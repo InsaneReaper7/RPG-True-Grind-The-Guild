@@ -148,6 +148,7 @@ export class OutpostScene extends Phaser.Scene {
     this.roomClassifier = new RoomClassifier(dataLoader.getRoomRules());
     this.hud = new HUD();
     this.hud.setLocation('Guild Outpost (Safe Zone)', true);
+    GameState.getInstance().setSafeZone(true);
 
     // Wire up HUD Build callbacks
     this.hud.setBuildCallbacks(
@@ -1022,6 +1023,7 @@ export class OutpostScene extends Phaser.Scene {
       }
     }
 
+    GameState.getInstance().updateClock(delta);
     this.player.update(time, delta);
     this.updatePlayerRoomLookup(false);
     this.hud.update(this.player, this.progressionSystem, time);

@@ -1,6 +1,6 @@
 import type { Player } from '../entities/Player.ts';
 import { ProgressionSystem } from './ProgressionSystem.ts';
-import type { PlayerData, PlayerSnapshot, PlacedBuildable, TrainableStat } from '../types/game.ts';
+import type { PlayerData, PlayerSnapshot, PlacedBuildable, TrainableStat, FoodItemInstance } from '../types/game.ts';
 import { DataLoader } from '../utils/DataLoader.ts';
 
 export class GameState {
@@ -13,6 +13,14 @@ export class GameState {
   private unlockedBuildables: Set<string> = new Set(['floor', 'wall', 'door', 'bed', 'research_station']);
   private inventory: Map<string, number> = new Map();
   private bookLearnedSkills: Set<string> = new Set();
+
+  // Milestone 7: Day/Clock, Food & Mood Systems
+  private currentGameDay: number = 1;
+  private dayProgressMs: number = 0;
+  private dayDurationMs: number = 60000; // 60s real-time per game day
+  private foodItems: FoodItemInstance[] = [];
+  private isSafeZone: boolean = false;
+  public onSpoilageCallback?: (spoiledCount: number) => void;
 
   private constructor() {}
 
@@ -69,7 +77,11 @@ export class GameState {
       classLevels: {},
       unlockedClasses: [],
       resources: { ...this.resources },
-      placedBuildables: []
+      placedBuildables: [],
+      hunger: 100,
+      mood: 80,
+      currentGameDay: 1,
+      foodItems: []
     };
 
     this.isInitialized = true;
@@ -143,12 +155,160 @@ export class GameState {
     return Array.from(this.unlockedBuildables);
   }
 
-  // --- Inventory System (Bandages, etc.) ---
+  // --- Clock & Game Day System (Milestone 7) ---
+  public getCurrentGameDay(): number {
+    return this.currentGameDay;
+  }
+
+  public getDayProgress(): number {
+    return Math.min(1.0, this.dayProgressMs / this.dayDurationMs);
+  }
+
+  public getDayDurationMs(): number {
+    return this.dayDurationMs;
+  }
+
+  public setSafeZone(safe: boolean): void {
+    this.isSafeZone = safe;
+  }
+
+  public getIsSafeZone(): boolean {
+    return this.isSafeZone;
+  }
+
+  /**
+   * Advances clock progress. When 1 full game day elapses (60s),
+   * advances the day counter and triggers food spoilage check.
+   */
+  public updateClock(deltaMs: number): boolean {
+    this.dayProgressMs += deltaMs;
+    if (this.dayProgressMs >= this.dayDurationMs) {
+      const daysToAdvance = Math.floor(this.dayProgressMs / this.dayDurationMs);
+      this.dayProgressMs = this.dayProgressMs % this.dayDurationMs;
+      this.advanceGameDay(daysToAdvance);
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * Advances the game day counter by N days.
+   * Runs food spoilage check immediately.
+   */
+  public advanceGameDay(days: number = 1): number {
+    this.currentGameDay += days;
+    console.log(`%c[Clock] 🌅 Game Day advanced by +${days} -> Day ${this.currentGameDay}`, 'color: #f59e0b; font-weight: bold;');
+    const spoiled = this.checkFoodSpoilage();
+    if (this.snapshot) {
+      this.snapshot.currentGameDay = this.currentGameDay;
+      this.snapshot.foodItems = [...this.foodItems];
+    }
+    return spoiled;
+  }
+
+  // --- Food & Spoilage System (Milestone 7) ---
+  /**
+   * Checks all food items in inventory for spoilage.
+   * A food item spoils and is completely deleted when:
+   * currentGameDay >= acquiredDay + threshold
+   */
+  public checkFoodSpoilage(): number {
+    const dataLoader = DataLoader.getInstance();
+    const fresh: FoodItemInstance[] = [];
+    let spoiledCount = 0;
+
+    for (const item of this.foodItems) {
+      const foodDef = dataLoader.getFood(item.id);
+      const threshold = foodDef ? foodDef.spoilageDays : 7;
+      if (this.currentGameDay >= item.acquiredDay + threshold) {
+        spoiledCount++;
+        console.log(
+          `%c[Spoilage] 🪰 1x ${foodDef?.name || item.id} (acquired Day ${item.acquiredDay}) exceeded ${threshold}-day shelf life on Day ${this.currentGameDay} and was deleted.`,
+          'color: #ef4444; font-weight: bold;'
+        );
+      } else {
+        fresh.push(item);
+      }
+    }
+
+    if (spoiledCount > 0) {
+      this.foodItems = fresh;
+      this.syncFoodInventory();
+      this.onSpoilageCallback?.(spoiledCount);
+    }
+    return spoiledCount;
+  }
+
+  public addFoodItem(foodId: string, count: number = 1): void {
+    for (let i = 0; i < count; i++) {
+      this.foodItems.push({
+        id: foodId,
+        acquiredDay: this.currentGameDay,
+        instanceId: `${foodId}_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`
+      });
+    }
+    this.syncFoodInventory();
+    if (this.snapshot) {
+      this.snapshot.foodItems = [...this.foodItems];
+    }
+    console.log(`[Food] Added ${count}x '${foodId}' on Day ${this.currentGameDay}. Total: ${this.getFoodItemCount(foodId)}`);
+  }
+
+  public consumeOldestFood(foodId: string): FoodItemInstance | null {
+    const idx = this.foodItems.findIndex((f) => f.id === foodId);
+    if (idx !== -1) {
+      const consumed = this.foodItems.splice(idx, 1)[0];
+      this.syncFoodInventory();
+      if (this.snapshot) {
+        this.snapshot.foodItems = [...this.foodItems];
+      }
+      return consumed;
+    }
+    return null;
+  }
+
+  public getFoodItemCount(foodId: string): number {
+    return this.foodItems.filter((f) => f.id === foodId).length;
+  }
+
+  public getFoodItems(): FoodItemInstance[] {
+    return [...this.foodItems];
+  }
+
+  private syncFoodInventory(): void {
+    const counts: Record<string, number> = {};
+    for (const item of this.foodItems) {
+      counts[item.id] = (counts[item.id] || 0) + 1;
+    }
+    const dataLoader = DataLoader.getInstance();
+    for (const food of dataLoader.getFoods()) {
+      const c = counts[food.id] || 0;
+      if (c > 0) {
+        this.inventory.set(food.id, c);
+      } else {
+        this.inventory.delete(food.id);
+      }
+    }
+    if (this.snapshot) {
+      this.snapshot.inventory = Object.fromEntries(this.inventory);
+    }
+  }
+
+  // --- Inventory System (Bandages, Rations, etc.) ---
   public getItemCount(itemId: string): number {
+    const dataLoader = DataLoader.getInstance();
+    if (dataLoader.getFood(itemId)) {
+      return this.getFoodItemCount(itemId);
+    }
     return this.inventory.get(itemId) || 0;
   }
 
   public addItem(itemId: string, count: number): void {
+    const dataLoader = DataLoader.getInstance();
+    if (dataLoader.getFood(itemId)) {
+      this.addFoodItem(itemId, count);
+      return;
+    }
     const current = this.getItemCount(itemId);
     this.inventory.set(itemId, current + count);
     if (this.snapshot) {
@@ -157,6 +317,15 @@ export class GameState {
   }
 
   public consumeItem(itemId: string, count: number = 1): boolean {
+    const dataLoader = DataLoader.getInstance();
+    if (dataLoader.getFood(itemId)) {
+      for (let i = 0; i < count; i++) {
+        if (!this.consumeOldestFood(itemId)) {
+          return false;
+        }
+      }
+      return true;
+    }
     const current = this.getItemCount(itemId);
     if (current >= count) {
       const remaining = current - count;
@@ -267,7 +436,11 @@ export class GameState {
       researchPoints: this.researchPoints,
       unlockedBuildables: Array.from(this.unlockedBuildables),
       inventory: Object.fromEntries(this.inventory),
-      bookLearnedSkills: Array.from(player.bookLearnedSkills)
+      bookLearnedSkills: Array.from(player.bookLearnedSkills),
+      hunger: player.hunger,
+      mood: player.mood,
+      currentGameDay: this.currentGameDay,
+      foodItems: [...this.foodItems]
     };
 
     console.log(
@@ -281,7 +454,8 @@ export class GameState {
       `  Proficiencies: ${JSON.stringify(this.snapshot.proficiencies)}\n` +
       `  Unlocked Classes: [${this.snapshot.unlockedClasses.join(', ')}]\n` +
       `  Wood: ${this.resources.wood}\n` +
-      `  Placed Buildables: ${this.placedBuildables.length}`,
+      `  Placed Buildables: ${this.placedBuildables.length}\n` +
+      `  Day: ${this.currentGameDay}, Hunger: ${this.snapshot.hunger?.toFixed(1)}, Mood: ${this.snapshot.mood?.toFixed(1)}, Rations: ${this.getFoodItemCount('ration')}`,
       'color: #38bdf8; font-weight: bold;'
     );
   }
@@ -326,6 +500,19 @@ export class GameState {
       this.bookLearnedSkills = new Set(snap.bookLearnedSkills);
       player.bookLearnedSkills = new Set(snap.bookLearnedSkills);
     }
+    if (snap.hunger !== undefined) {
+      player.hunger = snap.hunger;
+    }
+    if (snap.mood !== undefined) {
+      player.mood = snap.mood;
+    }
+    if (snap.currentGameDay !== undefined) {
+      this.currentGameDay = snap.currentGameDay;
+    }
+    if (snap.foodItems) {
+      this.foodItems = [...snap.foodItems];
+      this.syncFoodInventory();
+    }
 
     player.autocastMap.clear();
     for (const [k, v] of Object.entries(snap.autocastMap)) {
@@ -363,7 +550,8 @@ export class GameState {
       `  Autocast: ${JSON.stringify(Object.fromEntries(player.autocastMap))}\n` +
       `  Remaining Cooldowns (ms): ${JSON.stringify(verifiedRemaining)}\n` +
       `  Proficiencies: ${JSON.stringify(progression.getSnapshotData().proficiencies)}\n` +
-      `  Unlocked Classes: [${progression.getSnapshotData().unlockedClasses.join(', ')}]`,
+      `  Unlocked Classes: [${progression.getSnapshotData().unlockedClasses.join(', ')}]\n` +
+      `  Day: ${this.currentGameDay}, Hunger: ${player.hunger.toFixed(1)}, Mood: ${player.mood.toFixed(1)}, Rations: ${this.getFoodItemCount('ration')}`,
       'color: #4ade80; font-weight: bold;'
     );
   }

@@ -319,15 +319,18 @@ export class CombatSystem {
         const dataLoader = DataLoader.getInstance();
         const weaponId = this.player.equippedWeapon.id;
 
-        // Calculate weapon effective damage and uncapped accuracy
+        // Calculate weapon effective damage and uncapped accuracy with Mood tier modifiers
         const weapon = this.player.equippedWeapon;
         const weaponLevel = this.progressionSystem.getProficiencyLevel(weaponId);
         const damageBonusPerLevel = weapon.levelBonus?.damagePerLevel ?? 0;
         const accuracyBonusPerLevel = weapon.levelBonus?.accuracyPerLevel ?? 0;
-        const effectiveBaseDamage = weapon.baseDamage + (weaponLevel * damageBonusPerLevel);
+        const rawBaseDamage = weapon.baseDamage + (weaponLevel * damageBonusPerLevel);
         const baseAccuracy = weapon.baseAccuracy ?? 0.60;
+
+        const moodTier = dataLoader.getMoodTier(this.player.mood);
+        const effectiveBaseDamage = rawBaseDamage * moodTier.combatDamageMultiplier;
         // Strictly uncapped: accuracy must be allowed to exceed 1.0 / 100% to offset future enemy Evasion
-        const effectiveAccuracy = baseAccuracy + (weaponLevel * accuracyBonusPerLevel);
+        const effectiveAccuracy = baseAccuracy + (weaponLevel * accuracyBonusPerLevel) + moodTier.combatAccuracyBonus;
 
         // Check if any equipped skill auto-cast conditions are met
         let usedSkill = false;
@@ -366,9 +369,9 @@ export class CombatSystem {
               console.log(`[Skill] Player casts ${skillDef.name} with ${weapon.name} but MISSED! (Hit Chance: ${(effectiveAccuracy * 100).toFixed(1)}%, Roll: ${(hitRoll * 100).toFixed(1)}%)`);
               this.createFloatingText(target.x, target.y - 10, 'MISS', '#9ca3af');
             } else {
-              const skillDamage = Math.floor(effectiveBaseDamage * skillDef.damageMultiplier);
-              console.log(`[Skill] Player casts ${skillDef.name}! Dealt ${skillDamage} damage (${skillDef.damageMultiplier * 100}% of ${effectiveBaseDamage.toFixed(1)} base) [Hit Chance: ${(effectiveAccuracy * 100).toFixed(1)}%]`);
-              this.createFloatingText(target.x, target.y - 10, `${skillDef.name.toUpperCase()}! -${skillDamage}`, '#f59e0b');
+              const skillDamage = effectiveBaseDamage * skillDef.damageMultiplier;
+              console.log(`[Skill] Player casts ${skillDef.name}! Dealt ${skillDamage.toFixed(1)} damage (${skillDef.damageMultiplier * 100}% of ${effectiveBaseDamage.toFixed(2)} Mood-adjusted base [Mood: ${moodTier.name} x${moodTier.combatDamageMultiplier}]) [Hit Chance: ${(effectiveAccuracy * 100).toFixed(1)}%]`);
+              this.createFloatingText(target.x, target.y - 10, `${skillDef.name.toUpperCase()}! -${skillDamage.toFixed(1)}`, '#f59e0b');
 
               // Roll Bleed status effect chance
               this.checkAndApplyBleed(target);
@@ -405,7 +408,7 @@ export class CombatSystem {
               this.createFloatingText(target.x, target.y - 10, 'MISS', '#9ca3af');
             } else {
               const damage = effectiveBaseDamage;
-              console.log(`[Combat] Player attacks ${target.entityName} with ${weapon.name} for ${damage.toFixed(1)} damage! (Base: ${weapon.baseDamage}, Lv ${weaponLevel} Bonus: +${(weaponLevel * damageBonusPerLevel).toFixed(1)}, Accuracy: ${(effectiveAccuracy * 100).toFixed(1)}%)`);
+              console.log(`[Combat] Player attacks ${target.entityName} with ${weapon.name} for ${damage.toFixed(1)} damage! (Base: ${weapon.baseDamage}, Lv ${weaponLevel} Bonus: +${(weaponLevel * damageBonusPerLevel).toFixed(1)}, Mood: ${moodTier.name} x${moodTier.combatDamageMultiplier}, Accuracy: ${(effectiveAccuracy * 100).toFixed(1)}%)`);
               this.createFloatingText(target.x, target.y - 10, `-${damage.toFixed(1)}`, '#38bdf8');
 
               // Roll Bleed status effect chance

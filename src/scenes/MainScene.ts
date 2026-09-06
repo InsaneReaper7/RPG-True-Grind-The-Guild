@@ -115,6 +115,7 @@ export class MainScene extends Phaser.Scene {
     this.progressionSystem = new ProgressionSystem(classesData);
     this.hud = new HUD();
     this.hud.setLocation('Dungeon Floor 1', false);
+    GameState.getInstance().setSafeZone(false);
 
     // Progression Unlock Notification
     this.progressionSystem.onClassUnlocked((event) => {
@@ -488,6 +489,9 @@ export class MainScene extends Phaser.Scene {
         this.cameras.main.startFollow(this.player, true, 0.1, 0.1);
       }
     }
+
+    // Update Clock & Game Day Progress
+    GameState.getInstance().updateClock(delta);
 
     // Update Entities
     this.player.update(time, delta);

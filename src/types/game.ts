@@ -164,6 +164,10 @@ export interface PlayerSnapshot {
   unlockedBuildables?: string[];
   inventory?: Record<string, number>;
   bookLearnedSkills?: string[];
+  hunger?: number;
+  mood?: number;
+  currentGameDay?: number;
+  foodItems?: FoodItemInstance[];
 }
 
 export interface SkillBookDef {
@@ -295,3 +299,46 @@ export interface HiddenSkillsData {
 }
 
 export type EntityState = 'idle' | 'moving' | 'chasing' | 'attacking' | 'returning' | 'downed' | 'dead';
+
+export interface FoodBuffDef {
+  id: string;
+  name: string;
+  durationMs: number;
+  hpRegenPerSec: number;
+  description: string;
+}
+
+export interface FoodDef {
+  id: string;
+  name: string;
+  hungerRestored: number;
+  spoilageDays: number;
+  buff: FoodBuffDef;
+  description: string;
+}
+
+export interface FoodsData {
+  foods: FoodDef[];
+}
+
+export interface FoodItemInstance {
+  id: string;
+  acquiredDay: number;
+  instanceId: string;
+}
+
+export type MoodTierName = 'high' | 'content' | 'low';
+
+export interface MoodTierDef {
+  tier: MoodTierName;
+  name: string;
+  minMood: number;
+  combatDamageMultiplier: number;
+  combatAccuracyBonus: number;
+  alchemyYieldBonus: number;
+  description: string;
+}
+
+export interface MoodEffectsData {
+  moodTiers: MoodTierDef[];
+}

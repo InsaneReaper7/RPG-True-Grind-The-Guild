@@ -1,0 +1,31 @@
+{
+  "moodTiers": [
+    {
+      "tier": "high",
+      "name": "High Mood",
+      "minMood": 75,
+      "combatDamageMultiplier": 1.15,
+      "combatAccuracyBonus": 0.10,
+      "alchemyYieldBonus": 1,
+      "description": "+15% Combat Damage, +10% Accuracy, +1 Bonus Alchemy Yield (2x Bandages)"
+    },
+    {
+      "tier": "content",
+      "name": "Content",
+      "minMood": 25,
+      "combatDamageMultiplier": 1.0,
+      "combatAccuracyBonus": 0.0,
+      "alchemyYieldBonus": 0,
+      "description": "Standard combat performance and standard crafting yield (1x Bandage)."
+    },
+    {
+      "tier": "low",
+      "name": "Low Mood",
+      "minMood": 0,
+      "combatDamageMultiplier": 0.85,
+      "combatAccuracyBonus": -0.10,
+      "alchemyYieldBonus": 0,
+      "description": "-15% Combat Damage, -10% Accuracy, sluggish morale."
+    }
+  ]
+}

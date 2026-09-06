@@ -1,0 +1,18 @@
+{
+  "foods": [
+    {
+      "id": "ration",
+      "name": "Ration",
+      "hungerRestored": 40,
+      "spoilageDays": 7,
+      "buff": {
+        "id": "well_fed",
+        "name": "Well Fed",
+        "durationMs": 15000,
+        "hpRegenPerSec": 2,
+        "description": "+2 HP/sec regen for 15s"
+      },
+      "description": "Standard field ration. Restores 40 Hunger and grants Well Fed (+2 HP/sec for 15s). Spoils in 7 game days."
+    }
+  ]
+}

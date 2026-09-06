@@ -79,6 +79,20 @@ export class HUD {
   private debugBtnBleedSelf: HTMLElement | null;
   private debugBtnGrantBandage: HTMLElement | null;
 
+  // Milestone 7 Elements (Day, Hunger, Mood, Rations & Debug)
+  private dayClockBadgeEl: HTMLElement | null;
+  private playerHungerTextEl: HTMLElement | null;
+  private playerMoodTextEl: HTMLElement | null;
+  private hudRationRowEl: HTMLElement | null;
+  private playerRationTextEl: HTMLElement | null;
+  private hudEatRationBtn: HTMLElement | null;
+  private debugBtnAdvanceDay: HTMLElement | null;
+  private debugBtnGrantRation: HTMLElement | null;
+  private debugBtnCycleHunger: HTMLElement | null;
+  private debugBtnCycleMood: HTMLElement | null;
+  private alchemyMoodValueEl: HTMLElement | null;
+  private alchemyMoodEffectEl: HTMLElement | null;
+
   private static activeInstance: HUD | null = null;
   private static hasGlobalListeners: boolean = false;
 
@@ -156,6 +170,20 @@ export class HUD {
     this.debugBtnGrantRP = document.getElementById('debug-btn-grant-rp');
     this.debugBtnBleedSelf = document.getElementById('debug-btn-bleed-self');
     this.debugBtnGrantBandage = document.getElementById('debug-btn-grant-bandage');
+
+    // Milestone 7 Elements
+    this.dayClockBadgeEl = document.getElementById('day-clock-badge');
+    this.playerHungerTextEl = document.getElementById('player-hunger-text');
+    this.playerMoodTextEl = document.getElementById('player-mood-text');
+    this.hudRationRowEl = document.getElementById('hud-ration-row');
+    this.playerRationTextEl = document.getElementById('player-ration-text');
+    this.hudEatRationBtn = document.getElementById('hud-eat-ration-btn');
+    this.debugBtnAdvanceDay = document.getElementById('debug-btn-advance-day');
+    this.debugBtnGrantRation = document.getElementById('debug-btn-grant-ration');
+    this.debugBtnCycleHunger = document.getElementById('debug-btn-cycle-hunger');
+    this.debugBtnCycleMood = document.getElementById('debug-btn-cycle-mood');
+    this.alchemyMoodValueEl = document.getElementById('alchemy-mood-value');
+    this.alchemyMoodEffectEl = document.getElementById('alchemy-mood-effect');
 
     if (this.hudCardEl) {
       this.hudCardEl.style.display = HUD.isHudCardVisible ? 'block' : 'none';
@@ -296,17 +324,63 @@ export class HUD {
       };
     }
 
+    // Milestone 7 Debug Actions
+    if (this.debugBtnAdvanceDay) {
+      this.debugBtnAdvanceDay.onclick = () => {
+        HUD.activeInstance?.debugAdvanceDay(1);
+      };
+    }
+    if (this.debugBtnGrantRation) {
+      this.debugBtnGrantRation.onclick = () => {
+        HUD.activeInstance?.debugGrantRation(1);
+      };
+    }
+    if (this.debugBtnCycleHunger) {
+      this.debugBtnCycleHunger.onclick = () => {
+        HUD.activeInstance?.debugCycleHunger();
+      };
+    }
+    if (this.debugBtnCycleMood) {
+      this.debugBtnCycleMood.onclick = () => {
+        HUD.activeInstance?.debugCycleMood();
+      };
+    }
+    if (this.hudEatRationBtn) {
+      this.hudEatRationBtn.onclick = () => {
+        HUD.activeInstance?.eatRation();
+      };
+    }
+
     // Expose debug helpers globally on window for console testing
     (window as any).debugGrantSkillBook = (id: string = 'book_power_strike') => HUD.activeInstance?.debugGrantSkillBook(id);
     (window as any).debugGrantResearchPoints = (amount: number = 10) => HUD.activeInstance?.debugGrantResearchPoints(amount);
     (window as any).debugApplyBleed = () => HUD.activeInstance?.debugApplyBleed();
     (window as any).debugApplyBandage = () => HUD.activeInstance?.applyBandage();
+    (window as any).debugAdvanceDay = (days: number = 1) => HUD.activeInstance?.debugAdvanceDay(days);
+    (window as any).debugGrantRation = (count: number = 1) => HUD.activeInstance?.debugGrantRation(count);
+    (window as any).debugSetHunger = (amount: number) => {
+      HUD.activeInstance?.currentPlayer?.setHunger(amount);
+      if (HUD.activeInstance?.currentPlayer && HUD.activeInstance?.currentProgression) {
+        HUD.activeInstance.update(HUD.activeInstance.currentPlayer, HUD.activeInstance.currentProgression, 0);
+      }
+    };
+    (window as any).debugCycleHunger = () => HUD.activeInstance?.debugCycleHunger();
+    (window as any).debugSetMood = (amount: number) => {
+      HUD.activeInstance?.currentPlayer?.setMood(amount);
+      if (HUD.activeInstance?.currentPlayer && HUD.activeInstance?.currentProgression) {
+        HUD.activeInstance.update(HUD.activeInstance.currentPlayer, HUD.activeInstance.currentProgression, 0);
+      }
+    };
+    (window as any).debugCycleMood = () => HUD.activeInstance?.debugCycleMood();
+    (window as any).debugEatRation = () => HUD.activeInstance?.eatRation();
     (window as any).debugCraftBandage = () => {
       const gs = GameState.getInstance();
       if (gs.consumeWood(5)) {
-        gs.addItem('bandage', 1);
+        const moodTier = DataLoader.getInstance().getMoodTier(HUD.activeInstance?.currentPlayer?.mood ?? 80);
+        const yieldCount = 1 + moodTier.alchemyYieldBonus;
+        gs.addItem('bandage', yieldCount);
         HUD.activeInstance?.currentProgression?.addProficiencyExp('alchemy', 25);
-        HUD.activeInstance?.showToast('⚗️ Crafted Bandage! (+25 Alchemy EXP)', 'success');
+        HUD.activeInstance?.showToast(`⚗️ Crafted ${yieldCount}x Bandage! (+25 Alchemy EXP)`, 'success');
         if (HUD.activeInstance?.currentPlayer && HUD.activeInstance?.currentProgression) {
           HUD.activeInstance.update(HUD.activeInstance.currentPlayer, HUD.activeInstance.currentProgression, 0);
           if (HUD.activeInstance.isAlchemyModalOpen()) {
@@ -341,6 +415,12 @@ export class HUD {
           }
         } else if (e.key === 'h' || e.key === 'H') {
           active.applyBandage();
+        } else if (e.key === 'y' || e.key === 'Y') {
+          active.debugAdvanceDay(1);
+        } else if (e.key === 'u' || e.key === 'U') {
+          active.debugCycleHunger();
+        } else if (e.key === 'm' || e.key === 'M') {
+          active.debugCycleMood();
         } else if (e.key === 'Escape') {
           active.closeLoadoutModal();
           active.closeResearchTreeModal();
@@ -942,6 +1022,57 @@ export class HUD {
       }
     }
 
+    // 8b. Milestone 7: Day Clock, Hunger, Mood & Rations
+    if (this.dayClockBadgeEl) {
+      const day = GameState.getInstance().getCurrentGameDay();
+      const progressPct = (GameState.getInstance().getDayProgress() * 100).toFixed(0);
+      this.dayClockBadgeEl.innerText = `🌅 Day ${day} (${progressPct}%)`;
+    }
+
+    if (this.playerHungerTextEl) {
+      this.playerHungerTextEl.innerText = `${Math.ceil(player.hunger)} / ${player.maxHunger}`;
+      if (player.hunger > 50) {
+        this.playerHungerTextEl.style.color = '#22c55e';
+      } else if (player.hunger > 25) {
+        this.playerHungerTextEl.style.color = '#f59e0b';
+      } else {
+        this.playerHungerTextEl.style.color = '#ef4444';
+      }
+    }
+
+    if (this.playerMoodTextEl) {
+      const moodTier = DataLoader.getInstance().getMoodTier(player.mood);
+      this.playerMoodTextEl.innerText = `${Math.ceil(player.mood)} / ${player.maxMood} (${moodTier.name})`;
+      if (moodTier.tier === 'high') {
+        this.playerMoodTextEl.style.color = '#22c55e';
+      } else if (moodTier.tier === 'content') {
+        this.playerMoodTextEl.style.color = '#38bdf8';
+      } else {
+        this.playerMoodTextEl.style.color = '#ef4444';
+      }
+    }
+
+    if (this.hudRationRowEl && this.playerRationTextEl) {
+      const rationCount = GameState.getInstance().getFoodItemCount('ration');
+      if (rationCount > 0 || this.isOutpost) {
+        this.hudRationRowEl.style.display = 'flex';
+        this.playerRationTextEl.innerText = `${rationCount}`;
+        if (this.hudEatRationBtn) {
+          this.hudEatRationBtn.style.display = rationCount > 0 ? 'inline-block' : 'none';
+        }
+      } else {
+        this.hudRationRowEl.style.display = 'none';
+      }
+    }
+
+    if (this.playerStatusEl && player.state !== 'downed' && !player.activeStatusEffects.has('bleed')) {
+      if (player.wellFedRemainingMs > 0) {
+        const sec = Math.ceil(player.wellFedRemainingMs / 1000);
+        this.playerStatusEl.innerText = `Well Fed (+${player.wellFedHpPerSec} HP/s, ${sec}s)`;
+        this.playerStatusEl.style.color = '#10b981';
+      }
+    }
+
     // 9. Live All-Skills Debug Overview Panel (Backtick toggle)
     this.updateDebugSkillsPanel(progression);
   }
@@ -1111,6 +1242,21 @@ export class HUD {
       this.alchemyModalBandagesEl.innerText = `🩹 ${gameState.getItemCount('bandage')}`;
     }
 
+    // 2b. Mood Modifier Banner
+    const moodTier = dataLoader.getMoodTier(player.mood);
+    const yieldQuantity = 1 + moodTier.alchemyYieldBonus;
+
+    if (this.alchemyMoodValueEl && this.alchemyMoodEffectEl) {
+      this.alchemyMoodValueEl.innerText = `${moodTier.name} (${Math.ceil(player.mood)}/100)`;
+      if (moodTier.alchemyYieldBonus > 0) {
+        this.alchemyMoodEffectEl.innerText = `+${moodTier.alchemyYieldBonus * 100}% Crafting Yield (2x Bandages per craft!)`;
+        this.alchemyMoodEffectEl.style.color = '#fef08a';
+      } else {
+        this.alchemyMoodEffectEl.innerText = `Standard Yield (1x Bandage per craft)`;
+        this.alchemyMoodEffectEl.style.color = '#9ca3af';
+      }
+    }
+
     // 3. Recipes list
     if (this.alchemyRecipesContainerEl) {
       this.alchemyRecipesContainerEl.innerHTML = '';
@@ -1121,15 +1267,19 @@ export class HUD {
         const card = document.createElement('div');
         card.style.cssText = 'background: rgba(31, 41, 55, 0.85); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 8px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; gap: 12px;';
 
+        const craftLabel = yieldQuantity > 1 ? `⚗️ Craft ${yieldQuantity}x (+${recipe.expGranted} EXP)` : `⚗️ Craft (+${recipe.expGranted} EXP)`;
         const btnHtml = hasWood
-          ? `<button type="button" class="btn-action" style="background: #059669; border-color: #34d399; font-size: 12px; padding: 6px 14px;" data-craft-recipe="${recipe.id}">⚗️ Craft (+${recipe.expGranted} EXP)</button>`
+          ? `<button type="button" class="btn-action" style="background: #059669; border-color: #34d399; font-size: 12px; padding: 6px 14px;" data-craft-recipe="${recipe.id}">${craftLabel}</button>`
           : `<button type="button" disabled style="background: #374151; color: #9ca3af; border: 1px solid #4b5563; border-radius: 6px; font-size: 12px; padding: 6px 14px; cursor: not-allowed;">Needs 🪵 ${woodCost} Wood</button>`;
+
+        const yieldNotice = yieldQuantity > 1 ? `<span style="font-size: 11px; color: #34d399; font-weight: bold;">Yield: ${yieldQuantity}x Bandages</span>` : `<span style="font-size: 11px; color: #9ca3af;">Yield: 1x</span>`;
 
         card.innerHTML = `
           <div style="flex: 1;">
             <div style="font-size: 14px; font-weight: bold; color: #34d399; display: flex; align-items: center; gap: 8px;">
               <span>${recipe.name}</span>
               <span style="font-size: 11px; color: #fbbf24; font-weight: normal;">Cost: 🪵 ${woodCost} Wood</span>
+              ${yieldNotice}
               <span style="font-size: 11px; color: #60a5fa; font-weight: normal;">+${recipe.expGranted} Alchemy EXP</span>
             </div>
             <div style="font-size: 11px; color: #9ca3af; margin-top: 3px;">${recipe.description}</div>
@@ -1141,9 +1291,10 @@ export class HUD {
         if (craftBtn) {
           craftBtn.onclick = () => {
             if (gameState.consumeWood(woodCost)) {
-              gameState.addItem(recipe.id, 1);
+              gameState.addItem(recipe.id, yieldQuantity);
               progression.addProficiencyExp('alchemy', recipe.expGranted);
-              this.showToast(`⚗️ Crafted ${recipe.name}! (+${recipe.expGranted} Alchemy EXP)`, 'success', 2500);
+              const bonusText = yieldQuantity > 1 ? ` (${moodTier.name} ${yieldQuantity}x Bonus!)` : '';
+              this.showToast(`⚗️ Crafted ${yieldQuantity}x ${recipe.name}!${bonusText} (+${recipe.expGranted} Alchemy EXP)`, 'success', 2500);
               this.renderAlchemyModal(player, progression);
               this.update(player, progression, 0);
             } else {
@@ -1294,5 +1445,82 @@ export class HUD {
         this.renderAlchemyModal(this.currentPlayer, this.currentProgression);
       }
     }
+  }
+
+  // --- DEBUG TOOLING FOR DAY, FOOD & MOOD (Milestone 7) ---
+
+  public debugAdvanceDay(days: number = 1): void {
+    const spoiled = GameState.getInstance().advanceGameDay(days);
+    const currentDay = GameState.getInstance().getCurrentGameDay();
+    if (spoiled > 0) {
+      this.showToast(`🌅 Advanced to Day ${currentDay} (⚠️ ${spoiled} Ration(s) spoiled and discarded)`, 'warn', 3500);
+    } else {
+      this.showToast(`🌅 Advanced to Day ${currentDay}`, 'info', 2000);
+    }
+    if (this.currentPlayer && this.currentProgression) {
+      this.update(this.currentPlayer, this.currentProgression, 0);
+    }
+  }
+
+  public debugGrantRation(count: number = 1): void {
+    GameState.getInstance().addFoodItem('ration', count);
+    const currentDay = GameState.getInstance().getCurrentGameDay();
+    this.showToast(`🍖 Granted ${count}x Ration (Fresh on Day ${currentDay})`, 'success', 2500);
+    if (this.currentPlayer && this.currentProgression) {
+      this.update(this.currentPlayer, this.currentProgression, 0);
+    }
+  }
+
+  public debugCycleHunger(): void {
+    if (!this.currentPlayer) return;
+    if (this.currentPlayer.hunger > 30) {
+      this.currentPlayer.setHunger(25);
+      this.showToast('🍽️ Debug Hunger set to 25 (Low / Auto-eat threshold)', 'warn', 2000);
+    } else if (this.currentPlayer.hunger > 5) {
+      this.currentPlayer.setHunger(0);
+      this.showToast('🍽️ Debug Hunger set to 0 (Starving)', 'error', 2000);
+    } else {
+      this.currentPlayer.setHunger(100);
+      this.showToast('🍽️ Debug Hunger set to 100 (Full)', 'success', 2000);
+    }
+    if (this.currentProgression) {
+      this.update(this.currentPlayer, this.currentProgression, 0);
+    }
+  }
+
+  public debugCycleMood(): void {
+    if (!this.currentPlayer) return;
+    if (this.currentPlayer.mood >= 70) {
+      this.currentPlayer.setMood(50);
+      this.showToast('🎭 Debug Mood set to 50 (Content)', 'info', 2000);
+    } else if (this.currentPlayer.mood >= 30) {
+      this.currentPlayer.setMood(15);
+      this.showToast('🎭 Debug Mood set to 15 (Low / Miserable)', 'error', 2000);
+    } else {
+      this.currentPlayer.setMood(100);
+      this.showToast('🎭 Debug Mood set to 100 (High / Ecstatic)', 'success', 2000);
+    }
+    if (this.currentProgression) {
+      this.update(this.currentPlayer, this.currentProgression, 0);
+    }
+    if (this.isAlchemyModalOpen()) {
+      this.renderAlchemyModal(this.currentPlayer, this.currentProgression!);
+    }
+  }
+
+  public eatRation(): boolean {
+    if (!this.currentPlayer) return false;
+    if (GameState.getInstance().getFoodItemCount('ration') <= 0) {
+      this.showToast('No Rations in inventory!', 'error');
+      return false;
+    }
+    const ate = this.currentPlayer.eatFood('ration');
+    if (ate) {
+      this.showToast('🍖 Ate Ration! (+40 Hunger, Well Fed buff)', 'success', 2500);
+      if (this.currentProgression) {
+        this.update(this.currentPlayer, this.currentProgression, 0);
+      }
+    }
+    return ate;
   }
 }

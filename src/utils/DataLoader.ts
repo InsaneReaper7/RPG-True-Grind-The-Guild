@@ -20,7 +20,11 @@ import type {
   ResearchNodeDef,
   ResearchTreeData,
   AlchemyRecipeDef,
-  AlchemyRecipesData
+  AlchemyRecipesData,
+  FoodDef,
+  FoodsData,
+  MoodTierDef,
+  MoodEffectsData
 } from '../types/game.ts';
 import { HiddenSkillSystem } from '../systems/HiddenSkillSystem.ts';
 
@@ -38,6 +42,8 @@ export class DataLoader {
   private skillBooksData!: SkillBooksData;
   private researchTreeData!: ResearchTreeData;
   private alchemyRecipesData!: AlchemyRecipesData;
+  private foodsData!: FoodsData;
+  private moodEffectsData!: MoodEffectsData;
 
   private constructor() {}
 
@@ -49,7 +55,7 @@ export class DataLoader {
   }
 
   public async loadAll(): Promise<void> {
-    const [player, weapons, classes, enemies, skills, statusEffects, buildables, rooms, hiddenSkills, skillBooks, researchTree, alchemyRecipes] = await Promise.all([
+    const [player, weapons, classes, enemies, skills, statusEffects, buildables, rooms, hiddenSkills, skillBooks, researchTree, alchemyRecipes, foods, moodEffects] = await Promise.all([
       fetch('/data/player.json').then((res) => res.json()),
       fetch('/data/weapons.json').then((res) => res.json()),
       fetch('/data/classes.json').then((res) => res.json()),
@@ -61,7 +67,9 @@ export class DataLoader {
       fetch('/data/hiddenSkills.json').then((res) => res.json()),
       fetch('/data/skillBooks.json').then((res) => res.json()),
       fetch('/data/researchTree.json').then((res) => res.json()),
-      fetch('/data/alchemyRecipes.json').then((res) => res.json())
+      fetch('/data/alchemyRecipes.json').then((res) => res.json()),
+      fetch('/data/food.json').then((res) => res.json()),
+      fetch('/data/moodEffects.json').then((res) => res.json())
     ]);
 
     this.playerData = player as PlayerData;
@@ -76,6 +84,8 @@ export class DataLoader {
     this.skillBooksData = skillBooks as SkillBooksData;
     this.researchTreeData = researchTree as ResearchTreeData;
     this.alchemyRecipesData = alchemyRecipes as AlchemyRecipesData;
+    this.foodsData = foods as FoodsData;
+    this.moodEffectsData = moodEffects as MoodEffectsData;
 
     if (this.hiddenSkillsData?.hiddenSkills) {
       HiddenSkillSystem.getInstance().registerSkillDefs(this.hiddenSkillsData.hiddenSkills);
@@ -193,4 +203,46 @@ export class DataLoader {
   public getAlchemyRecipe(id: string): AlchemyRecipeDef | undefined {
     return this.alchemyRecipesData?.recipes.find((r) => r.id === id);
   }
+
+  public getFoodsData(): FoodsData {
+    return this.foodsData;
+  }
+
+  public getFoods(): FoodDef[] {
+    return this.foodsData?.foods ?? [];
+  }
+
+  public getFood(id: string): FoodDef | undefined {
+    return this.foodsData?.foods.find((f) => f.id === id);
+  }
+
+  public getMoodEffectsData(): MoodEffectsData {
+    return this.moodEffectsData;
+  }
+
+  public getMoodTiers(): MoodTierDef[] {
+    return this.moodEffectsData?.moodTiers ?? [];
+  }
+
+  public getMoodTier(mood: number): MoodTierDef {
+    const tiers = this.getMoodTiers();
+    // High to low check
+    for (const t of tiers) {
+      if (mood >= t.minMood) {
+        return t;
+      }
+    }
+    return (
+      tiers[tiers.length - 1] || {
+        tier: 'content',
+        name: 'Content',
+        minMood: 25,
+        combatDamageMultiplier: 1.0,
+        combatAccuracyBonus: 0.0,
+        alchemyYieldBonus: 0,
+        description: 'Standard performance.'
+      }
+    );
+  }
 }
+

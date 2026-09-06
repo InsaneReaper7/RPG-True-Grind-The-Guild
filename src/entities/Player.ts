@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { Entity } from './Entity';
 import { PlayerData, WeaponDef } from '../types/game';
 import { GameState } from '../systems/GameState';
+import { DataLoader } from '../utils/DataLoader';
 
 export class Player extends Entity {
   public equippedWeapon: WeaponDef;
@@ -18,6 +19,19 @@ export class Player extends Entity {
   public equippedSkillIds: string[] = [];
   public autocastMap: Map<string, boolean> = new Map();
   public bookLearnedSkills: Set<string> = new Set();
+
+  // Milestone 7: Hunger, Mood & Food Buff
+  public hunger: number = 100;
+  public maxHunger: number = 100;
+  public hungerDrainPerSecond: number = 0.5; // ~30 hunger per minute
+  public autoEatThreshold: number = 25;
+
+  public mood: number = 80;
+  public maxMood: number = 100;
+
+  public wellFedRemainingMs: number = 0;
+  public wellFedNextTickMs: number = 0;
+  public wellFedHpPerSec: number = 2;
 
   constructor(
     scene: Phaser.Scene,
@@ -209,14 +223,128 @@ export class Player extends Entity {
     return !wasFull;
   }
 
+  public eatFood(foodId: string = 'ration'): boolean {
+    const dataLoader = DataLoader.getInstance();
+    const foodDef = dataLoader.getFood(foodId);
+    if (!foodDef) {
+      console.warn(`[Player] Unknown food item: ${foodId}`);
+      return false;
+    }
+
+    const gameState = GameState.getInstance();
+    const consumed = gameState.consumeOldestFood(foodId);
+    if (!consumed) {
+      return false;
+    }
+
+    const oldHunger = this.hunger;
+    this.hunger = Math.min(this.maxHunger, this.hunger + foodDef.hungerRestored);
+    const restored = this.hunger - oldHunger;
+
+    // Refresh Well Fed buff (resets duration to 15s, does not stack +2 HP/sec rate)
+    this.wellFedHpPerSec = foodDef.buff.hpRegenPerSec;
+    this.wellFedRemainingMs = foodDef.buff.durationMs;
+    this.wellFedNextTickMs = 1000;
+
+    console.log(
+      `%c[Player] 🍖 Ate ${foodDef.name}! Restored +${restored.toFixed(1)} Hunger (Now: ${this.hunger.toFixed(1)}/100). Well Fed buff refreshed (15s @ +${this.wellFedHpPerSec} HP/s).`,
+      'color: #10b981; font-weight: bold;'
+    );
+    this.createFloatingText(`+${restored.toFixed(0)} Hunger (Well Fed)`, '#10b981');
+    return true;
+  }
+
+  public setHunger(amount: number): void {
+    this.hunger = Math.max(0, Math.min(this.maxHunger, amount));
+    console.log(`[Player] Hunger set to: ${this.hunger.toFixed(1)} / ${this.maxHunger}`);
+  }
+
+  public setMood(amount: number): void {
+    this.mood = Math.max(0, Math.min(this.maxMood, amount));
+    console.log(`[Player] Mood set to: ${this.mood.toFixed(1)} / ${this.maxMood}`);
+  }
+
+  public createFloatingText(textString: string, colorHex: string): void {
+    const text = this.scene.add.text(this.x, this.y - 20, textString, {
+      fontSize: '11px',
+      color: colorHex,
+      fontStyle: 'bold',
+      backgroundColor: 'rgba(0,0,0,0.6)',
+      padding: { x: 4, y: 2 }
+    });
+    text.setOrigin(0.5);
+    text.setDepth(this.y + 1000);
+
+    this.scene.tweens.add({
+      targets: text,
+      y: text.y - 20,
+      alpha: 0,
+      duration: 1000,
+      onComplete: () => text.destroy()
+    });
+  }
+
   public override update(time: number, delta: number): void {
     super.update(time, delta);
 
     if (this.state !== 'downed' && this.state !== 'dead') {
-      // Passive Energy regeneration over time
+      // 1. Passive Energy regeneration over time
       if (this.energy < this.maxEnergy) {
         this.energy = Math.min(this.maxEnergy, this.energy + (this.energyRegenPerSecond * delta) / 1000);
       }
+
+      // 2. Hunger Drain over time
+      if (this.hunger > 0) {
+        this.hunger = Math.max(0, this.hunger - (this.hungerDrainPerSecond * delta) / 1000);
+      }
+
+      // 3. Auto-Eat when crossing low threshold
+      if (this.hunger <= this.autoEatThreshold) {
+        const gameState = GameState.getInstance();
+        if (gameState.getFoodItemCount('ration') > 0) {
+          console.log(
+            `%c[Auto-Eat] 🥣 Hunger dropped to ${this.hunger.toFixed(1)} <= ${this.autoEatThreshold}. Auto-eating Ration from inventory...`,
+            'color: #34d399; font-weight: bold;'
+          );
+          this.eatFood('ration');
+        }
+      }
+
+      // 4. Well Fed HP Regen Buff Ticking
+      if (this.wellFedRemainingMs > 0) {
+        this.wellFedRemainingMs -= delta;
+        this.wellFedNextTickMs -= delta;
+        if (this.wellFedNextTickMs <= 0) {
+          this.wellFedNextTickMs += 1000;
+          if (this.hp < this.maxHp) {
+            const healed = this.heal(this.wellFedHpPerSec);
+            if (healed > 0) {
+              console.log(`[Well Fed] Regenerated +${healed} HP from food buff!`);
+              this.createFloatingText(`+${healed} HP`, '#22c55e');
+            }
+          }
+        }
+      }
+
+      // 5. Dynamic Mood System (Asymmetric Rest vs Dungeon Crawl & Hunger Inputs)
+      const isSafeZone = GameState.getInstance().getIsSafeZone();
+      let moodDeltaPerSec = 0;
+
+      // Rest Input: Safe Outpost vs Dungeon Crawl Fatigue
+      if (isSafeZone) {
+        moodDeltaPerSec += 0.35; // Outpost recovery (+21/min)
+      } else {
+        moodDeltaPerSec -= 0.50; // Dungeon crawling stress (-30/min)
+      }
+
+      // Hunger Input: Pure Mood drain when hungry
+      if (this.hunger < 20) {
+        moodDeltaPerSec -= 0.80; // Starvation severe drain
+      } else if (this.hunger < 50) {
+        moodDeltaPerSec -= 0.30; // Mild hunger drain
+      }
+
+      this.mood = Math.max(0, Math.min(this.maxMood, this.mood + (moodDeltaPerSec * delta) / 1000));
     }
   }
 }
