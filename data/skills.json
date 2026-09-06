@@ -14,6 +14,21 @@
         }
       ],
       "description": "Unleashes a powerful strike dealing 200% weapon damage."
+    },
+    {
+      "id": "thrust",
+      "name": "Thrust",
+      "energyCost": 20,
+      "cooldownMs": 3000,
+      "damageMultiplier": 1.5,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "fencer",
+          "value": 1
+        }
+      ],
+      "description": "A rapid piercing thrust dealing 150% weapon damage."
     }
   ]
 }

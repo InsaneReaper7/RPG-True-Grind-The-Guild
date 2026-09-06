@@ -35,6 +35,7 @@ export class ProgressionSystem {
     // Default trainable stats
     this.proficiencies.set('short_swords', { level: 0, currentExp: 0 });
     this.proficiencies.set('construction', { level: 0, currentExp: 0 });
+    this.proficiencies.set('alchemy', { level: 0, currentExp: 0 });
     for (const hiddenId of ProgressionSystem.HIDDEN_SKILL_IDS) {
       this.proficiencies.set(hiddenId, { level: 0, currentExp: 0 });
     }
@@ -169,7 +170,10 @@ export class ProgressionSystem {
     return this.unlockedClasses.has(classId);
   }
 
-  public isSkillUnlocked(skill: SkillDef): boolean {
+  public isSkillUnlocked(skill: SkillDef, player?: { isSkillLearnedFromBook?: (id: string) => boolean }): boolean {
+    if (player?.isSkillLearnedFromBook?.(skill.id)) {
+      return true;
+    }
     return skill.requirements.every((req: Requirement) => {
       if (req.type === 'classLevel') {
         return this.getClassLevel(req.target) >= req.value;

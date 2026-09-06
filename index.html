@@ -222,6 +222,35 @@
     #skill-loadout-modal.active {
       display: flex;
     }
+    .custom-modal {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 580px;
+      max-height: 520px;
+      background: rgba(17, 24, 39, 0.97);
+      backdrop-filter: blur(8px);
+      border: 2px solid #3b82f6;
+      border-radius: 12px;
+      padding: 20px 24px;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.7);
+      display: none;
+      flex-direction: column;
+      pointer-events: auto;
+      z-index: 100;
+    }
+    .custom-modal.active {
+      display: flex;
+    }
+    #research-tree-modal {
+      border-color: #38bdf8;
+      box-shadow: 0 0 25px rgba(56, 189, 248, 0.3);
+    }
+    #alchemy-modal {
+      border-color: #10b981;
+      box-shadow: 0 0 25px rgba(16, 185, 129, 0.3);
+    }
     .modal-header {
       display: flex;
       justify-content: space-between;
@@ -533,6 +562,17 @@
           <span>Construction:</span>
           <span id="construction-prof-text" class="hud-stat-value" style="color: #f59e0b;">Level 0 (0/50 EXP) (Untrained)</span>
         </div>
+        <div class="hud-stat" id="hud-alchemy-row" style="display: none;">
+          <span>Alchemy:</span>
+          <span id="alchemy-prof-text" class="hud-stat-value" style="color: #10b981;">Level 0 (0/50 EXP)</span>
+        </div>
+        <div class="hud-stat" id="hud-bandage-row" style="display: none;">
+          <span>Bandages:</span>
+          <span class="hud-stat-value" style="color: #34d399;">
+            <span id="player-bandage-text">0</span>
+            <button id="hud-apply-bandage-btn" type="button" style="background: #059669; color: white; border: none; border-radius: 4px; padding: 1px 6px; font-size: 10px; font-weight: bold; cursor: pointer; margin-left: 6px;">Apply [H]</button>
+          </span>
+        </div>
         <div class="hud-stat">
           <span>Status:</span>
           <span id="player-status-text" class="hud-stat-value" style="color: #9ca3af;">Normal</span>
@@ -568,6 +608,16 @@
           <span class="debug-key-badge">[ ` ]</span>
         </div>
         <div id="debug-skills-list" class="debug-skills-list"></div>
+        <div style="margin-top: 8px; border-top: 1px solid rgba(245, 158, 11, 0.3); padding-top: 6px;">
+          <div style="font-size: 10px; color: #fbbf24; font-weight: bold; margin-bottom: 4px;">MILESTONE 6 DEBUG ACTIONS:</div>
+          <div style="display: flex; flex-direction: column; gap: 4px;">
+            <button id="debug-btn-power-strike" type="button" style="background: #1e3a8a; color: #93c5fd; border: 1px solid #3b82f6; border-radius: 4px; padding: 3px 6px; font-size: 10px; font-weight: bold; cursor: pointer; text-align: left;">📖 Tome: Power Strike (Learn or +10 RP)</button>
+            <button id="debug-btn-thrust" type="button" style="background: #1e3a8a; color: #93c5fd; border: 1px solid #3b82f6; border-radius: 4px; padding: 3px 6px; font-size: 10px; font-weight: bold; cursor: pointer; text-align: left;">📖 Tome: Thrust (Learn or +10 RP)</button>
+            <button id="debug-btn-grant-rp" type="button" style="background: #065f46; color: #6ee7b7; border: 1px solid #10b981; border-radius: 4px; padding: 3px 6px; font-size: 10px; font-weight: bold; cursor: pointer; text-align: left;">🔬 Grant +10 Research Points</button>
+            <button id="debug-btn-bleed-self" type="button" style="background: #7f1d1d; color: #fca5a5; border: 1px solid #ef4444; border-radius: 4px; padding: 3px 6px; font-size: 10px; font-weight: bold; cursor: pointer; text-align: left;">🩸 Apply Bleed (Self-Inflict 6s DoT)</button>
+            <button id="debug-btn-grant-bandage" type="button" style="background: #047857; color: #a7f3d0; border: 1px solid #34d399; border-radius: 4px; padding: 3px 6px; font-size: 10px; font-weight: bold; cursor: pointer; text-align: left;">🩹 Grant +1 Bandage</button>
+          </div>
+        </div>
       </div>
 
       <div id="build-feedback-toast"></div>
@@ -657,6 +707,62 @@
               <!-- Dynamically populated from knownSkillIds -->
             </div>
           </div>
+        </div>
+      </div>
+
+      <!-- Research Tree Modal (Research Station) -->
+      <div id="research-tree-modal" class="custom-modal">
+        <div class="modal-header">
+          <div>
+            <div class="modal-title" style="color: #38bdf8;">🔬 Guild Research Station</div>
+            <div class="modal-subtitle">Study ancient tomes and unlock advanced outpost facilities.</div>
+          </div>
+          <button id="close-research-btn" class="modal-close-btn" type="button">✕</button>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(31, 41, 55, 0.7); padding: 8px 12px; border-radius: 6px; margin-bottom: 14px; border: 1px solid rgba(255,255,255,0.1);">
+          <span style="font-size: 13px; color: #9ca3af; font-weight: 600;">Available Research Points:</span>
+          <span id="research-points-count" style="font-size: 15px; font-weight: bold; color: #38bdf8;">🔬 0</span>
+        </div>
+        <div class="loadout-section-title">Unlockable Facilities</div>
+        <div id="research-nodes-container" style="display: flex; flex-direction: column; gap: 10px; max-height: 360px; overflow-y: auto;">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+
+      <!-- Alchemy Crafting Modal (Alchemy Station) -->
+      <div id="alchemy-modal" class="custom-modal">
+        <div class="modal-header">
+          <div>
+            <div class="modal-title" style="color: #34d399;">⚗️ Guild Alchemy Station</div>
+            <div class="modal-subtitle">Brew remedies and craft medicine from outpost resources.</div>
+          </div>
+          <button id="close-alchemy-btn" class="modal-close-btn" type="button">✕</button>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; background: rgba(31, 41, 55, 0.7); padding: 8px 12px; border-radius: 6px; margin-bottom: 14px; border: 1px solid rgba(255,255,255,0.1); font-size: 12px;">
+          <div>
+            <span style="color: #9ca3af;">Alchemy:</span>
+            <div id="alchemy-modal-prof" style="color: #10b981; font-weight: bold;">Level 0 (0/50 EXP)</div>
+          </div>
+          <div>
+            <span style="color: #9ca3af;">Wood Stockpile:</span>
+            <div id="alchemy-modal-wood" style="color: #f59e0b; font-weight: bold;">🪵 1000</div>
+          </div>
+          <div>
+            <span style="color: #9ca3af;">Stockpile Bandages:</span>
+            <div id="alchemy-modal-bandages" style="color: #34d399; font-weight: bold;">🩹 0</div>
+          </div>
+        </div>
+        <div class="loadout-section-title">Alchemy Recipes</div>
+        <div id="alchemy-recipes-container" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px;">
+          <!-- Dynamically populated -->
+        </div>
+        <div class="loadout-section-title">Emergency Treatment</div>
+        <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(31, 41, 55, 0.6); padding: 8px 12px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1);">
+          <div>
+            <span style="font-size: 12px; color: #9ca3af;">Patient Status: </span>
+            <span id="alchemy-player-status" style="font-size: 12px; font-weight: bold; color: #9ca3af;">Normal</span>
+          </div>
+          <button id="alchemy-apply-bandage-btn" class="btn-action" style="background: #059669; border-color: #34d399;" type="button">🩹 Apply Bandage [H]</button>
         </div>
       </div>
     </div>

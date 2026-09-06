@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { Entity } from './Entity';
 import { PlayerData, WeaponDef } from '../types/game';
+import { GameState } from '../systems/GameState';
 
 export class Player extends Entity {
   public equippedWeapon: WeaponDef;
@@ -16,6 +17,7 @@ export class Player extends Entity {
   public knownSkillIds: string[] = [];
   public equippedSkillIds: string[] = [];
   public autocastMap: Map<string, boolean> = new Map();
+  public bookLearnedSkills: Set<string> = new Set();
 
   constructor(
     scene: Phaser.Scene,
@@ -109,6 +111,38 @@ export class Player extends Entity {
     if (idx === -1) return false;
     this.equippedSkillIds.splice(idx, 1);
     console.log(`[Player] Unequipped skill: ${skillId}. Current loadout: [${this.equippedSkillIds.join(', ')}]`);
+    return true;
+  }
+
+  public learnSkill(skillId: string, fromBook: boolean = false): boolean {
+    let newlyLearned = false;
+    if (!this.knownSkillIds.includes(skillId)) {
+      this.knownSkillIds.push(skillId);
+      newlyLearned = true;
+    }
+    if (fromBook) {
+      this.bookLearnedSkills.add(skillId);
+    }
+    return newlyLearned;
+  }
+
+  public isSkillLearnedFromBook(skillId: string): boolean {
+    return this.bookLearnedSkills.has(skillId);
+  }
+
+  public applyBandage(): boolean {
+    if (!this.activeStatusEffects.has('bleed')) {
+      return false;
+    }
+    const gameState = GameState.getInstance();
+    if (gameState.getItemCount('bandage') <= 0) {
+      return false;
+    }
+    const consumed = gameState.consumeItem('bandage', 1);
+    if (!consumed) {
+      return false;
+    }
+    this.removeStatusEffect('bleed');
     return true;
   }
 

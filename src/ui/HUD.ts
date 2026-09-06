@@ -5,6 +5,7 @@ import { DataLoader } from '../utils/DataLoader';
 import { GameState } from '../systems/GameState';
 import { BuildingSystem } from '../systems/BuildingSystem';
 import { LevelingSystem } from '../systems/LevelingSystem';
+import { ResearchSystem } from '../systems/ResearchSystem';
 
 export class HUD {
   private playerHpEl: HTMLElement | null;
@@ -13,6 +14,11 @@ export class HUD {
   private weaponEl: HTMLElement | null;
   private profEl: HTMLElement | null;
   private constructionProfEl: HTMLElement | null;
+  private hudAlchemyRowEl: HTMLElement | null;
+  private alchemyProfTextEl: HTMLElement | null;
+  private hudBandageRowEl: HTMLElement | null;
+  private playerBandageTextEl: HTMLElement | null;
+  private hudApplyBandageBtn: HTMLElement | null;
   private discoveredSkillsSectionEl: HTMLElement | null;
   private discoveredSkillsListEl: HTMLElement | null;
   private skillDiscoveredModalEl: HTMLElement | null;
@@ -52,6 +58,27 @@ export class HUD {
   private static isDebugSkillsVisible: boolean = false;
   private renderedDebugSkillsKey: string = '';
 
+  // Milestone 6 Modal Elements
+  private researchTreeModalEl: HTMLElement | null;
+  private closeResearchBtn: HTMLElement | null;
+  private researchPointsCountEl: HTMLElement | null;
+  private researchNodesContainerEl: HTMLElement | null;
+  private alchemyModalEl: HTMLElement | null;
+  private closeAlchemyBtn: HTMLElement | null;
+  private alchemyModalProfEl: HTMLElement | null;
+  private alchemyModalWoodEl: HTMLElement | null;
+  private alchemyModalBandagesEl: HTMLElement | null;
+  private alchemyRecipesContainerEl: HTMLElement | null;
+  private alchemyPlayerStatusEl: HTMLElement | null;
+  private alchemyApplyBandageBtn: HTMLElement | null;
+
+  // Milestone 6 Debug Buttons
+  private debugBtnPowerStrike: HTMLElement | null;
+  private debugBtnThrust: HTMLElement | null;
+  private debugBtnGrantRP: HTMLElement | null;
+  private debugBtnBleedSelf: HTMLElement | null;
+  private debugBtnGrantBandage: HTMLElement | null;
+
   private static activeInstance: HUD | null = null;
   private static hasGlobalListeners: boolean = false;
 
@@ -60,6 +87,8 @@ export class HUD {
   private currentProgression: ProgressionSystem | null = null;
   private onBuildModeToggleCallback?: () => void;
   private onSelectBuildableCallback?: (id: string) => void;
+  private lastBandageApplyTime: number = 0;
+  private hasSeenBandages: boolean = false;
 
   constructor() {
     this.hudCardEl = document.getElementById('hud-card');
@@ -101,6 +130,32 @@ export class HUD {
     this.buildFeedbackToastEl = document.getElementById('build-feedback-toast');
     this.debugSkillsPanelEl = document.getElementById('debug-skills-panel');
     this.debugSkillsListEl = document.getElementById('debug-skills-list');
+
+    this.hudAlchemyRowEl = document.getElementById('hud-alchemy-row');
+    this.alchemyProfTextEl = document.getElementById('alchemy-prof-text');
+    this.hudBandageRowEl = document.getElementById('hud-bandage-row');
+    this.playerBandageTextEl = document.getElementById('player-bandage-text');
+    this.hudApplyBandageBtn = document.getElementById('hud-apply-bandage-btn');
+
+    this.researchTreeModalEl = document.getElementById('research-tree-modal');
+    this.closeResearchBtn = document.getElementById('close-research-btn');
+    this.researchPointsCountEl = document.getElementById('research-points-count');
+    this.researchNodesContainerEl = document.getElementById('research-nodes-container');
+
+    this.alchemyModalEl = document.getElementById('alchemy-modal');
+    this.closeAlchemyBtn = document.getElementById('close-alchemy-btn');
+    this.alchemyModalProfEl = document.getElementById('alchemy-modal-prof');
+    this.alchemyModalWoodEl = document.getElementById('alchemy-modal-wood');
+    this.alchemyModalBandagesEl = document.getElementById('alchemy-modal-bandages');
+    this.alchemyRecipesContainerEl = document.getElementById('alchemy-recipes-container');
+    this.alchemyPlayerStatusEl = document.getElementById('alchemy-player-status');
+    this.alchemyApplyBandageBtn = document.getElementById('alchemy-apply-bandage-btn');
+
+    this.debugBtnPowerStrike = document.getElementById('debug-btn-power-strike');
+    this.debugBtnThrust = document.getElementById('debug-btn-thrust');
+    this.debugBtnGrantRP = document.getElementById('debug-btn-grant-rp');
+    this.debugBtnBleedSelf = document.getElementById('debug-btn-bleed-self');
+    this.debugBtnGrantBandage = document.getElementById('debug-btn-grant-bandage');
 
     if (this.hudCardEl) {
       this.hudCardEl.style.display = HUD.isHudCardVisible ? 'block' : 'none';
@@ -190,9 +245,82 @@ export class HUD {
       };
     }
 
+    if (this.closeResearchBtn) {
+      this.closeResearchBtn.onclick = () => {
+        HUD.activeInstance?.closeResearchTreeModal();
+      };
+    }
+
+    if (this.closeAlchemyBtn) {
+      this.closeAlchemyBtn.onclick = () => {
+        HUD.activeInstance?.closeAlchemyModal();
+      };
+    }
+
+    if (this.alchemyApplyBandageBtn) {
+      this.alchemyApplyBandageBtn.onclick = () => {
+        HUD.activeInstance?.applyBandage();
+      };
+    }
+
+    if (this.hudApplyBandageBtn) {
+      this.hudApplyBandageBtn.onclick = () => {
+        HUD.activeInstance?.applyBandage();
+      };
+    }
+
+    // Debug Actions in Debug Panel
+    if (this.debugBtnPowerStrike) {
+      this.debugBtnPowerStrike.onclick = () => {
+        HUD.activeInstance?.debugGrantSkillBook('book_power_strike');
+      };
+    }
+    if (this.debugBtnThrust) {
+      this.debugBtnThrust.onclick = () => {
+        HUD.activeInstance?.debugGrantSkillBook('book_thrust');
+      };
+    }
+    if (this.debugBtnGrantRP) {
+      this.debugBtnGrantRP.onclick = () => {
+        HUD.activeInstance?.debugGrantResearchPoints(10);
+      };
+    }
+    if (this.debugBtnBleedSelf) {
+      this.debugBtnBleedSelf.onclick = () => {
+        HUD.activeInstance?.debugApplyBleed();
+      };
+    }
+    if (this.debugBtnGrantBandage) {
+      this.debugBtnGrantBandage.onclick = () => {
+        HUD.activeInstance?.debugGrantBandage(1);
+      };
+    }
+
+    // Expose debug helpers globally on window for console testing
+    (window as any).debugGrantSkillBook = (id: string = 'book_power_strike') => HUD.activeInstance?.debugGrantSkillBook(id);
+    (window as any).debugGrantResearchPoints = (amount: number = 10) => HUD.activeInstance?.debugGrantResearchPoints(amount);
+    (window as any).debugApplyBleed = () => HUD.activeInstance?.debugApplyBleed();
+    (window as any).debugApplyBandage = () => HUD.activeInstance?.applyBandage();
+    (window as any).debugCraftBandage = () => {
+      const gs = GameState.getInstance();
+      if (gs.consumeWood(5)) {
+        gs.addItem('bandage', 1);
+        HUD.activeInstance?.currentProgression?.addProficiencyExp('alchemy', 25);
+        HUD.activeInstance?.showToast('⚗️ Crafted Bandage! (+25 Alchemy EXP)', 'success');
+        if (HUD.activeInstance?.currentPlayer && HUD.activeInstance?.currentProgression) {
+          HUD.activeInstance.update(HUD.activeInstance.currentPlayer, HUD.activeInstance.currentProgression, 0);
+          if (HUD.activeInstance.isAlchemyModalOpen()) {
+            HUD.activeInstance.renderAlchemyModal(HUD.activeInstance.currentPlayer, HUD.activeInstance.currentProgression);
+          }
+        }
+      } else {
+        HUD.activeInstance?.showToast('Not enough wood to craft Bandage!', 'error');
+      }
+    };
+
     if (!HUD.hasGlobalListeners) {
       HUD.hasGlobalListeners = true;
-      // Key listeners: Tab (toggle HUD panel), L (toggle Loadout modal), B (toggle Build mode), Escape (close modals)
+      // Key listeners: Tab (toggle HUD panel), L (toggle Loadout modal), B (toggle Build mode), H (apply bandage), Escape (close modals)
       window.addEventListener('keydown', (e) => {
         const active = HUD.activeInstance;
         if (!active) return;
@@ -211,8 +339,12 @@ export class HUD {
           if (active.isOutpost) {
             active.onBuildModeToggleCallback?.();
           }
+        } else if (e.key === 'h' || e.key === 'H') {
+          active.applyBandage();
         } else if (e.key === 'Escape') {
           active.closeLoadoutModal();
+          active.closeResearchTreeModal();
+          active.closeAlchemyModal();
           if (active.isBuildOverlayVisible()) {
             active.onBuildModeToggleCallback?.();
           }
@@ -262,27 +394,37 @@ export class HUD {
     }
 
     if (this.buildPaletteContainerEl) {
-      const items = this.buildPaletteContainerEl.querySelectorAll<HTMLElement>('.palette-item');
-      items.forEach((item) => {
-        if (item.dataset.buildableId === selectedId) {
-          item.classList.add('active');
-        } else {
-          item.classList.remove('active');
-        }
-      });
-
-      // Update cost badges based on construction tier discount
       const dataLoader = DataLoader.getInstance();
       const buildables = dataLoader.getBuildables();
+      const gameState = GameState.getInstance();
+
+      let html = '';
       if (buildables) {
         for (const b of buildables) {
-          const badge = document.getElementById(`cost-badge-${b.id}`);
-          if (badge) {
-            const eff = BuildingSystem.getEffectiveBuildCost(b.woodCost, constructionLevel);
-            badge.innerText = `🪵 ${eff}`;
+          if (b.lockedByDefault && !gameState.isBuildableUnlocked(b.id)) {
+            continue; // Gated behind Research Tree!
           }
+          const effCost = BuildingSystem.getEffectiveBuildCost(b.woodCost, constructionLevel);
+          const isActive = b.id === selectedId;
+          const displayName = b.name.replace('Wood ', '');
+          html += `
+            <div class="palette-item ${isActive ? 'active' : ''}" data-buildable-id="${b.id}">
+              <span class="palette-name">${displayName}</span>
+              <span class="palette-cost" id="cost-badge-${b.id}">🪵 ${effCost}</span>
+            </div>
+          `;
         }
       }
+
+      const isDemolishActive = selectedId === 'demolish';
+      html += `
+        <div class="palette-item ${isDemolishActive ? 'active' : ''}" data-buildable-id="demolish" style="border-color: #ef4444;">
+          <span class="palette-name" style="color: #f87171;">Demolish</span>
+          <span class="palette-cost" style="color: #9ca3af;">Refund</span>
+        </div>
+      `;
+
+      this.buildPaletteContainerEl.innerHTML = html;
     }
   }
 
@@ -540,7 +682,7 @@ export class HUD {
       if (!skillDef) continue;
 
       const isEquipped = equipped.includes(skillId);
-      const isUnlocked = progression.isSkillUnlocked(skillDef);
+      const isUnlocked = progression.isSkillUnlocked(skillDef, player);
 
       const card = document.createElement('div');
       card.className = `skill-card ${isEquipped ? 'equipped-badge' : ''}`;
@@ -626,6 +768,34 @@ export class HUD {
       this.constructionProfEl.innerText = `Level ${constStat.level} (${constStat.currentExp}/${nextExp} EXP) (${constTier.name})`;
     }
 
+    // 4b2. Alchemy Proficiency
+    if (this.alchemyProfTextEl && this.hudAlchemyRowEl) {
+      const alchemyStat = progression.getProficiencyStat('alchemy');
+      const isAlchemyUnlocked = GameState.getInstance().isBuildableUnlocked('alchemy_station');
+      if (isAlchemyUnlocked || alchemyStat.level > 0 || alchemyStat.currentExp > 0) {
+        this.hudAlchemyRowEl.style.display = 'flex';
+        const nextExp = LevelingSystem.expForNextLevel(alchemyStat.level);
+        this.alchemyProfTextEl.innerText = `Level ${alchemyStat.level} (${alchemyStat.currentExp}/${nextExp} EXP)`;
+      } else {
+        this.hudAlchemyRowEl.style.display = 'none';
+      }
+    }
+
+    // 4b3. Bandage Stockpile
+    if (this.hudBandageRowEl && this.playerBandageTextEl) {
+      const bandageCount = GameState.getInstance().getItemCount('bandage');
+      const isAlchemyUnlocked = GameState.getInstance().isBuildableUnlocked('alchemy_station');
+      if (bandageCount > 0) {
+        this.hasSeenBandages = true;
+      }
+      if (bandageCount > 0 || isAlchemyUnlocked || this.hasSeenBandages) {
+        this.hudBandageRowEl.style.display = 'flex';
+        this.playerBandageTextEl.innerText = `${bandageCount}`;
+      } else {
+        this.hudBandageRowEl.style.display = 'none';
+      }
+    }
+
     // 4c. Discovered Defensive & Regen Skills (Strictly hidden until Level >= 1)
     if (this.discoveredSkillsSectionEl && this.discoveredSkillsListEl) {
       const dataLoader = DataLoader.getInstance();
@@ -696,7 +866,7 @@ export class HUD {
         const skillDef = dataLoader.getSkill(skillId);
         if (!skillDef) continue;
 
-        const isUnlocked = progression.isSkillUnlocked(skillDef);
+        const isUnlocked = progression.isSkillUnlocked(skillDef, player);
         const isAuto = player.isAutocastEnabled(skillId);
         const lastUsed = player.lastSkillUseTimes.get(skillId) || 0;
         const elapsed = time - lastUsed;
@@ -814,6 +984,315 @@ export class HUD {
           this.skillDiscoveredModalEl.classList.remove('active');
         }
       }, 5000);
+    }
+  }
+
+  // --- RESEARCH TREE MODAL METHODS (Milestone 6) ---
+
+  public openResearchTreeModal(): void {
+    if (this.researchTreeModalEl) {
+      this.researchTreeModalEl.classList.add('active');
+      this.renderResearchTreeModal();
+    }
+  }
+
+  public closeResearchTreeModal(): void {
+    if (this.researchTreeModalEl) {
+      this.researchTreeModalEl.classList.remove('active');
+    }
+  }
+
+  public isResearchTreeModalOpen(): boolean {
+    return this.researchTreeModalEl?.classList.contains('active') ?? false;
+  }
+
+  public renderResearchTreeModal(): void {
+    if (!this.researchTreeModalEl || !this.researchNodesContainerEl) return;
+
+    const dataLoader = DataLoader.getInstance();
+    const researchNodes = dataLoader.getResearchNodes();
+    const gameState = GameState.getInstance();
+    const researchSystem = ResearchSystem.getInstance();
+
+    if (this.researchPointsCountEl) {
+      this.researchPointsCountEl.innerText = `🔬 ${gameState.getResearchPoints()}`;
+    }
+
+    this.researchNodesContainerEl.innerHTML = '';
+
+    for (const node of researchNodes) {
+      const isUnlocked = gameState.isBuildableUnlocked(node.targetBuildableId);
+      const canUnlock = researchSystem.canUnlockNode(node);
+
+      const card = document.createElement('div');
+      card.style.cssText = 'background: rgba(31, 41, 55, 0.85); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 8px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; gap: 12px;';
+
+      let buttonHtml = '';
+      if (isUnlocked) {
+        buttonHtml = `<span style="font-size: 12px; font-weight: bold; color: #34d399; background: rgba(5, 150, 105, 0.25); border: 1px solid #10b981; border-radius: 4px; padding: 4px 10px;">✓ Unlocked</span>`;
+      } else if (canUnlock.canUnlock) {
+        buttonHtml = `<button type="button" class="btn-action" style="background: #0284c7; border-color: #38bdf8; font-size: 12px; padding: 6px 12px;" data-unlock-node="${node.id}">🔬 Unlock (${node.cost} Pts)</button>`;
+      } else {
+        buttonHtml = `<button type="button" disabled style="background: #374151; color: #9ca3af; border: 1px solid #4b5563; border-radius: 6px; font-size: 12px; padding: 6px 12px; cursor: not-allowed;">Locked (${node.cost} Pts)</button>`;
+      }
+
+      card.innerHTML = `
+        <div style="flex: 1;">
+          <div style="font-size: 14px; font-weight: bold; color: #f3f4f6; display: flex; align-items: center; gap: 8px;">
+            <span>${node.name}</span>
+            <span style="font-size: 11px; color: #38bdf8; font-weight: normal;">Cost: ${node.cost} RP</span>
+          </div>
+          <div style="font-size: 11px; color: #9ca3af; margin-top: 3px;">${node.description}</div>
+        </div>
+        <div>${buttonHtml}</div>
+      `;
+
+      const unlockBtn = card.querySelector<HTMLButtonElement>(`[data-unlock-node="${node.id}"]`);
+      if (unlockBtn) {
+        unlockBtn.onclick = () => {
+          const result = researchSystem.unlockNode(node);
+          if (result.success) {
+            this.showToast(`✨ Research Complete: ${node.name} unlocked in Build Mode!`, 'success', 3500);
+            this.renderResearchTreeModal();
+            if (this.currentProgression) {
+              const constLevel = this.currentProgression.getProficiencyLevel('construction');
+              this.updateBuildOverlay(gameState.getWood(), 0, 'floor', constLevel);
+            }
+          } else {
+            this.showToast(result.reason || 'Could not unlock facility', 'error');
+          }
+        };
+      }
+
+      this.researchNodesContainerEl.appendChild(card);
+    }
+  }
+
+  // --- ALCHEMY CRAFTING MODAL METHODS (Milestone 6) ---
+
+  public openAlchemyModal(player: Player, progression: ProgressionSystem): void {
+    this.currentPlayer = player;
+    this.currentProgression = progression;
+    if (this.alchemyModalEl) {
+      this.alchemyModalEl.classList.add('active');
+      this.renderAlchemyModal(player, progression);
+    }
+  }
+
+  public closeAlchemyModal(): void {
+    if (this.alchemyModalEl) {
+      this.alchemyModalEl.classList.remove('active');
+    }
+  }
+
+  public isAlchemyModalOpen(): boolean {
+    return this.alchemyModalEl?.classList.contains('active') ?? false;
+  }
+
+  public renderAlchemyModal(player: Player, progression: ProgressionSystem): void {
+    if (!this.alchemyModalEl) return;
+
+    const dataLoader = DataLoader.getInstance();
+    const gameState = GameState.getInstance();
+    const alchemyRecipes = dataLoader.getAlchemyRecipes();
+
+    // 1. Alchemy proficiency header
+    const alchemyStat = progression.getProficiencyStat('alchemy');
+    const nextExp = LevelingSystem.expForNextLevel(alchemyStat.level);
+    if (this.alchemyModalProfEl) {
+      this.alchemyModalProfEl.innerText = `Level ${alchemyStat.level} (${alchemyStat.currentExp}/${nextExp} EXP)`;
+    }
+
+    // 2. Resource counts
+    if (this.alchemyModalWoodEl) {
+      this.alchemyModalWoodEl.innerText = `🪵 ${gameState.getWood()}`;
+    }
+    if (this.alchemyModalBandagesEl) {
+      this.alchemyModalBandagesEl.innerText = `🩹 ${gameState.getItemCount('bandage')}`;
+    }
+
+    // 3. Recipes list
+    if (this.alchemyRecipesContainerEl) {
+      this.alchemyRecipesContainerEl.innerHTML = '';
+      for (const recipe of alchemyRecipes) {
+        const woodCost = recipe.ingredients.wood || 0;
+        const hasWood = gameState.getWood() >= woodCost;
+
+        const card = document.createElement('div');
+        card.style.cssText = 'background: rgba(31, 41, 55, 0.85); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 8px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; gap: 12px;';
+
+        const btnHtml = hasWood
+          ? `<button type="button" class="btn-action" style="background: #059669; border-color: #34d399; font-size: 12px; padding: 6px 14px;" data-craft-recipe="${recipe.id}">⚗️ Craft (+${recipe.expGranted} EXP)</button>`
+          : `<button type="button" disabled style="background: #374151; color: #9ca3af; border: 1px solid #4b5563; border-radius: 6px; font-size: 12px; padding: 6px 14px; cursor: not-allowed;">Needs 🪵 ${woodCost} Wood</button>`;
+
+        card.innerHTML = `
+          <div style="flex: 1;">
+            <div style="font-size: 14px; font-weight: bold; color: #34d399; display: flex; align-items: center; gap: 8px;">
+              <span>${recipe.name}</span>
+              <span style="font-size: 11px; color: #fbbf24; font-weight: normal;">Cost: 🪵 ${woodCost} Wood</span>
+              <span style="font-size: 11px; color: #60a5fa; font-weight: normal;">+${recipe.expGranted} Alchemy EXP</span>
+            </div>
+            <div style="font-size: 11px; color: #9ca3af; margin-top: 3px;">${recipe.description}</div>
+          </div>
+          <div>${btnHtml}</div>
+        `;
+
+        const craftBtn = card.querySelector<HTMLButtonElement>(`[data-craft-recipe="${recipe.id}"]`);
+        if (craftBtn) {
+          craftBtn.onclick = () => {
+            if (gameState.consumeWood(woodCost)) {
+              gameState.addItem(recipe.id, 1);
+              progression.addProficiencyExp('alchemy', recipe.expGranted);
+              this.showToast(`⚗️ Crafted ${recipe.name}! (+${recipe.expGranted} Alchemy EXP)`, 'success', 2500);
+              this.renderAlchemyModal(player, progression);
+              this.update(player, progression, 0);
+            } else {
+              this.showToast(`Not enough wood to craft ${recipe.name}!`, 'error');
+            }
+          };
+        }
+
+        this.alchemyRecipesContainerEl.appendChild(card);
+      }
+    }
+
+    // 4. Patient treatment section
+    const isBleeding = player.activeStatusEffects.has('bleed');
+    const bandageCount = gameState.getItemCount('bandage');
+
+    if (this.alchemyPlayerStatusEl) {
+      if (isBleeding) {
+        this.alchemyPlayerStatusEl.innerText = 'Bleeding (DoT Active)';
+        this.alchemyPlayerStatusEl.style.color = '#ef4444';
+      } else {
+        this.alchemyPlayerStatusEl.innerText = 'Normal (No active wounds)';
+        this.alchemyPlayerStatusEl.style.color = '#34d399';
+      }
+    }
+
+    if (this.alchemyApplyBandageBtn) {
+      if (bandageCount > 0 && isBleeding) {
+        (this.alchemyApplyBandageBtn as HTMLButtonElement).disabled = false;
+        this.alchemyApplyBandageBtn.style.opacity = '1';
+        this.alchemyApplyBandageBtn.style.cursor = 'pointer';
+        this.alchemyApplyBandageBtn.innerText = `🩹 Apply Bandage (${bandageCount} available) [H]`;
+      } else if (bandageCount === 0) {
+        (this.alchemyApplyBandageBtn as HTMLButtonElement).disabled = true;
+        this.alchemyApplyBandageBtn.style.opacity = '0.5';
+        this.alchemyApplyBandageBtn.style.cursor = 'not-allowed';
+        this.alchemyApplyBandageBtn.innerText = `🩹 No Bandages Crafted`;
+      } else {
+        (this.alchemyApplyBandageBtn as HTMLButtonElement).disabled = false;
+        this.alchemyApplyBandageBtn.style.opacity = '0.75';
+        this.alchemyApplyBandageBtn.style.cursor = 'pointer';
+        this.alchemyApplyBandageBtn.innerText = `🩹 Apply Bandage (${bandageCount} avail) [H]`;
+      }
+    }
+  }
+
+  // --- FIRST CURE RECIPE: APPLY BANDAGE (Milestone 6) ---
+
+  public applyBandage(): boolean {
+    const now = Date.now();
+    if (now - this.lastBandageApplyTime < 200) {
+      return false; // Debounce rapid keydown / scene key triggers
+    }
+    this.lastBandageApplyTime = now;
+
+    const gameState = GameState.getInstance();
+    const bandages = gameState.getItemCount('bandage');
+
+    if (bandages <= 0) {
+      this.showToast('No Bandages available in stockpile! Craft one at the Alchemy Station.', 'warn', 3000);
+      return false;
+    }
+
+    if (!this.currentPlayer) {
+      return false;
+    }
+
+    if (!this.currentPlayer.activeStatusEffects.has('bleed')) {
+      this.showToast('Not bleeding — no need to apply Bandage.', 'info', 2500);
+      return false;
+    }
+
+    const cured = this.currentPlayer.applyBandage();
+    if (cured) {
+      this.showToast('🩹 Bandage applied! Bleed status effect cleared.', 'success', 3000);
+      if (this.currentProgression) {
+        this.update(this.currentPlayer, this.currentProgression, 0);
+        if (this.isAlchemyModalOpen()) {
+          this.renderAlchemyModal(this.currentPlayer, this.currentProgression);
+        }
+      }
+      return true;
+    } else {
+      this.showToast('No Bandages available in stockpile! Craft one at the Alchemy Station.', 'warn', 3000);
+      return false;
+    }
+  }
+
+  // --- DEBUG TOOLING FOR SKILL BOOKS & RESEARCH (Milestone 6) ---
+
+  public debugGrantSkillBook(bookIdOrSkillId: string): void {
+    const dataLoader = DataLoader.getInstance();
+    let book = dataLoader.getSkillBook(bookIdOrSkillId);
+    if (!book) {
+      book = dataLoader.getSkillBookBySkillId(bookIdOrSkillId);
+    }
+    if (!book) {
+      this.showToast(`Unknown Skill Book: ${bookIdOrSkillId}`, 'error');
+      return;
+    }
+
+    if (!this.currentPlayer) return;
+
+    const result = ResearchSystem.getInstance().consumeSkillBook(book, this.currentPlayer);
+    this.showToast(result.message, result.action === 'learned_skill' ? 'success' : 'info', 4000);
+
+    if (this.currentProgression) {
+      this.update(this.currentPlayer, this.currentProgression, 0);
+      if (this.isResearchTreeModalOpen()) {
+        this.renderResearchTreeModal();
+      }
+      if (this.isLoadoutModalOpen()) {
+        this.renderLoadoutModal(this.currentPlayer, this.currentProgression);
+      }
+    }
+  }
+
+  public debugGrantResearchPoints(amount: number = 10): void {
+    GameState.getInstance().addResearchPoints(amount);
+    const total = GameState.getInstance().getResearchPoints();
+    this.showToast(`🔬 Granted +${amount} Research Points! (Total: ${total})`, 'success', 3000);
+    if (this.isResearchTreeModalOpen()) {
+      this.renderResearchTreeModal();
+    }
+  }
+
+  public debugApplyBleed(): void {
+    if (!this.currentPlayer) return;
+    const bleedDef = DataLoader.getInstance().getStatusEffect('bleed');
+    if (bleedDef) {
+      this.currentPlayer.applyStatusEffect(bleedDef);
+      this.showToast(`🩸 Applied Bleed status effect (6s DoT)!`, 'warn', 3000);
+      if (this.currentProgression) {
+        this.update(this.currentPlayer, this.currentProgression, 0);
+        if (this.isAlchemyModalOpen()) {
+          this.renderAlchemyModal(this.currentPlayer, this.currentProgression);
+        }
+      }
+    }
+  }
+
+  public debugGrantBandage(amount: number = 1): void {
+    GameState.getInstance().addItem('bandage', amount);
+    this.showToast(`🩹 Granted +${amount} Bandage!`, 'success', 2500);
+    if (this.currentPlayer && this.currentProgression) {
+      this.update(this.currentPlayer, this.currentProgression, 0);
+      if (this.isAlchemyModalOpen()) {
+        this.renderAlchemyModal(this.currentPlayer, this.currentProgression);
+      }
     }
   }
 }

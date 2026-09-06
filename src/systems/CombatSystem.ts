@@ -339,7 +339,7 @@ export class CombatSystem {
           }
 
           const skillDef = dataLoader.getSkill(skillId);
-          if (!skillDef || !this.progressionSystem.isSkillUnlocked(skillDef)) {
+          if (!skillDef || !this.progressionSystem.isSkillUnlocked(skillDef, this.player)) {
             continue;
           }
 

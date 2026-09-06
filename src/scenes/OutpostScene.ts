@@ -296,6 +296,11 @@ export class OutpostScene extends Phaser.Scene {
         this.progressionSystem.addProficiencyExp(this.player.equippedWeapon.id, 680);
         this.hud.showToast(`+680 ${this.player.equippedWeapon.name} EXP (Level 10 Fencer Gate)`, 'success', 3000);
       });
+
+      const hKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.H);
+      hKey.on('down', () => {
+        this.hud.applyBandage();
+      });
     }
 
     // Expose debug helpers on window in Outpost
@@ -398,10 +403,13 @@ export class OutpostScene extends Phaser.Scene {
 
       // Check if clicking a placed Research Station
       if (this.isPlacedStation(clickedTileX, clickedTileY)) {
-        const currentRoom = this.cachedRoomMap.get(`${clickedTileX},${clickedTileY}`);
-        const roomName = currentRoom ? currentRoom.name : 'Study';
-        this.hud.showToast(`🔬 Research Station: Guild research in the ${roomName}! (Milestone 6)`, 'info', 4000);
-        console.log(`[ResearchStation] Interacted in ${roomName}.`);
+        this.hud.openResearchTreeModal();
+        return;
+      }
+
+      // Check if clicking a placed Alchemy Station
+      if (this.isPlacedAlchemyStation(clickedTileX, clickedTileY)) {
+        this.hud.openAlchemyModal(this.player, this.progressionSystem);
         return;
       }
 
@@ -507,6 +515,7 @@ export class OutpostScene extends Phaser.Scene {
     else if (def.id === 'door') texture = this.currentRotation === 90 || this.currentRotation === 270 ? 'buildable-wood-door-v' : 'buildable-wood-door-h';
     else if (def.id === 'bed') texture = 'buildable-bed';
     else if (def.id === 'research_station') texture = 'buildable-research-station';
+    else if (def.id === 'alchemy_station') texture = 'buildable-alchemy-station';
 
     this.hoverGhostSprite.setTexture(texture);
     this.hoverGhostSprite.setAngle(def.rotatable ? this.currentRotation : 0);
@@ -784,6 +793,10 @@ export class OutpostScene extends Phaser.Scene {
       sprite = this.add.sprite(posX, posY, 'buildable-research-station')
         .setAngle(item.rotation)
         .setDepth(posY);
+    } else if (item.id === 'alchemy_station') {
+      sprite = this.add.sprite(posX, posY, 'buildable-alchemy-station')
+        .setAngle(item.rotation)
+        .setDepth(posY);
     } else {
       sprite = this.add.sprite(posX, posY, 'buildable-wood-floor').setDepth(1);
     }
@@ -846,6 +859,11 @@ export class OutpostScene extends Phaser.Scene {
   private isPlacedStation(x: number, y: number): boolean {
     const placed = this.getPlacedBuildableAt(x, y);
     return placed?.id === 'research_station';
+  }
+
+  private isPlacedAlchemyStation(x: number, y: number): boolean {
+    const placed = this.getPlacedBuildableAt(x, y);
+    return placed?.id === 'alchemy_station';
   }
 
   private isPlacedBed(x: number, y: number): boolean {

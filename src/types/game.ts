@@ -98,6 +98,7 @@ export interface BuildableDef {
   roomTag?: string;
   roomTags?: string[];
   description: string;
+  lockedByDefault?: boolean;
 }
 
 export interface BuildablesData {
@@ -159,6 +160,51 @@ export interface PlayerSnapshot {
     [key: string]: number;
   };
   placedBuildables?: PlacedBuildable[];
+  researchPoints?: number;
+  unlockedBuildables?: string[];
+  inventory?: Record<string, number>;
+  bookLearnedSkills?: string[];
+}
+
+export interface SkillBookDef {
+  id: string;
+  name: string;
+  skillId: string;
+  researchPoints: number;
+  description: string;
+}
+
+export interface SkillBooksData {
+  skillBooks: SkillBookDef[];
+}
+
+export interface ResearchNodeDef {
+  id: string;
+  name: string;
+  targetBuildableId: string;
+  cost: number;
+  prerequisites: string[];
+  description: string;
+}
+
+export interface ResearchTreeData {
+  nodes: ResearchNodeDef[];
+}
+
+export interface AlchemyRecipeDef {
+  id: string;
+  name: string;
+  cures: string[];
+  ingredients: {
+    wood: number;
+    [key: string]: number;
+  };
+  expGranted: number;
+  description: string;
+}
+
+export interface AlchemyRecipesData {
+  recipes: AlchemyRecipeDef[];
 }
 
 export interface SkillDef {

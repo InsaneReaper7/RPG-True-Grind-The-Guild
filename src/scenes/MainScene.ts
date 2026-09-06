@@ -42,6 +42,7 @@ export class MainScene extends Phaser.Scene {
   private cKey!: Phaser.Input.Keyboard.Key;
   private pKey!: Phaser.Input.Keyboard.Key;
   private tKey!: Phaser.Input.Keyboard.Key;
+  private hKey!: Phaser.Input.Keyboard.Key;
 
   private isCameraLocked: boolean = true;
   private targetReticle!: Phaser.GameObjects.Sprite;
@@ -228,6 +229,10 @@ export class MainScene extends Phaser.Scene {
       this.cKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.C);
       this.pKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.P);
       this.tKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.T);
+      this.hKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.H);
+      this.hKey.on('down', () => {
+        this.hud.applyBandage();
+      });
     }
 
     // Expose debug helpers on window for browser console testing

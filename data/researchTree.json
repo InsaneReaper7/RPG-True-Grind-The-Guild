@@ -1,0 +1,12 @@
+{
+  "nodes": [
+    {
+      "id": "research_alchemy_station",
+      "name": "Alchemy Station",
+      "targetBuildableId": "alchemy_station",
+      "cost": 10,
+      "prerequisites": [],
+      "description": "Unlocks the Alchemy Station for the Guild Outpost, enabling potion brewing and medicine crafting."
+    }
+  ]
+}

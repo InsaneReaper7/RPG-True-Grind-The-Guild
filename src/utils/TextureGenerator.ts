@@ -388,6 +388,44 @@ export class TextureGenerator {
       g.destroy();
     }
 
+    // 17b. Alchemy Station (Oak bench with brass alembic, emerald vials & mortar)
+    if (!scene.textures.exists('buildable-alchemy-station')) {
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      // Oak workbench
+      g.fillStyle(0x451a03, 1);
+      g.fillRect(2, 4, tileSize - 4, tileSize - 8);
+      g.lineStyle(1, 0x9a3412, 1);
+      g.strokeRect(2, 4, tileSize - 4, tileSize - 8);
+
+      // Stone slab work area
+      g.fillStyle(0x64748b, 0.9);
+      g.fillRect(5, 7, 12, 10);
+
+      // Mortar and pestle (Grey stone with wooden pestle)
+      g.fillStyle(0x334155, 1);
+      g.fillCircle(10, 20, 4);
+      g.fillStyle(0xd97706, 1);
+      g.fillRect(11, 16, 2, 6);
+
+      // Brass retort / alembic coil
+      g.fillStyle(0xd97706, 1);
+      g.fillCircle(tileSize - 9, 10, 4);
+      g.fillStyle(0xb45309, 1);
+      g.fillRect(tileSize - 11, 6, 4, 3);
+
+      // Bubbling emerald potion flask
+      g.fillStyle(0x10b981, 0.95);
+      g.fillCircle(tileSize - 9, 21, 4.5);
+      g.fillStyle(0x6ee7b7, 1);
+      g.fillCircle(tileSize - 10, 19, 1.5);
+      // Flask neck & cork
+      g.fillStyle(0x78350f, 1);
+      g.fillRect(tileSize - 10, 14, 2, 3);
+
+      g.generateTexture('buildable-alchemy-station', tileSize, tileSize);
+      g.destroy();
+    }
+
     // 18. Valid Tile Placement Highlight (Soft Green/White frame)
     if (!scene.textures.exists('tile-highlight-valid')) {
       const g = scene.make.graphics({ x: 0, y: 0 });

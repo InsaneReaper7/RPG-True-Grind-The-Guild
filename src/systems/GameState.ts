@@ -1,7 +1,7 @@
-import { Player } from '../entities/Player';
-import { ProgressionSystem } from './ProgressionSystem';
-import { PlayerData, PlayerSnapshot, PlacedBuildable, TrainableStat } from '../types/game';
-import { DataLoader } from '../utils/DataLoader';
+import type { Player } from '../entities/Player.ts';
+import { ProgressionSystem } from './ProgressionSystem.ts';
+import type { PlayerData, PlayerSnapshot, PlacedBuildable, TrainableStat } from '../types/game.ts';
+import { DataLoader } from '../utils/DataLoader.ts';
 
 export class GameState {
   private static instance: GameState;
@@ -9,6 +9,10 @@ export class GameState {
   private isInitialized: boolean = false;
   private resources: { wood: number; [key: string]: number } = { wood: 100 };
   private placedBuildables: PlacedBuildable[] = [];
+  private researchPoints: number = 0;
+  private unlockedBuildables: Set<string> = new Set(['floor', 'wall', 'door', 'bed', 'research_station']);
+  private inventory: Map<string, number> = new Map();
+  private bookLearnedSkills: Set<string> = new Set();
 
   private constructor() {}
 
@@ -94,6 +98,97 @@ export class GameState {
     }
   }
 
+  public setWood(amount: number): void {
+    this.resources.wood = Math.max(0, amount);
+    if (this.snapshot) {
+      this.snapshot.resources.wood = this.resources.wood;
+    }
+  }
+
+  // --- Research Points & Tree Unlocks ---
+  public getResearchPoints(): number {
+    return this.researchPoints;
+  }
+
+  public addResearchPoints(amount: number): void {
+    this.researchPoints += amount;
+    if (this.snapshot) {
+      this.snapshot.researchPoints = this.researchPoints;
+    }
+  }
+
+  public consumeResearchPoints(amount: number): boolean {
+    if (this.researchPoints >= amount) {
+      this.researchPoints -= amount;
+      if (this.snapshot) {
+        this.snapshot.researchPoints = this.researchPoints;
+      }
+      return true;
+    }
+    return false;
+  }
+
+  public isBuildableUnlocked(buildableId: string): boolean {
+    return this.unlockedBuildables.has(buildableId);
+  }
+
+  public unlockBuildable(buildableId: string): void {
+    this.unlockedBuildables.add(buildableId);
+    if (this.snapshot) {
+      this.snapshot.unlockedBuildables = Array.from(this.unlockedBuildables);
+    }
+  }
+
+  public getUnlockedBuildables(): string[] {
+    return Array.from(this.unlockedBuildables);
+  }
+
+  // --- Inventory System (Bandages, etc.) ---
+  public getItemCount(itemId: string): number {
+    return this.inventory.get(itemId) || 0;
+  }
+
+  public addItem(itemId: string, count: number): void {
+    const current = this.getItemCount(itemId);
+    this.inventory.set(itemId, current + count);
+    if (this.snapshot) {
+      this.snapshot.inventory = Object.fromEntries(this.inventory);
+    }
+  }
+
+  public consumeItem(itemId: string, count: number = 1): boolean {
+    const current = this.getItemCount(itemId);
+    if (current >= count) {
+      const remaining = current - count;
+      if (remaining <= 0) {
+        this.inventory.delete(itemId);
+      } else {
+        this.inventory.set(itemId, remaining);
+      }
+      if (this.snapshot) {
+        this.snapshot.inventory = Object.fromEntries(this.inventory);
+      }
+      return true;
+    }
+    return false;
+  }
+
+  // --- Book-Learned Skills (Cross-class usability) ---
+  public recordBookLearnedSkill(skillId: string): void {
+    this.bookLearnedSkills.add(skillId);
+    if (this.snapshot) {
+      this.snapshot.bookLearnedSkills = Array.from(this.bookLearnedSkills);
+    }
+  }
+
+  public isSkillBookLearned(skillId: string): boolean {
+    return this.bookLearnedSkills.has(skillId);
+  }
+
+  public getBookLearnedSkills(): string[] {
+    return Array.from(this.bookLearnedSkills);
+  }
+
   public getPlacedBuildables(): PlacedBuildable[] {
     return [...this.placedBuildables];
   }
@@ -168,7 +263,11 @@ export class GameState {
       classLevels: progData.classLevels,
       unlockedClasses: progData.unlockedClasses,
       resources: { ...this.resources },
-      placedBuildables: [...this.placedBuildables]
+      placedBuildables: [...this.placedBuildables],
+      researchPoints: this.researchPoints,
+      unlockedBuildables: Array.from(this.unlockedBuildables),
+      inventory: Object.fromEntries(this.inventory),
+      bookLearnedSkills: Array.from(player.bookLearnedSkills)
     };
 
     console.log(
@@ -209,6 +308,23 @@ export class GameState {
     }
     if (snap.placedBuildables) {
       this.placedBuildables = [...snap.placedBuildables];
+    }
+
+    if (snap.researchPoints !== undefined) {
+      this.researchPoints = snap.researchPoints;
+    }
+    if (snap.unlockedBuildables) {
+      this.unlockedBuildables = new Set(snap.unlockedBuildables);
+    }
+    if (snap.inventory) {
+      this.inventory.clear();
+      for (const [k, v] of Object.entries(snap.inventory)) {
+        this.inventory.set(k, v);
+      }
+    }
+    if (snap.bookLearnedSkills) {
+      this.bookLearnedSkills = new Set(snap.bookLearnedSkills);
+      player.bookLearnedSkills = new Set(snap.bookLearnedSkills);
     }
 
     player.autocastMap.clear();

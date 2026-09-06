@@ -1,0 +1,18 @@
+{
+  "skillBooks": [
+    {
+      "id": "book_power_strike",
+      "name": "Tome of Power Strike",
+      "skillId": "power_strike",
+      "researchPoints": 10,
+      "description": "An ancient martial manual detailing the execution of Power Strike. Teaches Power Strike, or grants 10 Research Points if already mastered."
+    },
+    {
+      "id": "book_thrust",
+      "name": "Tome of Thrust",
+      "skillId": "thrust",
+      "researchPoints": 10,
+      "description": "A treatise on pinpoint piercing strikes. Teaches Thrust, or grants 10 Research Points if already mastered."
+    }
+  ]
+}

@@ -1,4 +1,4 @@
-﻿import assert from 'node:assert/strict';
+import assert from 'node:assert/strict';
 import { ProgressionSystem } from '../src/systems/ProgressionSystem.ts';
 import { LevelingSystem } from '../src/systems/LevelingSystem.ts';
 import type { ClassesData } from '../src/types/game.ts';
@@ -28,6 +28,7 @@ const mockClassesData: ClassesData = {
   const expectedIds = [
     'short_swords',
     'construction',
+    'alchemy',
     'evasion',
     'parry',
     'block',
@@ -37,7 +38,7 @@ const mockClassesData: ClassesData = {
     'mana_regen'
   ];
 
-  assert.equal(stats.size, 9, 'Must contain exactly 9 trainable stats at initialization');
+  assert.equal(stats.size, expectedIds.length, `Must contain exactly ${expectedIds.length} trainable stats at initialization`);
 
   for (const id of expectedIds) {
     assert.ok(stats.has(id), `Missing expected trainable stat: '${id}'`);

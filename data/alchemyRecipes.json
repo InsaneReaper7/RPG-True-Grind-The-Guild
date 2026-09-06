@@ -1,0 +1,14 @@
+{
+  "recipes": [
+    {
+      "id": "bandage",
+      "name": "Bandage",
+      "cures": ["bleed"],
+      "ingredients": {
+        "wood": 5
+      },
+      "expGranted": 25,
+      "description": "A sterile splint and wooden fiber wrapping. Cleanses and cures the Bleed status effect."
+    }
+  ]
+}

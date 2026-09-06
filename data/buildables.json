@@ -51,6 +51,18 @@
       "walkable": false,
       "roomTag": "bedroom",
       "description": "Comfortable wooden guild bed for resting. Requires a fully enclosed indoor room."
+    },
+    {
+      "id": "alchemy_station",
+      "name": "Alchemy Station",
+      "woodCost": 25,
+      "footprint": { "width": 1, "height": 1 },
+      "rotatable": true,
+      "indoorRequired": true,
+      "walkable": false,
+      "roomTag": "alchemy",
+      "description": "Guild alchemy workbench. Requires a fully enclosed indoor room.",
+      "lockedByDefault": true
     }
   ]
 }

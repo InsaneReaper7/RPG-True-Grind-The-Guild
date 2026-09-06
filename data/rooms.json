@@ -1,4 +1,4 @@
-﻿{
+{
   "rules": [
     {
       "id": "cooking_dining",
@@ -20,6 +20,13 @@
       "priority": 10,
       "requiredTags": ["study"],
       "description": "Research and reading quarters with a research station."
+    },
+    {
+      "id": "alchemy_lab",
+      "name": "Alchemy Laboratory",
+      "priority": 10,
+      "requiredTags": ["alchemy"],
+      "description": "Brewing laboratory with an alchemy station."
     }
   ]
 }

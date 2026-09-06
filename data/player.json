@@ -13,6 +13,7 @@
   "proficiencies": {
     "short_swords": { "level": 0, "currentExp": 0 },
     "construction": { "level": 0, "currentExp": 0 },
+    "alchemy": { "level": 0, "currentExp": 0 },
     "evasion": { "level": 0, "currentExp": 0 },
     "parry": { "level": 0, "currentExp": 0 },
     "block": { "level": 0, "currentExp": 0 },
