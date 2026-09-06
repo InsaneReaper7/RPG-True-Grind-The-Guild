@@ -67,5 +67,22 @@ export class TextureGenerator {
       g.generateTexture('target-reticle', size, size);
       g.destroy();
     }
+
+    // 6. Bleed Status Indicator Texture (Red Blood Drop)
+    if (!scene.textures.exists('bleed-icon')) {
+      const size = 12;
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      g.fillStyle(0xd97706, 1); // Darker Amber / Blood Red
+      g.fillCircle(size / 2, size / 2 + 2, 4);
+      g.beginPath();
+      g.moveTo(size / 2, 1);
+      g.lineTo(size / 2 - 4, size / 2 + 2);
+      g.lineTo(size / 2 + 4, size / 2 + 2);
+      g.closePath();
+      g.fillPath();
+      g.fillStyle(0xd97706, 1);
+      g.generateTexture('bleed-icon', size, size);
+      g.destroy();
+    }
   }
 }

@@ -6,6 +6,7 @@
       "name": "Wolf",
       "tier": "common",
       "hp": 30,
+      "criticalHpMax": 15,
       "meleeDamage": 4,
       "aggroRadius": 5,
       "attackIntervalMs": 1200,

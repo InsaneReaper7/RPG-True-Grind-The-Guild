@@ -2,6 +2,9 @@
   "id": "player",
   "name": "Guild Hero",
   "maxHp": 50,
+  "criticalHpMax": 25,
+  "maxEnergy": 100,
+  "energyRegenPerSecond": 5,
   "moveSpeed": 120,
   "attackRangeTiles": 1,
   "startingWeaponId": "short_swords"

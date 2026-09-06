@@ -10,6 +10,7 @@ export interface WeaponDef {
   twoHanded: boolean;
   attackIntervalMs: number;
   baseDamage: number;
+  bleedChance?: number;
 }
 
 export interface ProficiencyTiers {
@@ -54,10 +55,12 @@ export interface EnemyDef {
   name: string;
   tier: string;
   hp: number;
+  criticalHpMax?: number;
   meleeDamage: number;
   aggroRadius: number;
   attackIntervalMs: number;
   moveSpeed: number;
+  attackRangeTiles?: number;
   harvest: HarvestItem[];
 }
 
@@ -69,9 +72,45 @@ export interface PlayerData {
   id: string;
   name: string;
   maxHp: number;
+  criticalHpMax: number;
+  maxEnergy: number;
+  energyRegenPerSecond: number;
   moveSpeed: number;
   attackRangeTiles: number;
   startingWeaponId: string;
 }
 
-export type EntityState = 'idle' | 'moving' | 'attacking' | 'dead';
+export interface SkillDef {
+  id: string;
+  name: string;
+  energyCost: number;
+  cooldownMs: number;
+  damageMultiplier: number;
+  requirements: Requirement[];
+  description?: string;
+}
+
+export interface SkillsData {
+  skills: SkillDef[];
+}
+
+export interface StatusEffectDef {
+  id: string;
+  name: string;
+  durationMs: number;
+  tickIntervalMs: number;
+  damagePerTick: number;
+  color?: string;
+}
+
+export interface StatusEffectsData {
+  statusEffects: StatusEffectDef[];
+}
+
+export interface ActiveStatusEffect {
+  def: StatusEffectDef;
+  remainingMs: number;
+  nextTickMs: number;
+}
+
+export type EntityState = 'idle' | 'moving' | 'chasing' | 'attacking' | 'returning' | 'downed' | 'dead';

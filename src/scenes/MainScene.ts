@@ -29,6 +29,8 @@ export class MainScene extends Phaser.Scene {
     D: Phaser.Input.Keyboard.Key;
     SPACE: Phaser.Input.Keyboard.Key;
   };
+  private rKey!: Phaser.Input.Keyboard.Key;
+  private kKey!: Phaser.Input.Keyboard.Key;
 
   private isCameraLocked: boolean = true;
   private targetReticle!: Phaser.GameObjects.Sprite;
@@ -110,6 +112,11 @@ export class MainScene extends Phaser.Scene {
     const wolf = new Enemy(this, 14, 14, wolfData, 'wolf-avatar', this.tileSize);
     this.enemies.push(wolf);
 
+    // Direct pointer click on Enemy sprite triggers engagement
+    wolf.on('pointerdown', (_pointer: Phaser.Input.Pointer) => {
+      this.engageEnemy(wolf);
+    });
+
     // Target Selection Reticle
     this.targetReticle = this.add.sprite(-100, -100, 'target-reticle');
     this.targetReticle.setVisible(false);
@@ -130,7 +137,7 @@ export class MainScene extends Phaser.Scene {
     this.cameras.main.setBounds(0, 0, this.mapWidth * this.tileSize, this.mapHeight * this.tileSize);
     this.cameras.main.startFollow(this.player, true, 0.1, 0.1);
 
-    // Input Controls: WASD & Space
+    // Input Controls: WASD, Space, R, K
     if (this.input.keyboard) {
       this.wasdKeys = {
         W: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W),
@@ -139,6 +146,8 @@ export class MainScene extends Phaser.Scene {
         D: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D),
         SPACE: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE)
       };
+      this.rKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.R);
+      this.kKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.K);
     }
 
     // Scroll Wheel Zoom
@@ -155,27 +164,24 @@ export class MainScene extends Phaser.Scene {
 
     // Pointer Click Interactions (Click-to-Move / Click-to-Engage)
     this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+      if (this.player.state === 'downed') return;
+
       const worldPoint = this.cameras.main.getWorldPoint(pointer.x, pointer.y);
       const clickedTileX = Math.floor(worldPoint.x / this.tileSize);
       const clickedTileY = Math.floor(worldPoint.y / this.tileSize);
 
-      // Check if an enemy was clicked
-      const clickedEnemy = this.enemies.find(
-        (e) => e.gridPos.x === clickedTileX && e.gridPos.y === clickedTileY && e.state !== 'dead'
-      );
+      // Check if an enemy was clicked (via tile grid OR world position bounding box)
+      const clickedEnemy = this.enemies.find((e) => {
+        if (e.state === 'dead' || e.state === 'downed') return false;
+        const isGridMatch = e.gridPos.x === clickedTileX && e.gridPos.y === clickedTileY;
+        const dx = Math.abs(e.x - worldPoint.x);
+        const dy = Math.abs(e.y - worldPoint.y);
+        const isPosMatch = dx <= this.tileSize / 2 + 4 && dy <= this.tileSize / 2 + 4;
+        return isGridMatch || isPosMatch;
+      });
 
       if (clickedEnemy) {
-        // Click-to-Engage Wolf
-        console.log(`[Input] Clicked Enemy: ${clickedEnemy.entityName} at (${clickedTileX}, ${clickedTileY})`);
-        this.player.setTarget(clickedEnemy);
-        this.targetReticle.setPosition(
-          clickedTileX * this.tileSize + this.tileSize / 2,
-          clickedTileY * this.tileSize + this.tileSize / 2
-        );
-        this.targetReticle.setVisible(true);
-
-        // Pathfind player to tile adjacent to enemy
-        this.pathfindPlayerToAdjacent(clickedEnemy.gridPos);
+        this.engageEnemy(clickedEnemy);
       } else if (gridMatrix[clickedTileY]?.[clickedTileX] === 0) {
         // Click-to-Move to empty walkable tile
         console.log(`[Input] Clicked Tile: (${clickedTileX}, ${clickedTileY})`);
@@ -190,6 +196,21 @@ export class MainScene extends Phaser.Scene {
         });
       }
     });
+  }
+
+  private engageEnemy(enemy: Enemy): void {
+    if (this.player.state === 'downed' || enemy.state === 'dead' || enemy.state === 'downed') return;
+
+    console.log(`[Input] Engaged Enemy: ${enemy.entityName} at (${enemy.gridPos.x}, ${enemy.gridPos.y})`);
+    this.player.setTarget(enemy);
+    this.targetReticle.setPosition(
+      enemy.gridPos.x * this.tileSize + this.tileSize / 2,
+      enemy.gridPos.y * this.tileSize + this.tileSize / 2
+    );
+    this.targetReticle.setVisible(true);
+
+    // Pathfind player to tile adjacent to enemy
+    this.pathfindPlayerToAdjacent(enemy.gridPos);
   }
 
   private pathfindPlayerToAdjacent(targetPos: GridPos): void {
@@ -212,6 +233,32 @@ export class MainScene extends Phaser.Scene {
   }
 
   public update(time: number, delta: number): void {
+    // Debug Revive key listener [R]
+    if (this.rKey && Phaser.Input.Keyboard.JustDown(this.rKey)) {
+      if (this.player.state === 'downed') {
+        this.player.revive();
+      }
+    }
+
+    // Debug Damage key listener [K]
+    if (this.kKey && Phaser.Input.Keyboard.JustDown(this.kKey)) {
+      // Target player's selected enemy if valid, or default to the first active enemy in scene (Wolf)
+      let targetEnemy: Enemy | null = null;
+      if (this.player.targetEntity instanceof Enemy && this.player.targetEntity.state !== 'dead' && this.player.targetEntity.state !== 'downed') {
+        targetEnemy = this.player.targetEntity;
+      } else {
+        targetEnemy = this.enemies.find((e) => e.state !== 'dead' && e.state !== 'downed') || null;
+      }
+
+      if (targetEnemy) {
+        console.log(`[Debug K Key] Dealing 5 damage to ${targetEnemy.entityName} from distance!`);
+        const wasDowned = targetEnemy.takeDamage(5);
+        if (wasDowned) {
+          console.log(`[Debug K Key] ${targetEnemy.entityName} was downed by debug hit!`);
+        }
+      }
+    }
+
     // WASD Camera Panning
     const panSpeed = 8;
     let panned = false;
@@ -256,6 +303,6 @@ export class MainScene extends Phaser.Scene {
     this.combatSystem.update(time, delta);
 
     // Update HUD Overlay
-    this.hud.update(this.player, this.progressionSystem);
+    this.hud.update(this.player, this.progressionSystem, time);
   }
 }

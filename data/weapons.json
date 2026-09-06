@@ -2,7 +2,7 @@
   "_comment": "Modular weapon/magic type registry. Adding a new type later = add an entry here, no engine changes needed.",
   "weapons": [
     { "id": "katana", "name": "Katana", "category": "melee_1h", "twoHanded": false, "attackIntervalMs": 900, "baseDamage": 6 },
-    { "id": "short_swords", "name": "Short Swords", "category": "melee_1h", "twoHanded": false, "attackIntervalMs": 1000, "baseDamage": 5 },
+    { "id": "short_swords", "name": "Short Swords", "category": "melee_1h", "twoHanded": false, "attackIntervalMs": 1000, "baseDamage": 5, "bleedChance": 0.3 },
     { "id": "shields", "name": "Shields", "category": "offhand", "twoHanded": false, "attackIntervalMs": 1500, "baseDamage": 2 },
     { "id": "longswords", "name": "Longswords", "category": "melee_2h", "twoHanded": true, "attackIntervalMs": 1200, "baseDamage": 8 },
     { "id": "greatswords", "name": "Greatswords", "category": "melee_2h", "twoHanded": true, "attackIntervalMs": 1600, "baseDamage": 12 },

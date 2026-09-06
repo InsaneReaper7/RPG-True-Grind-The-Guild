@@ -1,4 +1,15 @@
-import { PlayerData, WeaponsData, ClassesData, EnemiesData, WeaponDef, EnemyDef } from '../types/game';
+import {
+  PlayerData,
+  WeaponsData,
+  ClassesData,
+  EnemiesData,
+  SkillsData,
+  StatusEffectsData,
+  WeaponDef,
+  EnemyDef,
+  SkillDef,
+  StatusEffectDef
+} from '../types/game';
 
 export class DataLoader {
   private static instance: DataLoader;
@@ -6,6 +17,8 @@ export class DataLoader {
   private weaponsData!: WeaponsData;
   private classesData!: ClassesData;
   private enemiesData!: EnemiesData;
+  private skillsData!: SkillsData;
+  private statusEffectsData!: StatusEffectsData;
 
   private constructor() {}
 
@@ -17,17 +30,21 @@ export class DataLoader {
   }
 
   public async loadAll(): Promise<void> {
-    const [player, weapons, classes, enemies] = await Promise.all([
+    const [player, weapons, classes, enemies, skills, statusEffects] = await Promise.all([
       fetch('/data/player.json').then((res) => res.json()),
       fetch('/data/weapons.json').then((res) => res.json()),
       fetch('/data/classes.json').then((res) => res.json()),
-      fetch('/data/enemies.json').then((res) => res.json())
+      fetch('/data/enemies.json').then((res) => res.json()),
+      fetch('/data/skills.json').then((res) => res.json()),
+      fetch('/data/statusEffects.json').then((res) => res.json())
     ]);
 
     this.playerData = player as PlayerData;
     this.weaponsData = weapons as WeaponsData;
     this.classesData = classes as ClassesData;
     this.enemiesData = enemies as EnemiesData;
+    this.skillsData = skills as SkillsData;
+    this.statusEffectsData = statusEffects as StatusEffectsData;
   }
 
   public getPlayer(): PlayerData {
@@ -52,5 +69,21 @@ export class DataLoader {
 
   public getEnemy(id: string): EnemyDef | undefined {
     return this.enemiesData.enemies.find((e) => e.id === id);
+  }
+
+  public getSkillsData(): SkillsData {
+    return this.skillsData;
+  }
+
+  public getSkill(id: string): SkillDef | undefined {
+    return this.skillsData.skills.find((s) => s.id === id);
+  }
+
+  public getStatusEffectsData(): StatusEffectsData {
+    return this.statusEffectsData;
+  }
+
+  public getStatusEffect(id: string): StatusEffectDef | undefined {
+    return this.statusEffectsData.statusEffects.find((e) => e.id === id);
   }
 }

@@ -1,0 +1,12 @@
+{
+  "statusEffects": [
+    {
+      "id": "bleed",
+      "name": "Bleed",
+      "durationMs": 6000,
+      "tickIntervalMs": 1000,
+      "damagePerTick": 3,
+      "color": "#ef4444"
+    }
+  ]
+}

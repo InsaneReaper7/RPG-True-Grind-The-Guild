@@ -1,0 +1,19 @@
+{
+  "skills": [
+    {
+      "id": "power_strike",
+      "name": "Power Strike",
+      "energyCost": 25,
+      "cooldownMs": 4000,
+      "damageMultiplier": 2.0,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "fencer",
+          "value": 1
+        }
+      ],
+      "description": "Unleashes a powerful strike dealing 200% weapon damage."
+    }
+  ]
+}

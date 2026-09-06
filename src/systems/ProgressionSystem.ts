@@ -1,4 +1,4 @@
-import { ClassDef, Requirement, ClassesData } from '../types/game';
+import { ClassDef, Requirement, ClassesData, SkillDef } from '../types/game';
 
 export interface UnlockEvent {
   classDef: ClassDef;
@@ -63,6 +63,7 @@ export class ProgressionSystem {
     for (const classDef of this.classesData.classes) {
       if (this.evaluateRequirements(classDef)) {
         this.unlockedClasses.add(classDef.id);
+        this.classLevels.set(classDef.id, 1);
         console.log(`[Progression] Class Unlocked: ${classDef.name} (${classDef.id})!`);
 
         for (const cb of this.onUnlockCallbacks) {
@@ -74,5 +75,16 @@ export class ProgressionSystem {
 
   public isClassUnlocked(classId: string): boolean {
     return this.unlockedClasses.has(classId);
+  }
+
+  public isSkillUnlocked(skill: SkillDef): boolean {
+    return skill.requirements.every((req: Requirement) => {
+      if (req.type === 'classLevel') {
+        return this.getClassLevel(req.target) >= req.value;
+      } else if (req.type === 'proficiency') {
+        return this.getProficiency(req.target) >= req.value;
+      }
+      return false;
+    });
   }
 }
