@@ -1,0 +1,35 @@
+{
+  "_comment": "Requirement schema per true_grind design docs: requirements array is ANDed. type 'proficiency' = weapon/magic stat. type 'classLevel' = must have leveled a prerequisite class. This file starts with just enough classes for Milestone 1 (Fencer) plus two more to prove the classLevel-chained schema works before more classes get added in later milestones.",
+  "classes": [
+    {
+      "id": "fencer",
+      "name": "Fencer",
+      "tier": "novice",
+      "requirements": [
+        { "type": "proficiency", "target": "short_swords", "value": 10 }
+      ],
+      "fantasy": "Quick, light-footed duelist"
+    },
+    {
+      "id": "guardian",
+      "name": "Guardian",
+      "tier": "novice",
+      "requirements": [
+        { "type": "proficiency", "target": "shields", "value": 10 }
+      ],
+      "fantasy": "Learning to hold the line"
+    },
+    {
+      "id": "vanguard",
+      "name": "Vanguard",
+      "tier": "adept",
+      "requirements": [
+        { "type": "proficiency", "target": "short_swords", "value": 30 },
+        { "type": "proficiency", "target": "shields", "value": 30 },
+        { "type": "classLevel", "target": "fencer", "value": 5 },
+        { "type": "classLevel", "target": "guardian", "value": 5 }
+      ],
+      "fantasy": "Defensive frontline fighter"
+    }
+  ]
+}

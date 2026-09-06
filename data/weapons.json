@@ -1,0 +1,34 @@
+{
+  "_comment": "Modular weapon/magic type registry. Adding a new type later = add an entry here, no engine changes needed.",
+  "weapons": [
+    { "id": "katana", "name": "Katana", "category": "melee_1h", "twoHanded": false, "attackIntervalMs": 900, "baseDamage": 6 },
+    { "id": "short_swords", "name": "Short Swords", "category": "melee_1h", "twoHanded": false, "attackIntervalMs": 1000, "baseDamage": 5 },
+    { "id": "shields", "name": "Shields", "category": "offhand", "twoHanded": false, "attackIntervalMs": 1500, "baseDamage": 2 },
+    { "id": "longswords", "name": "Longswords", "category": "melee_2h", "twoHanded": true, "attackIntervalMs": 1200, "baseDamage": 8 },
+    { "id": "greatswords", "name": "Greatswords", "category": "melee_2h", "twoHanded": true, "attackIntervalMs": 1600, "baseDamage": 12 },
+    { "id": "daggers", "name": "Daggers", "category": "melee_1h", "twoHanded": false, "attackIntervalMs": 600, "baseDamage": 3 },
+    { "id": "bows", "name": "Bows", "category": "ranged", "twoHanded": true, "attackIntervalMs": 1200, "baseDamage": 6 },
+    { "id": "mace", "name": "Mace", "category": "melee_1h", "twoHanded": false, "attackIntervalMs": 1300, "baseDamage": 7 },
+    { "id": "throwing_weapons", "name": "Throwing Weapons", "category": "ranged", "twoHanded": false, "attackIntervalMs": 800, "baseDamage": 4 },
+    { "id": "arcane", "name": "Arcane", "category": "magic", "twoHanded": true, "attackIntervalMs": 1400, "baseDamage": 8 },
+    { "id": "fire_magic", "name": "Fire Magic", "category": "magic", "twoHanded": true, "attackIntervalMs": 1500, "baseDamage": 10 },
+    { "id": "water_magic", "name": "Water Magic", "category": "magic", "twoHanded": true, "attackIntervalMs": 1200, "baseDamage": 6 },
+    { "id": "ice_magic", "name": "Ice Magic", "category": "magic", "twoHanded": true, "attackIntervalMs": 1400, "baseDamage": 7 },
+    { "id": "earth_magic", "name": "Earth Magic", "category": "magic", "twoHanded": true, "attackIntervalMs": 1600, "baseDamage": 9 },
+    { "id": "nature_magic", "name": "Nature Magic", "category": "magic", "twoHanded": true, "attackIntervalMs": 1300, "baseDamage": 5 },
+    { "id": "lightning_magic", "name": "Lightning Magic", "category": "magic", "twoHanded": true, "attackIntervalMs": 1000, "baseDamage": 7 },
+    { "id": "wind_magic", "name": "Wind Magic", "category": "magic", "twoHanded": true, "attackIntervalMs": 900, "baseDamage": 5 },
+    { "id": "healing_magic", "name": "Healing Magic", "category": "magic", "twoHanded": true, "attackIntervalMs": 1500, "baseDamage": 4 },
+    { "id": "spears", "name": "Spears", "category": "melee_1h", "twoHanded": false, "attackIntervalMs": 1100, "baseDamage": 6 },
+    { "id": "crossbows", "name": "Crossbows", "category": "ranged", "twoHanded": true, "attackIntervalMs": 1500, "baseDamage": 9 },
+    { "id": "holy_magic", "name": "Holy Magic", "category": "magic", "twoHanded": true, "attackIntervalMs": 1400, "baseDamage": 7 },
+    { "id": "dark_magic", "name": "Dark Magic", "category": "magic", "twoHanded": true, "attackIntervalMs": 1300, "baseDamage": 8 },
+    { "id": "druid_staff", "name": "Druid Staff", "category": "magic", "twoHanded": true, "attackIntervalMs": 1400, "baseDamage": 6 }
+  ],
+  "proficiencyTiers": {
+    "novice": 10,
+    "adept": 30,
+    "expert": 60,
+    "master": 90
+  }
+}

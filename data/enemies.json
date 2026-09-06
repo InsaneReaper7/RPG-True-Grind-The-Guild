@@ -1,0 +1,75 @@
+{
+  "_comment": "Starter bestiary. harvestItems use profession tags so future recipes can reference 'anything tagged X' without a rewrite. Only 'wolf' is used in Milestone 1 — the rest are stubbed for later milestones.",
+  "enemies": [
+    {
+      "id": "wolf",
+      "name": "Wolf",
+      "tier": "common",
+      "hp": 30,
+      "meleeDamage": 4,
+      "aggroRadius": 5,
+      "attackIntervalMs": 1200,
+      "moveSpeed": 90,
+      "harvest": [
+        { "method": "skinning", "item": "wolf_pelt", "tags": ["armorsmithing"] },
+        { "method": "butchering", "item": "wolf_meat", "tags": ["cooking"] },
+        { "method": "rare_drop", "item": "wolf_claw", "tags": ["blacksmithing", "bowyer", "jewelcrafting"] }
+      ]
+    },
+    {
+      "id": "slime",
+      "name": "Slime",
+      "tier": "common",
+      "hp": 20,
+      "meleeDamage": 2,
+      "aggroRadius": 3,
+      "attackIntervalMs": 1500,
+      "moveSpeed": 60,
+      "harvest": [
+        { "method": "collect", "item": "slime_gel", "tags": ["cooking", "alchemy"] }
+      ]
+    },
+    {
+      "id": "goblin",
+      "name": "Goblin",
+      "tier": "common",
+      "hp": 25,
+      "meleeDamage": 5,
+      "aggroRadius": 6,
+      "attackIntervalMs": 1100,
+      "moveSpeed": 100,
+      "harvest": [
+        { "method": "butchering", "item": "monster_meat", "tags": ["cooking"], "note": "lower Chef dish-quality ceiling than wolf_meat" },
+        { "method": "rare_drop", "item": "goblin_ear", "tags": ["alchemy"] }
+      ]
+    },
+    {
+      "id": "skeleton",
+      "name": "Skeleton",
+      "tier": "common",
+      "hp": 22,
+      "meleeDamage": 4,
+      "aggroRadius": 5,
+      "attackIntervalMs": 1300,
+      "moveSpeed": 80,
+      "harvest": [
+        { "method": "salvage", "item": "bone", "tags": ["bowyer", "blacksmithing"] },
+        { "method": "rare_drop", "item": "ectoplasm", "tags": ["enchanting", "alchemy"] }
+      ]
+    },
+    {
+      "id": "undead",
+      "name": "Undead",
+      "tier": "common",
+      "hp": 28,
+      "meleeDamage": 5,
+      "aggroRadius": 5,
+      "attackIntervalMs": 1400,
+      "moveSpeed": 70,
+      "harvest": [
+        { "method": "salvage", "item": "bone", "tags": ["bowyer", "blacksmithing"] },
+        { "method": "rare_drop", "item": "ectoplasm", "tags": ["enchanting", "alchemy"] }
+      ]
+    }
+  ]
+}

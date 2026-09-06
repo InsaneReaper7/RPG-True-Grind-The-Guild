@@ -1,0 +1,8 @@
+{
+  "id": "player",
+  "name": "Guild Hero",
+  "maxHp": 50,
+  "moveSpeed": 120,
+  "attackRangeTiles": 1,
+  "startingWeaponId": "short_swords"
+}
