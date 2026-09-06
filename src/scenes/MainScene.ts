@@ -7,6 +7,7 @@ import { Enemy } from '../entities/Enemy';
 import { CombatSystem } from '../systems/CombatSystem';
 import { ProgressionSystem } from '../systems/ProgressionSystem';
 import { HUD } from '../ui/HUD';
+import { GameState } from '../systems/GameState';
 import { GridPos } from '../types/game';
 
 export class MainScene extends Phaser.Scene {
@@ -21,6 +22,10 @@ export class MainScene extends Phaser.Scene {
   private combatSystem!: CombatSystem;
   private progressionSystem!: ProgressionSystem;
   private hud!: HUD;
+
+  private portalSprite!: Phaser.GameObjects.Sprite;
+  private portalPos: GridPos = { x: 2, y: 2 };
+  private isTransitioning: boolean = false;
 
   private wasdKeys!: {
     W: Phaser.Input.Keyboard.Key;
@@ -45,6 +50,9 @@ export class MainScene extends Phaser.Scene {
   }
 
   public create(): void {
+    this.isTransitioning = false;
+    this.enemies = [];
+
     const dataLoader = DataLoader.getInstance();
     const playerData = dataLoader.getPlayer();
     const startingWeapon = dataLoader.getWeapon(playerData.startingWeaponId);
@@ -99,6 +107,7 @@ export class MainScene extends Phaser.Scene {
     // 4. Initialize Systems & HUD
     this.progressionSystem = new ProgressionSystem(classesData);
     this.hud = new HUD();
+    this.hud.setLocation('Dungeon Floor 1', false);
 
     // Progression Unlock Notification
     this.progressionSystem.onClassUnlocked((event) => {
@@ -109,6 +118,44 @@ export class MainScene extends Phaser.Scene {
     // 5. Spawn Player & Enemy (Wolf)
     this.player = new Player(this, 3, 3, playerData, startingWeapon, this.tileSize);
 
+    // Restore state from snapshot (HP, Energy, Cooldowns, Skills, Proficiencies)
+    GameState.getInstance().restoreTo(this.player, this.progressionSystem, this.time.now);
+
+    // Spawn Portal to Outpost at (2, 2)
+    this.portalSprite = this.add.sprite(
+      this.portalPos.x * this.tileSize + this.tileSize / 2,
+      this.portalPos.y * this.tileSize + this.tileSize / 2,
+      'portal-to-outpost'
+    ).setDepth(2);
+    this.portalSprite.setInteractive({ cursor: 'pointer' });
+
+    this.tweens.add({
+      targets: this.portalSprite,
+      scale: 1.15,
+      alpha: 0.85,
+      duration: 1000,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.easeInOut'
+    });
+
+    this.add.text(
+      this.portalPos.x * this.tileSize + this.tileSize / 2,
+      this.portalPos.y * this.tileSize - 10,
+      'Portal to Outpost',
+      {
+        fontSize: '11px',
+        color: '#d8b4fe',
+        fontStyle: 'bold',
+        backgroundColor: 'rgba(0,0,0,0.7)',
+        padding: { x: 4, y: 2 }
+      }
+    ).setOrigin(0.5).setDepth(5000);
+
+    this.portalSprite.on('pointerdown', () => {
+      this.triggerPortalTransition();
+    });
+
     const wolf = new Enemy(this, 14, 14, wolfData, 'wolf-avatar', this.tileSize);
     this.enemies.push(wolf);
 
@@ -118,7 +165,7 @@ export class MainScene extends Phaser.Scene {
     });
 
     // Target Selection Reticle
-    this.targetReticle = this.add.sprite(-100, -100, 'target-reticle');
+    this.targetReticle = this.add.sprite(-100, -100, 'target-reticle').setDepth(10000);
     this.targetReticle.setVisible(false);
 
     // 6. Initialize Combat System
@@ -162,13 +209,19 @@ export class MainScene extends Phaser.Scene {
       this.cameras.main.setZoom(newZoom);
     });
 
-    // Pointer Click Interactions (Click-to-Move / Click-to-Engage)
+    // Pointer Click Interactions (Click-to-Move / Click-to-Engage / Portal)
     this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
-      if (this.player.state === 'downed') return;
+      if (this.player.state === 'downed' || this.isTransitioning) return;
 
       const worldPoint = this.cameras.main.getWorldPoint(pointer.x, pointer.y);
       const clickedTileX = Math.floor(worldPoint.x / this.tileSize);
       const clickedTileY = Math.floor(worldPoint.y / this.tileSize);
+
+      // Check if portal clicked
+      if (clickedTileX === this.portalPos.x && clickedTileY === this.portalPos.y) {
+        this.triggerPortalTransition();
+        return;
+      }
 
       // Check if an enemy was clicked (via tile grid OR world position bounding box)
       const clickedEnemy = this.enemies.find((e) => {
@@ -196,6 +249,45 @@ export class MainScene extends Phaser.Scene {
         });
       }
     });
+  }
+
+  private triggerPortalTransition(): void {
+    if (this.isTransitioning) return;
+
+    this.player.clearTarget();
+    this.targetReticle.setVisible(false);
+
+    const dx = Math.abs(this.player.gridPos.x - this.portalPos.x);
+    const dy = Math.abs(this.player.gridPos.y - this.portalPos.y);
+
+    if (Math.max(dx, dy) <= 1) {
+      // Already adjacent
+      this.executeTransitionToOutpost();
+    } else {
+      console.log('[MainScene] Moving to Outpost Portal...');
+      this.pathfinder.findPath(this.player.gridPos, this.portalPos).then((path) => {
+        if (path.length > 1) {
+          path.pop(); // stop adjacent to portal
+          this.player.followPath(path, () => {
+            this.executeTransitionToOutpost();
+          });
+        } else {
+          this.executeTransitionToOutpost();
+        }
+      });
+    }
+  }
+
+  private executeTransitionToOutpost(): void {
+    if (this.isTransitioning) return;
+    this.isTransitioning = true;
+
+    console.log('[MainScene] Entering Outpost Portal -> Transitioning to OutpostScene');
+    // Save live player & progression snapshot
+    GameState.getInstance().saveSnapshot(this.player, this.progressionSystem, this.time.now);
+
+    // Switch active scene to OutpostScene
+    this.scene.start('OutpostScene');
   }
 
   private engageEnemy(enemy: Enemy): void {

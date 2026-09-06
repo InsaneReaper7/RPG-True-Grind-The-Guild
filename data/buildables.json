@@ -1,0 +1,44 @@
+﻿{
+  "buildables": [
+    {
+      "id": "floor",
+      "name": "Wood Floor",
+      "woodCost": 2,
+      "footprint": { "width": 1, "height": 1 },
+      "rotatable": true,
+      "indoorRequired": false,
+      "walkable": true,
+      "description": "Clean timber floorboards. Can be placed on grass courtyard."
+    },
+    {
+      "id": "wall",
+      "name": "Wood Wall",
+      "woodCost": 5,
+      "footprint": { "width": 1, "height": 1 },
+      "rotatable": false,
+      "indoorRequired": false,
+      "walkable": false,
+      "description": "Solid timber wall. Automatically connects to adjacent walls and doors."
+    },
+    {
+      "id": "door",
+      "name": "Wood Door",
+      "woodCost": 8,
+      "footprint": { "width": 1, "height": 1 },
+      "rotatable": true,
+      "indoorRequired": false,
+      "walkable": true,
+      "description": "Passable wooden door frame. Required to enclose indoor rooms."
+    },
+    {
+      "id": "research_station",
+      "name": "Research Station",
+      "woodCost": 20,
+      "footprint": { "width": 1, "height": 1 },
+      "rotatable": true,
+      "indoorRequired": true,
+      "walkable": false,
+      "description": "Guild crafting station. Requires a fully enclosed indoor room with walls and a door."
+    }
+  ]
+}

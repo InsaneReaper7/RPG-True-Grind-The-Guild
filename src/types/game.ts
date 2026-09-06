@@ -68,6 +68,33 @@ export interface EnemiesData {
   enemies: EnemyDef[];
 }
 
+export interface FootprintDef {
+  width: number;
+  height: number;
+}
+
+export interface BuildableDef {
+  id: string;
+  name: string;
+  woodCost: number;
+  footprint: FootprintDef;
+  rotatable: boolean;
+  indoorRequired: boolean;
+  walkable: boolean;
+  description: string;
+}
+
+export interface BuildablesData {
+  buildables: BuildableDef[];
+}
+
+export interface PlacedBuildable {
+  id: string;
+  x: number;
+  y: number;
+  rotation: number; // 0, 90, 180, 270
+}
+
 export interface PlayerData {
   id: string;
   name: string;
@@ -78,6 +105,30 @@ export interface PlayerData {
   moveSpeed: number;
   attackRangeTiles: number;
   startingWeaponId: string;
+  knownSkillIds?: string[];
+  equippedSkillIds?: string[];
+  resources?: {
+    wood: number;
+    [key: string]: number;
+  };
+}
+
+export interface PlayerSnapshot {
+  hp: number;
+  criticalHp: number;
+  energy: number;
+  knownSkillIds: string[];
+  equippedSkillIds: string[];
+  autocastMap: Record<string, boolean>;
+  skillCooldownsRemainingMs: Record<string, number>;
+  proficiencies: Record<string, number>;
+  classLevels: Record<string, number>;
+  unlockedClasses: string[];
+  resources: {
+    wood: number;
+    [key: string]: number;
+  };
+  placedBuildables?: PlacedBuildable[];
 }
 
 export interface SkillDef {

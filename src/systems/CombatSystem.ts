@@ -255,32 +255,41 @@ export class CombatSystem {
 
       if (distanceTiles <= this.player.attackRangeTiles) {
         const dataLoader = DataLoader.getInstance();
-        const powerStrikeDef = dataLoader.getSkill('power_strike');
         const weaponId = this.player.equippedWeapon.id;
 
-        // Check if Power Strike auto-cast conditions are met
-        let usedPowerStrike = false;
+        // Check if any equipped skill auto-cast conditions are met
+        let usedSkill = false;
 
-        if (powerStrikeDef && this.progressionSystem.isSkillUnlocked(powerStrikeDef)) {
-          const lastUsed = this.player.lastSkillUseTimes.get('power_strike') || 0;
-          const isOffCooldown = time - lastUsed >= powerStrikeDef.cooldownMs;
-          const isAffordable = this.player.energy >= powerStrikeDef.energyCost;
+        for (const skillId of this.player.equippedSkillIds) {
+          // Autocast switch check: if OFF, this skill never auto-fires
+          if (!this.player.isAutocastEnabled(skillId)) {
+            continue;
+          }
+
+          const skillDef = dataLoader.getSkill(skillId);
+          if (!skillDef || !this.progressionSystem.isSkillUnlocked(skillDef)) {
+            continue;
+          }
+
+          const lastUsed = this.player.lastSkillUseTimes.get(skillId) || 0;
+          const isOffCooldown = time - lastUsed >= skillDef.cooldownMs;
+          const isAffordable = this.player.energy >= skillDef.energyCost;
           const isWeaponReady = time - this.player.lastAttackTime >= this.player.equippedWeapon.attackIntervalMs;
 
           if (isOffCooldown && isAffordable && isWeaponReady) {
-            usedPowerStrike = true;
+            usedSkill = true;
             // Deduct Energy & trigger skill
-            this.player.energy -= powerStrikeDef.energyCost;
-            this.player.lastSkillUseTimes.set('power_strike', time);
+            this.player.energy -= skillDef.energyCost;
+            this.player.lastSkillUseTimes.set(skillId, time);
             this.player.lastAttackTime = time;
             this.player.state = 'attacking';
 
             const baseDamage = this.player.equippedWeapon.baseDamage;
-            const skillDamage = Math.floor(baseDamage * powerStrikeDef.damageMultiplier);
+            const skillDamage = Math.floor(baseDamage * skillDef.damageMultiplier);
 
-            console.log(`[Skill] Player casts Power Strike! Dealt ${skillDamage} damage (${powerStrikeDef.damageMultiplier * 100}% base)`);
+            console.log(`[Skill] Player casts ${skillDef.name}! Dealt ${skillDamage} damage (${skillDef.damageMultiplier * 100}% base)`);
             this.createSkillAttackEffect(this.player.x, this.player.y, target.x, target.y);
-            this.createFloatingText(target.x, target.y - 10, 'POWER STRIKE!', '#f59e0b');
+            this.createFloatingText(target.x, target.y - 10, `${skillDef.name.toUpperCase()}!`, '#f59e0b');
 
             // Roll Bleed status effect chance
             this.checkAndApplyBleed(target);
@@ -292,11 +301,12 @@ export class CombatSystem {
             if (targetDowned) {
               this.handleTargetDefeated(target, weaponId);
             }
+            break;
           }
         }
 
-        // Standard weapon attack if Power Strike was not used
-        if (!usedPowerStrike) {
+        // Standard weapon attack if no skill was used
+        if (!usedSkill) {
           if (time - this.player.lastAttackTime >= this.player.equippedWeapon.attackIntervalMs) {
             this.player.lastAttackTime = time;
             this.player.state = 'attacking';

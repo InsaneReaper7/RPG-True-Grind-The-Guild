@@ -18,6 +18,13 @@ export class Pathfinder {
     this.easystar.disableDiagonals();
   }
 
+  public updateGrid(newGridMatrix: number[][]): void {
+    this.gridMatrix = newGridMatrix;
+    this.gridHeight = newGridMatrix.length;
+    this.gridWidth = newGridMatrix[0].length;
+    this.easystar.setGrid(newGridMatrix);
+  }
+
   public isObstacle(x: number, y: number): boolean {
     if (x < 0 || x >= this.gridWidth || y < 0 || y >= this.gridHeight) return true;
     return this.gridMatrix[y][x] === 1;

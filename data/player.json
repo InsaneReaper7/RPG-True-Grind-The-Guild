@@ -7,5 +7,10 @@
   "energyRegenPerSecond": 5,
   "moveSpeed": 120,
   "attackRangeTiles": 1,
-  "startingWeaponId": "short_swords"
+  "startingWeaponId": "short_swords",
+  "knownSkillIds": ["power_strike"],
+  "equippedSkillIds": ["power_strike"],
+  "resources": {
+    "wood": 100
+  }
 }

@@ -84,5 +84,299 @@ export class TextureGenerator {
       g.generateTexture('bleed-icon', size, size);
       g.destroy();
     }
+
+    // 7. Outpost Grass Tile
+    if (!scene.textures.exists('tile-outpost-grass')) {
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      g.fillStyle(0x2d4a22, 1); // Lush green
+      g.fillRect(0, 0, tileSize, tileSize);
+      g.lineStyle(1, 0x3f6212, 0.4);
+      g.strokeRect(0, 0, tileSize, tileSize);
+      // Small decorative grass blade dots
+      g.fillStyle(0x4ade80, 0.4);
+      g.fillRect(8, 8, 2, 4);
+      g.fillRect(20, 18, 2, 4);
+      g.generateTexture('tile-outpost-grass', tileSize, tileSize);
+      g.destroy();
+    }
+
+    // 8. Outpost Timber Wood Tile
+    if (!scene.textures.exists('tile-outpost-wood')) {
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      g.fillStyle(0x5c4033, 1); // Timber brown
+      g.fillRect(0, 0, tileSize, tileSize);
+      g.lineStyle(1, 0x3e2723, 0.6);
+      g.strokeRect(0, 0, tileSize, tileSize);
+      g.lineBetween(0, tileSize / 2, tileSize, tileSize / 2);
+      g.generateTexture('tile-outpost-wood', tileSize, tileSize);
+      g.destroy();
+    }
+
+    // 9. Outpost Wall Obstacle Tile
+    if (!scene.textures.exists('tile-outpost-wall')) {
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      g.fillStyle(0x271c19, 1); // Dark timber wall
+      g.fillRect(0, 0, tileSize, tileSize);
+      g.lineStyle(2, 0x8d6e63, 0.8);
+      g.strokeRect(2, 2, tileSize - 4, tileSize - 4);
+      g.lineBetween(4, 4, tileSize - 4, tileSize - 4);
+      g.lineBetween(tileSize - 4, 4, 4, tileSize - 4);
+      g.generateTexture('tile-outpost-wall', tileSize, tileSize);
+      g.destroy();
+    }
+
+    // 10. Portal to Outpost (Mystic Purple Swirl in Dungeon)
+    if (!scene.textures.exists('portal-to-outpost')) {
+      const size = 32;
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      g.fillStyle(0xa855f7, 0.85); // Purple core
+      g.fillCircle(size / 2, size / 2, 12);
+      g.lineStyle(2, 0xe9d5ff, 1);
+      g.strokeCircle(size / 2, size / 2, 12);
+      g.lineStyle(1.5, 0xd8b4fe, 0.8);
+      g.strokeCircle(size / 2, size / 2, 8);
+      g.fillStyle(0xffffff, 0.9);
+      g.fillCircle(size / 2, size / 2, 4);
+      g.generateTexture('portal-to-outpost', size, size);
+      g.destroy();
+    }
+
+    // 11. Portal to Dungeon (Cyan Beacon in Outpost)
+    if (!scene.textures.exists('portal-to-dungeon')) {
+      const size = 32;
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      g.fillStyle(0x06b6d4, 0.85); // Cyan core
+      g.fillCircle(size / 2, size / 2, 12);
+      g.lineStyle(2, 0xa5f3fc, 1);
+      g.strokeCircle(size / 2, size / 2, 12);
+      g.lineStyle(1.5, 0x67e8f9, 0.8);
+      g.strokeCircle(size / 2, size / 2, 8);
+      g.fillStyle(0xffffff, 0.9);
+      g.fillCircle(size / 2, size / 2, 4);
+      g.generateTexture('portal-to-dungeon', size, size);
+      g.destroy();
+    }
+
+    // 12. Buildable Wood Floor (Clean timber planks)
+    if (!scene.textures.exists('buildable-wood-floor')) {
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      g.fillStyle(0x6b4f3b, 1);
+      g.fillRect(0, 0, tileSize, tileSize);
+      g.lineStyle(1, 0x4a3525, 0.8);
+      g.strokeRect(0, 0, tileSize, tileSize);
+      g.lineBetween(0, 10, tileSize, 10);
+      g.lineBetween(0, 21, tileSize, 21);
+      // Small wood grain nails
+      g.fillStyle(0x2e1c0c, 0.6);
+      g.fillRect(3, 4, 1, 2);
+      g.fillRect(tileSize - 4, 4, 1, 2);
+      g.fillRect(14, 15, 1, 2);
+      g.fillRect(6, 26, 1, 2);
+      g.generateTexture('buildable-wood-floor', tileSize, tileSize);
+      g.destroy();
+    }
+
+    // 13. Buildable Walls (Auto-Orienting Timber Walls)
+    // 13a. Single / standalone wall
+    if (!scene.textures.exists('buildable-wood-wall-single')) {
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      g.fillStyle(0x3e2723, 1);
+      g.fillRect(4, 4, tileSize - 8, tileSize - 8);
+      g.lineStyle(2, 0x8d6e63, 1);
+      g.strokeRect(4, 4, tileSize - 8, tileSize - 8);
+      g.fillStyle(0xd7ccc8, 0.9);
+      g.fillCircle(tileSize / 2, tileSize / 2, 3);
+      g.generateTexture('buildable-wood-wall-single', tileSize, tileSize);
+      g.destroy();
+    }
+
+    // 13b. Horizontal wall (East-West)
+    if (!scene.textures.exists('buildable-wood-wall-h')) {
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      g.fillStyle(0x3e2723, 1);
+      g.fillRect(0, 6, tileSize, tileSize - 12);
+      g.lineStyle(2, 0x8d6e63, 1);
+      g.lineBetween(0, 6, tileSize, 6);
+      g.lineBetween(0, tileSize - 6, tileSize, tileSize - 6);
+      g.lineStyle(1, 0x5d4037, 0.9);
+      g.lineBetween(0, tileSize / 2, tileSize, tileSize / 2);
+      g.generateTexture('buildable-wood-wall-h', tileSize, tileSize);
+      g.destroy();
+    }
+
+    // 13c. Vertical wall (North-South)
+    if (!scene.textures.exists('buildable-wood-wall-v')) {
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      g.fillStyle(0x3e2723, 1);
+      g.fillRect(6, 0, tileSize - 12, tileSize);
+      g.lineStyle(2, 0x8d6e63, 1);
+      g.lineBetween(6, 0, 6, tileSize);
+      g.lineBetween(tileSize - 6, 0, tileSize - 6, tileSize);
+      g.lineStyle(1, 0x5d4037, 0.9);
+      g.lineBetween(tileSize / 2, 0, tileSize / 2, tileSize);
+      g.generateTexture('buildable-wood-wall-v', tileSize, tileSize);
+      g.destroy();
+    }
+
+    // 13d. Corner NW (connects South & East)
+    if (!scene.textures.exists('buildable-wood-wall-corner-nw')) {
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      g.fillStyle(0x3e2723, 1);
+      g.fillRect(6, 6, tileSize - 6, tileSize - 12); // East arm
+      g.fillRect(6, 6, tileSize - 12, tileSize - 6); // South arm
+      g.lineStyle(2, 0x8d6e63, 1);
+      g.strokeRect(6, 6, tileSize - 12, tileSize - 12);
+      g.generateTexture('buildable-wood-wall-corner-nw', tileSize, tileSize);
+      g.destroy();
+    }
+
+    // 13e. Corner NE (connects South & West)
+    if (!scene.textures.exists('buildable-wood-wall-corner-ne')) {
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      g.fillStyle(0x3e2723, 1);
+      g.fillRect(0, 6, tileSize - 6, tileSize - 12); // West arm
+      g.fillRect(6, 6, tileSize - 12, tileSize - 6); // South arm
+      g.lineStyle(2, 0x8d6e63, 1);
+      g.strokeRect(6, 6, tileSize - 12, tileSize - 12);
+      g.generateTexture('buildable-wood-wall-corner-ne', tileSize, tileSize);
+      g.destroy();
+    }
+
+    // 13f. Corner SW (connects North & East)
+    if (!scene.textures.exists('buildable-wood-wall-corner-sw')) {
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      g.fillStyle(0x3e2723, 1);
+      g.fillRect(6, 6, tileSize - 6, tileSize - 12); // East arm
+      g.fillRect(6, 0, tileSize - 12, tileSize - 6); // North arm
+      g.lineStyle(2, 0x8d6e63, 1);
+      g.strokeRect(6, 6, tileSize - 12, tileSize - 12);
+      g.generateTexture('buildable-wood-wall-corner-sw', tileSize, tileSize);
+      g.destroy();
+    }
+
+    // 13g. Corner SE (connects North & West)
+    if (!scene.textures.exists('buildable-wood-wall-corner-se')) {
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      g.fillStyle(0x3e2723, 1);
+      g.fillRect(0, 6, tileSize - 6, tileSize - 12); // West arm
+      g.fillRect(6, 0, tileSize - 12, tileSize - 6); // North arm
+      g.lineStyle(2, 0x8d6e63, 1);
+      g.strokeRect(6, 6, tileSize - 12, tileSize - 12);
+      g.generateTexture('buildable-wood-wall-corner-se', tileSize, tileSize);
+      g.destroy();
+    }
+
+    // 13h. Junction / Cross
+    if (!scene.textures.exists('buildable-wood-wall-junction')) {
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      g.fillStyle(0x3e2723, 1);
+      g.fillRect(0, 6, tileSize, tileSize - 12);
+      g.fillRect(6, 0, tileSize - 12, tileSize);
+      g.lineStyle(2, 0x8d6e63, 1);
+      g.strokeRect(6, 6, tileSize - 12, tileSize - 12);
+      g.generateTexture('buildable-wood-wall-junction', tileSize, tileSize);
+      g.destroy();
+    }
+
+    // 14. Wood Door Horizontal (Passable door in horizontal wall)
+    if (!scene.textures.exists('buildable-wood-door-h')) {
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      // Floor backing
+      g.fillStyle(0x6b4f3b, 1);
+      g.fillRect(0, 0, tileSize, tileSize);
+      // Wall posts on left & right
+      g.fillStyle(0x3e2723, 1);
+      g.fillRect(0, 4, 6, tileSize - 8);
+      g.fillRect(tileSize - 6, 4, 6, tileSize - 8);
+      // Door plank
+      g.fillStyle(0xb45309, 1); // Warm timber door
+      g.fillRect(6, 11, tileSize - 12, 10);
+      g.lineStyle(1, 0x78350f, 1);
+      g.strokeRect(6, 11, tileSize - 12, 10);
+      // Brass handle
+      g.fillStyle(0xfef08a, 1);
+      g.fillCircle(tileSize / 2 + 4, 16, 2);
+      g.generateTexture('buildable-wood-door-h', tileSize, tileSize);
+      g.destroy();
+    }
+
+    // 15. Wood Door Vertical (Passable door in vertical wall)
+    if (!scene.textures.exists('buildable-wood-door-v')) {
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      // Floor backing
+      g.fillStyle(0x6b4f3b, 1);
+      g.fillRect(0, 0, tileSize, tileSize);
+      // Wall posts top & bottom
+      g.fillStyle(0x3e2723, 1);
+      g.fillRect(4, 0, tileSize - 8, 6);
+      g.fillRect(4, tileSize - 6, tileSize - 8, 6);
+      // Door plank
+      g.fillStyle(0xb45309, 1);
+      g.fillRect(11, 6, 10, tileSize - 12);
+      g.lineStyle(1, 0x78350f, 1);
+      g.strokeRect(11, 6, 10, tileSize - 12);
+      // Brass handle
+      g.fillStyle(0xfef08a, 1);
+      g.fillCircle(16, tileSize / 2 + 4, 2);
+      g.generateTexture('buildable-wood-door-v', tileSize, tileSize);
+      g.destroy();
+    }
+
+    // 16. Research Station (Crafting Station with Workbench, Spellbook & Flask)
+    if (!scene.textures.exists('buildable-research-station')) {
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      // Heavy oak worktable
+      g.fillStyle(0x451a03, 1); // Dark walnut
+      g.fillRect(2, 4, tileSize - 4, tileSize - 8);
+      g.lineStyle(1, 0x9a3412, 1);
+      g.strokeRect(2, 4, tileSize - 4, tileSize - 8);
+
+      // Desk cloth / parchment
+      g.fillStyle(0xfef3c7, 0.9);
+      g.fillRect(5, 7, 10, 8);
+
+      // Open grimoire / spellbook
+      g.fillStyle(0x1e3a8a, 1); // Blue tome
+      g.fillRect(6, 18, 9, 7);
+      g.fillStyle(0xffffff, 0.8);
+      g.lineBetween(10, 18, 10, 24);
+
+      // Glowing alchemy flask (Cyan)
+      g.fillStyle(0x06b6d4, 0.95);
+      g.fillCircle(tileSize - 8, 12, 4);
+      g.fillStyle(0xa5f3fc, 1);
+      g.fillCircle(tileSize - 9, 10, 1.5); // highlight
+      // Flask neck & cork
+      g.fillStyle(0x78350f, 1);
+      g.fillRect(tileSize - 9, 6, 2, 3);
+
+      g.generateTexture('buildable-research-station', tileSize, tileSize);
+      g.destroy();
+    }
+
+    // 17. Valid Tile Placement Highlight (Soft Green/White frame)
+    if (!scene.textures.exists('tile-highlight-valid')) {
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      g.fillStyle(0x22c55e, 0.25);
+      g.fillRect(0, 0, tileSize, tileSize);
+      g.lineStyle(2, 0x86efac, 0.9);
+      g.strokeRect(1, 1, tileSize - 2, tileSize - 2);
+      g.generateTexture('tile-highlight-valid', tileSize, tileSize);
+      g.destroy();
+    }
+
+    // 18. Invalid Tile Placement Highlight (Soft Red frame)
+    if (!scene.textures.exists('tile-highlight-invalid')) {
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      g.fillStyle(0xef4444, 0.3);
+      g.fillRect(0, 0, tileSize, tileSize);
+      g.lineStyle(2, 0xfca5a5, 0.9);
+      g.strokeRect(1, 1, tileSize - 2, tileSize - 2);
+      g.lineBetween(4, 4, tileSize - 4, tileSize - 4);
+      g.lineBetween(tileSize - 4, 4, 4, tileSize - 4);
+      g.generateTexture('tile-highlight-invalid', tileSize, tileSize);
+      g.destroy();
+    }
   }
 }
+

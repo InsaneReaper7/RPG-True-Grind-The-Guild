@@ -1,11 +1,16 @@
 import Phaser from 'phaser';
 import { DataLoader } from './utils/DataLoader';
+import { GameState } from './systems/GameState';
 import { MainScene } from './scenes/MainScene';
+import { OutpostScene } from './scenes/OutpostScene';
 
 async function bootstrap() {
   // Load JSON schemas first
   const dataLoader = DataLoader.getInstance();
   await dataLoader.loadAll();
+
+  // Initialize persistent GameState from player.json boot seed once
+  GameState.getInstance().initFromPlayerData(dataLoader.getPlayer());
 
   const config: Phaser.Types.Core.GameConfig = {
     type: Phaser.AUTO,
@@ -18,10 +23,11 @@ async function bootstrap() {
       mode: Phaser.Scale.FIT,
       autoCenter: Phaser.Scale.CENTER_BOTH
     },
-    scene: [MainScene]
+    scene: [OutpostScene, MainScene]
   };
 
-  new Phaser.Game(config);
+  const game = new Phaser.Game(config);
+  (window as any).game = game;
 }
 
 bootstrap().catch((err) => {

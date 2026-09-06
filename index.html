@@ -68,6 +68,55 @@
       font-weight: 600;
       color: #60a5fa;
     }
+    .hud-skill-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 5px;
+      padding: 4px 6px;
+      background: rgba(31, 41, 55, 0.6);
+      border-radius: 4px;
+      font-size: 12px;
+    }
+    .hud-autocast-btn {
+      pointer-events: auto;
+      border: none;
+      border-radius: 4px;
+      padding: 2px 6px;
+      font-size: 10px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .autocast-on {
+      background: #15803d;
+      color: #dcfce7;
+    }
+    .autocast-off {
+      background: #4b5563;
+      color: #d1d5db;
+    }
+    #outpost-controls {
+      pointer-events: auto;
+      margin-top: 10px;
+      display: none;
+    }
+    .btn-action {
+      background: #2563eb;
+      color: #ffffff;
+      border: 1px solid #60a5fa;
+      border-radius: 6px;
+      padding: 6px 14px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+      transition: all 0.2s;
+    }
+    .btn-action:hover {
+      background: #1d4ed8;
+      transform: translateY(-1px);
+    }
     #unlock-modal {
       position: absolute;
       top: 30%;
@@ -80,12 +129,15 @@
       text-align: center;
       box-shadow: 0 0 30px rgba(245, 158, 11, 0.4);
       opacity: 0;
+      pointer-events: none;
+      display: none;
       transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-      pointer-events: auto;
     }
     #unlock-modal.active {
+      display: block;
       opacity: 1;
       transform: translate(-50%, -50%) scale(1);
+      pointer-events: auto;
     }
     #unlock-modal h2 {
       color: #f59e0b;
@@ -116,12 +168,256 @@
     #downed-banner.active {
       display: block;
     }
+    /* Skill Loadout Modal (Outpost Only) */
+    #skill-loadout-modal {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 720px;
+      max-height: 520px;
+      background: rgba(17, 24, 39, 0.97);
+      backdrop-filter: blur(8px);
+      border: 2px solid #3b82f6;
+      border-radius: 12px;
+      padding: 20px 24px;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.7);
+      display: none;
+      flex-direction: column;
+      pointer-events: auto;
+      z-index: 100;
+    }
+    #skill-loadout-modal.active {
+      display: flex;
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding-bottom: 12px;
+      margin-bottom: 16px;
+    }
+    .modal-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #60a5fa;
+      letter-spacing: 0.05em;
+    }
+    .modal-subtitle {
+      font-size: 12px;
+      color: #9ca3af;
+      margin-top: 2px;
+    }
+    .modal-close-btn {
+      background: #374151;
+      color: #d1d5db;
+      border: none;
+      border-radius: 6px;
+      width: 28px;
+      height: 28px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .modal-close-btn:hover {
+      background: #ef4444;
+      color: #fff;
+    }
+    .loadout-body {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      overflow-y: auto;
+      max-height: 400px;
+      padding-right: 4px;
+    }
+    .loadout-section-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #f59e0b;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .equip-slot {
+      background: rgba(31, 41, 55, 0.8);
+      border: 2px dashed #4b5563;
+      border-radius: 8px;
+      padding: 10px 12px;
+      margin-bottom: 8px;
+      min-height: 52px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: border-color 0.2s;
+    }
+    .equip-slot.filled {
+      border: 1px solid #3b82f6;
+      background: rgba(30, 58, 138, 0.25);
+    }
+    .equip-slot.drag-over {
+      border-color: #60a5fa;
+      background: rgba(59, 130, 246, 0.2);
+    }
+    .slot-label {
+      font-size: 11px;
+      color: #9ca3af;
+      text-transform: uppercase;
+    }
+    .skill-card {
+      background: rgba(31, 41, 55, 0.9);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 8px;
+      padding: 10px 12px;
+      margin-bottom: 8px;
+      cursor: grab;
+      user-select: none;
+      transition: transform 0.15s, border-color 0.15s;
+    }
+    .skill-card:hover {
+      border-color: #60a5fa;
+      transform: translateY(-2px);
+    }
+    .skill-card.equipped-badge {
+      opacity: 0.65;
+      border-color: #10b981;
+    }
+    .skill-name {
+      font-size: 14px;
+      font-weight: 700;
+      color: #f3f4f6;
+    }
+    .skill-desc {
+      font-size: 11px;
+      color: #9ca3af;
+      margin-top: 3px;
+    }
+    .skill-stats {
+      font-size: 11px;
+      color: #60a5fa;
+      margin-top: 4px;
+      display: flex;
+      gap: 12px;
+    }
+    /* Build Mode Overlay & Palette */
+    #build-mode-overlay {
+      position: absolute;
+      bottom: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(17, 24, 39, 0.95);
+      backdrop-filter: blur(6px);
+      border: 2px solid #10b981;
+      border-radius: 10px;
+      padding: 10px 18px;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
+      pointer-events: auto;
+      z-index: 90;
+      min-width: 520px;
+    }
+    #build-mode-overlay.active {
+      display: flex;
+    }
+    .build-header-row {
+      display: flex;
+      justify-content: space-between;
+      width: 100%;
+      align-items: center;
+      margin-bottom: 8px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .palette-container {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+    .palette-item {
+      background: rgba(31, 41, 55, 0.9);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 8px;
+      padding: 6px 12px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      min-width: 84px;
+      transition: all 0.15s;
+    }
+    .palette-item:hover {
+      border-color: #34d399;
+      background: rgba(5, 150, 105, 0.2);
+    }
+    .palette-item.active {
+      border-color: #34d399;
+      background: rgba(5, 150, 105, 0.35);
+      box-shadow: 0 0 10px rgba(52, 211, 153, 0.4);
+    }
+    .palette-name {
+      font-size: 12px;
+      font-weight: 700;
+      color: #f3f4f6;
+    }
+    .palette-cost {
+      font-size: 11px;
+      color: #fbbf24;
+      font-weight: 600;
+    }
+    .build-shortcuts-hint {
+      font-size: 11px;
+      color: #9ca3af;
+      text-align: center;
+    }
+    #build-feedback-toast {
+      position: absolute;
+      top: 18px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-20px);
+      background: rgba(17, 24, 39, 0.95);
+      border: 2px solid #ef4444;
+      border-radius: 8px;
+      padding: 10px 18px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #ffffff;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7);
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.25s ease;
+      z-index: 200;
+      text-align: center;
+      max-width: 520px;
+    }
+    #build-feedback-toast.active {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+    #build-feedback-toast.toast-info {
+      border-color: #3b82f6;
+    }
+    #build-feedback-toast.toast-success {
+      border-color: #10b981;
+    }
+    #build-feedback-toast.toast-warn {
+      border-color: #f59e0b;
+    }
+    #build-feedback-toast.toast-error {
+      border-color: #ef4444;
+    }
   </style>
 </head>
 <body>
   <div id="game-container">
     <div id="hud-overlay">
-      <div class="hud-card">
+      <div class="hud-card" id="hud-card">
+        <div id="location-badge" style="font-size: 11px; color: #a78bfa; font-weight: bold; margin-bottom: 4px;">DUNGEON FLOOR 1</div>
         <div class="hud-title">Guild Hero</div>
         <div class="hud-stat">
           <span>Main HP:</span>
@@ -144,12 +440,61 @@
           <span id="proficiency-text" class="hud-stat-value">0 / 10 (Unranked)</span>
         </div>
         <div class="hud-stat">
-          <span>Power Strike:</span>
-          <span id="skill-status-text" class="hud-stat-value" style="color: #9ca3af;">Locked</span>
-        </div>
-        <div class="hud-stat">
           <span>Status:</span>
           <span id="player-status-text" class="hud-stat-value" style="color: #9ca3af;">Normal</span>
+        </div>
+        <div class="hud-stat" id="hud-wood-row" style="display: none;">
+          <span>Stockpile Wood:</span>
+          <span id="player-wood-text" class="hud-stat-value" style="color: #f59e0b;">🪵 100</span>
+        </div>
+
+        <!-- In-Combat Equipped Skills List with Cooldowns & Autocast Switches -->
+        <div id="equipped-skills-container" style="margin-top: 8px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 6px;">
+          <div style="font-size: 11px; color: #9ca3af; text-transform: uppercase; font-weight: 600; margin-bottom: 2px;">Equipped Skills (Max 5)</div>
+          <div id="hud-skills-list"></div>
+        </div>
+
+        <!-- Outpost-only Controls -->
+        <div id="outpost-controls">
+          <button id="open-loadout-btn" class="btn-action" type="button">⚔️ Skill Loadout [L]</button>
+          <button id="toggle-build-btn" class="btn-action" style="margin-top: 6px; background: #059669; border-color: #34d399;" type="button">🔨 Build Mode [B]</button>
+        </div>
+      </div>
+
+      <div id="build-feedback-toast"></div>
+
+      <!-- Build Mode Overlay & Palette (Outpost Scene Only) -->
+      <div id="build-mode-overlay">
+        <div class="build-header-row">
+          <span style="color: #34d399;">🔨 BUILD MODE</span>
+          <span style="color: #fbbf24;" id="build-overlay-wood">🪵 Wood: 100</span>
+          <span style="color: #93c5fd; font-size: 11px;" id="build-rotation-badge">Rotation: 0° [R]</span>
+          <button id="exit-build-btn" type="button" style="background: #374151; color: #d1d5db; border: none; border-radius: 4px; padding: 2px 8px; font-size: 11px; cursor: pointer;">✕ Exit [B]</button>
+        </div>
+        <div class="palette-container" id="build-palette-container">
+          <div class="palette-item active" data-buildable-id="floor">
+            <span class="palette-name">Floor</span>
+            <span class="palette-cost">🪵 2</span>
+          </div>
+          <div class="palette-item" data-buildable-id="wall">
+            <span class="palette-name">Wall</span>
+            <span class="palette-cost">🪵 5</span>
+          </div>
+          <div class="palette-item" data-buildable-id="door">
+            <span class="palette-name">Door</span>
+            <span class="palette-cost">🪵 8</span>
+          </div>
+          <div class="palette-item" data-buildable-id="research_station">
+            <span class="palette-name">Research</span>
+            <span class="palette-cost">🪵 20</span>
+          </div>
+          <div class="palette-item" data-buildable-id="demolish" style="border-color: #ef4444;">
+            <span class="palette-name" style="color: #f87171;">Demolish</span>
+            <span class="palette-cost" style="color: #9ca3af;">Refund</span>
+          </div>
+        </div>
+        <div class="build-shortcuts-hint">
+          Left-Click to place &bull; Right-Click to Demolish &bull; [R] Rotate &bull; [B / Esc] Exit
         </div>
       </div>
 
@@ -161,6 +506,38 @@
 
       <div id="downed-banner">
         ⚠️ DOWNED! Press <span style="color: #fef08a;">[R]</span> to Revive (50% Main HP)
+      </div>
+
+      <!-- Skill Loadout Modal (Outpost Scene Only) -->
+      <div id="skill-loadout-modal">
+        <div class="modal-header">
+          <div>
+            <div class="modal-title">⚔️ Guild Outpost — Skill Loadout</div>
+            <div class="modal-subtitle">Equip up to 5 skills. Swapping skills is only allowed in the Outpost.</div>
+          </div>
+          <button id="close-loadout-btn" class="modal-close-btn" type="button">✕</button>
+        </div>
+
+        <div class="loadout-body">
+          <!-- Left Column: 5 Equip Slots -->
+          <div>
+            <div class="loadout-section-title">
+              <span>Equipped Slots</span>
+              <span id="slots-count-badge" style="color: #9ca3af; font-size: 11px;">1 / 5</span>
+            </div>
+            <div id="equip-slots-container">
+              <!-- Dynamically populated with 5 slots -->
+            </div>
+          </div>
+
+          <!-- Right Column: Known Skills Library -->
+          <div>
+            <div class="loadout-section-title">Known Skills Grimoire</div>
+            <div id="known-skills-container">
+              <!-- Dynamically populated from knownSkillIds -->
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>

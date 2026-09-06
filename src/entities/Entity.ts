@@ -64,12 +64,14 @@ export class Entity extends Phaser.GameObjects.Container {
     this.drawHpBar();
 
     scene.add.existing(this);
+    this.setDepth(this.y);
   }
 
   public setGridPosition(x: number, y: number): void {
     this.gridPos = { x, y };
     this.x = x * this.tileSize + this.tileSize / 2;
     this.y = y * this.tileSize + this.tileSize / 2;
+    this.setDepth(this.y);
     this.targetWorldPos = null;
     this.path = [];
   }
@@ -238,6 +240,7 @@ export class Entity extends Phaser.GameObjects.Container {
       fontStyle: 'bold'
     });
     text.setOrigin(0.5);
+    text.setDepth(this.y + 1000);
 
     this.scene.tweens.add({
       targets: text,
@@ -248,7 +251,7 @@ export class Entity extends Phaser.GameObjects.Container {
     });
   }
 
-  protected drawHpBar(): void {
+  public drawHpBar(): void {
     this.hpBarBg.clear();
     this.hpBarFill.clear();
     this.critBarFill.clear();
@@ -284,6 +287,9 @@ export class Entity extends Phaser.GameObjects.Container {
   }
 
   public update(_time: number, delta: number): void {
+    // Dynamic depth sorting based on y position
+    this.setDepth(this.y);
+
     // Process DoT ticks continuously in entity update loop regardless of combat state
     this.updateStatusEffects(delta);
 
@@ -296,11 +302,13 @@ export class Entity extends Phaser.GameObjects.Container {
       if (distance <= step) {
         this.x = this.targetWorldPos.x;
         this.y = this.targetWorldPos.y;
+        this.setDepth(this.y);
         this.advanceToNextTileInPath();
       } else {
         const angle = Phaser.Math.Angle.Between(this.x, this.y, this.targetWorldPos.x, this.targetWorldPos.y);
         this.x += Math.cos(angle) * step;
         this.y += Math.sin(angle) * step;
+        this.setDepth(this.y);
       }
     }
   }

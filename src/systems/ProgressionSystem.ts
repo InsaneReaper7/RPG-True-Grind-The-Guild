@@ -87,4 +87,43 @@ export class ProgressionSystem {
       return false;
     });
   }
+
+  public getSnapshotData(): {
+    proficiencies: Record<string, number>;
+    classLevels: Record<string, number>;
+    unlockedClasses: string[];
+  } {
+    const profObj: Record<string, number> = {};
+    for (const [k, v] of this.proficiencies.entries()) {
+      profObj[k] = v;
+    }
+    const classObj: Record<string, number> = {};
+    for (const [k, v] of this.classLevels.entries()) {
+      classObj[k] = v;
+    }
+    return {
+      proficiencies: profObj,
+      classLevels: classObj,
+      unlockedClasses: Array.from(this.unlockedClasses)
+    };
+  }
+
+  public loadSnapshotData(data: {
+    proficiencies: Record<string, number>;
+    classLevels: Record<string, number>;
+    unlockedClasses: string[];
+  }): void {
+    this.proficiencies.clear();
+    for (const [k, v] of Object.entries(data.proficiencies)) {
+      this.proficiencies.set(k, v);
+    }
+    this.classLevels.clear();
+    for (const [k, v] of Object.entries(data.classLevels)) {
+      this.classLevels.set(k, v);
+    }
+    this.unlockedClasses.clear();
+    for (const c of data.unlockedClasses) {
+      this.unlockedClasses.add(c);
+    }
+  }
 }
