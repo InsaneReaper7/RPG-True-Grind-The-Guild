@@ -1,6 +1,6 @@
 import { Player } from '../entities/Player';
 import { ProgressionSystem } from '../systems/ProgressionSystem';
-import { ClassDef } from '../types/game';
+import { ClassDef, HiddenSkillDef, TrainableStat } from '../types/game';
 import { DataLoader } from '../utils/DataLoader';
 import { GameState } from '../systems/GameState';
 import { BuildingSystem } from '../systems/BuildingSystem';
@@ -13,6 +13,11 @@ export class HUD {
   private weaponEl: HTMLElement | null;
   private profEl: HTMLElement | null;
   private constructionProfEl: HTMLElement | null;
+  private discoveredSkillsSectionEl: HTMLElement | null;
+  private discoveredSkillsListEl: HTMLElement | null;
+  private skillDiscoveredModalEl: HTMLElement | null;
+  private discoveredSkillNameEl: HTMLElement | null;
+  private discoveredSkillDescEl: HTMLElement | null;
   private playerStatusEl: HTMLElement | null;
   private locationBadgeEl: HTMLElement | null;
   private roomBadgeEl: HTMLElement | null;
@@ -42,6 +47,10 @@ export class HUD {
   private toastTimer: any = null;
   private static isHudCardVisible: boolean = true;
   private renderedSkillsKey: string = '';
+  private debugSkillsPanelEl: HTMLElement | null;
+  private debugSkillsListEl: HTMLElement | null;
+  private static isDebugSkillsVisible: boolean = false;
+  private renderedDebugSkillsKey: string = '';
 
   private static activeInstance: HUD | null = null;
   private static hasGlobalListeners: boolean = false;
@@ -60,6 +69,11 @@ export class HUD {
     this.weaponEl = document.getElementById('equipped-weapon-text');
     this.profEl = document.getElementById('proficiency-text');
     this.constructionProfEl = document.getElementById('construction-prof-text');
+    this.discoveredSkillsSectionEl = document.getElementById('hud-discovered-skills-section');
+    this.discoveredSkillsListEl = document.getElementById('hud-discovered-skills-list');
+    this.skillDiscoveredModalEl = document.getElementById('skill-discovered-modal');
+    this.discoveredSkillNameEl = document.getElementById('discovered-skill-name');
+    this.discoveredSkillDescEl = document.getElementById('discovered-skill-desc');
     this.playerStatusEl = document.getElementById('player-status-text');
     this.hudWoodRowEl = document.getElementById('hud-wood-row');
     this.playerWoodEl = document.getElementById('player-wood-text');
@@ -85,9 +99,19 @@ export class HUD {
     this.exitBuildBtn = document.getElementById('exit-build-btn');
     this.buildPaletteContainerEl = document.getElementById('build-palette-container');
     this.buildFeedbackToastEl = document.getElementById('build-feedback-toast');
+    this.debugSkillsPanelEl = document.getElementById('debug-skills-panel');
+    this.debugSkillsListEl = document.getElementById('debug-skills-list');
 
     if (this.hudCardEl) {
       this.hudCardEl.style.display = HUD.isHudCardVisible ? 'block' : 'none';
+    }
+
+    if (this.debugSkillsPanelEl) {
+      if (HUD.isDebugSkillsVisible) {
+        this.debugSkillsPanelEl.classList.add('active');
+      } else {
+        this.debugSkillsPanelEl.classList.remove('active');
+      }
     }
 
     HUD.activeInstance = this;
@@ -176,6 +200,9 @@ export class HUD {
         if (e.key === 'Tab') {
           e.preventDefault(); // Prevent default focus navigation
           active.toggleHudCard();
+        } else if (e.key === '`' || e.code === 'Backquote' || e.key === '~') {
+          e.preventDefault();
+          active.toggleDebugSkillsPanel();
         } else if (e.key === 'l' || e.key === 'L') {
           if (active.isOutpost && active.currentPlayer && active.currentProgression) {
             active.toggleLoadoutModal(active.currentPlayer, active.currentProgression);
@@ -301,6 +328,61 @@ export class HUD {
 
   public isHudVisible(): boolean {
     return HUD.isHudCardVisible;
+  }
+
+  public toggleDebugSkillsPanel(): void {
+    HUD.isDebugSkillsVisible = !HUD.isDebugSkillsVisible;
+    if (this.debugSkillsPanelEl) {
+      if (HUD.isDebugSkillsVisible) {
+        this.debugSkillsPanelEl.classList.add('active');
+        this.renderedDebugSkillsKey = '';
+        if (this.currentProgression) {
+          this.updateDebugSkillsPanel(this.currentProgression);
+        }
+      } else {
+        this.debugSkillsPanelEl.classList.remove('active');
+      }
+    }
+    console.log(`[HUD] Debug all-skills panel toggled: ${HUD.isDebugSkillsVisible ? 'OPEN' : 'CLOSED'}`);
+  }
+
+  public isDebugSkillsPanelOpen(): boolean {
+    return HUD.isDebugSkillsVisible;
+  }
+
+  public setDebugSkillsPanelVisible(visible: boolean): void {
+    HUD.isDebugSkillsVisible = visible;
+    if (this.debugSkillsPanelEl) {
+      if (visible) {
+        this.debugSkillsPanelEl.classList.add('active');
+        this.renderedDebugSkillsKey = '';
+        if (this.currentProgression) {
+          this.updateDebugSkillsPanel(this.currentProgression);
+        }
+      } else {
+        this.debugSkillsPanelEl.classList.remove('active');
+      }
+    }
+  }
+
+  public updateDebugSkillsPanel(progression: ProgressionSystem): void {
+    if (!HUD.isDebugSkillsVisible || !this.debugSkillsListEl) return;
+
+    const stats = progression.getAllProficiencyStats();
+    let key = '';
+    for (const [id, stat] of stats.entries()) {
+      key += `${id}:${stat.level}:${stat.currentExp},`;
+    }
+
+    if (this.renderedDebugSkillsKey !== key) {
+      this.renderedDebugSkillsKey = key;
+      let html = '';
+      for (const [id, stat] of stats.entries()) {
+        const nextExp = LevelingSystem.expForNextLevel(stat.level);
+        html += `<div class="debug-skill-row"><span class="debug-skill-id">${id}:</span> Level ${stat.level} (${stat.currentExp}/${nextExp} EXP)</div>`;
+      }
+      this.debugSkillsListEl.innerHTML = html;
+    }
   }
 
   public setLocation(name: string, isOutpost: boolean): void {
@@ -544,6 +626,38 @@ export class HUD {
       this.constructionProfEl.innerText = `Level ${constStat.level} (${constStat.currentExp}/${nextExp} EXP) (${constTier.name})`;
     }
 
+    // 4c. Discovered Defensive & Regen Skills (Strictly hidden until Level >= 1)
+    if (this.discoveredSkillsSectionEl && this.discoveredSkillsListEl) {
+      const dataLoader = DataLoader.getInstance();
+      const hiddenSkills = dataLoader.getHiddenSkills();
+      const revealedSkills: { def: HiddenSkillDef; stat: TrainableStat; nextExp: number }[] = [];
+
+      for (const hDef of hiddenSkills) {
+        const stat = progression.getProficiencyStat(hDef.id);
+        if (stat.level >= 1) {
+          const nextExp = LevelingSystem.expForNextLevel(stat.level);
+          revealedSkills.push({ def: hDef, stat, nextExp });
+        }
+      }
+
+      if (revealedSkills.length === 0) {
+        this.discoveredSkillsSectionEl.style.display = 'none';
+        this.discoveredSkillsListEl.innerHTML = '';
+      } else {
+        this.discoveredSkillsSectionEl.style.display = 'block';
+        let html = '';
+        for (const item of revealedSkills) {
+          html += `
+            <div style="font-size: 11px; display: flex; justify-content: space-between; align-items: center; background: rgba(31, 41, 55, 0.4); padding: 3px 6px; border-radius: 4px;">
+              <span style="color: #60a5fa; font-weight: 600;">${item.def.name}:</span>
+              <span style="color: #34d399; font-weight: 500;">Level ${item.stat.level} (${item.stat.currentExp}/${item.nextExp} EXP)</span>
+            </div>
+          `;
+        }
+        this.discoveredSkillsListEl.innerHTML = html;
+      }
+    }
+
     // 5. Equipped Skills List with Cooldowns and Live Autocast Toggles
     if (this.hudSkillsListEl) {
       const dataLoader = DataLoader.getInstance();
@@ -657,6 +771,9 @@ export class HUD {
         this.buildOverlayWoodEl.innerText = `🪵 Wood: ${wood}`;
       }
     }
+
+    // 9. Live All-Skills Debug Overview Panel (Backtick toggle)
+    this.updateDebugSkillsPanel(progression);
   }
 
   public showClassUnlockModal(classDef: ClassDef): void {
@@ -673,6 +790,28 @@ export class HUD {
       setTimeout(() => {
         if (this.unlockModalEl) {
           this.unlockModalEl.classList.remove('active');
+        }
+      }, 5000);
+    }
+  }
+
+  public showSkillDiscoveredModal(skillDef: HiddenSkillDef): void {
+    if (this.discoveredSkillNameEl) {
+      this.discoveredSkillNameEl.innerText = skillDef.name;
+    }
+    if (this.discoveredSkillDescEl) {
+      const tier1 = skillDef.tierEffects?.find((t) => t.level === 1);
+      this.discoveredSkillDescEl.innerText = tier1
+        ? `${tier1.description} — ${skillDef.description}`
+        : skillDef.description;
+    }
+    if (this.skillDiscoveredModalEl) {
+      this.skillDiscoveredModalEl.classList.add('active');
+
+      // Auto-hide modal after 5 seconds
+      setTimeout(() => {
+        if (this.skillDiscoveredModalEl) {
+          this.skillDiscoveredModalEl.classList.remove('active');
         }
       }, 5000);
     }

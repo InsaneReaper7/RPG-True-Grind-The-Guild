@@ -6,6 +6,7 @@ import { Pathfinder } from '../utils/Pathfinder';
 import { ProgressionSystem } from './ProgressionSystem';
 import { DataLoader } from '../utils/DataLoader';
 import { GridPos } from '../types/game';
+import { HiddenSkillSystem, CombatContext, CounterattackResult } from './HiddenSkillSystem';
 
 export class CombatSystem {
   public static readonly DEBUG_AI: boolean = false;
@@ -16,6 +17,8 @@ export class CombatSystem {
   private pathfinder: Pathfinder;
   private progressionSystem: ProgressionSystem;
   private onEnemyDeathCallback?: (enemy: Enemy) => void;
+  private lastCombatTimeMs: number = 0;
+  private lastPassiveTickTimeMs: number = 0;
 
   constructor(
     scene: Phaser.Scene,
@@ -173,16 +176,75 @@ export class CombatSystem {
             // Re-verify range at exact moment attack lands
             if (distanceTiles <= attackRange) {
               enemy.lastAttackTime = time;
-              const damage = enemy.enemyData.meleeDamage;
-              console.log(
-                `[Combat] ${enemy.entityName} attacks Player for ${damage} damage! (distance: ${distanceTiles})`
-              );
-              this.createAttackEffect(enemy.x, enemy.y, this.player.x, this.player.y, 0xef4444);
+              this.lastCombatTimeMs = time;
+              const rawDamage = enemy.enemyData.meleeDamage;
 
-              const playerDowned = this.player.takeDamage(damage);
-              if (playerDowned) {
-                console.log('[Combat] Player has been downed by enemy attack!');
-                this.player.clearTarget();
+              // Context for HiddenSkillSystem
+              const hiddenSystem = HiddenSkillSystem.getInstance();
+              const context: CombatContext = {
+                equippedWeapon: this.player.equippedWeapon,
+                hasShield: false, // Strict: no shield item exists in game yet
+                hasMagicProficiency: false, // Strict: no magic weapon exists in game yet
+                inCombat: true,
+                attackerDistanceTiles: distanceTiles,
+                isMeleeAttack: true
+              };
+
+              // 1. STRICT SHORT-CIRCUITING AVOIDANCE CHAIN (Evasion -> Parry -> Block)
+              const avoidance = hiddenSystem.resolveIncomingAttack(context, this.progressionSystem);
+
+              if (avoidance.type === 'evaded') {
+                console.log(`[Combat] 💨 Player EVADED attack from ${enemy.entityName}! (0 damage)`);
+                this.createAttackEffect(enemy.x, enemy.y, this.player.x, this.player.y, 0x60a5fa);
+                this.createFloatingText(this.player.x, this.player.y - 12, 'EVADED!', '#60a5fa');
+
+                // Counterattack trigger: fires at most once per avoided attack
+                const counterRes = hiddenSystem.resolveCounterattack(context, this.progressionSystem);
+                if (counterRes.procced) {
+                  this.executePlayerCounterattack(enemy, counterRes);
+                }
+              } else if (avoidance.type === 'parried') {
+                console.log(`[Combat] ⚔️ Player PARRIED attack from ${enemy.entityName}! (0 damage)`);
+                this.createAttackEffect(enemy.x, enemy.y, this.player.x, this.player.y, 0xfacc15);
+                this.createFloatingText(this.player.x, this.player.y - 12, 'PARRIED!', '#facc15');
+
+                // Counterattack trigger: fires at most once per avoided attack
+                const counterRes = hiddenSystem.resolveCounterattack(context, this.progressionSystem);
+                if (counterRes.procced) {
+                  this.executePlayerCounterattack(enemy, counterRes);
+                }
+              } else if (avoidance.type === 'blocked') {
+                console.log(`[Combat] 🛡️ Player BLOCKED attack from ${enemy.entityName}! (0 damage)`);
+                this.createAttackEffect(enemy.x, enemy.y, this.player.x, this.player.y, 0x38bdf8);
+                this.createFloatingText(this.player.x, this.player.y - 12, 'BLOCKED!', '#38bdf8');
+
+                // Counterattack trigger: fires at most once per avoided attack
+                const counterRes = hiddenSystem.resolveCounterattack(context, this.progressionSystem);
+                if (counterRes.procced) {
+                  this.executePlayerCounterattack(enemy, counterRes);
+                }
+              } else {
+                // 2. Attack Connected: deals damage, then rolls Resilience
+                this.createAttackEffect(enemy.x, enemy.y, this.player.x, this.player.y, 0xef4444);
+
+                const mitigation = hiddenSystem.resolveDamageTaken(context, this.progressionSystem, rawDamage);
+                const actualDamage = mitigation.finalDamage;
+
+                if (mitigation.mitigatedAmount > 0) {
+                  console.log(`[Combat] ${enemy.entityName} hits Player for ${actualDamage} damage! (Resilience mitigated ${mitigation.mitigatedAmount} dmg)`);
+                  this.createFloatingText(this.player.x, this.player.y - 20, `-${actualDamage} (${mitigation.mitigatedAmount} RESIST)`, '#a78bfa');
+                } else if (mitigation.procced) {
+                  console.log(`[Combat] ${enemy.entityName} hits Player for ${actualDamage} damage! (Resilience proc: +1 EXP)`);
+                  this.createFloatingText(this.player.x, this.player.y - 20, `RESILIENCE! -${actualDamage}`, '#a78bfa');
+                } else {
+                  console.log(`[Combat] ${enemy.entityName} hits Player for ${actualDamage} damage!`);
+                }
+
+                const playerDowned = this.player.takeDamage(actualDamage);
+                if (playerDowned) {
+                  console.log('[Combat] Player has been downed by enemy attack!');
+                  this.player.clearTarget();
+                }
               }
             } else {
               // Target moved out of range at exact moment of attack tick
@@ -364,6 +426,68 @@ export class CombatSystem {
           }
         }
       }
+    }
+
+    // 3. Passive Regen Ticks (Out of Combat Health Regen & Mana Regen)
+    const anyEnemyAggroed = this.enemies.some((e) => e.isAggroed && e.state !== 'dead' && e.state !== 'downed');
+    const inCombat = anyEnemyAggroed || (time - this.lastCombatTimeMs < 4000);
+
+    if (time - this.lastPassiveTickTimeMs >= 3000) {
+      this.lastPassiveTickTimeMs = time;
+        const hiddenSystem = HiddenSkillSystem.getInstance();
+        const context: CombatContext = {
+          equippedWeapon: this.player.equippedWeapon,
+          hasShield: false,
+          hasMagicProficiency: false,
+          inCombat
+        };
+
+        const regenResult = hiddenSystem.resolvePassiveRegen(context, this.progressionSystem);
+        if (regenResult.healthRestored > 0) {
+          const restored = this.player.heal(regenResult.healthRestored);
+          if (restored > 0) {
+            console.log(`[Regen] Health Regen tick! Restored +${restored} HP`);
+            this.createFloatingText(this.player.x, this.player.y - 15, `+${restored} HP`, '#22c55e');
+          }
+        }
+        if (regenResult.energyRestored > 0) {
+          const oldEnergy = this.player.energy;
+          this.player.energy = Math.min(this.player.maxEnergy, this.player.energy + regenResult.energyRestored);
+          const restored = Math.floor(this.player.energy - oldEnergy);
+          if (restored > 0) {
+            console.log(`[Regen] Mana Regen tick! Restored +${restored} Energy`);
+            this.createFloatingText(this.player.x, this.player.y - 15, `+${restored} EN`, '#3b82f6');
+          }
+        }
+      }
+    }
+
+  private executePlayerCounterattack(enemy: Enemy, counterResult: CounterattackResult): void {
+    if (enemy.state === 'downed' || enemy.state === 'dead') return;
+    const weapon = this.player.equippedWeapon;
+    const weaponLevel = this.progressionSystem.getProficiencyLevel(weapon.id);
+    const damageBonusPerLevel = weapon.levelBonus?.damagePerLevel ?? 0;
+    const baseDamage = weapon.baseDamage + (weaponLevel * damageBonusPerLevel);
+
+    let counterDmg = Math.max(1, Math.round(baseDamage * counterResult.damageMultiplier));
+    let isCrit = false;
+    if (counterResult.canCrit && Math.random() < 0.25) {
+      counterDmg = Math.round(counterDmg * 1.5);
+      isCrit = true;
+    }
+
+    console.log(`[Combat] ⚡ COUNTERATTACK! Player retaliates against ${enemy.entityName} for ${counterDmg} damage!`);
+    this.createSkillAttackEffect(this.player.x, this.player.y, enemy.x, enemy.y);
+    this.createFloatingText(
+      enemy.x,
+      enemy.y - 15,
+      isCrit ? `CRIT COUNTER! -${counterDmg}` : `COUNTER! -${counterDmg}`,
+      '#f59e0b'
+    );
+
+    const enemyDowned = enemy.takeDamage(counterDmg);
+    if (enemyDowned) {
+      this.handleTargetDefeated(enemy, weapon.id);
     }
   }
 

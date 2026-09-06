@@ -1,4 +1,4 @@
-﻿import assert from 'node:assert/strict';
+import assert from 'node:assert/strict';
 import { BuildingSystem, CONSTRUCTION_TIERS } from '../src/systems/BuildingSystem.ts';
 import { RoomClassifier } from '../src/systems/RoomClassifier.ts';
 import type { BuildableDef, RoomRuleDef } from '../src/types/game.ts';
@@ -79,8 +79,8 @@ const testBuildables: BuildableDef[] = [
 {
   for (const b of testBuildables) {
     for (const tier of CONSTRUCTION_TIERS) {
-      const costPaid = BuildingSystem.getEffectiveBuildCost(b.woodCost, tier.minExp);
-      const refund = BuildingSystem.getEffectiveDemolishRefund(costPaid, tier.minExp);
+      const costPaid = BuildingSystem.getEffectiveBuildCost(b.woodCost, tier.minLevel);
+      const refund = BuildingSystem.getEffectiveDemolishRefund(costPaid, tier.minLevel);
 
       // Invariant 1: Refund must NEVER exceed cost paid
       assert.ok(

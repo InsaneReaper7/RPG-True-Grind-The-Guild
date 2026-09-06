@@ -133,6 +133,17 @@ export class Player extends Entity {
     console.log(`[Player] Revived with ${this.hp} Main HP and ${this.criticalHp} Critical HP!`);
   }
 
+  public heal(amount: number): number {
+    if (this.state === 'dead' || this.state === 'downed') return 0;
+    const oldHp = this.hp;
+    this.hp = Math.min(this.maxHp, this.hp + amount);
+    const restored = this.hp - oldHp;
+    if (restored > 0) {
+      this.drawHpBar();
+    }
+    return restored;
+  }
+
   /**
    * Fully restores Main HP, Critical HP, and Energy to their maximums instantly.
    * Recovers downed state if downed, clears active status effects, and redraws HP bar.

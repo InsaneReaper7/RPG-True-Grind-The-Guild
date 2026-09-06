@@ -8,7 +8,10 @@
       "requirements": [
         { "type": "proficiency", "target": "short_swords", "value": 10 }
       ],
-      "fantasy": "Quick, light-footed duelist"
+      "fantasy": "Quick, light-footed duelist",
+      "hiddenSkillBonuses": {
+        "counterattack": 0.05
+      }
     },
     {
       "id": "guardian",

@@ -9,6 +9,7 @@ import { GameState } from '../systems/GameState';
 import { GridPos, PlacedBuildable } from '../types/game';
 import { BuildingSystem } from '../systems/BuildingSystem';
 import { RoomClassifier, ClassifiedRoom } from '../systems/RoomClassifier';
+import { HiddenSkillSystem } from '../systems/HiddenSkillSystem';
 
 export class OutpostScene extends Phaser.Scene {
   private mapWidth: number = 20;
@@ -154,6 +155,21 @@ export class OutpostScene extends Phaser.Scene {
       (id: string) => this.selectBuildable(id)
     );
 
+    // Progression Unlock Notification
+    this.progressionSystem.onClassUnlocked((event) => {
+      console.log(`%c[UNLOCK] ${event.classDef.name} Class Unlocked!`, 'color: #f59e0b; font-weight: bold; font-size: 14px;');
+      this.hud.showClassUnlockModal(event.classDef);
+    });
+
+    // Hidden Skill Discovery Notification
+    this.progressionSystem.onSkillDiscovered((event) => {
+      const skillDef = DataLoader.getInstance().getHiddenSkill(event.skillId);
+      if (skillDef) {
+        console.log(`%c[DISCOVERY] ${skillDef.name} Skill Discovered!`, 'color: #34d399; font-weight: bold; font-size: 14px;');
+        this.hud.showSkillDiscoveredModal(skillDef);
+      }
+    });
+
     // 5. Spawn Player & Restore State Snapshot
     this.player = new Player(this, 4, 4, playerData, startingWeapon, this.tileSize);
     GameState.getInstance().restoreTo(this.player, this.progressionSystem, this.time.now);
@@ -281,6 +297,38 @@ export class OutpostScene extends Phaser.Scene {
         this.hud.showToast(`+680 ${this.player.equippedWeapon.name} EXP (Level 10 Fencer Gate)`, 'success', 3000);
       });
     }
+
+    // Expose debug helpers on window in Outpost
+    (window as any).__grantExp = (statId: string = 'short_swords', amount: number = 25) => {
+      return this.progressionSystem.addProficiencyExp(statId, amount);
+    };
+    (window as any).__grantHiddenExp = (skillId: string, amount: number = 25) => {
+      return this.progressionSystem.addProficiencyExp(skillId, amount);
+    };
+    (window as any).__setLevel = (statId: string = 'short_swords', targetLevel: number = 10) => {
+      const stat = this.progressionSystem.getProficiencyStat(statId);
+      stat.level = targetLevel;
+      stat.currentExp = 0;
+      this.progressionSystem.checkClassUnlocks();
+      console.log(`[Debug] Set '${statId}' to Level ${targetLevel} (0 EXP)`);
+    };
+    (window as any).__testHiddenProc = (skillId: string) => {
+      const hiddenDef = DataLoader.getInstance().getHiddenSkill(skillId);
+      if (!hiddenDef) {
+        console.warn(`[Debug] Unknown hidden skill: ${skillId}`);
+        return null;
+      }
+      const context = {
+        equippedWeapon: this.player.equippedWeapon,
+        hasShield: true,
+        hasMagicProficiency: true,
+        inCombat: false,
+        isMeleeAttack: true
+      };
+      const result = HiddenSkillSystem.getInstance().rollProc(hiddenDef, context, this.progressionSystem);
+      console.log(`[Debug] Tested proc for '${skillId}':`, result);
+      return result;
+    };
 
     // Scroll Wheel Zoom
     this.input.on('wheel', (_pointer: Phaser.Input.Pointer, _gameObjects: unknown[], _deltaX: number, deltaY: number) => {

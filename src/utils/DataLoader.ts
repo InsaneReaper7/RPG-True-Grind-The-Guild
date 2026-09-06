@@ -12,8 +12,11 @@ import {
   BuildableDef,
   BuildablesData,
   RoomRuleDef,
-  RoomsData
+  RoomsData,
+  HiddenSkillDef,
+  HiddenSkillsData
 } from '../types/game';
+import { HiddenSkillSystem } from '../systems/HiddenSkillSystem';
 
 export class DataLoader {
   private static instance: DataLoader;
@@ -25,6 +28,7 @@ export class DataLoader {
   private statusEffectsData!: StatusEffectsData;
   private buildablesData!: BuildablesData;
   private roomsData!: RoomsData;
+  private hiddenSkillsData!: HiddenSkillsData;
 
   private constructor() {}
 
@@ -36,7 +40,7 @@ export class DataLoader {
   }
 
   public async loadAll(): Promise<void> {
-    const [player, weapons, classes, enemies, skills, statusEffects, buildables, rooms] = await Promise.all([
+    const [player, weapons, classes, enemies, skills, statusEffects, buildables, rooms, hiddenSkills] = await Promise.all([
       fetch('/data/player.json').then((res) => res.json()),
       fetch('/data/weapons.json').then((res) => res.json()),
       fetch('/data/classes.json').then((res) => res.json()),
@@ -44,7 +48,8 @@ export class DataLoader {
       fetch('/data/skills.json').then((res) => res.json()),
       fetch('/data/statusEffects.json').then((res) => res.json()),
       fetch('/data/buildables.json').then((res) => res.json()),
-      fetch('/data/rooms.json').then((res) => res.json())
+      fetch('/data/rooms.json').then((res) => res.json()),
+      fetch('/data/hiddenSkills.json').then((res) => res.json())
     ]);
 
     this.playerData = player as PlayerData;
@@ -55,6 +60,11 @@ export class DataLoader {
     this.statusEffectsData = statusEffects as StatusEffectsData;
     this.buildablesData = buildables as BuildablesData;
     this.roomsData = rooms as RoomsData;
+    this.hiddenSkillsData = hiddenSkills as HiddenSkillsData;
+
+    if (this.hiddenSkillsData?.hiddenSkills) {
+      HiddenSkillSystem.getInstance().registerSkillDefs(this.hiddenSkillsData.hiddenSkills);
+    }
   }
 
   public getRoomsData(): RoomsData {
@@ -115,5 +125,17 @@ export class DataLoader {
 
   public getStatusEffect(id: string): StatusEffectDef | undefined {
     return this.statusEffectsData.statusEffects.find((e) => e.id === id);
+  }
+
+  public getHiddenSkillsData(): HiddenSkillsData {
+    return this.hiddenSkillsData;
+  }
+
+  public getHiddenSkills(): HiddenSkillDef[] {
+    return this.hiddenSkillsData?.hiddenSkills ?? [];
+  }
+
+  public getHiddenSkill(id: string): HiddenSkillDef | undefined {
+    return this.hiddenSkillsData?.hiddenSkills.find((s) => s.id === id);
   }
 }

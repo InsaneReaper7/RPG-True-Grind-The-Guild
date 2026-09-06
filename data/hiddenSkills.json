@@ -1,0 +1,130 @@
+{
+  "hiddenSkills": [
+    {
+      "id": "evasion",
+      "name": "Evasion",
+      "triggerType": "onIncomingAttack",
+      "eligibility": {
+        "gear": "none"
+      },
+      "baseProcChance": 0.05,
+      "procChancePerLevel": 0.005,
+      "expPerProc": 1,
+      "description": "Reduces the defender's chance of being hit by dodging incoming attacks completely.",
+      "tierEffects": [
+        { "level": 1, "description": "3% dodge chance against incoming attacks", "dodgeChance": 0.03 },
+        { "level": 30, "description": "8% dodge chance", "dodgeChance": 0.08 },
+        { "level": 60, "description": "15% dodge chance", "dodgeChance": 0.15 },
+        { "level": 90, "description": "25% dodge chance", "dodgeChance": 0.25 }
+      ]
+    },
+    {
+      "id": "parry",
+      "name": "Parry",
+      "triggerType": "onMeleeAttacked",
+      "eligibility": {
+        "weaponCategories": ["katana", "short_swords", "daggers", "mace", "spears"]
+      },
+      "baseProcChance": 0.05,
+      "procChancePerLevel": 0.005,
+      "expPerProc": 1,
+      "description": "Deflects incoming melee attacks using parry-capable weaponry.",
+      "tierEffects": [
+        { "level": 1, "description": "Unlocks parry window to deflect melee attacks", "deflectDamage": true },
+        { "level": 30, "description": "Opens counter window reliably", "deflectDamage": true },
+        { "level": 60, "description": "Partial damage reflection", "deflectDamage": true, "reflectPercent": 0.20 },
+        { "level": 90, "description": "Perfect parry stuns attacker", "deflectDamage": true, "stunOnParry": true }
+      ]
+    },
+    {
+      "id": "block",
+      "name": "Block",
+      "triggerType": "onShieldAttacked",
+      "eligibility": {
+        "shieldRequired": true
+      },
+      "baseProcChance": 0.05,
+      "procChancePerLevel": 0.005,
+      "expPerProc": 1,
+      "description": "Blocks incoming physical attacks when wielding a shield.",
+      "tierEffects": [
+        { "level": 1, "description": "Chip damage reduction on blocked attacks", "blockDamageReduction": 0.30 },
+        { "level": 30, "description": "Reduced stamina/energy cost when blocking", "blockDamageReduction": 0.50 },
+        { "level": 60, "description": "Negates critical hits completely", "blockDamageReduction": 0.70, "negateCrits": true },
+        { "level": 90, "description": "Reflects a percentage of blocked damage back to attacker", "blockDamageReduction": 0.85, "reflectPercent": 0.30 }
+      ]
+    },
+    {
+      "id": "counterattack",
+      "name": "Counterattack",
+      "triggerType": "onDodgeParryBlock",
+      "eligibility": {
+        "meleeWeaponRequired": true
+      },
+      "baseProcChance": 0.05,
+      "procChancePerLevel": 0.005,
+      "expPerProc": 1,
+      "description": "Automatically strikes back after successfully dodging, parrying, or blocking an attack.",
+      "tierEffects": [
+        { "level": 1, "description": "Small chance to auto-counter (75% weapon damage)", "counterDamageMultiplier": 0.75 },
+        { "level": 30, "description": "Higher counter chance and full weapon damage (100%)", "counterDamageMultiplier": 1.0 },
+        { "level": 60, "description": "Counterattacks can critically strike (150% damage)", "counterDamageMultiplier": 1.5, "canCrit": true },
+        { "level": 90, "description": "Counterattacks chain to a second strike", "counterDamageMultiplier": 1.5, "chainAttack": true }
+      ]
+    },
+    {
+      "id": "resilience",
+      "name": "Resilience",
+      "triggerType": "onDamageTaken",
+      "eligibility": {
+        "gear": "none"
+      },
+      "baseProcChance": 0.08,
+      "procChancePerLevel": 0.005,
+      "expPerProc": 1,
+      "description": "Mitigates incoming damage through physical toughness and grit.",
+      "tierEffects": [
+        { "level": 1, "description": "2% damage reduction", "damageReduction": 0.02 },
+        { "level": 30, "description": "5% damage reduction", "damageReduction": 0.05 },
+        { "level": 60, "description": "8% damage reduction + brief mitigation boost", "damageReduction": 0.08 },
+        { "level": 90, "description": "12% damage reduction + chance for full damage negation", "damageReduction": 0.12, "negationChance": 0.05 }
+      ]
+    },
+    {
+      "id": "health_regen",
+      "name": "Health Regen",
+      "triggerType": "onOutOfCombatTick",
+      "eligibility": {
+        "gear": "none"
+      },
+      "baseProcChance": 0.10,
+      "procChancePerLevel": 0.01,
+      "expPerProc": 1,
+      "description": "Passively restores health over time, primarily when out of combat.",
+      "tierEffects": [
+        { "level": 1, "description": "Passive health regen out of combat (+1 HP per tick)", "healAmount": 1, "inCombat": false },
+        { "level": 30, "description": "Light health regen in combat (+1 HP per tick)", "healAmount": 1, "inCombat": true },
+        { "level": 60, "description": "Increased regen rate (+2 HP per tick)", "healAmount": 2, "inCombat": true },
+        { "level": 90, "description": "Burst heal chance when at low HP (+10 HP burst)", "healAmount": 3, "inCombat": true, "burstHeal": true }
+      ]
+    },
+    {
+      "id": "mana_regen",
+      "name": "Mana Regen",
+      "triggerType": "onManaTick",
+      "eligibility": {
+        "magicProficiencyRequired": true
+      },
+      "baseProcChance": 0.10,
+      "procChancePerLevel": 0.01,
+      "expPerProc": 1,
+      "description": "Accelerates energy and mana recovery for spellcasters.",
+      "tierEffects": [
+        { "level": 1, "description": "Passive energy regen out of combat (+2 Energy per tick)", "energyAmount": 2, "inCombat": false },
+        { "level": 30, "description": "Light energy regen in combat (+2 Energy per tick)", "energyAmount": 2, "inCombat": true },
+        { "level": 60, "description": "Increased energy regen rate (+4 Energy per tick)", "energyAmount": 4, "inCombat": true },
+        { "level": 90, "description": "Burst mana chance at low energy (+15 Energy burst)", "energyAmount": 6, "inCombat": true, "burstEnergy": true }
+      ]
+    }
+  ]
+}

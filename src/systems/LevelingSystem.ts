@@ -1,4 +1,4 @@
-﻿import { TrainableStat } from '../types/game';
+import type { TrainableStat } from '../types/game.ts';
 
 export class LevelingSystem {
   public static readonly BASE_EXP: number = 50;

@@ -50,6 +50,7 @@ export interface ClassDef {
   tier: string;
   requirements: Requirement[];
   fantasy: string;
+  hiddenSkillBonuses?: Record<string, number>;
 }
 
 export interface ClassesData {
@@ -191,6 +192,60 @@ export interface ActiveStatusEffect {
   def: StatusEffectDef;
   remainingMs: number;
   nextTickMs: number;
+}
+
+export type HiddenSkillTriggerType =
+  | 'onIncomingAttack'
+  | 'onMeleeAttacked'
+  | 'onShieldAttacked'
+  | 'onDodgeParryBlock'
+  | 'onDamageTaken'
+  | 'onOutOfCombatTick'
+  | 'onManaTick';
+
+export interface HiddenSkillEligibility {
+  gear?: string;
+  weaponCategories?: string[];
+  shieldRequired?: boolean;
+  meleeWeaponRequired?: boolean;
+  magicProficiencyRequired?: boolean;
+}
+
+export interface HiddenSkillTierEffect {
+  level: number;
+  description: string;
+  dodgeChance?: number;
+  deflectDamage?: boolean;
+  reflectPercent?: number;
+  stunOnParry?: boolean;
+  blockDamageReduction?: number;
+  negateCrits?: boolean;
+  counterDamageMultiplier?: number;
+  canCrit?: boolean;
+  chainAttack?: boolean;
+  damageReduction?: number;
+  negationChance?: number;
+  healAmount?: number;
+  burstHeal?: boolean;
+  energyAmount?: number;
+  burstEnergy?: boolean;
+  inCombat?: boolean;
+}
+
+export interface HiddenSkillDef {
+  id: string;
+  name: string;
+  triggerType: HiddenSkillTriggerType;
+  eligibility: HiddenSkillEligibility;
+  baseProcChance: number;
+  procChancePerLevel: number;
+  expPerProc: number;
+  description: string;
+  tierEffects: HiddenSkillTierEffect[];
+}
+
+export interface HiddenSkillsData {
+  hiddenSkills: HiddenSkillDef[];
 }
 
 export type EntityState = 'idle' | 'moving' | 'chasing' | 'attacking' | 'returning' | 'downed' | 'dead';

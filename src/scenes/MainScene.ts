@@ -9,6 +9,7 @@ import { ProgressionSystem } from '../systems/ProgressionSystem';
 import { HUD } from '../ui/HUD';
 import { GameState } from '../systems/GameState';
 import { GridPos } from '../types/game';
+import { HiddenSkillSystem } from '../systems/HiddenSkillSystem';
 
 export class MainScene extends Phaser.Scene {
   private mapWidth: number = 20;
@@ -120,6 +121,15 @@ export class MainScene extends Phaser.Scene {
       this.hud.showClassUnlockModal(event.classDef);
     });
 
+    // Hidden Skill Discovery Notification
+    this.progressionSystem.onSkillDiscovered((event) => {
+      const skillDef = DataLoader.getInstance().getHiddenSkill(event.skillId);
+      if (skillDef) {
+        console.log(`%c[DISCOVERY] ${skillDef.name} Skill Discovered!`, 'color: #34d399; font-weight: bold; font-size: 14px;');
+        this.hud.showSkillDiscoveredModal(skillDef);
+      }
+    });
+
     // 5. Spawn Player & Enemy (Wolf)
     this.player = new Player(this, 3, 3, playerData, startingWeapon, this.tileSize);
 
@@ -224,6 +234,9 @@ export class MainScene extends Phaser.Scene {
     (window as any).__grantExp = (statId: string = 'short_swords', amount: number = 25) => {
       return this.progressionSystem.addProficiencyExp(statId, amount);
     };
+    (window as any).__grantHiddenExp = (skillId: string, amount: number = 25) => {
+      return this.progressionSystem.addProficiencyExp(skillId, amount);
+    };
     (window as any).__setLevel = (statId: string = 'short_swords', targetLevel: number = 10) => {
       const stat = this.progressionSystem.getProficiencyStat(statId);
       stat.level = targetLevel;
@@ -237,7 +250,24 @@ export class MainScene extends Phaser.Scene {
       }
       console.log('[Debug] All test enemies respawned and reset to spawn positions.');
     };
-    console.log('[Debug Tools] Hotkeys: [X] +25 Wpn Exp, [Z] +100 Wpn Exp, [C] +25 Const Exp, [P] +680 Wpn Exp (Lv10 Fencer), [T] Respawn Enemies. Console: __grantExp(id, amt), __setLevel(id, lv), __respawnEnemies().');
+    (window as any).__testHiddenProc = (skillId: string) => {
+      const hiddenDef = DataLoader.getInstance().getHiddenSkill(skillId);
+      if (!hiddenDef) {
+        console.warn(`[Debug] Unknown hidden skill: ${skillId}`);
+        return null;
+      }
+      const context = {
+        equippedWeapon: this.player.equippedWeapon,
+        hasShield: true,
+        hasMagicProficiency: true,
+        inCombat: false,
+        isMeleeAttack: true
+      };
+      const result = HiddenSkillSystem.getInstance().rollProc(hiddenDef, context, this.progressionSystem);
+      console.log(`[Debug] Tested proc for '${skillId}':`, result);
+      return result;
+    };
+    console.log('[Debug Tools] Hotkeys: [X] +25 Wpn Exp, [Z] +100 Wpn Exp, [C] +25 Const Exp, [P] +680 Wpn Exp (Lv10 Fencer), [T] Respawn Enemies. Console: __grantExp(id, amt), __grantHiddenExp(id, amt), __setLevel(id, lv), __respawnEnemies(), __testHiddenProc(id).');
 
     // Scroll Wheel Zoom
     this.input.on('wheel', (_pointer: Phaser.Input.Pointer, _gameObjects: unknown[], _deltaX: number, deltaY: number) => {

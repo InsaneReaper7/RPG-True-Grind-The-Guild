@@ -1,27 +1,51 @@
-import { ClassDef, Requirement, ClassesData, SkillDef, TrainableStat } from '../types/game';
-import { BuildingSystem, ConstructionTierDef } from './BuildingSystem';
-import { LevelingSystem } from './LevelingSystem';
+import type { ClassDef, Requirement, ClassesData, SkillDef, TrainableStat } from '../types/game.ts';
+import { BuildingSystem } from './BuildingSystem.ts';
+import type { ConstructionTierDef } from './BuildingSystem.ts';
+import { LevelingSystem } from './LevelingSystem.ts';
 
 export interface UnlockEvent {
   classDef: ClassDef;
 }
 
+export interface SkillDiscoveredEvent {
+  skillId: string;
+  level: number;
+}
+
 export class ProgressionSystem {
+  public static readonly HIDDEN_SKILL_IDS: readonly string[] = [
+    'evasion',
+    'parry',
+    'block',
+    'counterattack',
+    'resilience',
+    'health_regen',
+    'mana_regen'
+  ];
+
   private proficiencies: Map<string, TrainableStat> = new Map();
   private classLevels: Map<string, number> = new Map();
   private unlockedClasses: Set<string> = new Set();
   private classesData: ClassesData;
   private onUnlockCallbacks: ((event: UnlockEvent) => void)[] = [];
+  private onSkillDiscoveredCallbacks: ((event: SkillDiscoveredEvent) => void)[] = [];
 
   constructor(classesData: ClassesData) {
     this.classesData = classesData;
     // Default trainable stats
     this.proficiencies.set('short_swords', { level: 0, currentExp: 0 });
     this.proficiencies.set('construction', { level: 0, currentExp: 0 });
+    for (const hiddenId of ProgressionSystem.HIDDEN_SKILL_IDS) {
+      this.proficiencies.set(hiddenId, { level: 0, currentExp: 0 });
+    }
   }
 
   public onClassUnlocked(callback: (event: UnlockEvent) => void): void {
     this.onUnlockCallbacks.push(callback);
+  }
+
+  public onSkillDiscovered(callback: (event: SkillDiscoveredEvent) => void): void {
+    this.onSkillDiscoveredCallbacks.push(callback);
   }
 
   public getProficiencyStat(id: string): TrainableStat {
@@ -32,6 +56,14 @@ export class ProgressionSystem {
       return { ...newStat };
     }
     return { ...stat };
+  }
+
+  public getAllProficiencyStats(): Map<string, TrainableStat> {
+    const copy = new Map<string, TrainableStat>();
+    for (const [id, stat] of this.proficiencies.entries()) {
+      copy.set(id, { ...stat });
+    }
+    return copy;
   }
 
   public getProficiencyLevel(id: string): number {
@@ -54,6 +86,23 @@ export class ProgressionSystem {
     return this.classLevels.get(classId) || 0;
   }
 
+  public isHiddenSkillRevealed(skillId: string): boolean {
+    return this.getProficiencyLevel(skillId) >= 1;
+  }
+
+  public getClassHiddenBonus(skillId: string): number {
+    let bonus = 0;
+    for (const classDef of this.classesData.classes) {
+      if (this.unlockedClasses.has(classDef.id)) {
+        const classBonus = classDef.hiddenSkillBonuses?.[skillId];
+        if (typeof classBonus === 'number') {
+          bonus += classBonus;
+        }
+      }
+    }
+    return bonus;
+  }
+
   public addProficiencyExp(id: string, amount: number): { levelsGained: number; leveledUp: boolean } {
     let stat = this.proficiencies.get(id);
     if (!stat) {
@@ -61,6 +110,7 @@ export class ProgressionSystem {
       this.proficiencies.set(id, stat);
     }
 
+    const oldLevel = stat.level;
     const result = LevelingSystem.addExp(stat, amount);
     const nextExp = LevelingSystem.expForNextLevel(stat.level);
     console.log(`[Progression] +${amount} EXP for '${id}'. Current: Level ${stat.level} (${stat.currentExp}/${nextExp} EXP)`);
@@ -68,6 +118,13 @@ export class ProgressionSystem {
     if (result.leveledUp) {
       console.log(`[Progression] LEVEL UP! '${id}' is now Level ${stat.level}! (Gained ${result.levelsGained} level(s))`);
       this.checkClassUnlocks();
+
+      if (oldLevel === 0 && stat.level >= 1 && ProgressionSystem.HIDDEN_SKILL_IDS.includes(id)) {
+        console.log(`[Progression] ✨ HIDDEN SKILL DISCOVERED: '${id}' reached Level ${stat.level}! ✨`);
+        for (const cb of this.onSkillDiscoveredCallbacks) {
+          cb({ skillId: id, level: stat.level });
+        }
+      }
     }
 
     return result;

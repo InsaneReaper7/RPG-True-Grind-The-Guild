@@ -12,7 +12,14 @@
   "equippedSkillIds": ["power_strike"],
   "proficiencies": {
     "short_swords": { "level": 0, "currentExp": 0 },
-    "construction": { "level": 0, "currentExp": 0 }
+    "construction": { "level": 0, "currentExp": 0 },
+    "evasion": { "level": 0, "currentExp": 0 },
+    "parry": { "level": 0, "currentExp": 0 },
+    "block": { "level": 0, "currentExp": 0 },
+    "counterattack": { "level": 0, "currentExp": 0 },
+    "resilience": { "level": 0, "currentExp": 0 },
+    "health_regen": { "level": 0, "currentExp": 0 },
+    "mana_regen": { "level": 0, "currentExp": 0 }
   },
   "resources": {
     "wood": 1000
