@@ -133,6 +133,37 @@ export class Player extends Entity {
     console.log(`[Player] Revived with ${this.hp} Main HP and ${this.criticalHp} Critical HP!`);
   }
 
+  /**
+   * Fully restores Main HP, Critical HP, and Energy to their maximums instantly.
+   * Recovers downed state if downed, clears active status effects, and redraws HP bar.
+   * Returns true if any stat was actually restored, or false if already at 100% capacity.
+   */
+  public rest(): boolean {
+    const wasFull =
+      this.hp >= this.maxHp &&
+      this.criticalHp >= this.maxCriticalHp &&
+      this.energy >= this.maxEnergy;
+
+    this.hp = this.maxHp;
+    this.criticalHp = this.maxCriticalHp;
+    this.energy = this.maxEnergy;
+
+    if (this.state === 'downed') {
+      this.state = 'idle';
+      this.avatarSprite.setAngle(0);
+      this.avatarSprite.setAlpha(1);
+    }
+
+    if (this.activeStatusEffects.size > 0) {
+      this.activeStatusEffects.clear();
+      if (this.statusIconSprite) this.statusIconSprite.setVisible(false);
+      this.avatarSprite.clearTint();
+    }
+
+    this.drawHpBar();
+    return !wasFull;
+  }
+
   public override update(time: number, delta: number): void {
     super.update(time, delta);
 

@@ -10,7 +10,9 @@ import {
   SkillDef,
   StatusEffectDef,
   BuildableDef,
-  BuildablesData
+  BuildablesData,
+  RoomRuleDef,
+  RoomsData
 } from '../types/game';
 
 export class DataLoader {
@@ -22,6 +24,7 @@ export class DataLoader {
   private skillsData!: SkillsData;
   private statusEffectsData!: StatusEffectsData;
   private buildablesData!: BuildablesData;
+  private roomsData!: RoomsData;
 
   private constructor() {}
 
@@ -33,14 +36,15 @@ export class DataLoader {
   }
 
   public async loadAll(): Promise<void> {
-    const [player, weapons, classes, enemies, skills, statusEffects, buildables] = await Promise.all([
+    const [player, weapons, classes, enemies, skills, statusEffects, buildables, rooms] = await Promise.all([
       fetch('/data/player.json').then((res) => res.json()),
       fetch('/data/weapons.json').then((res) => res.json()),
       fetch('/data/classes.json').then((res) => res.json()),
       fetch('/data/enemies.json').then((res) => res.json()),
       fetch('/data/skills.json').then((res) => res.json()),
       fetch('/data/statusEffects.json').then((res) => res.json()),
-      fetch('/data/buildables.json').then((res) => res.json())
+      fetch('/data/buildables.json').then((res) => res.json()),
+      fetch('/data/rooms.json').then((res) => res.json())
     ]);
 
     this.playerData = player as PlayerData;
@@ -50,6 +54,15 @@ export class DataLoader {
     this.skillsData = skills as SkillsData;
     this.statusEffectsData = statusEffects as StatusEffectsData;
     this.buildablesData = buildables as BuildablesData;
+    this.roomsData = rooms as RoomsData;
+  }
+
+  public getRoomsData(): RoomsData {
+    return this.roomsData;
+  }
+
+  public getRoomRules(): RoomRuleDef[] {
+    return this.roomsData?.rules ?? [];
   }
 
   public getBuildablesData(): BuildablesData {

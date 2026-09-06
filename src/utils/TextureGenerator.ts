@@ -354,7 +354,41 @@ export class TextureGenerator {
       g.destroy();
     }
 
-    // 17. Valid Tile Placement Highlight (Soft Green/White frame)
+    // 17. Guild Bed (Comfortable wooden bed frame, mattress, pillow & guild blanket)
+    if (!scene.textures.exists('buildable-bed')) {
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      // Outer wooden bed frame / headboard
+      g.fillStyle(0x3e2723, 1); // Dark walnut wood
+      g.fillRect(3, 2, tileSize - 6, tileSize - 4);
+      g.lineStyle(1, 0x1b110e, 1);
+      g.strokeRect(3, 2, tileSize - 6, tileSize - 4);
+
+      // Headboard plank
+      g.fillStyle(0x5c4033, 1);
+      g.fillRect(3, 2, tileSize - 6, 5);
+
+      // Mattress / base sheet (Crisp linen cream)
+      g.fillStyle(0xf8fafc, 1);
+      g.fillRect(5, 7, tileSize - 10, tileSize - 11);
+
+      // Fluffy pillow
+      g.fillStyle(0xffffff, 1);
+      g.fillRoundedRect(6, 8, tileSize - 12, 6, 2);
+      g.lineStyle(1, 0xe2e8f0, 1);
+      g.strokeRoundedRect(6, 8, tileSize - 12, 6, 2);
+
+      // Guild blanket / duvet (Rich royal blue with gold trim)
+      g.fillStyle(0x1e3a8a, 1);
+      g.fillRect(5, 15, tileSize - 10, tileSize - 19);
+      // Gold trim on blanket fold
+      g.fillStyle(0xf59e0b, 1);
+      g.fillRect(5, 15, tileSize - 10, 2);
+
+      g.generateTexture('buildable-bed', tileSize, tileSize);
+      g.destroy();
+    }
+
+    // 18. Valid Tile Placement Highlight (Soft Green/White frame)
     if (!scene.textures.exists('tile-highlight-valid')) {
       const g = scene.make.graphics({ x: 0, y: 0 });
       g.fillStyle(0x22c55e, 0.25);

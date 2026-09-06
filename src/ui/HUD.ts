@@ -3,6 +3,8 @@ import { ProgressionSystem } from '../systems/ProgressionSystem';
 import { ClassDef } from '../types/game';
 import { DataLoader } from '../utils/DataLoader';
 import { GameState } from '../systems/GameState';
+import { BuildingSystem } from '../systems/BuildingSystem';
+import { LevelingSystem } from '../systems/LevelingSystem';
 
 export class HUD {
   private playerHpEl: HTMLElement | null;
@@ -10,8 +12,10 @@ export class HUD {
   private playerEnergyEl: HTMLElement | null;
   private weaponEl: HTMLElement | null;
   private profEl: HTMLElement | null;
+  private constructionProfEl: HTMLElement | null;
   private playerStatusEl: HTMLElement | null;
   private locationBadgeEl: HTMLElement | null;
+  private roomBadgeEl: HTMLElement | null;
   private hudSkillsListEl: HTMLElement | null;
   private outpostControlsEl: HTMLElement | null;
   private openLoadoutBtn: HTMLElement | null;
@@ -30,6 +34,7 @@ export class HUD {
   private toggleBuildBtn: HTMLElement | null;
   private buildOverlayEl: HTMLElement | null;
   private buildOverlayWoodEl: HTMLElement | null;
+  private buildTierBadgeEl: HTMLElement | null;
   private buildRotationBadgeEl: HTMLElement | null;
   private exitBuildBtn: HTMLElement | null;
   private buildPaletteContainerEl: HTMLElement | null;
@@ -54,10 +59,12 @@ export class HUD {
     this.playerEnergyEl = document.getElementById('player-energy-text');
     this.weaponEl = document.getElementById('equipped-weapon-text');
     this.profEl = document.getElementById('proficiency-text');
+    this.constructionProfEl = document.getElementById('construction-prof-text');
     this.playerStatusEl = document.getElementById('player-status-text');
     this.hudWoodRowEl = document.getElementById('hud-wood-row');
     this.playerWoodEl = document.getElementById('player-wood-text');
     this.locationBadgeEl = document.getElementById('location-badge');
+    this.roomBadgeEl = document.getElementById('room-badge');
     this.hudSkillsListEl = document.getElementById('hud-skills-list');
     this.outpostControlsEl = document.getElementById('outpost-controls');
     this.openLoadoutBtn = document.getElementById('open-loadout-btn');
@@ -73,6 +80,7 @@ export class HUD {
     this.downedBannerEl = document.getElementById('downed-banner');
     this.buildOverlayEl = document.getElementById('build-mode-overlay');
     this.buildOverlayWoodEl = document.getElementById('build-overlay-wood');
+    this.buildTierBadgeEl = document.getElementById('build-tier-badge');
     this.buildRotationBadgeEl = document.getElementById('build-rotation-badge');
     this.exitBuildBtn = document.getElementById('exit-build-btn');
     this.buildPaletteContainerEl = document.getElementById('build-palette-container');
@@ -208,7 +216,7 @@ export class HUD {
     }
   }
 
-  public updateBuildOverlay(wood: number, rotation: number, selectedId: string): void {
+  public updateBuildOverlay(wood: number, rotation: number, selectedId: string, constructionLevel: number = 0): void {
     if (this.buildOverlayWoodEl) {
       this.buildOverlayWoodEl.innerText = `🪵 Wood: ${wood}`;
     }
@@ -218,6 +226,14 @@ export class HUD {
     if (this.buildRotationBadgeEl) {
       this.buildRotationBadgeEl.innerText = `Rotation: ${rotation}° [R]`;
     }
+
+    const tier = BuildingSystem.getConstructionTier(constructionLevel);
+    if (this.buildTierBadgeEl) {
+      const costPct = Math.round(tier.buildCostMultiplier * 100);
+      const refundPct = Math.round(tier.demolishRefundMultiplier * 100);
+      this.buildTierBadgeEl.innerText = `Tier: ${tier.name} (Lv ${constructionLevel}) (${costPct}% Cost / ${refundPct}% Refund)`;
+    }
+
     if (this.buildPaletteContainerEl) {
       const items = this.buildPaletteContainerEl.querySelectorAll<HTMLElement>('.palette-item');
       items.forEach((item) => {
@@ -227,6 +243,30 @@ export class HUD {
           item.classList.remove('active');
         }
       });
+
+      // Update cost badges based on construction tier discount
+      const dataLoader = DataLoader.getInstance();
+      const buildables = dataLoader.getBuildables();
+      if (buildables) {
+        for (const b of buildables) {
+          const badge = document.getElementById(`cost-badge-${b.id}`);
+          if (badge) {
+            const eff = BuildingSystem.getEffectiveBuildCost(b.woodCost, constructionLevel);
+            badge.innerText = `🪵 ${eff}`;
+          }
+        }
+      }
+    }
+  }
+
+  public setRoomName(roomName: string | null): void {
+    if (this.roomBadgeEl) {
+      if (roomName) {
+        this.roomBadgeEl.innerText = `🏠 Room: ${roomName}`;
+        this.roomBadgeEl.style.display = 'block';
+      } else {
+        this.roomBadgeEl.style.display = 'none';
+      }
     }
   }
 
@@ -270,6 +310,10 @@ export class HUD {
     if (this.locationBadgeEl) {
       this.locationBadgeEl.innerText = name.toUpperCase();
       this.locationBadgeEl.style.color = isOutpost ? '#34d399' : '#a78bfa';
+    }
+
+    if (!isOutpost) {
+      this.setRoomName(null);
     }
 
     if (this.outpostControlsEl) {
@@ -485,10 +529,19 @@ export class HUD {
 
     if (this.profEl) {
       const weaponId = player.equippedWeapon.id;
-      const currentProf = progression.getProficiency(weaponId);
+      const stat = progression.getProficiencyStat(weaponId);
+      const nextExp = LevelingSystem.expForNextLevel(stat.level);
       const isFencerUnlocked = progression.isClassUnlocked('fencer');
       const tierText = isFencerUnlocked ? 'Novice' : 'Unranked';
-      this.profEl.innerText = `${currentProf} / 10 (${tierText})`;
+      this.profEl.innerText = `Level ${stat.level} (${stat.currentExp}/${nextExp} EXP) [${tierText}]`;
+    }
+
+    // 4b. Construction Proficiency
+    if (this.constructionProfEl) {
+      const constStat = progression.getProficiencyStat('construction');
+      const constTier = progression.getConstructionTier();
+      const nextExp = LevelingSystem.expForNextLevel(constStat.level);
+      this.constructionProfEl.innerText = `Level ${constStat.level} (${constStat.currentExp}/${nextExp} EXP) (${constTier.name})`;
     }
 
     // 5. Equipped Skills List with Cooldowns and Live Autocast Toggles

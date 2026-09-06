@@ -8,6 +8,7 @@ import { HUD } from '../ui/HUD';
 import { GameState } from '../systems/GameState';
 import { GridPos, PlacedBuildable } from '../types/game';
 import { BuildingSystem } from '../systems/BuildingSystem';
+import { RoomClassifier, ClassifiedRoom } from '../systems/RoomClassifier';
 
 export class OutpostScene extends Phaser.Scene {
   private mapWidth: number = 20;
@@ -20,6 +21,10 @@ export class OutpostScene extends Phaser.Scene {
   private progressionSystem!: ProgressionSystem;
   private hud!: HUD;
   private buildingSystem!: BuildingSystem;
+  private roomClassifier!: RoomClassifier;
+  private cachedRoomMap: Map<string, ClassifiedRoom> = new Map();
+  private lastKnownPlayerTile: string = '';
+  private lastClassifiedRoomName: string | null = null;
 
   private portalSprite!: Phaser.GameObjects.Sprite;
   private portalPos: GridPos = { x: 3, y: 3 };
@@ -139,6 +144,7 @@ export class OutpostScene extends Phaser.Scene {
 
     // 4. Initialize ProgressionSystem & HUD
     this.progressionSystem = new ProgressionSystem(classesData);
+    this.roomClassifier = new RoomClassifier(dataLoader.getRoomRules());
     this.hud = new HUD();
     this.hud.setLocation('Guild Outpost (Safe Zone)', true);
 
@@ -154,6 +160,9 @@ export class OutpostScene extends Phaser.Scene {
 
     // Restore any previously placed structures from GameState
     this.restorePlacedBuildables();
+
+    // Initial room classification scan
+    this.recalculateEnclosedRooms();
 
     // 6. Spawn Portal to Dungeon at (3, 3)
     this.portalSprite = this.add.sprite(
@@ -237,7 +246,39 @@ export class OutpostScene extends Phaser.Scene {
       rKey.on('down', () => {
         if (this.isBuildMode) {
           this.rotateBlueprint();
+        } else if (this.player.state === 'downed') {
+          this.player.revive();
         }
+      });
+
+      const cKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.C);
+      cKey.on('down', () => {
+        this.progressionSystem.addProficiencyExp('construction', 25);
+        this.hud.updateBuildOverlay(
+          GameState.getInstance().getWood(),
+          this.currentRotation,
+          this.selectedBuildableId,
+          this.progressionSystem.getProficiencyLevel('construction')
+        );
+        this.hud.showToast('+25 Construction EXP', 'success', 2000);
+      });
+
+      const xKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.X);
+      xKey.on('down', () => {
+        this.progressionSystem.addProficiencyExp(this.player.equippedWeapon.id, 25);
+        this.hud.showToast(`+25 ${this.player.equippedWeapon.name} EXP`, 'success', 2000);
+      });
+
+      const zKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.Z);
+      zKey.on('down', () => {
+        this.progressionSystem.addProficiencyExp(this.player.equippedWeapon.id, 100);
+        this.hud.showToast(`+100 ${this.player.equippedWeapon.name} EXP`, 'success', 2000);
+      });
+
+      const pKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.P);
+      pKey.on('down', () => {
+        this.progressionSystem.addProficiencyExp(this.player.equippedWeapon.id, 680);
+        this.hud.showToast(`+680 ${this.player.equippedWeapon.name} EXP (Level 10 Fencer Gate)`, 'success', 3000);
       });
     }
 
@@ -284,10 +325,35 @@ export class OutpostScene extends Phaser.Scene {
       }
 
       // Normal Play Mode
+      // Downed state blocks Normal Mode actions
+      if (this.player.state === 'downed') {
+        return;
+      }
+
+      // Check if clicking a placed Bed
+      if (this.isPlacedBed(clickedTileX, clickedTileY)) {
+        const currentRoom = this.cachedRoomMap.get(`${clickedTileX},${clickedTileY}`);
+        const roomName = currentRoom ? currentRoom.name : 'Bedroom';
+        const restored = this.player.rest();
+        this.hud.update(this.player, this.progressionSystem, this.time.now);
+
+        if (restored) {
+          this.createFloatingText(this.player.x, this.player.y - 20, '+RESTORED', '#22c55e');
+          this.hud.showToast(`🛏️ You rest in the ${roomName} and feel fully recovered! HP & Energy restored.`, 'success', 3500);
+          console.log(`[Bed] Rested in ${roomName}: Main HP (${this.player.hp}/${this.player.maxHp}), Critical HP (${this.player.criticalHp}/${this.player.maxCriticalHp}), Energy (${this.player.energy}/${this.player.maxEnergy}).`);
+        } else {
+          this.hud.showToast(`🛏️ Guild Bed (${roomName}): You are already fully rested!`, 'info', 3000);
+          console.log(`[Bed] Interacted in ${roomName}: Already at full HP & Energy.`);
+        }
+        return;
+      }
+
       // Check if clicking a placed Research Station
       if (this.isPlacedStation(clickedTileX, clickedTileY)) {
-        this.hud.showToast('🔬 Research Station: Research Tree coming in a future update! (Milestone 5)', 'info', 4500);
-        console.log('[ResearchStation] Interacted: Research Tree coming in Milestone 5.');
+        const currentRoom = this.cachedRoomMap.get(`${clickedTileX},${clickedTileY}`);
+        const roomName = currentRoom ? currentRoom.name : 'Study';
+        this.hud.showToast(`🔬 Research Station: Guild research in the ${roomName}! (Milestone 6)`, 'info', 4000);
+        console.log(`[ResearchStation] Interacted in ${roomName}.`);
         return;
       }
 
@@ -329,7 +395,12 @@ export class OutpostScene extends Phaser.Scene {
     if (this.isBuildMode) {
       this.selectedBuildableId = 'floor';
       this.currentRotation = 0;
-      this.hud.updateBuildOverlay(GameState.getInstance().getWood(), this.currentRotation, this.selectedBuildableId);
+      this.hud.updateBuildOverlay(
+        GameState.getInstance().getWood(),
+        this.currentRotation,
+        this.selectedBuildableId,
+        this.progressionSystem.getProficiency('construction')
+      );
       this.hoverHighlightSprite.setVisible(true);
       this.hoverGhostSprite.setVisible(true);
       this.updateGhostSprite();
@@ -347,7 +418,12 @@ export class OutpostScene extends Phaser.Scene {
   public selectBuildable(id: string): void {
     this.selectedBuildableId = id;
     this.currentRotation = 0;
-    this.hud.updateBuildOverlay(GameState.getInstance().getWood(), this.currentRotation, this.selectedBuildableId);
+    this.hud.updateBuildOverlay(
+      GameState.getInstance().getWood(),
+      this.currentRotation,
+      this.selectedBuildableId,
+      this.progressionSystem.getProficiency('construction')
+    );
     this.updateGhostSprite();
   }
 
@@ -357,7 +433,12 @@ export class OutpostScene extends Phaser.Scene {
       return;
     }
     this.currentRotation = (this.currentRotation + 90) % 360;
-    this.hud.updateBuildOverlay(GameState.getInstance().getWood(), this.currentRotation, this.selectedBuildableId);
+    this.hud.updateBuildOverlay(
+      GameState.getInstance().getWood(),
+      this.currentRotation,
+      this.selectedBuildableId,
+      this.progressionSystem.getProficiency('construction')
+    );
     this.hoverGhostSprite.setAngle(this.currentRotation);
   }
 
@@ -376,6 +457,7 @@ export class OutpostScene extends Phaser.Scene {
     if (def.id === 'floor') texture = 'buildable-wood-floor';
     else if (def.id === 'wall') texture = 'buildable-wood-wall-h';
     else if (def.id === 'door') texture = this.currentRotation === 90 || this.currentRotation === 270 ? 'buildable-wood-door-v' : 'buildable-wood-door-h';
+    else if (def.id === 'bed') texture = 'buildable-bed';
     else if (def.id === 'research_station') texture = 'buildable-research-station';
 
     this.hoverGhostSprite.setTexture(texture);
@@ -410,6 +492,8 @@ export class OutpostScene extends Phaser.Scene {
       tileY * this.tileSize + this.tileSize / 2
     );
 
+    const constLevel = this.progressionSystem.getProficiencyLevel('construction');
+
     if (this.selectedBuildableId === 'demolish') {
       const placed = this.getPlacedBuildableAt(tileX, tileY);
       const path = placed ? 'valid-highlight' : 'invalid-highlight-with-reason (Nothing to demolish)';
@@ -418,9 +502,14 @@ export class OutpostScene extends Phaser.Scene {
         this.lastLoggedHoverKey = hoverKey;
       }
       if (placed) {
+        const dataLoader = DataLoader.getInstance();
+        const def = dataLoader.getBuildable(placed.id);
+        const costPaid = placed.costPaid ?? (def?.woodCost || 0);
+        const refund = BuildingSystem.getEffectiveDemolishRefund(costPaid, constLevel);
+
         this.hoverHighlightSprite.setTexture('tile-highlight-valid');
         this.hoverGhostSprite.setTint(0xffffff);
-        this.hoverReasonText.setText(`Demolish ${placed.id} (Refund Wood)`).setVisible(true);
+        this.hoverReasonText.setText(`Demolish ${def?.name || placed.id} (Refund +${refund} Wood)`).setVisible(true);
       } else {
         this.hoverHighlightSprite.setTexture('tile-highlight-invalid');
         this.hoverGhostSprite.setTint(0xff6666);
@@ -445,8 +534,9 @@ export class OutpostScene extends Phaser.Scene {
       [this.portalPos],
       (x, y) => this.isWall(x, y),
       (x, y) => this.isPlacedDoor(x, y),
-      (x, y) => this.isPlacedStation(x, y),
-      GameState.getInstance().getWood()
+      (x, y) => this.isSolidFurnitureOrStation(x, y),
+      GameState.getInstance().getWood(),
+      constLevel
     );
 
     const path = validation.valid ? 'valid-highlight' : `invalid-highlight-with-reason (${validation.reason})`;
@@ -458,7 +548,12 @@ export class OutpostScene extends Phaser.Scene {
     if (validation.valid) {
       this.hoverHighlightSprite.setTexture('tile-highlight-valid');
       this.hoverGhostSprite.setTint(0xffffff);
-      this.hoverReasonText.setVisible(false);
+      const room = this.cachedRoomMap.get(hoverKey);
+      if (room) {
+        this.hoverReasonText.setText(`[${room.name}]`).setVisible(true);
+      } else {
+        this.hoverReasonText.setVisible(false);
+      }
     } else {
       this.hoverHighlightSprite.setTexture('tile-highlight-invalid');
       this.hoverGhostSprite.setTint(0xff6666);
@@ -476,6 +571,9 @@ export class OutpostScene extends Phaser.Scene {
     const blueprint = dataLoader.getBuildable(this.selectedBuildableId);
     if (!blueprint) return;
 
+    const constLevel = this.progressionSystem.getProficiencyLevel('construction');
+    const effectiveCost = BuildingSystem.getEffectiveBuildCost(blueprint.woodCost, constLevel);
+
     const validation = this.buildingSystem.canPlace(
       blueprint,
       x,
@@ -484,8 +582,9 @@ export class OutpostScene extends Phaser.Scene {
       [this.portalPos],
       (tx, ty) => this.isWall(tx, ty),
       (tx, ty) => this.isPlacedDoor(tx, ty),
-      (tx, ty) => this.isPlacedStation(tx, ty),
-      GameState.getInstance().getWood()
+      (tx, ty) => this.isSolidFurnitureOrStation(tx, ty),
+      GameState.getInstance().getWood(),
+      constLevel
     );
 
     if (!validation.valid) {
@@ -496,24 +595,29 @@ export class OutpostScene extends Phaser.Scene {
       return;
     }
 
-    // Deduct wood
-    const success = GameState.getInstance().consumeWood(blueprint.woodCost);
+    // Deduct wood using effective cost
+    const success = GameState.getInstance().consumeWood(effectiveCost);
     if (!success) {
       console.log(`[BuildMode:Place] Tile: (${x}, ${y}) | Result: REJECTED | Reason: Not enough wood`);
-      this.hud.showToast(`Not enough Wood! Requires ${blueprint.woodCost} Wood.`, 'error');
+      this.hud.showToast(`Not enough Wood! Requires ${effectiveCost} Wood.`, 'error');
       return;
     }
 
-    console.log(`[BuildMode:Place] Tile: (${x}, ${y}) | Result: PLACED ${blueprint.name}`);
+    console.log(`[BuildMode:Place] Tile: (${x}, ${y}) | Result: PLACED ${blueprint.name} (-${effectiveCost} Wood)`);
 
-    // Save to GameState
+    // Save to GameState with costPaid
     const placedItem: PlacedBuildable = {
       id: blueprint.id,
       x,
       y,
-      rotation: blueprint.rotatable ? this.currentRotation : 0
+      rotation: blueprint.rotatable ? this.currentRotation : 0,
+      costPaid: effectiveCost
     };
     GameState.getInstance().addPlacedBuildable(placedItem);
+
+    // Award +1 Construction EXP
+    this.progressionSystem.addProficiencyExp('construction', 1);
+    this.createFloatingText(x * this.tileSize + this.tileSize / 2, y * this.tileSize, '+1 Construction Exp', '#f59e0b');
 
     // Render sprite
     this.createPlacedSprite(placedItem);
@@ -529,12 +633,19 @@ export class OutpostScene extends Phaser.Scene {
       this.updateAllWallTextures();
     }
 
+    // Recalculate room classification cache
+    this.recalculateEnclosedRooms();
+
+    const currentRoom = this.cachedRoomMap.get(`${x},${y}`);
+    const roomSuffix = currentRoom ? ` in ${currentRoom.name}` : '';
+
     this.hud.updateBuildOverlay(
       GameState.getInstance().getWood(),
       this.currentRotation,
-      this.selectedBuildableId
+      this.selectedBuildableId,
+      this.progressionSystem.getProficiencyLevel('construction')
     );
-    this.hud.showToast(`Placed ${blueprint.name} (-${blueprint.woodCost} Wood).`, 'success');
+    this.hud.showToast(`Placed ${blueprint.name} (-${effectiveCost} Wood)${roomSuffix}. +1 Construction Exp`, 'success');
   }
 
   private demolishAt(x: number, y: number): void {
@@ -547,11 +658,17 @@ export class OutpostScene extends Phaser.Scene {
 
     const dataLoader = DataLoader.getInstance();
     const def = dataLoader.getBuildable(placed.id);
-    const refund = def?.woodCost || 0;
+    const constLevel = this.progressionSystem.getProficiencyLevel('construction');
+    const costPaid = placed.costPaid ?? (def?.woodCost || 0);
+    const refund = BuildingSystem.getEffectiveDemolishRefund(costPaid, constLevel);
 
     // Remove from GameState and refund wood
     GameState.getInstance().removePlacedBuildable(x, y);
     GameState.getInstance().addWood(refund);
+
+    // Award +1 Construction EXP
+    this.progressionSystem.addProficiencyExp('construction', 1);
+    this.createFloatingText(x * this.tileSize + this.tileSize / 2, y * this.tileSize, '+1 Construction Exp', '#f59e0b');
 
     // Remove visual sprite
     const sprite = this.placedSprites.get(`${x},${y}`);
@@ -571,13 +688,17 @@ export class OutpostScene extends Phaser.Scene {
       this.updateAllWallTextures();
     }
 
+    // Recalculate room classification cache
+    this.recalculateEnclosedRooms();
+
     this.hud.updateBuildOverlay(
       GameState.getInstance().getWood(),
       this.currentRotation,
-      this.selectedBuildableId
+      this.selectedBuildableId,
+      this.progressionSystem.getProficiencyLevel('construction')
     );
-    console.log(`[BuildMode:Demolish] Tile: (${x}, ${y}) | Result: DEMOLISHED ${placed.id} (+${refund} Wood refunded)`);
-    this.hud.showToast(`Demolished ${def?.name || placed.id} (+${refund} Wood refunded).`, 'success');
+    console.log(`[BuildMode:Demolish] Tile: (${x}, ${y}) | Result: DEMOLISHED ${placed.id} (+${refund} Wood refunded from ${costPaid} paid)`);
+    this.hud.showToast(`Demolished ${def?.name || placed.id} (+${refund} Wood refunded). +1 Construction Exp`, 'success');
   }
 
   private createPlacedSprite(item: PlacedBuildable): void {
@@ -607,6 +728,10 @@ export class OutpostScene extends Phaser.Scene {
     } else if (item.id === 'door') {
       const isVert = item.rotation === 90 || item.rotation === 270;
       sprite = this.add.sprite(posX, posY, isVert ? 'buildable-wood-door-v' : 'buildable-wood-door-h').setDepth(posY);
+    } else if (item.id === 'bed') {
+      sprite = this.add.sprite(posX, posY, 'buildable-bed')
+        .setAngle(item.rotation)
+        .setDepth(posY);
     } else if (item.id === 'research_station') {
       sprite = this.add.sprite(posX, posY, 'buildable-research-station')
         .setAngle(item.rotation)
@@ -663,9 +788,21 @@ export class OutpostScene extends Phaser.Scene {
     return placed?.id === 'door';
   }
 
+  private isSolidFurnitureOrStation(x: number, y: number): boolean {
+    const placed = this.getPlacedBuildableAt(x, y);
+    if (!placed) return false;
+    const def = DataLoader.getInstance().getBuildable(placed.id);
+    return def ? !def.walkable && def.id !== 'wall' : false;
+  }
+
   private isPlacedStation(x: number, y: number): boolean {
     const placed = this.getPlacedBuildableAt(x, y);
     return placed?.id === 'research_station';
+  }
+
+  private isPlacedBed(x: number, y: number): boolean {
+    const placed = this.getPlacedBuildableAt(x, y);
+    return placed?.id === 'bed';
   }
 
   private isWallOrDoor(x: number, y: number): boolean {
@@ -674,6 +811,94 @@ export class OutpostScene extends Phaser.Scene {
 
   private getPlacedBuildableAt(x: number, y: number): PlacedBuildable | undefined {
     return GameState.getInstance().getPlacedBuildables().find((b) => b.x === x && b.y === y);
+  }
+
+  // --- AUTOMATIC ROOM CLASSIFICATION (Section 9.5) ---
+
+  /**
+   * Recalculate room classifications for all enclosed spaces.
+   * Runs strictly on structural changes (placement, demolition, scene load).
+   * Caches results into an O(1) map so player movement is instantaneous.
+   */
+  private recalculateEnclosedRooms(): void {
+    this.cachedRoomMap.clear();
+    const dataLoader = DataLoader.getInstance();
+    const processedTiles = new Set<string>();
+
+    for (let y = 1; y < this.mapHeight - 1; y++) {
+      for (let x = 1; x < this.mapWidth - 1; x++) {
+        const key = `${x},${y}`;
+        if (processedTiles.has(key)) continue;
+        if (this.isWallOrDoor(x, y)) continue;
+
+        const enclosure = this.buildingSystem.checkEnclosure(
+          x,
+          y,
+          (tx, ty) => this.isWall(tx, ty),
+          (tx, ty) => this.isPlacedDoor(tx, ty)
+        );
+
+        if (enclosure.isIndoor && enclosure.enclosedTiles) {
+          const tags: string[] = [];
+          for (const tile of enclosure.enclosedTiles) {
+            processedTiles.add(`${tile.x},${tile.y}`);
+            const placed = this.getPlacedBuildableAt(tile.x, tile.y);
+            if (placed) {
+              const def = dataLoader.getBuildable(placed.id);
+              if (def?.roomTag) tags.push(def.roomTag);
+              if (def?.roomTags) tags.push(...def.roomTags);
+            }
+          }
+
+          const classified = this.roomClassifier.classify(tags, enclosure.enclosedTiles);
+          for (const tile of enclosure.enclosedTiles) {
+            this.cachedRoomMap.set(`${tile.x},${tile.y}`, classified);
+          }
+        }
+      }
+    }
+
+    this.updatePlayerRoomLookup(true);
+  }
+
+  /**
+   * O(1) room lookup when player moves between tiles.
+   * Zero flood fill.
+   */
+  private updatePlayerRoomLookup(forceUpdate: boolean = false): void {
+    const tileKey = `${this.player.gridPos.x},${this.player.gridPos.y}`;
+    if (!forceUpdate && tileKey === this.lastKnownPlayerTile) return;
+    this.lastKnownPlayerTile = tileKey;
+
+    const currentRoom = this.cachedRoomMap.get(tileKey);
+    const roomName = currentRoom?.name ?? null;
+
+    if (roomName !== this.lastClassifiedRoomName || forceUpdate) {
+      this.lastClassifiedRoomName = roomName;
+      this.hud.setRoomName(roomName);
+      if (roomName && !forceUpdate) {
+        console.log(`[RoomClassification] Player entered: ${roomName} at (${tileKey})`);
+        this.hud.showToast(`🏠 Entered ${roomName}`, 'info', 2500);
+      }
+    }
+  }
+
+  private createFloatingText(x: number, y: number, textString: string, colorHex: string): void {
+    const text = this.add.text(x, y, textString, {
+      fontSize: '11px',
+      color: colorHex,
+      fontStyle: 'bold',
+      backgroundColor: 'rgba(0,0,0,0.6)',
+      padding: { x: 4, y: 2 }
+    }).setOrigin(0.5).setDepth(10020);
+
+    this.tweens.add({
+      targets: text,
+      y: y - 20,
+      alpha: 0,
+      duration: 1000,
+      onComplete: () => text.destroy()
+    });
   }
 
   // --- SCENE TRANSITION & CAMERA ---
@@ -732,6 +957,7 @@ export class OutpostScene extends Phaser.Scene {
     }
 
     this.player.update(time, delta);
+    this.updatePlayerRoomLookup(false);
     this.hud.update(this.player, this.progressionSystem, time);
   }
 }

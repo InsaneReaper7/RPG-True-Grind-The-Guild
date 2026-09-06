@@ -6,6 +6,25 @@ export interface EnclosureResult {
   enclosedTiles?: GridPos[];
 }
 
+export type ConstructionTierName = 'untrained' | 'novice' | 'adept' | 'expert' | 'master';
+
+export interface ConstructionTierDef {
+  tier: ConstructionTierName;
+  name: string;
+  minLevel: number;
+  nextLevel?: number;
+  buildCostMultiplier: number;
+  demolishRefundMultiplier: number;
+}
+
+export const CONSTRUCTION_TIERS: ConstructionTierDef[] = [
+  { tier: 'untrained', name: 'Untrained', minLevel: 0, nextLevel: 10, buildCostMultiplier: 1.0, demolishRefundMultiplier: 0.5 },
+  { tier: 'novice', name: 'Novice', minLevel: 10, nextLevel: 30, buildCostMultiplier: 0.9, demolishRefundMultiplier: 0.6 },
+  { tier: 'adept', name: 'Adept', minLevel: 30, nextLevel: 60, buildCostMultiplier: 0.75, demolishRefundMultiplier: 0.75 },
+  { tier: 'expert', name: 'Expert', minLevel: 60, nextLevel: 90, buildCostMultiplier: 0.6, demolishRefundMultiplier: 0.9 },
+  { tier: 'master', name: 'Master', minLevel: 90, buildCostMultiplier: 0.5, demolishRefundMultiplier: 1.0 }
+];
+
 export class BuildingSystem {
   private mapWidth: number;
   private mapHeight: number;
@@ -13,6 +32,25 @@ export class BuildingSystem {
   constructor(mapWidth: number = 20, mapHeight: number = 20) {
     this.mapWidth = mapWidth;
     this.mapHeight = mapHeight;
+  }
+
+  public static getConstructionTier(level: number): ConstructionTierDef {
+    for (let i = CONSTRUCTION_TIERS.length - 1; i >= 0; i--) {
+      if (level >= CONSTRUCTION_TIERS[i].minLevel) {
+        return CONSTRUCTION_TIERS[i];
+      }
+    }
+    return CONSTRUCTION_TIERS[0];
+  }
+
+  public static getEffectiveBuildCost(baseCost: number, level: number): number {
+    const tier = BuildingSystem.getConstructionTier(level);
+    return Math.max(1, Math.floor(baseCost * tier.buildCostMultiplier));
+  }
+
+  public static getEffectiveDemolishRefund(costPaid: number, level: number): number {
+    const tier = BuildingSystem.getConstructionTier(level);
+    return Math.floor(costPaid * tier.demolishRefundMultiplier);
   }
 
   /**
@@ -147,13 +185,15 @@ export class BuildingSystem {
     isWallFn: (x: number, y: number) => boolean,
     isDoorFn: (x: number, y: number) => boolean,
     isOccupiedStationFn: (x: number, y: number) => boolean,
-    currentWood: number
+    currentWood: number,
+    constructionLevel: number = 0
   ): { valid: boolean; reason?: string } {
-    // 1. Wood resource check
-    if (currentWood < blueprint.woodCost) {
+    // 1. Wood resource check using Construction tier discounted cost
+    const effectiveCost = BuildingSystem.getEffectiveBuildCost(blueprint.woodCost, constructionLevel);
+    if (currentWood < effectiveCost) {
       return {
         valid: false,
-        reason: `Not enough Wood! Requires ${blueprint.woodCost} Wood (You have ${currentWood}).`
+        reason: `Not enough Wood! Requires ${effectiveCost} Wood (You have ${currentWood}).`
       };
     }
 
@@ -178,7 +218,7 @@ export class BuildingSystem {
         return { valid: false, reason: 'A wall already exists here.' };
       }
       if (isOccupiedStationFn(x, y)) {
-        return { valid: false, reason: 'Cannot place wall on a crafting station.' };
+        return { valid: false, reason: 'Cannot place wall on existing furniture or station.' };
       }
     } else if (blueprint.id === 'door') {
       if (isDoorFn(x, y)) {
@@ -188,17 +228,17 @@ export class BuildingSystem {
         return { valid: false, reason: 'Demolish the existing wall first to place a door.' };
       }
       if (isOccupiedStationFn(x, y)) {
-        return { valid: false, reason: 'Cannot place door on a crafting station.' };
+        return { valid: false, reason: 'Cannot place door on existing furniture or station.' };
       }
-    } else if (blueprint.id === 'research_station') {
+    } else if (!blueprint.walkable) {
       if (isWallFn(x, y)) {
-        return { valid: false, reason: 'Cannot place Research Station on a wall.' };
+        return { valid: false, reason: `Cannot place ${blueprint.name} on a wall.` };
       }
       if (isDoorFn(x, y)) {
-        return { valid: false, reason: 'Cannot place Research Station on a doorway.' };
+        return { valid: false, reason: `Cannot place ${blueprint.name} on a doorway.` };
       }
       if (isOccupiedStationFn(x, y)) {
-        return { valid: false, reason: 'A crafting station already exists here.' };
+        return { valid: false, reason: 'An object already exists here.' };
       }
     }
 
@@ -208,7 +248,7 @@ export class BuildingSystem {
       if (!enclosure.isIndoor) {
         return {
           valid: false,
-          reason: 'Cannot place Research Station: Requires a fully enclosed indoor room with walls and a door!'
+          reason: `Cannot place ${blueprint.name}: Requires a fully enclosed indoor room with walls and a door!`
         };
       }
     }

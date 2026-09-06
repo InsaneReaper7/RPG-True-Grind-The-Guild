@@ -36,6 +36,11 @@ export class MainScene extends Phaser.Scene {
   };
   private rKey!: Phaser.Input.Keyboard.Key;
   private kKey!: Phaser.Input.Keyboard.Key;
+  private xKey!: Phaser.Input.Keyboard.Key;
+  private zKey!: Phaser.Input.Keyboard.Key;
+  private cKey!: Phaser.Input.Keyboard.Key;
+  private pKey!: Phaser.Input.Keyboard.Key;
+  private tKey!: Phaser.Input.Keyboard.Key;
 
   private isCameraLocked: boolean = true;
   private targetReticle!: Phaser.GameObjects.Sprite;
@@ -164,6 +169,15 @@ export class MainScene extends Phaser.Scene {
       this.engageEnemy(wolf);
     });
 
+    // Spawn second test enemy (Wolf 2) at (14, 6)
+    const wolf2 = new Enemy(this, 14, 6, wolfData, 'wolf-avatar', this.tileSize);
+    wolf2.entityName = 'Wolf 2';
+    this.enemies.push(wolf2);
+
+    wolf2.on('pointerdown', (_pointer: Phaser.Input.Pointer) => {
+      this.engageEnemy(wolf2);
+    });
+
     // Target Selection Reticle
     this.targetReticle = this.add.sprite(-100, -100, 'target-reticle').setDepth(10000);
     this.targetReticle.setVisible(false);
@@ -175,8 +189,12 @@ export class MainScene extends Phaser.Scene {
       this.enemies,
       this.pathfinder,
       this.progressionSystem,
-      (_deadEnemy) => {
+      (deadEnemy) => {
         this.targetReticle.setVisible(false);
+        console.log(`[Combat] ${deadEnemy.entityName} defeated. Automatic respawn scheduled in 3 seconds.`);
+        this.time.delayedCall(3000, () => {
+          deadEnemy.respawn();
+        });
       }
     );
 
@@ -184,7 +202,7 @@ export class MainScene extends Phaser.Scene {
     this.cameras.main.setBounds(0, 0, this.mapWidth * this.tileSize, this.mapHeight * this.tileSize);
     this.cameras.main.startFollow(this.player, true, 0.1, 0.1);
 
-    // Input Controls: WASD, Space, R, K
+    // Input Controls: WASD, Space, R, K, X, Z, C, P, T
     if (this.input.keyboard) {
       this.wasdKeys = {
         W: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W),
@@ -195,7 +213,31 @@ export class MainScene extends Phaser.Scene {
       };
       this.rKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.R);
       this.kKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.K);
+      this.xKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.X);
+      this.zKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.Z);
+      this.cKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.C);
+      this.pKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.P);
+      this.tKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.T);
     }
+
+    // Expose debug helpers on window for browser console testing
+    (window as any).__grantExp = (statId: string = 'short_swords', amount: number = 25) => {
+      return this.progressionSystem.addProficiencyExp(statId, amount);
+    };
+    (window as any).__setLevel = (statId: string = 'short_swords', targetLevel: number = 10) => {
+      const stat = this.progressionSystem.getProficiencyStat(statId);
+      stat.level = targetLevel;
+      stat.currentExp = 0;
+      this.progressionSystem.checkClassUnlocks();
+      console.log(`[Debug] Set '${statId}' to Level ${targetLevel} (0 EXP)`);
+    };
+    (window as any).__respawnEnemies = () => {
+      for (const e of this.enemies) {
+        e.respawn();
+      }
+      console.log('[Debug] All test enemies respawned and reset to spawn positions.');
+    };
+    console.log('[Debug Tools] Hotkeys: [X] +25 Wpn Exp, [Z] +100 Wpn Exp, [C] +25 Const Exp, [P] +680 Wpn Exp (Lv10 Fencer), [T] Respawn Enemies. Console: __grantExp(id, amt), __setLevel(id, lv), __respawnEnemies().');
 
     // Scroll Wheel Zoom
     this.input.on('wheel', (_pointer: Phaser.Input.Pointer, _gameObjects: unknown[], _deltaX: number, deltaY: number) => {
@@ -348,6 +390,33 @@ export class MainScene extends Phaser.Scene {
         if (wasDowned) {
           console.log(`[Debug K Key] ${targetEnemy.entityName} was downed by debug hit!`);
         }
+      }
+    }
+
+    // Debug Grant +25 Weapon EXP [X]
+    if (this.xKey && Phaser.Input.Keyboard.JustDown(this.xKey)) {
+      this.progressionSystem.addProficiencyExp(this.player.equippedWeapon.id, 25);
+    }
+
+    // Debug Grant +100 Weapon EXP [Z]
+    if (this.zKey && Phaser.Input.Keyboard.JustDown(this.zKey)) {
+      this.progressionSystem.addProficiencyExp(this.player.equippedWeapon.id, 100);
+    }
+
+    // Debug Grant +25 Construction EXP [C]
+    if (this.cKey && Phaser.Input.Keyboard.JustDown(this.cKey)) {
+      this.progressionSystem.addProficiencyExp('construction', 25);
+    }
+
+    // Debug Grant +680 Weapon EXP [P] (Exact boundary test for Level 10 / Fencer unlock)
+    if (this.pKey && Phaser.Input.Keyboard.JustDown(this.pKey)) {
+      this.progressionSystem.addProficiencyExp(this.player.equippedWeapon.id, 680);
+    }
+
+    // Debug Respawn / Reset all test enemies [T]
+    if (this.tKey && Phaser.Input.Keyboard.JustDown(this.tKey)) {
+      for (const enemy of this.enemies) {
+        enemy.respawn();
       }
     }
 

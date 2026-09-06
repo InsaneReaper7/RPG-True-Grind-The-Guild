@@ -1,6 +1,6 @@
 import { Player } from '../entities/Player';
 import { ProgressionSystem } from './ProgressionSystem';
-import { PlayerData, PlayerSnapshot, PlacedBuildable } from '../types/game';
+import { PlayerData, PlayerSnapshot, PlacedBuildable, TrainableStat } from '../types/game';
 import { DataLoader } from '../utils/DataLoader';
 
 export class GameState {
@@ -34,9 +34,24 @@ export class GameState {
     }
 
     this.resources = {
-      wood: playerData.resources?.wood ?? 100,
+      wood: playerData.resources?.wood ?? 0,
       ...(playerData.resources ?? {})
     };
+
+    const seedProficiencies: Record<string, TrainableStat> = {
+      [playerData.startingWeaponId]: { level: 0, currentExp: 0 },
+      construction: { level: 0, currentExp: 0 }
+    };
+
+    if (playerData.proficiencies) {
+      for (const [k, v] of Object.entries(playerData.proficiencies)) {
+        if (typeof v === 'number') {
+          seedProficiencies[k] = { level: v, currentExp: 0 };
+        } else if (v && typeof v === 'object') {
+          seedProficiencies[k] = { level: v.level ?? 0, currentExp: v.currentExp ?? 0 };
+        }
+      }
+    }
 
     this.snapshot = {
       hp: playerData.maxHp,
@@ -46,7 +61,7 @@ export class GameState {
       equippedSkillIds: equipped,
       autocastMap: autocastObj,
       skillCooldownsRemainingMs: {},
-      proficiencies: { [playerData.startingWeaponId]: 0 },
+      proficiencies: seedProficiencies,
       classLevels: {},
       unlockedClasses: [],
       resources: { ...this.resources },

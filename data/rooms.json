@@ -1,0 +1,25 @@
+﻿{
+  "rules": [
+    {
+      "id": "cooking_dining",
+      "name": "Cooking & Dining Area",
+      "priority": 100,
+      "requiredTags": ["cooking", "dining"],
+      "description": "Combination of cooking and dining furniture."
+    },
+    {
+      "id": "bedroom",
+      "name": "Bedroom",
+      "priority": 10,
+      "requiredTags": ["bedroom"],
+      "description": "Sleeping quarters with a guild bed."
+    },
+    {
+      "id": "study",
+      "name": "Study",
+      "priority": 10,
+      "requiredTags": ["study"],
+      "description": "Research and reading quarters with a research station."
+    }
+  ]
+}

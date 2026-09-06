@@ -1,4 +1,4 @@
-﻿{
+{
   "buildables": [
     {
       "id": "floor",
@@ -38,7 +38,19 @@
       "rotatable": true,
       "indoorRequired": true,
       "walkable": false,
+      "roomTag": "study",
       "description": "Guild crafting station. Requires a fully enclosed indoor room with walls and a door."
+    },
+    {
+      "id": "bed",
+      "name": "Bed",
+      "woodCost": 15,
+      "footprint": { "width": 1, "height": 1 },
+      "rotatable": true,
+      "indoorRequired": true,
+      "walkable": false,
+      "roomTag": "bedroom",
+      "description": "Comfortable wooden guild bed for resting. Requires a fully enclosed indoor room."
     }
   ]
 }

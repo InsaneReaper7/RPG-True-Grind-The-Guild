@@ -10,7 +10,11 @@
   "startingWeaponId": "short_swords",
   "knownSkillIds": ["power_strike"],
   "equippedSkillIds": ["power_strike"],
+  "proficiencies": {
+    "short_swords": { "level": 0, "currentExp": 0 },
+    "construction": { "level": 0, "currentExp": 0 }
+  },
   "resources": {
-    "wood": 100
+    "wood": 1000
   }
 }

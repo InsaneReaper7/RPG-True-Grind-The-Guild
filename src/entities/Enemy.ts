@@ -54,4 +54,29 @@ export class Enemy extends Entity {
 
     return super.takeDamage(amount);
   }
+
+  /**
+   * Performs a complete state wipe and resets enemy back to its initial spawn configuration.
+   */
+  public respawn(): void {
+    this.hp = this.maxHp;
+    this.criticalHp = this.maxCriticalHp;
+    this.state = 'idle';
+    this.isAggroed = false;
+    this.outOfAggroTimerMs = 0;
+    this.lastAttackTime = 0;
+    this.targetEntity = null;
+    this.activeStatusEffects.clear();
+    this.stopMovement();
+    this.setGridPosition(this.spawnPos.x, this.spawnPos.y);
+
+    this.avatarSprite.setAngle(0);
+    this.avatarSprite.setAlpha(1);
+    this.avatarSprite.clearTint();
+    if (this.statusIconSprite) {
+      this.statusIconSprite.setVisible(false);
+    }
+    this.drawHpBar();
+    console.log(`[Respawn] ${this.entityName} completely reset and respawned at (${this.spawnPos.x}, ${this.spawnPos.y}) with full HP!`);
+  }
 }

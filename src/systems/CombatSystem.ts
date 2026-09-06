@@ -257,6 +257,16 @@ export class CombatSystem {
         const dataLoader = DataLoader.getInstance();
         const weaponId = this.player.equippedWeapon.id;
 
+        // Calculate weapon effective damage and uncapped accuracy
+        const weapon = this.player.equippedWeapon;
+        const weaponLevel = this.progressionSystem.getProficiencyLevel(weaponId);
+        const damageBonusPerLevel = weapon.levelBonus?.damagePerLevel ?? 0;
+        const accuracyBonusPerLevel = weapon.levelBonus?.accuracyPerLevel ?? 0;
+        const effectiveBaseDamage = weapon.baseDamage + (weaponLevel * damageBonusPerLevel);
+        const baseAccuracy = weapon.baseAccuracy ?? 0.60;
+        // Strictly uncapped: accuracy must be allowed to exceed 1.0 / 100% to offset future enemy Evasion
+        const effectiveAccuracy = baseAccuracy + (weaponLevel * accuracyBonusPerLevel);
+
         // Check if any equipped skill auto-cast conditions are met
         let usedSkill = false;
 
@@ -284,22 +294,34 @@ export class CombatSystem {
             this.player.lastAttackTime = time;
             this.player.state = 'attacking';
 
-            const baseDamage = this.player.equippedWeapon.baseDamage;
-            const skillDamage = Math.floor(baseDamage * skillDef.damageMultiplier);
-
-            console.log(`[Skill] Player casts ${skillDef.name}! Dealt ${skillDamage} damage (${skillDef.damageMultiplier * 100}% base)`);
             this.createSkillAttackEffect(this.player.x, this.player.y, target.x, target.y);
-            this.createFloatingText(target.x, target.y - 10, `${skillDef.name.toUpperCase()}!`, '#f59e0b');
 
-            // Roll Bleed status effect chance
-            this.checkAndApplyBleed(target);
+            // Power Strike rolls against the exact same weapon accuracy check
+            const hitRoll = Math.random();
+            const isHit = hitRoll < effectiveAccuracy;
 
-            // Grant proficiency EXP on skill hit
-            this.progressionSystem.addProficiencyExp(weaponId, 2);
+            if (!isHit) {
+              console.log(`[Skill] Player casts ${skillDef.name} with ${weapon.name} but MISSED! (Hit Chance: ${(effectiveAccuracy * 100).toFixed(1)}%, Roll: ${(hitRoll * 100).toFixed(1)}%)`);
+              this.createFloatingText(target.x, target.y - 10, 'MISS', '#9ca3af');
+            } else {
+              const skillDamage = Math.floor(effectiveBaseDamage * skillDef.damageMultiplier);
+              console.log(`[Skill] Player casts ${skillDef.name}! Dealt ${skillDamage} damage (${skillDef.damageMultiplier * 100}% of ${effectiveBaseDamage.toFixed(1)} base) [Hit Chance: ${(effectiveAccuracy * 100).toFixed(1)}%]`);
+              this.createFloatingText(target.x, target.y - 10, `${skillDef.name.toUpperCase()}! -${skillDamage}`, '#f59e0b');
 
-            const targetDowned = target.takeDamage(skillDamage);
-            if (targetDowned) {
-              this.handleTargetDefeated(target, weaponId);
+              // Roll Bleed status effect chance
+              this.checkAndApplyBleed(target);
+
+              // Grant proficiency EXP on skill hit
+              const result = this.progressionSystem.addProficiencyExp(weaponId, 2);
+              if (result.leveledUp) {
+                const newLevel = this.progressionSystem.getProficiencyLevel(weaponId);
+                this.createFloatingText(this.player.x, this.player.y - 20, `${weapon.name} Level ${newLevel}!`, '#22c55e');
+              }
+
+              const targetDowned = target.takeDamage(skillDamage);
+              if (targetDowned) {
+                this.handleTargetDefeated(target, weaponId);
+              }
             }
             break;
           }
@@ -311,19 +333,33 @@ export class CombatSystem {
             this.player.lastAttackTime = time;
             this.player.state = 'attacking';
 
-            const damage = this.player.equippedWeapon.baseDamage;
-            console.log(`[Combat] Player attacks ${target.entityName} with ${this.player.equippedWeapon.name} for ${damage} damage!`);
             this.createAttackEffect(this.player.x, this.player.y, target.x, target.y, 0x3b82f6);
 
-            // Roll Bleed status effect chance
-            this.checkAndApplyBleed(target);
+            const hitRoll = Math.random();
+            const isHit = hitRoll < effectiveAccuracy;
 
-            // Grant proficiency EXP on hit
-            this.progressionSystem.addProficiencyExp(weaponId, 2);
+            if (!isHit) {
+              console.log(`[Combat] Player attacks ${target.entityName} with ${weapon.name} but MISSED! (Hit Chance: ${(effectiveAccuracy * 100).toFixed(1)}%, Roll: ${(hitRoll * 100).toFixed(1)}%)`);
+              this.createFloatingText(target.x, target.y - 10, 'MISS', '#9ca3af');
+            } else {
+              const damage = effectiveBaseDamage;
+              console.log(`[Combat] Player attacks ${target.entityName} with ${weapon.name} for ${damage.toFixed(1)} damage! (Base: ${weapon.baseDamage}, Lv ${weaponLevel} Bonus: +${(weaponLevel * damageBonusPerLevel).toFixed(1)}, Accuracy: ${(effectiveAccuracy * 100).toFixed(1)}%)`);
+              this.createFloatingText(target.x, target.y - 10, `-${damage.toFixed(1)}`, '#38bdf8');
 
-            const targetDowned = target.takeDamage(damage);
-            if (targetDowned) {
-              this.handleTargetDefeated(target, weaponId);
+              // Roll Bleed status effect chance
+              this.checkAndApplyBleed(target);
+
+              // Grant proficiency EXP on hit
+              const result = this.progressionSystem.addProficiencyExp(weaponId, 2);
+              if (result.leveledUp) {
+                const newLevel = this.progressionSystem.getProficiencyLevel(weaponId);
+                this.createFloatingText(this.player.x, this.player.y - 20, `${weapon.name} Level ${newLevel}!`, '#22c55e');
+              }
+
+              const targetDowned = target.takeDamage(damage);
+              if (targetDowned) {
+                this.handleTargetDefeated(target, weaponId);
+              }
             }
           }
         }
@@ -346,7 +382,11 @@ export class CombatSystem {
   private handleTargetDefeated(target: Entity, weaponId: string): void {
     console.log(`[Combat] ${target.entityName} defeated/downed!`);
     // Bonus EXP on kill/downing target
-    this.progressionSystem.addProficiencyExp(weaponId, 4);
+    const result = this.progressionSystem.addProficiencyExp(weaponId, 4);
+    if (result.leveledUp) {
+      const newLevel = this.progressionSystem.getProficiencyLevel(weaponId);
+      this.createFloatingText(this.player.x, this.player.y - 20, `Level Up! Level ${newLevel}`, '#22c55e');
+    }
 
     this.player.clearTarget();
 

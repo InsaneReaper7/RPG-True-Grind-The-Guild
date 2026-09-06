@@ -3,6 +3,17 @@ export interface GridPos {
   y: number;
 }
 
+export interface TrainableStat {
+  level: number;
+  currentExp: number;
+}
+
+export interface WeaponLevelBonus {
+  accuracyPerLevel?: number;
+  damagePerLevel?: number;
+  attackSpeedPerLevel?: number;
+}
+
 export interface WeaponDef {
   id: string;
   name: string;
@@ -10,7 +21,9 @@ export interface WeaponDef {
   twoHanded: boolean;
   attackIntervalMs: number;
   baseDamage: number;
+  baseAccuracy?: number;
   bleedChance?: number;
+  levelBonus?: WeaponLevelBonus;
 }
 
 export interface ProficiencyTiers {
@@ -81,6 +94,8 @@ export interface BuildableDef {
   rotatable: boolean;
   indoorRequired: boolean;
   walkable: boolean;
+  roomTag?: string;
+  roomTags?: string[];
   description: string;
 }
 
@@ -93,6 +108,19 @@ export interface PlacedBuildable {
   x: number;
   y: number;
   rotation: number; // 0, 90, 180, 270
+  costPaid?: number;
+}
+
+export interface RoomRuleDef {
+  id: string;
+  name: string;
+  priority: number;
+  requiredTags: string[];
+  description?: string;
+}
+
+export interface RoomsData {
+  rules: RoomRuleDef[];
 }
 
 export interface PlayerData {
@@ -107,6 +135,7 @@ export interface PlayerData {
   startingWeaponId: string;
   knownSkillIds?: string[];
   equippedSkillIds?: string[];
+  proficiencies?: Record<string, number | TrainableStat>;
   resources?: {
     wood: number;
     [key: string]: number;
@@ -121,7 +150,7 @@ export interface PlayerSnapshot {
   equippedSkillIds: string[];
   autocastMap: Record<string, boolean>;
   skillCooldownsRemainingMs: Record<string, number>;
-  proficiencies: Record<string, number>;
+  proficiencies: Record<string, TrainableStat>;
   classLevels: Record<string, number>;
   unlockedClasses: string[];
   resources: {
