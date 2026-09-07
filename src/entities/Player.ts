@@ -1,14 +1,22 @@
 import Phaser from 'phaser';
 import { Entity } from './Entity';
-import { PlayerData, WeaponDef } from '../types/game';
+import { PlayerData, WeaponDef, CharacterSnapshot } from '../types/game';
 import { GameState } from '../systems/GameState';
 import { DataLoader } from '../utils/DataLoader';
+import { ProgressionSystem } from '../systems/ProgressionSystem';
+import type { ClassifiedRoom } from '../systems/RoomClassifier';
 
 export class Player extends Entity {
+  public id: string;
+  public progression: ProgressionSystem;
+  public currentRoom: ClassifiedRoom | null = null;
+  public currentRoomName: string | null = null;
   public equippedWeapon: WeaponDef;
+  public offhandWeapon: WeaponDef | null = null;
   public targetEntity: Entity | null = null;
   public lastAttackTime: number = 0;
   public attackRangeTiles: number = 1;
+  public avatarTextureKey: string;
 
   public energy: number;
   public maxEnergy: number;
@@ -39,19 +47,23 @@ export class Player extends Entity {
     y: number,
     playerData: PlayerData,
     startingWeapon: WeaponDef,
-    tileSize: number = 32
+    tileSize: number = 32,
+    avatarKey: string = 'player-avatar',
+    progression?: ProgressionSystem
   ) {
     super(
       scene,
       x,
       y,
-      'player-avatar',
+      avatarKey,
       playerData.name,
       playerData.maxHp,
       playerData.criticalHpMax,
       tileSize
     );
 
+    this.id = playerData.id || 'hero';
+    this.avatarTextureKey = avatarKey;
     this.moveSpeed = playerData.moveSpeed;
     this.attackRangeTiles = playerData.attackRangeTiles;
     this.equippedWeapon = startingWeapon;
@@ -60,11 +72,41 @@ export class Player extends Entity {
     this.maxEnergy = playerData.maxEnergy;
     this.energyRegenPerSecond = playerData.energyRegenPerSecond;
 
+    this.progression = progression || new ProgressionSystem(DataLoader.getInstance().getClassesData());
+
     this.knownSkillIds = playerData.knownSkillIds ? [...playerData.knownSkillIds] : ['power_strike'];
     this.equippedSkillIds = playerData.equippedSkillIds ? [...playerData.equippedSkillIds] : ['power_strike'];
     for (const skillId of this.equippedSkillIds) {
       this.autocastMap.set(skillId, true);
     }
+  }
+
+  public equipWeapon(weapon: WeaponDef): void {
+    this.equippedWeapon = weapon;
+    console.log(`[Player:${this.entityName}] Equipped main weapon: ${weapon.name}`);
+  }
+
+  public equipOffhandWeapon(weapon: WeaponDef | null): boolean {
+    if (weapon === null) {
+      this.offhandWeapon = null;
+      console.log(`[Player:${this.entityName}] Unequipped offhand weapon`);
+      return true;
+    }
+    if (!this.progression.isDualWieldUnlocked()) {
+      console.warn(`[Player:${this.entityName}] Cannot equip offhand: Dual Wielding is locked!`);
+      return false;
+    }
+    if (weapon.category !== 'melee_1h' || weapon.twoHanded) {
+      console.warn(`[Player:${this.entityName}] Cannot equip ${weapon.name} in offhand: must be a one-handed melee weapon`);
+      return false;
+    }
+    this.offhandWeapon = weapon;
+    console.log(`[Player:${this.entityName}] Equipped offhand weapon: ${weapon.name}`);
+    return true;
+  }
+
+  public isDualWielding(): boolean {
+    return this.offhandWeapon !== null;
   }
 
   public isAutocastEnabled(skillId: string): boolean {
@@ -160,12 +202,19 @@ export class Player extends Entity {
     return true;
   }
 
+  public lastCombatRepathTimeMs: number = 0;
+  public combatRepathIntervalMs: number = 400;
+
   public setTarget(target: Entity | null): void {
     this.targetEntity = target;
   }
 
   public clearTarget(): void {
+    const hadTarget = this.targetEntity !== null;
     this.targetEntity = null;
+    if (hadTarget) {
+      this.stopMovement();
+    }
   }
 
   public revive(): void {
@@ -174,6 +223,8 @@ export class Player extends Entity {
     this.hp = Math.floor(this.maxHp * 0.5);
     this.criticalHp = this.maxCriticalHp;
     this.state = 'idle';
+    this.claimedDestination = null;
+    this.clearTarget();
 
     this.avatarSprite.setAngle(0);
     this.avatarSprite.setAlpha(1);
@@ -221,6 +272,128 @@ export class Player extends Entity {
 
     this.drawHpBar();
     return !wasFull;
+  }
+
+  public getSnapshot(sceneTime: number): CharacterSnapshot {
+    const dataLoader = DataLoader.getInstance();
+    const autocastObj: Record<string, boolean> = {};
+    for (const [k, v] of this.autocastMap.entries()) {
+      autocastObj[k] = v;
+    }
+
+    const remainingCooldowns: Record<string, number> = {};
+    for (const skillId of this.equippedSkillIds) {
+      const skillDef = dataLoader.getSkill(skillId);
+      if (skillDef) {
+        const lastUsed = this.lastSkillUseTimes.get(skillId) || 0;
+        if (lastUsed > 0) {
+          const elapsed = sceneTime - lastUsed;
+          const remaining = Math.max(0, skillDef.cooldownMs - elapsed);
+          if (remaining > 0) {
+            remainingCooldowns[skillId] = remaining;
+          }
+        }
+      }
+    }
+
+    const progData = this.progression.getSnapshotData();
+
+    return {
+      id: this.id,
+      name: this.entityName,
+      avatarKey: this.avatarTextureKey,
+      avatarTextureKey: this.avatarTextureKey,
+      x: this.gridPos.x,
+      y: this.gridPos.y,
+      hp: this.hp,
+      criticalHp: this.criticalHp,
+      energy: this.energy,
+      equippedWeaponId: this.equippedWeapon.id,
+      offhandWeaponId: this.offhandWeapon?.id ?? null,
+      knownSkillIds: [...this.knownSkillIds],
+      equippedSkillIds: [...this.equippedSkillIds],
+      autocastMap: autocastObj,
+      skillCooldownsRemainingMs: remainingCooldowns,
+      proficiencies: progData.proficiencies,
+      classLevels: progData.classLevels,
+      unlockedClasses: progData.unlockedClasses,
+      bookLearnedSkills: Array.from(this.bookLearnedSkills),
+      hunger: this.hunger,
+      mood: this.mood,
+      state: this.state
+    };
+  }
+
+  public restoreFromSnapshot(snapshot: CharacterSnapshot, sceneTime: number): void {
+    const dataLoader = DataLoader.getInstance();
+    if (snapshot.id) {
+      this.id = snapshot.id;
+    }
+    if (snapshot.name) {
+      this.entityName = snapshot.name;
+    }
+    this.hp = snapshot.hp;
+    this.criticalHp = snapshot.criticalHp;
+    this.energy = snapshot.energy;
+
+    const mainWeapon = dataLoader.getWeapon(snapshot.equippedWeaponId);
+    if (mainWeapon) {
+      this.equippedWeapon = mainWeapon;
+    }
+
+    if (snapshot.offhandWeaponId) {
+      const offWeapon = dataLoader.getWeapon(snapshot.offhandWeaponId);
+      this.offhandWeapon = offWeapon ?? null;
+    } else {
+      this.offhandWeapon = null;
+    }
+
+    this.knownSkillIds = [...snapshot.knownSkillIds];
+    this.equippedSkillIds = [...snapshot.equippedSkillIds];
+
+    this.autocastMap.clear();
+    for (const [k, v] of Object.entries(snapshot.autocastMap)) {
+      this.autocastMap.set(k, v);
+    }
+
+    if (snapshot.bookLearnedSkills) {
+      this.bookLearnedSkills = new Set(snapshot.bookLearnedSkills);
+    }
+    if (snapshot.hunger !== undefined) {
+      this.hunger = snapshot.hunger;
+    }
+    if (snapshot.mood !== undefined) {
+      this.mood = snapshot.mood;
+    }
+
+    this.progression.loadSnapshotData({
+      proficiencies: snapshot.proficiencies,
+      classLevels: snapshot.classLevels,
+      unlockedClasses: snapshot.unlockedClasses
+    });
+
+    // Re-anchor cooldowns in current scene clock
+    this.lastSkillUseTimes.clear();
+    for (const [skillId, remainingMs] of Object.entries(snapshot.skillCooldownsRemainingMs)) {
+      const skillDef = dataLoader.getSkill(skillId);
+      if (skillDef && remainingMs > 0) {
+        const reanchoredLastUsed = sceneTime - (skillDef.cooldownMs - remainingMs);
+        this.lastSkillUseTimes.set(skillId, reanchoredLastUsed);
+      }
+    }
+
+    // Downed state restoration
+    if (snapshot.state === 'downed' || this.hp <= 0) {
+      this.state = 'downed';
+      this.avatarSprite.setAngle(90);
+      this.avatarSprite.setAlpha(0.6);
+    } else {
+      this.state = 'idle';
+      this.avatarSprite.setAngle(0);
+      this.avatarSprite.setAlpha(1);
+    }
+
+    this.drawHpBar();
   }
 
   public eatFood(foodId: string = 'ration'): boolean {

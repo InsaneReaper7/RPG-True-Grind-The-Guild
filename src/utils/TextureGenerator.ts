@@ -40,6 +40,22 @@ export class TextureGenerator {
       g.destroy();
     }
 
+    // 3b. Companion Avatar Texture (Purple Circle with Dual Daggers icon)
+    if (!scene.textures.exists('companion-avatar')) {
+      const size = 28;
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      g.fillStyle(0x8b5cf6, 1); // Violet / Purple
+      g.fillCircle(size / 2, size / 2, size / 2 - 2);
+      g.lineStyle(2, 0xc4b5fd, 1);
+      g.strokeCircle(size / 2, size / 2, size / 2 - 2);
+      // Dual Dagger crossing icon
+      g.lineStyle(2, 0xffffff, 1);
+      g.lineBetween(size / 2 - 4, size / 2 + 4, size / 2 + 4, size / 2 - 4);
+      g.lineBetween(size / 2 - 4, size / 2 - 4, size / 2 + 4, size / 2 + 4);
+      g.generateTexture('companion-avatar', size, size);
+      g.destroy();
+    }
+
     // 4. Wolf Avatar Texture (Red/Amber Diamond)
     if (!scene.textures.exists('wolf-avatar')) {
       const size = 28;

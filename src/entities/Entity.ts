@@ -11,6 +11,7 @@ export class Entity extends Phaser.GameObjects.Container {
   public entityName: string;
   public state: EntityState = 'idle';
   public moveSpeed: number = 100; // pixels per second
+  public claimedDestination: GridPos | null = null;
 
   public activeStatusEffects: Map<string, ActiveStatusEffect> = new Map();
 
@@ -74,11 +75,13 @@ export class Entity extends Phaser.GameObjects.Container {
     this.setDepth(this.y);
     this.targetWorldPos = null;
     this.path = [];
+    this.claimedDestination = null;
   }
 
   public stopMovement(): void {
     this.path = [];
     this.targetWorldPos = null;
+    this.claimedDestination = null;
     if (this.state === 'moving') {
       this.state = 'idle';
     }
@@ -92,6 +95,7 @@ export class Entity extends Phaser.GameObjects.Container {
     if (this.state === 'downed' || this.state === 'dead') return;
 
     if (!path || path.length === 0) {
+      this.claimedDestination = null;
       if (onComplete) onComplete();
       return;
     }
@@ -105,11 +109,13 @@ export class Entity extends Phaser.GameObjects.Container {
     this.onPathCompleteCallback = onComplete;
 
     if (this.path.length > 0) {
+      this.claimedDestination = { ...this.path[this.path.length - 1] };
       this.state = 'moving';
       if (!this.targetWorldPos) {
         this.advanceToNextTileInPath();
       }
     } else {
+      this.claimedDestination = null;
       if (!this.targetWorldPos) {
         this.state = 'idle';
         if (this.onPathCompleteCallback) {
@@ -122,6 +128,7 @@ export class Entity extends Phaser.GameObjects.Container {
   private advanceToNextTileInPath(): void {
     if (this.path.length === 0) {
       this.targetWorldPos = null;
+      this.claimedDestination = null;
       this.state = 'idle';
       if (this.onPathCompleteCallback) {
         const cb = this.onPathCompleteCallback;
@@ -172,6 +179,7 @@ export class Entity extends Phaser.GameObjects.Container {
     this.state = 'downed';
     this.path = [];
     this.targetWorldPos = null;
+    this.claimedDestination = null;
     this.avatarSprite.setAngle(90);
     this.avatarSprite.setAlpha(0.6);
     this.drawHpBar();

@@ -3,6 +3,7 @@ import { DataLoader } from '../utils/DataLoader';
 import { TextureGenerator } from '../utils/TextureGenerator';
 import { Pathfinder } from '../utils/Pathfinder';
 import { Player } from '../entities/Player';
+import { Entity } from '../entities/Entity';
 import { ProgressionSystem } from '../systems/ProgressionSystem';
 import { HUD } from '../ui/HUD';
 import { GameState } from '../systems/GameState';
@@ -18,14 +19,17 @@ export class OutpostScene extends Phaser.Scene {
 
   private tilemap!: Phaser.Tilemaps.Tilemap;
   private pathfinder!: Pathfinder;
-  private player!: Player;
+  public party: Player[] = [];
+  public get player(): Player {
+    return this.party[0];
+  }
   private progressionSystem!: ProgressionSystem;
   private hud!: HUD;
   private buildingSystem!: BuildingSystem;
   private roomClassifier!: RoomClassifier;
   private cachedRoomMap: Map<string, ClassifiedRoom> = new Map();
-  private lastKnownPlayerTile: string = '';
-  private lastClassifiedRoomName: string | null = null;
+  private lastKnownMemberTiles: Map<Player, string> = new Map();
+  private lastClassifiedMemberRooms: Map<Player, string | null> = new Map();
 
   private portalSprite!: Phaser.GameObjects.Sprite;
   private portalPos: GridPos = { x: 3, y: 3 };
@@ -171,14 +175,36 @@ export class OutpostScene extends Phaser.Scene {
       }
     });
 
-    // 5. Spawn Player & Restore State Snapshot
-    this.player = new Player(this, 4, 4, playerData, startingWeapon, this.tileSize);
-    GameState.getInstance().restoreTo(this.player, this.progressionSystem, this.time.now);
-
     // Restore any previously placed structures from GameState
     this.restorePlacedBuildables();
 
-    // Initial room classification scan
+    // 5. Spawn Party & Restore State Snapshot
+    const partySnapshots = GameState.getInstance().getPartySnapshots();
+    this.party = [];
+
+    if (partySnapshots.length === 0) {
+      const hero = new Player(this, 4, 4, playerData, startingWeapon, this.tileSize, 'player-avatar', this.progressionSystem);
+      hero.id = 'hero';
+      hero.entityName = playerData.name || 'Hero';
+      this.party.push(hero);
+      GameState.getInstance().restoreTo(hero, this.progressionSystem, this.time.now);
+    } else {
+      const claimedSpawn = new Set<string>();
+      for (let i = 0; i < partySnapshots.length; i++) {
+        const snap = partySnapshots[i];
+        const snapWeapon = dataLoader.getWeapon(snap.equippedWeaponId) || startingWeapon;
+        const memberProg = (i === 0) ? this.progressionSystem : new ProgressionSystem(classesData);
+        const snapAvatar = snap.avatarTextureKey || (i === 0 ? 'player-avatar' : 'companion-avatar');
+        const spawnTile = this.findOpenAdjacentTile(this.portalPos, undefined, claimedSpawn);
+        claimedSpawn.add(`${spawnTile.x},${spawnTile.y}`);
+
+        const member = new Player(this, spawnTile.x, spawnTile.y, playerData, snapWeapon, this.tileSize, snapAvatar, memberProg);
+        member.restoreFromSnapshot(snap, this.time.now);
+        this.party.push(member);
+      }
+    }
+
+    // Initial room classification scan (runs after party members are instantiated and placed)
     this.recalculateEnclosedRooms();
 
     // 6. Spawn Portal to Dungeon at (3, 3)
@@ -263,8 +289,12 @@ export class OutpostScene extends Phaser.Scene {
       rKey.on('down', () => {
         if (this.isBuildMode) {
           this.rotateBlueprint();
-        } else if (this.player.state === 'downed') {
-          this.player.revive();
+        } else {
+          for (const member of this.party) {
+            if (member.state === 'downed') {
+              member.revive();
+            }
+          }
         }
       });
 
@@ -305,18 +335,40 @@ export class OutpostScene extends Phaser.Scene {
     }
 
     // Expose debug helpers on window in Outpost
-    (window as any).__grantExp = (statId: string = 'short_swords', amount: number = 25) => {
-      return this.progressionSystem.addProficiencyExp(statId, amount);
+    (window as any).__grantExp = (statId: string = 'short_swords', amount: number = 25, memberIndex: number = 0) => {
+      const targetMember = this.party[memberIndex] || this.party[0];
+      return targetMember.progression.addProficiencyExp(statId, amount);
     };
-    (window as any).__grantHiddenExp = (skillId: string, amount: number = 25) => {
-      return this.progressionSystem.addProficiencyExp(skillId, amount);
+    (window as any).__grantHiddenExp = (skillId: string, amount: number = 25, memberIndex: number = 0) => {
+      const targetMember = this.party[memberIndex] || this.party[0];
+      return targetMember.progression.addProficiencyExp(skillId, amount);
     };
-    (window as any).__setLevel = (statId: string = 'short_swords', targetLevel: number = 10) => {
-      const stat = this.progressionSystem.getProficiencyStat(statId);
+    (window as any).__setLevel = (statId: string = 'short_swords', targetLevel: number = 10, memberIndex: number = 0) => {
+      const targetMember = this.party[memberIndex] || this.party[0];
+      const stat = targetMember.progression.getProficiencyStat(statId);
       stat.level = targetLevel;
       stat.currentExp = 0;
-      this.progressionSystem.checkClassUnlocks();
-      console.log(`[Debug] Set '${statId}' to Level ${targetLevel} (0 EXP)`);
+      targetMember.progression.checkClassUnlocks();
+      targetMember.progression.checkDualWieldUnlock();
+      console.log(`[Debug] Set '${statId}' to Level ${targetLevel} (0 EXP) on ${targetMember.entityName}`);
+    };
+    (window as any).__spawnTestCompanion = () => {
+      return this.spawnTestCompanion();
+    };
+    (window as any).__reviveParty = (memberIndex?: number) => {
+      if (memberIndex !== undefined) {
+        if (this.party[memberIndex]) {
+          this.party[memberIndex].revive();
+          console.log(`[Debug] Revived ${this.party[memberIndex].entityName}`);
+        }
+      } else {
+        for (const member of this.party) {
+          if (member.state === 'downed') {
+            member.revive();
+            console.log(`[Debug] Revived ${member.entityName}`);
+          }
+        }
+      }
     };
     (window as any).__testHiddenProc = (skillId: string) => {
       const hiddenDef = DataLoader.getInstance().getHiddenSkill(skillId);
@@ -388,15 +440,20 @@ export class OutpostScene extends Phaser.Scene {
       if (this.isPlacedBed(clickedTileX, clickedTileY)) {
         const currentRoom = this.cachedRoomMap.get(`${clickedTileX},${clickedTileY}`);
         const roomName = currentRoom ? currentRoom.name : 'Bedroom';
-        const restored = this.player.rest();
-        this.hud.update(this.player, this.progressionSystem, this.time.now);
+        let anyRestored = false;
+        for (const member of this.party) {
+          if (member.rest()) {
+            anyRestored = true;
+          }
+        }
+        this.hud.update(this.player, this.progressionSystem, this.time.now, this.party);
 
-        if (restored) {
-          this.createFloatingText(this.player.x, this.player.y - 20, '+RESTORED', '#22c55e');
-          this.hud.showToast(`🛏️ You rest in the ${roomName} and feel fully recovered! HP & Energy restored.`, 'success', 3500);
-          console.log(`[Bed] Rested in ${roomName}: Main HP (${this.player.hp}/${this.player.maxHp}), Critical HP (${this.player.criticalHp}/${this.player.maxCriticalHp}), Energy (${this.player.energy}/${this.player.maxEnergy}).`);
+        if (anyRestored) {
+          this.createFloatingText(this.player.x, this.player.y - 20, '+PARTY RESTORED', '#22c55e');
+          this.hud.showToast(`🛏️ You rest in the ${roomName} and feel fully recovered! Party HP & Energy restored.`, 'success', 3500);
+          console.log(`[Bed] Rested in ${roomName}: Party HP & Energy restored.`);
         } else {
-          this.hud.showToast(`🛏️ Guild Bed (${roomName}): You are already fully rested!`, 'info', 3000);
+          this.hud.showToast(`🛏️ Guild Bed (${roomName}): Party is already fully rested!`, 'info', 3000);
           console.log(`[Bed] Interacted in ${roomName}: Already at full HP & Energy.`);
         }
         return;
@@ -422,12 +479,72 @@ export class OutpostScene extends Phaser.Scene {
 
       // Normal Click-to-Move
       if (this.gridMatrix[clickedTileY]?.[clickedTileX] === 0) {
-        const targetPos: GridPos = { x: clickedTileX, y: clickedTileY };
-        this.pathfinder.findPath(this.player.gridPos, targetPos).then((path) => {
+        for (const member of this.party) {
+          member.clearTarget();
+        }
+
+        const claimed = new Set<string>();
+
+        const isTileBlockedForMove = (tx: number, ty: number, forEntity: Entity): boolean => {
+          if (tx <= 0 || tx >= this.mapWidth - 1 || ty <= 0 || ty >= this.mapHeight - 1) return true;
+          if (this.gridMatrix[ty]?.[tx] !== 0) return true;
+          if (claimed.has(`${tx},${ty}`)) return true;
+          if (this.party.some(m => m !== forEntity && (m.state === 'dead' || m.state === 'downed') && m.gridPos.x === tx && m.gridPos.y === ty)) return true;
+          return false;
+        };
+
+        // Leader movement
+        let leaderDest: GridPos = { x: clickedTileX, y: clickedTileY };
+        if (isTileBlockedForMove(clickedTileX, clickedTileY, this.player)) {
+          leaderDest = this.findNearestOpenTileForPartyMove({ x: clickedTileX, y: clickedTileY }, this.player.gridPos, claimed, this.player);
+        }
+        claimed.add(`${leaderDest.x},${leaderDest.y}`);
+        this.player.claimedDestination = { ...leaderDest };
+
+        const dynamicObs = this.getDynamicObstacles(this.player).filter(
+          obs => !this.party.some(m => m.gridPos.x === obs.x && m.gridPos.y === obs.y)
+        );
+        this.pathfinder.findPath(this.player.gridPos, leaderDest, dynamicObs).then((path) => {
           if (path.length > 0) {
             this.player.followPath(path);
+          } else {
+            this.player.claimedDestination = null;
           }
         });
+
+        // 2x2 Box Formation for Companions:
+        // Slot 0 (Leader): (0, 0)
+        // Slot 1 (Front-Right): (1, 0)
+        // Slot 2 (Back-Left): (0, 1)
+        // Slot 3 (Back-Right): (1, 1)
+        const formationOffsets = [
+          { x: 0, y: 0 },
+          { x: 1, y: 0 },
+          { x: 0, y: 1 },
+          { x: 1, y: 1 }
+        ];
+
+        for (let i = 1; i < this.party.length; i++) {
+          const companion = this.party[i];
+          if (companion.state === 'downed' || companion.state === 'dead') continue;
+
+          const offset = formationOffsets[i] || { x: i % 2, y: Math.floor(i / 2) };
+          const idealPos: GridPos = { x: leaderDest.x + offset.x, y: leaderDest.y + offset.y };
+          const compDest = this.findNearestOpenTileForPartyMove(idealPos, companion.gridPos, claimed, companion);
+          claimed.add(`${compDest.x},${compDest.y}`);
+          companion.claimedDestination = { ...compDest };
+
+          const compDynamicObs = this.getDynamicObstacles(companion).filter(
+            obs => !this.party.some(m => m.gridPos.x === obs.x && m.gridPos.y === obs.y)
+          );
+          this.pathfinder.findPath(companion.gridPos, compDest, compDynamicObs).then((path) => {
+            if (path.length > 0) {
+              companion.followPath(path);
+            } else {
+              companion.claimedDestination = null;
+            }
+          });
+        }
       }
     });
 
@@ -441,6 +558,219 @@ export class OutpostScene extends Phaser.Scene {
     });
 
     console.log('[OutpostScene] Outpost created. Safe zone active. Build Mode enabled.');
+  }
+
+  public getLivingUnits(excludeEntity?: Entity): Entity[] {
+    const units: Entity[] = [];
+    for (const m of this.party) {
+      if (m !== excludeEntity && m.state !== 'dead' && m.state !== 'downed') {
+        units.push(m);
+      }
+    }
+    return units;
+  }
+
+  public getDynamicObstacles(excludeEntity?: Entity): GridPos[] {
+    return this.getLivingUnits(excludeEntity).map((u) => u.gridPos);
+  }
+
+  public isTileOccupied(x: number, y: number, excludeEntity?: Entity): boolean {
+    const living = this.getLivingUnits(excludeEntity);
+    return living.some((u) => u.gridPos.x === x && u.gridPos.y === y);
+  }
+
+  public isTileClaimed(x: number, y: number, excludeEntity?: Entity): boolean {
+    const living = this.getLivingUnits(excludeEntity);
+    return living.some((u) => u.claimedDestination !== null && u.claimedDestination.x === x && u.claimedDestination.y === y);
+  }
+
+  public findOpenAdjacentTile(center: GridPos, preferredNear?: GridPos, claimedTiles?: Set<string>, excludeEntity?: Entity): GridPos {
+    const offsets = [
+      { x: 1, y: 0 }, { x: -1, y: 0 }, { x: 0, y: 1 }, { x: 0, y: -1 },
+      { x: 1, y: 1 }, { x: -1, y: 1 }, { x: 1, y: -1 }, { x: -1, y: -1 },
+      { x: 2, y: 0 }, { x: -2, y: 0 }, { x: 0, y: 2 }, { x: 0, y: -2 },
+      { x: 2, y: 1 }, { x: 2, y: -1 }, { x: -2, y: 1 }, { x: -2, y: -1 },
+      { x: 1, y: 2 }, { x: -1, y: 2 }, { x: 1, y: -2 }, { x: -1, y: -2 }
+    ];
+
+    const candidates: GridPos[] = [];
+    for (const off of offsets) {
+      const tx = center.x + off.x;
+      const ty = center.y + off.y;
+      if (
+        tx > 0 && tx < this.mapWidth - 1 &&
+        ty > 0 && ty < this.mapHeight - 1 &&
+        this.gridMatrix[ty]?.[tx] === 0
+      ) {
+        const key = `${tx},${ty}`;
+        if (!claimedTiles?.has(key) && !this.isTileOccupied(tx, ty, excludeEntity) && !this.isTileClaimed(tx, ty, excludeEntity)) {
+          candidates.push({ x: tx, y: ty });
+        }
+      }
+    }
+
+    if (candidates.length > 0) {
+      if (preferredNear) {
+        candidates.sort((a, b) => {
+          const distA = Math.max(Math.abs(a.x - preferredNear.x), Math.abs(a.y - preferredNear.y));
+          const distB = Math.max(Math.abs(b.x - preferredNear.x), Math.abs(b.y - preferredNear.y));
+          return distA - distB;
+        });
+      }
+      return candidates[0];
+    }
+
+    // Fallback: first walkable unclaimed tile
+    for (const off of offsets) {
+      const tx = center.x + off.x;
+      const ty = center.y + off.y;
+      if (
+        tx > 0 && tx < this.mapWidth - 1 &&
+        ty > 0 && ty < this.mapHeight - 1 &&
+        this.gridMatrix[ty]?.[tx] === 0
+      ) {
+        const key = `${tx},${ty}`;
+        if (!claimedTiles?.has(key) && !this.isTileClaimed(tx, ty, excludeEntity)) {
+          return { x: tx, y: ty };
+        }
+      }
+    }
+
+    return center;
+  }
+
+  public findNearestOpenTile(targetPos: GridPos, preferredNear?: GridPos, claimedTiles?: Set<string>, excludeEntity?: Entity): GridPos {
+    // Check if ideal targetPos is completely open
+    if (
+      targetPos.x > 0 && targetPos.x < this.mapWidth - 1 &&
+      targetPos.y > 0 && targetPos.y < this.mapHeight - 1 &&
+      this.gridMatrix[targetPos.y]?.[targetPos.x] === 0
+    ) {
+      const key = `${targetPos.x},${targetPos.y}`;
+      if (!claimedTiles?.has(key) && !this.isTileOccupied(targetPos.x, targetPos.y, excludeEntity) && !this.isTileClaimed(targetPos.x, targetPos.y, excludeEntity)) {
+        return { x: targetPos.x, y: targetPos.y };
+      }
+    }
+
+    // Concentric search around targetPos up to radius 3
+    const candidates: GridPos[] = [];
+    for (let r = 1; r <= 3; r++) {
+      for (let dx = -r; dx <= r; dx++) {
+        for (let dy = -r; dy <= r; dy++) {
+          if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
+          const tx = targetPos.x + dx;
+          const ty = targetPos.y + dy;
+          if (
+            tx > 0 && tx < this.mapWidth - 1 &&
+            ty > 0 && ty < this.mapHeight - 1 &&
+            this.gridMatrix[ty]?.[tx] === 0
+          ) {
+            const key = `${tx},${ty}`;
+            if (!claimedTiles?.has(key) && !this.isTileOccupied(tx, ty, excludeEntity) && !this.isTileClaimed(tx, ty, excludeEntity)) {
+              candidates.push({ x: tx, y: ty });
+            }
+          }
+        }
+      }
+      if (candidates.length > 0) break;
+    }
+
+    if (candidates.length > 0) {
+      const refPoint = preferredNear || targetPos;
+      candidates.sort((a, b) => {
+        const distA = Math.hypot(a.x - targetPos.x, a.y - targetPos.y) * 2 + Math.hypot(a.x - refPoint.x, a.y - refPoint.y);
+        const distB = Math.hypot(b.x - targetPos.x, b.y - targetPos.y) * 2 + Math.hypot(b.x - refPoint.x, b.y - refPoint.y);
+        return distA - distB;
+      });
+      return candidates[0];
+    }
+
+    return this.findOpenAdjacentTile(targetPos, preferredNear, claimedTiles, excludeEntity);
+  }
+
+  public findNearestOpenTileForPartyMove(
+    targetPos: GridPos,
+    preferredNear: GridPos,
+    claimedTiles: Set<string>,
+    companion: Entity
+  ): GridPos {
+    const isCandidateValid = (tx: number, ty: number): boolean => {
+      if (tx <= 0 || tx >= this.mapWidth - 1 || ty <= 0 || ty >= this.mapHeight - 1) return false;
+      if (this.gridMatrix[ty]?.[tx] !== 0) return false;
+      if (claimedTiles.has(`${tx},${ty}`)) return false;
+      if (this.party.some(m => m !== companion && (m.state === 'dead' || m.state === 'downed') && m.gridPos.x === tx && m.gridPos.y === ty)) return false;
+      return true;
+    };
+
+    if (isCandidateValid(targetPos.x, targetPos.y)) {
+      return targetPos;
+    }
+
+    const candidates: GridPos[] = [];
+    for (let r = 1; r <= 3; r++) {
+      for (let dx = -r; dx <= r; dx++) {
+        for (let dy = -r; dy <= r; dy++) {
+          if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
+          const tx = targetPos.x + dx;
+          const ty = targetPos.y + dy;
+          if (isCandidateValid(tx, ty)) {
+            candidates.push({ x: tx, y: ty });
+          }
+        }
+      }
+      if (candidates.length > 0) break;
+    }
+
+    if (candidates.length > 0) {
+      candidates.sort((a, b) => {
+        const isSelfA = (a.x === companion.gridPos.x && a.y === companion.gridPos.y) ? 1000 : 0;
+        const isSelfB = (b.x === companion.gridPos.x && b.y === companion.gridPos.y) ? 1000 : 0;
+        const distA = Math.hypot(a.x - targetPos.x, a.y - targetPos.y) * 2 + Math.hypot(a.x - preferredNear.x, a.y - preferredNear.y) + isSelfA;
+        const distB = Math.hypot(b.x - targetPos.x, b.y - targetPos.y) * 2 + Math.hypot(b.x - preferredNear.x, b.y - preferredNear.y) + isSelfB;
+        return distA - distB;
+      });
+      return candidates[0];
+    }
+
+    return targetPos;
+  }
+
+  public spawnTestCompanion(): boolean {
+    if (this.party.length >= 4) {
+      this.hud.showToast('Party is full (maximum 4 members)', 'warn', 3000);
+      return false;
+    }
+    const dataLoader = DataLoader.getInstance();
+    const playerData = dataLoader.getPlayer();
+    const daggerWeapon = dataLoader.getWeapon('daggers') || dataLoader.getWeapon(playerData.startingWeaponId)!;
+    const companionIndex = this.party.length;
+    const companionId = `companion_${companionIndex}`;
+    const companionName = companionIndex === 1 ? 'Valerie' : companionIndex === 2 ? 'Kaelen' : 'Barris';
+
+    // Find adjacent walkable unoccupied tile near leader
+    const spawnTile = this.findOpenAdjacentTile(this.player.gridPos);
+    const spawnX = spawnTile.x;
+    const spawnY = spawnTile.y;
+
+    const companionProgression = new ProgressionSystem(dataLoader.getClassesData());
+    const companion = new Player(
+      this,
+      spawnX,
+      spawnY,
+      playerData,
+      daggerWeapon,
+      this.tileSize,
+      'companion-avatar',
+      companionProgression
+    );
+    companion.id = companionId;
+    companion.entityName = companionName;
+    this.party.push(companion);
+    GameState.getInstance().addCompanionToParty(companion, this.time.now);
+    this.updatePlayerRoomLookup(true);
+    this.hud.showToast(`👥 ${companionName} joined the party!`, 'success', 3000);
+    console.log(`[OutpostScene] Spawned companion ${companionName} at (${spawnX}, ${spawnY}) with ${daggerWeapon.name}`);
+    return true;
   }
 
   // --- BUILD MODE METHODS ---
@@ -584,11 +914,12 @@ export class OutpostScene extends Phaser.Scene {
     const blueprint = dataLoader.getBuildable(this.selectedBuildableId);
     if (!blueprint) return;
 
-    const validation = this.buildingSystem.canPlace(
+    const playerPos = this.player?.gridPos ?? { x: -1, y: -1 };
+    let validation = this.buildingSystem.canPlace(
       blueprint,
       tileX,
       tileY,
-      this.player.gridPos,
+      playerPos,
       [this.portalPos],
       (x, y) => this.isWall(x, y),
       (x, y) => this.isPlacedDoor(x, y),
@@ -596,6 +927,10 @@ export class OutpostScene extends Phaser.Scene {
       GameState.getInstance().getWood(),
       constLevel
     );
+
+    if (validation.valid && !blueprint.walkable && this.party.some((m) => m.gridPos.x === tileX && m.gridPos.y === tileY)) {
+      validation = { valid: false, reason: 'Cannot place solid object on party member position.' };
+    }
 
     const path = validation.valid ? 'valid-highlight' : `invalid-highlight-with-reason (${validation.reason})`;
     if (this.lastLoggedHoverKey !== hoverKey) {
@@ -632,11 +967,12 @@ export class OutpostScene extends Phaser.Scene {
     const constLevel = this.progressionSystem.getProficiencyLevel('construction');
     const effectiveCost = BuildingSystem.getEffectiveBuildCost(blueprint.woodCost, constLevel);
 
-    const validation = this.buildingSystem.canPlace(
+    const playerPos = this.player?.gridPos ?? { x: -1, y: -1 };
+    let validation = this.buildingSystem.canPlace(
       blueprint,
       x,
       y,
-      this.player.gridPos,
+      playerPos,
       [this.portalPos],
       (tx, ty) => this.isWall(tx, ty),
       (tx, ty) => this.isPlacedDoor(tx, ty),
@@ -644,6 +980,10 @@ export class OutpostScene extends Phaser.Scene {
       GameState.getInstance().getWood(),
       constLevel
     );
+
+    if (validation.valid && !blueprint.walkable && this.party.some((m) => m.gridPos.x === x && m.gridPos.y === y)) {
+      validation = { valid: false, reason: 'Cannot place solid object on party member position.' };
+    }
 
     if (!validation.valid) {
       console.log(`[BuildMode:Place] Tile: (${x}, ${y}) | Result: REJECTED | Reason: ${validation.reason}`);
@@ -929,25 +1269,66 @@ export class OutpostScene extends Phaser.Scene {
   }
 
   /**
-   * O(1) room lookup when player moves between tiles.
-   * Zero flood fill.
+   * O(1) room lookup when party members move between tiles.
+   * Zero flood fill. Iterates active party roster.
    */
   private updatePlayerRoomLookup(forceUpdate: boolean = false): void {
-    const tileKey = `${this.player.gridPos.x},${this.player.gridPos.y}`;
-    if (!forceUpdate && tileKey === this.lastKnownPlayerTile) return;
-    this.lastKnownPlayerTile = tileKey;
+    if (!this.party || this.party.length === 0) return;
 
-    const currentRoom = this.cachedRoomMap.get(tileKey);
-    const roomName = currentRoom?.name ?? null;
-
-    if (roomName !== this.lastClassifiedRoomName || forceUpdate) {
-      this.lastClassifiedRoomName = roomName;
-      this.hud.setRoomName(roomName);
-      if (roomName && !forceUpdate) {
-        console.log(`[RoomClassification] Player entered: ${roomName} at (${tileKey})`);
-        this.hud.showToast(`🏠 Entered ${roomName}`, 'info', 2500);
+    // Clean up tracking for any dismissed/removed members
+    if (this.lastKnownMemberTiles.size > this.party.length) {
+      for (const trackedMember of this.lastKnownMemberTiles.keys()) {
+        if (!this.party.includes(trackedMember)) {
+          this.lastKnownMemberTiles.delete(trackedMember);
+          this.lastClassifiedMemberRooms.delete(trackedMember);
+        }
       }
     }
+
+    for (let i = 0; i < this.party.length; i++) {
+      const member = this.party[i];
+      if (!member || !member.gridPos) continue;
+
+      const tileKey = `${member.gridPos.x},${member.gridPos.y}`;
+      const lastTile = this.lastKnownMemberTiles.get(member);
+      if (!forceUpdate && tileKey === lastTile) continue;
+      this.lastKnownMemberTiles.set(member, tileKey);
+
+      const currentRoom = this.cachedRoomMap.get(tileKey) ?? null;
+      const roomName = currentRoom?.name ?? null;
+      const lastRoomName = this.lastClassifiedMemberRooms.get(member) ?? null;
+
+      member.currentRoom = currentRoom;
+      member.currentRoomName = roomName;
+
+      if (roomName !== lastRoomName || forceUpdate) {
+        this.lastClassifiedMemberRooms.set(member, roomName);
+
+        // Update HUD room badge for active leader
+        if (i === 0) {
+          this.hud.setRoomName(roomName);
+        }
+
+        if (roomName && !forceUpdate) {
+          const entityLabel = member.entityName || (i === 0 ? 'Player' : `Companion ${i}`);
+          console.log(`[RoomClassification] ${entityLabel} entered: ${roomName} at (${tileKey})`);
+          if (i === 0) {
+            this.hud.showToast(`🏠 Entered ${roomName}`, 'info', 2500);
+          } else {
+            this.hud.showToast(`🏠 ${entityLabel} entered ${roomName}`, 'info', 2500);
+          }
+        }
+      }
+    }
+  }
+
+  public getRoomAt(x: number, y: number): ClassifiedRoom | null {
+    return this.cachedRoomMap.get(`${x},${y}`) ?? null;
+  }
+
+  public getRoomForMember(member: Player): ClassifiedRoom | null {
+    if (!member || !member.gridPos) return null;
+    return this.cachedRoomMap.get(`${member.gridPos.x},${member.gridPos.y}`) ?? null;
   }
 
   private createFloatingText(x: number, y: number, textString: string, colorHex: string): void {
@@ -973,24 +1354,55 @@ export class OutpostScene extends Phaser.Scene {
   private triggerPortalTransition(): void {
     if (this.isTransitioning) return;
 
+    for (const member of this.party) {
+      member.clearTarget();
+    }
+
     const dx = Math.abs(this.player.gridPos.x - this.portalPos.x);
     const dy = Math.abs(this.player.gridPos.y - this.portalPos.y);
 
-    if (Math.max(dx, dy) <= 1) {
+    if (Math.max(dx, dy) <= 1 && (dx > 0 || dy > 0)) {
       this.executeTransitionToDungeon();
-    } else {
-      console.log('[OutpostScene] Moving to portal...');
-      this.pathfinder.findPath(this.player.gridPos, this.portalPos).then((path) => {
-        if (path.length > 1) {
-          path.pop(); // stop adjacent
-          this.player.followPath(path, () => {
-            this.executeTransitionToDungeon();
-          });
+      return;
+    }
+
+    console.log('[OutpostScene] Party moving to portal...');
+    const claimed = new Set<string>();
+
+    // Assign leader an open adjacent tile to the portal
+    const leaderDest = this.findOpenAdjacentTile(this.portalPos, this.player.gridPos, claimed, this.player);
+    claimed.add(`${leaderDest.x},${leaderDest.y}`);
+    this.player.claimedDestination = { ...leaderDest };
+
+    // Command all living companions to also move towards the portal
+    for (let i = 1; i < this.party.length; i++) {
+      const companion = this.party[i];
+      if (companion.state === 'downed' || companion.state === 'dead') continue;
+      const compDest = this.findOpenAdjacentTile(this.portalPos, companion.gridPos, claimed, companion);
+      claimed.add(`${compDest.x},${compDest.y}`);
+      companion.claimedDestination = { ...compDest };
+
+      const compDynamicObs = this.getDynamicObstacles(companion);
+      this.pathfinder.findPath(companion.gridPos, compDest, compDynamicObs).then((path) => {
+        if (path.length > 0) {
+          companion.followPath(path);
         } else {
-          this.executeTransitionToDungeon();
+          companion.claimedDestination = null;
         }
       });
     }
+
+    // Leader movement with transition on arrival (Leader-Arrival Rule)
+    const dynamicObs = this.getDynamicObstacles(this.player);
+    this.pathfinder.findPath(this.player.gridPos, leaderDest, dynamicObs).then((path) => {
+      if (path.length > 0) {
+        this.player.followPath(path, () => {
+          this.executeTransitionToDungeon();
+        });
+      } else {
+        this.executeTransitionToDungeon();
+      }
+    });
   }
 
   private executeTransitionToDungeon(): void {
@@ -998,6 +1410,7 @@ export class OutpostScene extends Phaser.Scene {
     this.isTransitioning = true;
 
     console.log('[OutpostScene] Entering Dungeon Portal -> Transitioning to MainScene');
+    GameState.getInstance().savePartySnapshot(this.party, this.time.now);
     GameState.getInstance().saveSnapshot(this.player, this.progressionSystem, this.time.now);
     this.scene.start('MainScene');
   }
@@ -1024,8 +1437,10 @@ export class OutpostScene extends Phaser.Scene {
     }
 
     GameState.getInstance().updateClock(delta);
-    this.player.update(time, delta);
+    for (const member of this.party) {
+      member.update(time, delta);
+    }
     this.updatePlayerRoomLookup(false);
-    this.hud.update(this.player, this.progressionSystem, time);
+    this.hud.update(this.player, this.progressionSystem, time, this.party);
   }
 }

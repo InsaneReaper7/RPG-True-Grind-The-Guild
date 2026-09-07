@@ -93,6 +93,22 @@ export class HUD {
   private alchemyMoodValueEl: HTMLElement | null;
   private alchemyMoodEffectEl: HTMLElement | null;
 
+  // Milestone 8 Elements (Party Overview & Dual Wielding)
+  private partyOverviewModalEl: HTMLElement | null;
+  private closePartyBtn: HTMLElement | null;
+  private partySpawnCompanionBtn: HTMLElement | null;
+  private partyOverviewRosterEl: HTMLElement | null;
+  private openPartyBtn: HTMLElement | null;
+  private currentParty: Player[] = [];
+  private renderedPartyRosterKey: string = '';
+  private lastPartyStatsUpdateTime: number = 0;
+
+  // Milestone 8 Debug Buttons
+  private debugBtnSpawnCompanion: HTMLElement | null;
+  private debugBtnLv30SwordsDaggers: HTMLElement | null;
+  private debugBtnGrantDaggersExp: HTMLElement | null;
+  private debugBtnGrantDualWieldExp: HTMLElement | null;
+
   private static activeInstance: HUD | null = null;
   private static hasGlobalListeners: boolean = false;
 
@@ -184,6 +200,18 @@ export class HUD {
     this.debugBtnCycleMood = document.getElementById('debug-btn-cycle-mood');
     this.alchemyMoodValueEl = document.getElementById('alchemy-mood-value');
     this.alchemyMoodEffectEl = document.getElementById('alchemy-mood-effect');
+
+    // Milestone 8 Elements
+    this.partyOverviewModalEl = document.getElementById('party-overview-modal');
+    this.closePartyBtn = document.getElementById('close-party-btn');
+    this.partySpawnCompanionBtn = document.getElementById('party-spawn-companion-btn');
+    this.partyOverviewRosterEl = document.getElementById('party-overview-roster');
+    this.openPartyBtn = document.getElementById('open-party-btn');
+
+    this.debugBtnSpawnCompanion = document.getElementById('debug-btn-spawn-companion');
+    this.debugBtnLv30SwordsDaggers = document.getElementById('debug-btn-lv30-swords-daggers');
+    this.debugBtnGrantDaggersExp = document.getElementById('debug-btn-grant-daggers-exp');
+    this.debugBtnGrantDualWieldExp = document.getElementById('debug-btn-grant-dual-wield-exp');
 
     if (this.hudCardEl) {
       this.hudCardEl.style.display = HUD.isHudCardVisible ? 'block' : 'none';
@@ -351,6 +379,71 @@ export class HUD {
       };
     }
 
+    // Milestone 8 Party Overview & Debug Listeners
+    if (this.openPartyBtn) {
+      this.openPartyBtn.onclick = () => {
+        HUD.activeInstance?.openPartyOverviewModal();
+      };
+    }
+    if (this.closePartyBtn) {
+      this.closePartyBtn.onclick = () => {
+        HUD.activeInstance?.closePartyOverviewModal();
+      };
+    }
+    if (this.partySpawnCompanionBtn) {
+      this.partySpawnCompanionBtn.onclick = () => {
+        (window as any).__spawnTestCompanion?.();
+        HUD.activeInstance?.renderPartyOverviewModal();
+      };
+    }
+
+    if (this.debugBtnSpawnCompanion) {
+      this.debugBtnSpawnCompanion.onclick = () => {
+        (window as any).__spawnTestCompanion?.();
+        HUD.activeInstance?.renderPartyOverviewModal();
+      };
+    }
+    if (this.debugBtnLv30SwordsDaggers) {
+      this.debugBtnLv30SwordsDaggers.onclick = () => {
+        const hero = HUD.activeInstance?.currentParty[0] || HUD.activeInstance?.currentPlayer;
+        if (hero) {
+          hero.progression.getProficiencyStat('short_swords').level = 30;
+          hero.progression.getProficiencyStat('short_swords').currentExp = 0;
+          hero.progression.getProficiencyStat('daggers').level = 30;
+          hero.progression.getProficiencyStat('daggers').currentExp = 0;
+          hero.progression.checkDualWieldUnlock();
+          HUD.activeInstance?.showToast('⚔️ Set Hero Short Swords & Daggers to Lv30! Dual Wielding UNLOCKED!', 'success', 3500);
+          if (HUD.activeInstance) {
+            HUD.activeInstance.update(hero, hero.progression, 0, HUD.activeInstance.currentParty);
+          }
+        }
+      };
+    }
+    if (this.debugBtnGrantDaggersExp) {
+      this.debugBtnGrantDaggersExp.onclick = () => {
+        const hero = HUD.activeInstance?.currentParty[0] || HUD.activeInstance?.currentPlayer;
+        if (hero) {
+          hero.progression.addProficiencyExp('daggers', 25);
+          HUD.activeInstance?.showToast('+25 Daggers EXP (Hero)', 'success');
+          if (HUD.activeInstance) {
+            HUD.activeInstance.update(hero, hero.progression, 0, HUD.activeInstance.currentParty);
+          }
+        }
+      };
+    }
+    if (this.debugBtnGrantDualWieldExp) {
+      this.debugBtnGrantDualWieldExp.onclick = () => {
+        const hero = HUD.activeInstance?.currentParty[0] || HUD.activeInstance?.currentPlayer;
+        if (hero) {
+          hero.progression.addProficiencyExp('dual_wielding', 25);
+          HUD.activeInstance?.showToast('+25 Dual Wield EXP (Hero)', 'success');
+          if (HUD.activeInstance) {
+            HUD.activeInstance.update(hero, hero.progression, 0, HUD.activeInstance.currentParty);
+          }
+        }
+      };
+    }
+
     // Expose debug helpers globally on window for console testing
     (window as any).debugGrantSkillBook = (id: string = 'book_power_strike') => HUD.activeInstance?.debugGrantSkillBook(id);
     (window as any).debugGrantResearchPoints = (amount: number = 10) => HUD.activeInstance?.debugGrantResearchPoints(amount);
@@ -394,7 +487,7 @@ export class HUD {
 
     if (!HUD.hasGlobalListeners) {
       HUD.hasGlobalListeners = true;
-      // Key listeners: Tab (toggle HUD panel), L (toggle Loadout modal), B (toggle Build mode), H (apply bandage), Escape (close modals)
+      // Key listeners: Tab (toggle HUD panel), L (toggle Loadout modal), B (toggle Build mode), H (apply bandage), O (toggle Party modal), Escape (close modals)
       window.addEventListener('keydown', (e) => {
         const active = HUD.activeInstance;
         if (!active) return;
@@ -415,6 +508,8 @@ export class HUD {
           }
         } else if (e.key === 'h' || e.key === 'H') {
           active.applyBandage();
+        } else if (e.key === 'o' || e.key === 'O') {
+          active.togglePartyOverviewModal();
         } else if (e.key === 'y' || e.key === 'Y') {
           active.debugAdvanceDay(1);
         } else if (e.key === 'u' || e.key === 'U') {
@@ -425,6 +520,7 @@ export class HUD {
           active.closeLoadoutModal();
           active.closeResearchTreeModal();
           active.closeAlchemyModal();
+          active.closePartyOverviewModal();
           if (active.isBuildOverlayVisible()) {
             active.onBuildModeToggleCallback?.();
           }
@@ -805,9 +901,14 @@ export class HUD {
     }
   }
 
-  public update(player: Player, progression: ProgressionSystem, time: number): void {
+  public update(player: Player, progression: ProgressionSystem, time: number, party?: Player[]): void {
     this.currentPlayer = player;
     this.currentProgression = progression;
+    if (party && party.length > 0) {
+      this.currentParty = party;
+    } else if (this.currentParty.length === 0) {
+      this.currentParty = [player];
+    }
 
     // 1. Main HP
     if (this.playerHpEl) {
@@ -1075,6 +1176,436 @@ export class HUD {
 
     // 9. Live All-Skills Debug Overview Panel (Backtick toggle)
     this.updateDebugSkillsPanel(progression);
+
+    // 10. Update Party Overview modal if open
+    if (this.isPartyOverviewModalOpen()) {
+      this.updatePartyOverview(time);
+    }
+  }
+
+  private setElementTextIfChanged(el: HTMLElement | null, text: string): void {
+    if (el && el.textContent !== text) {
+      el.textContent = text;
+    }
+  }
+
+  private getPartyRosterKey(): string {
+    return `${this.currentParty.length}_` + this.currentParty.map((m) => {
+      const isDw = m.progression.isDualWieldUnlocked();
+      const equippedSkills = m.equippedSkillIds.join(',');
+      const knownSkills = m.knownSkillIds.join(',');
+      return `${m.id}:${m.entityName}:${m.state}:${isDw}:${equippedSkills}:${knownSkills}`;
+    }).join('|');
+  }
+
+  public openPartyOverviewModal(): void {
+    this.renderPartyOverviewModal(true);
+    if (this.partyOverviewModalEl) {
+      this.partyOverviewModalEl.classList.add('active');
+    }
+  }
+
+  public closePartyOverviewModal(): void {
+    if (this.partyOverviewModalEl) {
+      this.partyOverviewModalEl.classList.remove('active');
+    }
+  }
+
+  public togglePartyOverviewModal(): void {
+    if (this.isPartyOverviewModalOpen()) {
+      this.closePartyOverviewModal();
+    } else {
+      this.openPartyOverviewModal();
+    }
+  }
+
+  public isPartyOverviewModalOpen(): boolean {
+    return this.partyOverviewModalEl?.classList.contains('active') ?? false;
+  }
+
+  public updatePartyOverview(time: number): void {
+    if (!this.partyOverviewRosterEl) return;
+
+    // Check if structural roster key changed (e.g. member count, downed status, DW unlock flipped)
+    const currentKey = this.getPartyRosterKey();
+    if (this.renderedPartyRosterKey !== currentKey) {
+      this.renderPartyOverviewModal(false);
+      return;
+    }
+
+    // Throttled in-place updates: 100ms (10 updates/second)
+    if (time - this.lastPartyStatsUpdateTime < 100) {
+      return;
+    }
+    this.lastPartyStatsUpdateTime = time;
+
+    this.updatePartyOverviewLiveStats();
+  }
+
+  public updatePartyOverviewLiveStats(): void {
+    if (!this.partyOverviewRosterEl) return;
+
+    if (this.partySpawnCompanionBtn) {
+      const isFull = this.currentParty.length >= 4;
+      (this.partySpawnCompanionBtn as HTMLButtonElement).disabled = isFull;
+      this.partySpawnCompanionBtn.style.opacity = isFull ? '0.5' : '1';
+      this.partySpawnCompanionBtn.style.cursor = isFull ? 'not-allowed' : 'pointer';
+    }
+
+    for (let i = 0; i < this.currentParty.length; i++) {
+      const member = this.currentParty[i];
+      if (!member) continue;
+
+      // 1. HP
+      const hpEl = this.partyOverviewRosterEl.querySelector<HTMLElement>(`[data-party-hp="${i}"]`);
+      if (hpEl) {
+        this.setElementTextIfChanged(hpEl, `${Math.ceil(member.hp)} / ${member.maxHp}`);
+        const hpColor = member.hp === 0 ? '#ef4444' : '#22c55e';
+        if (hpEl.style.color !== hpColor) hpEl.style.color = hpColor;
+      }
+
+      // 2. Critical HP
+      const critHpEl = this.partyOverviewRosterEl.querySelector<HTMLElement>(`[data-party-crit-hp="${i}"]`);
+      if (critHpEl) {
+        this.setElementTextIfChanged(critHpEl, `${Math.ceil(member.criticalHp)} / ${member.maxCriticalHp}`);
+      }
+
+      // 3. Energy
+      const energyEl = this.partyOverviewRosterEl.querySelector<HTMLElement>(`[data-party-energy="${i}"]`);
+      if (energyEl) {
+        this.setElementTextIfChanged(energyEl, `${Math.floor(member.energy)} / ${member.maxEnergy}`);
+      }
+
+      // 4. Hunger
+      const hungerEl = this.partyOverviewRosterEl.querySelector<HTMLElement>(`[data-party-hunger="${i}"]`);
+      if (hungerEl) {
+        this.setElementTextIfChanged(hungerEl, `${Math.floor(member.hunger)} / ${member.maxHunger}`);
+      }
+
+      // 5. Mood
+      const moodEl = this.partyOverviewRosterEl.querySelector<HTMLElement>(`[data-party-mood="${i}"]`);
+      if (moodEl) {
+        this.setElementTextIfChanged(moodEl, `${Math.floor(member.mood)} / ${member.maxMood}`);
+      }
+
+      // 6. Proficiencies
+      const shortSwordsStat = member.progression.getProficiencyStat('short_swords');
+      const swordsEl = this.partyOverviewRosterEl.querySelector<HTMLElement>(`[data-party-prof-swords="${i}"]`);
+      if (swordsEl) {
+        const nextSwordsExp = LevelingSystem.expForNextLevel(shortSwordsStat.level);
+        this.setElementTextIfChanged(swordsEl, `Lv ${shortSwordsStat.level} (${shortSwordsStat.currentExp}/${nextSwordsExp})`);
+      }
+
+      const daggersStat = member.progression.getProficiencyStat('daggers');
+      const daggersEl = this.partyOverviewRosterEl.querySelector<HTMLElement>(`[data-party-prof-daggers="${i}"]`);
+      if (daggersEl) {
+        const nextDaggersExp = LevelingSystem.expForNextLevel(daggersStat.level);
+        this.setElementTextIfChanged(daggersEl, `Lv ${daggersStat.level} (${daggersStat.currentExp}/${nextDaggersExp})`);
+      }
+
+      const dwStat = member.progression.getProficiencyStat('dual_wielding');
+      const isDwUnlocked = member.progression.isDualWieldUnlocked();
+      const dwEl = this.partyOverviewRosterEl.querySelector<HTMLElement>(`[data-party-prof-dw="${i}"]`);
+      if (dwEl) {
+        if (isDwUnlocked) {
+          const nextDwExp = LevelingSystem.expForNextLevel(dwStat.level);
+          this.setElementTextIfChanged(dwEl, `Lv ${dwStat.level} (${dwStat.currentExp}/${nextDwExp})`);
+          if (dwEl.style.color !== '#c084fc') dwEl.style.color = '#c084fc';
+        } else {
+          this.setElementTextIfChanged(dwEl, 'Locked');
+          if (dwEl.style.color !== '#6b7280') dwEl.style.color = '#6b7280';
+        }
+      }
+
+      // 7. Dual Wield Penalty
+      if (isDwUnlocked) {
+        const dwPenaltyEl = this.partyOverviewRosterEl.querySelector<HTMLElement>(`[data-party-dw-penalty="${i}"]`);
+        if (dwPenaltyEl) {
+          const dwPenaltyPct = Math.round(member.progression.getDualWieldPenalty() * 100);
+          this.setElementTextIfChanged(dwPenaltyEl, `Dual Wield Penalty: -${dwPenaltyPct}% Hit Rate (DW Lv ${dwStat.level})`);
+          const penaltyColor = dwPenaltyPct === 0 ? '#4ade80' : '#fbbf24';
+          if (dwPenaltyEl.style.color !== penaltyColor) dwPenaltyEl.style.color = penaltyColor;
+        }
+      }
+    }
+  }
+
+  public renderPartyOverviewModal(forceRebuild: boolean = false): void {
+    if (!this.partyOverviewRosterEl) return;
+
+    const currentKey = this.getPartyRosterKey();
+    if (!forceRebuild && this.renderedPartyRosterKey === currentKey) {
+      this.updatePartyOverviewLiveStats();
+      return;
+    }
+    this.renderedPartyRosterKey = currentKey;
+
+    if (this.partySpawnCompanionBtn) {
+      const isFull = this.currentParty.length >= 4;
+      (this.partySpawnCompanionBtn as HTMLButtonElement).disabled = isFull;
+      this.partySpawnCompanionBtn.style.opacity = isFull ? '0.5' : '1';
+      this.partySpawnCompanionBtn.style.cursor = isFull ? 'not-allowed' : 'pointer';
+    }
+
+    const dataLoader = DataLoader.getInstance();
+    const allWeapons = dataLoader.getAllWeapons();
+    let html = '';
+
+    const avatarColors = ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b'];
+
+    for (let i = 0; i < this.currentParty.length; i++) {
+      const member = this.currentParty[i];
+      const color = avatarColors[i % avatarColors.length];
+      const isDowned = member.state === 'downed';
+
+      const shortSwordsStat = member.progression.getProficiencyStat('short_swords');
+      const daggersStat = member.progression.getProficiencyStat('daggers');
+      const dwStat = member.progression.getProficiencyStat('dual_wielding');
+      const isDwUnlocked = member.progression.isDualWieldUnlocked();
+      const dwPenaltyPct = Math.round(member.progression.getDualWieldPenalty() * 100);
+
+      // Main weapon options
+      let mainOptions = '';
+      for (const w of allWeapons) {
+        if (!w.twoHanded) {
+          const sel = member.equippedWeapon.id === w.id ? 'selected' : '';
+          mainOptions += `<option value="${w.id}" ${sel}>${w.name} (Dmg: ${w.baseDamage})</option>`;
+        }
+      }
+
+      // Offhand options
+      let offhandSelectHtml = '';
+      if (!isDwUnlocked) {
+        offhandSelectHtml = `
+          <select class="party-select" disabled>
+            <option>🔒 Locked (Requires 2 1H Melee Lv30+)</option>
+          </select>
+        `;
+      } else {
+        let offhandOptions = `<option value="none" ${!member.offhandWeapon ? 'selected' : ''}>None (Single Wield)</option>`;
+        for (const w of allWeapons) {
+          if (!w.twoHanded && w.category === 'melee_1h') {
+            const sel = member.offhandWeapon?.id === w.id ? 'selected' : '';
+            offhandOptions += `<option value="${w.id}" ${sel}>${w.name} (Dmg: ${w.baseDamage})</option>`;
+          }
+        }
+        offhandSelectHtml = `
+          <select class="party-select party-offhand-select" data-member-idx="${i}">
+            ${offhandOptions}
+          </select>
+          <div data-party-dw-penalty="${i}" style="font-size: 10px; color: ${dwPenaltyPct === 0 ? '#4ade80' : '#fbbf24'}; margin-top: 2px;">
+            Dual Wield Penalty: -${dwPenaltyPct}% Hit Rate (DW Lv ${dwStat.level})
+          </div>
+        `;
+      }
+
+      // Skills chips
+      let equippedSkillsHtml = '';
+      for (const skillId of member.equippedSkillIds) {
+        const skillDef = dataLoader.getSkill(skillId);
+        const skillName = skillDef?.name || skillId;
+        const auto = member.isAutocastEnabled(skillId);
+        equippedSkillsHtml += `
+          <div class="party-skill-chip">
+            <span>${skillName}</span>
+            <button class="party-skill-auto-toggle" data-member-idx="${i}" data-skill-id="${skillId}" type="button" style="background: ${auto ? '#059669' : '#4b5563'}; color: white; border: none; border-radius: 3px; padding: 1px 4px; font-size: 9px; cursor: pointer;">
+              ${auto ? 'AUTO' : 'MAN'}
+            </button>
+            <span class="party-skill-unequip" data-member-idx="${i}" data-skill-id="${skillId}" title="Unequip">&times;</span>
+          </div>
+        `;
+      }
+
+      // Available unequipped skills
+      const unequippedSkills = member.knownSkillIds.filter((id) => !member.equippedSkillIds.includes(id));
+      let availableSkillsHtml = '';
+      if (member.equippedSkillIds.length < 5 && unequippedSkills.length > 0) {
+        const skillOpts = unequippedSkills.map((id) => {
+          const def = dataLoader.getSkill(id);
+          return `<option value="${id}">${def?.name || id}</option>`;
+        }).join('');
+        availableSkillsHtml = `
+          <div style="display: flex; gap: 4px; margin-top: 4px;">
+            <select class="party-select party-equip-skill-select" data-member-idx="${i}">
+              ${skillOpts}
+            </select>
+            <button class="btn-action party-equip-skill-btn" data-member-idx="${i}" type="button" style="padding: 2px 8px; font-size: 10px; white-space: nowrap;">Equip</button>
+          </div>
+        `;
+      }
+
+      html += `
+        <div class="party-card ${isDowned ? 'downed' : ''}" data-party-card-idx="${i}">
+          <div class="party-card-header">
+            <div class="party-avatar-badge" style="background: ${color};">${member.entityName.charAt(0)}</div>
+            <div>
+              <div class="party-member-name">${member.entityName}</div>
+              <div style="font-size: 10px; color: #9ca3af;">ID: ${member.id}</div>
+            </div>
+            ${isDowned ? `
+              <span class="party-member-status party-status-downed">DOWNED</span>
+              <button class="party-revive-btn" data-revive-idx="${i}" type="button">Revive [R]</button>
+            ` : `
+              <span class="party-member-status party-status-active">ACTIVE</span>
+            `}
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 3px;">
+            <div class="party-stat-row">
+              <span>Main HP:</span>
+              <span class="party-stat-val" data-party-hp="${i}" style="color: ${member.hp === 0 ? '#ef4444' : '#22c55e'};">${Math.ceil(member.hp)} / ${member.maxHp}</span>
+            </div>
+            <div class="party-stat-row">
+              <span>Critical HP:</span>
+              <span class="party-stat-val" data-party-crit-hp="${i}" style="color: #a855f7;">${Math.ceil(member.criticalHp)} / ${member.maxCriticalHp}</span>
+            </div>
+            <div class="party-stat-row">
+              <span>Energy:</span>
+              <span class="party-stat-val" data-party-energy="${i}" style="color: #3b82f6;">${Math.floor(member.energy)} / ${member.maxEnergy}</span>
+            </div>
+            <div class="party-stat-row">
+              <span>Hunger:</span>
+              <span class="party-stat-val" data-party-hunger="${i}" style="color: #fb923c;">${Math.floor(member.hunger)} / ${member.maxHunger}</span>
+            </div>
+            <div class="party-stat-row">
+              <span>Mood:</span>
+              <span class="party-stat-val" data-party-mood="${i}" style="color: #34d399;">${Math.floor(member.mood)} / ${member.maxMood}</span>
+            </div>
+          </div>
+
+          <div class="party-equip-box">
+            <div style="font-weight: bold; color: #60a5fa; font-size: 10px; text-transform: uppercase;">Equipment</div>
+            <div>
+              <span style="color: #9ca3af; font-size: 10px;">Main Weapon:</span>
+              <select class="party-select party-main-select" data-member-idx="${i}">
+                ${mainOptions}
+              </select>
+            </div>
+            <div>
+              <span style="color: #9ca3af; font-size: 10px;">Offhand Weapon:</span>
+              ${offhandSelectHtml}
+            </div>
+          </div>
+
+          <div class="party-equip-box">
+            <div style="font-weight: bold; color: #fbbf24; font-size: 10px; text-transform: uppercase;">Proficiencies</div>
+            <div class="party-stat-row">
+              <span>Short Swords:</span>
+              <span class="party-stat-val" data-party-prof-swords="${i}" style="color: #60a5fa;">Lv ${shortSwordsStat.level} (${shortSwordsStat.currentExp}/${LevelingSystem.expForNextLevel(shortSwordsStat.level)})</span>
+            </div>
+            <div class="party-stat-row">
+              <span>Daggers:</span>
+              <span class="party-stat-val" data-party-prof-daggers="${i}" style="color: #2dd4bf;">Lv ${daggersStat.level} (${daggersStat.currentExp}/${LevelingSystem.expForNextLevel(daggersStat.level)})</span>
+            </div>
+            <div class="party-stat-row">
+              <span>Dual Wielding:</span>
+              <span class="party-stat-val" data-party-prof-dw="${i}" style="color: ${isDwUnlocked ? '#c084fc' : '#6b7280'};">
+                ${isDwUnlocked ? `Lv ${dwStat.level} (${dwStat.currentExp}/${LevelingSystem.expForNextLevel(dwStat.level)})` : 'Locked'}
+              </span>
+            </div>
+          </div>
+
+          <div class="party-equip-box">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-weight: bold; color: #a78bfa; font-size: 10px; text-transform: uppercase;">Equipped Skills</span>
+              <span style="font-size: 10px; color: #9ca3af;">${member.equippedSkillIds.length} / 5</span>
+            </div>
+            <div class="party-skills-chip-list">
+              ${equippedSkillsHtml || '<span style="color: #6b7280; font-size: 10px;">No skills equipped</span>'}
+            </div>
+            ${availableSkillsHtml}
+          </div>
+        </div>
+      `;
+    }
+
+    this.partyOverviewRosterEl.innerHTML = html;
+    this.attachPartyOverviewEvents();
+  }
+
+  private attachPartyOverviewEvents(): void {
+    if (!this.partyOverviewRosterEl) return;
+
+    this.partyOverviewRosterEl.onchange = (e) => {
+      const target = e.target as HTMLElement;
+      if (target.classList.contains('party-main-select')) {
+        const select = target as HTMLSelectElement;
+        const memberIdx = parseInt(select.dataset.memberIdx || '0', 10);
+        const member = this.currentParty[memberIdx];
+        const weapon = DataLoader.getInstance().getWeapon(select.value);
+        if (member && weapon) {
+          member.equipWeapon(weapon);
+          this.updatePartyOverviewLiveStats();
+        }
+      } else if (target.classList.contains('party-offhand-select')) {
+        const select = target as HTMLSelectElement;
+        const memberIdx = parseInt(select.dataset.memberIdx || '0', 10);
+        const member = this.currentParty[memberIdx];
+        if (member) {
+          if (select.value === 'none') {
+            member.equipOffhandWeapon(null);
+          } else {
+            const weapon = DataLoader.getInstance().getWeapon(select.value);
+            if (weapon) {
+              member.equipOffhandWeapon(weapon);
+            }
+          }
+          this.updatePartyOverviewLiveStats();
+        }
+      }
+    };
+
+    this.partyOverviewRosterEl.onclick = (e) => {
+      const target = e.target as HTMLElement;
+
+      // Revive button
+      if (target.classList.contains('party-revive-btn')) {
+        const idx = parseInt(target.dataset.reviveIdx || '0', 10);
+        const member = this.currentParty[idx];
+        if (member && member.state === 'downed') {
+          member.revive();
+          this.renderPartyOverviewModal(true);
+          this.showToast(`✨ Revived ${member.entityName}!`, 'success');
+        }
+      }
+
+      // Autocast toggle button (update in place without rebuilding the card DOM)
+      if (target.classList.contains('party-skill-auto-toggle')) {
+        const memberIdx = parseInt(target.dataset.memberIdx || '0', 10);
+        const skillId = target.dataset.skillId;
+        const member = this.currentParty[memberIdx];
+        if (member && skillId) {
+          const current = member.isAutocastEnabled(skillId);
+          const nextState = !current;
+          member.setAutocast(skillId, nextState);
+          target.innerText = nextState ? 'AUTO' : 'MAN';
+          (target as HTMLElement).style.background = nextState ? '#059669' : '#4b5563';
+        }
+      }
+
+      // Unequip skill
+      if (target.classList.contains('party-skill-unequip')) {
+        const memberIdx = parseInt(target.dataset.memberIdx || '0', 10);
+        const skillId = target.dataset.skillId;
+        const member = this.currentParty[memberIdx];
+        if (member && skillId) {
+          member.unequipSkill(skillId);
+          this.renderPartyOverviewModal(true);
+        }
+      }
+
+      // Equip skill button
+      if (target.classList.contains('party-equip-skill-btn')) {
+        const memberIdx = parseInt(target.dataset.memberIdx || '0', 10);
+        const member = this.currentParty[memberIdx];
+        const card = target.closest('.party-card');
+        const select = card?.querySelector<HTMLSelectElement>('.party-equip-skill-select');
+        if (member && select && select.value) {
+          member.equipSkill(select.value);
+          this.renderPartyOverviewModal(true);
+        }
+      }
+    };
   }
 
   public showClassUnlockModal(classDef: ClassDef): void {

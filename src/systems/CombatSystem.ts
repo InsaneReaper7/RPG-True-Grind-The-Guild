@@ -12,31 +12,102 @@ export class CombatSystem {
   public static readonly DEBUG_AI: boolean = false;
 
   private scene: Phaser.Scene;
-  private player: Player;
+  public party: Player[];
   private enemies: Enemy[];
   private pathfinder: Pathfinder;
-  private progressionSystem: ProgressionSystem;
   private onEnemyDeathCallback?: (enemy: Enemy) => void;
   private lastCombatTimeMs: number = 0;
   private lastPassiveTickTimeMs: number = 0;
+  private enemyTargets: Map<Enemy, Player> = new Map();
 
   constructor(
     scene: Phaser.Scene,
-    player: Player,
+    playerOrParty: Player | Player[],
     enemies: Enemy[],
     pathfinder: Pathfinder,
-    progressionSystem: ProgressionSystem,
+    _progressionSystem?: ProgressionSystem,
     onEnemyDeath?: (enemy: Enemy) => void
   ) {
     this.scene = scene;
-    this.player = player;
+    this.party = Array.isArray(playerOrParty) ? playerOrParty : [playerOrParty];
     this.enemies = enemies;
     this.pathfinder = pathfinder;
-    this.progressionSystem = progressionSystem;
     this.onEnemyDeathCallback = onEnemyDeath;
   }
 
-  private getBestAdjacentTile(enemyTile: GridPos, playerTile: GridPos): GridPos | null {
+  public get player(): Player {
+    return this.party[0];
+  }
+
+  public get progressionSystem(): ProgressionSystem {
+    return this.party[0]?.progression;
+  }
+
+  public setParty(party: Player[]): void {
+    this.party = party;
+  }
+
+  public addPartyMember(member: Player): void {
+    if (!this.party.includes(member)) {
+      this.party.push(member);
+    }
+  }
+
+  public getParty(): Player[] {
+    return [...this.party];
+  }
+
+  /**
+   * Finds the closest valid, living party member within enemy's aggro radius and LOS.
+   */
+  public findBestTargetInParty(enemy: Enemy): Player | null {
+    const enemyTile = {
+      x: Math.floor(enemy.x / enemy.tileSize),
+      y: Math.floor(enemy.y / enemy.tileSize)
+    };
+    const distFromSpawn = Math.max(
+      Math.abs(enemyTile.x - enemy.spawnPos.x),
+      Math.abs(enemyTile.y - enemy.spawnPos.y)
+    );
+    if (distFromSpawn > enemy.maxLeashDistance) return null;
+
+    const validCandidates: { member: Player; dist: number }[] = [];
+
+    for (const member of this.party) {
+      if (member.state === 'downed' || member.state === 'dead') continue;
+      const memberTile = {
+        x: Math.floor(member.x / member.tileSize),
+        y: Math.floor(member.y / member.tileSize)
+      };
+      const dist = Math.max(Math.abs(enemyTile.x - memberTile.x), Math.abs(enemyTile.y - memberTile.y));
+      if (dist <= enemy.enemyData.aggroRadius) {
+        if (this.pathfinder.hasLineOfSight(enemyTile, memberTile)) {
+          validCandidates.push({ member, dist });
+        }
+      }
+    }
+
+    if (validCandidates.length === 0) return null;
+    validCandidates.sort((a, b) => a.dist - b.dist);
+    return validCandidates[0].member;
+  }
+
+  private getOtherUnitPositions(currentUnit?: Entity): GridPos[] {
+    const positions: GridPos[] = [];
+    for (const e of this.enemies) {
+      if (e !== currentUnit && e.state !== 'dead' && e.state !== 'downed') {
+        positions.push(e.gridPos);
+      }
+    }
+    for (const m of this.party) {
+      if (m !== currentUnit && m.state !== 'dead' && m.state !== 'downed') {
+        positions.push(m.gridPos);
+      }
+    }
+    return positions;
+  }
+
+  private getBestAdjacentTile(enemyTile: GridPos, playerTile: GridPos, currentEnemy?: Enemy): GridPos | null {
     // 8 Chebyshev surrounding tiles (4 orthogonal + 4 diagonal)
     const neighbors: GridPos[] = [
       { x: playerTile.x + 1, y: playerTile.y },
@@ -53,250 +124,319 @@ export class CombatSystem {
     const walkableNeighbors = neighbors.filter((n) => !this.pathfinder.isObstacle(n.x, n.y));
     if (walkableNeighbors.length === 0) return null;
 
-    // If enemy is already on one of the walkable adjacent tiles, keep that tile!
-    const currentIsAdjacent = walkableNeighbors.find(
-      (n) => n.x === enemyTile.x && n.y === enemyTile.y
-    );
-    if (currentIsAdjacent) {
-      return currentIsAdjacent;
+    // Filter out tiles occupied or claimed by other units (other enemies or party members)
+    const isOccupiedByOther = (tile: GridPos) => {
+      return this.isTileClaimedOrOccupiedByOther(tile.x, tile.y, currentEnemy as any);
+    };
+
+    // If enemy is already on one of the walkable adjacent tiles and it's not occupied by another unit, keep that tile!
+    if (!isOccupiedByOther(enemyTile)) {
+      const currentIsAdjacent = walkableNeighbors.find(
+        (n) => n.x === enemyTile.x && n.y === enemyTile.y
+      );
+      if (currentIsAdjacent) {
+        return currentIsAdjacent;
+      }
     }
 
-    // Sort walkable neighbors by Chebyshev distance to enemyTile to pick the closest adjacent tile
-    walkableNeighbors.sort((a, b) => {
+    const unoccupiedNeighbors = walkableNeighbors.filter((n) => !isOccupiedByOther(n));
+    const candidateList = unoccupiedNeighbors.length > 0 ? unoccupiedNeighbors : walkableNeighbors;
+
+    // Sort candidate neighbors by Chebyshev distance to enemyTile to pick the closest adjacent tile
+    candidateList.sort((a, b) => {
       const distA = Math.max(Math.abs(a.x - enemyTile.x), Math.abs(a.y - enemyTile.y));
       const distB = Math.max(Math.abs(b.x - enemyTile.x), Math.abs(b.y - enemyTile.y));
       return distA - distB;
     });
 
-    return walkableNeighbors[0];
+    return candidateList[0];
+  }
+
+  public isTileClaimedOrOccupiedByOther(tx: number, ty: number, currentUnit?: Entity): boolean {
+    if (this.pathfinder.isObstacle(tx, ty)) return true;
+    for (const m of this.party) {
+      if (m !== currentUnit && m.state !== 'dead' && m.state !== 'downed') {
+        if (m.gridPos.x === tx && m.gridPos.y === ty) return true;
+        if (m.claimedDestination && m.claimedDestination.x === tx && m.claimedDestination.y === ty) return true;
+      }
+    }
+    for (const e of this.enemies) {
+      if (e !== currentUnit && e.state !== 'dead' && e.state !== 'downed') {
+        if (e.gridPos.x === tx && e.gridPos.y === ty) return true;
+        if (e.claimedDestination && e.claimedDestination.x === tx && e.claimedDestination.y === ty) return true;
+      }
+    }
+    return false;
+  }
+
+  public findOpenAdjacentForMember(center: GridPos, preferredNear: GridPos, currentMember: Player): GridPos | null {
+    const offsets = [
+      { x: 1, y: 0 }, { x: -1, y: 0 }, { x: 0, y: 1 }, { x: 0, y: -1 },
+      { x: 1, y: 1 }, { x: -1, y: 1 }, { x: 1, y: -1 }, { x: -1, y: -1 },
+      { x: 2, y: 0 }, { x: -2, y: 0 }, { x: 0, y: 2 }, { x: 0, y: -2 },
+      { x: 2, y: 1 }, { x: 2, y: -1 }, { x: -2, y: 1 }, { x: -2, y: -1 },
+      { x: 1, y: 2 }, { x: -1, y: 2 }, { x: 1, y: -2 }, { x: -1, y: -2 }
+    ];
+
+    const candidates: GridPos[] = [];
+    for (const off of offsets) {
+      const tx = center.x + off.x;
+      const ty = center.y + off.y;
+      if (!this.isTileClaimedOrOccupiedByOther(tx, ty, currentMember)) {
+        candidates.push({ x: tx, y: ty });
+      }
+    }
+
+    if (candidates.length > 0) {
+      candidates.sort((a, b) => {
+        const distA = Math.max(Math.abs(a.x - preferredNear.x), Math.abs(a.y - preferredNear.y));
+        const distB = Math.max(Math.abs(b.x - preferredNear.x), Math.abs(b.y - preferredNear.y));
+        return distA - distB;
+      });
+      return candidates[0];
+    }
+    return null;
   }
 
   public update(time: number, delta: number): void {
-    // If player is downed or dead, player cannot act and enemies stop attacking
-    if (this.player.state === 'downed' || this.player.state === 'dead') {
-      this.player.clearTarget();
-      return;
+    // Clear targets for any downed or dead party members
+    for (const member of this.party) {
+      if (member.state === 'downed' || member.state === 'dead') {
+        member.clearTarget();
+      }
     }
 
-    // 1. Enemy AI: Aggro detection, Leashing, Pursuit ('chasing') & Auto-Attack ('attacking')
+    // 1. Enemy AI: Aggro detection, Leashing, Retargeting Machine, Pursuit & Auto-Attack
     for (let i = this.enemies.length - 1; i >= 0; i--) {
       const enemy = this.enemies[i];
       if (enemy.state === 'downed' || enemy.state === 'dead') continue;
 
-      // Use physical tile positions from sprite x, y for accurate distance calculations
-      const enemyTileX = Math.floor(enemy.x / enemy.tileSize);
-      const enemyTileY = Math.floor(enemy.y / enemy.tileSize);
-      const playerTileX = Math.floor(this.player.x / this.player.tileSize);
-      const playerTileY = Math.floor(this.player.y / this.player.tileSize);
-
-      const dx = Math.abs(enemyTileX - playerTileX);
-      const dy = Math.abs(enemyTileY - playerTileY);
-      const distanceTiles = Math.max(dx, dy); // Chebyshev distance
-
+      const enemyTile = {
+        x: Math.floor(enemy.x / enemy.tileSize),
+        y: Math.floor(enemy.y / enemy.tileSize)
+      };
       const distFromSpawn = Math.max(
-        Math.abs(enemyTileX - enemy.spawnPos.x),
-        Math.abs(enemyTileY - enemy.spawnPos.y)
+        Math.abs(enemyTile.x - enemy.spawnPos.x),
+        Math.abs(enemyTile.y - enemy.spawnPos.y)
       );
 
-      // Proximity Aggro check:
-      // Only aggro from proximity if not currently aggroed, not returning, and within max leash distance from spawn
+      let target = this.enemyTargets.get(enemy) || null;
+
+      // Proximity Aggro check: if not currently aggroed, evaluate closest party member
       if (!enemy.isAggroed && enemy.state !== 'returning' && distFromSpawn <= enemy.maxLeashDistance) {
-        if (distanceTiles <= enemy.enemyData.aggroRadius) {
+        const potentialTarget = this.findBestTargetInParty(enemy);
+        if (potentialTarget) {
+          target = potentialTarget;
+          this.enemyTargets.set(enemy, target);
           enemy.isAggroed = true;
           enemy.outOfAggroTimerMs = 0;
           enemy.state = 'chasing';
-          console.log(`[Combat] ${enemy.entityName} aggroed on Player! (Distance: ${distanceTiles} tiles)`);
+          const tDist = Math.max(
+            Math.abs(enemyTile.x - Math.floor(target.x / target.tileSize)),
+            Math.abs(enemyTile.y - Math.floor(target.y / target.tileSize))
+          );
+          console.log(`[Combat] ${enemy.entityName} aggroed on ${target.entityName}! (Distance: ${tDist} tiles)`);
         }
       }
 
       if (enemy.isAggroed) {
-        // Leash Check 1: Max leash distance from spawn point
-        const exceededLeashDistance = distFromSpawn > enemy.maxLeashDistance;
+        const targetTile = target
+          ? { x: Math.floor(target.x / target.tileSize), y: Math.floor(target.y / target.tileSize) }
+          : { x: 0, y: 0 };
+        const distanceTiles = target
+          ? Math.max(Math.abs(enemyTile.x - targetTile.x), Math.abs(enemyTile.y - targetTile.y))
+          : 999;
 
-        // Leash Check 2: Player continuously outside aggro radius timeout
+        const isTargetDowned = !target || target.state === 'downed' || target.state === 'dead';
+        const exceededLeash = distFromSpawn > enemy.maxLeashDistance;
+
         if (distanceTiles > enemy.enemyData.aggroRadius) {
           enemy.outOfAggroTimerMs += delta;
         } else {
           enemy.outOfAggroTimerMs = 0;
         }
         const timedOut = enemy.outOfAggroTimerMs >= enemy.leashTimeoutMs;
+        const hasLOS = target ? this.pathfinder.hasLineOfSight(enemyTile, targetTile) : false;
 
-        // Leash Check 3: Line of Sight check
-        const enemyTilePos = { x: enemyTileX, y: enemyTileY };
-        const playerTilePos = { x: playerTileX, y: playerTileY };
-        const hasLOS = this.pathfinder.hasLineOfSight(enemyTilePos, playerTilePos);
+        const isTargetInvalid = isTargetDowned || exceededLeash || timedOut || !hasLOS;
 
-        if (exceededLeashDistance || timedOut || !hasLOS) {
-          const reason = exceededLeashDistance
-            ? `pursued beyond max leash distance (${distFromSpawn} > ${enemy.maxLeashDistance} tiles)`
-            : timedOut
-            ? `player outside aggro radius for ${(enemy.outOfAggroTimerMs / 1000).toFixed(1)}s`
-            : `line of sight blocked by obstacle`;
-          console.log(`[Combat] ${enemy.entityName} gave up chase (${reason}). Returning to spawn (${enemy.spawnPos.x}, ${enemy.spawnPos.y}). (hasLOS: ${hasLOS}, exceededLeash: ${exceededLeashDistance}, timedOut: ${timedOut})`);
-
-          enemy.isAggroed = false;
-          enemy.outOfAggroTimerMs = 0;
-          enemy.state = 'returning';
-
-          this.pathfinder.findPath(enemyTilePos, enemy.spawnPos).then((path) => {
-            if (path.length > 0 && enemy.state === 'returning') {
-              enemy.followPath(path, () => {
-                if (enemy.state === 'returning') {
-                  enemy.state = 'idle';
-                  console.log(`[Combat] ${enemy.entityName} arrived at spawnPos. State set to 'idle'. Proximity aggro restored.`);
-                }
-              });
-            } else {
-              enemy.state = 'idle';
-              console.log(`[Combat] ${enemy.entityName} already at spawnPos. State set to 'idle'. Proximity aggro restored.`);
-            }
-          });
-
-          continue; // Skip attack/chase logic for this tick
-        }
-
-        // Combat AI: Melee attack execution vs Pursuit
-        const attackRange = enemy.enemyData.attackRangeTiles ?? 1;
-
-        if (distanceTiles <= attackRange) {
-          // 1. Arrival Transition: If not already attacking, halt movement and set state to 'attacking'
-          if (enemy.state !== 'attacking') {
-            const oldState = enemy.state;
-            enemy.stopMovement();
-            enemy.state = 'attacking';
-            if (CombatSystem.DEBUG_AI) {
-              console.log(
-                `[Combat AI] ${enemy.entityName} reached attack range (distanceTiles: ${distanceTiles}). State transition: '${oldState}' -> 'attacking'`
-              );
-            }
-          }
-
-          // 2. Attack Execution on Cooldown
-          if (time - enemy.lastAttackTime >= enemy.enemyData.attackIntervalMs) {
-            // Re-verify range at exact moment attack lands
-            if (distanceTiles <= attackRange) {
-              enemy.lastAttackTime = time;
-              this.lastCombatTimeMs = time;
-              const rawDamage = enemy.enemyData.meleeDamage;
-
-              // Context for HiddenSkillSystem
-              const hiddenSystem = HiddenSkillSystem.getInstance();
-              const context: CombatContext = {
-                equippedWeapon: this.player.equippedWeapon,
-                hasShield: false, // Strict: no shield item exists in game yet
-                hasMagicProficiency: false, // Strict: no magic weapon exists in game yet
-                inCombat: true,
-                attackerDistanceTiles: distanceTiles,
-                isMeleeAttack: true
-              };
-
-              // 1. STRICT SHORT-CIRCUITING AVOIDANCE CHAIN (Evasion -> Parry -> Block)
-              const avoidance = hiddenSystem.resolveIncomingAttack(context, this.progressionSystem);
-
-              if (avoidance.type === 'evaded') {
-                console.log(`[Combat] 💨 Player EVADED attack from ${enemy.entityName}! (0 damage)`);
-                this.createAttackEffect(enemy.x, enemy.y, this.player.x, this.player.y, 0x60a5fa);
-                this.createFloatingText(this.player.x, this.player.y - 12, 'EVADED!', '#60a5fa');
-
-                // Counterattack trigger: fires at most once per avoided attack
-                const counterRes = hiddenSystem.resolveCounterattack(context, this.progressionSystem);
-                if (counterRes.procced) {
-                  this.executePlayerCounterattack(enemy, counterRes);
-                }
-              } else if (avoidance.type === 'parried') {
-                console.log(`[Combat] ⚔️ Player PARRIED attack from ${enemy.entityName}! (0 damage)`);
-                this.createAttackEffect(enemy.x, enemy.y, this.player.x, this.player.y, 0xfacc15);
-                this.createFloatingText(this.player.x, this.player.y - 12, 'PARRIED!', '#facc15');
-
-                // Counterattack trigger: fires at most once per avoided attack
-                const counterRes = hiddenSystem.resolveCounterattack(context, this.progressionSystem);
-                if (counterRes.procced) {
-                  this.executePlayerCounterattack(enemy, counterRes);
-                }
-              } else if (avoidance.type === 'blocked') {
-                console.log(`[Combat] 🛡️ Player BLOCKED attack from ${enemy.entityName}! (0 damage)`);
-                this.createAttackEffect(enemy.x, enemy.y, this.player.x, this.player.y, 0x38bdf8);
-                this.createFloatingText(this.player.x, this.player.y - 12, 'BLOCKED!', '#38bdf8');
-
-                // Counterattack trigger: fires at most once per avoided attack
-                const counterRes = hiddenSystem.resolveCounterattack(context, this.progressionSystem);
-                if (counterRes.procced) {
-                  this.executePlayerCounterattack(enemy, counterRes);
-                }
-              } else {
-                // 2. Attack Connected: deals damage, then rolls Resilience
-                this.createAttackEffect(enemy.x, enemy.y, this.player.x, this.player.y, 0xef4444);
-
-                const mitigation = hiddenSystem.resolveDamageTaken(context, this.progressionSystem, rawDamage);
-                const actualDamage = mitigation.finalDamage;
-
-                if (mitigation.mitigatedAmount > 0) {
-                  console.log(`[Combat] ${enemy.entityName} hits Player for ${actualDamage} damage! (Resilience mitigated ${mitigation.mitigatedAmount} dmg)`);
-                  this.createFloatingText(this.player.x, this.player.y - 20, `-${actualDamage} (${mitigation.mitigatedAmount} RESIST)`, '#a78bfa');
-                } else if (mitigation.procced) {
-                  console.log(`[Combat] ${enemy.entityName} hits Player for ${actualDamage} damage! (Resilience proc: +1 EXP)`);
-                  this.createFloatingText(this.player.x, this.player.y - 20, `RESILIENCE! -${actualDamage}`, '#a78bfa');
-                } else {
-                  console.log(`[Combat] ${enemy.entityName} hits Player for ${actualDamage} damage!`);
-                }
-
-                const playerDowned = this.player.takeDamage(actualDamage);
-                if (playerDowned) {
-                  console.log('[Combat] Player has been downed by enemy attack!');
-                  this.player.clearTarget();
-                }
-              }
-            } else {
-              // Target moved out of range at exact moment of attack tick
-              if (CombatSystem.DEBUG_AI) {
-                console.log(
-                  `[Combat AI] ${enemy.entityName} attack missed: player moved out of range (distanceTiles: ${distanceTiles}).`
-                );
-              }
-              enemy.state = 'chasing';
-            }
-          }
-        } else {
-          // Target is out of melee range (distanceTiles > attackRange)
-          if (enemy.state === 'attacking' || enemy.state === 'idle') {
-            const oldState = enemy.state;
+        if (isTargetInvalid) {
+          // RETARGETING MACHINE: Immediate frame re-evaluation across party
+          const altTarget = this.findBestTargetInParty(enemy);
+          if (altTarget && altTarget !== target) {
+            console.log(
+              `%c[Combat Retarget] 🎯 ${enemy.entityName} retargeted from ${target?.entityName ?? 'none'} (invalid: downed=${isTargetDowned}, leash=${exceededLeash}, timeout=${timedOut}, los=${!hasLOS}) to ${altTarget.entityName}!`,
+              'color: #f59e0b; font-weight: bold;'
+            );
+            target = altTarget;
+            this.enemyTargets.set(enemy, target);
+            enemy.outOfAggroTimerMs = 0;
             enemy.state = 'chasing';
-            if (CombatSystem.DEBUG_AI) {
-              console.log(
-                `[Combat AI] ${enemy.entityName} target out of range (distanceTiles: ${distanceTiles}). State transition: '${oldState}' -> 'chasing'`
-              );
-            }
-          }
+          } else {
+            // No valid living party members in range/LOS -> Return to spawn
+            const reason = isTargetDowned
+              ? `target was downed`
+              : exceededLeash
+              ? `pursued beyond max leash distance (${distFromSpawn} > ${enemy.maxLeashDistance} tiles)`
+              : timedOut
+              ? `target outside aggro radius for ${(enemy.outOfAggroTimerMs / 1000).toFixed(1)}s`
+              : `line of sight blocked by obstacle`;
 
-          if (enemy.state === 'chasing' || enemy.state === 'moving') {
-            const startTile = enemy.gridPos;
-            const targetTile = this.getBestAdjacentTile(startTile, playerTilePos) || playerTilePos;
+            console.log(`[Combat] ${enemy.entityName} gave up chase (${reason}). Returning to spawn (${enemy.spawnPos.x}, ${enemy.spawnPos.y}).`);
+            this.enemyTargets.delete(enemy);
+            enemy.isAggroed = false;
+            enemy.outOfAggroTimerMs = 0;
+            enemy.state = 'returning';
+            enemy.claimedDestination = { ...enemy.spawnPos };
 
-            const isStopped = !enemy.isMoving();
-            const timeForRepath = time - enemy.lastRepathTimeMs >= enemy.repathIntervalMs;
-
-            if (isStopped || timeForRepath) {
-              const alreadyHeadingToTarget =
-                enemy.isMoving() && enemy.gridPos.x === targetTile.x && enemy.gridPos.y === targetTile.y;
-
-              if (!alreadyHeadingToTarget) {
-                enemy.lastRepathTimeMs = time;
-                this.pathfinder.findPath(startTile, targetTile).then((path) => {
-                  if (CombatSystem.DEBUG_AI) {
-                    console.log(
-                      `[Combat AI] Repath from (${startTile.x},${startTile.y}) to target (${targetTile.x},${targetTile.y}) -> path length: ${path.length}`
-                    );
-                  }
-                  if (
-                    path.length > 0 &&
-                    (enemy.state as string) !== 'downed' &&
-                    (enemy.state as string) !== 'dead' &&
-                    enemy.isAggroed &&
-                    this.player.state !== 'downed'
-                  ) {
-                    enemy.followPath(path);
+            const dynamicObstacles = this.getOtherUnitPositions(enemy);
+            this.pathfinder.findPath(enemyTile, enemy.spawnPos, dynamicObstacles).then((path) => {
+              if (path.length > 0 && enemy.state === 'returning') {
+                enemy.followPath(path, () => {
+                  if (enemy.state === 'returning') {
+                    enemy.state = 'idle';
+                    enemy.claimedDestination = null;
+                    console.log(`[Combat] ${enemy.entityName} arrived at spawnPos. State set to 'idle'. Proximity aggro restored.`);
                   }
                 });
+              } else {
+                enemy.state = 'idle';
+                enemy.claimedDestination = null;
+                console.log(`[Combat] ${enemy.entityName} already at spawnPos. State set to 'idle'. Proximity aggro restored.`);
+              }
+            });
+            continue;
+          }
+        }
+
+        // Target is valid and living: Proceed with Melee Attack vs Pursuit
+        if (target) {
+          const currentTargetTile = {
+            x: Math.floor(target.x / target.tileSize),
+            y: Math.floor(target.y / target.tileSize)
+          };
+          const curDistTiles = Math.max(
+            Math.abs(enemyTile.x - currentTargetTile.x),
+            Math.abs(enemyTile.y - currentTargetTile.y)
+          );
+          const attackRange = enemy.enemyData.attackRangeTiles ?? 1;
+
+          if (curDistTiles <= attackRange) {
+            if (enemy.state !== 'attacking') {
+              enemy.stopMovement();
+              enemy.claimedDestination = null;
+              enemy.state = 'attacking';
+            }
+
+            if (time - enemy.lastAttackTime >= enemy.enemyData.attackIntervalMs) {
+              if (curDistTiles <= attackRange) {
+                enemy.lastAttackTime = time;
+                this.lastCombatTimeMs = time;
+                const rawDamage = enemy.enemyData.meleeDamage;
+
+                const hiddenSystem = HiddenSkillSystem.getInstance();
+                const context: CombatContext = {
+                  equippedWeapon: target.equippedWeapon,
+                  hasShield: false,
+                  hasMagicProficiency: false,
+                  inCombat: true,
+                  attackerDistanceTiles: curDistTiles,
+                  isMeleeAttack: true
+                };
+
+                // Avoidance chain evaluated against target's own progression
+                const avoidance = hiddenSystem.resolveIncomingAttack(context, target.progression);
+
+                if (avoidance.type === 'evaded') {
+                  console.log(`[Combat] 💨 ${target.entityName} EVADED attack from ${enemy.entityName}! (0 damage)`);
+                  this.createAttackEffect(enemy.x, enemy.y, target.x, target.y, 0x60a5fa);
+                  this.createFloatingText(target.x, target.y - 12, 'EVADED!', '#60a5fa');
+                  const counterRes = hiddenSystem.resolveCounterattack(context, target.progression);
+                  if (counterRes.procced) {
+                    this.executePlayerCounterattack(target, enemy, counterRes);
+                  }
+                } else if (avoidance.type === 'parried') {
+                  console.log(`[Combat] ⚔️ ${target.entityName} PARRIED attack from ${enemy.entityName}! (0 damage)`);
+                  this.createAttackEffect(enemy.x, enemy.y, target.x, target.y, 0xfacc15);
+                  this.createFloatingText(target.x, target.y - 12, 'PARRIED!', '#facc15');
+                  const counterRes = hiddenSystem.resolveCounterattack(context, target.progression);
+                  if (counterRes.procced) {
+                    this.executePlayerCounterattack(target, enemy, counterRes);
+                  }
+                } else if (avoidance.type === 'blocked') {
+                  console.log(`[Combat] 🛡️ ${target.entityName} BLOCKED attack from ${enemy.entityName}! (0 damage)`);
+                  this.createAttackEffect(enemy.x, enemy.y, target.x, target.y, 0x38bdf8);
+                  this.createFloatingText(target.x, target.y - 12, 'BLOCKED!', '#38bdf8');
+                  const counterRes = hiddenSystem.resolveCounterattack(context, target.progression);
+                  if (counterRes.procced) {
+                    this.executePlayerCounterattack(target, enemy, counterRes);
+                  }
+                } else {
+                  this.createAttackEffect(enemy.x, enemy.y, target.x, target.y, 0xef4444);
+                  const mitigation = hiddenSystem.resolveDamageTaken(context, target.progression, rawDamage);
+                  const actualDamage = mitigation.finalDamage;
+
+                  if (mitigation.mitigatedAmount > 0) {
+                    console.log(`[Combat] ${enemy.entityName} hits ${target.entityName} for ${actualDamage} damage! (Resilience mitigated ${mitigation.mitigatedAmount} dmg)`);
+                    this.createFloatingText(target.x, target.y - 20, `-${actualDamage} (${mitigation.mitigatedAmount} RESIST)`, '#a78bfa');
+                  } else if (mitigation.procced) {
+                    console.log(`[Combat] ${enemy.entityName} hits ${target.entityName} for ${actualDamage} damage! (Resilience proc: +1 EXP)`);
+                    this.createFloatingText(target.x, target.y - 20, `RESILIENCE! -${actualDamage}`, '#a78bfa');
+                  } else {
+                    console.log(`[Combat] ${enemy.entityName} hits ${target.entityName} for ${actualDamage} damage!`);
+                  }
+
+                  const targetDowned = target.takeDamage(actualDamage);
+                  if (targetDowned) {
+                    console.log(`[Combat] ${target.entityName} has been downed by enemy attack!`);
+                    target.clearTarget();
+                    this.enemyTargets.delete(enemy);
+                    // Immediate Retarget on same frame
+                    const nextTarget = this.findBestTargetInParty(enemy);
+                    if (nextTarget) {
+                      this.enemyTargets.set(enemy, nextTarget);
+                      enemy.state = 'chasing';
+                      console.log(`%c[Combat Retarget] 🎯 ${enemy.entityName} immediately switched target to ${nextTarget.entityName}!`, 'color: #f59e0b; font-weight: bold;');
+                    }
+                  }
+                }
+              } else {
+                enemy.state = 'chasing';
+              }
+            }
+          } else {
+            if (enemy.state === 'attacking' || enemy.state === 'idle') {
+              enemy.state = 'chasing';
+            }
+            if (enemy.state === 'chasing' || enemy.state === 'moving') {
+              const startTile = enemy.gridPos;
+              const targetDestTile = this.getBestAdjacentTile(startTile, currentTargetTile, enemy) || currentTargetTile;
+              const isStopped = !enemy.isMoving();
+              const timeForRepath = time - enemy.lastRepathTimeMs >= enemy.repathIntervalMs;
+
+              if (isStopped || timeForRepath) {
+                const alreadyHeading =
+                  enemy.isMoving() && enemy.gridPos.x === targetDestTile.x && enemy.gridPos.y === targetDestTile.y;
+                if (!alreadyHeading) {
+                  enemy.lastRepathTimeMs = time;
+                  enemy.claimedDestination = { ...targetDestTile };
+                  const dynamicObstacles = this.getOtherUnitPositions(enemy);
+                  this.pathfinder.findPath(startTile, targetDestTile, dynamicObstacles).then((path) => {
+                    if (
+                      path.length > 0 &&
+                      (enemy.state as string) !== 'downed' &&
+                      (enemy.state as string) !== 'dead' &&
+                      enemy.isAggroed &&
+                      target?.state !== 'downed'
+                    ) {
+                      enemy.followPath(path);
+                    } else {
+                      if (!enemy.isMoving()) {
+                        enemy.claimedDestination = null;
+                      }
+                    }
+                  });
+                }
               }
             }
           }
@@ -304,173 +444,279 @@ export class CombatSystem {
       }
     }
 
-    // 2. Player Auto-Attack & Auto-Skill Loop against Target Entity
-    if (
-      this.player.targetEntity &&
-      this.player.targetEntity.state !== 'downed' &&
-      this.player.targetEntity.state !== 'dead'
-    ) {
-      const target = this.player.targetEntity;
-      const dx = Math.abs(this.player.gridPos.x - target.gridPos.x);
-      const dy = Math.abs(this.player.gridPos.y - target.gridPos.y);
+    // 2. Party Auto-Attack & Auto-Skill Loop against Target Entities
+    for (const member of this.party) {
+      if (member.state === 'downed' || member.state === 'dead') continue;
+      if (!member.targetEntity || member.targetEntity.state === 'downed' || member.targetEntity.state === 'dead') {
+        member.clearTarget();
+        continue;
+      }
+
+      const target = member.targetEntity;
+      const dx = Math.abs(member.gridPos.x - target.gridPos.x);
+      const dy = Math.abs(member.gridPos.y - target.gridPos.y);
       const distanceTiles = Math.max(dx, dy);
 
-      if (distanceTiles <= this.player.attackRangeTiles) {
+      if (distanceTiles <= member.attackRangeTiles) {
+        if (member.isMoving()) {
+          member.stopMovement();
+        }
         const dataLoader = DataLoader.getInstance();
-        const weaponId = this.player.equippedWeapon.id;
-
-        // Calculate weapon effective damage and uncapped accuracy with Mood tier modifiers
-        const weapon = this.player.equippedWeapon;
-        const weaponLevel = this.progressionSystem.getProficiencyLevel(weaponId);
+        const weapon = member.equippedWeapon;
+        const weaponId = weapon.id;
+        const weaponLevel = member.progression.getProficiencyLevel(weaponId);
         const damageBonusPerLevel = weapon.levelBonus?.damagePerLevel ?? 0;
         const accuracyBonusPerLevel = weapon.levelBonus?.accuracyPerLevel ?? 0;
-        const rawBaseDamage = weapon.baseDamage + (weaponLevel * damageBonusPerLevel);
+        const rawBaseDamage = weapon.baseDamage + weaponLevel * damageBonusPerLevel;
         const baseAccuracy = weapon.baseAccuracy ?? 0.60;
 
-        const moodTier = dataLoader.getMoodTier(this.player.mood);
+        const moodTier = dataLoader.getMoodTier(member.mood);
         const effectiveBaseDamage = rawBaseDamage * moodTier.combatDamageMultiplier;
-        // Strictly uncapped: accuracy must be allowed to exceed 1.0 / 100% to offset future enemy Evasion
-        const effectiveAccuracy = baseAccuracy + (weaponLevel * accuracyBonusPerLevel) + moodTier.combatAccuracyBonus;
 
-        // Check if any equipped skill auto-cast conditions are met
+        // Dual Wielding accuracy penalty calculation
+        const isDW = member.isDualWielding();
+        const dwPenalty = isDW ? member.progression.getDualWieldPenalty() : 0;
+        const effectiveAccuracy = baseAccuracy + weaponLevel * accuracyBonusPerLevel + moodTier.combatAccuracyBonus - dwPenalty;
+
         let usedSkill = false;
 
-        for (const skillId of this.player.equippedSkillIds) {
-          // Autocast switch check: if OFF, this skill never auto-fires
-          if (!this.player.isAutocastEnabled(skillId)) {
-            continue;
-          }
+        // Check equipped skills
+        for (const skillId of member.equippedSkillIds) {
+          if (!member.isAutocastEnabled(skillId)) continue;
 
           const skillDef = dataLoader.getSkill(skillId);
-          if (!skillDef || !this.progressionSystem.isSkillUnlocked(skillDef, this.player)) {
-            continue;
-          }
+          if (!skillDef || !member.progression.isSkillUnlocked(skillDef, member)) continue;
 
-          const lastUsed = this.player.lastSkillUseTimes.get(skillId) || 0;
+          const lastUsed = member.lastSkillUseTimes.get(skillId) || 0;
           const isOffCooldown = time - lastUsed >= skillDef.cooldownMs;
-          const isAffordable = this.player.energy >= skillDef.energyCost;
-          const isWeaponReady = time - this.player.lastAttackTime >= this.player.equippedWeapon.attackIntervalMs;
+          const isAffordable = member.energy >= skillDef.energyCost;
+          const isWeaponReady = time - member.lastAttackTime >= member.equippedWeapon.attackIntervalMs;
 
           if (isOffCooldown && isAffordable && isWeaponReady) {
             usedSkill = true;
-            // Deduct Energy & trigger skill
-            this.player.energy -= skillDef.energyCost;
-            this.player.lastSkillUseTimes.set(skillId, time);
-            this.player.lastAttackTime = time;
-            this.player.state = 'attacking';
+            member.energy -= skillDef.energyCost;
+            member.lastSkillUseTimes.set(skillId, time);
+            member.lastAttackTime = time;
+            member.state = 'attacking';
 
-            this.createSkillAttackEffect(this.player.x, this.player.y, target.x, target.y);
+            this.createSkillAttackEffect(member.x, member.y, target.x, target.y);
 
-            // Power Strike rolls against the exact same weapon accuracy check
             const hitRoll = Math.random();
             const isHit = hitRoll < effectiveAccuracy;
 
             if (!isHit) {
-              console.log(`[Skill] Player casts ${skillDef.name} with ${weapon.name} but MISSED! (Hit Chance: ${(effectiveAccuracy * 100).toFixed(1)}%, Roll: ${(hitRoll * 100).toFixed(1)}%)`);
+              console.log(
+                `[Skill] ${member.entityName} casts ${skillDef.name} but MISSED! (Hit Chance: ${(effectiveAccuracy * 100).toFixed(1)}%${isDW ? ` [DW Penalty -${(dwPenalty * 100).toFixed(0)}%]` : ''}, Roll: ${(hitRoll * 100).toFixed(1)}%)`
+              );
               this.createFloatingText(target.x, target.y - 10, 'MISS', '#9ca3af');
             } else {
               const skillDamage = effectiveBaseDamage * skillDef.damageMultiplier;
-              console.log(`[Skill] Player casts ${skillDef.name}! Dealt ${skillDamage.toFixed(1)} damage (${skillDef.damageMultiplier * 100}% of ${effectiveBaseDamage.toFixed(2)} Mood-adjusted base [Mood: ${moodTier.name} x${moodTier.combatDamageMultiplier}]) [Hit Chance: ${(effectiveAccuracy * 100).toFixed(1)}%]`);
+              console.log(
+                `[Skill] ${member.entityName} casts ${skillDef.name}! Dealt ${skillDamage.toFixed(1)} damage (${skillDef.damageMultiplier * 100}% of ${effectiveBaseDamage.toFixed(2)})${isDW ? ` [DW Penalty -${(dwPenalty * 100).toFixed(0)}%]` : ''}`
+              );
               this.createFloatingText(target.x, target.y - 10, `${skillDef.name.toUpperCase()}! -${skillDamage.toFixed(1)}`, '#f59e0b');
 
-              // Roll Bleed status effect chance
-              this.checkAndApplyBleed(target);
+              this.checkAndApplyBleed(member, target);
 
-              // Grant proficiency EXP on skill hit
-              const result = this.progressionSystem.addProficiencyExp(weaponId, 2);
+              const result = member.progression.addProficiencyExp(weaponId, 2);
               if (result.leveledUp) {
-                const newLevel = this.progressionSystem.getProficiencyLevel(weaponId);
-                this.createFloatingText(this.player.x, this.player.y - 20, `${weapon.name} Level ${newLevel}!`, '#22c55e');
+                const newLevel = member.progression.getProficiencyLevel(weaponId);
+                this.createFloatingText(member.x, member.y - 20, `${weapon.name} Level ${newLevel}!`, '#22c55e');
+              }
+
+              if (isDW) {
+                member.progression.addProficiencyExp('dual_wielding', 2);
               }
 
               const targetDowned = target.takeDamage(skillDamage);
               if (targetDowned) {
-                this.handleTargetDefeated(target, weaponId);
+                this.handleTargetDefeated(member, target, weaponId);
               }
             }
             break;
           }
         }
 
-        // Standard weapon attack if no skill was used
+        // Standard weapon attack if no skill fired
         if (!usedSkill) {
-          if (time - this.player.lastAttackTime >= this.player.equippedWeapon.attackIntervalMs) {
-            this.player.lastAttackTime = time;
-            this.player.state = 'attacking';
+          if (time - member.lastAttackTime >= member.equippedWeapon.attackIntervalMs) {
+            member.lastAttackTime = time;
+            member.state = 'attacking';
 
-            this.createAttackEffect(this.player.x, this.player.y, target.x, target.y, 0x3b82f6);
+            this.createAttackEffect(member.x, member.y, target.x, target.y, 0x3b82f6);
 
             const hitRoll = Math.random();
             const isHit = hitRoll < effectiveAccuracy;
 
             if (!isHit) {
-              console.log(`[Combat] Player attacks ${target.entityName} with ${weapon.name} but MISSED! (Hit Chance: ${(effectiveAccuracy * 100).toFixed(1)}%, Roll: ${(hitRoll * 100).toFixed(1)}%)`);
+              console.log(
+                `[Combat] ${member.entityName} attacks ${target.entityName} with ${weapon.name} but MISSED! (Hit Chance: ${(effectiveAccuracy * 100).toFixed(1)}%${isDW ? ` [DW Penalty: -${(dwPenalty * 100).toFixed(0)}%]` : ''}, Roll: ${(hitRoll * 100).toFixed(1)}%)`
+              );
               this.createFloatingText(target.x, target.y - 10, 'MISS', '#9ca3af');
             } else {
               const damage = effectiveBaseDamage;
-              console.log(`[Combat] Player attacks ${target.entityName} with ${weapon.name} for ${damage.toFixed(1)} damage! (Base: ${weapon.baseDamage}, Lv ${weaponLevel} Bonus: +${(weaponLevel * damageBonusPerLevel).toFixed(1)}, Mood: ${moodTier.name} x${moodTier.combatDamageMultiplier}, Accuracy: ${(effectiveAccuracy * 100).toFixed(1)}%)`);
+              console.log(
+                `[Combat] ${member.entityName} attacks ${target.entityName} with ${weapon.name} for ${damage.toFixed(1)} damage! (Base: ${weapon.baseDamage}, Lv ${weaponLevel} Bonus: +${(weaponLevel * damageBonusPerLevel).toFixed(1)}, Accuracy: ${(effectiveAccuracy * 100).toFixed(1)}%${isDW ? ` [DW Penalty -${(dwPenalty * 100).toFixed(0)}%]` : ''})`
+              );
               this.createFloatingText(target.x, target.y - 10, `-${damage.toFixed(1)}`, '#38bdf8');
 
-              // Roll Bleed status effect chance
-              this.checkAndApplyBleed(target);
+              this.checkAndApplyBleed(member, target);
 
-              // Grant proficiency EXP on hit
-              const result = this.progressionSystem.addProficiencyExp(weaponId, 2);
+              const result = member.progression.addProficiencyExp(weaponId, 2);
               if (result.leveledUp) {
-                const newLevel = this.progressionSystem.getProficiencyLevel(weaponId);
-                this.createFloatingText(this.player.x, this.player.y - 20, `${weapon.name} Level ${newLevel}!`, '#22c55e');
+                const newLevel = member.progression.getProficiencyLevel(weaponId);
+                this.createFloatingText(member.x, member.y - 20, `${weapon.name} Level ${newLevel}!`, '#22c55e');
               }
 
-              const targetDowned = target.takeDamage(damage);
+              let targetDowned = target.takeDamage(damage);
               if (targetDowned) {
-                this.handleTargetDefeated(target, weaponId);
+                this.handleTargetDefeated(member, target, weaponId);
               }
+            }
+
+            // DUAL WIELDING: Offhand weapon attack strike
+            if (isDW && member.offhandWeapon && target.state !== 'downed' && target.state !== 'dead') {
+              const offWpn = member.offhandWeapon;
+              const offLevel = member.progression.getProficiencyLevel(offWpn.id);
+              const offBonusDmg = offWpn.levelBonus?.damagePerLevel ?? 0;
+              const offBonusAcc = offWpn.levelBonus?.accuracyPerLevel ?? 0;
+              const offRawDamage = offWpn.baseDamage + offLevel * offBonusDmg;
+              const offEffectiveDamage = offRawDamage * moodTier.combatDamageMultiplier;
+              const offEffectiveAccuracy =
+                (offWpn.baseAccuracy ?? 0.65) + offLevel * offBonusAcc + moodTier.combatAccuracyBonus - dwPenalty;
+
+              this.createAttackEffect(member.x, member.y, target.x, target.y, 0xa855f7);
+
+              const offHitRoll = Math.random();
+              const isOffHit = offHitRoll < offEffectiveAccuracy;
+
+              if (!isOffHit) {
+                console.log(
+                  `[Dual Wield] ${member.entityName} offhand strike with ${offWpn.name} MISSED! (Hit Chance: ${(offEffectiveAccuracy * 100).toFixed(1)}% [DW Penalty: -${(dwPenalty * 100).toFixed(0)}%], Roll: ${(offHitRoll * 100).toFixed(1)}%)`
+                );
+                this.createFloatingText(target.x, target.y - 22, 'DW MISS', '#9ca3af');
+              } else {
+                console.log(
+                  `[Dual Wield] ⚔️ ${member.entityName} offhand strike with ${offWpn.name} hits ${target.entityName} for ${offEffectiveDamage.toFixed(1)} damage! (DW Penalty: -${(dwPenalty * 100).toFixed(0)}%, Hit Chance: ${(offEffectiveAccuracy * 100).toFixed(1)}%)`
+                );
+                this.createFloatingText(target.x, target.y - 22, `-${offEffectiveDamage.toFixed(1)} (DW)`, '#c084fc');
+
+                member.progression.addProficiencyExp(offWpn.id, 2);
+                const dwResult = member.progression.addProficiencyExp('dual_wielding', 2);
+                if (dwResult.leveledUp) {
+                  const dwLv = member.progression.getProficiencyLevel('dual_wielding');
+                  this.createFloatingText(member.x, member.y - 20, `Dual Wield Level ${dwLv}!`, '#a855f7');
+                }
+
+                const offTargetDowned = target.takeDamage(offEffectiveDamage);
+                if (offTargetDowned) {
+                  this.handleTargetDefeated(member, target, offWpn.id);
+                }
+              }
+            }
+          }
+        }
+      } else {
+        // Target is outside attack range: Party Member Pursuit & Surround Maintenance
+        const isStopped = !member.isMoving();
+        const timeForRepath = time - member.lastCombatRepathTimeMs >= member.combatRepathIntervalMs;
+
+        if (isStopped || timeForRepath) {
+          let needsRepath = true;
+          if (member.claimedDestination) {
+            const cdx = Math.abs(member.claimedDestination.x - target.gridPos.x);
+            const cdy = Math.abs(member.claimedDestination.y - target.gridPos.y);
+            const isAdjacent = Math.max(cdx, cdy) <= member.attackRangeTiles && (cdx > 0 || cdy > 0);
+
+            // Exclusive ownership check: no other party member has claimed this same destination
+            const anotherMemberClaimed = this.party.some(
+              (other) => other !== member && other.state !== 'dead' && other.state !== 'downed' &&
+                other.claimedDestination !== null &&
+                other.claimedDestination.x === member.claimedDestination!.x &&
+                other.claimedDestination.y === member.claimedDestination!.y
+            );
+            const blockedByStaticOrEnemy = this.pathfinder.isObstacle(member.claimedDestination.x, member.claimedDestination.y) ||
+              this.enemies.some(e => e.state !== 'dead' && e.state !== 'downed' && e.gridPos.x === member.claimedDestination!.x && e.gridPos.y === member.claimedDestination!.y);
+
+            if (isAdjacent && !anotherMemberClaimed && !blockedByStaticOrEnemy && (member.isMoving() || !isStopped)) {
+              needsRepath = false; // already en route to a valid exclusive adjacent tile!
+            }
+          }
+
+          if (needsRepath) {
+            member.lastCombatRepathTimeMs = time;
+            const targetTile = this.findOpenAdjacentForMember(target.gridPos, member.gridPos, member);
+            if (targetTile) {
+              member.claimedDestination = { ...targetTile };
+              const enemyObstacles = this.enemies.filter(e => e !== target && e.state !== 'dead' && e.state !== 'downed').map(e => e.gridPos);
+              this.pathfinder.findPath(member.gridPos, targetTile, enemyObstacles).then((path) => {
+                if (
+                  path.length > 0 &&
+                  member.state !== 'downed' &&
+                  member.state !== 'dead' &&
+                  member.targetEntity === target
+                ) {
+                  member.followPath(path);
+                } else {
+                  if (!member.isMoving()) {
+                    member.claimedDestination = null;
+                  }
+                }
+              });
             }
           }
         }
       }
     }
 
-    // 3. Passive Regen Ticks (Out of Combat Health Regen & Mana Regen)
+    // 3. Passive Regen Ticks (Out of Combat Health & Mana Regen) per Party Member
     const anyEnemyAggroed = this.enemies.some((e) => e.isAggroed && e.state !== 'dead' && e.state !== 'downed');
-    const inCombat = anyEnemyAggroed || (time - this.lastCombatTimeMs < 4000);
+    const inCombat = anyEnemyAggroed || time - this.lastCombatTimeMs < 4000;
 
     if (time - this.lastPassiveTickTimeMs >= 3000) {
       this.lastPassiveTickTimeMs = time;
-        const hiddenSystem = HiddenSkillSystem.getInstance();
+      const hiddenSystem = HiddenSkillSystem.getInstance();
+
+      for (const member of this.party) {
+        if (member.state === 'downed' || member.state === 'dead') continue;
         const context: CombatContext = {
-          equippedWeapon: this.player.equippedWeapon,
+          equippedWeapon: member.equippedWeapon,
           hasShield: false,
           hasMagicProficiency: false,
           inCombat
         };
 
-        const regenResult = hiddenSystem.resolvePassiveRegen(context, this.progressionSystem);
+        const regenResult = hiddenSystem.resolvePassiveRegen(context, member.progression);
         if (regenResult.healthRestored > 0) {
-          const restored = this.player.heal(regenResult.healthRestored);
+          const restored = member.heal(regenResult.healthRestored);
           if (restored > 0) {
-            console.log(`[Regen] Health Regen tick! Restored +${restored} HP`);
-            this.createFloatingText(this.player.x, this.player.y - 15, `+${restored} HP`, '#22c55e');
+            console.log(`[Regen] ${member.entityName} Health Regen tick! Restored +${restored} HP`);
+            this.createFloatingText(member.x, member.y - 15, `+${restored} HP`, '#22c55e');
           }
         }
         if (regenResult.energyRestored > 0) {
-          const oldEnergy = this.player.energy;
-          this.player.energy = Math.min(this.player.maxEnergy, this.player.energy + regenResult.energyRestored);
-          const restored = Math.floor(this.player.energy - oldEnergy);
+          const oldEnergy = member.energy;
+          member.energy = Math.min(member.maxEnergy, member.energy + regenResult.energyRestored);
+          const restored = Math.floor(member.energy - oldEnergy);
           if (restored > 0) {
-            console.log(`[Regen] Mana Regen tick! Restored +${restored} Energy`);
-            this.createFloatingText(this.player.x, this.player.y - 15, `+${restored} EN`, '#3b82f6');
+            console.log(`[Regen] ${member.entityName} Mana Regen tick! Restored +${restored} Energy`);
+            this.createFloatingText(member.x, member.y - 15, `+${restored} EN`, '#3b82f6');
           }
         }
       }
     }
+  }
 
-  private executePlayerCounterattack(enemy: Enemy, counterResult: CounterattackResult): void {
+  private executePlayerCounterattack(
+    counterAttacker: Player,
+    enemy: Enemy,
+    counterResult: CounterattackResult
+  ): void {
     if (enemy.state === 'downed' || enemy.state === 'dead') return;
-    const weapon = this.player.equippedWeapon;
-    const weaponLevel = this.progressionSystem.getProficiencyLevel(weapon.id);
+    const weapon = counterAttacker.equippedWeapon;
+    const weaponLevel = counterAttacker.progression.getProficiencyLevel(weapon.id);
     const damageBonusPerLevel = weapon.levelBonus?.damagePerLevel ?? 0;
-    const baseDamage = weapon.baseDamage + (weaponLevel * damageBonusPerLevel);
+    const baseDamage = weapon.baseDamage + weaponLevel * damageBonusPerLevel;
 
     let counterDmg = Math.max(1, Math.round(baseDamage * counterResult.damageMultiplier));
     let isCrit = false;
@@ -479,8 +725,10 @@ export class CombatSystem {
       isCrit = true;
     }
 
-    console.log(`[Combat] ⚡ COUNTERATTACK! Player retaliates against ${enemy.entityName} for ${counterDmg} damage!`);
-    this.createSkillAttackEffect(this.player.x, this.player.y, enemy.x, enemy.y);
+    console.log(
+      `[Combat] ⚡ COUNTERATTACK! ${counterAttacker.entityName} retaliates against ${enemy.entityName} for ${counterDmg} damage!`
+    );
+    this.createSkillAttackEffect(counterAttacker.x, counterAttacker.y, enemy.x, enemy.y);
     this.createFloatingText(
       enemy.x,
       enemy.y - 15,
@@ -490,12 +738,12 @@ export class CombatSystem {
 
     const enemyDowned = enemy.takeDamage(counterDmg);
     if (enemyDowned) {
-      this.handleTargetDefeated(enemy, weapon.id);
+      this.handleTargetDefeated(counterAttacker, enemy, weapon.id);
     }
   }
 
-  private checkAndApplyBleed(target: Entity): void {
-    const weapon = this.player.equippedWeapon;
+  private checkAndApplyBleed(attacker: Player, target: Entity): void {
+    const weapon = attacker.equippedWeapon;
     if (weapon.bleedChance && Math.random() < weapon.bleedChance) {
       const bleedDef = DataLoader.getInstance().getStatusEffect('bleed');
       if (bleedDef) {
@@ -506,18 +754,28 @@ export class CombatSystem {
     }
   }
 
-  private handleTargetDefeated(target: Entity, weaponId: string): void {
-    console.log(`[Combat] ${target.entityName} defeated/downed!`);
-    // Bonus EXP on kill/downing target
-    const result = this.progressionSystem.addProficiencyExp(weaponId, 4);
+  private handleTargetDefeated(killer: Player, target: Entity, weaponId: string): void {
+    console.log(`[Combat] ${target.entityName} defeated/downed by ${killer.entityName}!`);
+    const result = killer.progression.addProficiencyExp(weaponId, 4);
     if (result.leveledUp) {
-      const newLevel = this.progressionSystem.getProficiencyLevel(weaponId);
-      this.createFloatingText(this.player.x, this.player.y - 20, `Level Up! Level ${newLevel}`, '#22c55e');
+      const newLevel = killer.progression.getProficiencyLevel(weaponId);
+      this.createFloatingText(killer.x, killer.y - 20, `Level Up! Level ${newLevel}`, '#22c55e');
     }
 
-    this.player.clearTarget();
+    if (killer.isDualWielding() && killer.offhandWeapon) {
+      killer.progression.addProficiencyExp(killer.offhandWeapon.id, 2);
+      killer.progression.addProficiencyExp('dual_wielding', 2);
+    }
+
+    // Clear target for all party members who had targeted this enemy
+    for (const member of this.party) {
+      if (member.targetEntity === target) {
+        member.clearTarget();
+      }
+    }
 
     if (target instanceof Enemy) {
+      this.enemyTargets.delete(target);
       if (this.onEnemyDeathCallback) {
         this.onEnemyDeathCallback(target);
       }

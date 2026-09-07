@@ -1,11 +1,12 @@
 import type { Player } from '../entities/Player.ts';
 import { ProgressionSystem } from './ProgressionSystem.ts';
-import type { PlayerData, PlayerSnapshot, PlacedBuildable, TrainableStat, FoodItemInstance } from '../types/game.ts';
+import type { PlayerData, PlayerSnapshot, CharacterSnapshot, PlacedBuildable, TrainableStat, FoodItemInstance } from '../types/game.ts';
 import { DataLoader } from '../utils/DataLoader.ts';
 
 export class GameState {
   private static instance: GameState;
   private snapshot: PlayerSnapshot | null = null;
+  private partySnapshots: CharacterSnapshot[] = [];
   private isInitialized: boolean = false;
   private resources: { wood: number; [key: string]: number } = { wood: 100 };
   private placedBuildables: PlacedBuildable[] = [];
@@ -81,8 +82,35 @@ export class GameState {
       hunger: 100,
       mood: 80,
       currentGameDay: 1,
-      foodItems: []
+      foodItems: [],
+      equippedWeaponId: playerData.startingWeaponId,
+      offhandWeaponId: null
     };
+
+    const heroSnapshot: CharacterSnapshot = {
+      id: playerData.id || 'hero',
+      name: playerData.name,
+      avatarKey: 'player-avatar',
+      hp: playerData.maxHp,
+      criticalHp: playerData.criticalHpMax,
+      energy: playerData.maxEnergy,
+      equippedWeaponId: playerData.startingWeaponId,
+      offhandWeaponId: null,
+      knownSkillIds: known,
+      equippedSkillIds: equipped,
+      autocastMap: autocastObj,
+      skillCooldownsRemainingMs: {},
+      proficiencies: seedProficiencies,
+      classLevels: {},
+      unlockedClasses: [],
+      bookLearnedSkills: [],
+      hunger: 100,
+      mood: 80,
+      state: 'idle'
+    };
+
+    this.partySnapshots = [heroSnapshot];
+    this.snapshot.party = [heroSnapshot];
 
     this.isInitialized = true;
     console.log('[GameState] Initialized from player.json boot seed:', this.snapshot);
@@ -391,6 +419,66 @@ export class GameState {
     return this.snapshot;
   }
 
+  public getPartySnapshots(): CharacterSnapshot[] {
+    return [...this.partySnapshots];
+  }
+
+  public addCompanionToParty(companion: any, sceneTime: number = 0): void {
+    const snap: CharacterSnapshot = ('getSnapshot' in companion)
+      ? companion.getSnapshot(sceneTime)
+      : companion;
+    const existingIdx = this.partySnapshots.findIndex((m) => m.id === snap.id);
+    if (existingIdx !== -1) {
+      this.partySnapshots[existingIdx] = snap;
+    } else {
+      this.partySnapshots.push(snap);
+    }
+    if (this.snapshot) {
+      this.snapshot.party = [...this.partySnapshots];
+    }
+    console.log(`[GameState] Added/Updated companion '${snap.name}' (id: ${snap.id}) in party. Total members: ${this.partySnapshots.length}`);
+  }
+
+  /**
+   * Captures snapshots of all active party members at scene transition.
+   */
+  public savePartySnapshot(party: Player[], sceneTime: number): void {
+    this.partySnapshots = party.map((p) => p.getSnapshot(sceneTime));
+    if (this.partySnapshots.length > 0) {
+      const leader = this.partySnapshots[0];
+      this.snapshot = {
+        hp: leader.hp,
+        criticalHp: leader.criticalHp,
+        energy: leader.energy,
+        knownSkillIds: [...leader.knownSkillIds],
+        equippedSkillIds: [...leader.equippedSkillIds],
+        autocastMap: { ...leader.autocastMap },
+        skillCooldownsRemainingMs: { ...leader.skillCooldownsRemainingMs },
+        proficiencies: { ...leader.proficiencies },
+        classLevels: { ...leader.classLevels },
+        unlockedClasses: [...leader.unlockedClasses],
+        resources: { ...this.resources },
+        placedBuildables: [...this.placedBuildables],
+        researchPoints: this.researchPoints,
+        unlockedBuildables: Array.from(this.unlockedBuildables),
+        inventory: Object.fromEntries(this.inventory),
+        bookLearnedSkills: leader.bookLearnedSkills ? [...leader.bookLearnedSkills] : [],
+        hunger: leader.hunger,
+        mood: leader.mood,
+        currentGameDay: this.currentGameDay,
+        foodItems: [...this.foodItems],
+        equippedWeaponId: leader.equippedWeaponId,
+        offhandWeaponId: leader.offhandWeaponId,
+        party: [...this.partySnapshots]
+      };
+    }
+    console.log(
+      `%c[SceneTransition Handoff-OUT] Saved party snapshot (${party.length} members) at sceneTime=${sceneTime.toFixed(0)}ms:`,
+      'color: #38bdf8; font-weight: bold;',
+      this.partySnapshots
+    );
+  }
+
   /**
    * Called strictly at scene exit / transition.
    * Captures snapshot of live Player entity and ProgressionSystem.
@@ -419,6 +507,14 @@ export class GameState {
     }
 
     const progData = progression.getSnapshotData();
+    const playerSnap = player.getSnapshot(sceneTime);
+
+    const existingIdx = this.partySnapshots.findIndex((m) => m.id === player.id);
+    if (existingIdx !== -1) {
+      this.partySnapshots[existingIdx] = playerSnap;
+    } else {
+      this.partySnapshots.push(playerSnap);
+    }
 
     this.snapshot = {
       hp: player.hp,
@@ -440,7 +536,10 @@ export class GameState {
       hunger: player.hunger,
       mood: player.mood,
       currentGameDay: this.currentGameDay,
-      foodItems: [...this.foodItems]
+      foodItems: [...this.foodItems],
+      equippedWeaponId: player.equippedWeapon.id,
+      offhandWeaponId: player.offhandWeapon?.id ?? null,
+      party: [...this.partySnapshots]
     };
 
     console.log(
@@ -537,6 +636,29 @@ export class GameState {
         player.lastSkillUseTimes.set(skillId, reanchoredLastUsed);
         verifiedRemaining[skillId] = Math.max(0, skillDef.cooldownMs - (sceneTime - reanchoredLastUsed));
       }
+    }
+
+    if (snap.equippedWeaponId) {
+      const mainWpn = dataLoader.getWeapon(snap.equippedWeaponId);
+      if (mainWpn) player.equippedWeapon = mainWpn;
+    }
+    if (snap.offhandWeaponId) {
+      const offWpn = dataLoader.getWeapon(snap.offhandWeaponId);
+      player.offhandWeapon = offWpn ?? null;
+    } else {
+      player.offhandWeapon = null;
+    }
+
+    // Downed state restoration
+    const leaderSnap = snap.party?.[0];
+    if (leaderSnap?.state === 'downed' || player.hp <= 0) {
+      player.state = 'downed';
+      (player as any).avatarSprite?.setAngle(90);
+      (player as any).avatarSprite?.setAlpha(0.6);
+    } else {
+      player.state = 'idle';
+      (player as any).avatarSprite?.setAngle(0);
+      (player as any).avatarSprite?.setAlpha(1);
     }
 
     player.drawHpBar();

@@ -4,6 +4,11 @@ declare module 'easystarjs' {
     setAcceptableTiles(tiles: number[]): void;
     disableDiagonals(): void;
     enableDiagonals(): void;
+    enableSync(): void;
+    disableSync(): void;
+    avoidAdditionalPoint(x: number, y: number): void;
+    stopAvoidingAdditionalPoint(x: number, y: number): void;
+    stopAvoidingAllAdditionalPoints(): void;
     findPath(
       startX: number,
       startY: number,

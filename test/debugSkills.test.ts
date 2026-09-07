@@ -27,6 +27,8 @@ const mockClassesData: ClassesData = {
 
   const expectedIds = [
     'short_swords',
+    'daggers',
+    'dual_wielding',
     'construction',
     'alchemy',
     'evasion',

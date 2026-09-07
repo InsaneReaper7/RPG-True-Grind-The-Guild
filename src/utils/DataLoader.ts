@@ -124,6 +124,19 @@ export class DataLoader {
     return this.weaponsData.weapons.find((w) => w.id === id);
   }
 
+  public getAllWeapons(): WeaponDef[] {
+    return this.weaponsData?.weapons ?? [];
+  }
+
+  public getOneHandedMeleeWeaponIds(): string[] {
+    if (!this.weaponsData?.weapons) {
+      return ['short_swords', 'daggers', 'katana', 'mace', 'spears'];
+    }
+    return this.weaponsData.weapons
+      .filter((w) => w.category === 'melee_1h' && !w.twoHanded)
+      .map((w) => w.id);
+  }
+
   public getClassesData(): ClassesData {
     return this.classesData;
   }

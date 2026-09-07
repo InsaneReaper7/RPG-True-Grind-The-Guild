@@ -6,7 +6,7 @@
     { "id": "shields", "name": "Shields", "category": "offhand", "twoHanded": false, "attackIntervalMs": 1500, "baseDamage": 2 },
     { "id": "longswords", "name": "Longswords", "category": "melee_2h", "twoHanded": true, "attackIntervalMs": 1200, "baseDamage": 8 },
     { "id": "greatswords", "name": "Greatswords", "category": "melee_2h", "twoHanded": true, "attackIntervalMs": 1600, "baseDamage": 12 },
-    { "id": "daggers", "name": "Daggers", "category": "melee_1h", "twoHanded": false, "attackIntervalMs": 600, "baseDamage": 3 },
+    { "id": "daggers", "name": "Daggers", "category": "melee_1h", "twoHanded": false, "attackIntervalMs": 600, "baseDamage": 3, "baseAccuracy": 0.65, "bleedChance": 0.2, "levelBonus": { "accuracyPerLevel": 0.004, "damagePerLevel": 0.3 } },
     { "id": "bows", "name": "Bows", "category": "ranged", "twoHanded": true, "attackIntervalMs": 1200, "baseDamage": 6 },
     { "id": "mace", "name": "Mace", "category": "melee_1h", "twoHanded": false, "attackIntervalMs": 1300, "baseDamage": 7 },
     { "id": "throwing_weapons", "name": "Throwing Weapons", "category": "ranged", "twoHanded": false, "attackIntervalMs": 800, "baseDamage": 4 },

@@ -2,6 +2,7 @@ import type { ClassDef, Requirement, ClassesData, SkillDef, TrainableStat } from
 import { BuildingSystem } from './BuildingSystem.ts';
 import type { ConstructionTierDef } from './BuildingSystem.ts';
 import { LevelingSystem } from './LevelingSystem.ts';
+import { DataLoader } from '../utils/DataLoader.ts';
 
 export interface UnlockEvent {
   classDef: ClassDef;
@@ -26,14 +27,18 @@ export class ProgressionSystem {
   private proficiencies: Map<string, TrainableStat> = new Map();
   private classLevels: Map<string, number> = new Map();
   private unlockedClasses: Set<string> = new Set();
+  private dualWieldUnlocked: boolean = false;
   private classesData: ClassesData;
   private onUnlockCallbacks: ((event: UnlockEvent) => void)[] = [];
   private onSkillDiscoveredCallbacks: ((event: SkillDiscoveredEvent) => void)[] = [];
+  private onDualWieldUnlockedCallbacks: (() => void)[] = [];
 
   constructor(classesData: ClassesData) {
     this.classesData = classesData;
     // Default trainable stats
     this.proficiencies.set('short_swords', { level: 0, currentExp: 0 });
+    this.proficiencies.set('daggers', { level: 0, currentExp: 0 });
+    this.proficiencies.set('dual_wielding', { level: 0, currentExp: 0 });
     this.proficiencies.set('construction', { level: 0, currentExp: 0 });
     this.proficiencies.set('alchemy', { level: 0, currentExp: 0 });
     for (const hiddenId of ProgressionSystem.HIDDEN_SKILL_IDS) {
@@ -49,14 +54,17 @@ export class ProgressionSystem {
     this.onSkillDiscoveredCallbacks.push(callback);
   }
 
+  public onDualWieldUnlocked(callback: () => void): void {
+    this.onDualWieldUnlockedCallbacks.push(callback);
+  }
+
   public getProficiencyStat(id: string): TrainableStat {
-    const stat = this.proficiencies.get(id);
+    let stat = this.proficiencies.get(id);
     if (!stat) {
-      const newStat: TrainableStat = { level: 0, currentExp: 0 };
-      this.proficiencies.set(id, newStat);
-      return { ...newStat };
+      stat = { level: 0, currentExp: 0 };
+      this.proficiencies.set(id, stat);
     }
-    return { ...stat };
+    return stat;
   }
 
   public getAllProficiencyStats(): Map<string, TrainableStat> {
@@ -119,6 +127,7 @@ export class ProgressionSystem {
     if (result.leveledUp) {
       console.log(`[Progression] LEVEL UP! '${id}' is now Level ${stat.level}! (Gained ${result.levelsGained} level(s))`);
       this.checkClassUnlocks();
+      this.checkDualWieldUnlock();
 
       if (oldLevel === 0 && stat.level >= 1 && ProgressionSystem.HIDDEN_SKILL_IDS.includes(id)) {
         console.log(`[Progression] ✨ HIDDEN SKILL DISCOVERED: '${id}' reached Level ${stat.level}! ✨`);
@@ -184,6 +193,66 @@ export class ProgressionSystem {
     });
   }
 
+  /**
+   * Generic Dual Wielding Unlock:
+   * Counts how many eligible one-handed melee weapon proficiencies have reached Level 30+.
+   * Dynamically queries DataLoader.getOneHandedMeleeWeaponIds() so any future 1H melee weapon
+   * (e.g. Katana, Mace, Spears) seamlessly qualifies with zero rewrites.
+   */
+  public isDualWieldUnlocked(): boolean {
+    if (this.dualWieldUnlocked) return true;
+
+    let eligibleIds: string[];
+    try {
+      eligibleIds = DataLoader.getInstance().getOneHandedMeleeWeaponIds();
+    } catch {
+      eligibleIds = ['short_swords', 'daggers', 'katana', 'mace', 'spears'];
+    }
+    if (!eligibleIds || eligibleIds.length === 0) {
+      eligibleIds = ['short_swords', 'daggers', 'katana', 'mace', 'spears'];
+    }
+
+    let qualifiedCount = 0;
+    for (const weaponId of eligibleIds) {
+      if (this.getProficiencyLevel(weaponId) >= 30) {
+        qualifiedCount++;
+      }
+    }
+
+    if (qualifiedCount >= 2) {
+      this.dualWieldUnlocked = true;
+      console.log(`%c[Progression] ✨ DUAL WIELDING UNLOCKED! Two 1H melee weapon proficiencies reached Level 30! ✨`, 'color: #f59e0b; font-weight: bold;');
+      for (const cb of this.onDualWieldUnlockedCallbacks) {
+        cb();
+      }
+      return true;
+    }
+    return false;
+  }
+
+  public checkDualWieldUnlock(): boolean {
+    if (this.dualWieldUnlocked) return false;
+    return this.isDualWieldUnlocked();
+  }
+
+  /**
+   * Accuracy penalty for dual wielding:
+   * Starts at -20% (-0.20) at Level 0, and shrinks through 10/30/60/90:
+   * - Level 0-9: -0.20 (-20%)
+   * - Level 10-29 (Novice): -0.15 (-15%)
+   * - Level 30-59 (Adept): -0.10 (-10%)
+   * - Level 60-89 (Expert): -0.05 (-5%)
+   * - Level 90+ (Master): 0.00 (0% penalty)
+   */
+  public getDualWieldPenalty(): number {
+    const level = this.getProficiencyLevel('dual_wielding');
+    if (level >= 90) return 0.0;
+    if (level >= 60) return 0.05;
+    if (level >= 30) return 0.10;
+    if (level >= 10) return 0.15;
+    return 0.20;
+  }
+
   public getSnapshotData(): {
     proficiencies: Record<string, TrainableStat>;
     classLevels: Record<string, number>;
@@ -227,5 +296,6 @@ export class ProgressionSystem {
     for (const c of data.unlockedClasses) {
       this.unlockedClasses.add(c);
     }
+    this.checkDualWieldUnlock();
   }
 }

@@ -144,6 +144,31 @@ export interface PlayerData {
   };
 }
 
+export interface CharacterSnapshot {
+  id: string;
+  name: string;
+  avatarKey?: string;
+  avatarTextureKey?: string;
+  x?: number;
+  y?: number;
+  hp: number;
+  criticalHp: number;
+  energy: number;
+  equippedWeaponId: string;
+  offhandWeaponId?: string | null;
+  knownSkillIds: string[];
+  equippedSkillIds: string[];
+  autocastMap: Record<string, boolean>;
+  skillCooldownsRemainingMs: Record<string, number>;
+  proficiencies: Record<string, TrainableStat>;
+  classLevels: Record<string, number>;
+  unlockedClasses: string[];
+  bookLearnedSkills?: string[];
+  hunger?: number;
+  mood?: number;
+  state?: EntityState;
+}
+
 export interface PlayerSnapshot {
   hp: number;
   criticalHp: number;
@@ -168,6 +193,9 @@ export interface PlayerSnapshot {
   mood?: number;
   currentGameDay?: number;
   foodItems?: FoodItemInstance[];
+  equippedWeaponId?: string;
+  offhandWeaponId?: string | null;
+  party?: CharacterSnapshot[];
 }
 
 export interface SkillBookDef {

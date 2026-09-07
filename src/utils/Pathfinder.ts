@@ -1,5 +1,5 @@
 import EasyStar from 'easystarjs';
-import { GridPos } from '../types/game';
+import type { GridPos } from '../types/game';
 
 export class Pathfinder {
   private gridMatrix: number[][];
@@ -16,6 +16,7 @@ export class Pathfinder {
     this.easystar.setGrid(gridMatrix);
     this.easystar.setAcceptableTiles([0]); // 0 = walkable, 1 = obstacle
     this.easystar.disableDiagonals();
+    this.easystar.enableSync();
   }
 
   public updateGrid(newGridMatrix: number[][]): void {
@@ -94,7 +95,7 @@ export class Pathfinder {
     return true;
   }
 
-  public findPath(start: GridPos, end: GridPos): Promise<GridPos[]> {
+  public findPath(start: GridPos, end: GridPos, dynamicObstacles?: GridPos[]): Promise<GridPos[]> {
     return new Promise((resolve) => {
       // Validate boundaries
       if (
@@ -111,16 +112,45 @@ export class Pathfinder {
         return;
       }
 
+      const applyDynamicObstacles = (obstacles: GridPos[]) => {
+        for (const obs of obstacles) {
+          // Do not mark start or destination tile as dynamic obstacle
+          if ((obs.x !== start.x || obs.y !== start.y) && (obs.x !== end.x || obs.y !== end.y)) {
+            this.easystar.avoidAdditionalPoint(obs.x, obs.y);
+          }
+        }
+      };
+
+      if (dynamicObstacles && dynamicObstacles.length > 0) {
+        applyDynamicObstacles(dynamicObstacles);
+      }
+
+      let returnedPath: GridPos[] = [];
       this.easystar.findPath(start.x, start.y, end.x, end.y, (path) => {
-        if (path === null) {
-          resolve([]);
-        } else {
-          // Convert {x, y} array to GridPos[]
-          const result: GridPos[] = path.map((p) => ({ x: p.x, y: p.y }));
-          resolve(result);
+        if (path !== null) {
+          returnedPath = path.map((p) => ({ x: p.x, y: p.y }));
         }
       });
       this.easystar.calculate();
+
+      if (dynamicObstacles && dynamicObstacles.length > 0) {
+        this.easystar.stopAvoidingAllAdditionalPoints();
+      }
+
+      // Corridor bottleneck fallback:
+      // If path was blocked by intermediate dynamic obstacles in a narrow corridor/doorway,
+      // recalculate toward the exact same destination without intermediate dynamic obstacles
+      // so the unit can stream through the corridor rather than deadlocking.
+      if (returnedPath.length === 0 && dynamicObstacles && dynamicObstacles.length > 0) {
+        this.easystar.findPath(start.x, start.y, end.x, end.y, (path) => {
+          if (path !== null) {
+            returnedPath = path.map((p) => ({ x: p.x, y: p.y }));
+          }
+        });
+        this.easystar.calculate();
+      }
+
+      resolve(returnedPath);
     });
   }
 }
