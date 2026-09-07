@@ -95,8 +95,8 @@ async function run() {
         name: m.entityName || m.id,
         startPos: m.gridPos,
         dest: m.claimedDestination ? { ...m.claimedDestination } : null,
-        moving: m.state === 'moving' || (m.currentPath && m.currentPath.length > 0),
-        pathLen: m.currentPath ? m.currentPath.length : 0
+        moving: m.state === 'moving' || (m.path && m.path.length > 0),
+        pathLen: m.path ? m.path.length : 0
       }));
 
       // Wait for movement completion
@@ -266,16 +266,16 @@ async function run() {
 
     scene.input.emit('pointerdown', { x: px, y: py });
 
-    // Inspect immediate reaction
-    await new Promise(r => setTimeout(r, 100));
+    // Inspect immediate reaction after async path resolution
+    await new Promise(r => setTimeout(r, 200));
 
     const immediateStates = allMembers.map(m => ({
       name: m.entityName,
       state: m.state,
-      moving: m.state === 'moving' || (m.currentPath && m.currentPath.length > 0),
+      moving: m.state === 'moving' || (m.path && m.path.length > 0),
       target: m.targetEntity ? (m.targetEntity.entityName || 'Wolf') : null,
       dest: m.claimedDestination ? { x: m.claimedDestination.x, y: m.claimedDestination.y } : null,
-      pathLen: m.currentPath ? m.currentPath.length : 0
+      pathLen: m.path ? m.path.length : 0
     }));
 
     // Wait 3.2 seconds for traversal across dungeon
