@@ -13,6 +13,15 @@ import { GridPos, EnemyDef } from '../types/game';
 import { HiddenSkillSystem } from '../systems/HiddenSkillSystem';
 import { TileClaimDebugOverlay } from '../ui/TileClaimDebugOverlay';
 
+export interface ForagingBush {
+  x: number;
+  y: number;
+  sprite: Phaser.GameObjects.Sprite;
+  label: Phaser.GameObjects.Text;
+  isHarvested: boolean;
+  respawnTimer?: Phaser.Time.TimerEvent;
+}
+
 export class MainScene extends Phaser.Scene {
   private mapWidth: number = 20;
   private mapHeight: number = 20;
@@ -34,6 +43,7 @@ export class MainScene extends Phaser.Scene {
   private portalSprite!: Phaser.GameObjects.Sprite;
   private portalPos: GridPos = { x: 2, y: 2 };
   private isTransitioning: boolean = false;
+  private foragingBushes: ForagingBush[] = [];
 
   private wasdKeys!: {
     W: Phaser.Input.Keyboard.Key;
@@ -198,6 +208,12 @@ export class MainScene extends Phaser.Scene {
     if (goblinData) this.spawnEnemyUnit(goblinData, 14, 5, 'goblin-avatar');
     if (skeletonData) this.spawnEnemyUnit(skeletonData, 5, 14, 'skeleton-avatar');
     if (undeadData) this.spawnEnemyUnit(undeadData, 15, 10, 'undead-avatar');
+
+    // 5b. Spawn Dungeon Foraging Nodes (Milestone 10)
+    this.foragingBushes = [];
+    this.spawnForagingBush(4, 8);
+    this.spawnForagingBush(11, 4);
+    this.spawnForagingBush(8, 15);
 
     // Target Selection Reticle
     this.targetReticle = this.add.sprite(-100, -100, 'target-reticle').setDepth(10000);
@@ -374,6 +390,20 @@ export class MainScene extends Phaser.Scene {
       // Check if portal clicked
       if (clickedTileX === this.portalPos.x && clickedTileY === this.portalPos.y) {
         this.triggerPortalTransition();
+        return;
+      }
+
+      // Check if clicking a foraging bush node (Milestone 10)
+      const clickedBush = this.foragingBushes.find((b) => {
+        const isGridMatch = b.x === clickedTileX && b.y === clickedTileY;
+        const dx = Math.abs(b.sprite.x - worldPoint.x);
+        const dy = Math.abs(b.sprite.y - worldPoint.y);
+        const isPosMatch = dx <= this.tileSize / 2 + 4 && dy <= this.tileSize / 2 + 4;
+        return isGridMatch || isPosMatch;
+      });
+
+      if (clickedBush) {
+        this.interactWithBush(clickedBush);
         return;
       }
 
@@ -1033,5 +1063,163 @@ export class MainScene extends Phaser.Scene {
       this.engageEnemy(enemy);
     });
     return enemy;
+  }
+
+  // --- FORAGING & DUNGEON GATHERING NODES (Milestone 10) ---
+
+  public spawnForagingBush(x: number, y: number): ForagingBush {
+    const posX = x * this.tileSize + this.tileSize / 2;
+    const posY = y * this.tileSize + this.tileSize / 2;
+
+    const sprite = this.add.sprite(posX, posY, 'foraging-bush')
+      .setDepth(posY - 2)
+      .setInteractive({ useHandCursor: true });
+
+    const label = this.add.text(posX, posY - 16, 'Wild Herbs', {
+      fontSize: '10px',
+      color: '#34d399',
+      fontStyle: 'bold',
+      backgroundColor: 'rgba(0,0,0,0.6)',
+      padding: { x: 3, y: 1 }
+    }).setOrigin(0.5).setDepth(5000);
+
+    const bush: ForagingBush = {
+      x,
+      y,
+      sprite,
+      label,
+      isHarvested: false
+    };
+
+    sprite.on('pointerdown', (_pointer: Phaser.Input.Pointer, _localX: number, _localY: number, event: Phaser.Types.Input.EventData) => {
+      if (event && event.stopPropagation) event.stopPropagation();
+      this.interactWithBush(bush);
+    });
+
+    this.foragingBushes.push(bush);
+    return bush;
+  }
+
+  public interactWithBush(bush: ForagingBush): void {
+    if (bush.isHarvested) {
+      this.hud.showToast('🌿 This bush has been stripped and is regrowing...', 'info', 2000);
+      return;
+    }
+
+    if (this.player.state === 'downed' || this.player.state === 'dead') return;
+
+    const dist = Math.hypot(this.player.gridPos.x - bush.x, this.player.gridPos.y - bush.y);
+
+    if (dist <= 1.5) {
+      // Adjacent: harvest immediately
+      this.harvestBush(bush);
+    } else {
+      // Find open adjacent tile to bush and move there, then harvest
+      const adjTiles = [
+        { x: bush.x + 1, y: bush.y },
+        { x: bush.x - 1, y: bush.y },
+        { x: bush.x, y: bush.y + 1 },
+        { x: bush.x, y: bush.y - 1 }
+      ].filter(t => t.x > 0 && t.x < this.mapWidth - 1 && t.y > 0 && t.y < this.mapHeight - 1 && this.gridMatrix[t.y]?.[t.x] === 0);
+
+      adjTiles.sort((a, b) => Math.hypot(a.x - this.player.gridPos.x, a.y - this.player.gridPos.y) - Math.hypot(b.x - this.player.gridPos.x, b.y - this.player.gridPos.y));
+
+      const targetTile = adjTiles[0];
+      if (targetTile) {
+        for (const member of this.party) {
+          member.clearTarget();
+        }
+        const dynamicObs = this.getDynamicObstacles(this.player).filter(
+          obs => !this.party.some(m => m.gridPos.x === obs.x && m.gridPos.y === obs.y)
+        );
+        this.pathfinder.findPath(this.player.gridPos, targetTile, dynamicObs).then((path) => {
+          if (path.length > 0) {
+            this.player.followPath(path);
+            const checkArrival = this.time.addEvent({
+              delay: 150,
+              repeat: 40,
+              callback: () => {
+                if (Math.hypot(this.player.gridPos.x - bush.x, this.player.gridPos.y - bush.y) <= 1.5) {
+                  checkArrival.remove();
+                  this.harvestBush(bush);
+                } else if (this.player.state !== 'moving') {
+                  checkArrival.remove();
+                }
+              }
+            });
+          }
+        });
+      }
+    }
+  }
+
+  public harvestBush(bush: ForagingBush): void {
+    if (bush.isHarvested) return;
+
+    bush.isHarvested = true;
+    bush.sprite.setTexture('foraging-bush-depleted');
+    bush.label.setText('Stripped');
+    bush.label.setColor('#9ca3af');
+
+    const yieldCount = 1;
+    const expGranted = 15;
+
+    GameState.getInstance().addItem('wild_herbs', yieldCount);
+    this.progressionSystem.addProficiencyExp('foraging', expGranted);
+
+    // Floating combat/gathering text
+    const posX = bush.x * this.tileSize + this.tileSize / 2;
+    const posY = bush.y * this.tileSize + this.tileSize / 2;
+    this.createFloatingText(posX, posY - 10, `+${yieldCount} Wild Herbs`, '#34d399');
+    this.createFloatingText(posX, posY - 24, `+${expGranted} Foraging EXP`, '#60a5fa');
+
+    // Bounce animation
+    this.tweens.add({
+      targets: bush.sprite,
+      scaleY: 0.8,
+      duration: 120,
+      yoyo: true,
+      ease: 'Quad.easeInOut'
+    });
+
+    console.log(`[Foraging] 🌿 Harvested ${yieldCount}x Wild Herbs! (+${expGranted} Foraging EXP)`);
+    this.hud.showToast(`🌿 Harvested Wild Herbs (+${expGranted} Foraging EXP)`, 'success', 2500);
+
+    // Independent timer per bush instance (15 seconds)
+    bush.respawnTimer = this.time.delayedCall(15000, () => {
+      bush.isHarvested = false;
+      bush.sprite.setTexture('foraging-bush');
+      bush.label.setText('Wild Herbs');
+      bush.label.setColor('#34d399');
+
+      this.tweens.add({
+        targets: bush.sprite,
+        scale: 1.15,
+        duration: 200,
+        yoyo: true,
+        ease: 'Back.easeOut'
+      });
+      console.log(`[Foraging] 🌿 Wild Herbs regrew at (${bush.x}, ${bush.y})!`);
+    });
+  }
+
+  public createFloatingText(x: number, y: number, textString: string, colorHex: string): void {
+    const text = this.add.text(x, y, textString, {
+      fontSize: '11px',
+      color: colorHex,
+      fontStyle: 'bold',
+      backgroundColor: 'rgba(0,0,0,0.6)',
+      padding: { x: 4, y: 2 }
+    });
+    text.setOrigin(0.5);
+    text.setDepth(y + 1000);
+
+    this.tweens.add({
+      targets: text,
+      y: y - 20,
+      alpha: 0,
+      duration: 1200,
+      onComplete: () => text.destroy()
+    });
   }
 }

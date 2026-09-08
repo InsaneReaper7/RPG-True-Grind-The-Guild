@@ -63,6 +63,18 @@
       "roomTag": "alchemy",
       "description": "Guild alchemy workbench. Requires a fully enclosed indoor room.",
       "lockedByDefault": true
+    },
+    {
+      "id": "cooking_station",
+      "name": "Cooking Station",
+      "woodCost": 25,
+      "footprint": { "width": 1, "height": 1 },
+      "rotatable": true,
+      "indoorRequired": true,
+      "walkable": false,
+      "roomTag": "cooking",
+      "description": "Guild cooking stove and preparation station. Requires a fully enclosed indoor room.",
+      "lockedByDefault": true
     }
   ]
 }

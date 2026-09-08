@@ -21,6 +21,8 @@ import type {
   ResearchTreeData,
   AlchemyRecipeDef,
   AlchemyRecipesData,
+  CookingRecipeDef,
+  CookingRecipesData,
   FoodDef,
   FoodsData,
   MoodTierDef,
@@ -42,6 +44,7 @@ export class DataLoader {
   private skillBooksData!: SkillBooksData;
   private researchTreeData!: ResearchTreeData;
   private alchemyRecipesData!: AlchemyRecipesData;
+  private cookingRecipesData!: CookingRecipesData;
   private foodsData!: FoodsData;
   private moodEffectsData!: MoodEffectsData;
 
@@ -55,7 +58,7 @@ export class DataLoader {
   }
 
   public async loadAll(): Promise<void> {
-    const [player, weapons, classes, enemies, skills, statusEffects, buildables, rooms, hiddenSkills, skillBooks, researchTree, alchemyRecipes, foods, moodEffects] = await Promise.all([
+    const [player, weapons, classes, enemies, skills, statusEffects, buildables, rooms, hiddenSkills, skillBooks, researchTree, alchemyRecipes, cookingRecipes, foods, moodEffects] = await Promise.all([
       fetch('/data/player.json').then((res) => res.json()),
       fetch('/data/weapons.json').then((res) => res.json()),
       fetch('/data/classes.json').then((res) => res.json()),
@@ -68,6 +71,7 @@ export class DataLoader {
       fetch('/data/skillBooks.json').then((res) => res.json()),
       fetch('/data/researchTree.json').then((res) => res.json()),
       fetch('/data/alchemyRecipes.json').then((res) => res.json()),
+      fetch('/data/cookingRecipes.json').then((res) => res.json()),
       fetch('/data/food.json').then((res) => res.json()),
       fetch('/data/moodEffects.json').then((res) => res.json())
     ]);
@@ -84,6 +88,7 @@ export class DataLoader {
     this.skillBooksData = skillBooks as SkillBooksData;
     this.researchTreeData = researchTree as ResearchTreeData;
     this.alchemyRecipesData = alchemyRecipes as AlchemyRecipesData;
+    this.cookingRecipesData = cookingRecipes as CookingRecipesData;
     this.foodsData = foods as FoodsData;
     this.moodEffectsData = moodEffects as MoodEffectsData;
 
@@ -216,6 +221,22 @@ export class DataLoader {
       };
     }
 
+    if (id === 'foraging') {
+      return {
+        id: 'foraging',
+        name: 'Foraging',
+        description: 'Gathering wild plants, herbs, and natural resources from dungeons and wilderness.'
+      };
+    }
+
+    if (id === 'cooking') {
+      return {
+        id: 'cooking',
+        name: 'Cooking',
+        description: 'Preparing meals, discovering recipes, and crafting quality dishes at cooking stations.'
+      };
+    }
+
     return {
       id,
       name: id.split('_').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),
@@ -261,6 +282,18 @@ export class DataLoader {
 
   public getAlchemyRecipe(id: string): AlchemyRecipeDef | undefined {
     return this.alchemyRecipesData?.recipes.find((r) => r.id === id);
+  }
+
+  public getCookingRecipesData(): CookingRecipesData {
+    return this.cookingRecipesData;
+  }
+
+  public getCookingRecipes(): CookingRecipeDef[] {
+    return this.cookingRecipesData?.recipes ?? [];
+  }
+
+  public getCookingRecipe(id: string): CookingRecipeDef | undefined {
+    return this.cookingRecipesData?.recipes.find((r) => r.id === id);
   }
 
   public getFoodsData(): FoodsData {

@@ -1,6 +1,6 @@
 import type { Player } from '../entities/Player.ts';
 import { ProgressionSystem } from '../systems/ProgressionSystem.ts';
-import type { ClassDef, HiddenSkillDef, TrainableStat } from '../types/game.ts';
+import type { ClassDef, HiddenSkillDef, TrainableStat, FoodQuality } from '../types/game.ts';
 import { DataLoader } from '../utils/DataLoader.ts';
 import { GameState } from '../systems/GameState.ts';
 import { BuildingSystem } from '../systems/BuildingSystem.ts';
@@ -112,6 +112,20 @@ export class HUD {
   private debugBtnGrantDaggersExp: HTMLElement | null;
   private debugBtnGrantDualWieldExp: HTMLElement | null;
 
+  // Milestone 10 Modal Elements (Cooking Station)
+  private cookingModalEl: HTMLElement | null;
+  private closeCookingBtn: HTMLElement | null;
+  private cookingModalProfEl: HTMLElement | null;
+  private cookingStockpileHerbsEl: HTMLElement | null;
+  private cookingStockpileMonsterMeatEl: HTMLElement | null;
+  private cookingStockpileWolfMeatEl: HTMLElement | null;
+  private cookingExpSlot1El: HTMLSelectElement | null;
+  private cookingExpSlot2El: HTMLSelectElement | null;
+  private cookingExperimentBtn: HTMLElement | null;
+  private cookingExpStatusEl: HTMLElement | null;
+  private cookingRecipesContainerEl: HTMLElement | null;
+  private cookingDishesContainerEl: HTMLElement | null;
+
   private static activeInstance: HUD | null = null;
   private static hasGlobalListeners: boolean = false;
 
@@ -219,6 +233,20 @@ export class HUD {
     this.debugBtnGrantDaggersExp = document.getElementById('debug-btn-grant-daggers-exp');
     this.debugBtnGrantDualWieldExp = document.getElementById('debug-btn-grant-dual-wield-exp');
 
+    // Milestone 10 Elements (Cooking Station)
+    this.cookingModalEl = document.getElementById('cooking-modal');
+    this.closeCookingBtn = document.getElementById('close-cooking-btn');
+    this.cookingModalProfEl = document.getElementById('cooking-modal-prof');
+    this.cookingStockpileHerbsEl = document.getElementById('cooking-stockpile-herbs');
+    this.cookingStockpileMonsterMeatEl = document.getElementById('cooking-stockpile-monster-meat');
+    this.cookingStockpileWolfMeatEl = document.getElementById('cooking-stockpile-wolf-meat');
+    this.cookingExpSlot1El = document.getElementById('cooking-exp-slot1') as HTMLSelectElement | null;
+    this.cookingExpSlot2El = document.getElementById('cooking-exp-slot2') as HTMLSelectElement | null;
+    this.cookingExperimentBtn = document.getElementById('cooking-experiment-btn');
+    this.cookingExpStatusEl = document.getElementById('cooking-exp-status');
+    this.cookingRecipesContainerEl = document.getElementById('cooking-recipes-container');
+    this.cookingDishesContainerEl = document.getElementById('cooking-dishes-container');
+
     if (this.hudCardEl) {
       this.hudCardEl.style.display = HUD.isHudCardVisible ? 'block' : 'none';
     }
@@ -316,6 +344,18 @@ export class HUD {
     if (this.closeAlchemyBtn) {
       this.closeAlchemyBtn.onclick = () => {
         HUD.activeInstance?.closeAlchemyModal();
+      };
+    }
+
+    if (this.closeCookingBtn) {
+      this.closeCookingBtn.onclick = () => {
+        HUD.activeInstance?.closeCookingModal();
+      };
+    }
+
+    if (this.cookingExperimentBtn) {
+      this.cookingExperimentBtn.onclick = () => {
+        HUD.activeInstance?.handleCookingExperiment();
       };
     }
 
@@ -1174,12 +1214,13 @@ export class HUD {
     }
 
     if (this.hudRationRowEl && this.playerRationTextEl) {
-      const rationCount = GameState.getInstance().getFoodItemCount('ration');
-      if (rationCount > 0 || this.isOutpost) {
+      const allFood = GameState.getInstance().getFoodItems();
+      const foodCount = allFood.length;
+      if (foodCount > 0 || this.isOutpost) {
         this.hudRationRowEl.style.display = 'flex';
-        this.playerRationTextEl.innerText = `${rationCount}`;
+        this.playerRationTextEl.innerText = `${foodCount}`;
         if (this.hudEatRationBtn) {
-          this.hudEatRationBtn.style.display = rationCount > 0 ? 'inline-block' : 'none';
+          this.hudEatRationBtn.style.display = foodCount > 0 ? 'inline-block' : 'none';
         }
       } else {
         this.hudRationRowEl.style.display = 'none';
@@ -1200,6 +1241,11 @@ export class HUD {
     // 10. Update Party Overview modal if open
     if (this.isPartyOverviewModalOpen()) {
       this.updatePartyOverview(time);
+    }
+
+    // 11. Update Cooking Station modal live if open
+    if (this.isCookingModalOpen()) {
+      this.updateCookingStockpileLive();
     }
   }
 
@@ -2108,15 +2154,44 @@ export class HUD {
 
   public eatRation(): boolean {
     if (!this.currentPlayer) return false;
-    if (GameState.getInstance().getFoodItemCount('ration') <= 0) {
-      this.showToast('No Rations in inventory!', 'error');
+    const allFood = GameState.getInstance().getFoodItems();
+    if (allFood.length <= 0) {
+      this.showToast('No food in inventory!', 'error');
       return false;
     }
-    const ate = this.currentPlayer.eatFood('ration');
+    const foodToEat = allFood[0];
+    const ate = this.currentPlayer.eatFood(foodToEat.id);
     if (ate) {
-      this.showToast('🍖 Ate Ration! (+40 Hunger, Well Fed buff)', 'success', 2500);
+      const foodDef = DataLoader.getInstance().getFood(foodToEat.id);
+      const name = foodDef?.name || 'Food';
+      const q = foodToEat.quality && foodToEat.quality !== 'common' ? ` [${foodToEat.quality}]` : '';
+      this.showToast(`🍖 Ate ${name}${q}!`, 'success', 2500);
       if (this.currentProgression) {
         this.update(this.currentPlayer, this.currentProgression, 0);
+      }
+      if (this.isCookingModalOpen()) {
+        this.renderCookingModal(this.currentPlayer, this.currentProgression!);
+      }
+    }
+    return ate;
+  }
+
+  public eatFood(foodId: string): boolean {
+    if (!this.currentPlayer) return false;
+    if (GameState.getInstance().getFoodItemCount(foodId) <= 0) {
+      this.showToast(`No ${foodId} in inventory!`, 'error');
+      return false;
+    }
+    const ate = this.currentPlayer.eatFood(foodId);
+    if (ate) {
+      const foodDef = DataLoader.getInstance().getFood(foodId);
+      const name = foodDef?.name || 'Food';
+      this.showToast(`🍖 Ate ${name}!`, 'success', 2500);
+      if (this.currentProgression) {
+        this.update(this.currentPlayer, this.currentProgression, 0);
+      }
+      if (this.isCookingModalOpen()) {
+        this.renderCookingModal(this.currentPlayer, this.currentProgression!);
       }
     }
     return ate;
@@ -2137,7 +2212,355 @@ export class HUD {
       case 'dual_wielding': return '#c084fc';
       case 'construction': return '#f59e0b';
       case 'alchemy': return '#10b981';
+      case 'foraging': return '#4ade80';
+      case 'cooking': return '#f97316';
       default: return '#34d399';
+    }
+  }
+
+  // --- COOKING STATION & RECIPE DISCOVERY (Milestone 10) ---
+
+  public openCookingModal(player: Player, progression: ProgressionSystem): void {
+    this.currentPlayer = player;
+    this.currentProgression = progression;
+    if (this.cookingModalEl) {
+      this.cookingModalEl.classList.add('active');
+      this.renderCookingModal(player, progression);
+    }
+  }
+
+  public closeCookingModal(): void {
+    if (this.cookingModalEl) {
+      this.cookingModalEl.classList.remove('active');
+    }
+  }
+
+  public isCookingModalOpen(): boolean {
+    return this.cookingModalEl?.classList.contains('active') ?? false;
+  }
+
+  public updateCookingStockpileLive(): void {
+    const gameState = GameState.getInstance();
+    if (this.cookingStockpileHerbsEl) {
+      this.setElementTextIfChanged(this.cookingStockpileHerbsEl, `${gameState.getItemCount('wild_herbs')}`);
+    }
+    if (this.cookingStockpileMonsterMeatEl) {
+      this.setElementTextIfChanged(this.cookingStockpileMonsterMeatEl, `${gameState.getItemCount('monster_meat')}`);
+    }
+    if (this.cookingStockpileWolfMeatEl) {
+      this.setElementTextIfChanged(this.cookingStockpileWolfMeatEl, `${gameState.getItemCount('wolf_meat')}`);
+    }
+  }
+
+  public static calculateDishQuality(cookingLevel: number, maxQuality?: FoodQuality, rollOverride?: number): FoodQuality {
+    const roll = rollOverride !== undefined ? rollOverride : Math.random();
+    // Quality odds scaling with Cooking proficiency level
+    // At Lv 0: Perfect 0%, Excellent 5%, Good 25%, Common 70%
+    // At Lv 10: Perfect 6%, Excellent 14%, Good 28%, Common 52%
+    // At Lv 30+: Perfect 18%, Excellent 32%, Good 34%, Common 16%
+    // At Lv 50+: Perfect 30%, Excellent 45%, Good 20%, Common 5%
+    const pPerfect = Math.min(0.35, cookingLevel * 0.006);
+    const pExcellent = Math.min(0.45, 0.05 + cookingLevel * 0.009);
+    const pGood = Math.min(0.35, 0.25 + cookingLevel * 0.003);
+
+    let determined: FoodQuality = 'common';
+    if (roll < pPerfect) {
+      determined = 'perfect';
+    } else if (roll < pPerfect + pExcellent) {
+      determined = 'excellent';
+    } else if (roll < pPerfect + pExcellent + pGood) {
+      determined = 'good';
+    } else {
+      determined = 'common';
+    }
+
+    // HARD CEILING ENFORCEMENT:
+    // Design doc: Monster Meat dishes hard-capped at Excellent; Wolf Meat can reach Perfect.
+    if (maxQuality) {
+      const tierRanks: Record<FoodQuality, number> = {
+        common: 0,
+        good: 1,
+        excellent: 2,
+        perfect: 3
+      };
+      if (tierRanks[determined] > tierRanks[maxQuality]) {
+        determined = maxQuality;
+      }
+    }
+
+    return determined;
+  }
+
+  public handleCookingExperiment(): void {
+    if (!this.currentPlayer || !this.currentProgression) return;
+    if (!this.cookingExpSlot1El || !this.cookingExpSlot2El) return;
+
+    const slot1 = this.cookingExpSlot1El.value;
+    const slot2 = this.cookingExpSlot2El.value;
+
+    const gameState = GameState.getInstance();
+    const herbsCount = gameState.getItemCount('wild_herbs');
+    const monsterMeatCount = gameState.getItemCount('monster_meat');
+    const wolfMeatCount = gameState.getItemCount('wolf_meat');
+
+    const counts: Record<string, number> = {
+      wild_herbs: herbsCount,
+      monster_meat: monsterMeatCount,
+      wolf_meat: wolfMeatCount
+    };
+
+    const needed: Record<string, number> = {};
+    needed[slot1] = (needed[slot1] || 0) + 1;
+    needed[slot2] = (needed[slot2] || 0) + 1;
+
+    for (const [k, v] of Object.entries(needed)) {
+      if ((counts[k] || 0) < v) {
+        this.showToast(`Not enough ${k.replace(/_/g, ' ')} in stockpile!`, 'error');
+        if (this.cookingExpStatusEl) {
+          this.cookingExpStatusEl.innerText = `⚠️ Need at least ${v}x ${k.replace(/_/g, ' ')}.`;
+          this.cookingExpStatusEl.style.color = '#ef4444';
+        }
+        return;
+      }
+    }
+
+    const dataLoader = DataLoader.getInstance();
+    const allRecipes = dataLoader.getCookingRecipes();
+
+    // Find recipe matching slot1 + slot2
+    const matchedRecipe = allRecipes.find((r) => {
+      const keys = Object.keys(r.ingredients);
+      if (keys.length !== 2) return false;
+      return (
+        keys.includes(slot1) &&
+        keys.includes(slot2) &&
+        r.ingredients[slot1] === 1 &&
+        r.ingredients[slot2] === 1
+      );
+    });
+
+    const cookingStat = this.currentProgression.getProficiencyStat('cooking');
+    const cookingLevel = cookingStat.level;
+
+    // Deduct raw ingredients
+    gameState.consumeItem(slot1, 1);
+    gameState.consumeItem(slot2, 1);
+
+    if (matchedRecipe) {
+      const isAlreadyKnown = gameState.isCookingRecipeDiscovered(matchedRecipe.id);
+
+      if (isAlreadyKnown) {
+        // RE-COMBINATION SAFETY NET: Already known! Routes straight to cooking without re-rolling discovery.
+        const quality = HUD.calculateDishQuality(cookingLevel, matchedRecipe.maxQuality);
+        gameState.addFoodItem(matchedRecipe.resultFoodId, 1, quality);
+        this.currentProgression.addProficiencyExp('cooking', matchedRecipe.expGranted);
+
+        const qualityBadge = quality.toUpperCase();
+        this.showToast(`🍳 You already know how to make ${matchedRecipe.name}! Cooked 1x [${qualityBadge}].`, 'info', 3500);
+        if (this.cookingExpStatusEl) {
+          this.cookingExpStatusEl.innerText = `ℹ️ You already know how to make ${matchedRecipe.name}! Cooked 1x [${qualityBadge}]. (Use the Known Recipes list below to cook on demand).`;
+          this.cookingExpStatusEl.style.color = '#38bdf8';
+        }
+      } else {
+        // Undiscovered recipe: Roll discovery (85% base chance, guaranteed at Cooking Lv 1+)
+        const discoveryRoll = Math.random();
+        const discoverySuccess = cookingLevel >= 1 || discoveryRoll < 0.85;
+
+        if (discoverySuccess) {
+          gameState.discoverCookingRecipe(matchedRecipe.id);
+          const quality = HUD.calculateDishQuality(cookingLevel, matchedRecipe.maxQuality);
+          gameState.addFoodItem(matchedRecipe.resultFoodId, 1, quality);
+          // Discovery bonus EXP
+          const exp = matchedRecipe.expGranted + 20;
+          this.currentProgression.addProficiencyExp('cooking', exp);
+
+          const qualityBadge = quality.toUpperCase();
+          this.showToast(`✨ RECIPE DISCOVERED: ${matchedRecipe.name}! Cooked 1x [${qualityBadge}] (+${exp} Cooking EXP)`, 'success', 4000);
+          if (this.cookingExpStatusEl) {
+            this.cookingExpStatusEl.innerText = `✨ DISCOVERY! Learned ${matchedRecipe.name} [${qualityBadge}]! Permanently added to Known Recipes below.`;
+            this.cookingExpStatusEl.style.color = '#34d399';
+          }
+        } else {
+          // Discovery mishap
+          this.currentProgression.addProficiencyExp('cooking', 5);
+          this.showToast('Experiment scorched the ingredients, but you gained +5 Cooking EXP.', 'warn', 3000);
+          if (this.cookingExpStatusEl) {
+            this.cookingExpStatusEl.innerText = '⚠️ Experiment scorched the ingredients. You gained +5 Cooking EXP. Try again!';
+            this.cookingExpStatusEl.style.color = '#fbbf24';
+          }
+        }
+      }
+    } else {
+      // Invalid combination
+      this.currentProgression.addProficiencyExp('cooking', 5);
+      this.showToast('The ingredients failed to produce a valid dish (+5 Cooking EXP).', 'warn', 3000);
+      if (this.cookingExpStatusEl) {
+        this.cookingExpStatusEl.innerText = '❌ Failed experiment — these ingredients do not form any known dish (+5 Cooking EXP).';
+        this.cookingExpStatusEl.style.color = '#f87171';
+      }
+    }
+
+    this.renderCookingModal(this.currentPlayer, this.currentProgression);
+    this.update(this.currentPlayer, this.currentProgression, 0);
+  }
+
+  public renderCookingModal(player: Player, progression: ProgressionSystem): void {
+    if (!this.cookingModalEl) return;
+
+    const dataLoader = DataLoader.getInstance();
+    const gameState = GameState.getInstance();
+
+    // 1. Cooking proficiency
+    const cookingStat = progression.getProficiencyStat('cooking');
+    if (this.cookingModalProfEl) {
+      if (cookingStat.level >= 1) {
+        const nextExp = LevelingSystem.expForNextLevel(cookingStat.level);
+        this.cookingModalProfEl.innerText = `Lv ${cookingStat.level} (${cookingStat.currentExp}/${nextExp} EXP)`;
+        this.cookingModalProfEl.style.color = '#f97316';
+      } else {
+        this.cookingModalProfEl.innerText = `Untrained (${cookingStat.currentExp}/50 EXP)`;
+        this.cookingModalProfEl.style.color = '#9ca3af';
+      }
+    }
+
+    // 2. Narrowly scoped live ingredient counts
+    const herbs = gameState.getItemCount('wild_herbs');
+    const monsterMeat = gameState.getItemCount('monster_meat');
+    const wolfMeat = gameState.getItemCount('wolf_meat');
+
+    if (this.cookingStockpileHerbsEl) {
+      this.cookingStockpileHerbsEl.innerText = `${herbs}`;
+    }
+    if (this.cookingStockpileMonsterMeatEl) {
+      this.cookingStockpileMonsterMeatEl.innerText = `${monsterMeat}`;
+    }
+    if (this.cookingStockpileWolfMeatEl) {
+      this.cookingStockpileWolfMeatEl.innerText = `${wolfMeat}`;
+    }
+
+    // 3. Known / Discovered Recipes
+    if (this.cookingRecipesContainerEl) {
+      this.cookingRecipesContainerEl.innerHTML = '';
+      const allRecipes = dataLoader.getCookingRecipes();
+      const discovered = allRecipes.filter((r) => gameState.isCookingRecipeDiscovered(r.id));
+
+      if (discovered.length === 0) {
+        this.cookingRecipesContainerEl.innerHTML = `
+          <div style="font-size: 11px; color: #6b7280; font-style: italic; background: rgba(31, 41, 55, 0.4); padding: 10px; border-radius: 6px; text-align: center;">
+            No recipes discovered yet. Combine raw ingredients in the Experimentation panel above!
+          </div>
+        `;
+      } else {
+        for (const recipe of discovered) {
+          const card = document.createElement('div');
+          card.style.cssText = 'background: rgba(31, 41, 55, 0.85); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 8px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; gap: 10px;';
+
+          let canCook = true;
+          const ingStrings: string[] = [];
+          for (const [item, qty] of Object.entries(recipe.ingredients)) {
+            const has = gameState.getItemCount(item);
+            if (has < qty) canCook = false;
+            const itemLabel = item.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+            ingStrings.push(`${itemLabel} (${has}/${qty})`);
+          }
+
+          const ceilingBadge = recipe.maxQuality === 'excellent'
+            ? `<span style="font-size: 10px; color: #f87171; background: rgba(239, 68, 68, 0.2); border: 1px solid #ef4444; border-radius: 3px; padding: 1px 5px;">Max: Excellent (Monster Meat)</span>`
+            : `<span style="font-size: 10px; color: #a855f7; background: rgba(168, 85, 247, 0.2); border: 1px solid #a855f7; border-radius: 3px; padding: 1px 5px;">Max: Perfect (Wolf Meat)</span>`;
+
+          const cookBtnHtml = canCook
+            ? `<button type="button" class="btn-action" style="background: #ea580c; border-color: #f97316; font-size: 11px; padding: 5px 12px;" data-cook-recipe="${recipe.id}">🍲 Cook (+${recipe.expGranted} EXP)</button>`
+            : `<button type="button" disabled style="background: #374151; color: #9ca3af; border: 1px solid #4b5563; border-radius: 6px; font-size: 11px; padding: 5px 12px; cursor: not-allowed;">Missing Ingredients</button>`;
+
+          card.innerHTML = `
+            <div style="flex: 1;">
+              <div style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: bold; color: #f97316;">
+                <span>${recipe.name}</span>
+                ${ceilingBadge}
+                <span style="font-size: 10px; color: #60a5fa; font-weight: normal;">+${recipe.expGranted} Cooking EXP</span>
+              </div>
+              <div style="font-size: 10px; color: #9ca3af; margin-top: 2px;">${recipe.description}</div>
+              <div style="font-size: 11px; color: ${canCook ? '#34d399' : '#fbbf24'}; margin-top: 4px;">
+                Ingredients: ${ingStrings.join(', ')}
+              </div>
+            </div>
+            <div>${cookBtnHtml}</div>
+          `;
+
+          const btn = card.querySelector<HTMLButtonElement>(`[data-cook-recipe="${recipe.id}"]`);
+          if (btn) {
+            btn.onclick = () => {
+              for (const [item, qty] of Object.entries(recipe.ingredients)) {
+                gameState.consumeItem(item, qty);
+              }
+              const quality = HUD.calculateDishQuality(cookingStat.level, recipe.maxQuality);
+              gameState.addFoodItem(recipe.resultFoodId, 1, quality);
+              progression.addProficiencyExp('cooking', recipe.expGranted);
+
+              const qBadge = quality.toUpperCase();
+              this.showToast(`🍲 Cooked 1x ${recipe.name} [${qBadge}]! (+${recipe.expGranted} Cooking EXP)`, 'success', 2500);
+              this.renderCookingModal(player, progression);
+              this.update(player, progression, 0);
+            };
+          }
+
+          this.cookingRecipesContainerEl.appendChild(card);
+        }
+      }
+    }
+
+    // 4. Prepared Dishes In Pack (with Quick-Eat button)
+    if (this.cookingDishesContainerEl) {
+      this.cookingDishesContainerEl.innerHTML = '';
+      const allFood = gameState.getFoodItems();
+
+      if (allFood.length === 0) {
+        this.cookingDishesContainerEl.innerHTML = `
+          <div style="font-size: 11px; color: #6b7280; font-style: italic; background: rgba(31, 41, 55, 0.4); padding: 8px; border-radius: 6px; text-align: center;">
+            No prepared food in pack.
+          </div>
+        `;
+      } else {
+        for (const item of allFood) {
+          const foodDef = dataLoader.getFood(item.id);
+          const name = foodDef?.name || item.id;
+          const quality = item.quality || 'common';
+
+          const qualityColors: Record<string, string> = {
+            common: '#9ca3af',
+            good: '#22c55e',
+            excellent: '#3b82f6',
+            perfect: '#eab308'
+          };
+          const color = qualityColors[quality] || '#9ca3af';
+
+          const row = document.createElement('div');
+          row.style.cssText = 'background: rgba(31, 41, 55, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 6px; padding: 6px 12px; display: flex; justify-content: space-between; align-items: center; font-size: 11px;';
+
+          const qDef = foodDef?.qualities?.[quality];
+          const hungerAmt = qDef ? Math.round((foodDef?.hungerRestored || 30) * qDef.hungerMultiplier) : (foodDef?.hungerRestored || 30);
+          const regenAmt = qDef ? qDef.hpRegenPerSec : (foodDef?.buff.hpRegenPerSec || 2);
+          const durSec = Math.round((qDef ? qDef.buffDurationMs : (foodDef?.buff.durationMs || 15000)) / 1000);
+
+          row.innerHTML = `
+            <div>
+              <span style="font-weight: bold; color: #f3f4f6;">${name}</span>
+              <span style="font-weight: bold; color: ${color}; margin-left: 6px; font-size: 10px; text-transform: uppercase;">[${quality}]</span>
+              <span style="color: #9ca3af; margin-left: 8px;">+${hungerAmt} Hunger, Well Fed (+${regenAmt} HP/s for ${durSec}s)</span>
+            </div>
+            <button type="button" class="btn-action" style="background: #15803d; border-color: #22c55e; font-size: 10px; padding: 3px 10px;" data-eat-food="${item.id}">Eat</button>
+          `;
+
+          const eatBtn = row.querySelector<HTMLButtonElement>(`[data-eat-food="${item.id}"]`);
+          if (eatBtn) {
+            eatBtn.onclick = () => {
+              this.eatFood(item.id);
+            };
+          }
+
+          this.cookingDishesContainerEl.appendChild(row);
+        }
+      }
     }
   }
 }

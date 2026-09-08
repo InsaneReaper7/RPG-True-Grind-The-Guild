@@ -1,0 +1,28 @@
+{
+  "recipes": [
+    {
+      "id": "herb_stew",
+      "name": "Herb Stew",
+      "ingredients": {
+        "wild_herbs": 1,
+        "monster_meat": 1
+      },
+      "resultFoodId": "herb_stew",
+      "expGranted": 20,
+      "maxQuality": "excellent",
+      "description": "A restorative, earthy stew of wild herbs and simmered monster meat. Hard ceiling at Excellent quality."
+    },
+    {
+      "id": "beast_stew",
+      "name": "Hearty Beast Stew",
+      "ingredients": {
+        "wild_herbs": 1,
+        "wolf_meat": 1
+      },
+      "resultFoodId": "beast_stew",
+      "expGranted": 35,
+      "maxQuality": "perfect",
+      "description": "A rich and revitalizing stew made from prized wolf meat. Can reach Perfect quality."
+    }
+  ]
+}

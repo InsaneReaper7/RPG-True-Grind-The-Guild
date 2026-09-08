@@ -440,20 +440,29 @@ export class Player extends Entity {
       return false;
     }
 
+    const quality = consumed.quality || 'common';
+    const qualityDef = foodDef.qualities?.[quality];
+    const baseHunger = foodDef.hungerRestored;
+    const hungerRestored = qualityDef ? Math.round(baseHunger * qualityDef.hungerMultiplier) : baseHunger;
+
     const oldHunger = this.hunger;
-    this.hunger = Math.min(this.maxHunger, this.hunger + foodDef.hungerRestored);
+    this.hunger = Math.min(this.maxHunger, this.hunger + hungerRestored);
     const restored = this.hunger - oldHunger;
 
-    // Refresh Well Fed buff (resets duration to 15s, does not stack +2 HP/sec rate)
-    this.wellFedHpPerSec = foodDef.buff.hpRegenPerSec;
-    this.wellFedRemainingMs = foodDef.buff.durationMs;
+    const buffDuration = qualityDef ? qualityDef.buffDurationMs : foodDef.buff.durationMs;
+    const buffRegen = qualityDef ? qualityDef.hpRegenPerSec : foodDef.buff.hpRegenPerSec;
+
+    // Refresh Well Fed buff (resets duration to quality duration, sets HP/sec rate)
+    this.wellFedHpPerSec = buffRegen;
+    this.wellFedRemainingMs = buffDuration;
     this.wellFedNextTickMs = 1000;
 
+    const qualityLabel = quality !== 'common' ? ` [${quality.charAt(0).toUpperCase() + quality.slice(1)}]` : '';
     console.log(
-      `%c[Player] 🍖 Ate ${foodDef.name}! Restored +${restored.toFixed(1)} Hunger (Now: ${this.hunger.toFixed(1)}/100). Well Fed buff refreshed (15s @ +${this.wellFedHpPerSec} HP/s).`,
+      `%c[Player] 🍖 Ate ${foodDef.name}${qualityLabel}! Restored +${restored.toFixed(1)} Hunger (Now: ${this.hunger.toFixed(1)}/100). Well Fed buff refreshed (${(buffDuration / 1000).toFixed(0)}s @ +${this.wellFedHpPerSec} HP/s).`,
       'color: #10b981; font-weight: bold;'
     );
-    this.createFloatingText(`+${restored.toFixed(0)} Hunger (Well Fed)`, '#10b981');
+    this.createFloatingText(`+${restored.toFixed(0)} Hunger${qualityLabel} (Well Fed)`, '#10b981');
     return true;
   }
 
@@ -504,12 +513,14 @@ export class Player extends Entity {
       // 3. Auto-Eat when crossing low threshold
       if (this.hunger <= this.autoEatThreshold) {
         const gameState = GameState.getInstance();
-        if (gameState.getFoodItemCount('ration') > 0) {
+        const foodItems = gameState.getFoodItems();
+        if (foodItems.length > 0) {
+          const foodToEat = foodItems[0].id;
           console.log(
-            `%c[Auto-Eat] 🥣 Hunger dropped to ${this.hunger.toFixed(1)} <= ${this.autoEatThreshold}. Auto-eating Ration from inventory...`,
+            `%c[Auto-Eat] 🥣 Hunger dropped to ${this.hunger.toFixed(1)} <= ${this.autoEatThreshold}. Auto-eating ${foodToEat} from inventory...`,
             'color: #34d399; font-weight: bold;'
           );
-          this.eatFood('ration');
+          this.eatFood(foodToEat);
         }
       }
 

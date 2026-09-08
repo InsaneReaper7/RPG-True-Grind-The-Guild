@@ -1,6 +1,6 @@
 import type { Player } from '../entities/Player.ts';
 import { ProgressionSystem } from './ProgressionSystem.ts';
-import type { PlayerData, PlayerSnapshot, CharacterSnapshot, PlacedBuildable, TrainableStat, FoodItemInstance } from '../types/game.ts';
+import type { PlayerData, PlayerSnapshot, CharacterSnapshot, PlacedBuildable, TrainableStat, FoodItemInstance, FoodQuality } from '../types/game.ts';
 import { DataLoader } from '../utils/DataLoader.ts';
 
 export class GameState {
@@ -14,6 +14,7 @@ export class GameState {
   private unlockedBuildables: Set<string> = new Set(['floor', 'wall', 'door', 'bed', 'research_station']);
   private inventory: Map<string, number> = new Map();
   private bookLearnedSkills: Set<string> = new Set();
+  private discoveredCookingRecipes: Set<string> = new Set();
 
   // Milestone 7: Day/Clock, Food & Mood Systems
   private currentGameDay: number = 1;
@@ -267,19 +268,41 @@ export class GameState {
     return spoiledCount;
   }
 
-  public addFoodItem(foodId: string, count: number = 1): void {
+  public addFoodItem(foodId: string, count: number = 1, quality?: FoodQuality): void {
     for (let i = 0; i < count; i++) {
       this.foodItems.push({
         id: foodId,
         acquiredDay: this.currentGameDay,
-        instanceId: `${foodId}_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`
+        instanceId: `${foodId}_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
+        quality: quality ?? 'common'
       });
     }
     this.syncFoodInventory();
     if (this.snapshot) {
       this.snapshot.foodItems = [...this.foodItems];
     }
-    console.log(`[Food] Added ${count}x '${foodId}' on Day ${this.currentGameDay}. Total: ${this.getFoodItemCount(foodId)}`);
+    console.log(`[Food] Added ${count}x '${foodId}' (${quality ?? 'common'}) on Day ${this.currentGameDay}. Total: ${this.getFoodItemCount(foodId)}`);
+  }
+
+  // --- Recipe Discovery (Cooking System - Milestone 10) ---
+  public discoverCookingRecipe(recipeId: string): boolean {
+    if (!this.discoveredCookingRecipes.has(recipeId)) {
+      this.discoveredCookingRecipes.add(recipeId);
+      if (this.snapshot) {
+        this.snapshot.discoveredCookingRecipes = Array.from(this.discoveredCookingRecipes);
+      }
+      console.log(`[Cooking] ✨ Recipe permanently discovered: '${recipeId}'!`);
+      return true;
+    }
+    return false;
+  }
+
+  public isCookingRecipeDiscovered(recipeId: string): boolean {
+    return this.discoveredCookingRecipes.has(recipeId);
+  }
+
+  public getDiscoveredCookingRecipes(): string[] {
+    return Array.from(this.discoveredCookingRecipes);
   }
 
   public consumeOldestFood(foodId: string): FoodItemInstance | null {
@@ -539,7 +562,8 @@ export class GameState {
       foodItems: [...this.foodItems],
       equippedWeaponId: player.equippedWeapon.id,
       offhandWeaponId: player.offhandWeapon?.id ?? null,
-      party: [...this.partySnapshots]
+      party: [...this.partySnapshots],
+      discoveredCookingRecipes: Array.from(this.discoveredCookingRecipes)
     };
 
     console.log(
@@ -611,6 +635,9 @@ export class GameState {
     if (snap.foodItems) {
       this.foodItems = [...snap.foodItems];
       this.syncFoodInventory();
+    }
+    if (snap.discoveredCookingRecipes) {
+      this.discoveredCookingRecipes = new Set(snap.discoveredCookingRecipes);
     }
 
     player.autocastMap.clear();

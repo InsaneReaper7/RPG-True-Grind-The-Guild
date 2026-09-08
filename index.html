@@ -1065,6 +1065,78 @@
           <button id="alchemy-apply-bandage-btn" class="btn-action" style="background: #059669; border-color: #34d399;" type="button">🩹 Apply Bandage [H]</button>
         </div>
       </div>
+
+      <!-- Cooking Crafting Modal (Milestone 10) -->
+      <div id="cooking-modal" class="custom-modal" style="width: 620px; max-height: 85vh; overflow-y: auto;">
+        <div class="modal-header">
+          <div>
+            <div class="modal-title" style="color: #f97316;">🍲 Guild Cooking Station</div>
+            <div class="modal-subtitle">Experiment with raw ingredients to discover recipes, or cook known dishes.</div>
+          </div>
+          <button id="close-cooking-btn" class="modal-close-btn" type="button">✕</button>
+        </div>
+
+        <!-- 1. Proficiency & Stockpile Ingredients Bar (Narrowly Scoped Ingredient Visibility) -->
+        <div style="display: grid; grid-template-columns: 1.2fr 1fr 1fr 1fr; gap: 8px; background: rgba(31, 41, 55, 0.7); padding: 8px 12px; border-radius: 6px; margin-bottom: 12px; border: 1px solid rgba(255,255,255,0.1); font-size: 11px;">
+          <div>
+            <span style="color: #9ca3af;">Cooking:</span>
+            <div id="cooking-modal-prof" style="color: #f97316; font-weight: bold;">Untrained</div>
+          </div>
+          <div>
+            <span style="color: #9ca3af;">🌿 Wild Herbs:</span>
+            <div id="cooking-stockpile-herbs" style="color: #34d399; font-weight: bold;">0</div>
+          </div>
+          <div>
+            <span style="color: #9ca3af;">🥩 Monster Meat:</span>
+            <div id="cooking-stockpile-monster-meat" style="color: #f87171; font-weight: bold;">0</div>
+          </div>
+          <div>
+            <span style="color: #9ca3af;">🐺 Wolf Meat:</span>
+            <div id="cooking-stockpile-wolf-meat" style="color: #fbbf24; font-weight: bold;">0</div>
+          </div>
+        </div>
+
+        <!-- 2. Recipe Discovery & Experimentation Section -->
+        <div class="loadout-section-title">🧪 Recipe Discovery (Experimentation)</div>
+        <div style="background: rgba(31, 41, 55, 0.65); border: 1px solid rgba(249, 115, 22, 0.3); border-radius: 8px; padding: 12px; margin-bottom: 14px;">
+          <div style="font-size: 11px; color: #d1d5db; margin-bottom: 8px;">Combine two raw ingredients to discover new recipes. Once discovered, recipes are permanently cookable on demand.</div>
+          <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px;">
+            <div style="flex: 1;">
+              <label style="font-size: 10px; color: #9ca3af; display: block; margin-bottom: 2px;">Ingredient 1 (Primary):</label>
+              <select id="cooking-exp-slot1" class="party-select" style="width: 100%;">
+                <option value="wild_herbs">🌿 Wild Herbs</option>
+                <option value="monster_meat">🥩 Monster Meat</option>
+                <option value="wolf_meat">🐺 Wolf Meat</option>
+              </select>
+            </div>
+            <div style="font-size: 14px; color: #f97316; font-weight: bold; padding-top: 14px;">+</div>
+            <div style="flex: 1;">
+              <label style="font-size: 10px; color: #9ca3af; display: block; margin-bottom: 2px;">Ingredient 2 (Combine):</label>
+              <select id="cooking-exp-slot2" class="party-select" style="width: 100%;">
+                <option value="monster_meat">🥩 Monster Meat</option>
+                <option value="wolf_meat">🐺 Wolf Meat</option>
+                <option value="wild_herbs">🌿 Wild Herbs</option>
+              </select>
+            </div>
+            <div style="padding-top: 14px;">
+              <button id="cooking-experiment-btn" class="btn-action" style="background: #ea580c; border-color: #f97316; padding: 6px 14px; font-size: 11px; white-space: nowrap;" type="button">🍳 Experiment & Cook</button>
+            </div>
+          </div>
+          <div id="cooking-exp-status" style="font-size: 11px; color: #fbbf24; font-style: italic;">Select raw ingredients and click Experiment & Cook.</div>
+        </div>
+
+        <!-- 3. Discovered Recipes List (Cook On Demand) -->
+        <div class="loadout-section-title">📖 Discovered Recipes (Cook On Demand)</div>
+        <div id="cooking-recipes-container" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px;">
+          <!-- Dynamically populated with cards of discovered recipes -->
+        </div>
+
+        <!-- 4. Prepared Dishes In Pack -->
+        <div class="loadout-section-title">🍽️ Prepared Dishes In Pack</div>
+        <div id="cooking-dishes-container" style="display: flex; flex-direction: column; gap: 6px;">
+          <!-- Dynamically populated list of cooked dishes with quality badges and eat buttons -->
+        </div>
+      </div>
       <!-- Party Overview Modal (Milestone 8) -->
       <div id="party-overview-modal">
         <div class="modal-header">

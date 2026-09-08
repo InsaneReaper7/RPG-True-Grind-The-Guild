@@ -13,6 +13,46 @@
         "description": "+2 HP/sec regen for 15s"
       },
       "description": "Standard field ration. Restores 40 Hunger and grants Well Fed (+2 HP/sec for 15s). Spoils in 7 game days."
+    },
+    {
+      "id": "herb_stew",
+      "name": "Herb Stew",
+      "hungerRestored": 35,
+      "spoilageDays": 5,
+      "buff": {
+        "id": "well_fed",
+        "name": "Well Fed",
+        "durationMs": 15000,
+        "hpRegenPerSec": 2,
+        "description": "+2 HP/sec regen for 15s"
+      },
+      "qualities": {
+        "common": { "hungerMultiplier": 1.0, "buffDurationMs": 15000, "hpRegenPerSec": 2 },
+        "good": { "hungerMultiplier": 1.25, "buffDurationMs": 20000, "hpRegenPerSec": 2.5 },
+        "excellent": { "hungerMultiplier": 1.5, "buffDurationMs": 25000, "hpRegenPerSec": 3 },
+        "perfect": { "hungerMultiplier": 2.0, "buffDurationMs": 30000, "hpRegenPerSec": 4 }
+      },
+      "description": "A warm, fragrant stew of wild herbs and simmered monster meat."
+    },
+    {
+      "id": "beast_stew",
+      "name": "Hearty Beast Stew",
+      "hungerRestored": 55,
+      "spoilageDays": 6,
+      "buff": {
+        "id": "well_fed",
+        "name": "Well Fed",
+        "durationMs": 20000,
+        "hpRegenPerSec": 3,
+        "description": "+3 HP/sec regen for 20s"
+      },
+      "qualities": {
+        "common": { "hungerMultiplier": 1.0, "buffDurationMs": 20000, "hpRegenPerSec": 3 },
+        "good": { "hungerMultiplier": 1.25, "buffDurationMs": 25000, "hpRegenPerSec": 3.5 },
+        "excellent": { "hungerMultiplier": 1.5, "buffDurationMs": 30000, "hpRegenPerSec": 4 },
+        "perfect": { "hungerMultiplier": 2.0, "buffDurationMs": 35000, "hpRegenPerSec": 5 }
+      },
+      "description": "A robust, fortifying stew prepared from seasoned wolf meat."
     }
   ]
 }

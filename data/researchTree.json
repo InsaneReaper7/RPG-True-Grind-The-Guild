@@ -7,6 +7,14 @@
       "cost": 10,
       "prerequisites": [],
       "description": "Unlocks the Alchemy Station for the Guild Outpost, enabling potion brewing and medicine crafting."
+    },
+    {
+      "id": "research_cooking_station",
+      "name": "Cooking Station",
+      "targetBuildableId": "cooking_station",
+      "cost": 10,
+      "prerequisites": [],
+      "description": "Unlocks the Cooking Station for the Guild Outpost, enabling recipe discovery, food preparation, and cooking."
     }
   ]
 }

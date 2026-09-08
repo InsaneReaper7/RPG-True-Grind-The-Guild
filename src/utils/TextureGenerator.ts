@@ -532,6 +532,108 @@ export class TextureGenerator {
       g.generateTexture('tile-highlight-invalid', tileSize, tileSize);
       g.destroy();
     }
+
+    // 19. Buildable Cooking Station (Hearth, pot, firewood)
+    if (!scene.textures.exists('buildable-cooking-station')) {
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      // Stone hearth table/base
+      g.fillStyle(0x374151, 1);
+      g.fillRoundedRect(3, 3, tileSize - 6, tileSize - 6, 4);
+      g.lineStyle(1.5, 0x1f2937, 1);
+      g.strokeRoundedRect(3, 3, tileSize - 6, tileSize - 6, 4);
+
+      // Firebox opening with glowing hearth flames
+      g.fillStyle(0x111827, 1);
+      g.fillRoundedRect(7, 13, 18, 12, 2);
+      g.fillStyle(0xd97706, 0.9); // Warm orange
+      g.fillCircle(16, 21, 5);
+      g.fillStyle(0xfbbf24, 0.95); // Bright gold flame
+      g.fillCircle(16, 20, 3);
+      g.fillStyle(0xffedd5, 1); // Flame core
+      g.fillCircle(16, 19, 1.5);
+
+      // Firewood logs underneath
+      g.fillStyle(0x78350f, 1);
+      g.fillRect(8, 23, 16, 2);
+
+      // Cast iron cooking pot on top
+      g.fillStyle(0x1f2937, 1);
+      g.fillRoundedRect(9, 6, 14, 7, 2);
+      // Pot rim and handles
+      g.fillStyle(0x111827, 1);
+      g.fillRect(7, 7, 2, 2);
+      g.fillRect(23, 7, 2, 2);
+      // Stew inside pot
+      g.fillStyle(0xb45309, 1);
+      g.fillEllipse(16, 7, 5, 2);
+      // Wooden spoon handle sticking out
+      g.lineStyle(1.5, 0xd97706, 1);
+      g.lineBetween(18, 7, 22, 3);
+
+      g.generateTexture('buildable-cooking-station', tileSize, tileSize);
+      g.destroy();
+    }
+
+    // 20. Foraging Bush (Lush with wild herbs and berries)
+    if (!scene.textures.exists('foraging-bush')) {
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      // Base dark green shadow foliage
+      g.fillStyle(0x14532d, 0.9);
+      g.fillCircle(tileSize / 2, tileSize / 2 + 2, 12);
+
+      // Mid vibrant leafy lobes
+      g.fillStyle(0x15803d, 1);
+      g.fillCircle(tileSize / 2 - 5, tileSize / 2 - 2, 7);
+      g.fillCircle(tileSize / 2 + 5, tileSize / 2 - 2, 7);
+      g.fillCircle(tileSize / 2, tileSize / 2 - 6, 8);
+      g.fillCircle(tileSize / 2 - 6, tileSize / 2 + 3, 6);
+      g.fillCircle(tileSize / 2 + 6, tileSize / 2 + 3, 6);
+
+      // Top highlighted green foliage
+      g.fillStyle(0x22c55e, 1);
+      g.fillCircle(tileSize / 2 - 2, tileSize / 2 - 4, 5);
+      g.fillCircle(tileSize / 2 + 3, tileSize / 2 - 1, 4.5);
+      g.fillCircle(tileSize / 2 - 3, tileSize / 2 + 2, 4);
+
+      // Bright wild herb leaves (cyan-tinted mint green)
+      g.fillStyle(0x6ee7b7, 1);
+      g.fillCircle(12, 10, 2);
+      g.fillCircle(20, 11, 2);
+      g.fillCircle(15, 17, 2);
+
+      // Small wild berries (bright ruby/gold)
+      g.fillStyle(0xf43f5e, 1);
+      g.fillCircle(10, 15, 1.5);
+      g.fillCircle(22, 16, 1.5);
+      g.fillCircle(17, 8, 1.5);
+      g.fillStyle(0xfbbf24, 1);
+      g.fillCircle(14, 21, 1.5);
+
+      g.generateTexture('foraging-bush', tileSize, tileSize);
+      g.destroy();
+    }
+
+    // 21. Foraging Bush Depleted (Harvested / leaves stripped)
+    if (!scene.textures.exists('foraging-bush-depleted')) {
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      // Sparsely leafy base in muted sage
+      g.fillStyle(0x374151, 0.5);
+      g.fillCircle(tileSize / 2, tileSize / 2 + 3, 9);
+
+      g.fillStyle(0x365314, 0.85); // Muted olive green
+      g.fillCircle(tileSize / 2 - 3, tileSize / 2 + 1, 6);
+      g.fillCircle(tileSize / 2 + 3, tileSize / 2 + 1, 6);
+      g.fillCircle(tileSize / 2, tileSize / 2 - 2, 5);
+
+      // Bare twigs/stems
+      g.lineStyle(1.5, 0x78350f, 0.9);
+      g.lineBetween(16, 24, 16, 12);
+      g.lineBetween(16, 18, 10, 14);
+      g.lineBetween(16, 16, 22, 12);
+
+      g.generateTexture('foraging-bush-depleted', tileSize, tileSize);
+      g.destroy();
+    }
   }
 }
 

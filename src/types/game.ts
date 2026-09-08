@@ -200,6 +200,7 @@ export interface PlayerSnapshot {
   equippedWeaponId?: string;
   offhandWeaponId?: string | null;
   party?: CharacterSnapshot[];
+  discoveredCookingRecipes?: string[];
 }
 
 export interface SkillBookDef {
@@ -241,6 +242,20 @@ export interface AlchemyRecipeDef {
 
 export interface AlchemyRecipesData {
   recipes: AlchemyRecipeDef[];
+}
+
+export interface CookingRecipeDef {
+  id: string;
+  name: string;
+  ingredients: Record<string, number>;
+  resultFoodId: string;
+  expGranted: number;
+  maxQuality?: FoodQuality;
+  description: string;
+}
+
+export interface CookingRecipesData {
+  recipes: CookingRecipeDef[];
 }
 
 export interface SkillDef {
@@ -332,6 +347,14 @@ export interface HiddenSkillsData {
 
 export type EntityState = 'idle' | 'moving' | 'chasing' | 'attacking' | 'returning' | 'downed' | 'dead';
 
+export type FoodQuality = 'common' | 'good' | 'excellent' | 'perfect';
+
+export interface FoodQualityModifier {
+  hungerMultiplier: number;
+  buffDurationMs: number;
+  hpRegenPerSec: number;
+}
+
 export interface FoodBuffDef {
   id: string;
   name: string;
@@ -346,6 +369,7 @@ export interface FoodDef {
   hungerRestored: number;
   spoilageDays: number;
   buff: FoodBuffDef;
+  qualities?: Record<FoodQuality, FoodQualityModifier>;
   description: string;
 }
 
@@ -357,6 +381,7 @@ export interface FoodItemInstance {
   id: string;
   acquiredDay: number;
   instanceId: string;
+  quality?: FoodQuality;
 }
 
 export type MoodTierName = 'high' | 'content' | 'low';
