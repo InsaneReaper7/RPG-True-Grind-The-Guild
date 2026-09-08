@@ -284,24 +284,32 @@ export class HUD {
       this.hudSkillsListEl.onclick = (e) => {
         const target = e.target as HTMLElement;
         const btn = target.closest<HTMLButtonElement>('[data-hud-skill]');
-        if (!btn) return;
-        e.stopPropagation();
-
-        const skillId = btn.getAttribute('data-hud-skill');
         const active = HUD.activeInstance;
-        if (!skillId || !active || !active.currentPlayer) return;
+        if (btn) {
+          e.stopPropagation();
+          const skillId = btn.getAttribute('data-hud-skill');
+          if (!skillId || !active || !active.currentPlayer) return;
 
-        const currentVal = active.currentPlayer.isAutocastEnabled(skillId);
-        const newVal = !currentVal;
-        active.currentPlayer.setAutocast(skillId, newVal);
+          const currentVal = active.currentPlayer.isAutocastEnabled(skillId);
+          const newVal = !currentVal;
+          active.currentPlayer.setAutocast(skillId, newVal);
 
-        // Immediate visual state update on the button
-        btn.className = `hud-autocast-btn ${newVal ? 'autocast-on' : 'autocast-off'}`;
-        btn.innerText = newVal ? 'AUTO: ON' : 'AUTO: OFF';
+          btn.className = `hud-autocast-btn ${newVal ? 'autocast-on' : 'autocast-off'}`;
+          btn.innerText = newVal ? 'AUTO: ON' : 'AUTO: OFF';
 
-        // Also update Outpost loadout modal if open
-        if (active.isLoadoutModalOpen() && active.currentProgression) {
-          active.renderLoadoutModal(active.currentPlayer, active.currentProgression);
+          if (active.isLoadoutModalOpen() && active.currentProgression) {
+            active.renderLoadoutModal(active.currentPlayer, active.currentProgression);
+          }
+          return;
+        }
+
+        // Clicking the row outside the AUTO toggle manually triggers the skill
+        const row = target.closest<HTMLElement>('[data-skill-row]');
+        if (row && active?.currentPlayer) {
+          const skillId = row.getAttribute('data-skill-row');
+          if (skillId) {
+            active.currentPlayer.useSkill(skillId);
+          }
         }
       };
 
@@ -851,7 +859,9 @@ export class HUD {
 
         const skillName = skillDef ? skillDef.name : skillId;
         const details = skillDef
-          ? `${skillDef.energyCost} EN | ${skillDef.cooldownMs / 1000}s CD | ${skillDef.damageMultiplier * 100}% DMG`
+          ? skillDef.healAmount
+            ? `${skillDef.energyCost} EN | ${skillDef.cooldownMs / 1000}s CD | +${skillDef.healAmount} HP`
+            : `${skillDef.energyCost} EN | ${skillDef.cooldownMs / 1000}s CD | ${(skillDef.damageMultiplier ?? 1.0) * 100}% DMG`
           : '';
 
         slotEl.innerHTML = `
@@ -931,7 +941,7 @@ export class HUD {
         <div class="skill-stats">
           <span>Cost: ${skillDef.energyCost} Energy</span>
           <span>Cooldown: ${skillDef.cooldownMs / 1000}s</span>
-          <span>Damage: ${skillDef.damageMultiplier * 100}%</span>
+          <span>${skillDef.healAmount ? `Heal: +${skillDef.healAmount} HP` : `Damage: ${(skillDef.damageMultiplier ?? 1.0) * 100}%`}</span>
         </div>
       `;
 
@@ -1487,8 +1497,8 @@ export class HUD {
         }
       }
 
-      const isShieldEquipped = member.hasShield();
-      const isDwActive = member.isDualWielding();
+      const isShieldEquipped = typeof member.hasShield === 'function' ? member.hasShield() : false;
+      const isDwActive = typeof member.isDualWielding === 'function' ? member.isDualWielding() : false;
 
       let offhandStatusHtml = '';
       if (isDwActive) {
@@ -1671,7 +1681,7 @@ export class HUD {
         const idx = parseInt(target.dataset.reviveIdx || '0', 10);
         const member = this.currentParty[idx];
         if (member && member.state === 'downed') {
-          member.revive();
+          member.revive(this.currentParty[0]);
           this.renderPartyOverviewModal(true);
           this.showToast(`✨ Revived ${member.entityName}!`, 'success');
         }

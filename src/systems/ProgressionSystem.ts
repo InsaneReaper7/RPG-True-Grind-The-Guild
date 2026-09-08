@@ -27,6 +27,7 @@ export class ProgressionSystem {
   private proficiencies: Map<string, TrainableStat> = new Map();
   private classLevels: Map<string, number> = new Map();
   private unlockedClasses: Set<string> = new Set();
+  private activityCounts: Map<string, number> = new Map();
   private dualWieldUnlocked: boolean = false;
   private classesData: ClassesData;
   private onUnlockCallbacks: ((event: UnlockEvent) => void)[] = [];
@@ -99,6 +100,19 @@ export class ProgressionSystem {
     return this.classLevels.get(classId) || 0;
   }
 
+  public getActivityCount(target: string): number {
+    return this.activityCounts.get(target) ?? 0;
+  }
+
+  public recordActivity(target: string, amount: number = 1): number {
+    const current = this.getActivityCount(target);
+    const updated = current + amount;
+    this.activityCounts.set(target, updated);
+    console.log(`[Progression] Activity '${target}' count: ${current} -> ${updated} (+${amount})`);
+    this.checkClassUnlocks();
+    return updated;
+  }
+
   public isStatRevealed(statId: string): boolean {
     return this.getProficiencyLevel(statId) >= 1;
   }
@@ -164,6 +178,9 @@ export class ProgressionSystem {
       } else if (req.type === 'classLevel') {
         const currentLevel = this.getClassLevel(req.target);
         return currentLevel >= req.value;
+      } else if (req.type === 'activityCount') {
+        const currentCount = this.getActivityCount(req.target);
+        return currentCount >= req.value;
       }
       return false;
     });
@@ -196,6 +213,8 @@ export class ProgressionSystem {
         return this.getClassLevel(req.target) >= req.value;
       } else if (req.type === 'proficiency') {
         return this.getProficiencyLevel(req.target) >= req.value;
+      } else if (req.type === 'activityCount') {
+        return this.getActivityCount(req.target) >= req.value;
       }
       return false;
     });
@@ -265,6 +284,7 @@ export class ProgressionSystem {
     proficiencies: Record<string, TrainableStat>;
     classLevels: Record<string, number>;
     unlockedClasses: string[];
+    activityCounts?: Record<string, number>;
   } {
     const profObj: Record<string, TrainableStat> = {};
     for (const [k, v] of this.proficiencies.entries()) {
@@ -274,10 +294,15 @@ export class ProgressionSystem {
     for (const [k, v] of this.classLevels.entries()) {
       classObj[k] = v;
     }
+    const actObj: Record<string, number> = {};
+    for (const [k, v] of this.activityCounts.entries()) {
+      actObj[k] = v;
+    }
     return {
       proficiencies: profObj,
       classLevels: classObj,
-      unlockedClasses: Array.from(this.unlockedClasses)
+      unlockedClasses: Array.from(this.unlockedClasses),
+      activityCounts: actObj
     };
   }
 
@@ -285,6 +310,7 @@ export class ProgressionSystem {
     proficiencies: Record<string, number | TrainableStat>;
     classLevels: Record<string, number>;
     unlockedClasses: string[];
+    activityCounts?: Record<string, number>;
   }): void {
     this.initDefaultProficiencies();
     for (const [k, v] of Object.entries(data.proficiencies)) {
@@ -303,6 +329,12 @@ export class ProgressionSystem {
     this.unlockedClasses.clear();
     for (const c of data.unlockedClasses) {
       this.unlockedClasses.add(c);
+    }
+    this.activityCounts.clear();
+    if (data.activityCounts) {
+      for (const [k, v] of Object.entries(data.activityCounts)) {
+        this.activityCounts.set(k, v);
+      }
     }
     this.checkDualWieldUnlock();
   }

@@ -550,6 +550,7 @@ export class GameState {
       proficiencies: progData.proficiencies,
       classLevels: progData.classLevels,
       unlockedClasses: progData.unlockedClasses,
+      activityCounts: progData.activityCounts,
       resources: { ...this.resources },
       placedBuildables: [...this.placedBuildables],
       researchPoints: this.researchPoints,
@@ -648,7 +649,8 @@ export class GameState {
     progression.loadSnapshotData({
       proficiencies: snap.proficiencies,
       classLevels: snap.classLevels,
-      unlockedClasses: snap.unlockedClasses
+      unlockedClasses: snap.unlockedClasses,
+      activityCounts: snap.activityCounts
     });
 
     // Re-anchor remaining cooldowns in the new scene's relative clock

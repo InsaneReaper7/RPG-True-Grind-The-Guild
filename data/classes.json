@@ -33,6 +33,16 @@
         { "type": "classLevel", "target": "guardian", "value": 5 }
       ],
       "fantasy": "Defensive frontline fighter"
+    },
+    {
+      "id": "combat_medic",
+      "name": "Combat Medic",
+      "tier": "novice",
+      "requirements": [
+        { "type": "activityCount", "target": "Ally Revived", "value": 5 }
+      ],
+      "fantasy": "Field triage specialist keeping allies on their feet",
+      "_knownGapComment": "Original design requires Healing Magic Level 30. Dropped for Milestone 11 since magic schools do not exist yet. Revisit once magic schools are added."
     }
   ]
 }

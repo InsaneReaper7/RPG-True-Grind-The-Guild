@@ -1,13 +1,13 @@
-import Phaser from 'phaser';
-import { Entity } from '../entities/Entity';
-import { Player } from '../entities/Player';
-import { Enemy } from '../entities/Enemy';
-import { Pathfinder } from '../utils/Pathfinder';
-import { ProgressionSystem } from './ProgressionSystem';
-import { DataLoader } from '../utils/DataLoader';
-import { GridPos } from '../types/game';
-import { HiddenSkillSystem, CombatContext, CounterattackResult } from './HiddenSkillSystem';
-import { GameState } from './GameState';
+import type Phaser from 'phaser';
+import { Entity } from '../entities/Entity.ts';
+import { Player } from '../entities/Player.ts';
+import { Enemy } from '../entities/Enemy.ts';
+import { Pathfinder } from '../utils/Pathfinder.ts';
+import { ProgressionSystem } from './ProgressionSystem.ts';
+import { DataLoader } from '../utils/DataLoader.ts';
+import type { GridPos } from '../types/game.ts';
+import { HiddenSkillSystem, type CombatContext, type CounterattackResult } from './HiddenSkillSystem.ts';
+import { GameState } from './GameState.ts';
 
 export class CombatSystem {
   public static readonly DEBUG_AI: boolean = false;
@@ -445,6 +445,7 @@ export class CombatSystem {
                     console.log(`[Combat] ${enemy.entityName} hits ${target.entityName} for ${actualDamage} damage!`);
                   }
 
+                  const wasUnengaged = target.targetEntity === null;
                   const targetDowned = target.takeDamage(actualDamage);
                   if (targetDowned) {
                     console.log(`[Combat] ${target.entityName} has been downed by enemy attack!`);
@@ -457,6 +458,13 @@ export class CombatSystem {
                       enemy.state = 'chasing';
                       console.log(`%c[Combat Retarget] 🎯 ${enemy.entityName} immediately switched target to ${nextTarget.entityName}!`, 'color: #f59e0b; font-weight: bold;');
                     }
+                  }
+
+                  // Milestone 11: Full-Group Retaliation
+                  // When an unengaged party member takes damage, trigger full-group retaliation
+                  // for all idle/unengaged members against the attacker
+                  if (actualDamage > 0 && wasUnengaged) {
+                    this.triggerRetaliation(enemy, target);
                   }
                 }
               } else {
@@ -506,6 +514,10 @@ export class CombatSystem {
     // 2. Party Auto-Attack & Auto-Skill Loop against Target Entities
     for (const member of this.party) {
       if (member.state === 'downed' || member.state === 'dead') continue;
+
+      // Check if member has an ally heal skill that can be autocast
+      this.checkAndAutocastAllyHeal(member, time);
+
       if (!member.targetEntity || member.targetEntity.state === 'downed' || member.targetEntity.state === 'dead') {
         member.clearTarget();
         continue;
@@ -580,9 +592,10 @@ export class CombatSystem {
               );
               this.createFloatingText(target.x, target.y - 10, 'MISS', '#9ca3af');
             } else {
-              const skillDamage = effectiveBaseDamage * skillDef.damageMultiplier;
+              const mult = skillDef.damageMultiplier ?? 1.0;
+              const skillDamage = effectiveBaseDamage * mult;
               console.log(
-                `[Skill] ${member.entityName} casts ${skillDef.name}! Dealt ${skillDamage.toFixed(1)} damage (${skillDef.damageMultiplier * 100}% of ${effectiveBaseDamage.toFixed(2)})${isDW ? ` [DW Penalty -${(dwPenalty * 100).toFixed(0)}%]` : ''}`
+                `[Skill] ${member.entityName} casts ${skillDef.name}! Dealt ${skillDamage.toFixed(1)} damage (${mult * 100}% of ${effectiveBaseDamage.toFixed(2)})${isDW ? ` [DW Penalty -${(dwPenalty * 100).toFixed(0)}%]` : ''}`
               );
               this.createFloatingText(target.x, target.y - 10, `${skillDef.name.toUpperCase()}! -${skillDamage.toFixed(1)}`, '#f59e0b');
 
@@ -937,5 +950,273 @@ export class CombatSystem {
       duration: 700,
       onComplete: () => text.destroy()
     });
+  }
+
+  public createHealEffect(x: number, y: number): void {
+    if (!this.scene?.add) return;
+    const circle = this.scene.add.circle(x, y, 16, 0x22c55e, 0.6).setDepth(2000);
+    this.scene.tweens?.add({
+      targets: circle,
+      scaleX: 1.8,
+      scaleY: 1.8,
+      alpha: 0,
+      duration: 500,
+      ease: 'Cubic.easeOut',
+      onComplete: () => circle.destroy()
+    });
+  }
+
+  public checkAndAutocastAllyHeal(member: Player, time: number): boolean {
+    const dataLoader = DataLoader.getInstance();
+    for (const skillId of member.equippedSkillIds) {
+      if (!member.isAutocastEnabled(skillId)) continue;
+      const skillDef = dataLoader.getSkill(skillId);
+      if (!skillDef || !member.progression.isSkillUnlocked(skillDef, member)) continue;
+      if (skillDef.targetType !== 'ally' && (!skillDef.healAmount || skillDef.healAmount <= 0)) continue;
+
+      const lastUsed = member.lastSkillUseTimes.get(skillId) || 0;
+      const isOffCooldown = time - lastUsed >= skillDef.cooldownMs;
+      const isAffordable = member.energy >= skillDef.energyCost;
+      if (!isOffCooldown || !isAffordable) continue;
+
+      // Find living damaged party members (prioritize other allies, then self)
+      const damagedMembers = this.party.filter(
+        (m) => m.state !== 'dead' && m.state !== 'downed' && m.hp < m.maxHp
+      );
+      if (damagedMembers.length === 0) continue;
+
+      damagedMembers.sort((a, b) => {
+        const aSelf = a === member ? 1 : 0;
+        const bSelf = b === member ? 1 : 0;
+        if (aSelf !== bSelf) return aSelf - bSelf;
+        return (a.hp / a.maxHp) - (b.hp / b.maxHp);
+      });
+
+      const targetAlly = damagedMembers[0];
+      return this.castSkill(member, skillId, targetAlly, time);
+    }
+    return false;
+  }
+
+  public castSkill(
+    caster: Player,
+    skillId: string,
+    target?: Entity | Player,
+    currentTime?: number
+  ): boolean {
+    const dataLoader = DataLoader.getInstance();
+    const skillDef = dataLoader.getSkill(skillId);
+    if (!skillDef || !caster.progression.isSkillUnlocked(skillDef, caster)) {
+      console.warn(`[Skill] Cannot cast ${skillId}: not unlocked or not found.`);
+      return false;
+    }
+
+    const time = currentTime ?? (this.scene as any)?.time?.now ?? Date.now();
+    if (caster.lastSkillUseTimes.has(skillId)) {
+      const lastUsed = caster.lastSkillUseTimes.get(skillId)!;
+      if (time - lastUsed < skillDef.cooldownMs) {
+        console.warn(`[Skill] ${skillDef.name} is on cooldown! (${((skillDef.cooldownMs - (time - lastUsed)) / 1000).toFixed(1)}s remaining)`);
+        return false;
+      }
+    }
+
+    if (caster.energy < skillDef.energyCost) {
+      console.warn(`[Skill] Not enough energy to cast ${skillDef.name}! (${caster.energy}/${skillDef.energyCost})`);
+      return false;
+    }
+
+    if (skillDef.targetType === 'ally' || (skillDef.healAmount && skillDef.healAmount > 0)) {
+      let targetAlly = target as Player | undefined;
+      if (!targetAlly || targetAlly.state === 'dead' || targetAlly.state === 'downed') {
+        const candidates = this.party.filter(
+          (m) => m.state !== 'dead' && m.state !== 'downed' && m.hp < m.maxHp
+        );
+        candidates.sort((a, b) => {
+          const aSelf = a === caster ? 1 : 0;
+          const bSelf = b === caster ? 1 : 0;
+          if (aSelf !== bSelf) return aSelf - bSelf;
+          return (a.hp / a.maxHp) - (b.hp / b.maxHp);
+        });
+        targetAlly = candidates[0] || caster;
+      }
+
+      caster.energy -= skillDef.energyCost;
+      caster.lastSkillUseTimes.set(skillId, time);
+      caster.lastAttackTime = time;
+
+      const restored = targetAlly.heal(skillDef.healAmount || 20);
+      this.createHealEffect(targetAlly.x, targetAlly.y);
+      this.createFloatingText(targetAlly.x, targetAlly.y - 12, `+${restored} HP`, '#22c55e');
+
+      console.log(
+        `[Skill] ${caster.entityName} casts ${skillDef.name} on ${targetAlly.entityName}! Restored ${restored} HP. (Energy: ${caster.energy}/${caster.maxEnergy})`
+      );
+      return true;
+    } else {
+      const enemyTarget = (target as Enemy) || (caster.targetEntity instanceof Enemy ? caster.targetEntity : null);
+      if (!enemyTarget || enemyTarget.state === 'dead' || enemyTarget.state === 'downed') {
+        return false;
+      }
+
+      caster.energy -= skillDef.energyCost;
+      caster.lastSkillUseTimes.set(skillId, time);
+      caster.lastAttackTime = time;
+      caster.state = 'attacking';
+
+      this.createSkillAttackEffect(caster.x, caster.y, enemyTarget.x, enemyTarget.y);
+      const weapon = caster.equippedWeapon;
+      const weaponLevel = caster.progression.getProficiencyLevel(weapon.id);
+      const dmgBonus = weapon.levelBonus?.damagePerLevel ?? 0;
+      const rawBase = weapon.baseDamage + weaponLevel * dmgBonus;
+      const moodTier = dataLoader.getMoodTier(caster.mood);
+      const effBase = rawBase * moodTier.combatDamageMultiplier;
+      const skillDamage = effBase * (skillDef.damageMultiplier ?? 1.0);
+
+      this.createFloatingText(enemyTarget.x, enemyTarget.y - 10, `${skillDef.name.toUpperCase()}! -${skillDamage.toFixed(1)}`, '#f59e0b');
+      const downed = enemyTarget.takeDamage(skillDamage);
+      if (downed) {
+        this.handleTargetDefeated(caster, enemyTarget, weapon.id);
+      }
+      return true;
+    }
+  }
+
+  public triggerRetaliation(attacker: Enemy, victim: Player): void {
+    if (attacker.state === 'dead' || attacker.state === 'downed') return;
+
+    // Milestone 11: Non-interference rule - only genuinely idle / unengaged living members join retaliation
+    const idleLivingMembers = this.party.filter(
+      (m) => m.state !== 'downed' && m.state !== 'dead' && m.targetEntity === null
+    );
+
+    if (idleLivingMembers.length === 0) return;
+
+    console.log(
+      `%c[Combat Retaliation] ⚔️ ${victim.entityName} was attacked by ${attacker.entityName} while unengaged! Commanding ${idleLivingMembers.length} idle party member(s) to retaliate!`,
+      'color: #f87171; font-weight: bold;'
+    );
+
+    if (this.scene && typeof (this.scene as any).engageEnemy === 'function') {
+      (this.scene as any).engageEnemy(attacker, idleLivingMembers);
+    } else {
+      this.engageMembers(attacker, idleLivingMembers);
+    }
+  }
+
+  public engageMembers(enemy: Enemy, livingMembers: Player[]): void {
+    if (enemy.state === 'dead' || enemy.state === 'downed') return;
+    if (livingMembers.length === 0) return;
+
+    // Pass 0: Purge stale targets ONLY for members being commanded
+    for (const member of livingMembers) {
+      if (member.targetEntity !== enemy) {
+        member.clearTarget();
+      }
+    }
+
+    const tileOwner = new Map<string, Player>();
+    const memberDest = new Map<Player, GridPos>();
+    const claimedKeys = new Set<string>();
+
+    // Reserve tiles/destinations of non-participating living members (e.g. fighting a different enemy)
+    for (const other of this.party) {
+      if (other.state !== 'dead' && other.state !== 'downed' && !livingMembers.includes(other)) {
+        claimedKeys.add(`${other.gridPos.x},${other.gridPos.y}`);
+        if (other.claimedDestination) {
+          claimedKeys.add(`${other.claimedDestination.x},${other.claimedDestination.y}`);
+        }
+      }
+    }
+
+    // Pass 1: Members that can currently land an attack from their exact current tile hold position
+    for (const member of livingMembers) {
+      member.setTarget(enemy);
+      const dx = Math.abs(member.gridPos.x - enemy.gridPos.x);
+      const dy = Math.abs(member.gridPos.y - enemy.gridPos.y);
+      const currentDist = Math.max(dx, dy);
+
+      const canAttackNow = currentDist <= member.attackRangeTiles && currentDist > 0;
+      const key = `${member.gridPos.x},${member.gridPos.y}`;
+
+      if (canAttackNow && !claimedKeys.has(key)) {
+        claimedKeys.add(key);
+        tileOwner.set(key, member);
+        memberDest.set(member, { ...member.gridPos });
+        member.claimedDestination = null;
+        if (member.isMoving()) {
+          member.stopMovement();
+        }
+      }
+    }
+
+    // Pass 2: Assign distinct reachable tiles within attackRangeTiles to unassigned members
+    const unassigned = livingMembers.filter((m) => !memberDest.has(m));
+    unassigned.sort((a, b) => {
+      const distA = Math.hypot(a.gridPos.x - enemy.gridPos.x, a.gridPos.y - enemy.gridPos.y);
+      const distB = Math.hypot(b.gridPos.x - enemy.gridPos.x, b.gridPos.y - enemy.gridPos.y);
+      return distA - distB;
+    });
+
+    for (const member of unassigned) {
+      const targetTile = this.findOpenAttackTileForMember(enemy, member, claimedKeys);
+      if (targetTile) {
+        const key = `${targetTile.x},${targetTile.y}`;
+        claimedKeys.add(key);
+        tileOwner.set(key, member);
+        memberDest.set(member, targetTile);
+      }
+    }
+
+    // Pass 3: Execute movement for members that need to travel
+    const now = (this.scene as any)?.time?.now ?? Date.now();
+    for (const member of livingMembers) {
+      const dest = memberDest.get(member);
+      if (!dest) {
+        member.claimedDestination = null;
+        if (member.isMoving()) {
+          member.stopMovement();
+        }
+        continue;
+      }
+
+      if (member.gridPos.x === dest.x && member.gridPos.y === dest.y) {
+        if (member.isMoving()) {
+          member.stopMovement();
+        }
+        member.claimedDestination = null;
+        continue;
+      }
+
+      if (member.isMoving() && member.claimedDestination && member.claimedDestination.x === dest.x && member.claimedDestination.y === dest.y) {
+        continue;
+      }
+
+      member.claimedDestination = { ...dest };
+      member.lastCombatRepathTimeMs = now;
+      member.state = 'moving';
+
+      const dynamicObstacles: GridPos[] = [];
+      for (const m of this.party) {
+        if (m !== member && m.state !== 'dead' && m.state !== 'downed') {
+          dynamicObstacles.push(m.gridPos);
+        }
+      }
+      for (const e of this.enemies) {
+        if (e.state !== 'dead' && e.state !== 'downed') {
+          dynamicObstacles.push(e.gridPos);
+        }
+      }
+
+      this.pathfinder.findPath(member.gridPos, dest, dynamicObstacles).then((path) => {
+        if (path.length > 0 && member.state !== 'downed' && member.state !== 'dead' && member.targetEntity === enemy) {
+          member.followPath(path);
+        } else {
+          member.claimedDestination = null;
+          if (member.isMoving()) {
+            member.stopMovement();
+          }
+        }
+      });
+    }
   }
 }

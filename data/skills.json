@@ -29,6 +29,23 @@
         }
       ],
       "description": "A rapid piercing thrust dealing 150% weapon damage."
+    },
+    {
+      "id": "first_aid",
+      "name": "First Aid",
+      "energyCost": 20,
+      "cooldownMs": 4000,
+      "damageMultiplier": 0,
+      "healAmount": 20,
+      "targetType": "ally",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "combat_medic",
+          "value": 1
+        }
+      ],
+      "description": "Quickly tends to wounds, restoring 20 HP to a damaged ally or self."
     }
   ]
 }

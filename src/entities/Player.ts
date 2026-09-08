@@ -79,6 +79,15 @@ export class Player extends Entity {
     for (const skillId of this.equippedSkillIds) {
       this.autocastMap.set(skillId, true);
     }
+
+    this.progression.onClassUnlocked((event) => {
+      if (event.classDef.id === 'combat_medic') {
+        this.learnSkill('first_aid');
+        if (this.equippedSkillIds.length < 5 && !this.equippedSkillIds.includes('first_aid')) {
+          this.equipSkill('first_aid');
+        }
+      }
+    });
   }
 
   public equipWeapon(weapon: WeaponDef): void {
@@ -239,7 +248,7 @@ export class Player extends Entity {
     }
   }
 
-  public revive(): void {
+  public revive(reviver?: Player): void {
     if (this.state !== 'downed') return;
 
     this.hp = Math.floor(this.maxHp * 0.5);
@@ -252,6 +261,12 @@ export class Player extends Entity {
     this.avatarSprite.setAlpha(1);
     this.drawHpBar();
     console.log(`[Player] Revived with ${this.hp} Main HP and ${this.criticalHp} Critical HP!`);
+
+    // Track Ally Revived activity on the reviver (or leader/first non-downed living ally)
+    const actor = reviver || (this.scene as any)?.party?.find((m: Player) => m !== this && m.state !== 'downed' && m.state !== 'dead') || (this.scene as any)?.player;
+    if (actor && actor !== this && actor.progression) {
+      actor.progression.recordActivity('Ally Revived', 1);
+    }
   }
 
   public heal(amount: number): number {
@@ -263,6 +278,29 @@ export class Player extends Entity {
       this.drawHpBar();
     }
     return restored;
+  }
+
+  public useSkill(skillId: string, target?: Entity | Player, time?: number): boolean {
+    const scene = this.scene as any;
+    if (scene?.combatSystem && typeof scene.combatSystem.castSkill === 'function') {
+      return scene.combatSystem.castSkill(this, skillId, target, time);
+    }
+    const dataLoader = DataLoader.getInstance();
+    const skillDef = dataLoader.getSkill(skillId);
+    if (!skillDef || !this.progression.isSkillUnlocked(skillDef, this)) return false;
+    const now = time ?? Date.now();
+    const lastUsed = this.lastSkillUseTimes.get(skillId) || 0;
+    if (now - lastUsed < skillDef.cooldownMs) return false;
+    if (this.energy < skillDef.energyCost) return false;
+
+    if (skillDef.targetType === 'ally' || (skillDef.healAmount && skillDef.healAmount > 0)) {
+      const targetAlly = (target as Player) || this;
+      this.energy -= skillDef.energyCost;
+      this.lastSkillUseTimes.set(skillId, now);
+      targetAlly.heal(skillDef.healAmount || 20);
+      return true;
+    }
+    return false;
   }
 
   /**
@@ -344,6 +382,7 @@ export class Player extends Entity {
       proficiencies: progData.proficiencies,
       classLevels: progData.classLevels,
       unlockedClasses: progData.unlockedClasses,
+      activityCounts: progData.activityCounts,
       bookLearnedSkills: Array.from(this.bookLearnedSkills),
       hunger: this.hunger,
       mood: this.mood,
@@ -396,7 +435,8 @@ export class Player extends Entity {
     this.progression.loadSnapshotData({
       proficiencies: snapshot.proficiencies,
       classLevels: snapshot.classLevels,
-      unlockedClasses: snapshot.unlockedClasses
+      unlockedClasses: snapshot.unlockedClasses,
+      activityCounts: snapshot.activityCounts
     });
 
     // Re-anchor cooldowns in current scene clock

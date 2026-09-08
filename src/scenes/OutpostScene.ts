@@ -283,7 +283,7 @@ export class OutpostScene extends Phaser.Scene {
         } else {
           for (const member of this.party) {
             if (member.state === 'downed') {
-              member.revive();
+              member.revive(this.player);
             }
           }
         }
@@ -349,13 +349,13 @@ export class OutpostScene extends Phaser.Scene {
     (window as any).__reviveParty = (memberIndex?: number) => {
       if (memberIndex !== undefined) {
         if (this.party[memberIndex]) {
-          this.party[memberIndex].revive();
+          this.party[memberIndex].revive(this.player);
           console.log(`[Debug] Revived ${this.party[memberIndex].entityName}`);
         }
       } else {
         for (const member of this.party) {
           if (member.state === 'downed') {
-            member.revive();
+            member.revive(this.player);
             console.log(`[Debug] Revived ${member.entityName}`);
           }
         }

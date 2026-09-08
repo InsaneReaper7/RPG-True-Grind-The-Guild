@@ -43,7 +43,7 @@ export interface WeaponsData {
 }
 
 export interface Requirement {
-  type: 'proficiency' | 'classLevel';
+  type: 'proficiency' | 'classLevel' | 'activityCount';
   target: string;
   value: number;
 }
@@ -167,6 +167,7 @@ export interface CharacterSnapshot {
   proficiencies: Record<string, TrainableStat>;
   classLevels: Record<string, number>;
   unlockedClasses: string[];
+  activityCounts?: Record<string, number>;
   bookLearnedSkills?: string[];
   hunger?: number;
   mood?: number;
@@ -184,6 +185,7 @@ export interface PlayerSnapshot {
   proficiencies: Record<string, TrainableStat>;
   classLevels: Record<string, number>;
   unlockedClasses: string[];
+  activityCounts?: Record<string, number>;
   resources: {
     wood: number;
     [key: string]: number;
@@ -263,7 +265,9 @@ export interface SkillDef {
   name: string;
   energyCost: number;
   cooldownMs: number;
-  damageMultiplier: number;
+  damageMultiplier?: number;
+  healAmount?: number;
+  targetType?: 'enemy' | 'ally' | 'self';
   requirements: Requirement[];
   description?: string;
 }

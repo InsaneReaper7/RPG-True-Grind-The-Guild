@@ -290,16 +290,34 @@ export class MainScene extends Phaser.Scene {
     (window as any).__reviveParty = (memberIndex?: number) => {
       if (memberIndex !== undefined) {
         if (this.party[memberIndex]) {
-          this.party[memberIndex].revive();
+          this.party[memberIndex].revive(this.player);
           console.log(`[Debug] Revived ${this.party[memberIndex].entityName}`);
         }
       } else {
         for (const member of this.party) {
           if (member.state === 'downed') {
-            member.revive();
+            member.revive(this.player);
             console.log(`[Debug] Revived ${member.entityName}`);
           }
         }
+      }
+    };
+    (window as any).__castSkill = (skillId: string, casterIdx: number = 0, targetIdx?: number) => {
+      const caster = this.party[casterIdx];
+      if (!caster) return false;
+      const target = targetIdx !== undefined ? this.party[targetIdx] : undefined;
+      return this.combatSystem.castSkill(caster, skillId, target);
+    };
+    (window as any).__recordActivity = (target: string, count: number = 1, memberIdx: number = 0) => {
+      const member = this.party[memberIdx];
+      if (!member) return 0;
+      return member.progression.recordActivity(target, count);
+    };
+    (window as any).__triggerRetaliation = (enemyIdx: number = 0, victimIdx: number = 0) => {
+      const enemy = this.enemies[enemyIdx];
+      const victim = this.party[victimIdx];
+      if (enemy && victim) {
+        this.combatSystem.triggerRetaliation(enemy, victim);
       }
     };
     (window as any).__respawnEnemies = () => {
@@ -826,117 +844,27 @@ export class MainScene extends Phaser.Scene {
     this.scene.start('OutpostScene');
   }
 
-  private engageEnemy(enemy: Enemy): void {
+  public engageEnemy(enemy: Enemy, membersToEngage?: Player[]): void {
     if (enemy.state === 'dead' || enemy.state === 'downed') return;
 
     console.log(`[Input] Engaged Enemy: ${enemy.entityName} at (${enemy.gridPos.x}, ${enemy.gridPos.y})`);
 
-    const livingMembers = this.party.filter(m => m.state !== 'downed' && m.state !== 'dead');
+    const allLivingMembers = this.party.filter(m => m.state !== 'downed' && m.state !== 'dead');
+    const livingMembers = membersToEngage
+      ? membersToEngage.filter(m => m.state !== 'downed' && m.state !== 'dead')
+      : allLivingMembers;
 
-    // Pass 0: Purge any stale targets and lingering destinations across all party members
-    for (const member of livingMembers) {
-      if (member.targetEntity !== enemy) {
-        member.clearTarget();
-      }
+    if (livingMembers.length === 0) return;
+
+    this.combatSystem.engageMembers(enemy, livingMembers);
+
+    if (!membersToEngage || livingMembers.includes(this.player)) {
+      this.targetReticle.setPosition(
+        enemy.gridPos.x * this.tileSize + this.tileSize / 2,
+        enemy.gridPos.y * this.tileSize + this.tileSize / 2
+      );
+      this.targetReticle.setVisible(true);
     }
-
-    // Explicit 1-to-1 mapping of tile key "x,y" to owning player
-    const tileOwner = new Map<string, Player>();
-    const memberDest = new Map<Player, GridPos>();
-    const claimedKeys = new Set<string>();
-
-    // First pass: Strictly evaluate members that can CURRENTLY land an attack from their exact current tile
-    for (const member of livingMembers) {
-      member.setTarget(enemy);
-      const dx = Math.abs(member.gridPos.x - enemy.gridPos.x);
-      const dy = Math.abs(member.gridPos.y - enemy.gridPos.y);
-      const currentDist = Math.max(dx, dy);
-
-      // Can this member attack from their current tile right now?
-      const canAttackNow = currentDist <= member.attackRangeTiles && currentDist > 0;
-      const key = `${member.gridPos.x},${member.gridPos.y}`;
-
-      if (canAttackNow && !claimedKeys.has(key)) {
-        claimedKeys.add(key);
-        tileOwner.set(key, member);
-        memberDest.set(member, { ...member.gridPos });
-        member.claimedDestination = null;
-        if (member.isMoving()) {
-          member.stopMovement();
-        }
-      }
-    }
-
-    // Second pass: Assign distinct reachable tiles within attackRangeTiles to all unassigned members
-    // Sort unassigned members by distance to enemy so closer members claim closer attack slots
-    const unassigned = livingMembers.filter(m => !memberDest.has(m));
-    unassigned.sort((a, b) => {
-      const distA = Math.hypot(a.gridPos.x - enemy.gridPos.x, a.gridPos.y - enemy.gridPos.y);
-      const distB = Math.hypot(b.gridPos.x - enemy.gridPos.x, b.gridPos.y - enemy.gridPos.y);
-      return distA - distB;
-    });
-
-    for (const member of unassigned) {
-      const targetTile = this.findOpenAttackTileForMember(enemy, member, claimedKeys);
-      if (targetTile) {
-        const key = `${targetTile.x},${targetTile.y}`;
-        claimedKeys.add(key);
-        tileOwner.set(key, member);
-        memberDest.set(member, targetTile);
-      }
-    }
-
-    // Third pass: Execute movement for members that need to travel to attack range
-    const now = this.time.now;
-    for (const member of livingMembers) {
-      const dest = memberDest.get(member);
-      if (!dest) {
-        member.claimedDestination = null;
-        if (member.isMoving()) {
-          member.stopMovement();
-        }
-        continue;
-      }
-
-      // Already on the tile
-      if (member.gridPos.x === dest.x && member.gridPos.y === dest.y) {
-        if (member.isMoving()) {
-          member.stopMovement();
-        }
-        member.claimedDestination = null;
-        continue;
-      }
-
-      // If already moving toward this exact tile, keep current path
-      if (member.isMoving() && member.claimedDestination && member.claimedDestination.x === dest.x && member.claimedDestination.y === dest.y) {
-        continue;
-      }
-
-      member.claimedDestination = { ...dest };
-      member.lastCombatRepathTimeMs = now; // Lock against immediate repath in CombatSystem
-      member.state = 'moving';
-
-      // Party members path towards their designated adjacent tile; avoid enemies and stationary companions
-      const dynamicObstacles = this.getDynamicObstacles(member);
-
-      this.pathfinder.findPath(member.gridPos, dest, dynamicObstacles).then((path) => {
-        if (path.length > 0 && member.state !== 'downed' && member.state !== 'dead' && member.targetEntity === enemy) {
-          member.followPath(path);
-        } else {
-          // No reachable path found to assigned tile: clean up destination claim
-          member.claimedDestination = null;
-          if (member.isMoving()) {
-            member.stopMovement();
-          }
-        }
-      });
-    }
-
-    this.targetReticle.setPosition(
-      enemy.gridPos.x * this.tileSize + this.tileSize / 2,
-      enemy.gridPos.y * this.tileSize + this.tileSize / 2
-    );
-    this.targetReticle.setVisible(true);
   }
 
   public update(time: number, delta: number): void {
@@ -948,7 +876,7 @@ export class MainScene extends Phaser.Scene {
     if (this.rKey && Phaser.Input.Keyboard.JustDown(this.rKey)) {
       for (const member of this.party) {
         if (member.state === 'downed') {
-          member.revive();
+          member.revive(this.player);
         }
       }
     }

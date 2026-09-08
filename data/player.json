@@ -8,7 +8,7 @@
   "moveSpeed": 120,
   "attackRangeTiles": 1,
   "startingWeaponId": "short_swords",
-  "knownSkillIds": ["power_strike"],
+  "knownSkillIds": ["power_strike", "first_aid"],
   "equippedSkillIds": ["power_strike"],
   "proficiencies": {
     "short_swords": { "level": 0, "currentExp": 0 },
