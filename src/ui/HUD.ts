@@ -1,18 +1,21 @@
-import { Player } from '../entities/Player';
-import { ProgressionSystem } from '../systems/ProgressionSystem';
-import { ClassDef, HiddenSkillDef, TrainableStat } from '../types/game';
-import { DataLoader } from '../utils/DataLoader';
-import { GameState } from '../systems/GameState';
-import { BuildingSystem } from '../systems/BuildingSystem';
-import { LevelingSystem } from '../systems/LevelingSystem';
-import { ResearchSystem } from '../systems/ResearchSystem';
+import type { Player } from '../entities/Player.ts';
+import { ProgressionSystem } from '../systems/ProgressionSystem.ts';
+import type { ClassDef, HiddenSkillDef, TrainableStat } from '../types/game.ts';
+import { DataLoader } from '../utils/DataLoader.ts';
+import { GameState } from '../systems/GameState.ts';
+import { BuildingSystem } from '../systems/BuildingSystem.ts';
+import { LevelingSystem } from '../systems/LevelingSystem.ts';
+import { ResearchSystem } from '../systems/ResearchSystem.ts';
 
 export class HUD {
   private playerHpEl: HTMLElement | null;
   private playerCritHpEl: HTMLElement | null;
   private playerEnergyEl: HTMLElement | null;
   private weaponEl: HTMLElement | null;
+  private hudProficiencyRowEl: HTMLElement | null;
+  private hudProficiencyLabelEl: HTMLElement | null;
   private profEl: HTMLElement | null;
+  private hudConstructionRowEl: HTMLElement | null;
   private constructionProfEl: HTMLElement | null;
   private hudAlchemyRowEl: HTMLElement | null;
   private alchemyProfTextEl: HTMLElement | null;
@@ -126,7 +129,10 @@ export class HUD {
     this.playerCritHpEl = document.getElementById('player-crit-hp-text');
     this.playerEnergyEl = document.getElementById('player-energy-text');
     this.weaponEl = document.getElementById('equipped-weapon-text');
+    this.hudProficiencyRowEl = document.getElementById('hud-proficiency-row');
+    this.hudProficiencyLabelEl = document.getElementById('proficiency-label');
     this.profEl = document.getElementById('proficiency-text');
+    this.hudConstructionRowEl = document.getElementById('hud-construction-row');
     this.constructionProfEl = document.getElementById('construction-prof-text');
     this.discoveredSkillsSectionEl = document.getElementById('hud-discovered-skills-section');
     this.discoveredSkillsListEl = document.getElementById('hud-discovered-skills-list');
@@ -508,7 +514,7 @@ export class HUD {
           }
         } else if (e.key === 'h' || e.key === 'H') {
           active.applyBandage();
-        } else if (e.key === 'o' || e.key === 'O') {
+        } else if (e.key === 'o' || e.key === 'O' || e.code === 'KeyO') {
           active.togglePartyOverviewModal();
         } else if (e.key === 'y' || e.key === 'Y') {
           active.debugAdvanceDay(1);
@@ -932,28 +938,42 @@ export class HUD {
       this.weaponEl.innerText = player.equippedWeapon.name;
     }
 
-    if (this.profEl) {
-      const weaponId = player.equippedWeapon.id;
-      const stat = progression.getProficiencyStat(weaponId);
-      const nextExp = LevelingSystem.expForNextLevel(stat.level);
-      const isFencerUnlocked = progression.isClassUnlocked('fencer');
-      const tierText = isFencerUnlocked ? 'Novice' : 'Unranked';
-      this.profEl.innerText = `Level ${stat.level} (${stat.currentExp}/${nextExp} EXP) [${tierText}]`;
+    const weaponId = player.equippedWeapon.id;
+    const stat = progression.getProficiencyStat(weaponId);
+    if (this.hudProficiencyRowEl) {
+      if (stat.level >= 1) {
+        this.hudProficiencyRowEl.style.display = 'flex';
+        if (this.hudProficiencyLabelEl) {
+          this.hudProficiencyLabelEl.innerText = `${player.equippedWeapon.name}:`;
+        }
+        if (this.profEl) {
+          const nextExp = LevelingSystem.expForNextLevel(stat.level);
+          const isFencerUnlocked = progression.isClassUnlocked('fencer');
+          const tierText = isFencerUnlocked ? 'Novice' : 'Unranked';
+          this.profEl.innerText = `Level ${stat.level} (${stat.currentExp}/${nextExp} EXP) [${tierText}]`;
+        }
+      } else {
+        this.hudProficiencyRowEl.style.display = 'none';
+      }
     }
 
     // 4b. Construction Proficiency
-    if (this.constructionProfEl) {
+    if (this.hudConstructionRowEl && this.constructionProfEl) {
       const constStat = progression.getProficiencyStat('construction');
-      const constTier = progression.getConstructionTier();
-      const nextExp = LevelingSystem.expForNextLevel(constStat.level);
-      this.constructionProfEl.innerText = `Level ${constStat.level} (${constStat.currentExp}/${nextExp} EXP) (${constTier.name})`;
+      if (constStat.level >= 1) {
+        this.hudConstructionRowEl.style.display = 'flex';
+        const constTier = progression.getConstructionTier();
+        const nextExp = LevelingSystem.expForNextLevel(constStat.level);
+        this.constructionProfEl.innerText = `Level ${constStat.level} (${constStat.currentExp}/${nextExp} EXP) (${constTier.name})`;
+      } else {
+        this.hudConstructionRowEl.style.display = 'none';
+      }
     }
 
     // 4b2. Alchemy Proficiency
     if (this.alchemyProfTextEl && this.hudAlchemyRowEl) {
       const alchemyStat = progression.getProficiencyStat('alchemy');
-      const isAlchemyUnlocked = GameState.getInstance().isBuildableUnlocked('alchemy_station');
-      if (isAlchemyUnlocked || alchemyStat.level > 0 || alchemyStat.currentExp > 0) {
+      if (alchemyStat.level >= 1) {
         this.hudAlchemyRowEl.style.display = 'flex';
         const nextExp = LevelingSystem.expForNextLevel(alchemyStat.level);
         this.alchemyProfTextEl.innerText = `Level ${alchemyStat.level} (${alchemyStat.currentExp}/${nextExp} EXP)`;
@@ -1289,36 +1309,37 @@ export class HUD {
       }
 
       // 6. Proficiencies
-      const shortSwordsStat = member.progression.getProficiencyStat('short_swords');
-      const swordsEl = this.partyOverviewRosterEl.querySelector<HTMLElement>(`[data-party-prof-swords="${i}"]`);
-      if (swordsEl) {
-        const nextSwordsExp = LevelingSystem.expForNextLevel(shortSwordsStat.level);
-        this.setElementTextIfChanged(swordsEl, `Lv ${shortSwordsStat.level} (${shortSwordsStat.currentExp}/${nextSwordsExp})`);
-      }
-
-      const daggersStat = member.progression.getProficiencyStat('daggers');
-      const daggersEl = this.partyOverviewRosterEl.querySelector<HTMLElement>(`[data-party-prof-daggers="${i}"]`);
-      if (daggersEl) {
-        const nextDaggersExp = LevelingSystem.expForNextLevel(daggersStat.level);
-        this.setElementTextIfChanged(daggersEl, `Lv ${daggersStat.level} (${daggersStat.currentExp}/${nextDaggersExp})`);
-      }
-
-      const dwStat = member.progression.getProficiencyStat('dual_wielding');
-      const isDwUnlocked = member.progression.isDualWieldUnlocked();
-      const dwEl = this.partyOverviewRosterEl.querySelector<HTMLElement>(`[data-party-prof-dw="${i}"]`);
-      if (dwEl) {
-        if (isDwUnlocked) {
-          const nextDwExp = LevelingSystem.expForNextLevel(dwStat.level);
-          this.setElementTextIfChanged(dwEl, `Lv ${dwStat.level} (${dwStat.currentExp}/${nextDwExp})`);
-          if (dwEl.style.color !== '#c084fc') dwEl.style.color = '#c084fc';
+      let hasAnyRevealed = false;
+      for (const [statId, stat] of member.progression.getAllProficiencyStats().entries()) {
+        const rowEl = this.partyOverviewRosterEl.querySelector<HTMLElement>(`[data-party-prof-row="${i}-${statId}"]`);
+        const valEl = this.partyOverviewRosterEl.querySelector<HTMLElement>(`[data-party-prof-val="${i}-${statId}"]`);
+        if (stat.level >= 1) {
+          hasAnyRevealed = true;
+          if (rowEl && rowEl.style.display !== 'flex') {
+            rowEl.style.display = 'flex';
+          }
+          if (valEl) {
+            const nextExp = LevelingSystem.expForNextLevel(stat.level);
+            this.setElementTextIfChanged(valEl, `Lv ${stat.level} (${stat.currentExp}/${nextExp})`);
+          }
         } else {
-          this.setElementTextIfChanged(dwEl, 'Locked');
-          if (dwEl.style.color !== '#6b7280') dwEl.style.color = '#6b7280';
+          if (rowEl && rowEl.style.display !== 'none') {
+            rowEl.style.display = 'none';
+          }
+        }
+      }
+      const noProfEl = this.partyOverviewRosterEl.querySelector<HTMLElement>(`[data-party-no-prof="${i}"]`);
+      if (noProfEl) {
+        const targetDisplay = hasAnyRevealed ? 'none' : 'block';
+        if (noProfEl.style.display !== targetDisplay) {
+          noProfEl.style.display = targetDisplay;
         }
       }
 
       // 7. Dual Wield Penalty
+      const isDwUnlocked = member.progression.isDualWieldUnlocked();
       if (isDwUnlocked) {
+        const dwStat = member.progression.getProficiencyStat('dual_wielding');
         const dwPenaltyEl = this.partyOverviewRosterEl.querySelector<HTMLElement>(`[data-party-dw-penalty="${i}"]`);
         if (dwPenaltyEl) {
           const dwPenaltyPct = Math.round(member.progression.getDualWieldPenalty() * 100);
@@ -1358,11 +1379,30 @@ export class HUD {
       const color = avatarColors[i % avatarColors.length];
       const isDowned = member.state === 'downed';
 
-      const shortSwordsStat = member.progression.getProficiencyStat('short_swords');
-      const daggersStat = member.progression.getProficiencyStat('daggers');
       const dwStat = member.progression.getProficiencyStat('dual_wielding');
       const isDwUnlocked = member.progression.isDualWieldUnlocked();
       const dwPenaltyPct = Math.round(member.progression.getDualWieldPenalty() * 100);
+
+      let hasAnyRevealed = false;
+      let profRowsHtml = '';
+      for (const [statId, stat] of member.progression.getAllProficiencyStats().entries()) {
+        const isRevealed = stat.level >= 1;
+        if (isRevealed) hasAnyRevealed = true;
+        const nextExp = LevelingSystem.expForNextLevel(stat.level);
+        const displayName = this.getStatDisplayName(statId);
+        const statColor = this.getStatColor(statId);
+        let legacyAttr = '';
+        if (statId === 'short_swords') legacyAttr = `data-party-prof-swords="${i}"`;
+        else if (statId === 'daggers') legacyAttr = `data-party-prof-daggers="${i}"`;
+        else if (statId === 'dual_wielding') legacyAttr = `data-party-prof-dw="${i}"`;
+
+        profRowsHtml += `
+          <div class="party-stat-row" data-party-prof-row="${i}-${statId}" style="display: ${isRevealed ? 'flex' : 'none'};">
+            <span>${displayName}:</span>
+            <span class="party-stat-val" data-party-prof-val="${i}-${statId}" ${legacyAttr} style="color: ${statColor};">Lv ${stat.level} (${stat.currentExp}/${nextExp})</span>
+          </div>
+        `;
+      }
 
       // Main weapon options
       let mainOptions = '';
@@ -1489,20 +1529,8 @@ export class HUD {
 
           <div class="party-equip-box">
             <div style="font-weight: bold; color: #fbbf24; font-size: 10px; text-transform: uppercase;">Proficiencies</div>
-            <div class="party-stat-row">
-              <span>Short Swords:</span>
-              <span class="party-stat-val" data-party-prof-swords="${i}" style="color: #60a5fa;">Lv ${shortSwordsStat.level} (${shortSwordsStat.currentExp}/${LevelingSystem.expForNextLevel(shortSwordsStat.level)})</span>
-            </div>
-            <div class="party-stat-row">
-              <span>Daggers:</span>
-              <span class="party-stat-val" data-party-prof-daggers="${i}" style="color: #2dd4bf;">Lv ${daggersStat.level} (${daggersStat.currentExp}/${LevelingSystem.expForNextLevel(daggersStat.level)})</span>
-            </div>
-            <div class="party-stat-row">
-              <span>Dual Wielding:</span>
-              <span class="party-stat-val" data-party-prof-dw="${i}" style="color: ${isDwUnlocked ? '#c084fc' : '#6b7280'};">
-                ${isDwUnlocked ? `Lv ${dwStat.level} (${dwStat.currentExp}/${LevelingSystem.expForNextLevel(dwStat.level)})` : 'Locked'}
-              </span>
-            </div>
+            <div data-party-no-prof="${i}" style="color: #6b7280; font-size: 10px; font-style: italic; display: ${hasAnyRevealed ? 'none' : 'block'};">No proficiencies discovered</div>
+            ${profRowsHtml}
           </div>
 
           <div class="party-equip-box">
@@ -1627,15 +1655,15 @@ export class HUD {
     }
   }
 
-  public showSkillDiscoveredModal(skillDef: HiddenSkillDef): void {
+  public showSkillDiscoveredModal(skillDef: { name: string; description?: string; tierEffects?: any[] }): void {
     if (this.discoveredSkillNameEl) {
       this.discoveredSkillNameEl.innerText = skillDef.name;
     }
     if (this.discoveredSkillDescEl) {
       const tier1 = skillDef.tierEffects?.find((t) => t.level === 1);
       this.discoveredSkillDescEl.innerText = tier1
-        ? `${tier1.description} — ${skillDef.description}`
-        : skillDef.description;
+        ? `${tier1.description} — ${skillDef.description || ''}`
+        : (skillDef.description || '');
     }
     if (this.skillDiscoveredModalEl) {
       this.skillDiscoveredModalEl.classList.add('active');
@@ -1647,6 +1675,7 @@ export class HUD {
         }
       }, 5000);
     }
+    this.showToast(`✨ Skill Discovered: ${skillDef.name}!`, 'success', 4000);
   }
 
   // --- RESEARCH TREE MODAL METHODS (Milestone 6) ---
@@ -1760,9 +1789,13 @@ export class HUD {
 
     // 1. Alchemy proficiency header
     const alchemyStat = progression.getProficiencyStat('alchemy');
-    const nextExp = LevelingSystem.expForNextLevel(alchemyStat.level);
     if (this.alchemyModalProfEl) {
-      this.alchemyModalProfEl.innerText = `Level ${alchemyStat.level} (${alchemyStat.currentExp}/${nextExp} EXP)`;
+      if (alchemyStat.level >= 1) {
+        const nextExp = LevelingSystem.expForNextLevel(alchemyStat.level);
+        this.alchemyModalProfEl.innerText = `Level ${alchemyStat.level} (${alchemyStat.currentExp}/${nextExp} EXP)`;
+      } else {
+        this.alchemyModalProfEl.innerText = 'Untrained';
+      }
     }
 
     // 2. Resource counts
@@ -2053,5 +2086,24 @@ export class HUD {
       }
     }
     return ate;
+  }
+
+  public getStatDisplayName(statId: string): string {
+    const dataLoader = DataLoader.getInstance();
+    const statDef = dataLoader.getTrainableStatDef(statId);
+    if (statDef?.name) return statDef.name;
+    return statId.split('_').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+  }
+
+  public getStatColor(statId: string): string {
+    switch (statId) {
+      case 'short_swords': return '#60a5fa';
+      case 'daggers': return '#2dd4bf';
+      case 'shields': return '#38bdf8';
+      case 'dual_wielding': return '#c084fc';
+      case 'construction': return '#f59e0b';
+      case 'alchemy': return '#10b981';
+      default: return '#34d399';
+    }
   }
 }

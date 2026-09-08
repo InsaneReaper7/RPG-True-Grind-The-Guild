@@ -650,8 +650,11 @@ export class GameState {
     }
 
     // Downed state restoration
+    // Two-bar system: Downed only occurs when BOTH Main HP and Critical HP reach zero.
+    // When Main HP <= 0 but Critical HP > 0, the character is in Critical state (conscious, warning-only), NOT downed.
     const leaderSnap = snap.party?.[0];
-    if (leaderSnap?.state === 'downed' || player.hp <= 0) {
+    const isLeaderDowned = (leaderSnap?.state === 'downed' || (player.hp <= 0 && player.criticalHp <= 0)) && player.hp <= 0 && player.criticalHp <= 0;
+    if (isLeaderDowned) {
       player.state = 'downed';
       (player as any).avatarSprite?.setAngle(90);
       (player as any).avatarSprite?.setAlpha(0.6);

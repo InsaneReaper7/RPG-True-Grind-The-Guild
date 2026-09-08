@@ -12,6 +12,9 @@
   "equippedSkillIds": ["power_strike"],
   "proficiencies": {
     "short_swords": { "level": 0, "currentExp": 0 },
+    "daggers": { "level": 0, "currentExp": 0 },
+    "shields": { "level": 0, "currentExp": 0 },
+    "dual_wielding": { "level": 0, "currentExp": 0 },
     "construction": { "level": 0, "currentExp": 0 },
     "alchemy": { "level": 0, "currentExp": 0 },
     "evasion": { "level": 0, "currentExp": 0 },

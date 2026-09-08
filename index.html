@@ -814,13 +814,13 @@
           <span>Equipped Weapon:</span>
           <span id="equipped-weapon-text" class="hud-stat-value">Short Swords</span>
         </div>
-        <div class="hud-stat">
-          <span>Short Swords:</span>
-          <span id="proficiency-text" class="hud-stat-value">Level 0 (0/50 EXP) [Unranked]</span>
+        <div class="hud-stat" id="hud-proficiency-row" style="display: none;">
+          <span id="proficiency-label">Short Swords:</span>
+          <span id="proficiency-text" class="hud-stat-value"></span>
         </div>
-        <div class="hud-stat" id="hud-construction-row">
+        <div class="hud-stat" id="hud-construction-row" style="display: none;">
           <span>Construction:</span>
-          <span id="construction-prof-text" class="hud-stat-value" style="color: #f59e0b;">Level 0 (0/50 EXP) (Untrained)</span>
+          <span id="construction-prof-text" class="hud-stat-value" style="color: #f59e0b;"></span>
         </div>
         <div class="hud-stat" id="hud-alchemy-row" style="display: none;">
           <span>Alchemy:</span>
@@ -1037,7 +1037,7 @@
         <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; background: rgba(31, 41, 55, 0.7); padding: 8px 12px; border-radius: 6px; margin-bottom: 14px; border: 1px solid rgba(255,255,255,0.1); font-size: 12px;">
           <div>
             <span style="color: #9ca3af;">Alchemy:</span>
-            <div id="alchemy-modal-prof" style="color: #10b981; font-weight: bold;">Level 0 (0/50 EXP)</div>
+            <div id="alchemy-modal-prof" style="color: #10b981; font-weight: bold;">Untrained</div>
           </div>
           <div>
             <span style="color: #9ca3af;">Wood Stockpile:</span>

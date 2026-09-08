@@ -214,6 +214,9 @@ export class Player extends Entity {
     this.targetEntity = null;
     if (hadTarget) {
       this.stopMovement();
+      if (this.state === 'attacking') {
+        this.state = 'idle';
+      }
     }
   }
 
@@ -298,6 +301,11 @@ export class Player extends Entity {
 
     const progData = this.progression.getSnapshotData();
 
+    // Two-bar system: Downed only occurs when BOTH Main HP and Critical HP reach zero.
+    // When Main HP <= 0 but Critical HP > 0, the character is in Critical state (conscious, warning-only), NOT downed.
+    const isDowned = (this.state === 'downed' || (this.hp <= 0 && this.criticalHp <= 0)) && this.hp <= 0 && this.criticalHp <= 0;
+    const currentState = isDowned ? 'downed' : (this.state === 'downed' ? 'idle' : this.state);
+
     return {
       id: this.id,
       name: this.entityName,
@@ -320,7 +328,7 @@ export class Player extends Entity {
       bookLearnedSkills: Array.from(this.bookLearnedSkills),
       hunger: this.hunger,
       mood: this.mood,
-      state: this.state
+      state: currentState
     };
   }
 
@@ -383,7 +391,10 @@ export class Player extends Entity {
     }
 
     // Downed state restoration
-    if (snapshot.state === 'downed' || this.hp <= 0) {
+    // Two-bar system: Downed only occurs when BOTH Main HP and Critical HP reach zero.
+    // When Main HP <= 0 but Critical HP > 0, the character is in Critical state (conscious, warning-only), NOT downed.
+    const isDowned = (snapshot.state === 'downed' || (this.hp <= 0 && this.criticalHp <= 0)) && this.hp <= 0 && this.criticalHp <= 0;
+    if (isDowned) {
       this.state = 'downed';
       this.avatarSprite.setAngle(90);
       this.avatarSprite.setAlpha(0.6);

@@ -35,9 +35,13 @@ export class ProgressionSystem {
 
   constructor(classesData: ClassesData) {
     this.classesData = classesData;
-    // Default trainable stats
+    this.initDefaultProficiencies();
+  }
+
+  private initDefaultProficiencies(): void {
     this.proficiencies.set('short_swords', { level: 0, currentExp: 0 });
     this.proficiencies.set('daggers', { level: 0, currentExp: 0 });
+    this.proficiencies.set('shields', { level: 0, currentExp: 0 });
     this.proficiencies.set('dual_wielding', { level: 0, currentExp: 0 });
     this.proficiencies.set('construction', { level: 0, currentExp: 0 });
     this.proficiencies.set('alchemy', { level: 0, currentExp: 0 });
@@ -95,8 +99,12 @@ export class ProgressionSystem {
     return this.classLevels.get(classId) || 0;
   }
 
+  public isStatRevealed(statId: string): boolean {
+    return this.getProficiencyLevel(statId) >= 1;
+  }
+
   public isHiddenSkillRevealed(skillId: string): boolean {
-    return this.getProficiencyLevel(skillId) >= 1;
+    return this.isStatRevealed(skillId);
   }
 
   public getClassHiddenBonus(skillId: string): number {
@@ -129,8 +137,8 @@ export class ProgressionSystem {
       this.checkClassUnlocks();
       this.checkDualWieldUnlock();
 
-      if (oldLevel === 0 && stat.level >= 1 && ProgressionSystem.HIDDEN_SKILL_IDS.includes(id)) {
-        console.log(`[Progression] ✨ HIDDEN SKILL DISCOVERED: '${id}' reached Level ${stat.level}! ✨`);
+      if (oldLevel === 0 && stat.level >= 1) {
+        console.log(`[Progression] ✨ SKILL DISCOVERED: '${id}' reached Level ${stat.level}! ✨`);
         for (const cb of this.onSkillDiscoveredCallbacks) {
           cb({ skillId: id, level: stat.level });
         }
@@ -278,7 +286,7 @@ export class ProgressionSystem {
     classLevels: Record<string, number>;
     unlockedClasses: string[];
   }): void {
-    this.proficiencies.clear();
+    this.initDefaultProficiencies();
     for (const [k, v] of Object.entries(data.proficiencies)) {
       if (typeof v === 'number') {
         this.proficiencies.set(k, { level: v, currentExp: 0 });

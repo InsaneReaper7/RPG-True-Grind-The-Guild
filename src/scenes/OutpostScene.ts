@@ -160,20 +160,8 @@ export class OutpostScene extends Phaser.Scene {
       (id: string) => this.selectBuildable(id)
     );
 
-    // Progression Unlock Notification
-    this.progressionSystem.onClassUnlocked((event) => {
-      console.log(`%c[UNLOCK] ${event.classDef.name} Class Unlocked!`, 'color: #f59e0b; font-weight: bold; font-size: 14px;');
-      this.hud.showClassUnlockModal(event.classDef);
-    });
-
-    // Hidden Skill Discovery Notification
-    this.progressionSystem.onSkillDiscovered((event) => {
-      const skillDef = DataLoader.getInstance().getHiddenSkill(event.skillId);
-      if (skillDef) {
-        console.log(`%c[DISCOVERY] ${skillDef.name} Skill Discovered!`, 'color: #34d399; font-weight: bold; font-size: 14px;');
-        this.hud.showSkillDiscoveredModal(skillDef);
-      }
-    });
+    // Progression & Skill Discovery Notifications
+    this.bindProgressionEvents(this.progressionSystem);
 
     // Restore any previously placed structures from GameState
     this.restorePlacedBuildables();
@@ -194,6 +182,9 @@ export class OutpostScene extends Phaser.Scene {
         const snap = partySnapshots[i];
         const snapWeapon = dataLoader.getWeapon(snap.equippedWeaponId) || startingWeapon;
         const memberProg = (i === 0) ? this.progressionSystem : new ProgressionSystem(classesData);
+        if (i > 0) {
+          this.bindProgressionEvents(memberProg, snap.name || `Companion ${i}`);
+        }
         const snapAvatar = snap.avatarTextureKey || (i === 0 ? 'player-avatar' : 'companion-avatar');
         const spawnTile = this.findOpenAdjacentTile(this.portalPos, undefined, claimedSpawn);
         claimedSpawn.add(`${spawnTile.x},${spawnTile.y}`);
@@ -753,6 +744,7 @@ export class OutpostScene extends Phaser.Scene {
     const spawnY = spawnTile.y;
 
     const companionProgression = new ProgressionSystem(dataLoader.getClassesData());
+    this.bindProgressionEvents(companionProgression, companionName);
     const companion = new Player(
       this,
       spawnX,
@@ -771,6 +763,21 @@ export class OutpostScene extends Phaser.Scene {
     this.hud.showToast(`👥 ${companionName} joined the party!`, 'success', 3000);
     console.log(`[OutpostScene] Spawned companion ${companionName} at (${spawnX}, ${spawnY}) with ${daggerWeapon.name}`);
     return true;
+  }
+
+  private bindProgressionEvents(prog: ProgressionSystem, memberName?: string): void {
+    prog.onClassUnlocked((event) => {
+      console.log(`%c[UNLOCK] ${event.classDef.name} Class Unlocked${memberName ? ' for ' + memberName : ''}!`, 'color: #f59e0b; font-weight: bold; font-size: 14px;');
+      this.hud.showClassUnlockModal(event.classDef);
+    });
+
+    prog.onSkillDiscovered((event) => {
+      const skillDef = DataLoader.getInstance().getTrainableStatDef(event.skillId);
+      if (skillDef) {
+        console.log(`%c[DISCOVERY] ${skillDef.name} Skill Discovered${memberName ? ' by ' + memberName : ''}!`, 'color: #34d399; font-weight: bold; font-size: 14px;');
+        this.hud.showSkillDiscoveredModal(skillDef);
+      }
+    });
   }
 
   // --- BUILD MODE METHODS ---

@@ -20,7 +20,7 @@ const mockClassesData: ClassesData = {
   ]
 };
 
-// Test 1: All 9 trainable stats are present at initialization with Level 0 and 0 EXP
+// Test 1: All 13 trainable stats are present at initialization with Level 0 and 0 EXP
 {
   const progression = new ProgressionSystem(mockClassesData);
   const stats = progression.getAllProficiencyStats();
@@ -28,6 +28,7 @@ const mockClassesData: ClassesData = {
   const expectedIds = [
     'short_swords',
     'daggers',
+    'shields',
     'dual_wielding',
     'construction',
     'alchemy',
@@ -53,7 +54,7 @@ const mockClassesData: ClassesData = {
     assert.equal(line, `${id}: Level 0 (0/50 EXP)`, `Formatted line for '${id}' mismatch`);
   }
 
-  console.log('✔ Test 1 passed: All 9 trainable stats present at initialization in Level 0 (0/50 EXP) state');
+  console.log('✔ Test 1 passed: All 13 trainable stats present at initialization in Level 0 (0/50 EXP) state');
 }
 
 // Test 2: Partial EXP on hidden skill visible in debug panel stats while HUD reveal remains FALSE

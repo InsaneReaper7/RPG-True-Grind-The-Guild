@@ -68,6 +68,8 @@ export class Entity extends Phaser.GameObjects.Container {
     this.setDepth(this.y);
   }
 
+  protected blockedWaitMs: number = 0;
+
   public setGridPosition(x: number, y: number): void {
     this.gridPos = { x, y };
     this.x = x * this.tileSize + this.tileSize / 2;
@@ -76,12 +78,14 @@ export class Entity extends Phaser.GameObjects.Container {
     this.targetWorldPos = null;
     this.path = [];
     this.claimedDestination = null;
+    this.blockedWaitMs = 0;
   }
 
   public stopMovement(): void {
     this.path = [];
     this.targetWorldPos = null;
     this.claimedDestination = null;
+    this.blockedWaitMs = 0;
     if (this.state === 'moving') {
       this.state = 'idle';
     }
@@ -96,6 +100,7 @@ export class Entity extends Phaser.GameObjects.Container {
 
     if (!path || path.length === 0) {
       this.claimedDestination = null;
+      this.blockedWaitMs = 0;
       if (onComplete) onComplete();
       return;
     }
@@ -107,6 +112,7 @@ export class Entity extends Phaser.GameObjects.Container {
 
     this.path = remainingPath;
     this.onPathCompleteCallback = onComplete;
+    this.blockedWaitMs = 0;
 
     if (this.path.length > 0) {
       this.claimedDestination = { ...this.path[this.path.length - 1] };
@@ -130,6 +136,7 @@ export class Entity extends Phaser.GameObjects.Container {
       this.targetWorldPos = null;
       this.claimedDestination = null;
       this.state = 'idle';
+      this.blockedWaitMs = 0;
       if (this.onPathCompleteCallback) {
         const cb = this.onPathCompleteCallback;
         this.onPathCompleteCallback = undefined;
@@ -138,6 +145,15 @@ export class Entity extends Phaser.GameObjects.Container {
       return;
     }
 
+    const nextTile = this.path[0];
+    const scene = this.scene as any;
+    // Dynamic anti-stack check: Never enter a tile currently occupied by another living unit!
+    if (scene && typeof scene.isTileOccupied === 'function' && scene.isTileOccupied(nextTile.x, nextTile.y, this)) {
+      // Tile occupied by another entity: yield this tick and hold position until tile is free
+      return;
+    }
+
+    this.blockedWaitMs = 0;
     const nextGridPos = this.path.shift()!;
     this.gridPos = nextGridPos;
     this.targetWorldPos = {
@@ -302,21 +318,39 @@ export class Entity extends Phaser.GameObjects.Container {
     this.updateStatusEffects(delta);
 
     if (this.state === 'downed' || this.state === 'dead') return;
-
-    if (this.state === 'moving' && this.targetWorldPos) {
-      const distance = Phaser.Math.Distance.Between(this.x, this.y, this.targetWorldPos.x, this.targetWorldPos.y);
-      const step = (this.moveSpeed * delta) / 1000;
-
-      if (distance <= step) {
-        this.x = this.targetWorldPos.x;
-        this.y = this.targetWorldPos.y;
-        this.setDepth(this.y);
+ 
+    if (this.state === 'moving') {
+      // If we don't have an active targetWorldPos but still have path steps,
+      // it means we yielded because the next tile was occupied. Check if it opened up.
+      if (!this.targetWorldPos && this.path.length > 0) {
+        this.blockedWaitMs += delta;
+        if (this.blockedWaitMs > 400) {
+          // Blocked too long by stationary unit: stop movement so repath logic can find an open alternative route
+          this.path = [];
+          this.claimedDestination = null;
+          this.state = 'idle';
+          this.blockedWaitMs = 0;
+          return;
+        }
         this.advanceToNextTileInPath();
-      } else {
-        const angle = Phaser.Math.Angle.Between(this.x, this.y, this.targetWorldPos.x, this.targetWorldPos.y);
-        this.x += Math.cos(angle) * step;
-        this.y += Math.sin(angle) * step;
-        this.setDepth(this.y);
+      }
+
+      if (this.targetWorldPos) {
+        const distance = Phaser.Math.Distance.Between(this.x, this.y, this.targetWorldPos.x, this.targetWorldPos.y);
+        const step = (this.moveSpeed * delta) / 1000;
+
+        if (distance <= step) {
+          this.x = this.targetWorldPos.x;
+          this.y = this.targetWorldPos.y;
+          this.setDepth(this.y);
+          this.targetWorldPos = null;
+          this.advanceToNextTileInPath();
+        } else {
+          const angle = Phaser.Math.Angle.Between(this.x, this.y, this.targetWorldPos.x, this.targetWorldPos.y);
+          this.x += Math.cos(angle) * step;
+          this.y += Math.sin(angle) * step;
+          this.setDepth(this.y);
+        }
       }
     }
   }

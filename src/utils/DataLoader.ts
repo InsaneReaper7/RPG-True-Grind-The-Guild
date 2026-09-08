@@ -121,7 +121,7 @@ export class DataLoader {
   }
 
   public getWeapon(id: string): WeaponDef | undefined {
-    return this.weaponsData.weapons.find((w) => w.id === id);
+    return this.weaponsData?.weapons?.find((w) => w.id === id);
   }
 
   public getAllWeapons(): WeaponDef[] {
@@ -175,6 +175,52 @@ export class DataLoader {
 
   public getHiddenSkill(id: string): HiddenSkillDef | undefined {
     return this.hiddenSkillsData?.hiddenSkills.find((s) => s.id === id);
+  }
+
+  public getTrainableStatDef(id: string): { id: string; name: string; description: string; tierEffects?: any[] } | undefined {
+    const hidden = this.getHiddenSkill(id);
+    if (hidden) return hidden;
+
+    const weapon = this.getWeapon(id);
+    if (weapon) {
+      return {
+        id: weapon.id,
+        name: weapon.name,
+        description: weapon.category === 'offhand'
+          ? 'Proficiency with shields to block and deflect incoming attacks.'
+          : `Proficiency with ${weapon.name.toLowerCase()} in melee and combat.`
+      };
+    }
+
+    if (id === 'construction') {
+      return {
+        id: 'construction',
+        name: 'Construction',
+        description: 'Building, repairing, and upgrading outpost structures.'
+      };
+    }
+
+    if (id === 'alchemy') {
+      return {
+        id: 'alchemy',
+        name: 'Alchemy',
+        description: 'Brewing remedies, potions, and crafting medicine.'
+      };
+    }
+
+    if (id === 'dual_wielding') {
+      return {
+        id: 'dual_wielding',
+        name: 'Dual Wielding',
+        description: 'Wielding two one-handed melee weapons simultaneously in combat.'
+      };
+    }
+
+    return {
+      id,
+      name: id.split('_').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),
+      description: `Proficiency in ${id}.`
+    };
   }
 
   public getSkillBooksData(): SkillBooksData {

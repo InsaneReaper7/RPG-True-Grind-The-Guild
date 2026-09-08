@@ -11,6 +11,7 @@ import { HUD } from '../ui/HUD';
 import { GameState } from '../systems/GameState';
 import { GridPos } from '../types/game';
 import { HiddenSkillSystem } from '../systems/HiddenSkillSystem';
+import { TileClaimDebugOverlay } from '../ui/TileClaimDebugOverlay';
 
 export class MainScene extends Phaser.Scene {
   private mapWidth: number = 20;
@@ -28,6 +29,7 @@ export class MainScene extends Phaser.Scene {
   private combatSystem!: CombatSystem;
   private progressionSystem!: ProgressionSystem;
   private hud!: HUD;
+  private tileClaimOverlay!: TileClaimDebugOverlay;
 
   private portalSprite!: Phaser.GameObjects.Sprite;
   private portalPos: GridPos = { x: 2, y: 2 };
@@ -122,20 +124,8 @@ export class MainScene extends Phaser.Scene {
     this.hud.setLocation('Dungeon Floor 1', false);
     GameState.getInstance().setSafeZone(false);
 
-    // Progression Unlock Notification
-    this.progressionSystem.onClassUnlocked((event) => {
-      console.log(`%c[UNLOCK] ${event.classDef.name} Class Unlocked!`, 'color: #f59e0b; font-weight: bold; font-size: 14px;');
-      this.hud.showClassUnlockModal(event.classDef);
-    });
-
-    // Hidden Skill Discovery Notification
-    this.progressionSystem.onSkillDiscovered((event) => {
-      const skillDef = DataLoader.getInstance().getHiddenSkill(event.skillId);
-      if (skillDef) {
-        console.log(`%c[DISCOVERY] ${skillDef.name} Skill Discovered!`, 'color: #34d399; font-weight: bold; font-size: 14px;');
-        this.hud.showSkillDiscoveredModal(skillDef);
-      }
-    });
+    // Progression & Skill Discovery Notifications
+    this.bindProgressionEvents(this.progressionSystem);
 
     // 5. Spawn Party (Hero & Companions)
     const partySnapshots = GameState.getInstance().getPartySnapshots();
@@ -153,6 +143,9 @@ export class MainScene extends Phaser.Scene {
         const snap = partySnapshots[i];
         const snapWeapon = dataLoader.getWeapon(snap.equippedWeaponId) || startingWeapon;
         const memberProg = (i === 0) ? this.progressionSystem : new ProgressionSystem(classesData);
+        if (i > 0) {
+          this.bindProgressionEvents(memberProg, snap.name || `Companion ${i}`);
+        }
         const snapAvatar = snap.avatarTextureKey || (i === 0 ? 'player-avatar' : 'companion-avatar');
         const spawnTile = this.findOpenAdjacentTile(this.portalPos, undefined, claimedSpawn);
         claimedSpawn.add(`${spawnTile.x},${spawnTile.y}`);
@@ -240,6 +233,11 @@ export class MainScene extends Phaser.Scene {
     // 7. Setup Camera Controls
     this.cameras.main.setBounds(0, 0, this.mapWidth * this.tileSize, this.mapHeight * this.tileSize);
     this.cameras.main.startFollow(this.player, true, 0.1, 0.1);
+
+    // 8. Initialize Tile-Claim Debug Overlay (Key [V] to toggle)
+    this.tileClaimOverlay = new TileClaimDebugOverlay(this, this.party, this.enemies, this.tileSize);
+    (window as any).__tileClaimOverlay = this.tileClaimOverlay;
+    (window as any).__toggleTileClaimOverlay = () => this.tileClaimOverlay.toggle();
 
     // Input Controls: WASD, Space, R, K, X, Z, C, P, T
     if (this.input.keyboard) {
@@ -469,58 +467,84 @@ export class MainScene extends Phaser.Scene {
   }
 
   public findOpenAdjacentTile(center: GridPos, preferredNear?: GridPos, claimedTiles?: Set<string>, excludeEntity?: Entity): GridPos {
-    const offsets = [
+    const r1Offsets = [
       { x: 1, y: 0 }, { x: -1, y: 0 }, { x: 0, y: 1 }, { x: 0, y: -1 },
-      { x: 1, y: 1 }, { x: -1, y: 1 }, { x: 1, y: -1 }, { x: -1, y: -1 },
+      { x: 1, y: 1 }, { x: -1, y: 1 }, { x: 1, y: -1 }, { x: -1, y: -1 }
+    ];
+
+    const isCandidateOpen = (tx: number, ty: number): boolean => {
+      if (tx <= 0 || tx >= this.mapWidth - 1 || ty <= 0 || ty >= this.mapHeight - 1) return false;
+      if (this.gridMatrix[ty]?.[tx] !== 0) return false;
+      const key = `${tx},${ty}`;
+      if (claimedTiles?.has(key)) return false;
+      if (this.isTileOccupied(tx, ty, excludeEntity)) return false;
+      if (this.isTileClaimed(tx, ty, excludeEntity)) return false;
+      return true;
+    };
+
+    // 1. Prioritize true adjacent tiles (radius 1)
+    const r1Candidates: GridPos[] = [];
+    for (const off of r1Offsets) {
+      const tx = center.x + off.x;
+      const ty = center.y + off.y;
+      if (isCandidateOpen(tx, ty)) {
+        r1Candidates.push({ x: tx, y: ty });
+      }
+    }
+
+    if (r1Candidates.length > 0) {
+      if (preferredNear) {
+        r1Candidates.sort((a, b) => {
+          const distA = Math.hypot(a.x - preferredNear.x, a.y - preferredNear.y);
+          const distB = Math.hypot(b.x - preferredNear.x, b.y - preferredNear.y);
+          return distA - distB;
+        });
+      }
+      return r1Candidates[0];
+    }
+
+    // 2. Fallback: Radius 2 only if all 8 adjacent tiles are blocked/occupied
+    const r2Offsets = [
       { x: 2, y: 0 }, { x: -2, y: 0 }, { x: 0, y: 2 }, { x: 0, y: -2 },
       { x: 2, y: 1 }, { x: 2, y: -1 }, { x: -2, y: 1 }, { x: -2, y: -1 },
       { x: 1, y: 2 }, { x: -1, y: 2 }, { x: 1, y: -2 }, { x: -1, y: -2 }
     ];
-
-    const candidates: GridPos[] = [];
-    for (const off of offsets) {
+    const r2Candidates: GridPos[] = [];
+    for (const off of r2Offsets) {
       const tx = center.x + off.x;
       const ty = center.y + off.y;
-      if (
-        tx > 0 && tx < this.mapWidth - 1 &&
-        ty > 0 && ty < this.mapHeight - 1 &&
-        this.gridMatrix[ty]?.[tx] === 0
-      ) {
-        const key = `${tx},${ty}`;
-        if (!claimedTiles?.has(key) && !this.isTileOccupied(tx, ty, excludeEntity) && !this.isTileClaimed(tx, ty, excludeEntity)) {
-          candidates.push({ x: tx, y: ty });
-        }
+      if (isCandidateOpen(tx, ty)) {
+        r2Candidates.push({ x: tx, y: ty });
       }
     }
 
-    if (candidates.length > 0) {
+    if (r2Candidates.length > 0) {
       if (preferredNear) {
-        candidates.sort((a, b) => {
-          const distA = Math.max(Math.abs(a.x - preferredNear.x), Math.abs(a.y - preferredNear.y));
-          const distB = Math.max(Math.abs(b.x - preferredNear.x), Math.abs(b.y - preferredNear.y));
+        r2Candidates.sort((a, b) => {
+          const distA = Math.hypot(a.x - preferredNear.x, a.y - preferredNear.y);
+          const distB = Math.hypot(b.x - preferredNear.x, b.y - preferredNear.y);
           return distA - distB;
         });
       }
-      return candidates[0];
-    }
-
-    // Fallback: first walkable unclaimed tile
-    for (const off of offsets) {
-      const tx = center.x + off.x;
-      const ty = center.y + off.y;
-      if (
-        tx > 0 && tx < this.mapWidth - 1 &&
-        ty > 0 && ty < this.mapHeight - 1 &&
-        this.gridMatrix[ty]?.[tx] === 0
-      ) {
-        const key = `${tx},${ty}`;
-        if (!claimedTiles?.has(key) && !this.isTileClaimed(tx, ty, excludeEntity)) {
-          return { x: tx, y: ty };
-        }
-      }
+      return r2Candidates[0];
     }
 
     return center;
+  }
+
+  /**
+   * Dedicated combat attack positioning: delegates to the unified authoritative
+   * CombatSystem claim and positioning calculator to prevent duplicate logic or double-booking.
+   */
+  public findOpenAttackTileForMember(
+    enemy: Enemy,
+    member: Player,
+    claimedKeys?: Set<string>
+  ): GridPos | null {
+    if (this.combatSystem) {
+      return this.combatSystem.findOpenAttackTileForMember(enemy, member, claimedKeys);
+    }
+    return null;
   }
 
   public findNearestOpenTile(targetPos: GridPos, preferredNear?: GridPos, claimedTiles?: Set<string>, excludeEntity?: Entity): GridPos {
@@ -638,6 +662,7 @@ export class MainScene extends Phaser.Scene {
     const spawnY = spawnTile.y;
 
     const companionProgression = new ProgressionSystem(dataLoader.getClassesData());
+    this.bindProgressionEvents(companionProgression, companionName);
     const companion = new Player(
       this,
       spawnX,
@@ -656,6 +681,21 @@ export class MainScene extends Phaser.Scene {
     this.hud.showToast(`👥 ${companionName} joined the party!`, 'success', 3000);
     console.log(`[MainScene] Spawned companion ${companionName} at (${spawnX}, ${spawnY}) with ${daggerWeapon.name}`);
     return true;
+  }
+
+  private bindProgressionEvents(prog: ProgressionSystem, memberName?: string): void {
+    prog.onClassUnlocked((event) => {
+      console.log(`%c[UNLOCK] ${event.classDef.name} Class Unlocked${memberName ? ' for ' + memberName : ''}!`, 'color: #f59e0b; font-weight: bold; font-size: 14px;');
+      this.hud.showClassUnlockModal(event.classDef);
+    });
+
+    prog.onSkillDiscovered((event) => {
+      const skillDef = DataLoader.getInstance().getTrainableStatDef(event.skillId);
+      if (skillDef) {
+        console.log(`%c[DISCOVERY] ${skillDef.name} Skill Discovered${memberName ? ' by ' + memberName : ''}!`, 'color: #34d399; font-weight: bold; font-size: 14px;');
+        this.hud.showSkillDiscoveredModal(skillDef);
+      }
+    });
   }
 
   private triggerPortalTransition(): void {
@@ -731,63 +771,79 @@ export class MainScene extends Phaser.Scene {
     if (enemy.state === 'dead' || enemy.state === 'downed') return;
 
     console.log(`[Input] Engaged Enemy: ${enemy.entityName} at (${enemy.gridPos.x}, ${enemy.gridPos.y})`);
-    
-    // Explicit 1-to-1 mapping of tile key "x,y" to owning player
-    const tileOwner = new Map<string, Player>();
-    const memberDest = new Map<Player, GridPos>();
 
     const livingMembers = this.party.filter(m => m.state !== 'downed' && m.state !== 'dead');
 
-    // First pass: Members already adjacent or already en route to an exclusive adjacent tile
+    // Pass 0: Purge any stale targets and lingering destinations across all party members
+    for (const member of livingMembers) {
+      if (member.targetEntity !== enemy) {
+        member.clearTarget();
+      }
+    }
+
+    // Explicit 1-to-1 mapping of tile key "x,y" to owning player
+    const tileOwner = new Map<string, Player>();
+    const memberDest = new Map<Player, GridPos>();
+    const claimedKeys = new Set<string>();
+
+    // First pass: Strictly evaluate members that can CURRENTLY land an attack from their exact current tile
     for (const member of livingMembers) {
       member.setTarget(enemy);
       const dx = Math.abs(member.gridPos.x - enemy.gridPos.x);
       const dy = Math.abs(member.gridPos.y - enemy.gridPos.y);
+      const currentDist = Math.max(dx, dy);
 
-      // If already adjacent to the enemy
-      if (Math.max(dx, dy) <= 1 && (dx > 0 || dy > 0)) {
-        const key = `${member.gridPos.x},${member.gridPos.y}`;
-        if (!tileOwner.has(key)) {
-          tileOwner.set(key, member);
-          memberDest.set(member, { ...member.gridPos });
-          member.claimedDestination = null;
-          continue;
-        }
-      }
+      // Can this member attack from their current tile right now?
+      const canAttackNow = currentDist <= member.attackRangeTiles && currentDist > 0;
+      const key = `${member.gridPos.x},${member.gridPos.y}`;
 
-      // If already traveling to a valid adjacent tile
-      if (member.claimedDestination) {
-        const cdx = Math.abs(member.claimedDestination.x - enemy.gridPos.x);
-        const cdy = Math.abs(member.claimedDestination.y - enemy.gridPos.y);
-        const claimKey = `${member.claimedDestination.x},${member.claimedDestination.y}`;
-        if (Math.max(cdx, cdy) <= 1 && (cdx > 0 || cdy > 0) && !tileOwner.has(claimKey)) {
-          tileOwner.set(claimKey, member);
-          memberDest.set(member, { ...member.claimedDestination });
-          continue;
+      if (canAttackNow && !claimedKeys.has(key)) {
+        claimedKeys.add(key);
+        tileOwner.set(key, member);
+        memberDest.set(member, { ...member.gridPos });
+        member.claimedDestination = null;
+        if (member.isMoving()) {
+          member.stopMovement();
         }
       }
     }
 
-    // Second pass: Assign distinct surrounding adjacent tiles to all unassigned members
-    const claimedKeys = new Set<string>(tileOwner.keys());
-    for (const member of livingMembers) {
-      if (memberDest.has(member)) continue;
+    // Second pass: Assign distinct reachable tiles within attackRangeTiles to all unassigned members
+    // Sort unassigned members by distance to enemy so closer members claim closer attack slots
+    const unassigned = livingMembers.filter(m => !memberDest.has(m));
+    unassigned.sort((a, b) => {
+      const distA = Math.hypot(a.gridPos.x - enemy.gridPos.x, a.gridPos.y - enemy.gridPos.y);
+      const distB = Math.hypot(b.gridPos.x - enemy.gridPos.x, b.gridPos.y - enemy.gridPos.y);
+      return distA - distB;
+    });
 
-      const targetTile = this.findOpenAdjacentTile(enemy.gridPos, member.gridPos, claimedKeys, member);
-      const key = `${targetTile.x},${targetTile.y}`;
-      claimedKeys.add(key);
-      tileOwner.set(key, member);
-      memberDest.set(member, targetTile);
+    for (const member of unassigned) {
+      const targetTile = this.findOpenAttackTileForMember(enemy, member, claimedKeys);
+      if (targetTile) {
+        const key = `${targetTile.x},${targetTile.y}`;
+        claimedKeys.add(key);
+        tileOwner.set(key, member);
+        memberDest.set(member, targetTile);
+      }
     }
 
-    // Third pass: Execute movement for members that need to travel
+    // Third pass: Execute movement for members that need to travel to attack range
     const now = this.time.now;
     for (const member of livingMembers) {
       const dest = memberDest.get(member);
-      if (!dest) continue;
+      if (!dest) {
+        member.claimedDestination = null;
+        if (member.isMoving()) {
+          member.stopMovement();
+        }
+        continue;
+      }
 
       // Already on the tile
-      if (member.gridPos.x === dest.x && member.gridPos.y === dest.y && !member.isMoving()) {
+      if (member.gridPos.x === dest.x && member.gridPos.y === dest.y) {
+        if (member.isMoving()) {
+          member.stopMovement();
+        }
         member.claimedDestination = null;
         continue;
       }
@@ -801,17 +857,17 @@ export class MainScene extends Phaser.Scene {
       member.lastCombatRepathTimeMs = now; // Lock against immediate repath in CombatSystem
       member.state = 'moving';
 
-      // Party members path towards their designated adjacent tile; enemies are avoided
-      const enemyObstacles = this.enemies
-        .filter(e => e !== enemy && e.state !== 'dead' && e.state !== 'downed')
-        .map(e => e.gridPos);
+      // Party members path towards their designated adjacent tile; avoid enemies and stationary companions
+      const dynamicObstacles = this.getDynamicObstacles(member);
 
-      this.pathfinder.findPath(member.gridPos, dest, enemyObstacles).then((path) => {
+      this.pathfinder.findPath(member.gridPos, dest, dynamicObstacles).then((path) => {
         if (path.length > 0 && member.state !== 'downed' && member.state !== 'dead' && member.targetEntity === enemy) {
           member.followPath(path);
         } else {
-          if (!member.isMoving()) {
-            member.claimedDestination = null;
+          // No reachable path found to assigned tile: clean up destination claim
+          member.claimedDestination = null;
+          if (member.isMoving()) {
+            member.stopMovement();
           }
         }
       });
@@ -825,6 +881,10 @@ export class MainScene extends Phaser.Scene {
   }
 
   public update(time: number, delta: number): void {
+    // Standing Tile-Claim Debug Overlay update loop
+    if (this.tileClaimOverlay) {
+      this.tileClaimOverlay.update(time);
+    }
     // Debug Revive key listener [R]
     if (this.rKey && Phaser.Input.Keyboard.JustDown(this.rKey)) {
       for (const member of this.party) {

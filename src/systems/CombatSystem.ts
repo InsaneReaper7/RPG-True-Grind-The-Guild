@@ -152,8 +152,16 @@ export class CombatSystem {
     return candidateList[0];
   }
 
-  public isTileClaimedOrOccupiedByOther(tx: number, ty: number, currentUnit?: Entity): boolean {
+  public isTileClaimedOrOccupiedByOther(
+    tx: number,
+    ty: number,
+    currentUnit?: Entity,
+    reservedKeys?: Set<string>
+  ): boolean {
     if (this.pathfinder.isObstacle(tx, ty)) return true;
+    const key = `${tx},${ty}`;
+    if (reservedKeys && reservedKeys.has(key)) return true;
+
     for (const m of this.party) {
       if (m !== currentUnit && m.state !== 'dead' && m.state !== 'downed') {
         if (m.gridPos.x === tx && m.gridPos.y === ty) return true;
@@ -169,33 +177,68 @@ export class CombatSystem {
     return false;
   }
 
-  public findOpenAdjacentForMember(center: GridPos, preferredNear: GridPos, currentMember: Player): GridPos | null {
-    const offsets = [
-      { x: 1, y: 0 }, { x: -1, y: 0 }, { x: 0, y: 1 }, { x: 0, y: -1 },
-      { x: 1, y: 1 }, { x: -1, y: 1 }, { x: 1, y: -1 }, { x: -1, y: -1 },
-      { x: 2, y: 0 }, { x: -2, y: 0 }, { x: 0, y: 2 }, { x: 0, y: -2 },
-      { x: 2, y: 1 }, { x: 2, y: -1 }, { x: -2, y: 1 }, { x: -2, y: -1 },
-      { x: 1, y: 2 }, { x: -1, y: 2 }, { x: 1, y: -2 }, { x: -1, y: -2 }
-    ];
-
+  public findOpenAttackTileForMember(
+    enemy: Entity,
+    member: Player,
+    reservedKeys?: Set<string>
+  ): GridPos | null {
+    const range = member.attackRangeTiles || 1;
     const candidates: GridPos[] = [];
-    for (const off of offsets) {
-      const tx = center.x + off.x;
-      const ty = center.y + off.y;
-      if (!this.isTileClaimedOrOccupiedByOther(tx, ty, currentMember)) {
-        candidates.push({ x: tx, y: ty });
+
+    // Collect candidate offsets strictly within attackRangeTiles
+    for (let dx = -range; dx <= range; dx++) {
+      for (let dy = -range; dy <= range; dy++) {
+        if (dx === 0 && dy === 0) continue;
+        if (Math.max(Math.abs(dx), Math.abs(dy)) > range) continue;
+        const tx = enemy.gridPos.x + dx;
+        const ty = enemy.gridPos.y + dy;
+        if (!this.isTileClaimedOrOccupiedByOther(tx, ty, member, reservedKeys)) {
+          candidates.push({ x: tx, y: ty });
+        }
       }
     }
 
     if (candidates.length > 0) {
       candidates.sort((a, b) => {
-        const distA = Math.max(Math.abs(a.x - preferredNear.x), Math.abs(a.y - preferredNear.y));
-        const distB = Math.max(Math.abs(b.x - preferredNear.x), Math.abs(b.y - preferredNear.y));
+        const distA = Math.hypot(a.x - member.gridPos.x, a.y - member.gridPos.y);
+        const distB = Math.hypot(b.x - member.gridPos.x, b.y - member.gridPos.y);
         return distA - distB;
       });
       return candidates[0];
     }
+
+    // Concentric ring fallback: If all attack-range tiles are occupied/claimed,
+    // search rings (range + 1) to (range + 3) for the nearest open staging tile to the enemy.
+    for (let r = range + 1; r <= range + 3; r++) {
+      const fallbackCandidates: GridPos[] = [];
+      for (let dx = -r; dx <= r; dx++) {
+        for (let dy = -r; dy <= r; dy++) {
+          if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
+          const tx = enemy.gridPos.x + dx;
+          const ty = enemy.gridPos.y + dy;
+          if (!this.isTileClaimedOrOccupiedByOther(tx, ty, member, reservedKeys)) {
+            fallbackCandidates.push({ x: tx, y: ty });
+          }
+        }
+      }
+      if (fallbackCandidates.length > 0) {
+        fallbackCandidates.sort((a, b) => {
+          const distA = Math.hypot(a.x - member.gridPos.x, a.y - member.gridPos.y);
+          const distB = Math.hypot(b.x - member.gridPos.x, b.y - member.gridPos.y);
+          return distA - distB;
+        });
+        return fallbackCandidates[0];
+      }
+    }
+
+    // Zero valid tiles found: return null so unit holds position rather than stacking
     return null;
+  }
+
+  public findOpenAdjacentForMember(center: GridPos, _preferredNear?: GridPos, currentMember?: Player): GridPos | null {
+    if (!currentMember) return null;
+    const dummyEnemy = { gridPos: center } as Entity;
+    return this.findOpenAttackTileForMember(dummyEnemy, currentMember);
   }
 
   public update(time: number, delta: number): void {
@@ -458,7 +501,18 @@ export class CombatSystem {
       const distanceTiles = Math.max(dx, dy);
 
       if (distanceTiles <= member.attackRangeTiles) {
+        const hasUnreachedDest = member.claimedDestination &&
+          (member.gridPos.x !== member.claimedDestination.x || member.gridPos.y !== member.claimedDestination.y);
+        const tileOccupiedByOther = this.party.some(
+          (other) => other !== member && other.state !== 'dead' && other.state !== 'downed' &&
+            other.gridPos.x === member.gridPos.x && other.gridPos.y === member.gridPos.y
+        );
+
         if (member.isMoving()) {
+          if (hasUnreachedDest || tileOccupiedByOther) {
+            // Keep moving along path to designated unshared attack tile; do not stop on intermediate occupied tiles
+            continue;
+          }
           member.stopMovement();
         }
         const dataLoader = DataLoader.getInstance();
@@ -623,33 +677,47 @@ export class CombatSystem {
 
         if (isStopped || timeForRepath) {
           let needsRepath = true;
-          if (member.claimedDestination) {
-            const cdx = Math.abs(member.claimedDestination.x - target.gridPos.x);
-            const cdy = Math.abs(member.claimedDestination.y - target.gridPos.y);
+          if (member.claimedDestination && (member.isMoving() || !isStopped)) {
+            const dest = member.claimedDestination;
+            const cdx = Math.abs(dest.x - target.gridPos.x);
+            const cdy = Math.abs(dest.y - target.gridPos.y);
             const isAdjacent = Math.max(cdx, cdy) <= member.attackRangeTiles && (cdx > 0 || cdy > 0);
 
-            // Exclusive ownership check: no other party member has claimed this same destination
-            const anotherMemberClaimed = this.party.some(
-              (other) => other !== member && other.state !== 'dead' && other.state !== 'downed' &&
-                other.claimedDestination !== null &&
-                other.claimedDestination.x === member.claimedDestination!.x &&
-                other.claimedDestination.y === member.claimedDestination!.y
+            // Exclusive ownership check: no other party member has claimed this destination AND no other party member is occupying it
+            const anotherMemberClaimedOrOccupies = this.party.some(
+              (other) => other !== member && other.state !== 'dead' && other.state !== 'downed' && (
+                (other.claimedDestination !== null && other.claimedDestination.x === dest.x && other.claimedDestination.y === dest.y) ||
+                (other.gridPos.x === dest.x && other.gridPos.y === dest.y)
+              )
             );
-            const blockedByStaticOrEnemy = this.pathfinder.isObstacle(member.claimedDestination.x, member.claimedDestination.y) ||
-              this.enemies.some(e => e.state !== 'dead' && e.state !== 'downed' && e.gridPos.x === member.claimedDestination!.x && e.gridPos.y === member.claimedDestination!.y);
+            const blockedByStaticOrEnemy = this.pathfinder.isObstacle(dest.x, dest.y) ||
+              this.enemies.some(e => e.state !== 'dead' && e.state !== 'downed' && (
+                (e.gridPos.x === dest.x && e.gridPos.y === dest.y) ||
+                (e.claimedDestination !== null && e.claimedDestination.x === dest.x && e.claimedDestination.y === dest.y)
+              ));
 
-            if (isAdjacent && !anotherMemberClaimed && !blockedByStaticOrEnemy && (member.isMoving() || !isStopped)) {
+            if (isAdjacent && !anotherMemberClaimedOrOccupies && !blockedByStaticOrEnemy) {
               needsRepath = false; // already en route to a valid exclusive adjacent tile!
             }
           }
 
           if (needsRepath) {
             member.lastCombatRepathTimeMs = time;
-            const targetTile = this.findOpenAdjacentForMember(target.gridPos, member.gridPos, member);
+            const targetTile = this.findOpenAttackTileForMember(target, member);
             if (targetTile) {
               member.claimedDestination = { ...targetTile };
-              const enemyObstacles = this.enemies.filter(e => e !== target && e.state !== 'dead' && e.state !== 'downed').map(e => e.gridPos);
-              this.pathfinder.findPath(member.gridPos, targetTile, enemyObstacles).then((path) => {
+              const dynamicObstacles: GridPos[] = [];
+              for (const e of this.enemies) {
+                if (e !== target && e.state !== 'dead' && e.state !== 'downed') {
+                  dynamicObstacles.push(e.gridPos);
+                }
+              }
+              for (const m of this.party) {
+                if (m !== member && m.state !== 'dead' && m.state !== 'downed') {
+                  dynamicObstacles.push(m.gridPos);
+                }
+              }
+              this.pathfinder.findPath(member.gridPos, targetTile, dynamicObstacles).then((path) => {
                 if (
                   path.length > 0 &&
                   member.state !== 'downed' &&
@@ -658,11 +726,19 @@ export class CombatSystem {
                 ) {
                   member.followPath(path);
                 } else {
-                  if (!member.isMoving()) {
-                    member.claimedDestination = null;
+                  // No reachable path to targetTile: cancel claim so unit does not hold ghost claims
+                  member.claimedDestination = null;
+                  if (member.isMoving()) {
+                    member.stopMovement();
                   }
                 }
               });
+            } else {
+              // No open tile available (all surround and fallback tiles full): hold current position
+              member.claimedDestination = null;
+              if (member.isMoving()) {
+                member.stopMovement();
+              }
             }
           }
         }
@@ -767,7 +843,10 @@ export class CombatSystem {
       killer.progression.addProficiencyExp('dual_wielding', 2);
     }
 
-    // Clear target for all party members who had targeted this enemy
+    // Clear target for all party members who had targeted this enemy.
+    // INVARIANT: On enemy defeat, members call clearTarget() -> stopMovement().
+    // They hold their exact combat positions without automatic re-formation.
+    // Formation resumes only when the player issues the next manual movement command.
     for (const member of this.party) {
       if (member.targetEntity === target) {
         member.clearTarget();
