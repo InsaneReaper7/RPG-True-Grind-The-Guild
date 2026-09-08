@@ -9,7 +9,7 @@ import { CombatSystem } from '../systems/CombatSystem';
 import { ProgressionSystem } from '../systems/ProgressionSystem';
 import { HUD } from '../ui/HUD';
 import { GameState } from '../systems/GameState';
-import { GridPos } from '../types/game';
+import { GridPos, EnemyDef } from '../types/game';
 import { HiddenSkillSystem } from '../systems/HiddenSkillSystem';
 import { TileClaimDebugOverlay } from '../ui/TileClaimDebugOverlay';
 
@@ -71,6 +71,9 @@ export class MainScene extends Phaser.Scene {
     const playerData = dataLoader.getPlayer();
     const startingWeapon = dataLoader.getWeapon(playerData.startingWeaponId);
     const wolfData = dataLoader.getEnemy('wolf');
+    const goblinData = dataLoader.getEnemy('goblin');
+    const skeletonData = dataLoader.getEnemy('skeleton');
+    const undeadData = dataLoader.getEnemy('undead');
     const classesData = dataLoader.getClassesData();
 
     if (!startingWeapon) {
@@ -191,24 +194,10 @@ export class MainScene extends Phaser.Scene {
       this.triggerPortalTransition();
     });
 
-    const wolf = new Enemy(this, 14, 14, wolfData, 'wolf-avatar', this.tileSize);
-    this.enemies.push(wolf);
-
-    // Direct pointer click on Enemy sprite triggers engagement
-    wolf.on('pointerdown', (_pointer: Phaser.Input.Pointer, _localX: number, _localY: number, event?: Phaser.Types.Input.EventData) => {
-      if (event && event.stopPropagation) event.stopPropagation();
-      this.engageEnemy(wolf);
-    });
-
-    // Spawn second test enemy (Wolf 2) at (14, 6)
-    const wolf2 = new Enemy(this, 14, 6, wolfData, 'wolf-avatar', this.tileSize);
-    wolf2.entityName = 'Wolf 2';
-    this.enemies.push(wolf2);
-
-    wolf2.on('pointerdown', (_pointer: Phaser.Input.Pointer, _localX: number, _localY: number, event?: Phaser.Types.Input.EventData) => {
-      if (event && event.stopPropagation) event.stopPropagation();
-      this.engageEnemy(wolf2);
-    });
+    this.spawnEnemyUnit(wolfData, 14, 14, 'wolf-avatar');
+    if (goblinData) this.spawnEnemyUnit(goblinData, 14, 5, 'goblin-avatar');
+    if (skeletonData) this.spawnEnemyUnit(skeletonData, 5, 14, 'skeleton-avatar');
+    if (undeadData) this.spawnEnemyUnit(undeadData, 15, 10, 'undead-avatar');
 
     // Target Selection Reticle
     this.targetReticle = this.add.sprite(-100, -100, 'target-reticle').setDepth(10000);
@@ -320,7 +309,47 @@ export class MainScene extends Phaser.Scene {
       console.log(`[Debug] Tested proc for '${skillId}':`, result);
       return result;
     };
-    console.log('[Debug Tools] Hotkeys: [X] +25 Wpn Exp, [Z] +100 Wpn Exp, [C] +25 Const Exp, [P] +680 Wpn Exp (Lv10 Fencer), [T] Respawn Enemies. Console: __grantExp(id, amt, [idx]), __grantHiddenExp(id, amt, [idx]), __setLevel(id, lv, [idx]), __spawnTestCompanion(), __reviveParty([idx]).');
+    (window as any).__spawnEnemy = (enemyId: string, x?: number, y?: number) => {
+      const def = DataLoader.getInstance().getEnemy(enemyId);
+      if (!def) {
+        console.warn(`[Debug] Unknown enemy id: ${enemyId}`);
+        return null;
+      }
+      const spawnX = x ?? 10;
+      const spawnY = y ?? 10;
+      const textureKey = `${def.id}-avatar`;
+      return this.spawnEnemyUnit(def, spawnX, spawnY, this.textures.exists(textureKey) ? textureKey : 'wolf-avatar');
+    };
+    (window as any).__spawnSwarmAround = (memberIdx: number = 0) => {
+      const member = this.party[memberIdx] || this.player;
+      const mx = member.gridPos.x;
+      const my = member.gridPos.y;
+      const offsets = [
+        { ox: -1, oy: 0, type: 'goblin', tex: 'goblin-avatar' },
+        { ox: 1, oy: 0, type: 'skeleton', tex: 'skeleton-avatar' },
+        { ox: 0, oy: -1, type: 'undead', tex: 'undead-avatar' },
+        { ox: 0, oy: 1, type: 'wolf', tex: 'wolf-avatar' },
+        { ox: -1, oy: -1, type: 'goblin', tex: 'goblin-avatar' },
+        { ox: 1, oy: -1, type: 'skeleton', tex: 'skeleton-avatar' },
+        { ox: -1, oy: 1, type: 'undead', tex: 'undead-avatar' },
+        { ox: 1, oy: 1, type: 'wolf', tex: 'wolf-avatar' }
+      ];
+      const spawned: Enemy[] = [];
+      for (const off of offsets) {
+        const tx = mx + off.ox;
+        const ty = my + off.oy;
+        if (tx > 0 && tx < this.mapWidth - 1 && ty > 0 && ty < this.mapHeight - 1 && this.gridMatrix[ty]?.[tx] === 0) {
+          const def = DataLoader.getInstance().getEnemy(off.type);
+          if (def) {
+            const e = this.spawnEnemyUnit(def, tx, ty, off.tex, `${def.name} (Swarm)`);
+            spawned.push(e);
+          }
+        }
+      }
+      console.log(`[Debug] Spawned ${spawned.length} swarm enemies surrounding ${member.entityName} at (${mx}, ${my})`);
+      return spawned;
+    };
+    console.log('[Debug Tools] Hotkeys: [X] +25 Wpn Exp, [Z] +100 Wpn Exp, [C] +25 Const Exp, [P] +680 Wpn Exp (Lv10 Fencer), [T] Respawn Enemies. Console: __grantExp(id, amt, [idx]), __grantHiddenExp(id, amt, [idx]), __setLevel(id, lv, [idx]), __spawnTestCompanion(), __reviveParty([idx]), __spawnEnemy(id, x, y), __spawnSwarmAround(idx).');
 
     // Scroll Wheel Zoom
     this.input.on('wheel', (_pointer: Phaser.Input.Pointer, _gameObjects: unknown[], _deltaX: number, deltaY: number) => {
@@ -993,5 +1022,16 @@ export class MainScene extends Phaser.Scene {
 
     // Update HUD Overlay
     this.hud.update(this.player, this.progressionSystem, time, this.party);
+  }
+
+  public spawnEnemyUnit(enemyData: EnemyDef, x: number, y: number, textureKey: string, customName?: string): Enemy {
+    const enemy = new Enemy(this, x, y, enemyData, textureKey, this.tileSize);
+    if (customName) enemy.entityName = customName;
+    this.enemies.push(enemy);
+    enemy.on('pointerdown', (_pointer: Phaser.Input.Pointer, _localX: number, _localY: number, event?: Phaser.Types.Input.EventData) => {
+      if (event && event.stopPropagation) event.stopPropagation();
+      this.engageEnemy(enemy);
+    });
+    return enemy;
   }
 }

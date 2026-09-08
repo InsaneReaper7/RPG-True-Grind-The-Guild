@@ -28,6 +28,8 @@ async function bootstrap() {
 
   const game = new Phaser.Game(config);
   (window as any).game = game;
+  (window as any).GameState = GameState;
+  (window as any).DataLoader = DataLoader;
 
   window.addEventListener('resize', () => {
     game.scale.refresh();

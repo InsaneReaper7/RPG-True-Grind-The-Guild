@@ -1212,9 +1212,11 @@ export class HUD {
   private getPartyRosterKey(): string {
     return `${this.currentParty.length}_` + this.currentParty.map((m) => {
       const isDw = m.progression.isDualWieldUnlocked();
+      const mainWpn = m.equippedWeapon?.id || 'none';
+      const offWpn = m.offhandWeapon?.id || 'none';
       const equippedSkills = m.equippedSkillIds.join(',');
       const knownSkills = m.knownSkillIds.join(',');
-      return `${m.id}:${m.entityName}:${m.state}:${isDw}:${equippedSkills}:${knownSkills}`;
+      return `${m.id}:${m.entityName}:${m.state}:${mainWpn}:${offWpn}:${isDw}:${equippedSkills}:${knownSkills}`;
     }).join('|');
   }
 
@@ -1336,7 +1338,7 @@ export class HUD {
         }
       }
 
-      // 7. Dual Wield Penalty
+      // 7. Dual Wield Penalty & Shield Status
       const isDwUnlocked = member.progression.isDualWieldUnlocked();
       if (isDwUnlocked) {
         const dwStat = member.progression.getProficiencyStat('dual_wielding');
@@ -1347,6 +1349,11 @@ export class HUD {
           const penaltyColor = dwPenaltyPct === 0 ? '#4ade80' : '#fbbf24';
           if (dwPenaltyEl.style.color !== penaltyColor) dwPenaltyEl.style.color = penaltyColor;
         }
+      }
+      const shieldStatusEl = this.partyOverviewRosterEl.querySelector<HTMLElement>(`[data-party-shield-status="${i}"]`);
+      if (shieldStatusEl) {
+        const shieldStat = member.progression.getProficiencyStat('shields');
+        this.setElementTextIfChanged(shieldStatusEl, `Shield Active: Block & Mitigation (Shields Lv ${shieldStat.level})`);
       }
     }
   }
@@ -1414,30 +1421,57 @@ export class HUD {
       }
 
       // Offhand options
-      let offhandSelectHtml = '';
-      if (!isDwUnlocked) {
-        offhandSelectHtml = `
-          <select class="party-select" disabled>
-            <option>🔒 Locked (Requires 2 1H Melee Lv30+)</option>
-          </select>
-        `;
-      } else {
-        let offhandOptions = `<option value="none" ${!member.offhandWeapon ? 'selected' : ''}>None (Single Wield)</option>`;
+      let offhandOptions = `<option value="none" ${!member.offhandWeapon ? 'selected' : ''}>None (Single Wield)</option>`;
+
+      // Shields are always available without requiring Dual Wielding
+      for (const w of allWeapons) {
+        if (w.category === 'offhand' || w.id === 'shields') {
+          const sel = member.offhandWeapon?.id === w.id ? 'selected' : '';
+          offhandOptions += `<option value="${w.id}" ${sel}>🛡️ ${w.name} (Shield)</option>`;
+        }
+      }
+
+      // One-handed melee weapons for Dual Wielding (if unlocked)
+      if (isDwUnlocked) {
         for (const w of allWeapons) {
           if (!w.twoHanded && w.category === 'melee_1h') {
             const sel = member.offhandWeapon?.id === w.id ? 'selected' : '';
-            offhandOptions += `<option value="${w.id}" ${sel}>${w.name} (Dmg: ${w.baseDamage})</option>`;
+            offhandOptions += `<option value="${w.id}" ${sel}>⚔️ ${w.name} (Offhand - Dmg: ${w.baseDamage})</option>`;
           }
         }
-        offhandSelectHtml = `
-          <select class="party-select party-offhand-select" data-member-idx="${i}">
-            ${offhandOptions}
-          </select>
+      }
+
+      const isShieldEquipped = member.hasShield();
+      const isDwActive = member.isDualWielding();
+
+      let offhandStatusHtml = '';
+      if (isDwActive) {
+        offhandStatusHtml = `
           <div data-party-dw-penalty="${i}" style="font-size: 10px; color: ${dwPenaltyPct === 0 ? '#4ade80' : '#fbbf24'}; margin-top: 2px;">
             Dual Wield Penalty: -${dwPenaltyPct}% Hit Rate (DW Lv ${dwStat.level})
           </div>
         `;
+      } else if (isShieldEquipped) {
+        const shieldStat = member.progression.getProficiencyStat('shields');
+        offhandStatusHtml = `
+          <div data-party-shield-status="${i}" style="font-size: 10px; color: #38bdf8; margin-top: 2px;">
+            Shield Active: Block & Mitigation (Shields Lv ${shieldStat.level})
+          </div>
+        `;
+      } else if (!isDwUnlocked) {
+        offhandStatusHtml = `
+          <div style="font-size: 10px; color: #6b7280; margin-top: 2px;">
+            🔒 Dual Wielding Locked (Requires 2 1H Melee Lv30+)
+          </div>
+        `;
       }
+
+      const offhandSelectHtml = `
+        <select class="party-select party-offhand-select" data-member-idx="${i}">
+          ${offhandOptions}
+        </select>
+        ${offhandStatusHtml}
+      `;
 
       // Skills chips
       let equippedSkillsHtml = '';
@@ -1563,7 +1597,7 @@ export class HUD {
         const weapon = DataLoader.getInstance().getWeapon(select.value);
         if (member && weapon) {
           member.equipWeapon(weapon);
-          this.updatePartyOverviewLiveStats();
+          this.renderPartyOverviewModal(true);
         }
       } else if (target.classList.contains('party-offhand-select')) {
         const select = target as HTMLSelectElement;
@@ -1578,7 +1612,7 @@ export class HUD {
               member.equipOffhandWeapon(weapon);
             }
           }
-          this.updatePartyOverviewLiveStats();
+          this.renderPartyOverviewModal(true);
         }
       }
     };

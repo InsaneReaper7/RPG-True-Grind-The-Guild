@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { GridPos, EntityState, StatusEffectDef, ActiveStatusEffect } from '../types/game';
+import type { GridPos, EntityState, StatusEffectDef, ActiveStatusEffect } from '../types/game.ts';
 
 export class Entity extends Phaser.GameObjects.Container {
   public gridPos: GridPos;

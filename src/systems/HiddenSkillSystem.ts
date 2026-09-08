@@ -3,7 +3,10 @@ import type { ProgressionSystem } from './ProgressionSystem.ts';
 
 export interface CombatContext {
   equippedWeapon?: WeaponDef | null;
+  equippedOffhand?: WeaponDef | null;
   hasShield?: boolean;
+  shieldBlockBonus?: number;
+  shieldMitigationBonus?: number;
   hasMagicProficiency?: boolean;
   inCombat?: boolean;
   attackerDistanceTiles?: number;
@@ -159,7 +162,10 @@ export class HiddenSkillSystem {
     }
 
     const currentLevel = progression.getProficiencyLevel(skillDef.id);
-    const classBonus = progression.getClassHiddenBonus(skillDef.id);
+    let classBonus = progression.getClassHiddenBonus(skillDef.id);
+    if (skillDef.id === 'block' && context.shieldBlockBonus) {
+      classBonus += context.shieldBlockBonus;
+    }
     const procChance = this.calculateProcChance(skillDef, currentLevel, classBonus);
 
     const roll = Math.random();
@@ -285,8 +291,11 @@ export class HiddenSkillSystem {
     const reductionPercent = activeTier?.damageReduction ?? 0;
 
     let finalDamage = incomingDamage;
+    if (context.hasShield && context.shieldMitigationBonus && context.shieldMitigationBonus > 0) {
+      finalDamage = Math.max(1, finalDamage - context.shieldMitigationBonus);
+    }
     if (reductionPercent > 0) {
-      finalDamage = Math.max(1, Math.round(incomingDamage * (1 - reductionPercent)));
+      finalDamage = Math.max(1, Math.round(finalDamage * (1 - reductionPercent)));
     }
 
     const mitigatedAmount = Math.max(0, incomingDamage - finalDamage);

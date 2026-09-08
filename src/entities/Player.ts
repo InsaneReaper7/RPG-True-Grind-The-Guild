@@ -1,10 +1,10 @@
 import Phaser from 'phaser';
-import { Entity } from './Entity';
-import { PlayerData, WeaponDef, CharacterSnapshot } from '../types/game';
-import { GameState } from '../systems/GameState';
-import { DataLoader } from '../utils/DataLoader';
-import { ProgressionSystem } from '../systems/ProgressionSystem';
-import type { ClassifiedRoom } from '../systems/RoomClassifier';
+import { Entity } from './Entity.ts';
+import type { PlayerData, WeaponDef, CharacterSnapshot } from '../types/game.ts';
+import { GameState } from '../systems/GameState.ts';
+import { DataLoader } from '../utils/DataLoader.ts';
+import { ProgressionSystem } from '../systems/ProgressionSystem.ts';
+import type { ClassifiedRoom } from '../systems/RoomClassifier.ts';
 
 export class Player extends Entity {
   public id: string;
@@ -83,6 +83,10 @@ export class Player extends Entity {
 
   public equipWeapon(weapon: WeaponDef): void {
     this.equippedWeapon = weapon;
+    if (weapon.twoHanded && this.offhandWeapon) {
+      console.log(`[Player:${this.entityName}] Unequipped offhand because ${weapon.name} is two-handed`);
+      this.offhandWeapon = null;
+    }
     console.log(`[Player:${this.entityName}] Equipped main weapon: ${weapon.name}`);
   }
 
@@ -92,12 +96,23 @@ export class Player extends Entity {
       console.log(`[Player:${this.entityName}] Unequipped offhand weapon`);
       return true;
     }
+    if (this.equippedWeapon?.twoHanded) {
+      console.warn(`[Player:${this.entityName}] Cannot equip offhand while wielding a two-handed weapon!`);
+      return false;
+    }
+    // Shield can be equipped directly in offhand without requiring Dual Wielding
+    if (weapon.category === 'offhand' || weapon.id === 'shields') {
+      this.offhandWeapon = weapon;
+      console.log(`[Player:${this.entityName}] Equipped shield in offhand: ${weapon.name}`);
+      return true;
+    }
+    // Second one-handed weapon requires Dual Wielding unlocked
     if (!this.progression.isDualWieldUnlocked()) {
-      console.warn(`[Player:${this.entityName}] Cannot equip offhand: Dual Wielding is locked!`);
+      console.warn(`[Player:${this.entityName}] Cannot equip offhand weapon: Dual Wielding is locked!`);
       return false;
     }
     if (weapon.category !== 'melee_1h' || weapon.twoHanded) {
-      console.warn(`[Player:${this.entityName}] Cannot equip ${weapon.name} in offhand: must be a one-handed melee weapon`);
+      console.warn(`[Player:${this.entityName}] Cannot equip ${weapon.name} in offhand: must be a one-handed melee weapon or shield`);
       return false;
     }
     this.offhandWeapon = weapon;
@@ -106,7 +121,11 @@ export class Player extends Entity {
   }
 
   public isDualWielding(): boolean {
-    return this.offhandWeapon !== null;
+    return this.offhandWeapon !== null && this.offhandWeapon.category !== 'offhand';
+  }
+
+  public hasShield(): boolean {
+    return this.offhandWeapon !== null && (this.offhandWeapon.category === 'offhand' || this.offhandWeapon.id === 'shields');
   }
 
   public isAutocastEnabled(skillId: string): boolean {

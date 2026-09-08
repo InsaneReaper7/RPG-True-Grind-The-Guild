@@ -7,6 +7,7 @@ import { ProgressionSystem } from './ProgressionSystem';
 import { DataLoader } from '../utils/DataLoader';
 import { GridPos } from '../types/game';
 import { HiddenSkillSystem, CombatContext, CounterattackResult } from './HiddenSkillSystem';
+import { GameState } from './GameState';
 
 export class CombatSystem {
   public static readonly DEBUG_AI: boolean = false;
@@ -378,9 +379,20 @@ export class CombatSystem {
                 const rawDamage = enemy.enemyData.meleeDamage;
 
                 const hiddenSystem = HiddenSkillSystem.getInstance();
+                const hasShield = target.hasShield();
+                const shieldDef = hasShield ? target.offhandWeapon : null;
+                const shieldLevel = hasShield ? target.progression.getProficiencyLevel('shields') : 0;
+                const shieldBlockBonus = hasShield ? shieldLevel * (shieldDef?.levelBonus?.blockPerLevel ?? 0.005) : 0;
+                const shieldMitigationBonus = hasShield
+                  ? (shieldDef?.baseMitigation ?? 1) + Math.floor(shieldLevel * (shieldDef?.levelBonus?.mitigationPerLevel ?? 0.2))
+                  : 0;
+
                 const context: CombatContext = {
                   equippedWeapon: target.equippedWeapon,
-                  hasShield: false,
+                  equippedOffhand: target.offhandWeapon,
+                  hasShield,
+                  shieldBlockBonus,
+                  shieldMitigationBonus,
                   hasMagicProficiency: false,
                   inCombat: true,
                   attackerDistanceTiles: curDistTiles,
@@ -410,12 +422,16 @@ export class CombatSystem {
                   console.log(`[Combat] 🛡️ ${target.entityName} BLOCKED attack from ${enemy.entityName}! (0 damage)`);
                   this.createAttackEffect(enemy.x, enemy.y, target.x, target.y, 0x38bdf8);
                   this.createFloatingText(target.x, target.y - 12, 'BLOCKED!', '#38bdf8');
+                  target.progression.addProficiencyExp('shields', 2);
                   const counterRes = hiddenSystem.resolveCounterattack(context, target.progression);
                   if (counterRes.procced) {
                     this.executePlayerCounterattack(target, enemy, counterRes);
                   }
                 } else {
                   this.createAttackEffect(enemy.x, enemy.y, target.x, target.y, 0xef4444);
+                  if (context.hasShield) {
+                    target.progression.addProficiencyExp('shields', 1);
+                  }
                   const mitigation = hiddenSystem.resolveDamageTaken(context, target.progression, rawDamage);
                   const actualDamage = mitigation.finalDamage;
 
@@ -757,7 +773,8 @@ export class CombatSystem {
         if (member.state === 'downed' || member.state === 'dead') continue;
         const context: CombatContext = {
           equippedWeapon: member.equippedWeapon,
-          hasShield: false,
+          equippedOffhand: member.offhandWeapon,
+          hasShield: member.hasShield(),
           hasMagicProficiency: false,
           inCombat
         };
@@ -855,6 +872,20 @@ export class CombatSystem {
 
     if (target instanceof Enemy) {
       this.enemyTargets.delete(target);
+      // Roll and award harvest drops
+      if (target.enemyData.harvest && target.enemyData.harvest.length > 0) {
+        const gameState = GameState.getInstance();
+        for (const h of target.enemyData.harvest) {
+          const isRare = h.method === 'rare_drop';
+          const roll = Math.random();
+          if (!isRare || roll < 0.35) {
+            gameState.addItem(h.item, 1);
+            const itemName = h.item.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+            console.log(`[Harvest] 🎒 Harvested 1x ${itemName} from ${target.entityName}!`);
+            this.createFloatingText(target.x, target.y - 16, `+1 ${itemName}`, isRare ? '#f59e0b' : '#34d399');
+          }
+        }
+      }
       if (this.onEnemyDeathCallback) {
         this.onEnemyDeathCallback(target);
       }

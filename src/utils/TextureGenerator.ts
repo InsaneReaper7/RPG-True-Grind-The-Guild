@@ -74,6 +74,73 @@ export class TextureGenerator {
       g.destroy();
     }
 
+    // 4b. Goblin Avatar Texture (Green Diamond with pointed ear accents)
+    if (!scene.textures.exists('goblin-avatar')) {
+      const size = 28;
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      g.fillStyle(0x16a34a, 1); // Forest/Goblin Green
+      g.beginPath();
+      g.moveTo(size / 2, 3);
+      g.lineTo(size - 2, size / 2);
+      g.lineTo(size / 2, size - 3);
+      g.lineTo(2, size / 2);
+      g.closePath();
+      g.fillPath();
+      g.lineStyle(2, 0x86efac, 1);
+      g.strokePath();
+      // Pointed ear notches
+      g.fillStyle(0x4ade80, 1);
+      g.fillTriangle(2, size / 2, 0, size / 2 - 4, 4, size / 2 - 2);
+      g.fillTriangle(size - 2, size / 2, size, size / 2 - 4, size - 4, size / 2 - 2);
+      // Small feral eyes
+      g.fillStyle(0xfef08a, 1);
+      g.fillCircle(size / 2 - 4, size / 2 - 2, 2);
+      g.fillCircle(size / 2 + 4, size / 2 - 2, 2);
+      g.generateTexture('goblin-avatar', size, size);
+      g.destroy();
+    }
+
+    // 4c. Skeleton Avatar Texture (Bone Ivory with Skull & Crossbone accents)
+    if (!scene.textures.exists('skeleton-avatar')) {
+      const size = 28;
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      g.fillStyle(0xe2e8f0, 1); // Bone Ivory
+      g.fillCircle(size / 2, size / 2, size / 2 - 3);
+      g.lineStyle(2, 0x94a3b8, 1);
+      g.strokeCircle(size / 2, size / 2, size / 2 - 3);
+      // Dark eye sockets
+      g.fillStyle(0x0f172a, 1);
+      g.fillCircle(size / 2 - 4, size / 2 - 2, 3);
+      g.fillCircle(size / 2 + 4, size / 2 - 2, 3);
+      // Nasal cavity / teeth line
+      g.lineStyle(2, 0x0f172a, 1);
+      g.lineBetween(size / 2 - 3, size / 2 + 5, size / 2 + 3, size / 2 + 5);
+      g.generateTexture('skeleton-avatar', size, size);
+      g.destroy();
+    }
+
+    // 4d. Undead Avatar Texture (Rotting Teal / Decaying Ghoul)
+    if (!scene.textures.exists('undead-avatar')) {
+      const size = 28;
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      g.fillStyle(0x0f766e, 1); // Dark Rot Teal
+      g.beginPath();
+      g.moveTo(size / 2, 2);
+      g.lineTo(size - 3, size / 2);
+      g.lineTo(size / 2, size - 2);
+      g.lineTo(3, size / 2);
+      g.closePath();
+      g.fillPath();
+      g.lineStyle(2, 0x2dd4bf, 1);
+      g.strokePath();
+      // Glowing eerie eyes
+      g.fillStyle(0xc084fc, 1); // Eerie Violet
+      g.fillCircle(size / 2 - 4, size / 2 - 2, 2.5);
+      g.fillCircle(size / 2 + 4, size / 2 - 2, 2.5);
+      g.generateTexture('undead-avatar', size, size);
+      g.destroy();
+    }
+
     // 5. Target Selection Reticle
     if (!scene.textures.exists('target-reticle')) {
       const size = 32;

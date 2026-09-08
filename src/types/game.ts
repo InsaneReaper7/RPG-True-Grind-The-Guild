@@ -12,6 +12,8 @@ export interface WeaponLevelBonus {
   accuracyPerLevel?: number;
   damagePerLevel?: number;
   attackSpeedPerLevel?: number;
+  blockPerLevel?: number;
+  mitigationPerLevel?: number;
 }
 
 export interface WeaponDef {
@@ -23,6 +25,8 @@ export interface WeaponDef {
   baseDamage: number;
   baseAccuracy?: number;
   bleedChance?: number;
+  baseBlock?: number;
+  baseMitigation?: number;
   levelBonus?: WeaponLevelBonus;
 }
 

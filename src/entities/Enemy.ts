@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
-import { Entity } from './Entity';
-import { EnemyDef, GridPos } from '../types/game';
+import { Entity } from './Entity.ts';
+import type { EnemyDef, GridPos } from '../types/game.ts';
 
 export class Enemy extends Entity {
   public enemyData: EnemyDef;
