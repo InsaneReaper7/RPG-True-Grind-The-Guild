@@ -72,7 +72,10 @@ export class Player extends Entity {
     this.maxEnergy = playerData.maxEnergy;
     this.energyRegenPerSecond = playerData.energyRegenPerSecond;
 
-    this.progression = progression || new ProgressionSystem(DataLoader.getInstance().getClassesData());
+    this.progression = progression || new ProgressionSystem(DataLoader.getInstance().getClassesData(), this.entityName);
+    if (this.progression) {
+      this.progression.ownerName = this.entityName;
+    }
 
     this.knownSkillIds = playerData.knownSkillIds ? [...playerData.knownSkillIds] : ['power_strike'];
     this.equippedSkillIds = playerData.equippedSkillIds ? [...playerData.equippedSkillIds] : ['power_strike'];
@@ -397,6 +400,9 @@ export class Player extends Entity {
     }
     if (snapshot.name) {
       this.entityName = snapshot.name;
+      if (this.progression) {
+        this.progression.ownerName = snapshot.name;
+      }
     }
     this.hp = snapshot.hp;
     this.criticalHp = snapshot.criticalHp;

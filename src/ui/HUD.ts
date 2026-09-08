@@ -1,11 +1,18 @@
 import type { Player } from '../entities/Player.ts';
 import { ProgressionSystem } from '../systems/ProgressionSystem.ts';
-import type { ClassDef, HiddenSkillDef, TrainableStat, FoodQuality } from '../types/game.ts';
+import type { ClassDef, HiddenSkillDef, TrainableStat, FoodQuality, ExpTransaction } from '../types/game.ts';
 import { DataLoader } from '../utils/DataLoader.ts';
 import { GameState } from '../systems/GameState.ts';
 import { BuildingSystem } from '../systems/BuildingSystem.ts';
 import { LevelingSystem } from '../systems/LevelingSystem.ts';
 import { ResearchSystem } from '../systems/ResearchSystem.ts';
+
+export interface AnnouncementItem {
+  type: 'class' | 'skill';
+  data: any;
+  memberName: string;
+  durationMs: number;
+}
 
 export class HUD {
   private playerHpEl: HTMLElement | null;
@@ -58,8 +65,22 @@ export class HUD {
   private renderedSkillsKey: string = '';
   private debugSkillsPanelEl: HTMLElement | null;
   private debugSkillsListEl: HTMLElement | null;
+  private debugMemberSelectEl: HTMLSelectElement | null = null;
+  private debugExpLogListEl: HTMLElement | null = null;
+  private debugClearExpLogBtn: HTMLElement | null = null;
+  private selectedDebugMemberIndex: number = 0;
+  private renderedPartyMemberCount: number = 0;
+  private lastPartyKey: string = '';
+  private unsubscribeExpListener: (() => void) | null = null;
   private static isDebugSkillsVisible: boolean = false;
   private renderedDebugSkillsKey: string = '';
+
+  // Announcement Queue
+  private announcementQueue: AnnouncementItem[] = [];
+  private isAnnouncementActive: boolean = false;
+  private announcementTimer: any = null;
+  private announcementTransitionTimer: any = null;
+  private activeAnnouncementItem: AnnouncementItem | null = null;
 
   // Milestone 6 Modal Elements
   private researchTreeModalEl: HTMLElement | null;
@@ -180,6 +201,48 @@ export class HUD {
     this.buildFeedbackToastEl = document.getElementById('build-feedback-toast');
     this.debugSkillsPanelEl = document.getElementById('debug-skills-panel');
     this.debugSkillsListEl = document.getElementById('debug-skills-list');
+    this.debugMemberSelectEl = document.getElementById('debug-member-select') as HTMLSelectElement | null;
+    this.debugExpLogListEl = document.getElementById('debug-exp-log-list');
+    this.debugClearExpLogBtn = document.getElementById('debug-clear-exp-log-btn');
+
+    // Click to dismiss modals early (cancels auto-dismiss timer immediately)
+    this.unlockModalEl?.addEventListener('click', () => {
+      this.dismissCurrentAnnouncement();
+    });
+    this.skillDiscoveredModalEl?.addEventListener('click', () => {
+      this.dismissCurrentAnnouncement();
+    });
+
+    // Party member selector in debug panel
+    this.debugMemberSelectEl?.addEventListener('change', () => {
+      if (this.debugMemberSelectEl) {
+        this.selectedDebugMemberIndex = parseInt(this.debugMemberSelectEl.value, 10) || 0;
+        this.renderedDebugSkillsKey = '';
+        const targetMember = (this.currentParty && this.currentParty[this.selectedDebugMemberIndex]) || this.currentPlayer;
+        if (targetMember) {
+          this.updateDebugSkillsPanel(targetMember.progression, targetMember.entityName);
+        }
+      }
+    });
+
+    // Clear EXP Log button
+    this.debugClearExpLogBtn?.addEventListener('click', () => {
+      ProgressionSystem.clearExpLog();
+      if (this.debugExpLogListEl) {
+        this.debugExpLogListEl.innerHTML = '';
+      }
+    });
+
+    // Subscribe to live EXP transactions
+    this.unsubscribeExpListener = ProgressionSystem.onExpGranted((tx) => {
+      this.appendExpLogEntry(tx);
+    });
+
+    // Hydrate existing EXP log transactions if any exist
+    const existingLogs = ProgressionSystem.getExpLog();
+    for (const tx of existingLogs) {
+      this.appendExpLogEntry(tx);
+    }
 
     this.hudAlchemyRowEl = document.getElementById('hud-alchemy-row');
     this.alchemyProfTextEl = document.getElementById('alchemy-prof-text');
@@ -571,12 +634,20 @@ export class HUD {
         } else if (e.key === 'm' || e.key === 'M') {
           active.debugCycleMood();
         } else if (e.key === 'Escape') {
+          if (active.isAnnouncementShowing()) {
+            active.dismissCurrentAnnouncement();
+          }
           active.closeLoadoutModal();
           active.closeResearchTreeModal();
           active.closeAlchemyModal();
           active.closePartyOverviewModal();
           if (active.isBuildOverlayVisible()) {
             active.onBuildModeToggleCallback?.();
+          }
+        } else if (e.key === 'Enter' || e.key === ' ' || e.code === 'Space') {
+          if (active.isAnnouncementShowing()) {
+            e.preventDefault();
+            active.dismissCurrentAnnouncement();
           }
         }
       });
@@ -708,8 +779,9 @@ export class HUD {
       if (HUD.isDebugSkillsVisible) {
         this.debugSkillsPanelEl.classList.add('active');
         this.renderedDebugSkillsKey = '';
-        if (this.currentProgression) {
-          this.updateDebugSkillsPanel(this.currentProgression);
+        const targetMember = (this.currentParty && this.currentParty[this.selectedDebugMemberIndex]) || this.currentPlayer;
+        if (targetMember) {
+          this.updateDebugSkillsPanel(targetMember.progression, targetMember.entityName);
         }
       } else {
         this.debugSkillsPanelEl.classList.remove('active');
@@ -728,8 +800,9 @@ export class HUD {
       if (visible) {
         this.debugSkillsPanelEl.classList.add('active');
         this.renderedDebugSkillsKey = '';
-        if (this.currentProgression) {
-          this.updateDebugSkillsPanel(this.currentProgression);
+        const targetMember = (this.currentParty && this.currentParty[this.selectedDebugMemberIndex]) || this.currentPlayer;
+        if (targetMember) {
+          this.updateDebugSkillsPanel(targetMember.progression, targetMember.entityName);
         }
       } else {
         this.debugSkillsPanelEl.classList.remove('active');
@@ -737,11 +810,12 @@ export class HUD {
     }
   }
 
-  public updateDebugSkillsPanel(progression: ProgressionSystem): void {
+  public updateDebugSkillsPanel(progression: ProgressionSystem, memberName?: string): void {
     if (!HUD.isDebugSkillsVisible || !this.debugSkillsListEl) return;
 
+    const name = memberName || progression.ownerName || 'Guild Hero';
     const stats = progression.getAllProficiencyStats();
-    let key = '';
+    let key = `${name}:`;
     for (const [id, stat] of stats.entries()) {
       key += `${id}:${stat.level}:${stat.currentExp},`;
     }
@@ -755,6 +829,18 @@ export class HUD {
       }
       this.debugSkillsListEl.innerHTML = html;
     }
+  }
+
+  public appendExpLogEntry(tx: ExpTransaction): void {
+    if (!this.debugExpLogListEl) return;
+    const entry = document.createElement('div');
+    entry.className = 'debug-exp-entry';
+    entry.innerHTML = `<span class="exp-amount">+${tx.amount} EXP</span> <span class="exp-id">${tx.id}</span> <span class="exp-member">(${tx.memberName})</span>`;
+    this.debugExpLogListEl.appendChild(entry);
+    while (this.debugExpLogListEl.children.length > 300) {
+      this.debugExpLogListEl.removeChild(this.debugExpLogListEl.firstChild!);
+    }
+    this.debugExpLogListEl.scrollTop = this.debugExpLogListEl.scrollHeight;
   }
 
   public setLocation(name: string, isOutpost: boolean): void {
@@ -1245,8 +1331,33 @@ export class HUD {
       }
     }
 
+    // Sync Debug Member Select dropdown options
+    if (this.debugMemberSelectEl && this.currentParty) {
+      const party = this.currentParty;
+      const partyKey = party.map(m => m.entityName).join('|');
+      if (this.lastPartyKey !== partyKey || this.renderedPartyMemberCount !== party.length) {
+        this.lastPartyKey = partyKey;
+        this.renderedPartyMemberCount = party.length;
+        let optionsHtml = '';
+        for (let i = 0; i < party.length; i++) {
+          const m = party[i];
+          const label = i === 0 ? `${m.entityName || 'Hero'} (Leader)` : `${m.entityName || `Companion ${i}`}`;
+          optionsHtml += `<option value="${i}">${label}</option>`;
+        }
+        const prevVal = this.selectedDebugMemberIndex;
+        this.debugMemberSelectEl.innerHTML = optionsHtml;
+        if (prevVal < party.length) {
+          this.debugMemberSelectEl.value = prevVal.toString();
+        } else {
+          this.selectedDebugMemberIndex = 0;
+          this.debugMemberSelectEl.value = '0';
+        }
+      }
+    }
+
     // 9. Live All-Skills Debug Overview Panel (Backtick toggle)
-    this.updateDebugSkillsPanel(progression);
+    const targetMember = (this.currentParty && this.currentParty[this.selectedDebugMemberIndex]) || player;
+    this.updateDebugSkillsPanel(targetMember.progression, targetMember.entityName);
 
     // 10. Update Party Overview modal if open
     if (this.isPartyOverviewModalOpen()) {
@@ -1726,46 +1837,159 @@ export class HUD {
     };
   }
 
-  public showClassUnlockModal(classDef: ClassDef): void {
-    if (this.classNameEl) {
-      this.classNameEl.innerText = classDef.name;
-    }
-    if (this.classFantasyEl) {
-      this.classFantasyEl.innerText = classDef.fantasy;
-    }
-    if (this.unlockModalEl) {
-      this.unlockModalEl.classList.add('active');
-
-      // Auto-hide modal after 5 seconds
-      setTimeout(() => {
-        if (this.unlockModalEl) {
-          this.unlockModalEl.classList.remove('active');
-        }
-      }, 5000);
-    }
+  public showClassUnlockModal(
+    classDef: ClassDef,
+    memberName: string = 'Guild Hero',
+    durationMs: number = 4000
+  ): void {
+    this.announcementQueue.push({
+      type: 'class',
+      data: classDef,
+      memberName,
+      durationMs
+    });
+    this.processAnnouncementQueue();
   }
 
-  public showSkillDiscoveredModal(skillDef: { name: string; description?: string; tierEffects?: any[] }): void {
-    if (this.discoveredSkillNameEl) {
-      this.discoveredSkillNameEl.innerText = skillDef.name;
+  public showSkillDiscoveredModal(
+    skillDef: { name: string; description?: string; tierEffects?: any[] },
+    memberName: string = 'Guild Hero',
+    durationMs: number = 4000
+  ): void {
+    this.announcementQueue.push({
+      type: 'skill',
+      data: skillDef,
+      memberName,
+      durationMs
+    });
+    this.processAnnouncementQueue();
+  }
+
+  public processAnnouncementQueue(): void {
+    if (this.isAnnouncementActive || this.announcementQueue.length === 0) {
+      return;
     }
-    if (this.discoveredSkillDescEl) {
-      const tier1 = skillDef.tierEffects?.find((t) => t.level === 1);
-      this.discoveredSkillDescEl.innerText = tier1
-        ? `${tier1.description} — ${skillDef.description || ''}`
-        : (skillDef.description || '');
+
+    const item = this.announcementQueue.shift()!;
+    this.isAnnouncementActive = true;
+    this.activeAnnouncementItem = item;
+
+    // Safety: ensure any previous timers are cancelled
+    if (this.announcementTimer) {
+      clearTimeout(this.announcementTimer);
+      this.announcementTimer = null;
+    }
+    if (this.announcementTransitionTimer) {
+      clearTimeout(this.announcementTransitionTimer);
+      this.announcementTransitionTimer = null;
+    }
+
+    if (item.type === 'class') {
+      const classDef = item.data as ClassDef;
+      if (this.classNameEl) {
+        this.classNameEl.innerText = `${item.memberName} unlocked ${classDef.name}!`;
+      }
+      if (this.classFantasyEl) {
+        this.classFantasyEl.innerText = classDef.fantasy || '';
+      }
+      if (this.skillDiscoveredModalEl) {
+        this.skillDiscoveredModalEl.classList.remove('active');
+      }
+      if (this.unlockModalEl) {
+        this.unlockModalEl.classList.add('active');
+      }
+      this.showToast(`✨ ${item.memberName} unlocked ${classDef.name}!`, 'success', item.durationMs);
+    } else if (item.type === 'skill') {
+      const skillDef = item.data;
+      if (this.discoveredSkillNameEl) {
+        this.discoveredSkillNameEl.innerText = `${item.memberName} discovered ${skillDef.name}!`;
+      }
+      if (this.discoveredSkillDescEl) {
+        const tier1 = skillDef.tierEffects?.find((t: any) => t.level === 1);
+        this.discoveredSkillDescEl.innerText = tier1
+          ? `${tier1.description} — ${skillDef.description || ''}`
+          : (skillDef.description || '');
+      }
+      if (this.unlockModalEl) {
+        this.unlockModalEl.classList.remove('active');
+      }
+      if (this.skillDiscoveredModalEl) {
+        this.skillDiscoveredModalEl.classList.add('active');
+      }
+      this.showToast(`✨ ${item.memberName} discovered ${skillDef.name}!`, 'success', item.durationMs);
+    }
+
+    // Auto-dismiss timeout (guaranteed anti-stall)
+    this.announcementTimer = setTimeout(() => {
+      this.announcementTimer = null;
+      this.dismissCurrentAnnouncement();
+    }, item.durationMs);
+  }
+
+  public dismissCurrentAnnouncement(): void {
+    // CRITICAL: Cancel the auto-dismiss timer immediately so it cannot fire later
+    if (this.announcementTimer) {
+      clearTimeout(this.announcementTimer);
+      this.announcementTimer = null;
+    }
+    if (this.announcementTransitionTimer) {
+      clearTimeout(this.announcementTransitionTimer);
+      this.announcementTransitionTimer = null;
+    }
+
+    if (!this.isAnnouncementActive) {
+      return;
+    }
+
+    if (this.unlockModalEl) {
+      this.unlockModalEl.classList.remove('active');
     }
     if (this.skillDiscoveredModalEl) {
-      this.skillDiscoveredModalEl.classList.add('active');
-
-      // Auto-hide modal after 5 seconds
-      setTimeout(() => {
-        if (this.skillDiscoveredModalEl) {
-          this.skillDiscoveredModalEl.classList.remove('active');
-        }
-      }, 5000);
+      this.skillDiscoveredModalEl.classList.remove('active');
     }
-    this.showToast(`✨ Skill Discovered: ${skillDef.name}!`, 'success', 4000);
+    this.activeAnnouncementItem = null;
+
+    // Brief 200ms transition delay before showing next queued modal
+    this.announcementTransitionTimer = setTimeout(() => {
+      this.announcementTransitionTimer = null;
+      this.isAnnouncementActive = false;
+      this.processAnnouncementQueue();
+    }, 200);
+  }
+
+  public getPendingAnnouncementCount(): number {
+    return this.announcementQueue.length;
+  }
+
+  public isAnnouncementShowing(): boolean {
+    return this.isAnnouncementActive;
+  }
+
+  public getActiveAnnouncement(): AnnouncementItem | null {
+    return this.activeAnnouncementItem;
+  }
+
+  public clearAnnouncementQueue(): void {
+    this.announcementQueue = [];
+    if (this.announcementTimer) {
+      clearTimeout(this.announcementTimer);
+      this.announcementTimer = null;
+    }
+    if (this.announcementTransitionTimer) {
+      clearTimeout(this.announcementTransitionTimer);
+      this.announcementTransitionTimer = null;
+    }
+    this.isAnnouncementActive = false;
+    this.activeAnnouncementItem = null;
+    this.unlockModalEl?.classList.remove('active');
+    this.skillDiscoveredModalEl?.classList.remove('active');
+  }
+
+  public destroy(): void {
+    if (this.unsubscribeExpListener) {
+      this.unsubscribeExpListener();
+      this.unsubscribeExpListener = null;
+    }
   }
 
   // --- RESEARCH TREE MODAL METHODS (Milestone 6) ---

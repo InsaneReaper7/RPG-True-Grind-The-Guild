@@ -132,13 +132,13 @@ export class MainScene extends Phaser.Scene {
     this.pathfinder = new Pathfinder(this.gridMatrix);
 
     // 4. Initialize Systems & HUD
-    this.progressionSystem = new ProgressionSystem(classesData);
+    this.progressionSystem = new ProgressionSystem(classesData, playerData.name || 'Hero');
     this.hud = new HUD();
     this.hud.setLocation('Dungeon Floor 1', false);
     GameState.getInstance().setSafeZone(false);
 
     // Progression & Skill Discovery Notifications
-    this.bindProgressionEvents(this.progressionSystem);
+    this.bindProgressionEvents(this.progressionSystem, playerData.name || 'Hero');
 
     // 5. Spawn Party (Hero & Companions)
     const partySnapshots = GameState.getInstance().getPartySnapshots();
@@ -155,7 +155,7 @@ export class MainScene extends Phaser.Scene {
       for (let i = 0; i < partySnapshots.length; i++) {
         const snap = partySnapshots[i];
         const snapWeapon = dataLoader.getWeapon(snap.equippedWeaponId) || startingWeapon;
-        const memberProg = (i === 0) ? this.progressionSystem : new ProgressionSystem(classesData);
+        const memberProg = (i === 0) ? this.progressionSystem : new ProgressionSystem(classesData, snap.name || `Companion ${i}`);
         if (i > 0) {
           this.bindProgressionEvents(memberProg, snap.name || `Companion ${i}`);
         }
@@ -738,7 +738,7 @@ export class MainScene extends Phaser.Scene {
     const spawnX = spawnTile.x;
     const spawnY = spawnTile.y;
 
-    const companionProgression = new ProgressionSystem(dataLoader.getClassesData());
+    const companionProgression = new ProgressionSystem(dataLoader.getClassesData(), companionName);
     this.bindProgressionEvents(companionProgression, companionName);
     const companion = new Player(
       this,
@@ -752,6 +752,7 @@ export class MainScene extends Phaser.Scene {
     );
     companion.id = companionId;
     companion.entityName = companionName;
+    companionProgression.ownerName = companionName;
     this.party.push(companion);
     GameState.getInstance().addCompanionToParty(companion, this.time.now);
     this.combatSystem.party = this.party;
@@ -761,16 +762,21 @@ export class MainScene extends Phaser.Scene {
   }
 
   private bindProgressionEvents(prog: ProgressionSystem, memberName?: string): void {
+    const resolvedName = memberName || prog.ownerName || this.player?.entityName || 'Guild Hero';
+    prog.ownerName = resolvedName;
+
     prog.onClassUnlocked((event) => {
-      console.log(`%c[UNLOCK] ${event.classDef.name} Class Unlocked${memberName ? ' for ' + memberName : ''}!`, 'color: #f59e0b; font-weight: bold; font-size: 14px;');
-      this.hud.showClassUnlockModal(event.classDef);
+      const name = event.memberName || memberName || prog.ownerName || 'Guild Hero';
+      console.log(`%c[UNLOCK] ${name} unlocked ${event.classDef.name}!`, 'color: #f59e0b; font-weight: bold; font-size: 14px;');
+      this.hud.showClassUnlockModal(event.classDef, name);
     });
 
     prog.onSkillDiscovered((event) => {
+      const name = event.memberName || memberName || prog.ownerName || 'Guild Hero';
       const skillDef = DataLoader.getInstance().getTrainableStatDef(event.skillId);
       if (skillDef) {
-        console.log(`%c[DISCOVERY] ${skillDef.name} Skill Discovered${memberName ? ' by ' + memberName : ''}!`, 'color: #34d399; font-weight: bold; font-size: 14px;');
-        this.hud.showSkillDiscoveredModal(skillDef);
+        console.log(`%c[DISCOVERY] ${name} discovered ${skillDef.name}!`, 'color: #34d399; font-weight: bold; font-size: 14px;');
+        this.hud.showSkillDiscoveredModal(skillDef, name);
       }
     });
   }

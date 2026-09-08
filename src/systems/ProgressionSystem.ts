@@ -1,4 +1,4 @@
-import type { ClassDef, Requirement, ClassesData, SkillDef, TrainableStat } from '../types/game.ts';
+import type { ClassDef, Requirement, ClassesData, SkillDef, TrainableStat, ExpTransaction } from '../types/game.ts';
 import { BuildingSystem } from './BuildingSystem.ts';
 import type { ConstructionTierDef } from './BuildingSystem.ts';
 import { LevelingSystem } from './LevelingSystem.ts';
@@ -6,11 +6,13 @@ import { DataLoader } from '../utils/DataLoader.ts';
 
 export interface UnlockEvent {
   classDef: ClassDef;
+  memberName?: string;
 }
 
 export interface SkillDiscoveredEvent {
   skillId: string;
   level: number;
+  memberName?: string;
 }
 
 export class ProgressionSystem {
@@ -24,6 +26,43 @@ export class ProgressionSystem {
     'mana_regen'
   ];
 
+  public ownerName: string = 'Guild Hero';
+
+  private static expLog: ExpTransaction[] = [];
+  private static expListeners: ((tx: ExpTransaction) => void)[] = [];
+
+  public static recordExpTransaction(tx: ExpTransaction): void {
+    ProgressionSystem.expLog.push(tx);
+    if (ProgressionSystem.expLog.length > 500) {
+      ProgressionSystem.expLog.shift();
+    }
+    for (const listener of ProgressionSystem.expListeners) {
+      try {
+        listener(tx);
+      } catch (err) {
+        console.error('[ProgressionSystem] Error in expListener:', err);
+      }
+    }
+  }
+
+  public static getExpLog(): ExpTransaction[] {
+    return [...ProgressionSystem.expLog];
+  }
+
+  public static clearExpLog(): void {
+    ProgressionSystem.expLog = [];
+  }
+
+  public static onExpGranted(cb: (tx: ExpTransaction) => void): () => void {
+    ProgressionSystem.expListeners.push(cb);
+    return () => {
+      const idx = ProgressionSystem.expListeners.indexOf(cb);
+      if (idx !== -1) {
+        ProgressionSystem.expListeners.splice(idx, 1);
+      }
+    };
+  }
+
   private proficiencies: Map<string, TrainableStat> = new Map();
   private classLevels: Map<string, number> = new Map();
   private unlockedClasses: Set<string> = new Set();
@@ -34,8 +73,9 @@ export class ProgressionSystem {
   private onSkillDiscoveredCallbacks: ((event: SkillDiscoveredEvent) => void)[] = [];
   private onDualWieldUnlockedCallbacks: (() => void)[] = [];
 
-  constructor(classesData: ClassesData) {
+  constructor(classesData: ClassesData, ownerName: string = 'Guild Hero') {
     this.classesData = classesData;
+    this.ownerName = ownerName;
     this.initDefaultProficiencies();
   }
 
@@ -144,7 +184,19 @@ export class ProgressionSystem {
     const oldLevel = stat.level;
     const result = LevelingSystem.addExp(stat, amount);
     const nextExp = LevelingSystem.expForNextLevel(stat.level);
-    console.log(`[Progression] +${amount} EXP for '${id}'. Current: Level ${stat.level} (${stat.currentExp}/${nextExp} EXP)`);
+    console.log(`[Progression] +${amount} EXP for '${id}' (${this.ownerName}). Current: Level ${stat.level} (${stat.currentExp}/${nextExp} EXP)`);
+
+    // Record EXP transaction for debug panel and live tooling
+    const tx: ExpTransaction = {
+      id,
+      amount,
+      memberName: this.ownerName || 'Guild Hero',
+      timestamp: Date.now(),
+      currentLevel: stat.level,
+      currentExp: stat.currentExp,
+      nextExp
+    };
+    ProgressionSystem.recordExpTransaction(tx);
 
     if (result.leveledUp) {
       console.log(`[Progression] LEVEL UP! '${id}' is now Level ${stat.level}! (Gained ${result.levelsGained} level(s))`);
@@ -152,9 +204,9 @@ export class ProgressionSystem {
       this.checkDualWieldUnlock();
 
       if (oldLevel === 0 && stat.level >= 1) {
-        console.log(`[Progression] ✨ SKILL DISCOVERED: '${id}' reached Level ${stat.level}! ✨`);
+        console.log(`[Progression] ✨ SKILL DISCOVERED: '${id}' reached Level ${stat.level} by ${this.ownerName}! ✨`);
         for (const cb of this.onSkillDiscoveredCallbacks) {
-          cb({ skillId: id, level: stat.level });
+          cb({ skillId: id, level: stat.level, memberName: this.ownerName });
         }
       }
     }
@@ -191,10 +243,10 @@ export class ProgressionSystem {
       if (this.evaluateRequirements(classDef)) {
         this.unlockedClasses.add(classDef.id);
         this.classLevels.set(classDef.id, 1);
-        console.log(`[Progression] Class Unlocked: ${classDef.name} (${classDef.id})!`);
+        console.log(`[Progression] Class Unlocked: ${classDef.name} (${classDef.id}) for ${this.ownerName}!`);
 
         for (const cb of this.onUnlockCallbacks) {
-          cb({ classDef });
+          cb({ classDef, memberName: this.ownerName });
         }
       }
     }

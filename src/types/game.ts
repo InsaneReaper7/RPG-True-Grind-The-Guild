@@ -403,3 +403,13 @@ export interface MoodTierDef {
 export interface MoodEffectsData {
   moodTiers: MoodTierDef[];
 }
+
+export interface ExpTransaction {
+  id: string; // proficiency/stat ID (e.g. 'short_swords', 'foraging')
+  amount: number; // e.g. 2, 15
+  memberName: string; // e.g. 'Valerie', 'Guild Hero'
+  timestamp: number;
+  currentLevel: number;
+  currentExp: number;
+  nextExp: number;
+}

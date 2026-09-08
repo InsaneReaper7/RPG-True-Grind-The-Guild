@@ -141,6 +141,8 @@
       pointer-events: none;
       display: none;
       transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      z-index: 150;
+      cursor: pointer;
     }
     #unlock-modal.active {
       display: block;
@@ -173,6 +175,7 @@
       display: none;
       transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
       z-index: 150;
+      cursor: pointer;
     }
     #skill-discovered-modal.active {
       display: block;
@@ -741,6 +744,67 @@
       color: #93c5fd;
       font-weight: 600;
     }
+    .debug-member-select {
+      background: #1f2937;
+      color: #f3f4f6;
+      border: 1px solid #f59e0b;
+      border-radius: 4px;
+      padding: 2px 6px;
+      font-size: 10px;
+      max-width: 170px;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .debug-member-select:focus {
+      outline: none;
+      border-color: #fbbf24;
+      box-shadow: 0 0 5px rgba(245, 158, 11, 0.4);
+    }
+    .debug-exp-log-list {
+      max-height: 140px;
+      overflow-y: auto;
+      background: rgba(0, 0, 0, 0.45);
+      border: 1px solid rgba(245, 158, 11, 0.2);
+      border-radius: 4px;
+      padding: 6px 8px;
+      font-size: 11px;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      scrollbar-width: thin;
+    }
+    .debug-exp-entry {
+      font-size: 11px;
+      line-height: 1.4;
+      color: #e5e7eb;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      white-space: nowrap;
+    }
+    .debug-exp-entry .exp-amount {
+      color: #34d399;
+      font-weight: bold;
+    }
+    .debug-exp-entry .exp-id {
+      color: #60a5fa;
+      font-weight: 600;
+    }
+    .debug-exp-entry .exp-member {
+      color: #fbbf24;
+    }
+    .debug-clear-btn {
+      font-size: 10px;
+      padding: 1px 6px;
+      background: #374151;
+      color: #9ca3af;
+      border: 1px solid #4b5563;
+      border-radius: 3px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .debug-clear-btn:hover {
+      background: #4b5563;
+      color: #f3f4f6;
+    }
     .debug-actions-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -882,13 +946,26 @@
 
         <!-- Section 1: Stats List -->
         <div class="debug-section" id="debug-stats-section">
-          <div class="debug-section-header">
+          <div class="debug-section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
             <span class="debug-section-title">📊 Stats</span>
+            <div style="display: flex; align-items: center; gap: 4px;">
+              <label for="debug-member-select" style="font-size: 10px; color: #9ca3af;">Member:</label>
+              <select id="debug-member-select" class="debug-member-select"></select>
+            </div>
           </div>
           <div id="debug-skills-list" class="debug-skills-list"></div>
         </div>
 
-        <!-- Section 2: Debug Actions Button Grid -->
+        <!-- Section 2: Live EXP Transaction Log -->
+        <div class="debug-section" id="debug-exp-log-section">
+          <div class="debug-section-header" style="display: flex; justify-content: space-between; align-items: center;">
+            <span class="debug-section-title">📜 EXP Transaction Log</span>
+            <button id="debug-clear-exp-log-btn" class="debug-clear-btn" type="button">Clear</button>
+          </div>
+          <div id="debug-exp-log-list" class="debug-exp-log-list"></div>
+        </div>
+
+        <!-- Section 3: Debug Actions Button Grid -->
         <div class="debug-section" id="debug-actions-section">
           <div class="debug-section-header">
             <span class="debug-section-title">⚡ Debug Actions</span>
@@ -962,12 +1039,14 @@
         <h2>✨ CLASS UNLOCKED! ✨</h2>
         <p><strong id="unlocked-class-name" style="color: #60a5fa;">Fencer</strong></p>
         <p id="unlocked-class-fantasy" style="font-size: 13px; color: #9ca3af; margin-top: 4px;">Quick, light-footed duelist</p>
+        <div style="font-size: 11px; color: #6b7280; margin-top: 12px; font-style: italic;">Click or press Esc to dismiss</div>
       </div>
 
       <div id="skill-discovered-modal">
         <h2>✨ SKILL DISCOVERED! ✨</h2>
         <p><strong id="discovered-skill-name" style="color: #34d399; font-size: 20px;">Parry</strong></p>
         <p id="discovered-skill-desc" style="font-size: 13px; color: #d1d5db; margin-top: 4px;">Deflects incoming melee attacks.</p>
+        <div style="font-size: 11px; color: #6b7280; margin-top: 12px; font-style: italic;">Click or press Esc to dismiss</div>
       </div>
 
       <div id="downed-banner">
