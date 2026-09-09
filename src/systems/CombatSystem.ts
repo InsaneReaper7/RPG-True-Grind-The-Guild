@@ -157,6 +157,95 @@ export class CombatSystem {
     return candidateList[0];
   }
 
+  /**
+   * Milestone 20: Finds an open staging tile within attackRangeTiles with direct Line of Sight
+   * for ranged enemies so they do not close to melee distance during pursuit.
+   */
+  public findRangedStagingTile(enemy: Enemy, target: Entity, attackRange: number): GridPos | null {
+    const enemyTile = enemy.gridPos;
+    const targetTile = target.gridPos;
+    const candidates: { tile: GridPos; distToEnemy: number; distToTarget: number }[] = [];
+
+    // Search concentric rings from attackRange down to Math.max(2, attackRange - 1)
+    for (let r = attackRange; r >= Math.max(2, attackRange - 1); r--) {
+      for (let dx = -r; dx <= r; dx++) {
+        for (let dy = -r; dy <= r; dy++) {
+          if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
+          const tx = targetTile.x + dx;
+          const ty = targetTile.y + dy;
+
+          if (this.pathfinder.isObstacle(tx, ty)) continue;
+          if (this.isTileClaimedOrOccupiedByOther(tx, ty, enemy)) continue;
+
+          const distFromSpawn = Math.max(Math.abs(tx - enemy.spawnPos.x), Math.abs(ty - enemy.spawnPos.y));
+          if (distFromSpawn > enemy.maxLeashDistance) continue;
+
+          if (!this.pathfinder.hasLineOfSight({ x: tx, y: ty }, targetTile)) continue;
+
+          const distToEnemy = Math.max(Math.abs(tx - enemyTile.x), Math.abs(ty - enemyTile.y));
+          candidates.push({ tile: { x: tx, y: ty }, distToEnemy, distToTarget: r });
+        }
+      }
+      if (candidates.length > 0) break; // Found open staging tiles in outermost ring
+    }
+
+    if (candidates.length === 0) {
+      // Fallback: getBestAdjacentTile if no ring tiles open
+      return this.getBestAdjacentTile(enemyTile, targetTile, enemy);
+    }
+
+    // Sort by distance to enemy (pick the nearest staging tile to current enemy position)
+    candidates.sort((a, b) => a.distToEnemy - b.distToEnemy);
+    return candidates[0].tile;
+  }
+
+  /**
+   * Milestone 20: Evaluates retreat tiles when a target closes in on a ranged enemy (distance <= 2)
+   * to backpedal and maintain spacing while preserving line of sight and staying within leash distance.
+   */
+  public findKiteTile(enemy: Enemy, target: Entity, attackRange: number): GridPos | null {
+    const enemyTile = enemy.gridPos;
+    const targetTile = target.gridPos;
+    const currentDist = Math.max(Math.abs(enemyTile.x - targetTile.x), Math.abs(enemyTile.y - targetTile.y));
+
+    const candidates: { tile: GridPos; distToTarget: number; distToEnemy: number }[] = [];
+
+    for (let dx = -2; dx <= 2; dx++) {
+      for (let dy = -2; dy <= 2; dy++) {
+        if (dx === 0 && dy === 0) continue;
+        const tx = enemyTile.x + dx;
+        const ty = enemyTile.y + dy;
+
+        if (this.pathfinder.isObstacle(tx, ty)) continue;
+        if (this.isTileClaimedOrOccupiedByOther(tx, ty, enemy)) continue;
+
+        const distFromSpawn = Math.max(Math.abs(tx - enemy.spawnPos.x), Math.abs(ty - enemy.spawnPos.y));
+        if (distFromSpawn > enemy.maxLeashDistance) continue;
+
+        const distToTarget = Math.max(Math.abs(tx - targetTile.x), Math.abs(ty - targetTile.y));
+        // Must strictly increase distance from target and not exceed attackRange
+        if (distToTarget <= currentDist) continue;
+        if (distToTarget > attackRange) continue;
+
+        if (!this.pathfinder.hasLineOfSight({ x: tx, y: ty }, targetTile)) continue;
+
+        const distToEnemy = Math.max(Math.abs(dx), Math.abs(dy));
+        candidates.push({ tile: { x: tx, y: ty }, distToTarget, distToEnemy });
+      }
+    }
+
+    if (candidates.length === 0) return null;
+
+    // Prioritize tiles that maximize distance to target up to attackRange, while minimizing move distance from enemy
+    candidates.sort((a, b) => {
+      const scoreA = (attackRange - a.distToTarget) * 2 + a.distToEnemy;
+      const scoreB = (attackRange - b.distToTarget) * 2 + b.distToEnemy;
+      return scoreA - scoreB;
+    });
+
+    return candidates[0].tile;
+  }
+
   public isTileClaimedOrOccupiedByOther(
     tx: number,
     ty: number,
@@ -324,6 +413,7 @@ export class CombatSystem {
         if (potentialTarget) {
           target = potentialTarget;
           this.enemyTargets.set(enemy, target);
+          enemy.targetEntity = target;
           enemy.isAggroed = true;
           enemy.outOfAggroTimerMs = 0;
           enemy.state = 'chasing';
@@ -419,10 +509,35 @@ export class CombatSystem {
             Math.abs(enemyTile.y - currentTargetTile.y)
           );
           const attackRange = enemy.enemyData.attackRangeTiles ?? 1;
+          const isRanged = attackRange > 1;
 
           if (curDistTiles <= attackRange) {
-            if (enemy.state !== 'attacking') {
-              enemy.stopMovement();
+            // Milestone 20: Ranged Enemy Kiting AI
+            // If target closes into melee distance (<= 2 tiles), attempt to backpedal to maintain spacing
+            let isKiting = false;
+            if (isRanged && curDistTiles <= 2) {
+              const timeForKite = time - enemy.lastRepathTimeMs >= enemy.repathIntervalMs;
+              if (!enemy.isMoving() || timeForKite) {
+                const kiteTile = this.findKiteTile(enemy, target, attackRange);
+                if (kiteTile && (kiteTile.x !== enemyTile.x || kiteTile.y !== enemyTile.y)) {
+                  enemy.lastRepathTimeMs = time;
+                  enemy.claimedDestination = { ...kiteTile };
+                  const dynamicObstacles = this.getOtherUnitPositions(enemy);
+                  this.pathfinder.findPath(enemyTile, kiteTile, dynamicObstacles).then((path) => {
+                    if (path.length > 0 && enemy.state !== 'downed' && enemy.state !== 'dead' && enemy.isAggroed) {
+                      enemy.followPath(path);
+                      console.log(`[Combat:Kite] 🏹 ${enemy.entityName} kiting back from ${target?.entityName ?? 'target'} to (${kiteTile.x}, ${kiteTile.y})!`);
+                    }
+                  });
+                  isKiting = true;
+                }
+              }
+            }
+
+            if (!isKiting) {
+              if (enemy.isMoving()) {
+                enemy.stopMovement();
+              }
               enemy.claimedDestination = null;
               enemy.state = 'attacking';
             }
@@ -451,7 +566,7 @@ export class CombatSystem {
                   hasMagicProficiency: false,
                   inCombat: true,
                   attackerDistanceTiles: curDistTiles,
-                  isMeleeAttack: true
+                  isMeleeAttack: !isRanged
                 };
 
                 // Avoidance chain evaluated against target's own progression
@@ -501,7 +616,8 @@ export class CombatSystem {
                     }
                   }
                 } else {
-                  this.createAttackEffect(enemy.x, enemy.y, target.x, target.y, 0xef4444);
+                  const attackColor = isRanged ? 0xf59e0b : 0xef4444;
+                  this.createAttackEffect(enemy.x, enemy.y, target.x, target.y, attackColor);
                   if (context.hasShield) {
                     target.progression.addProficiencyExp('shields', 1);
                   }
@@ -572,7 +688,9 @@ export class CombatSystem {
             }
             if (enemy.state === 'chasing' || enemy.state === 'moving') {
               const startTile = enemy.gridPos;
-              const targetDestTile = this.getBestAdjacentTile(startTile, currentTargetTile, enemy) || currentTargetTile;
+              const targetDestTile = isRanged
+                ? this.findRangedStagingTile(enemy, target, attackRange) || currentTargetTile
+                : this.getBestAdjacentTile(startTile, currentTargetTile, enemy) || currentTargetTile;
               const isStopped = !enemy.isMoving();
               const timeForRepath = time - enemy.lastRepathTimeMs >= enemy.repathIntervalMs;
 
@@ -868,7 +986,7 @@ export class CombatSystem {
                 }
 
                 this.lastCombatTimeMs = time;
-                if (target.state !== 'dead' && target.state !== 'downed') (target as any).isAggroed = true;
+                if ((target.state as string) !== 'dead' && (target.state as string) !== 'downed') (target as any).isAggroed = true;
                 const offTargetDowned = target.takeDamage(offEffectiveDamage);
                 if (offTargetDowned) {
                   this.handleTargetDefeated(member, target, offWpn.id);
@@ -1572,7 +1690,13 @@ export class CombatSystem {
     if (!enemy.targetEntity || enemy.targetEntity.state === 'downed' || enemy.targetEntity.state === 'dead') {
       enemy.targetEntity = livingMembers[0];
       this.enemyTargets.set(enemy, livingMembers[0]);
-      enemy.state = 'chasing';
+      const curDist = Math.max(
+        Math.abs(enemy.gridPos.x - livingMembers[0].gridPos.x),
+        Math.abs(enemy.gridPos.y - livingMembers[0].gridPos.y)
+      );
+      if (curDist > (enemy.enemyData.attackRangeTiles ?? 1)) {
+        enemy.state = 'chasing';
+      }
     }
 
     // Pass 0: Purge stale targets ONLY for members being commanded

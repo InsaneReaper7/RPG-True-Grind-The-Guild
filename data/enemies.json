@@ -1,5 +1,5 @@
 {
-  "_comment": "Starter bestiary. harvestItems use profession tags so future recipes can reference 'anything tagged X' without a rewrite. Only 'wolf' is used in Milestone 1 — the rest are stubbed for later milestones.",
+  "_comment": "Expanded bestiary (Milestone 20). harvestItems use profession tags so future recipes can reference 'anything tagged X' without a rewrite.",
   "enemies": [
     {
       "id": "wolf",
@@ -22,8 +22,9 @@
       "name": "Slime",
       "tier": "common",
       "hp": 20,
+      "criticalHpMax": 10,
       "meleeDamage": 2,
-      "aggroRadius": 3,
+      "aggroRadius": 4,
       "attackIntervalMs": 1500,
       "moveSpeed": 60,
       "harvest": [
@@ -46,6 +47,23 @@
       ]
     },
     {
+      "id": "goblin_archer",
+      "name": "Goblin Archer",
+      "tier": "common",
+      "hp": 18,
+      "criticalHpMax": 9,
+      "meleeDamage": 4,
+      "aggroRadius": 7,
+      "attackIntervalMs": 1100,
+      "moveSpeed": 95,
+      "attackRangeTiles": 4,
+      "harvest": [
+        { "method": "butchering", "item": "monster_meat", "tags": ["cooking"] },
+        { "method": "salvage", "item": "bowstring", "tags": ["bowyer"] },
+        { "method": "rare_drop", "item": "feather", "tags": ["bowyer", "fletching"] }
+      ]
+    },
+    {
       "id": "skeleton",
       "name": "Skeleton",
       "tier": "common",
@@ -57,6 +75,23 @@
       "moveSpeed": 80,
       "harvest": [
         { "method": "salvage", "item": "bone", "tags": ["bowyer", "blacksmithing"] },
+        { "method": "rare_drop", "item": "ectoplasm", "tags": ["enchanting", "alchemy"] }
+      ]
+    },
+    {
+      "id": "skeleton_archer",
+      "name": "Skeleton Archer",
+      "tier": "common",
+      "hp": 22,
+      "criticalHpMax": 11,
+      "meleeDamage": 6,
+      "aggroRadius": 7,
+      "attackIntervalMs": 1300,
+      "moveSpeed": 85,
+      "attackRangeTiles": 5,
+      "harvest": [
+        { "method": "salvage", "item": "bone", "tags": ["bowyer", "blacksmithing"] },
+        { "method": "salvage", "item": "bowstring", "tags": ["bowyer"] },
         { "method": "rare_drop", "item": "ectoplasm", "tags": ["enchanting", "alchemy"] }
       ]
     },
@@ -73,6 +108,37 @@
       "harvest": [
         { "method": "salvage", "item": "bone", "tags": ["bowyer", "blacksmithing"] },
         { "method": "rare_drop", "item": "ectoplasm", "tags": ["enchanting", "alchemy"] }
+      ]
+    },
+    {
+      "id": "spider",
+      "name": "Giant Spider",
+      "tier": "common",
+      "hp": 25,
+      "criticalHpMax": 12,
+      "meleeDamage": 5,
+      "aggroRadius": 6,
+      "attackIntervalMs": 950,
+      "moveSpeed": 110,
+      "harvest": [
+        { "method": "collect", "item": "spider_silk", "tags": ["tailoring", "bowyer"] },
+        { "method": "rare_drop", "item": "spider_venom", "tags": ["alchemy"] }
+      ]
+    },
+    {
+      "id": "orc_warrior",
+      "name": "Orc Warrior",
+      "tier": "elite",
+      "hp": 85,
+      "criticalHpMax": 42,
+      "meleeDamage": 12,
+      "aggroRadius": 6,
+      "attackIntervalMs": 1300,
+      "moveSpeed": 90,
+      "harvest": [
+        { "method": "salvage", "item": "orc_heavy_hide", "tags": ["armorsmithing"] },
+        { "method": "salvage", "item": "steel_scrap", "tags": ["blacksmithing"] },
+        { "method": "rare_drop", "item": "orc_emblem", "tags": ["enchanting", "blacksmithing"] }
       ]
     }
   ]

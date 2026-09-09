@@ -18,6 +18,9 @@ export class Enemy extends Entity {
   public repathIntervalMs: number = 400;
   public roomIndex?: number;
 
+  public eliteAura?: Phaser.GameObjects.Graphics;
+  public eliteLabel?: Phaser.GameObjects.Text;
+
   constructor(
     scene: Phaser.Scene,
     x: number,
@@ -33,9 +36,32 @@ export class Enemy extends Entity {
     this.moveSpeed = enemyData.moveSpeed;
     this.spawnPos = { x, y };
 
+    // Milestone 20: Elite Tier Visual Distinction
+    if (this.enemyData.tier === 'elite') {
+      if (scene.add && typeof scene.add.graphics === 'function') {
+        this.eliteAura = scene.add.graphics();
+        this.eliteAura.lineStyle(2, 0xf59e0b, 0.85);
+        this.eliteAura.strokeCircle(0, 0, 18);
+        this.eliteAura.fillStyle(0xf59e0b, 0.18);
+        this.eliteAura.fillCircle(0, 0, 18);
+        this.addAt(this.eliteAura, 0); // Behind avatar
+      }
+      if (scene.add && typeof scene.add.text === 'function') {
+        this.eliteLabel = scene.add.text(0, -this.tileSize / 2 - 17, '★ ELITE ★', {
+          fontSize: '9px',
+          color: '#f59e0b',
+          fontStyle: 'bold',
+          backgroundColor: 'rgba(0,0,0,0.75)',
+          padding: { x: 3, y: 1 }
+        }).setOrigin(0.5);
+        this.add(this.eliteLabel);
+      }
+    }
+
     // Enable direct sprite/container click interactive hit area
     this.setInteractive(new Phaser.Geom.Rectangle(-16, -16, 32, 32), Phaser.Geom.Rectangle.Contains);
     this.avatarSprite.setInteractive();
+    this.drawHpBar();
   }
 
   public override takeDamage(amount: number): boolean {
@@ -88,6 +114,12 @@ export class Enemy extends Entity {
     if (this.statusIconSprite) {
       this.statusIconSprite.setVisible(false);
     }
+    if (this.eliteAura) {
+      this.eliteAura.setVisible(false);
+    }
+    if (this.eliteLabel) {
+      this.eliteLabel.setVisible(false);
+    }
     this.drawHpBar();
   }
 
@@ -116,7 +148,26 @@ export class Enemy extends Entity {
     if (this.statusIconSprite) {
       this.statusIconSprite.setVisible(false);
     }
+    if (this.eliteAura) {
+      this.eliteAura.setVisible(true);
+    }
+    if (this.eliteLabel) {
+      this.eliteLabel.setVisible(true);
+    }
     this.drawHpBar();
     console.log(`[Respawn] ${this.entityName} completely reset and respawned at (${this.spawnPos.x}, ${this.spawnPos.y}) with full HP!`);
+  }
+
+  public override drawHpBar(): void {
+    super.drawHpBar();
+    // Milestone 20: Gold border around HP bar for Elite enemies
+    if (this.enemyData?.tier === 'elite' && this.state !== 'dead' && this.hpBarBg) {
+      const barWidth = 32;
+      const barHeight = 3;
+      const barX = -barWidth / 2;
+      const barY = -this.tileSize / 2 - 10;
+      this.hpBarBg.lineStyle(1.5, 0xf59e0b, 0.95);
+      this.hpBarBg.strokeRect(barX - 1, barY - 1, barWidth + 2, barHeight * 2 + 3);
+    }
   }
 }

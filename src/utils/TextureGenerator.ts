@@ -141,6 +141,159 @@ export class TextureGenerator {
       g.destroy();
     }
 
+    // 4e. Slime Avatar Texture (Vibrant emerald gelatinous blob)
+    if (!scene.textures.exists('slime-avatar')) {
+      const size = 28;
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      // Gelatinous droplet blob base
+      g.fillStyle(0x10b981, 0.85); // Emerald Green
+      g.fillEllipse(size / 2, size / 2 + 2, 11, 9);
+      g.fillCircle(size / 2, size / 2 - 2, 8);
+      g.lineStyle(2, 0x34d399, 1);
+      g.strokeEllipse(size / 2, size / 2 + 2, 11, 9);
+      // Jelly highlight glints
+      g.fillStyle(0xa7f3d0, 0.9);
+      g.fillCircle(size / 2 - 4, size / 2 - 4, 3);
+      g.fillCircle(size / 2 + 3, size / 2 - 6, 1.5);
+      // Jelly core nucleus
+      g.fillStyle(0x047857, 0.7);
+      g.fillCircle(size / 2 + 1, size / 2 + 1, 3.5);
+      g.generateTexture('slime-avatar', size, size);
+      g.destroy();
+    }
+
+    // 4f. Goblin Archer Avatar Texture (Green Diamond with Hunting Bow)
+    if (!scene.textures.exists('goblin_archer-avatar')) {
+      const size = 28;
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      g.fillStyle(0x15803d, 1); // Darker Ranger Goblin Green
+      g.beginPath();
+      g.moveTo(size / 2, 3);
+      g.lineTo(size - 2, size / 2);
+      g.lineTo(size / 2, size - 3);
+      g.lineTo(2, size / 2);
+      g.closePath();
+      g.fillPath();
+      g.lineStyle(2, 0x86efac, 1);
+      g.strokePath();
+      // Pointed ear notches
+      g.fillStyle(0x4ade80, 1);
+      g.fillTriangle(2, size / 2, 0, size / 2 - 4, 4, size / 2 - 2);
+      g.fillTriangle(size - 2, size / 2, size, size / 2 - 4, size - 4, size / 2 - 2);
+      // Feral eyes
+      g.fillStyle(0xfef08a, 1);
+      g.fillCircle(size / 2 - 4, size / 2 - 3, 1.5);
+      g.fillCircle(size / 2 + 4, size / 2 - 3, 1.5);
+      // Curved wooden hunting bow across chest
+      g.lineStyle(2, 0xb45309, 1); // Wood bow
+      g.beginPath();
+      g.arc(size / 2, size / 2 + 2, 7, Phaser.Math.DegToRad(200), Phaser.Math.DegToRad(340), false);
+      g.strokePath();
+      // Bowstring
+      g.lineStyle(1, 0xfef08a, 0.9);
+      g.lineBetween(size / 2 - 6, size / 2 + 2, size / 2 + 6, size / 2 + 2);
+      // Arrow shaft
+      g.lineStyle(1.5, 0xffffff, 1);
+      g.lineBetween(size / 2, size / 2 - 4, size / 2, size / 2 + 5);
+      g.generateTexture('goblin_archer-avatar', size, size);
+      g.destroy();
+    }
+
+    // 4g. Skeleton Archer Avatar Texture (Ivory Skull with Strung Recurve Bow)
+    if (!scene.textures.exists('skeleton_archer-avatar')) {
+      const size = 28;
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      g.fillStyle(0xe2e8f0, 1); // Bone Ivory
+      g.fillCircle(size / 2, size / 2, size / 2 - 3);
+      g.lineStyle(2, 0x94a3b8, 1);
+      g.strokeCircle(size / 2, size / 2, size / 2 - 3);
+      // Dark eye sockets
+      g.fillStyle(0x0f172a, 1);
+      g.fillCircle(size / 2 - 4, size / 2 - 2, 2.5);
+      g.fillCircle(size / 2 + 4, size / 2 - 2, 2.5);
+      // Archer headband / bone notch
+      g.fillStyle(0x78350f, 1);
+      g.fillRect(size / 2 - 7, size / 2 - 8, 14, 2.5);
+      // Strung Bow
+      g.lineStyle(2, 0xd97706, 1);
+      g.beginPath();
+      g.arc(size / 2 + 2, size / 2 + 2, 6, Phaser.Math.DegToRad(120), Phaser.Math.DegToRad(280), false);
+      g.strokePath();
+      // Arrow
+      g.lineStyle(1.5, 0x38bdf8, 1); // Cyan bone arrow
+      g.lineBetween(size / 2 - 6, size / 2 + 2, size / 2 + 6, size / 2 + 2);
+      g.generateTexture('skeleton_archer-avatar', size, size);
+      g.destroy();
+    }
+
+    // 4h. Giant Spider Avatar Texture (Obsidian with Multi-legs and Ruby Eyes)
+    if (!scene.textures.exists('spider-avatar')) {
+      const size = 28;
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      // 8 Arachnid legs
+      g.lineStyle(2, 0x4c1d95, 1); // Deep violet chitin legs
+      // Left legs
+      g.lineBetween(size / 2 - 4, size / 2 - 3, 2, size / 2 - 8);
+      g.lineBetween(size / 2 - 5, size / 2, 1, size / 2);
+      g.lineBetween(size / 2 - 5, size / 2 + 3, 2, size / 2 + 8);
+      g.lineBetween(size / 2 - 3, size / 2 + 5, 4, size / 2 + 11);
+      // Right legs
+      g.lineBetween(size / 2 + 4, size / 2 - 3, size - 2, size / 2 - 8);
+      g.lineBetween(size / 2 + 5, size / 2, size - 1, size / 2);
+      g.lineBetween(size / 2 + 5, size / 2 + 3, size - 2, size / 2 + 8);
+      g.lineBetween(size / 2 + 3, size / 2 + 5, size - 4, size / 2 + 11);
+      // Abdomen and Cephalothorax
+      g.fillStyle(0x18181b, 1); // Obsidian black body
+      g.fillCircle(size / 2, size / 2 + 3, 6);
+      g.fillCircle(size / 2, size / 2 - 3, 4);
+      g.lineStyle(1.5, 0x7c3aed, 0.8);
+      g.strokeCircle(size / 2, size / 2 + 3, 6);
+      // Ruby cluster eyes
+      g.fillStyle(0xef4444, 1);
+      g.fillCircle(size / 2 - 2, size / 2 - 4, 1.2);
+      g.fillCircle(size / 2 + 2, size / 2 - 4, 1.2);
+      g.fillCircle(size / 2 - 3, size / 2 - 2, 1);
+      g.fillCircle(size / 2 + 3, size / 2 - 2, 1);
+      g.generateTexture('spider-avatar', size, size);
+      g.destroy();
+    }
+
+    // 4i. Orc Warrior Avatar Texture (First Elite Tier - Blood Red War Diamond with Tusks & Iron Horns)
+    if (!scene.textures.exists('orc_warrior-avatar')) {
+      const size = 30;
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      // Bulky blood-red war diamond
+      g.fillStyle(0x991b1b, 1); // Dark Crimson Red
+      g.beginPath();
+      g.moveTo(size / 2, 2);
+      g.lineTo(size - 2, size / 2);
+      g.lineTo(size / 2, size - 2);
+      g.lineTo(2, size / 2);
+      g.closePath();
+      g.fillPath();
+      // Heavy iron plate border
+      g.lineStyle(2.5, 0x374151, 1);
+      g.strokePath();
+      // Inner war rune
+      g.lineStyle(1.5, 0xf59e0b, 1);
+      g.lineBetween(size / 2 - 5, size / 2, size / 2 + 5, size / 2);
+      g.lineBetween(size / 2, size / 2 - 5, size / 2, size / 2 + 5);
+      // Iron Horned Spikes
+      g.fillStyle(0x475569, 1);
+      g.fillTriangle(size / 2 - 7, 6, size / 2 - 11, 0, size / 2 - 4, 4);
+      g.fillTriangle(size / 2 + 7, 6, size / 2 + 11, 0, size / 2 + 4, 4);
+      // Ivory war tusks curving upward
+      g.fillStyle(0xf8fafc, 1);
+      g.fillTriangle(size / 2 - 5, size / 2 + 4, size / 2 - 7, size / 2 - 1, size / 2 - 3, size / 2 + 2);
+      g.fillTriangle(size / 2 + 5, size / 2 + 4, size / 2 + 7, size / 2 - 1, size / 2 + 3, size / 2 + 2);
+      // Piercing glowing amber eyes
+      g.fillStyle(0xfbbf24, 1);
+      g.fillCircle(size / 2 - 4, size / 2 - 3, 1.8);
+      g.fillCircle(size / 2 + 4, size / 2 - 3, 1.8);
+      g.generateTexture('orc_warrior-avatar', size, size);
+      g.destroy();
+    }
+
     // 5. Target Selection Reticle
     if (!scene.textures.exists('target-reticle')) {
       const size = 32;

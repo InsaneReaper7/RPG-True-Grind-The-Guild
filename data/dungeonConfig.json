@@ -33,9 +33,14 @@
   },
   "enemyPool": [
     "wolf",
+    "slime",
     "goblin",
+    "goblin_archer",
     "skeleton",
-    "undead"
+    "skeleton_archer",
+    "undead",
+    "spider",
+    "orc_warrior"
   ],
   "floorRespawnTimerSec": 300
 }
