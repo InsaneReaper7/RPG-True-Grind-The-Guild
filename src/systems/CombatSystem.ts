@@ -888,7 +888,7 @@ export class CombatSystem {
               `[DIAG:Combat] ⚔️ ${member.entityName} attacks ${target.entityName} with ${effectiveWeapon.name}! inCombat: ${member.inCombat}, Pre-EN: ${(member.energy + energyCost).toFixed(1)}, Post-EN: ${member.energy.toFixed(1)}, Range: ${member.attackRangeTiles}, Dist: ${distanceTiles}`
             );
 
-            const isFire = effectiveWeapon.id === 'fire_magic' || effectiveWeapon.category === 'magic';
+            const isFire = effectiveWeapon.id === 'fire_magic';
             const attackColor = isFire ? 0xf97316 : 0x3b82f6;
             this.createAttackEffect(member.x, member.y, target.x, target.y, attackColor);
             if (isFire) {
@@ -997,7 +997,7 @@ export class CombatSystem {
         }
       } else {
         // Target is outside attack range: Party Member Pursuit & Surround Maintenance
-        if (member.attackRangeTiles === 1 && (member.equippedWeapon?.id === 'staff' || member.equippedWeapon?.id === 'fire_magic' || member.equippedWeapon?.category === 'staff' || member.equippedWeapon?.category === 'magic')) {
+        if (member.attackRangeTiles === 1 && (member.equippedWeapon?.id === 'fire_staff' || member.equippedWeapon?.id === 'fire_magic')) {
           console.log(
             `[DIAG:Combat] 🏃 ${member.entityName} DRY FALLBACK: Range is 1 (${member.energy.toFixed(1)} EN). Pursuing ${target.entityName} to melee distance (currently ${distanceTiles} tiles)...`
           );
@@ -1323,9 +1323,9 @@ export class CombatSystem {
   public checkAndAutocastHealingMagic(member: Player, time: number): boolean {
     if (member.state === 'dead' || member.state === 'downed') return false;
 
-    // Healing Magic requires a Staff equipped as conduit
-    const isStaffEquipped = member.equippedWeapon?.id === 'staff' || member.equippedWeapon?.category === 'staff';
-    if (!isStaffEquipped) return false;
+    // Healing Magic requires a Healing Staff equipped as conduit (or legacy healing_magic)
+    const isHealingStaff = member.equippedWeapon?.id === 'healing_staff' || member.equippedWeapon?.id === 'healing_magic';
+    if (!isHealingStaff) return false;
 
     // Scan for living damaged party members (prioritize other allies, then self)
     const damagedMembers = this.party.filter(
@@ -1813,34 +1813,52 @@ export class CombatSystem {
   }
 
   public updateStaffDynamicRange(member: Player): void {
-    const isStaffOrFire = member.equippedWeapon?.id === 'staff' ||
-      member.equippedWeapon?.category === 'staff' ||
-      member.equippedWeapon?.id === 'fire_magic' ||
-      member.equippedWeapon?.category === 'magic';
-    if (!isStaffOrFire) return;
+    const weaponId = member.equippedWeapon?.id;
+    if (weaponId === 'fire_staff' || weaponId === 'fire_magic') {
+      const fireDef = DataLoader.getInstance().getWeapon('fire_magic');
+      const fireProfLevel = member.progression.getProficiencyLevel('fire_magic');
+      const fireCostReduction = (fireDef?.levelBonus?.energyCostReductionPerLevel ?? 0.1) * fireProfLevel;
+      const fireEnergyCost = fireDef ? Math.max(1, Math.round((fireDef.energyCostPerCast ?? 22) - fireCostReduction)) : 22;
+      const canCastFire = fireDef !== null && member.energy >= fireEnergyCost;
+      member.attackRangeTiles = canCastFire ? (fireDef?.attackRangeTiles ?? 4) : 1;
+      return;
+    }
 
-    const fireDef = DataLoader.getInstance().getWeapon('fire_magic');
-    const fireProfLevel = member.progression.getProficiencyLevel('fire_magic');
-    const fireCostReduction = (fireDef?.levelBonus?.energyCostReductionPerLevel ?? 0.1) * fireProfLevel;
-    const fireEnergyCost = fireDef ? Math.max(1, Math.round((fireDef.energyCostPerCast ?? 22) - fireCostReduction)) : 22;
-    const canCastFire = fireDef !== null && member.energy >= fireEnergyCost;
-    member.attackRangeTiles = canCastFire ? (fireDef?.attackRangeTiles ?? 4) : 1;
+    if (
+      weaponId === 'healing_staff' ||
+      weaponId === 'healing_magic' ||
+      weaponId === 'staff' ||
+      member.equippedWeapon?.category === 'staff'
+    ) {
+      member.attackRangeTiles = 1;
+      return;
+    }
   }
 
   public getEffectiveWeaponForAttack(member: Player): WeaponDef {
-    const isStaffOrFire = member.equippedWeapon?.id === 'staff' ||
-      member.equippedWeapon?.category === 'staff' ||
-      member.equippedWeapon?.id === 'fire_magic' ||
-      member.equippedWeapon?.category === 'magic';
-    if (!isStaffOrFire) return member.equippedWeapon;
-
     const dataLoader = DataLoader.getInstance();
-    const fireDefFromData = dataLoader.getWeapon('fire_magic');
-    const staffDef = dataLoader.getWeapon('staff') || member.equippedWeapon;
-    const fireLevel = member.progression.getProficiencyLevel('fire_magic');
-    const fireCostReduction = (fireDefFromData?.levelBonus?.energyCostReductionPerLevel ?? 0.1) * fireLevel;
-    const staffFireCost = fireDefFromData ? Math.max(1, Math.round((fireDefFromData.energyCostPerCast ?? 22) - fireCostReduction)) : 22;
-    const isCastingFire = fireDefFromData !== null && member.energy >= staffFireCost;
-    return isCastingFire ? fireDefFromData! : staffDef;
+    const weaponId = member.equippedWeapon?.id;
+
+    if (weaponId === 'fire_staff' || weaponId === 'fire_magic') {
+      const fireDefFromData = dataLoader.getWeapon('fire_magic');
+      const staffDef = dataLoader.getWeapon('staff') || member.equippedWeapon;
+      const fireLevel = member.progression.getProficiencyLevel('fire_magic');
+      const fireCostReduction = (fireDefFromData?.levelBonus?.energyCostReductionPerLevel ?? 0.1) * fireLevel;
+      const staffFireCost = fireDefFromData ? Math.max(1, Math.round((fireDefFromData.energyCostPerCast ?? 22) - fireCostReduction)) : 22;
+      const isCastingFire = fireDefFromData !== null && member.energy >= staffFireCost;
+      return isCastingFire ? fireDefFromData! : staffDef;
+    }
+
+    if (
+      weaponId === 'healing_staff' ||
+      weaponId === 'healing_magic' ||
+      weaponId === 'staff' ||
+      member.equippedWeapon?.category === 'staff'
+    ) {
+      const staffDef = dataLoader.getWeapon('staff') || member.equippedWeapon;
+      return staffDef;
+    }
+
+    return member.equippedWeapon;
   }
 }

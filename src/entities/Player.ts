@@ -145,7 +145,7 @@ export class Player extends Entity {
 
   public equipWeapon(weapon: WeaponDef): void {
     this.equippedWeapon = weapon;
-    this.attackRangeTiles = weapon.attackRangeTiles ?? (weapon.category === 'magic' || weapon.category === 'ranged' ? 4 : 1);
+    this.attackRangeTiles = weapon.attackRangeTiles ?? ((weapon.category === 'magic' && weapon.baseDamage > 0) || weapon.category === 'ranged' ? 4 : 1);
     if (weapon.twoHanded && this.offhandWeapon) {
       console.log(`[Player:${this.entityName}] Unequipped offhand because ${weapon.name} is two-handed`);
       this.offhandWeapon = null;
@@ -498,7 +498,13 @@ export class Player extends Entity {
     this.criticalHp = snapshot.criticalHp;
     this.energy = snapshot.energy;
 
-    const mainWeapon = dataLoader.getWeapon(snapshot.equippedWeaponId);
+    let normalizedWeaponId = snapshot.equippedWeaponId;
+    if (normalizedWeaponId === 'fire_magic') {
+      normalizedWeaponId = 'fire_staff';
+    } else if (normalizedWeaponId === 'healing_magic') {
+      normalizedWeaponId = 'healing_staff';
+    }
+    const mainWeapon = dataLoader.getWeapon(normalizedWeaponId);
     if (mainWeapon) {
       this.equippedWeapon = mainWeapon;
     }
@@ -510,12 +516,14 @@ export class Player extends Entity {
       this.offhandWeapon = null;
     }
 
-    this.knownSkillIds = [...snapshot.knownSkillIds];
-    this.equippedSkillIds = [...snapshot.equippedSkillIds];
+    this.knownSkillIds = snapshot.knownSkillIds ? [...snapshot.knownSkillIds] : [];
+    this.equippedSkillIds = snapshot.equippedSkillIds ? [...snapshot.equippedSkillIds] : [];
 
     this.autocastMap.clear();
-    for (const [k, v] of Object.entries(snapshot.autocastMap)) {
-      this.autocastMap.set(k, v);
+    if (snapshot.autocastMap) {
+      for (const [k, v] of Object.entries(snapshot.autocastMap)) {
+        this.autocastMap.set(k, v);
+      }
     }
 
     if (snapshot.bookLearnedSkills) {

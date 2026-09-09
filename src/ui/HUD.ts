@@ -1517,7 +1517,8 @@ export class HUD {
     }
 
     const weaponId = player.equippedWeapon.id;
-    const stat = progression.getProficiencyStat(weaponId);
+    const profId = (weaponId === 'healing_staff' || weaponId === 'fire_staff') ? 'staff' : weaponId;
+    const stat = progression.getProficiencyStat(profId);
     if (this.hudProficiencyRowEl) {
       if (stat.level >= 1) {
         this.hudProficiencyRowEl.style.display = 'flex';
@@ -2065,10 +2066,10 @@ export class HUD {
         `;
       }
 
-      // Main weapon options (all weapons except offhand-only and non-offensive spell disciplines)
+      // Main weapon options (physical items and staff conduits, excluding offhand and pure magic spell disciplines)
       let mainOptions = '';
       for (const w of allWeapons) {
-        if (w.category !== 'offhand' && (w.category !== 'magic' || w.baseDamage > 0)) {
+        if (w.category !== 'offhand' && w.category !== 'magic') {
           const sel = member.equippedWeapon.id === w.id ? 'selected' : '';
           const tag = w.twoHanded ? '2H' : '1H';
           mainOptions += `<option value="${w.id}" ${sel}>${w.name} (${tag} - Dmg: ${w.baseDamage})</option>`;

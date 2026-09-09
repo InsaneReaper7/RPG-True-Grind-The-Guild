@@ -322,7 +322,7 @@ export class DataLoader {
         description = 'Proficiency with healing magic to restore health to injured allies.';
       } else if (weapon.id === 'fire_magic') {
         description = 'Proficiency with fire magic to incinerate enemies with ranged flames.';
-      } else if (weapon.id === 'staff') {
+      } else if (weapon.id === 'staff' || weapon.id === 'healing_staff' || weapon.id === 'fire_staff') {
         description = 'Proficiency with two-handed staves in melee combat.';
       }
       return {
@@ -532,7 +532,7 @@ export class DataLoader {
         id: 'random_magic_staff',
         name: 'Random Magic Staff',
         description: 'A randomly assigned starting magic school — feeds toward that school’s Tier 0/1 line.',
-        mainWeaponId: 'fire_magic',
+        mainWeaponId: 'fire_staff',
         offhandWeaponId: null,
         isRandomMagic: true
       }

@@ -389,40 +389,42 @@ async function runMilestone19Tests() {
   console.log('✔ Test 6 passed: Active potion buff awarded +1 bonus EXP toward regen hidden skill.');
 
   // ---------------------------------------------------------------------------
-  // TEST 7: Staff Conduit Fire Magic & Melee Fallback When Dry
+  // TEST 7: Fire Staff Conduit Fire Magic & Melee Fallback When Dry
   // ---------------------------------------------------------------------------
-  console.log('\n--- TEST 7: Staff Conduit Fire Magic & Melee Fallback ---');
-  const staff = dataLoader.getWeapon('staff');
-  assert.ok(staff, 'staff weapon exists');
+  console.log('\n--- TEST 7: Fire Staff Conduit Fire Magic & Melee Fallback ---');
+  const fireStaff = dataLoader.getWeapon('fire_staff');
+  assert.ok(fireStaff, 'fire_staff weapon exists');
 
-  const mage = createMockHero('mage1', 'Mage', 5, 5, staff, new ProgressionSystem(dataLoader.getClassesData(), 'Mage'));
+  const mage = createMockHero('mage1', 'Mage', 5, 5, fireStaff, new ProgressionSystem(dataLoader.getClassesData(), 'Mage'));
   mage.energy = 100;
 
   // With full energy: effective range is 4 tiles (Fire Magic range)
   combat.updateStaffDynamicRange(mage);
-  assert.equal(mage.attackRangeTiles, 4, 'Staff with >= 22 EN gets 4 tiles attack range');
+  assert.equal(mage.attackRangeTiles, 4, 'Fire Staff with >= 22 EN gets 4 tiles attack range');
 
   const weaponFull = (combat as any).getEffectiveWeaponForAttack(mage);
-  assert.equal(weaponFull.id, 'fire_magic', 'Staff with >= 22 EN attacks using fire_magic profile');
+  assert.equal(weaponFull.id, 'fire_magic', 'Fire Staff with >= 22 EN attacks using fire_magic profile');
 
   // With dry energy (< 22): drops range to 1 tile and falls back to physical staff
   mage.energy = 10;
   combat.updateStaffDynamicRange(mage);
-  assert.equal(mage.attackRangeTiles, 1, 'Dry Staff (< 22 EN) drops to 1 tile attack range');
+  assert.equal(mage.attackRangeTiles, 1, 'Dry Fire Staff (< 22 EN) drops to 1 tile attack range');
 
   const weaponDry = (combat as any).getEffectiveWeaponForAttack(mage);
-  assert.equal(weaponDry.id, 'staff', 'Dry Staff attacks using staff profile');
+  assert.equal(weaponDry.id, 'staff', 'Dry Fire Staff attacks using staff profile');
   assert.equal(weaponDry.energyCostPerCast || 0, 0, 'Staff melee fallback costs 0 energy');
   assert.equal(weaponDry.category, 'melee_2h', 'Staff category is melee_2h');
-  console.log('✔ Test 7 passed: Staff dynamically channels Fire Magic at 4 tiles with >= 22 EN and drops to 1 tile physical melee at 0 cost when dry.');
+  console.log('✔ Test 7 passed: Fire Staff dynamically channels Fire Magic at 4 tiles with >= 22 EN and drops to 1 tile physical melee at 0 cost when dry.');
 
   // ---------------------------------------------------------------------------
   // TEST 8: Healing Magic Branch 3 Dry-State Dynamic Cost Warning & Fallback
   // ---------------------------------------------------------------------------
   console.log('\n--- TEST 8: Healing Magic Branch 3 Dry-State Log & Fallback ---');
-  const cleric = createMockHero('cleric1', 'Cleric', 5, 5, staff, new ProgressionSystem(dataLoader.getClassesData(), 'Cleric'));
+  const healingStaff = dataLoader.getWeapon('healing_staff');
+  assert.ok(healingStaff, 'healing_staff weapon exists');
+  const cleric = createMockHero('cleric1', 'Cleric', 5, 5, healingStaff, new ProgressionSystem(dataLoader.getClassesData(), 'Cleric'));
   cleric.energy = 10; // dry (< 22)
-  const woundedAlly = createMockHero('ally1', 'Ally', 5, 6, staff, new ProgressionSystem(dataLoader.getClassesData(), 'Ally'));
+  const woundedAlly = createMockHero('ally1', 'Ally', 5, 6, healingStaff, new ProgressionSystem(dataLoader.getClassesData(), 'Ally'));
   woundedAlly.hp = 20; // damaged (20/50)
 
   const logs: string[] = [];

@@ -19,6 +19,8 @@
     { "id": "lightning_magic", "name": "Lightning Magic", "category": "magic", "twoHanded": true, "attackIntervalMs": 1000, "baseDamage": 7 },
     { "id": "wind_magic", "name": "Wind Magic", "category": "magic", "twoHanded": true, "attackIntervalMs": 900, "baseDamage": 5 },
     { "id": "healing_magic", "name": "Healing Magic", "category": "magic", "twoHanded": true, "attackIntervalMs": 1500, "baseDamage": 0, "baseHealAmount": 8, "energyCostPerCast": 22, "levelBonus": { "healPerLevel": 0.5, "energyCostReductionPerLevel": 0.1 } },
+    { "id": "healing_staff", "name": "Healing Staff", "category": "melee_2h", "twoHanded": true, "attackIntervalMs": 1300, "baseDamage": 7, "baseAccuracy": 0.65, "levelBonus": { "accuracyPerLevel": 0.003, "damagePerLevel": 0.4 } },
+    { "id": "fire_staff", "name": "Fire Staff", "category": "melee_2h", "twoHanded": true, "attackIntervalMs": 1300, "baseDamage": 7, "baseAccuracy": 0.65, "levelBonus": { "accuracyPerLevel": 0.003, "damagePerLevel": 0.4 } },
     { "id": "staff", "name": "Staff", "category": "melee_2h", "twoHanded": true, "attackIntervalMs": 1300, "baseDamage": 7, "baseAccuracy": 0.65, "levelBonus": { "accuracyPerLevel": 0.003, "damagePerLevel": 0.4 } },
     { "id": "spears", "name": "Spears", "category": "melee_1h", "twoHanded": false, "attackIntervalMs": 1100, "baseDamage": 6 },
     { "id": "crossbows", "name": "Crossbows", "category": "ranged", "twoHanded": true, "attackIntervalMs": 1500, "baseDamage": 9 },
