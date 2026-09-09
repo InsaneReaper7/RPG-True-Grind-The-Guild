@@ -11,6 +11,8 @@ export interface CombatContext {
   inCombat?: boolean;
   attackerDistanceTiles?: number;
   isMeleeAttack?: boolean;
+  hasEnergyPotionBuff?: boolean;
+  hasManaPotionBuff?: boolean;
 }
 
 export interface AvoidanceResult {
@@ -42,6 +44,7 @@ export interface PassiveRegenResult {
   healthProcced: boolean;
   healthRestored: number;
   manaProcced: boolean;
+  energyRegenProcced: boolean;
   energyRestored: number;
 }
 
@@ -171,8 +174,15 @@ export class HiddenSkillSystem {
     const roll = Math.random();
     const procced = roll < procChance;
 
+    let expToAward = 0;
     if (procced) {
-      progression.addProficiencyExp(skillDef.id, skillDef.expPerProc);
+      expToAward = skillDef.expPerProc;
+      if (skillDef.id === 'energy_regen' && context.hasEnergyPotionBuff) {
+        expToAward += 1;
+      } else if (skillDef.id === 'mana_regen' && context.hasManaPotionBuff) {
+        expToAward += 1;
+      }
+      progression.addProficiencyExp(skillDef.id, expToAward);
     }
 
     const updatedLevel = progression.getProficiencyLevel(skillDef.id);
@@ -181,7 +191,7 @@ export class HiddenSkillSystem {
     return {
       eligible: true,
       procced,
-      expAwarded: procced ? skillDef.expPerProc : 0,
+      expAwarded: expToAward,
       newLevel: updatedLevel,
       tierEffect
     };
@@ -317,6 +327,7 @@ export class HiddenSkillSystem {
     let healthProcced = false;
     let healthRestored = 0;
     let manaProcced = false;
+    let energyRegenProcced = false;
     let energyRestored = 0;
 
     const hpLevel = progression.getProficiencyLevel('health_regen');
@@ -333,13 +344,31 @@ export class HiddenSkillSystem {
       }
     }
 
+    const energyLevel = progression.getProficiencyLevel('energy_regen');
+    const energyDef = this.getSkillDef('energy_regen');
+    if (energyDef) {
+      const energyTier = this.getTierEffect(energyDef, energyLevel);
+      const isEligibleByCombat = !context.inCombat || (energyTier && energyTier.inCombat) || !!context.hasEnergyPotionBuff;
+      if (isEligibleByCombat) {
+        const energyRes = this.rollProc(energyDef, context, progression);
+        if (energyRes.procced) {
+          energyRegenProcced = true;
+          energyRestored += energyRes.tierEffect?.energyAmount ?? (energyLevel >= 1 ? 4 : 0);
+        }
+      }
+    }
+
     const manaLevel = progression.getProficiencyLevel('mana_regen');
     const manaDef = this.getSkillDef('mana_regen');
     if (manaDef) {
-      const manaRes = this.rollProc(manaDef, context, progression);
-      if (manaRes.procced) {
-        manaProcced = true;
-        energyRestored = manaRes.tierEffect?.energyAmount ?? (manaLevel >= 1 ? 2 : 0);
+      const manaTier = this.getTierEffect(manaDef, manaLevel);
+      const isEligibleByCombat = !context.inCombat || (manaTier && manaTier.inCombat) || !!context.hasManaPotionBuff;
+      if (isEligibleByCombat) {
+        const manaRes = this.rollProc(manaDef, context, progression);
+        if (manaRes.procced) {
+          manaProcced = true;
+          energyRestored += manaRes.tierEffect?.energyAmount ?? (manaLevel >= 1 ? 4 : 0);
+        }
       }
     }
 
@@ -347,6 +376,7 @@ export class HiddenSkillSystem {
       healthProcced,
       healthRestored,
       manaProcced,
+      energyRegenProcced,
       energyRestored
     };
   }

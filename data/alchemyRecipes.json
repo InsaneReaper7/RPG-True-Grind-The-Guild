@@ -9,6 +9,34 @@
       },
       "expGranted": 25,
       "description": "A sterile splint and wooden fiber wrapping. Cleanses and cures the Bleed status effect."
+    },
+    {
+      "id": "energy_potion",
+      "name": "Energy Potion",
+      "ingredients": {
+        "wild_herbs": 2,
+        "wood": 2
+      },
+      "expGranted": 30,
+      "energyRestored": 35,
+      "buffDurationMs": 15000,
+      "buffRegenPerSec": 2,
+      "targetRegenSkill": "energy_regen",
+      "description": "A potent herbal tonic. Instantly restores 35 Energy, grants +2 Energy/s for 15s, and accelerates Energy Regen skill growth."
+    },
+    {
+      "id": "mana_potion",
+      "name": "Mana Potion",
+      "ingredients": {
+        "wild_herbs": 2,
+        "ectoplasm": 1
+      },
+      "expGranted": 35,
+      "energyRestored": 35,
+      "buffDurationMs": 15000,
+      "buffRegenPerSec": 2,
+      "targetRegenSkill": "mana_regen",
+      "description": "An infused distillation of ethereal ectoplasm and wild herbs. Instantly restores 35 Energy/Mana, grants +2 Energy/s for 15s, and accelerates Mana Regen skill growth."
     }
   ]
 }

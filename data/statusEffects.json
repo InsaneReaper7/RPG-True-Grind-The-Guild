@@ -7,6 +7,54 @@
       "tickIntervalMs": 1000,
       "damagePerTick": 3,
       "color": "#ef4444"
+    },
+    {
+      "id": "burn",
+      "name": "Burn",
+      "durationMs": 4000,
+      "tickIntervalMs": 1000,
+      "damagePerTick": 4,
+      "color": "#f97316"
+    },
+    {
+      "id": "stun",
+      "name": "Stun",
+      "durationMs": 2000,
+      "tickIntervalMs": 2000,
+      "damagePerTick": 0,
+      "color": "#facc15"
+    },
+    {
+      "id": "guard_up",
+      "name": "Guard Up",
+      "durationMs": 5000,
+      "tickIntervalMs": 5000,
+      "damagePerTick": 0,
+      "color": "#38bdf8"
+    },
+    {
+      "id": "taunted",
+      "name": "Taunted",
+      "durationMs": 6000,
+      "tickIntervalMs": 6000,
+      "damagePerTick": 0,
+      "color": "#f97316"
+    },
+    {
+      "id": "retaliate",
+      "name": "Retaliate",
+      "durationMs": 15000,
+      "tickIntervalMs": 15000,
+      "damagePerTick": 0,
+      "color": "#eab308"
+    },
+    {
+      "id": "unbreakable",
+      "name": "Unbreakable",
+      "durationMs": 4000,
+      "tickIntervalMs": 4000,
+      "damagePerTick": 0,
+      "color": "#f59e0b"
     }
   ]
 }

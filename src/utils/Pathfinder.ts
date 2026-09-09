@@ -1,5 +1,5 @@
 import EasyStar from 'easystarjs';
-import type { GridPos } from '../types/game';
+import type { GridPos, DynamicObstaclesConfig } from '../types/game';
 
 export class Pathfinder {
   private gridMatrix: number[][];
@@ -95,7 +95,12 @@ export class Pathfinder {
     return true;
   }
 
-  public findPath(start: GridPos, end: GridPos, dynamicObstacles?: GridPos[]): Promise<GridPos[]> {
+  public findPath(
+    start: GridPos,
+    end: GridPos,
+    dynamicObstacles?: GridPos[] | DynamicObstaclesConfig,
+    hardObstacles?: GridPos[]
+  ): Promise<GridPos[]> {
     return new Promise((resolve) => {
       // Validate boundaries
       if (
@@ -112,7 +117,22 @@ export class Pathfinder {
         return;
       }
 
-      const applyDynamicObstacles = (obstacles: GridPos[]) => {
+      let softList: GridPos[] = [];
+      let hardList: GridPos[] = [];
+
+      if (Array.isArray(dynamicObstacles)) {
+        softList = dynamicObstacles;
+        if (hardObstacles) {
+          hardList = hardObstacles;
+        }
+      } else if (dynamicObstacles && typeof dynamicObstacles === 'object') {
+        softList = dynamicObstacles.soft || [];
+        hardList = dynamicObstacles.hard || [];
+      } else if (hardObstacles) {
+        hardList = hardObstacles;
+      }
+
+      const applyObstacleList = (obstacles: GridPos[]) => {
         for (const obs of obstacles) {
           // Do not mark start or destination tile as dynamic obstacle
           if ((obs.x !== start.x || obs.y !== start.y) && (obs.x !== end.x || obs.y !== end.y)) {
@@ -121,9 +141,9 @@ export class Pathfinder {
         }
       };
 
-      if (dynamicObstacles && dynamicObstacles.length > 0) {
-        applyDynamicObstacles(dynamicObstacles);
-      }
+      // 1. Primary Pass: avoid both hard (enemies) and soft (friendly units) obstacles
+      if (hardList.length > 0) applyObstacleList(hardList);
+      if (softList.length > 0) applyObstacleList(softList);
 
       let returnedPath: GridPos[] = [];
       this.easystar.findPath(start.x, start.y, end.x, end.y, (path) => {
@@ -133,21 +153,30 @@ export class Pathfinder {
       });
       this.easystar.calculate();
 
-      if (dynamicObstacles && dynamicObstacles.length > 0) {
-        this.easystar.stopAvoidingAllAdditionalPoints();
-      }
+      // Clear all avoided points before deciding if bottleneck fallback is eligible
+      this.easystar.stopAvoidingAllAdditionalPoints();
 
-      // Corridor bottleneck fallback:
-      // If path was blocked by intermediate dynamic obstacles in a narrow corridor/doorway,
-      // recalculate toward the exact same destination without intermediate dynamic obstacles
-      // so the unit can stream through the corridor rather than deadlocking.
-      if (returnedPath.length === 0 && dynamicObstacles && dynamicObstacles.length > 0) {
+      // 2. Corridor Bottleneck Fallback:
+      // If path was blocked by intermediate obstacles in a corridor/doorway,
+      // and there were soft (friendly) obstacles, recalculate toward the exact same destination
+      // with soft obstacles relaxed, BUT with hard obstacles (living enemies) STILL STRICTLY AVOIDED!
+      // This preserves party members queueing/streaming through doorways when blocked by allies,
+      // while strictly enforcing the Swarm-Trap: hostile living enemies are NEVER bypassed.
+      if (returnedPath.length === 0 && softList.length > 0) {
+        if (hardList.length > 0) {
+          applyObstacleList(hardList);
+        }
+
         this.easystar.findPath(start.x, start.y, end.x, end.y, (path) => {
           if (path !== null) {
             returnedPath = path.map((p) => ({ x: p.x, y: p.y }));
           }
         });
         this.easystar.calculate();
+
+        if (hardList.length > 0) {
+          this.easystar.stopAvoidingAllAdditionalPoints();
+        }
       }
 
       resolve(returnedPath);

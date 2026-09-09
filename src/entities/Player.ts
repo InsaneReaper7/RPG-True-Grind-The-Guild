@@ -23,6 +23,7 @@ export class Player extends Entity {
   public energyRegenPerSecond: number;
   public lastSkillUseTimes: Map<string, number> = new Map();
 
+  public activeClass: string | null = null;
   public knownSkillIds: string[] = [];
   public equippedSkillIds: string[] = [];
   public autocastMap: Map<string, boolean> = new Map();
@@ -40,6 +41,13 @@ export class Player extends Entity {
   public wellFedRemainingMs: number = 0;
   public wellFedNextTickMs: number = 0;
   public wellFedHpPerSec: number = 2;
+
+  // Milestone 19: Energy Scarcity & Potions
+  public inCombat: boolean = false;
+  public energyPotionRemainingMs: number = 0;
+  public energyPotionRegenPerSec: number = 0;
+  public manaPotionRemainingMs: number = 0;
+  public manaPotionRegenPerSec: number = 0;
 
   constructor(
     scene: Phaser.Scene,
@@ -65,8 +73,8 @@ export class Player extends Entity {
     this.id = playerData.id || 'hero';
     this.avatarTextureKey = avatarKey;
     this.moveSpeed = playerData.moveSpeed;
-    this.attackRangeTiles = playerData.attackRangeTiles;
     this.equippedWeapon = startingWeapon;
+    this.attackRangeTiles = startingWeapon?.attackRangeTiles ?? playerData.attackRangeTiles ?? 1;
 
     this.energy = playerData.maxEnergy;
     this.maxEnergy = playerData.maxEnergy;
@@ -77,29 +85,70 @@ export class Player extends Entity {
       this.progression.ownerName = this.entityName;
     }
 
-    this.knownSkillIds = playerData.knownSkillIds ? [...playerData.knownSkillIds] : ['power_strike'];
-    this.equippedSkillIds = playerData.equippedSkillIds ? [...playerData.equippedSkillIds] : ['power_strike'];
+    this.knownSkillIds = playerData.knownSkillIds ? [...playerData.knownSkillIds] : [];
+    this.equippedSkillIds = playerData.equippedSkillIds ? [...playerData.equippedSkillIds] : [];
     for (const skillId of this.equippedSkillIds) {
       this.autocastMap.set(skillId, true);
     }
 
     this.progression.onClassUnlocked((event) => {
-      if (event.classDef.id === 'combat_medic') {
-        this.learnSkill('first_aid');
-        if (this.equippedSkillIds.length < 5 && !this.equippedSkillIds.includes('first_aid')) {
-          this.equipSkill('first_aid');
+      // First-unlock auto-equip: if currently unranked/null, equip first unlocked class
+      if (!this.activeClass) {
+        this.setActiveClass(event.classDef.id);
+      }
+      this.checkSkillUnlocks();
+    });
+
+    this.checkSkillUnlocks();
+  }
+
+  public setActiveClass(classId: string | null): boolean {
+    if (classId === null) {
+      this.activeClass = null;
+      console.log(`[Player:${this.entityName}] Cleared active class (Unranked).`);
+      return true;
+    }
+    if (this.progression.isClassUnlocked(classId)) {
+      this.activeClass = classId;
+      console.log(`[Player:${this.entityName}] Active class set to: ${classId}`);
+      this.checkSkillUnlocks();
+      return true;
+    }
+    console.warn(`[Player:${this.entityName}] Cannot set active class to '${classId}': not unlocked.`);
+    return false;
+  }
+
+  public checkSkillUnlocks(): string[] {
+    const dataLoader = DataLoader.getInstance();
+    let allSkills: any[] = [];
+    try {
+      allSkills = dataLoader.getSkills();
+    } catch {
+      allSkills = [];
+    }
+    const newlyLearned: string[] = [];
+    for (const skill of allSkills) {
+      if (this.progression.isSkillUnlocked(skill, this)) {
+        if (!this.knownSkillIds.includes(skill.id)) {
+          this.learnSkill(skill.id);
+          newlyLearned.push(skill.id);
+          if (this.equippedSkillIds.length < 5 && !this.equippedSkillIds.includes(skill.id)) {
+            this.equipSkill(skill.id);
+          }
         }
       }
-    });
+    }
+    return newlyLearned;
   }
 
   public equipWeapon(weapon: WeaponDef): void {
     this.equippedWeapon = weapon;
+    this.attackRangeTiles = weapon.attackRangeTiles ?? (weapon.category === 'magic' || weapon.category === 'ranged' ? 4 : 1);
     if (weapon.twoHanded && this.offhandWeapon) {
       console.log(`[Player:${this.entityName}] Unequipped offhand because ${weapon.name} is two-handed`);
       this.offhandWeapon = null;
     }
-    console.log(`[Player:${this.entityName}] Equipped main weapon: ${weapon.name}`);
+    console.log(`[Player:${this.entityName}] Equipped main weapon: ${weapon.name} (Range: ${this.attackRangeTiles} tiles)`);
   }
 
   public equipOffhandWeapon(weapon: WeaponDef | null): boolean {
@@ -230,6 +279,43 @@ export class Player extends Entity {
       return false;
     }
     this.removeStatusEffect('bleed');
+    return true;
+  }
+
+  public drinkPotion(potionId: string): boolean {
+    if (potionId !== 'energy_potion' && potionId !== 'mana_potion') {
+      return false;
+    }
+    const gameState = GameState.getInstance();
+    if (gameState.getItemCount(potionId) <= 0) {
+      return false;
+    }
+    const dataLoader = DataLoader.getInstance();
+    const recipe = dataLoader.getAlchemyRecipe(potionId);
+    if (!recipe) return false;
+
+    const consumed = gameState.consumeItem(potionId, 1);
+    if (!consumed) return false;
+
+    const energyRestored = recipe.energyRestored ?? 35;
+    const oldEnergy = this.energy;
+    this.energy = Math.min(this.maxEnergy, this.energy + energyRestored);
+    const restored = Math.floor(this.energy - oldEnergy);
+
+    const buffDuration = recipe.buffDurationMs ?? 15000;
+    const buffRegen = recipe.buffRegenPerSec ?? 2;
+
+    if (potionId === 'energy_potion') {
+      this.energyPotionRemainingMs = buffDuration;
+      this.energyPotionRegenPerSec = buffRegen;
+      console.log(`[Potion] ⚡ ${this.entityName} drank Energy Potion! +${restored} EN restored, +${buffRegen} EN/s for ${(buffDuration / 1000).toFixed(0)}s`);
+      this.createFloatingText(`+${restored} EN (Energy Potion)`, '#38bdf8');
+    } else {
+      this.manaPotionRemainingMs = buffDuration;
+      this.manaPotionRegenPerSec = buffRegen;
+      console.log(`[Potion] 🔷 ${this.entityName} drank Mana Potion! +${restored} EN restored, +${buffRegen} EN/s for ${(buffDuration / 1000).toFixed(0)}s`);
+      this.createFloatingText(`+${restored} EN (Mana Potion)`, '#a855f7');
+    }
     return true;
   }
 
@@ -382,8 +468,10 @@ export class Player extends Entity {
       equippedSkillIds: [...this.equippedSkillIds],
       autocastMap: autocastObj,
       skillCooldownsRemainingMs: remainingCooldowns,
+      activeClass: this.activeClass,
       proficiencies: progData.proficiencies,
       classLevels: progData.classLevels,
+      classStats: progData.classStats,
       unlockedClasses: progData.unlockedClasses,
       activityCounts: progData.activityCounts,
       bookLearnedSkills: Array.from(this.bookLearnedSkills),
@@ -437,21 +525,27 @@ export class Player extends Entity {
     if (snapshot.mood !== undefined) {
       this.mood = snapshot.mood;
     }
+    this.activeClass = snapshot.activeClass ?? null;
 
     this.progression.loadSnapshotData({
       proficiencies: snapshot.proficiencies,
       classLevels: snapshot.classLevels,
+      classStats: snapshot.classStats,
       unlockedClasses: snapshot.unlockedClasses,
       activityCounts: snapshot.activityCounts
     });
+    this.checkSkillUnlocks();
 
     // Re-anchor cooldowns in current scene clock
     this.lastSkillUseTimes.clear();
-    for (const [skillId, remainingMs] of Object.entries(snapshot.skillCooldownsRemainingMs)) {
-      const skillDef = dataLoader.getSkill(skillId);
-      if (skillDef && remainingMs > 0) {
-        const reanchoredLastUsed = sceneTime - (skillDef.cooldownMs - remainingMs);
-        this.lastSkillUseTimes.set(skillId, reanchoredLastUsed);
+    if (snapshot.skillCooldownsRemainingMs) {
+      for (const [skillId, remainingMs] of Object.entries(snapshot.skillCooldownsRemainingMs)) {
+        const ms = Number(remainingMs);
+        const skillDef = dataLoader.getSkill(skillId);
+        if (skillDef && ms > 0) {
+          const reanchoredLastUsed = sceneTime - (skillDef.cooldownMs - ms);
+          this.lastSkillUseTimes.set(skillId, reanchoredLastUsed);
+        }
       }
     }
 
@@ -546,8 +640,8 @@ export class Player extends Entity {
     super.update(time, delta);
 
     if (this.state !== 'downed' && this.state !== 'dead') {
-      // 1. Passive Energy regeneration over time
-      if (this.energy < this.maxEnergy) {
+      // 1. Passive Energy regeneration over time (strictly out-of-combat)
+      if (!this.inCombat && this.energy < this.maxEnergy) {
         this.energy = Math.min(this.maxEnergy, this.energy + (this.energyRegenPerSecond * delta) / 1000);
       }
 
@@ -583,6 +677,20 @@ export class Player extends Entity {
               this.createFloatingText(`+${healed} HP`, '#22c55e');
             }
           }
+        }
+      }
+
+      // 4b. Energy & Mana Potion Buff Ticking
+      if (this.energyPotionRemainingMs > 0) {
+        this.energyPotionRemainingMs -= delta;
+        if (this.energy < this.maxEnergy) {
+          this.energy = Math.min(this.maxEnergy, this.energy + (this.energyPotionRegenPerSec * delta) / 1000);
+        }
+      }
+      if (this.manaPotionRemainingMs > 0) {
+        this.manaPotionRemainingMs -= delta;
+        if (this.energy < this.maxEnergy) {
+          this.energy = Math.min(this.maxEnergy, this.energy + (this.manaPotionRegenPerSec * delta) / 1000);
         }
       }
 

@@ -531,6 +531,99 @@
       display: flex;
       gap: 12px;
     }
+    /* Active Class Selection Shelf (Milestone 14) */
+    .active-class-container {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 14px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .active-class-card {
+      flex: 1;
+      background: rgba(31, 41, 55, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 8px;
+      padding: 8px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      transition: all 0.2s;
+    }
+    .active-class-card.active-selected {
+      border: 2px solid #3b82f6;
+      background: rgba(37, 99, 235, 0.2);
+    }
+    .active-class-card.locked {
+      opacity: 0.45;
+      border: 1px dashed rgba(156, 163, 175, 0.4);
+    }
+    .active-class-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .active-class-name {
+      font-size: 13px;
+      font-weight: 700;
+      color: #f3f4f6;
+    }
+    .active-class-card.active-selected .active-class-name {
+      color: #60a5fa;
+    }
+    .active-class-badge {
+      font-size: 9px;
+      font-weight: 700;
+      padding: 1px 5px;
+      border-radius: 4px;
+      text-transform: uppercase;
+    }
+    .active-class-badge.badge-active {
+      background: rgba(59, 130, 246, 0.25);
+      color: #93c5fd;
+      border: 1px solid #3b82f6;
+    }
+    .active-class-badge.badge-locked {
+      background: rgba(107, 114, 128, 0.25);
+      color: #9ca3af;
+      border: 1px solid #6b7280;
+    }
+    .active-class-info {
+      font-size: 11px;
+      color: #9ca3af;
+    }
+    .active-class-btn {
+      margin-top: 4px;
+      padding: 3px 8px;
+      font-size: 10px;
+      font-weight: bold;
+      border-radius: 4px;
+      cursor: pointer;
+      border: none;
+      transition: background 0.15s;
+    }
+    .active-class-btn.btn-equip {
+      background: #2563eb;
+      color: #ffffff;
+    }
+    .active-class-btn.btn-equip:hover {
+      background: #1d4ed8;
+    }
+    .active-class-btn.btn-current {
+      background: rgba(34, 197, 94, 0.2);
+      color: #4ade80;
+      border: 1px solid #22c55e;
+      cursor: default;
+    }
+    .active-class-btn.btn-unequip {
+      background: rgba(239, 68, 68, 0.2);
+      color: #f87171;
+      border: 1px solid #ef4444;
+    }
+    .active-class-btn.btn-unequip:hover {
+      background: #dc2626;
+      color: #ffffff;
+    }
     /* Build Mode Overlay & Palette */
     #build-mode-overlay {
       position: absolute;
@@ -853,6 +946,7 @@
         <div id="location-badge" style="font-size: 11px; color: #a78bfa; font-weight: bold; margin-bottom: 2px;">DUNGEON FLOOR 1</div>
         <div id="day-clock-badge" style="font-size: 11px; color: #fbbf24; font-weight: bold; margin-bottom: 2px;">🌅 Day 1 (0%)</div>
         <div id="room-badge" style="font-size: 11px; color: #60a5fa; font-weight: 600; margin-bottom: 4px; display: none;">🏠 Room: None</div>
+        <div id="floor-timer-badge" style="font-size: 11px; color: #f87171; font-weight: bold; margin-bottom: 4px; display: none;">⏳ Floor Respawn: 5:00</div>
         <div class="hud-title">Guild Hero</div>
         <div class="hud-stat">
           <span>Main HP:</span>
@@ -902,6 +996,20 @@
           <span class="hud-stat-value" style="color: #34d399;">
             <span id="player-bandage-text">0</span>
             <button id="hud-apply-bandage-btn" type="button" style="background: #059669; color: white; border: none; border-radius: 4px; padding: 1px 6px; font-size: 10px; font-weight: bold; cursor: pointer; margin-left: 6px;">Apply [H]</button>
+          </span>
+        </div>
+        <div class="hud-stat" id="hud-energy-potion-row" style="display: none;">
+          <span>Energy Potion:</span>
+          <span class="hud-stat-value" style="color: #38bdf8;">
+            <span id="player-energy-potion-text">0</span>
+            <button id="hud-drink-energy-potion-btn" type="button" style="background: #0284c7; color: white; border: none; border-radius: 4px; padding: 1px 6px; font-size: 10px; font-weight: bold; cursor: pointer; margin-left: 6px;">Drink [E]</button>
+          </span>
+        </div>
+        <div class="hud-stat" id="hud-mana-potion-row" style="display: none;">
+          <span>Mana Potion:</span>
+          <span class="hud-stat-value" style="color: #c084fc;">
+            <span id="player-mana-potion-text">0</span>
+            <button id="hud-drink-mana-potion-btn" type="button" style="background: #9333ea; color: white; border: none; border-radius: 4px; padding: 1px 6px; font-size: 10px; font-weight: bold; cursor: pointer; margin-left: 6px;">Drink [P]</button>
           </span>
         </div>
         <div class="hud-stat">
@@ -989,6 +1097,26 @@
             <button id="debug-btn-lv30-swords-daggers" class="debug-btn" type="button" style="background: #7c2d12; color: #fed7aa; border: 1px solid #ea580c;">⚔️ Set Lv30 Swords & Daggers (Hero)</button>
             <button id="debug-btn-grant-daggers-exp" class="debug-btn" type="button" style="background: #0f766e; color: #99f6e4; border: 1px solid #14b8a6;">🗡️ +25 Daggers EXP (Hero)</button>
             <button id="debug-btn-grant-dual-wield-exp" class="debug-btn" type="button" style="background: #1e3a8a; color: #bfdbfe; border: 1px solid #3b82f6;">⚔️ +25 Dual Wield EXP (Hero)</button>
+
+            <div class="debug-grid-category">MILESTONE 14: VANGUARD & ACTIVE CLASS</div>
+            <button id="debug-btn-active-fencer" class="debug-btn" type="button" style="background: #1e3a8a; color: #93c5fd; border: 1px solid #3b82f6;">🎯 Active: Fencer</button>
+            <button id="debug-btn-active-guardian" class="debug-btn" type="button" style="background: #1e3a8a; color: #93c5fd; border: 1px solid #3b82f6;">🎯 Active: Guardian</button>
+            <button id="debug-btn-active-vanguard" class="debug-btn" type="button" style="background: #1e3a8a; color: #93c5fd; border: 1px solid #3b82f6;">🎯 Active: Vanguard</button>
+            <button id="debug-btn-active-none" class="debug-btn" type="button" style="background: #374151; color: #d1d5db; border: 1px solid #4b5563;">🎯 Active: None</button>
+            <button id="debug-btn-setup-vanguard-reqs" class="debug-btn" type="button" style="background: #7c2d12; color: #fed7aa; border: 1px solid #ea580c;">🛡️ Setup Vanguard Reqs (SS 30, Sh 30, Fencer 5, Guard 5)</button>
+            <button id="debug-btn-vanguard-lv40" class="debug-btn" type="button" style="background: #065f46; color: #6ee7b7; border: 1px solid #10b981;">🛡️ Set Vanguard Lv40 (Hero)</button>
+            <button id="debug-btn-grant-class-exp" class="debug-btn" type="button" style="background: #047857; color: #a7f3d0; border: 1px solid #34d399; grid-column: 1 / -1;">✨ +25 Class EXP (Active Class)</button>
+
+            <div class="debug-grid-category">MILESTONE 16: FLOOR TIMER & ENEMY RESPAWN</div>
+            <button id="debug-btn-fast-forward-floor-timer" class="debug-btn" type="button" style="background: #9a3412; color: #ffedd5; border: 1px solid #ea580c;">⏳ Fast-Forward Floor Timer (+60s)</button>
+            <button id="debug-btn-trigger-floor-respawn" class="debug-btn" type="button" style="background: #991b1b; color: #fee2e2; border: 1px solid #ef4444;">⚡ Trigger Floor Respawn Now</button>
+            <button id="debug-btn-toggle-auto-respawn" class="debug-btn" type="button" style="background: #374151; color: #d1d5db; border: 1px solid #4b5563; grid-column: 1 / -1;">🔄 Toggle Debug 3s Respawn: OFF</button>
+
+            <div class="debug-grid-category">MILESTONE 19: ENERGY & POTIONS</div>
+            <button id="debug-btn-grant-energy-potion" class="debug-btn" type="button" style="background: #0369a1; color: #bae6fd; border: 1px solid #38bdf8;">🧪 Grant +1 Energy Potion</button>
+            <button id="debug-btn-grant-mana-potion" class="debug-btn" type="button" style="background: #7e22ce; color: #e9d5ff; border: 1px solid #c084fc;">🧪 Grant +1 Mana Potion</button>
+            <button id="debug-btn-drain-energy" class="debug-btn" type="button" style="background: #991b1b; color: #fee2e2; border: 1px solid #ef4444;">⚡ Drain Energy to 0</button>
+            <button id="debug-btn-restore-energy" class="debug-btn" type="button" style="background: #15803d; color: #dcfce7; border: 1px solid #22c55e;">⚡ Restore Full Energy</button>
           </div>
         </div>
       </div>
@@ -1058,9 +1186,26 @@
         <div class="modal-header">
           <div>
             <div class="modal-title">⚔️ Guild Outpost — Skill Loadout</div>
-            <div class="modal-subtitle">Equip up to 5 skills. Swapping skills is only allowed in the Outpost.</div>
+            <div class="modal-subtitle">Equip up to 5 skills. Swapping skills and active class is only allowed in the Outpost.</div>
           </div>
-          <button id="close-loadout-btn" class="modal-close-btn" type="button">✕</button>
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <label for="loadout-member-select" style="font-size: 11px; color: #9ca3af; font-weight: bold;">Character:</label>
+              <select id="loadout-member-select" class="debug-member-select" style="min-width: 140px;"></select>
+            </div>
+            <button id="close-loadout-btn" class="modal-close-btn" type="button">✕</button>
+          </div>
+        </div>
+
+        <!-- Active Class Selection Shelf (Milestone 14) -->
+        <div style="margin-bottom: 6px;">
+          <div class="loadout-section-title">
+            <span>Active Class (Outpost Only)</span>
+            <span id="active-class-current-badge" style="color: #60a5fa; font-size: 11px; text-transform: none;">Active: None</span>
+          </div>
+          <div id="active-class-container" class="active-class-container">
+            <!-- Dynamically populated with unlocked & locked class cards -->
+          </div>
         </div>
 
         <div class="loadout-body">
@@ -1113,18 +1258,26 @@
           </div>
           <button id="close-alchemy-btn" class="modal-close-btn" type="button">✕</button>
         </div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; background: rgba(31, 41, 55, 0.7); padding: 8px 12px; border-radius: 6px; margin-bottom: 14px; border: 1px solid rgba(255,255,255,0.1); font-size: 12px;">
+        <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; background: rgba(31, 41, 55, 0.7); padding: 8px 12px; border-radius: 6px; margin-bottom: 14px; border: 1px solid rgba(255,255,255,0.1); font-size: 11px;">
           <div>
             <span style="color: #9ca3af;">Alchemy:</span>
             <div id="alchemy-modal-prof" style="color: #10b981; font-weight: bold;">Untrained</div>
           </div>
           <div>
-            <span style="color: #9ca3af;">Wood Stockpile:</span>
+            <span style="color: #9ca3af;">Wood:</span>
             <div id="alchemy-modal-wood" style="color: #f59e0b; font-weight: bold;">🪵 1000</div>
           </div>
           <div>
-            <span style="color: #9ca3af;">Stockpile Bandages:</span>
+            <span style="color: #9ca3af;">Bandages:</span>
             <div id="alchemy-modal-bandages" style="color: #34d399; font-weight: bold;">🩹 0</div>
+          </div>
+          <div>
+            <span style="color: #9ca3af;">Energy Pot:</span>
+            <div id="alchemy-modal-energy-potions" style="color: #38bdf8; font-weight: bold;">⚡ 0</div>
+          </div>
+          <div>
+            <span style="color: #9ca3af;">Mana Pot:</span>
+            <div id="alchemy-modal-mana-potions" style="color: #c084fc; font-weight: bold;">✨ 0</div>
           </div>
         </div>
         <div id="alchemy-mood-banner" style="background: rgba(16, 185, 129, 0.15); border: 1px solid #10b981; border-radius: 6px; padding: 6px 10px; margin-bottom: 12px; font-size: 11px; color: #6ee7b7; display: flex; justify-content: space-between; align-items: center;">

@@ -1,4 +1,4 @@
-﻿import assert from 'node:assert/strict';
+import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { ProgressionSystem } from '../src/systems/ProgressionSystem.ts';
 import { LevelingSystem } from '../src/systems/LevelingSystem.ts';
@@ -41,7 +41,10 @@ const ALL_13_TRAINABLE_STATS = [
   'counterattack',
   'resilience',
   'health_regen',
-  'mana_regen'
+  'mana_regen',
+  'energy_regen',
+  'staff',
+  'healing_magic'
 ] as const;
 
 async function run() {
@@ -55,7 +58,7 @@ async function run() {
     const prog = new ProgressionSystem(mockClassesData);
     const stats = prog.getAllProficiencyStats();
 
-    assert.equal(stats.size, 13, 'Must track exactly 13 trainable stats');
+    assert.equal(stats.size, 16, 'Must track exactly 16 trainable stats');
 
     for (const statId of ALL_13_TRAINABLE_STATS) {
       assert.ok(stats.has(statId), `Stat '${statId}' must be initialized in progression`);

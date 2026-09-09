@@ -5,7 +5,7 @@ import { Enemy } from '../entities/Enemy.ts';
 import { Pathfinder } from '../utils/Pathfinder.ts';
 import { ProgressionSystem } from './ProgressionSystem.ts';
 import { DataLoader } from '../utils/DataLoader.ts';
-import type { GridPos } from '../types/game.ts';
+import type { GridPos, WeaponDef } from '../types/game.ts';
 import { HiddenSkillSystem, type CombatContext, type CounterattackResult } from './HiddenSkillSystem.ts';
 import { GameState } from './GameState.ts';
 
@@ -46,6 +46,10 @@ export class CombatSystem {
 
   public setParty(party: Player[]): void {
     this.party = party;
+  }
+
+  public setEnemies(enemies: Enemy[]): void {
+    this.enemies = enemies;
   }
 
   public addPartyMember(member: Player): void {
@@ -243,6 +247,9 @@ export class CombatSystem {
   }
 
   public update(time: number, delta: number): void {
+    const anyEnemyAggroed = this.enemies.some((e) => e.isAggroed && e.state !== 'dead' && e.state !== 'downed');
+    const inCombat = anyEnemyAggroed || time - this.lastCombatTimeMs < 4000;
+
     // Clear targets for any downed or dead party members
     for (const member of this.party) {
       if (member.state === 'downed' || member.state === 'dead') {
@@ -255,6 +262,51 @@ export class CombatSystem {
       const enemy = this.enemies[i];
       if (enemy.state === 'downed' || enemy.state === 'dead') continue;
 
+      // Stun check: stunned enemy halts movement and cannot act
+      if (enemy.hasStatusEffect('stun')) {
+        enemy.stopMovement();
+        continue;
+      }
+
+      let target = this.enemyTargets.get(enemy) || null;
+
+      // Taunt handling & forced targeting
+      const isTaunted = enemy.hasStatusEffect('taunted');
+      if (isTaunted) {
+        if (!enemy.tauntSource || enemy.tauntSource.state === 'downed' || enemy.tauntSource.state === 'dead') {
+          // Early break: taunter is dead or downed!
+          console.log(`[Combat] 💔 Taunt broke early on ${enemy.entityName}: taunter is downed/dead!`);
+          enemy.removeStatusEffect('taunted');
+          enemy.tauntSource = null;
+          const nextTarget = this.findBestTargetInParty(enemy);
+          if (nextTarget) {
+            target = nextTarget;
+            this.enemyTargets.set(enemy, target);
+            enemy.isAggroed = true;
+            enemy.outOfAggroTimerMs = 0;
+            enemy.state = 'chasing';
+          }
+        } else if (enemy.tauntSource) {
+          // Force locked target to tauntSource
+          target = enemy.tauntSource;
+          this.enemyTargets.set(enemy, target);
+          enemy.isAggroed = true;
+          enemy.outOfAggroTimerMs = 0;
+        }
+      } else if (enemy.tauntSource) {
+        // Taunt expired naturally
+        console.log(`[Combat] ⏰ Taunt on ${enemy.entityName} expired cleanly. Re-evaluating targeting from scratch.`);
+        enemy.tauntSource = null;
+        const nextTarget = this.findBestTargetInParty(enemy);
+        if (nextTarget) {
+          target = nextTarget;
+          this.enemyTargets.set(enemy, target);
+          enemy.isAggroed = true;
+          enemy.outOfAggroTimerMs = 0;
+          enemy.state = 'chasing';
+        }
+      }
+
       const enemyTile = {
         x: Math.floor(enemy.x / enemy.tileSize),
         y: Math.floor(enemy.y / enemy.tileSize)
@@ -263,8 +315,6 @@ export class CombatSystem {
         Math.abs(enemyTile.x - enemy.spawnPos.x),
         Math.abs(enemyTile.y - enemy.spawnPos.y)
       );
-
-      let target = this.enemyTargets.get(enemy) || null;
 
       // Proximity Aggro check: if not currently aggroed, evaluate closest party member
       if (!enemy.isAggroed && enemy.state !== 'returning' && distFromSpawn <= enemy.maxLeashDistance) {
@@ -302,7 +352,10 @@ export class CombatSystem {
         const timedOut = enemy.outOfAggroTimerMs >= enemy.leashTimeoutMs;
         const hasLOS = target ? this.pathfinder.hasLineOfSight(enemyTile, targetTile) : false;
 
-        const isTargetInvalid = isTargetDowned || exceededLeash || timedOut || !hasLOS;
+        let isTargetInvalid = isTargetDowned || exceededLeash || timedOut || !hasLOS;
+        if (isTaunted && !isTargetDowned && !exceededLeash) {
+          isTargetInvalid = false;
+        }
 
         if (isTargetInvalid) {
           // RETARGETING MACHINE: Immediate frame re-evaluation across party
@@ -406,47 +459,87 @@ export class CombatSystem {
                   console.log(`[Combat] 💨 ${target.entityName} EVADED attack from ${enemy.entityName}! (0 damage)`);
                   this.createAttackEffect(enemy.x, enemy.y, target.x, target.y, 0x60a5fa);
                   this.createFloatingText(target.x, target.y - 12, 'EVADED!', '#60a5fa');
-                  const counterRes = hiddenSystem.resolveCounterattack(context, target.progression);
-                  if (counterRes.procced) {
-                    this.executePlayerCounterattack(target, enemy, counterRes);
+                  if (target.hasStatusEffect('retaliate')) {
+                    target.removeStatusEffect('retaliate');
+                    this.executePlayerCounterattack(target, enemy, { procced: true, damageMultiplier: 1.0, canCrit: true, chainAttack: false });
+                    this.createFloatingText(target.x, target.y - 12, 'RETALIATE!', '#eab308');
+                  } else {
+                    const counterRes = hiddenSystem.resolveCounterattack(context, target.progression);
+                    if (counterRes.procced) {
+                      this.executePlayerCounterattack(target, enemy, counterRes);
+                    }
                   }
                 } else if (avoidance.type === 'parried') {
                   console.log(`[Combat] ⚔️ ${target.entityName} PARRIED attack from ${enemy.entityName}! (0 damage)`);
                   this.createAttackEffect(enemy.x, enemy.y, target.x, target.y, 0xfacc15);
                   this.createFloatingText(target.x, target.y - 12, 'PARRIED!', '#facc15');
-                  const counterRes = hiddenSystem.resolveCounterattack(context, target.progression);
-                  if (counterRes.procced) {
-                    this.executePlayerCounterattack(target, enemy, counterRes);
+                  if (target.hasStatusEffect('retaliate')) {
+                    target.removeStatusEffect('retaliate');
+                    this.executePlayerCounterattack(target, enemy, { procced: true, damageMultiplier: 1.0, canCrit: true, chainAttack: false });
+                    this.createFloatingText(target.x, target.y - 12, 'RETALIATE!', '#eab308');
+                  } else {
+                    const counterRes = hiddenSystem.resolveCounterattack(context, target.progression);
+                    if (counterRes.procced) {
+                      this.executePlayerCounterattack(target, enemy, counterRes);
+                    }
                   }
                 } else if (avoidance.type === 'blocked') {
                   console.log(`[Combat] 🛡️ ${target.entityName} BLOCKED attack from ${enemy.entityName}! (0 damage)`);
                   this.createAttackEffect(enemy.x, enemy.y, target.x, target.y, 0x38bdf8);
                   this.createFloatingText(target.x, target.y - 12, 'BLOCKED!', '#38bdf8');
                   target.progression.addProficiencyExp('shields', 2);
-                  const counterRes = hiddenSystem.resolveCounterattack(context, target.progression);
-                  if (counterRes.procced) {
-                    this.executePlayerCounterattack(target, enemy, counterRes);
+                  if (target.hasStatusEffect('retaliate')) {
+                    target.removeStatusEffect('retaliate');
+                    this.executePlayerCounterattack(target, enemy, { procced: true, damageMultiplier: 1.0, canCrit: true, chainAttack: false });
+                    this.createFloatingText(target.x, target.y - 12, 'RETALIATE!', '#eab308');
+                  } else {
+                    const counterRes = hiddenSystem.resolveCounterattack(context, target.progression);
+                    if (counterRes.procced) {
+                      this.executePlayerCounterattack(target, enemy, counterRes);
+                    }
                   }
                 } else {
                   this.createAttackEffect(enemy.x, enemy.y, target.x, target.y, 0xef4444);
                   if (context.hasShield) {
                     target.progression.addProficiencyExp('shields', 1);
                   }
-                  const mitigation = hiddenSystem.resolveDamageTaken(context, target.progression, rawDamage);
-                  const actualDamage = mitigation.finalDamage;
 
-                  if (mitigation.mitigatedAmount > 0) {
-                    console.log(`[Combat] ${enemy.entityName} hits ${target.entityName} for ${actualDamage} damage! (Resilience mitigated ${mitigation.mitigatedAmount} dmg)`);
-                    this.createFloatingText(target.x, target.y - 20, `-${actualDamage} (${mitigation.mitigatedAmount} RESIST)`, '#a78bfa');
-                  } else if (mitigation.procced) {
-                    console.log(`[Combat] ${enemy.entityName} hits ${target.entityName} for ${actualDamage} damage! (Resilience proc: +1 EXP)`);
-                    this.createFloatingText(target.x, target.y - 20, `RESILIENCE! -${actualDamage}`, '#a78bfa');
+                  let actualDamage = rawDamage;
+
+                  if (target.hasStatusEffect('unbreakable')) {
+                    actualDamage = 0;
+                    this.createFloatingText(target.x, target.y - 20, 'IMMUNE!', '#f59e0b');
+                    console.log(`[Combat] ${target.entityName} is UNBREAKABLE! Immune to all damage.`);
                   } else {
-                    console.log(`[Combat] ${enemy.entityName} hits ${target.entityName} for ${actualDamage} damage!`);
+                    const mitigation = hiddenSystem.resolveDamageTaken(context, target.progression, rawDamage);
+                    actualDamage = mitigation.finalDamage;
+
+                    if (target.hasStatusEffect('guard_up')) {
+                      actualDamage = Math.max(1, Math.round(actualDamage * 0.5));
+                      this.createFloatingText(target.x, target.y - 20, `-${actualDamage} (GUARD UP!)`, '#38bdf8');
+                      console.log(`[Combat] Guard Up mitigated 50% damage! ${actualDamage} taken.`);
+                    } else if (mitigation.mitigatedAmount > 0) {
+                      console.log(`[Combat] ${enemy.entityName} hits ${target.entityName} for ${actualDamage} damage! (Resilience mitigated ${mitigation.mitigatedAmount} dmg)`);
+                      this.createFloatingText(target.x, target.y - 20, `-${actualDamage} (${mitigation.mitigatedAmount} RESIST)`, '#a78bfa');
+                    } else if (mitigation.procced) {
+                      console.log(`[Combat] ${enemy.entityName} hits ${target.entityName} for ${actualDamage} damage! (Resilience proc: +1 EXP)`);
+                      this.createFloatingText(target.x, target.y - 20, `RESILIENCE! -${actualDamage}`, '#a78bfa');
+                    } else {
+                      console.log(`[Combat] ${enemy.entityName} hits ${target.entityName} for ${actualDamage} damage!`);
+                    }
+                  }
+
+                  if (target.hasStatusEffect('retaliate')) {
+                    target.removeStatusEffect('retaliate');
+                    this.executePlayerCounterattack(target, enemy, { procced: true, damageMultiplier: 1.0, canCrit: true, chainAttack: false });
+                    this.createFloatingText(target.x, target.y - 12, 'RETALIATE!', '#eab308');
                   }
 
                   const wasUnengaged = target.targetEntity === null;
                   const targetDowned = target.takeDamage(actualDamage);
+                  if (actualDamage > 0 && this.scene && typeof (this.scene as any).interruptGatherChannel === 'function') {
+                    (this.scene as any).interruptGatherChannel(target, enemy);
+                  }
                   if (targetDowned) {
                     console.log(`[Combat] ${target.entityName} has been downed by enemy attack!`);
                     target.clearTarget();
@@ -514,13 +607,35 @@ export class CombatSystem {
     // 2. Party Auto-Attack & Auto-Skill Loop against Target Entities
     for (const member of this.party) {
       if (member.state === 'downed' || member.state === 'dead') continue;
+      member.inCombat = inCombat;
 
-      // Check if member has an ally heal skill that can be autocast
+      // Unconditionally prioritize ally healing via Healing Magic if equipped with Staff
+      const castHeal = this.checkAndAutocastHealingMagic(member, time);
+      if (castHeal) {
+        continue;
+      }
+
+      // Check if member has an ally heal or self buff skill that can be autocast
       this.checkAndAutocastAllyHeal(member, time);
+      this.checkAndAutocastSelfBuffs(member, time);
 
       if (!member.targetEntity || member.targetEntity.state === 'downed' || member.targetEntity.state === 'dead') {
         member.clearTarget();
         continue;
+      }
+
+      const isStaffWielder = member.equippedWeapon?.id === 'staff' || member.equippedWeapon?.category === 'staff';
+      const fireDef = isStaffWielder ? DataLoader.getInstance().getWeapon('fire_magic') : null;
+      const fireProfLevel = isStaffWielder ? member.progression.getProficiencyLevel('fire_magic') : 0;
+      const fireCostReduction = (fireDef?.levelBonus?.energyCostReductionPerLevel ?? 0.1) * fireProfLevel;
+      const fireEnergyCost = fireDef ? Math.max(1, Math.round((fireDef.energyCostPerCast ?? 22) - fireCostReduction)) : 22;
+      const canCastFireThroughStaff = isStaffWielder && fireDef !== null && member.energy >= fireEnergyCost;
+
+      // Dynamically adjust member's effective attack range:
+      // If holding Staff with >= fire energy, effective range is 4 tiles (Fire Magic conduit)
+      // If holding Staff with < fire energy, drop range to 1 tile (Staff melee fallback)
+      if (isStaffWielder) {
+        member.attackRangeTiles = canCastFireThroughStaff ? (fireDef?.attackRangeTiles ?? 4) : 1;
       }
 
       const target = member.targetEntity;
@@ -544,13 +659,22 @@ export class CombatSystem {
           member.stopMovement();
         }
         const dataLoader = DataLoader.getInstance();
-        const weapon = member.equippedWeapon;
-        const weaponId = weapon.id;
+        // Weapon resolution: If Staff wielder has enough energy for Fire Magic, use Fire Magic profile;
+        // if out of energy, fall back to physical Staff melee strike.
+        const isStaff = member.equippedWeapon?.id === 'staff' || member.equippedWeapon?.category === 'staff';
+        const fireDefFromData = isStaff ? dataLoader.getWeapon('fire_magic') : null;
+        const fireLevel = isStaff ? member.progression.getProficiencyLevel('fire_magic') : 0;
+        const fireCostReduction = (fireDefFromData?.levelBonus?.energyCostReductionPerLevel ?? 0.1) * fireLevel;
+        const staffFireCost = fireDefFromData ? Math.max(1, Math.round((fireDefFromData.energyCostPerCast ?? 22) - fireCostReduction)) : 22;
+        const isCastingFireThroughStaff = isStaff && fireDefFromData !== null && member.energy >= staffFireCost;
+
+        const effectiveWeapon = isCastingFireThroughStaff ? fireDefFromData! : member.equippedWeapon;
+        const weaponId = effectiveWeapon.id;
         const weaponLevel = member.progression.getProficiencyLevel(weaponId);
-        const damageBonusPerLevel = weapon.levelBonus?.damagePerLevel ?? 0;
-        const accuracyBonusPerLevel = weapon.levelBonus?.accuracyPerLevel ?? 0;
-        const rawBaseDamage = weapon.baseDamage + weaponLevel * damageBonusPerLevel;
-        const baseAccuracy = weapon.baseAccuracy ?? 0.60;
+        const damageBonusPerLevel = effectiveWeapon.levelBonus?.damagePerLevel ?? 0;
+        const accuracyBonusPerLevel = effectiveWeapon.levelBonus?.accuracyPerLevel ?? 0;
+        const rawBaseDamage = effectiveWeapon.baseDamage + weaponLevel * damageBonusPerLevel;
+        const baseAccuracy = effectiveWeapon.baseAccuracy ?? 0.60;
 
         const moodTier = dataLoader.getMoodTier(member.mood);
         const effectiveBaseDamage = rawBaseDamage * moodTier.combatDamageMultiplier;
@@ -572,7 +696,7 @@ export class CombatSystem {
           const lastUsed = member.lastSkillUseTimes.get(skillId) || 0;
           const isOffCooldown = time - lastUsed >= skillDef.cooldownMs;
           const isAffordable = member.energy >= skillDef.energyCost;
-          const isWeaponReady = time - member.lastAttackTime >= member.equippedWeapon.attackIntervalMs;
+          const isWeaponReady = time - member.lastAttackTime >= effectiveWeapon.attackIntervalMs;
 
           if (isOffCooldown && isAffordable && isWeaponReady) {
             usedSkill = true;
@@ -599,12 +723,28 @@ export class CombatSystem {
               );
               this.createFloatingText(target.x, target.y - 10, `${skillDef.name.toUpperCase()}! -${skillDamage.toFixed(1)}`, '#f59e0b');
 
+              if (skillDef.id === 'shield_bash') {
+                const stunDef = dataLoader.getStatusEffect('stun') || {
+                  id: 'stun',
+                  name: 'Stun',
+                  durationMs: skillDef.stunDurationMs ?? 2000,
+                  tickIntervalMs: 2000,
+                  damagePerTick: 0,
+                  color: '#facc15'
+                };
+                target.applyStatusEffect(stunDef);
+                target.stopMovement();
+                this.createFloatingText(target.x, target.y - 25, 'STUNNED!', '#facc15');
+                console.log(`[Skill] Shield Bash STUNNED ${target.entityName} for 2s!`);
+              }
+
               this.checkAndApplyBleed(member, target);
+              this.checkAndApplyBurn(member, target);
 
               const result = member.progression.addProficiencyExp(weaponId, 2);
               if (result.leveledUp) {
                 const newLevel = member.progression.getProficiencyLevel(weaponId);
-                this.createFloatingText(member.x, member.y - 20, `${weapon.name} Level ${newLevel}!`, '#22c55e');
+                this.createFloatingText(member.x, member.y - 20, `${effectiveWeapon.name} Level ${newLevel}!`, '#22c55e');
               }
 
               if (isDW) {
@@ -622,33 +762,73 @@ export class CombatSystem {
 
         // Standard weapon attack if no skill fired
         if (!usedSkill) {
-          if (time - member.lastAttackTime >= member.equippedWeapon.attackIntervalMs) {
+          if (time - member.lastAttackTime >= effectiveWeapon.attackIntervalMs) {
+            // Energy check for weapons that cost energy per cast (e.g. Magic Schools)
+            let energyCost = 0;
+            if (effectiveWeapon.energyCostPerCast && effectiveWeapon.energyCostPerCast > 0) {
+              const costReduction = (effectiveWeapon.levelBonus?.energyCostReductionPerLevel ?? 0.1) * weaponLevel;
+              energyCost = Math.max(1, Math.round(effectiveWeapon.energyCostPerCast - costReduction));
+              if (member.energy < energyCost) {
+                // Not enough energy to cast spell (for pure spell wielder with no melee fallback)
+                continue;
+              }
+              member.energy -= energyCost;
+            }
+
             member.lastAttackTime = time;
             member.state = 'attacking';
 
-            this.createAttackEffect(member.x, member.y, target.x, target.y, 0x3b82f6);
+            const isFire = effectiveWeapon.id === 'fire_magic' || effectiveWeapon.category === 'magic';
+            const attackColor = isFire ? 0xf97316 : 0x3b82f6;
+            this.createAttackEffect(member.x, member.y, target.x, target.y, attackColor);
+            if (isFire) {
+              this.createFireExplosionEffect(target.x, target.y);
+            }
 
             const hitRoll = Math.random();
             const isHit = hitRoll < effectiveAccuracy;
 
             if (!isHit) {
               console.log(
-                `[Combat] ${member.entityName} attacks ${target.entityName} with ${weapon.name} but MISSED! (Hit Chance: ${(effectiveAccuracy * 100).toFixed(1)}%${isDW ? ` [DW Penalty: -${(dwPenalty * 100).toFixed(0)}%]` : ''}, Roll: ${(hitRoll * 100).toFixed(1)}%)`
+                `[Combat] ${member.entityName} attacks ${target.entityName} with ${effectiveWeapon.name} but MISSED! (Hit Chance: ${(effectiveAccuracy * 100).toFixed(1)}%${isDW ? ` [DW Penalty: -${(dwPenalty * 100).toFixed(0)}%]` : ''}, Roll: ${(hitRoll * 100).toFixed(1)}%)`
               );
               this.createFloatingText(target.x, target.y - 10, 'MISS', '#9ca3af');
             } else {
               const damage = effectiveBaseDamage;
               console.log(
-                `[Combat] ${member.entityName} attacks ${target.entityName} with ${weapon.name} for ${damage.toFixed(1)} damage! (Base: ${weapon.baseDamage}, Lv ${weaponLevel} Bonus: +${(weaponLevel * damageBonusPerLevel).toFixed(1)}, Accuracy: ${(effectiveAccuracy * 100).toFixed(1)}%${isDW ? ` [DW Penalty -${(dwPenalty * 100).toFixed(0)}%]` : ''})`
+                `[Combat] ${member.entityName} attacks ${target.entityName} with ${effectiveWeapon.name} for ${damage.toFixed(1)} damage! (Base: ${effectiveWeapon.baseDamage}, Lv ${weaponLevel} Bonus: +${(weaponLevel * damageBonusPerLevel).toFixed(1)}, Accuracy: ${(effectiveAccuracy * 100).toFixed(1)}%${isDW ? ` [DW Penalty -${(dwPenalty * 100).toFixed(0)}%]` : ''})`
               );
-              this.createFloatingText(target.x, target.y - 10, `-${damage.toFixed(1)}`, '#38bdf8');
+              const dmgColor = isFire ? '#f97316' : '#38bdf8';
+              this.createFloatingText(target.x, target.y - 10, `-${damage.toFixed(1)}`, dmgColor);
 
               this.checkAndApplyBleed(member, target);
+              this.checkAndApplyBurn(member, target);
+
+              // Ranged AoE splash if weapon has aoeRadiusTiles
+              if (effectiveWeapon.aoeRadiusTiles && effectiveWeapon.aoeRadiusTiles > 0) {
+                const aoeRadius = effectiveWeapon.aoeRadiusTiles;
+                const splashPercent = effectiveWeapon.aoeSplashPercent ?? 0.50;
+                const splashDmg = damage * splashPercent;
+                for (const enemy of this.enemies) {
+                  if (enemy === target || enemy.state === 'dead' || enemy.state === 'downed') continue;
+                  const edx = Math.abs(enemy.gridPos.x - target.gridPos.x);
+                  const edy = Math.abs(enemy.gridPos.y - target.gridPos.y);
+                  if (Math.max(edx, edy) <= aoeRadius) {
+                    console.log(`[Combat:AoE] ${enemy.entityName} caught in fire splash for ${splashDmg.toFixed(1)} damage!`);
+                    this.createFloatingText(enemy.x, enemy.y - 10, `-${splashDmg.toFixed(1)} (Splash)`, '#f97316');
+                    this.checkAndApplyBurn(member, enemy);
+                    const splashDowned = enemy.takeDamage(splashDmg);
+                    if (splashDowned) {
+                      this.handleTargetDefeated(member, enemy, weaponId);
+                    }
+                  }
+                }
+              }
 
               const result = member.progression.addProficiencyExp(weaponId, 2);
               if (result.leveledUp) {
                 const newLevel = member.progression.getProficiencyLevel(weaponId);
-                this.createFloatingText(member.x, member.y - 20, `${weapon.name} Level ${newLevel}!`, '#22c55e');
+                this.createFloatingText(member.x, member.y - 20, `${effectiveWeapon.name} Level ${newLevel}!`, '#22c55e');
               }
 
               let targetDowned = target.takeDamage(damage);
@@ -735,18 +915,19 @@ export class CombatSystem {
             const targetTile = this.findOpenAttackTileForMember(target, member);
             if (targetTile) {
               member.claimedDestination = { ...targetTile };
-              const dynamicObstacles: GridPos[] = [];
+              const hardObs: GridPos[] = [];
+              const softObs: GridPos[] = [];
               for (const e of this.enemies) {
                 if (e !== target && e.state !== 'dead' && e.state !== 'downed') {
-                  dynamicObstacles.push(e.gridPos);
+                  hardObs.push(e.gridPos);
                 }
               }
               for (const m of this.party) {
                 if (m !== member && m.state !== 'dead' && m.state !== 'downed') {
-                  dynamicObstacles.push(m.gridPos);
+                  softObs.push(m.gridPos);
                 }
               }
-              this.pathfinder.findPath(member.gridPos, targetTile, dynamicObstacles).then((path) => {
+              this.pathfinder.findPath(member.gridPos, targetTile, { soft: softObs, hard: hardObs }).then((path) => {
                 if (
                   path.length > 0 &&
                   member.state !== 'downed' &&
@@ -775,21 +956,25 @@ export class CombatSystem {
     }
 
     // 3. Passive Regen Ticks (Out of Combat Health & Mana Regen) per Party Member
-    const anyEnemyAggroed = this.enemies.some((e) => e.isAggroed && e.state !== 'dead' && e.state !== 'downed');
-    const inCombat = anyEnemyAggroed || time - this.lastCombatTimeMs < 4000;
-
     if (time - this.lastPassiveTickTimeMs >= 3000) {
       this.lastPassiveTickTimeMs = time;
       const hiddenSystem = HiddenSkillSystem.getInstance();
 
       for (const member of this.party) {
         if (member.state === 'downed' || member.state === 'dead') continue;
+        const dataLoader = DataLoader.getInstance();
+        const magicSchoolIds = dataLoader.getMagicSchoolIds();
+        const hasMagicProficiency = magicSchoolIds.some(
+          (id) => member.progression.getProficiencyLevel(id) >= 1
+        );
         const context: CombatContext = {
           equippedWeapon: member.equippedWeapon,
           equippedOffhand: member.offhandWeapon,
           hasShield: member.hasShield(),
-          hasMagicProficiency: false,
-          inCombat
+          hasMagicProficiency,
+          inCombat,
+          hasEnergyPotionBuff: member.energyPotionRemainingMs > 0,
+          hasManaPotionBuff: member.manaPotionRemainingMs > 0
         };
 
         const regenResult = hiddenSystem.resolvePassiveRegen(context, member.progression);
@@ -805,7 +990,12 @@ export class CombatSystem {
           member.energy = Math.min(member.maxEnergy, member.energy + regenResult.energyRestored);
           const restored = Math.floor(member.energy - oldEnergy);
           if (restored > 0) {
-            console.log(`[Regen] ${member.entityName} Mana Regen tick! Restored +${restored} Energy`);
+            const label = regenResult.manaProcced && regenResult.energyRegenProcced
+              ? 'Energy & Mana Regen'
+              : regenResult.manaProcced
+              ? 'Mana Regen'
+              : 'Energy Regen';
+            console.log(`[Regen] ${member.entityName} ${label} tick! Restored +${restored} Energy`);
             this.createFloatingText(member.x, member.y - 15, `+${restored} EN`, '#3b82f6');
           }
         }
@@ -860,6 +1050,26 @@ export class CombatSystem {
     }
   }
 
+  private checkAndApplyBurn(attacker: Player, target: Entity): void {
+    const weapon = attacker.equippedWeapon;
+    if (!weapon.burnChance) return;
+
+    const weaponLevel = attacker.progression.getProficiencyLevel(weapon.id);
+    const burnBonusPerLevel = weapon.levelBonus?.burnChancePerLevel ?? 0;
+    const effectiveBurnChance = weapon.burnChance + weaponLevel * burnBonusPerLevel;
+
+    if (Math.random() < effectiveBurnChance) {
+      const burnDef = DataLoader.getInstance().getStatusEffect('burn');
+      if (burnDef) {
+        console.log(
+          `[StatusEffect] Applied Burn to ${target.entityName}! (Proc Chance: ${(effectiveBurnChance * 100).toFixed(1)}%)`
+        );
+        target.applyStatusEffect(burnDef);
+        this.createFloatingText(target.x, target.y - 25, 'BURN!', '#f97316');
+      }
+    }
+  }
+
   private handleTargetDefeated(killer: Player, target: Entity, weaponId: string): void {
     console.log(`[Combat] ${target.entityName} defeated/downed by ${killer.entityName}!`);
     const result = killer.progression.addProficiencyExp(weaponId, 4);
@@ -871,6 +1081,18 @@ export class CombatSystem {
     if (killer.isDualWielding() && killer.offhandWeapon) {
       killer.progression.addProficiencyExp(killer.offhandWeapon.id, 2);
       killer.progression.addProficiencyExp('dual_wielding', 2);
+    }
+
+    // Milestone 14: Class EXP kill hook (flat +25 Class EXP specifically to active class only)
+    if (killer.activeClass) {
+      const classResult = killer.progression.addClassExp(killer.activeClass, 25);
+      const activeName = killer.activeClass.toUpperCase();
+      this.createFloatingText(killer.x, killer.y - 12, `+25 ${activeName} EXP`, '#f59e0b');
+      if (classResult.leveledUp) {
+        const newClassLvl = killer.progression.getClassLevel(killer.activeClass);
+        this.createFloatingText(killer.x, killer.y - 30, `Class Level Up! ${activeName} Lv ${newClassLvl}!`, '#f59e0b');
+        killer.checkSkillUnlocks();
+      }
     }
 
     // Clear target for all party members who had targeted this enemy.
@@ -894,8 +1116,8 @@ export class CombatSystem {
           if (!isRare || roll < 0.35) {
             gameState.addItem(h.item, 1);
             const itemName = h.item.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-            console.log(`[Harvest] 🎒 Harvested 1x ${itemName} from ${target.entityName}!`);
-            this.createFloatingText(target.x, target.y - 16, `+1 ${itemName}`, isRare ? '#f59e0b' : '#34d399');
+            console.log(`[Loot] Harvested 1x ${itemName} from ${target.entityName}!`);
+            this.createFloatingText(target.x, target.y - 35, `+1 ${itemName}`, isRare ? '#f59e0b' : '#34d399');
           }
         }
       }
@@ -905,37 +1127,30 @@ export class CombatSystem {
     }
   }
 
-  private createAttackEffect(fromX: number, fromY: number, toX: number, toY: number, color: number): void {
-    const graphics = this.scene.add.graphics();
-    graphics.lineStyle(2, color, 1);
-    graphics.lineBetween(fromX, fromY, toX, toY);
+  public createSkillAttackEffect(fromX: number, fromY: number, toX: number, toY: number): void {
+    if (!this.scene?.add) return;
+    const line = this.scene.add.line(0, 0, fromX, fromY, toX, toY, 0xf59e0b).setOrigin(0).setLineWidth(3).setDepth(2000);
+    this.scene.tweens?.add({
+      targets: line,
+      alpha: 0,
+      duration: 250,
+      onComplete: () => line.destroy()
+    });
+  }
 
-    this.scene.tweens.add({
-      targets: graphics,
+  public createAttackEffect(fromX: number, fromY: number, toX: number, toY: number, color: number = 0xffffff): void {
+    if (!this.scene?.add) return;
+    const line = this.scene.add.line(0, 0, fromX, fromY, toX, toY, color).setOrigin(0).setLineWidth(2).setDepth(2000);
+    this.scene.tweens?.add({
+      targets: line,
       alpha: 0,
       duration: 200,
-      onComplete: () => {
-        graphics.destroy();
-      }
+      onComplete: () => line.destroy()
     });
   }
 
-  private createSkillAttackEffect(fromX: number, fromY: number, toX: number, toY: number): void {
-    const graphics = this.scene.add.graphics();
-    graphics.lineStyle(4, 0xf59e0b, 1); // Gold stroke
-    graphics.lineBetween(fromX, fromY, toX, toY);
-
-    this.scene.tweens.add({
-      targets: graphics,
-      alpha: 0,
-      duration: 350,
-      onComplete: () => {
-        graphics.destroy();
-      }
-    });
-  }
-
-  private createFloatingText(x: number, y: number, textString: string, colorHex: string): void {
+  public createFloatingText(x: number, y: number, textString: string, colorHex: string = '#ffffff'): void {
+    if (!this.scene?.add) return;
     const text = this.scene.add.text(x, y, textString, {
       fontSize: '11px',
       color: colorHex,
@@ -964,6 +1179,99 @@ export class CombatSystem {
       ease: 'Cubic.easeOut',
       onComplete: () => circle.destroy()
     });
+  }
+
+  public createFireExplosionEffect(x: number, y: number): void {
+    if (!this.scene?.add) return;
+    const burst = this.scene.add.circle(x, y, 18, 0xf97316, 0.7).setDepth(2000);
+    const core = this.scene.add.circle(x, y, 9, 0xfef08a, 0.9).setDepth(2001);
+    this.scene.tweens?.add({
+      targets: [burst, core],
+      scaleX: 1.5,
+      scaleY: 1.5,
+      alpha: 0,
+      duration: 350,
+      ease: 'Cubic.easeOut',
+      onComplete: () => {
+        burst.destroy();
+        core.destroy();
+      }
+    });
+  }
+
+  public checkAndAutocastHealingMagic(member: Player, time: number): boolean {
+    if (member.state === 'dead' || member.state === 'downed') return false;
+
+    // Healing Magic requires a Staff equipped as conduit
+    const isStaffEquipped = member.equippedWeapon?.id === 'staff' || member.equippedWeapon?.category === 'staff';
+    if (!isStaffEquipped) return false;
+
+    // Scan for living damaged party members (prioritize other allies, then self)
+    const damagedMembers = this.party.filter(
+      (m) => m.state !== 'dead' && m.state !== 'downed' && m.hp < m.maxHp
+    );
+
+    // Branch 2: Nobody needs healing -> proceed to standard combat actions
+    if (damagedMembers.length === 0) return false;
+
+    const dataLoader = DataLoader.getInstance();
+    const healDef = dataLoader.getWeapon('healing_magic');
+    const healInterval = healDef?.attackIntervalMs ?? 1500;
+
+    const lastHeal = member.lastSkillUseTimes.get('healing_magic');
+    if (lastHeal !== undefined && time - lastHeal < healInterval) return false;
+
+    const healLevel = member.progression.getProficiencyLevel('healing_magic');
+    const costReduction = (healDef?.levelBonus?.energyCostReductionPerLevel ?? 0.1) * healLevel;
+    const energyCost = Math.max(1, Math.round((healDef?.energyCostPerCast ?? 22) - costReduction));
+
+    // Branch 3: Damaged ally exists, but healer is out of energy (< energyCost)
+    if (member.energy < energyCost) {
+      // Throttle warning log to once per heal interval to avoid console spamming
+      if (lastHeal === undefined || time - lastHeal >= healInterval) {
+        console.log(
+          `[Healing Magic] ⚠️ Out of Energy to cast Heal (${member.energy.toFixed(0)}/${energyCost})! ${member.entityName} falling back to Staff melee attack.`
+        );
+        member.lastSkillUseTimes.set('healing_magic', time);
+      }
+      return false; // Fall back to melee target attack
+    }
+
+    // Branch 1: Damaged ally exists and healer has sufficient energy -> cast Heal
+    damagedMembers.sort((a, b) => {
+      const aSelf = a === member ? 1 : 0;
+      const bSelf = b === member ? 1 : 0;
+      if (aSelf !== bSelf) return aSelf - bSelf;
+      return (a.hp / a.maxHp) - (b.hp / b.maxHp);
+    });
+
+    const targetAlly = damagedMembers[0];
+
+    // Deduct energy and record cast times
+    member.energy -= energyCost;
+    member.lastSkillUseTimes.set('healing_magic', time);
+    member.lastAttackTime = time;
+    member.state = 'attacking';
+
+    const healBonus = (healDef?.levelBonus?.healPerLevel ?? 0.5) * healLevel;
+    const healAmount = Math.max(1, Math.round((healDef?.baseHealAmount ?? 8) + healBonus));
+
+    const restored = targetAlly.heal(healAmount);
+    console.log(
+      `[Healing Magic] ✨ ${member.entityName} casts Heal on ${targetAlly.entityName}! Restored ${restored} HP. (Energy: ${member.energy}/${member.maxEnergy})`
+    );
+
+    this.createFloatingText(targetAlly.x, targetAlly.y - 15, `+${restored} HP`, '#22c55e');
+    this.createSkillAttackEffect(member.x, member.y, targetAlly.x, targetAlly.y);
+
+    // Flat proficiency EXP grant for Healing Magic (+2)
+    const result = member.progression.addProficiencyExp('healing_magic', 2);
+    if (result.leveledUp) {
+      const newLevel = member.progression.getProficiencyLevel('healing_magic');
+      this.createFloatingText(member.x, member.y - 20, `Healing Magic Level ${newLevel}!`, '#22c55e');
+    }
+
+    return true;
   }
 
   public checkAndAutocastAllyHeal(member: Player, time: number): boolean {
@@ -998,6 +1306,31 @@ export class CombatSystem {
     return false;
   }
 
+  public checkAndAutocastSelfBuffs(member: Player, time: number): boolean {
+    if (member.state === 'dead' || member.state === 'downed') return false;
+    const hasActiveThreat = member.targetEntity !== null || this.enemies.some((e) => e.isAggroed && e.state !== 'downed' && e.state !== 'dead');
+    if (!hasActiveThreat) return false;
+
+    const dataLoader = DataLoader.getInstance();
+    for (const skillId of member.equippedSkillIds) {
+      if (!member.isAutocastEnabled(skillId)) continue;
+      const skillDef = dataLoader.getSkill(skillId);
+      if (!skillDef || !member.progression.isSkillUnlocked(skillDef, member)) continue;
+      if (skillDef.targetType !== 'self') continue;
+
+      // Don't recast if buff is already active
+      if (member.hasStatusEffect(skillId)) continue;
+
+      const lastUsed = member.lastSkillUseTimes.get(skillId) || 0;
+      const isOffCooldown = time - lastUsed >= skillDef.cooldownMs;
+      const isAffordable = member.energy >= skillDef.energyCost;
+      if (isOffCooldown && isAffordable) {
+        return this.castSkill(member, skillId, member, time);
+      }
+    }
+    return false;
+  }
+
   public castSkill(
     caster: Player,
     skillId: string,
@@ -1025,7 +1358,90 @@ export class CombatSystem {
       return false;
     }
 
-    if (skillDef.targetType === 'ally' || (skillDef.healAmount && skillDef.healAmount > 0)) {
+    if (skillDef.targetType === 'self') {
+      caster.energy -= skillDef.energyCost;
+      caster.lastSkillUseTimes.set(skillId, time);
+      caster.lastAttackTime = time;
+
+      if (skillId === 'guard_up') {
+        const effDef = dataLoader.getStatusEffect('guard_up') || {
+          id: 'guard_up',
+          name: 'Guard Up',
+          durationMs: skillDef.durationMs ?? 5000,
+          tickIntervalMs: 5000,
+          damagePerTick: 0,
+          color: '#38bdf8'
+        };
+        caster.applyStatusEffect(effDef);
+        this.createFloatingText(caster.x, caster.y - 12, 'GUARD UP!', '#38bdf8');
+        console.log(`[Skill] ${caster.entityName} casts Guard Up! (50% damage reduction for 5s)`);
+        return true;
+      } else if (skillId === 'taunt') {
+        const effDef = dataLoader.getStatusEffect('taunted') || {
+          id: 'taunted',
+          name: 'Taunted',
+          durationMs: skillDef.durationMs ?? 6000,
+          tickIntervalMs: 6000,
+          damagePerTick: 0,
+          color: '#f97316'
+        };
+        const casterTile = {
+          x: Math.floor(caster.x / caster.tileSize),
+          y: Math.floor(caster.y / caster.tileSize)
+        };
+        const radius = skillDef.radiusTiles ?? 5;
+        let affectedCount = 0;
+        for (const enemy of this.enemies) {
+          if (enemy.state === 'dead' || enemy.state === 'downed') continue;
+          const enemyTile = {
+            x: Math.floor(enemy.x / enemy.tileSize),
+            y: Math.floor(enemy.y / enemy.tileSize)
+          };
+          const dist = Math.max(Math.abs(casterTile.x - enemyTile.x), Math.abs(casterTile.y - enemyTile.y));
+          if (dist <= radius && this.pathfinder.hasLineOfSight(casterTile, enemyTile)) {
+            enemy.applyStatusEffect(effDef);
+            enemy.tauntSource = caster;
+            this.enemyTargets.set(enemy, caster);
+            enemy.targetEntity = caster;
+            enemy.isAggroed = true;
+            enemy.outOfAggroTimerMs = 0;
+            enemy.state = 'chasing';
+            this.createFloatingText(enemy.x, enemy.y - 20, 'TAUNTED!', '#f97316');
+            affectedCount++;
+          }
+        }
+        this.createFloatingText(caster.x, caster.y - 12, 'TAUNT!', '#f97316');
+        console.log(`[Skill] ${caster.entityName} casts Taunt! Forced ${affectedCount} enemies within ${radius} tiles to target them.`);
+        return true;
+      } else if (skillId === 'retaliate') {
+        const effDef = dataLoader.getStatusEffect('retaliate') || {
+          id: 'retaliate',
+          name: 'Retaliate',
+          durationMs: skillDef.durationMs ?? 15000,
+          tickIntervalMs: 15000,
+          damagePerTick: 0,
+          color: '#eab308'
+        };
+        caster.applyStatusEffect(effDef);
+        this.createFloatingText(caster.x, caster.y - 12, 'RETALIATE READY!', '#eab308');
+        console.log(`[Skill] ${caster.entityName} casts Retaliate! Next hit taken triggers free counterattack.`);
+        return true;
+      } else if (skillId === 'unbreakable') {
+        const effDef = dataLoader.getStatusEffect('unbreakable') || {
+          id: 'unbreakable',
+          name: 'Unbreakable',
+          durationMs: skillDef.durationMs ?? 4000,
+          tickIntervalMs: 4000,
+          damagePerTick: 0,
+          color: '#f59e0b'
+        };
+        caster.applyStatusEffect(effDef);
+        this.createFloatingText(caster.x, caster.y - 12, 'UNBREAKABLE!', '#f59e0b');
+        console.log(`[Skill] ${caster.entityName} casts Unbreakable! Full damage immunity for 4s.`);
+        return true;
+      }
+      return true;
+    } else if (skillDef.targetType === 'ally' || (skillDef.healAmount && skillDef.healAmount > 0)) {
       let targetAlly = target as Player | undefined;
       if (!targetAlly || targetAlly.state === 'dead' || targetAlly.state === 'downed') {
         const candidates = this.party.filter(
@@ -1058,6 +1474,17 @@ export class CombatSystem {
         return false;
       }
 
+      if (skillId === 'shield_bash') {
+        const curDist = Math.max(
+          Math.abs(Math.floor(caster.x / caster.tileSize) - Math.floor(enemyTarget.x / enemyTarget.tileSize)),
+          Math.abs(Math.floor(caster.y / caster.tileSize) - Math.floor(enemyTarget.y / enemyTarget.tileSize))
+        );
+        if (curDist > 1) {
+          console.warn(`[Skill] Cannot cast Shield Bash: target is outside melee range (${curDist} > 1)`);
+          return false;
+        }
+      }
+
       caster.energy -= skillDef.energyCost;
       caster.lastSkillUseTimes.set(skillId, time);
       caster.lastAttackTime = time;
@@ -1073,6 +1500,22 @@ export class CombatSystem {
       const skillDamage = effBase * (skillDef.damageMultiplier ?? 1.0);
 
       this.createFloatingText(enemyTarget.x, enemyTarget.y - 10, `${skillDef.name.toUpperCase()}! -${skillDamage.toFixed(1)}`, '#f59e0b');
+      
+      if (skillId === 'shield_bash') {
+        const stunDef = dataLoader.getStatusEffect('stun') || {
+          id: 'stun',
+          name: 'Stun',
+          durationMs: skillDef.stunDurationMs ?? 2000,
+          tickIntervalMs: 2000,
+          damagePerTick: 0,
+          color: '#facc15'
+        };
+        enemyTarget.applyStatusEffect(stunDef);
+        enemyTarget.stopMovement();
+        this.createFloatingText(enemyTarget.x, enemyTarget.y - 25, 'STUNNED!', '#facc15');
+        console.log(`[Skill] Shield Bash STUNNED ${enemyTarget.entityName} for 2s!`);
+      }
+
       const downed = enemyTarget.takeDamage(skillDamage);
       if (downed) {
         this.handleTargetDefeated(caster, enemyTarget, weapon.id);
@@ -1195,19 +1638,20 @@ export class CombatSystem {
       member.lastCombatRepathTimeMs = now;
       member.state = 'moving';
 
-      const dynamicObstacles: GridPos[] = [];
+      const softObs: GridPos[] = [];
+      const hardObs: GridPos[] = [];
       for (const m of this.party) {
         if (m !== member && m.state !== 'dead' && m.state !== 'downed') {
-          dynamicObstacles.push(m.gridPos);
+          softObs.push(m.gridPos);
         }
       }
       for (const e of this.enemies) {
         if (e.state !== 'dead' && e.state !== 'downed') {
-          dynamicObstacles.push(e.gridPos);
+          hardObs.push(e.gridPos);
         }
       }
 
-      this.pathfinder.findPath(member.gridPos, dest, dynamicObstacles).then((path) => {
+      this.pathfinder.findPath(member.gridPos, dest, { soft: softObs, hard: hardObs }).then((path) => {
         if (path.length > 0 && member.state !== 'downed' && member.state !== 'dead' && member.targetEntity === enemy) {
           member.followPath(path);
         } else {
@@ -1218,5 +1662,27 @@ export class CombatSystem {
         }
       });
     }
+  }
+
+  public updateStaffDynamicRange(member: Player): void {
+    const isStaffWielder = member.equippedWeapon?.id === 'staff' || member.equippedWeapon?.category === 'staff';
+    if (!isStaffWielder) return;
+    const fireDef = DataLoader.getInstance().getWeapon('fire_magic');
+    const fireProfLevel = member.progression.getProficiencyLevel('fire_magic');
+    const fireCostReduction = (fireDef?.levelBonus?.energyCostReductionPerLevel ?? 0.1) * fireProfLevel;
+    const fireEnergyCost = fireDef ? Math.max(1, Math.round((fireDef.energyCostPerCast ?? 22) - fireCostReduction)) : 22;
+    const canCastFireThroughStaff = fireDef !== null && member.energy >= fireEnergyCost;
+    member.attackRangeTiles = canCastFireThroughStaff ? (fireDef?.attackRangeTiles ?? 4) : 1;
+  }
+
+  public getEffectiveWeaponForAttack(member: Player): WeaponDef {
+    const isStaff = member.equippedWeapon?.id === 'staff' || member.equippedWeapon?.category === 'staff';
+    if (!isStaff) return member.equippedWeapon;
+    const fireDefFromData = DataLoader.getInstance().getWeapon('fire_magic');
+    const fireLevel = member.progression.getProficiencyLevel('fire_magic');
+    const fireCostReduction = (fireDefFromData?.levelBonus?.energyCostReductionPerLevel ?? 0.1) * fireLevel;
+    const staffFireCost = fireDefFromData ? Math.max(1, Math.round((fireDefFromData.energyCostPerCast ?? 22) - fireCostReduction)) : 22;
+    const isCastingFireThroughStaff = fireDefFromData !== null && member.energy >= staffFireCost;
+    return isCastingFireThroughStaff ? fireDefFromData! : member.equippedWeapon;
   }
 }

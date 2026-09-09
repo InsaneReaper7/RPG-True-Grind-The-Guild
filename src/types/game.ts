@@ -14,6 +14,9 @@ export interface WeaponLevelBonus {
   attackSpeedPerLevel?: number;
   blockPerLevel?: number;
   mitigationPerLevel?: number;
+  healPerLevel?: number;
+  energyCostReductionPerLevel?: number;
+  burnChancePerLevel?: number;
 }
 
 export interface WeaponDef {
@@ -25,9 +28,24 @@ export interface WeaponDef {
   baseDamage: number;
   baseAccuracy?: number;
   bleedChance?: number;
+  burnChance?: number;
+  attackRangeTiles?: number;
+  aoeRadiusTiles?: number;
+  aoeSplashPercent?: number;
   baseBlock?: number;
   baseMitigation?: number;
+  baseHealAmount?: number;
+  energyCostPerCast?: number;
   levelBonus?: WeaponLevelBonus;
+}
+
+export interface StartingKitDef {
+  id: string;
+  name: string;
+  description: string;
+  mainWeaponId: string;
+  offhandWeaponId: string | null;
+  isRandomMagic?: boolean;
 }
 
 export interface ProficiencyTiers {
@@ -163,9 +181,11 @@ export interface CharacterSnapshot {
   knownSkillIds: string[];
   equippedSkillIds: string[];
   autocastMap: Record<string, boolean>;
-  skillCooldownsRemainingMs: Record<string, number>;
+  skillCooldownsRemainingMs?: Record<string, number>;
   proficiencies: Record<string, TrainableStat>;
   classLevels: Record<string, number>;
+  classStats?: Record<string, TrainableStat>;
+  activeClass?: string | null;
   unlockedClasses: string[];
   activityCounts?: Record<string, number>;
   bookLearnedSkills?: string[];
@@ -184,11 +204,14 @@ export interface PlayerSnapshot {
   skillCooldownsRemainingMs: Record<string, number>;
   proficiencies: Record<string, TrainableStat>;
   classLevels: Record<string, number>;
+  classStats?: Record<string, TrainableStat>;
+  activeClass?: string | null;
   unlockedClasses: string[];
   activityCounts?: Record<string, number>;
   resources: {
     wood: number;
-    [key: string]: number;
+    ore?: number;
+    [key: string]: number | undefined;
   };
   placedBuildables?: PlacedBuildable[];
   researchPoints?: number;
@@ -203,6 +226,7 @@ export interface PlayerSnapshot {
   offhandWeaponId?: string | null;
   party?: CharacterSnapshot[];
   discoveredCookingRecipes?: string[];
+  discoveredAlchemyRecipes?: string[];
 }
 
 export interface SkillBookDef {
@@ -233,12 +257,13 @@ export interface ResearchTreeData {
 export interface AlchemyRecipeDef {
   id: string;
   name: string;
-  cures: string[];
-  ingredients: {
-    wood: number;
-    [key: string]: number;
-  };
+  cures?: string[];
+  ingredients: Record<string, number>;
   expGranted: number;
+  energyRestored?: number;
+  buffDurationMs?: number;
+  buffRegenPerSec?: number;
+  targetRegenSkill?: string;
   description: string;
 }
 
@@ -270,6 +295,11 @@ export interface SkillDef {
   targetType?: 'enemy' | 'ally' | 'self';
   requirements: Requirement[];
   description?: string;
+  stunDurationMs?: number;
+  mitigationPercent?: number;
+  durationMs?: number;
+  radiusTiles?: number;
+  damageImmunity?: boolean;
 }
 
 export interface SkillsData {
@@ -349,7 +379,7 @@ export interface HiddenSkillsData {
   hiddenSkills: HiddenSkillDef[];
 }
 
-export type EntityState = 'idle' | 'moving' | 'chasing' | 'attacking' | 'returning' | 'downed' | 'dead';
+export type EntityState = 'idle' | 'moving' | 'chasing' | 'attacking' | 'returning' | 'downed' | 'dead' | 'channeling';
 
 export type FoodQuality = 'common' | 'good' | 'excellent' | 'perfect';
 
@@ -413,3 +443,109 @@ export interface ExpTransaction {
   currentExp: number;
   nextExp: number;
 }
+
+// Milestone 13: Procedural Dungeon Generation Types
+export type DungeonRoomType = 'entrance' | 'gathering' | 'light_combat' | 'heavy_combat';
+
+export interface DungeonRoomConfig {
+  weight?: number;
+  bushesRange: [number, number];
+  enemiesRange: [number, number];
+}
+
+export interface DungeonConfig {
+  _comment?: string;
+  mapWidth: number;
+  mapHeight: number;
+  tileSize: number;
+  roomCount: {
+    min: number;
+    max: number;
+  };
+  roomSize: {
+    minWidth: number;
+    maxWidth: number;
+    minHeight: number;
+    maxHeight: number;
+  };
+  corridorWidth: number;
+  roomTypes: {
+    gathering: DungeonRoomConfig;
+    light_combat: DungeonRoomConfig;
+    heavy_combat: DungeonRoomConfig;
+  };
+  enemyPool: string[];
+  floorRespawnTimerSec?: number;
+}
+
+export interface DungeonRoom {
+  id: number;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  centerX: number;
+  centerY: number;
+  type: DungeonRoomType;
+}
+
+export interface EnemySpawnDef {
+  enemyId: string;
+  x: number;
+  y: number;
+  roomIndex: number;
+}
+
+export interface GatheringNodeDef {
+  id: string;
+  name: string;
+  skillId: string;
+  resourceId: string;
+  yieldCount: number;
+  expGranted: number;
+  channelDurationMs: number;
+  respawnTimeMs: number;
+  textureKey: string;
+  textureDepletedKey: string;
+  label: string;
+  depletedLabel: string;
+  color: string;
+  actionVerb: string;
+}
+
+export interface GatheringNodesConfig {
+  defaultChannelDurationMs: number;
+  interruptOnDamage: boolean;
+  debugRespawnTimeMs: number;
+  nodes: Record<string, GatheringNodeDef>;
+}
+
+export interface GatheringNodeSpawnDef {
+  x: number;
+  y: number;
+  roomIndex: number;
+  nodeTypeId: string;
+}
+
+export interface BushSpawnDef {
+  x: number;
+  y: number;
+  roomIndex: number;
+  nodeTypeId?: string;
+}
+
+export interface GeneratedDungeon {
+  width: number;
+  height: number;
+  gridMatrix: number[][]; // 0 = walkable, 1 = obstacle/wall
+  rooms: DungeonRoom[];
+  portalPos: GridPos;
+  enemySpawns: EnemySpawnDef[];
+  bushSpawns: BushSpawnDef[];
+}
+
+export interface DynamicObstaclesConfig {
+  soft?: GridPos[]; // eligible for corridor bottleneck fallback (friendly party members)
+  hard?: GridPos[]; // hard non-negotiable obstacles (living enemies)
+}
+

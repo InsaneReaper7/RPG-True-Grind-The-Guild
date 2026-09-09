@@ -154,6 +154,12 @@ export class OutpostScene extends Phaser.Scene {
     this.hud.setLocation('Guild Outpost (Safe Zone)', true);
     GameState.getInstance().setSafeZone(true);
 
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      if (this.hud) {
+        this.hud.destroy();
+      }
+    });
+
     // Wire up HUD Build callbacks
     this.hud.setBuildCallbacks(
       () => this.toggleBuildMode(),
@@ -342,6 +348,63 @@ export class OutpostScene extends Phaser.Scene {
       targetMember.progression.checkClassUnlocks();
       targetMember.progression.checkDualWieldUnlock();
       console.log(`[Debug] Set '${statId}' to Level ${targetLevel} (0 EXP) on ${targetMember.entityName}`);
+    };
+    (window as any).__setActiveClass = (classId: string | null = 'vanguard', memberIdx: number = 0) => {
+      const targetMember = this.party[memberIdx] || this.party[0];
+      if (targetMember) {
+        targetMember.setActiveClass(classId);
+        targetMember.checkSkillUnlocks();
+        this.hud.update(this.player, this.progressionSystem, 0, this.party);
+        console.log(`[Debug] Active class set to '${classId}' on ${targetMember.entityName}`);
+      }
+    };
+    (window as any).__grantClassExp = (amount: number = 25, memberIdx: number = 0) => {
+      const targetMember = this.party[memberIdx] || this.party[0];
+      if (targetMember && targetMember.activeClass) {
+        const res = targetMember.progression.addClassExp(targetMember.activeClass, amount);
+        targetMember.checkSkillUnlocks();
+        this.hud.update(this.player, this.progressionSystem, 0, this.party);
+        console.log(`[Debug] Granted ${amount} Class EXP to active class '${targetMember.activeClass}' on ${targetMember.entityName}`);
+        return res;
+      }
+      console.warn(`[Debug] No active class equipped on ${targetMember?.entityName}`);
+      return false;
+    };
+    (window as any).__setClassLevel = (classId: string, level: number, memberIdx: number = 0) => {
+      const targetMember = this.party[memberIdx] || this.party[0];
+      if (targetMember) {
+        targetMember.progression.setClassLevel(classId, level);
+        targetMember.progression.checkClassUnlocks();
+        targetMember.checkSkillUnlocks();
+        this.hud.update(this.player, this.progressionSystem, 0, this.party);
+        console.log(`[Debug] Set class '${classId}' to Level ${level} on ${targetMember.entityName}`);
+      }
+    };
+    (window as any).__setupVanguardTestState = (memberIdx: number = 0) => {
+      const targetMember = this.party[memberIdx] || this.party[0];
+      if (targetMember) {
+        const p = targetMember.progression;
+        p.getProficiencyStat('short_swords').level = 30;
+        p.getProficiencyStat('short_swords').currentExp = 0;
+        p.getProficiencyStat('shields').level = 30;
+        p.getProficiencyStat('shields').currentExp = 0;
+        p.setClassLevel('fencer', 5);
+        p.setClassLevel('guardian', 5);
+        p.checkClassUnlocks();
+        targetMember.checkSkillUnlocks();
+        this.hud.update(this.player, this.progressionSystem, 0, this.party);
+        console.log(`[Debug] Setup Vanguard requirements on ${targetMember.entityName}`);
+      }
+    };
+    (window as any).__setVanguardLevel = (level: number = 40, memberIdx: number = 0) => {
+      const targetMember = this.party[memberIdx] || this.party[0];
+      if (targetMember) {
+        targetMember.progression.setClassLevel('vanguard', level);
+        targetMember.setActiveClass('vanguard');
+        targetMember.checkSkillUnlocks();
+        this.hud.update(this.player, this.progressionSystem, 0, this.party);
+        console.log(`[Debug] Set Vanguard to Level ${level} and active on ${targetMember.entityName}`);
+      }
     };
     (window as any).__spawnTestCompanion = () => {
       return this.spawnTestCompanion();

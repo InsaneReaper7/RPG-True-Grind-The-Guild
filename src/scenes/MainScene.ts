@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { DataLoader } from '../utils/DataLoader';
 import { TextureGenerator } from '../utils/TextureGenerator';
 import { Pathfinder } from '../utils/Pathfinder';
+import { DungeonGenerator } from '../utils/DungeonGenerator';
 import { Player } from '../entities/Player';
 import { Enemy } from '../entities/Enemy';
 import { Entity } from '../entities/Entity';
@@ -9,24 +10,39 @@ import { CombatSystem } from '../systems/CombatSystem';
 import { ProgressionSystem } from '../systems/ProgressionSystem';
 import { HUD } from '../ui/HUD';
 import { GameState } from '../systems/GameState';
-import { GridPos, EnemyDef } from '../types/game';
+import { GridPos, EnemyDef, GeneratedDungeon, DungeonRoom, GatheringNodeDef } from '../types/game';
 import { HiddenSkillSystem } from '../systems/HiddenSkillSystem';
 import { TileClaimDebugOverlay } from '../ui/TileClaimDebugOverlay';
 
-export interface ForagingBush {
+export interface GatheringNode {
   x: number;
   y: number;
+  nodeDef: GatheringNodeDef;
   sprite: Phaser.GameObjects.Sprite;
   label: Phaser.GameObjects.Text;
   isHarvested: boolean;
   respawnTimer?: Phaser.Time.TimerEvent;
 }
 
+export type ForagingBush = GatheringNode;
+
+export interface ActiveGatherChannel {
+  character: Player;
+  node: GatheringNode;
+  durationMs: number;
+  elapsedMs: number;
+  barContainer: Phaser.GameObjects.Container;
+  barBg: Phaser.GameObjects.Graphics;
+  barFill: Phaser.GameObjects.Graphics;
+  labelText: Phaser.GameObjects.Text;
+}
+
 export class MainScene extends Phaser.Scene {
-  private mapWidth: number = 20;
-  private mapHeight: number = 20;
+  private mapWidth: number = 48;
+  private mapHeight: number = 48;
   private tileSize: number = 32;
 
+  private dungeon!: GeneratedDungeon;
   private tilemap!: Phaser.Tilemaps.Tilemap;
   private pathfinder!: Pathfinder;
   public party: Player[] = [];
@@ -40,10 +56,25 @@ export class MainScene extends Phaser.Scene {
   private hud!: HUD;
   private tileClaimOverlay!: TileClaimDebugOverlay;
 
+  // Milestone 16: Floor Timer & Respawn Overhaul
+  public debugAutoRespawnEnabled: boolean = false;
+  private floorTimerDurationMs: number = 300000;
+  private floorTimerRemainingMs: number = 300000;
+
+  // Milestone 17: Gathering Channel & Debug Respawn
+  public debugGatheringRespawnEnabled: boolean = false;
+  public gatheringNodes: GatheringNode[] = [];
+  public get foragingBushes(): GatheringNode[] {
+    return this.gatheringNodes;
+  }
+  public set foragingBushes(nodes: GatheringNode[]) {
+    this.gatheringNodes = nodes;
+  }
+  private activeGatherChannels: Map<Player, ActiveGatherChannel> = new Map();
+
   private portalSprite!: Phaser.GameObjects.Sprite;
   private portalPos: GridPos = { x: 2, y: 2 };
   private isTransitioning: boolean = false;
-  private foragingBushes: ForagingBush[] = [];
 
   private wasdKeys!: {
     W: Phaser.Input.Keyboard.Key;
@@ -77,42 +108,59 @@ export class MainScene extends Phaser.Scene {
     this.isTransitioning = false;
     this.enemies = [];
 
+    // Clean up previous overlay, gathering channels, or timers if restarting scene
+    if (this.tileClaimOverlay) {
+      this.tileClaimOverlay.destroy();
+    }
+    for (const channel of this.activeGatherChannels.values()) {
+      channel.barContainer.destroy();
+    }
+    this.activeGatherChannels.clear();
+    for (const node of this.gatheringNodes) {
+      if (node.respawnTimer) {
+        node.respawnTimer.remove();
+      }
+    }
+    this.gatheringNodes = [];
+
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      if (this.tileClaimOverlay) {
+        this.tileClaimOverlay.destroy();
+      }
+      for (const channel of this.activeGatherChannels.values()) {
+        channel.barContainer.destroy();
+      }
+      this.activeGatherChannels.clear();
+      for (const node of this.gatheringNodes) {
+        if (node.respawnTimer) {
+          node.respawnTimer.remove();
+        }
+      }
+      this.gatheringNodes = [];
+      if (this.hud) {
+        this.hud.destroy();
+      }
+    });
+
     const dataLoader = DataLoader.getInstance();
     const playerData = dataLoader.getPlayer();
     const startingWeapon = dataLoader.getWeapon(playerData.startingWeaponId);
-    const wolfData = dataLoader.getEnemy('wolf');
-    const goblinData = dataLoader.getEnemy('goblin');
-    const skeletonData = dataLoader.getEnemy('skeleton');
-    const undeadData = dataLoader.getEnemy('undead');
     const classesData = dataLoader.getClassesData();
 
     if (!startingWeapon) {
       throw new Error(`Starting weapon '${playerData.startingWeaponId}' not found in data/weapons.json`);
     }
-    if (!wolfData) {
-      throw new Error(`Wolf enemy data not found in data/enemies.json`);
-    }
 
-    // 1. Build 20x20 Grid Matrix (0 = Walkable, 1 = Obstacle)
-    this.gridMatrix = [];
-    for (let y = 0; y < this.mapHeight; y++) {
-      const row: number[] = [];
-      for (let x = 0; x < this.mapWidth; x++) {
-        // Border walls & center rock cluster
-        if (
-          x === 0 ||
-          x === this.mapWidth - 1 ||
-          y === 0 ||
-          y === this.mapHeight - 1 ||
-          (x >= 8 && x <= 10 && y >= 8 && y <= 9)
-        ) {
-          row.push(1);
-        } else {
-          row.push(0);
-        }
-      }
-      this.gridMatrix.push(row);
-    }
+    // 1. Procedural Dungeon Generation (Milestone 13)
+    const dungeonConfig = dataLoader.getDungeonConfig();
+    this.dungeon = DungeonGenerator.generate(dungeonConfig);
+    this.mapWidth = this.dungeon.width;
+    this.mapHeight = this.dungeon.height;
+    this.gridMatrix = this.dungeon.gridMatrix;
+    this.portalPos = this.dungeon.portalPos;
+
+    // Expose generated dungeon for debug and verification inspection
+    (window as any).__lastGeneratedDungeon = this.dungeon;
 
     // 2. Tilemap Creation using Phaser Tilemap API
     this.tilemap = this.make.tilemap({
@@ -128,7 +176,7 @@ export class MainScene extends Phaser.Scene {
       this.tilemap.createLayer(0, [tilesetWalkable, tilesetObstacle], 0, 0);
     }
 
-    // 3. Initialize Pathfinder
+    // 3. Initialize Pathfinder with fresh grid
     this.pathfinder = new Pathfinder(this.gridMatrix);
 
     // 4. Initialize Systems & HUD
@@ -140,12 +188,13 @@ export class MainScene extends Phaser.Scene {
     // Progression & Skill Discovery Notifications
     this.bindProgressionEvents(this.progressionSystem, playerData.name || 'Hero');
 
-    // 5. Spawn Party (Hero & Companions)
+    // 5. Spawn Party (Hero & Companions) around dynamic entrance portal
     const partySnapshots = GameState.getInstance().getPartySnapshots();
     this.party = [];
 
     if (partySnapshots.length === 0) {
-      const hero = new Player(this, 3, 3, playerData, startingWeapon, this.tileSize, 'player-avatar', this.progressionSystem);
+      const spawnTile = this.findOpenAdjacentTile(this.portalPos);
+      const hero = new Player(this, spawnTile.x, spawnTile.y, playerData, startingWeapon, this.tileSize, 'player-avatar', this.progressionSystem);
       hero.id = 'hero';
       hero.entityName = playerData.name || 'Hero';
       this.party.push(hero);
@@ -169,7 +218,7 @@ export class MainScene extends Phaser.Scene {
       }
     }
 
-    // Spawn Portal to Outpost at (2, 2)
+    // Spawn Portal to Outpost at dynamic portalPos
     this.portalSprite = this.add.sprite(
       this.portalPos.x * this.tileSize + this.tileSize / 2,
       this.portalPos.y * this.tileSize + this.tileSize / 2,
@@ -204,16 +253,24 @@ export class MainScene extends Phaser.Scene {
       this.triggerPortalTransition();
     });
 
-    this.spawnEnemyUnit(wolfData, 14, 14, 'wolf-avatar');
-    if (goblinData) this.spawnEnemyUnit(goblinData, 14, 5, 'goblin-avatar');
-    if (skeletonData) this.spawnEnemyUnit(skeletonData, 5, 14, 'skeleton-avatar');
-    if (undeadData) this.spawnEnemyUnit(undeadData, 15, 10, 'undead-avatar');
+    // 5b. Spawn Procedural Enemies
+    this.enemies = [];
+    for (const espawn of this.dungeon.enemySpawns) {
+      const enemyDef = dataLoader.getEnemy(espawn.enemyId);
+      if (enemyDef) {
+        const texKey = `${enemyDef.id}-avatar`;
+        const tex = this.textures.exists(texKey) ? texKey : 'wolf-avatar';
+        const enemy = this.spawnEnemyUnit(enemyDef, espawn.x, espawn.y, tex);
+        enemy.roomIndex = espawn.roomIndex;
+      }
+    }
 
-    // 5b. Spawn Dungeon Foraging Nodes (Milestone 10)
-    this.foragingBushes = [];
-    this.spawnForagingBush(4, 8);
-    this.spawnForagingBush(11, 4);
-    this.spawnForagingBush(8, 15);
+    // 5c. Spawn Procedural Gathering Nodes (Foraging Bushes, Woodcutting Trees, Mining Rocks)
+    this.gatheringNodes = [];
+    for (const bspawn of this.dungeon.bushSpawns) {
+      const typeId = (bspawn as any).nodeTypeId || 'foraging_bush';
+      this.spawnGatheringNode(bspawn.x, bspawn.y, typeId);
+    }
 
     // Target Selection Reticle
     this.targetReticle = this.add.sprite(-100, -100, 'target-reticle').setDepth(10000);
@@ -227,13 +284,14 @@ export class MainScene extends Phaser.Scene {
       this.pathfinder,
       this.progressionSystem,
       (deadEnemy) => {
-        this.targetReticle.setVisible(false);
-        console.log(`[Combat] ${deadEnemy.entityName} defeated. Automatic respawn scheduled in 3 seconds.`);
-        this.time.delayedCall(3000, () => {
-          deadEnemy.respawn();
-        });
+        this.onEnemyDefeated(deadEnemy);
       }
     );
+
+    // Milestone 16: Continuous Floor Timer initialization
+    this.debugAutoRespawnEnabled = false;
+    this.floorTimerDurationMs = (dungeonConfig.floorRespawnTimerSec ?? 300) * 1000;
+    this.floorTimerRemainingMs = this.floorTimerDurationMs;
 
     // 7. Setup Camera Controls
     this.cameras.main.setBounds(0, 0, this.mapWidth * this.tileSize, this.mapHeight * this.tileSize);
@@ -267,6 +325,7 @@ export class MainScene extends Phaser.Scene {
     }
 
     // Expose debug helpers on window for browser console testing
+    (window as any).GameState = GameState;
     (window as any).__grantExp = (statId: string = 'short_swords', amount: number = 25, memberIndex: number = 0) => {
       const targetMember = this.party[memberIndex] || this.party[0];
       return targetMember.progression.addProficiencyExp(statId, amount);
@@ -326,6 +385,51 @@ export class MainScene extends Phaser.Scene {
       }
       console.log('[Debug] All test enemies respawned and reset to spawn positions.');
     };
+    (window as any).__getFloorTimerState = () => ({
+      durationMs: this.floorTimerDurationMs,
+      remainingMs: this.floorTimerRemainingMs,
+      debugAutoRespawnEnabled: this.debugAutoRespawnEnabled,
+      totalEnemies: this.enemies.length,
+      livingEnemies: this.enemies.filter((e) => e.state !== 'dead' && e.state !== 'downed').length
+    });
+    (window as any).__fastForwardFloorTimer = (seconds: number = 60) => this.fastForwardFloorTimer(seconds);
+    (window as any).__triggerFloorRespawn = () => this.triggerFloorRespawn();
+    (window as any).__toggleAutoRespawn = () => this.toggleDebugAutoRespawn();
+    (window as any).__toggleDebugGatheringRespawn = () => this.toggleDebugGatheringRespawn();
+    (window as any).__getGatheringNodes = () => this.gatheringNodes;
+    (window as any).__startGatherChannel = (nodeIdx: number = 0, charIdx: number = 0) => {
+      const node = this.gatheringNodes[nodeIdx];
+      const char = this.party[charIdx];
+      if (node && char) {
+        return this.startGatherChannel(char, node);
+      }
+      return false;
+    };
+    (window as any).__interruptGatherChannel = (charIdx: number = 0, enemyIdx: number = 0) => {
+      const char = this.party[charIdx];
+      const enemy = this.enemies[enemyIdx];
+      if (char) {
+        return this.interruptGatherChannel(char, enemy);
+      }
+      return false;
+    };
+    (window as any).__getGatheringState = () => ({
+      debugGatheringRespawnEnabled: this.debugGatheringRespawnEnabled,
+      totalNodes: this.gatheringNodes.length,
+      harvestedNodes: this.gatheringNodes.filter((n) => n.isHarvested).length,
+      activeChannels: this.activeGatherChannels.size
+    });
+    (window as any).__defeatEnemy = (enemy: Enemy) => this.defeatEnemy(enemy);
+    (window as any).__getRoomEnemies = (roomId?: number) => {
+      if (roomId !== undefined) {
+        return this.enemies.filter((e) => e.roomIndex === roomId);
+      }
+      return this.dungeon.rooms.map((r) => ({
+        id: r.id,
+        type: r.type,
+        enemies: this.enemies.filter((e) => e.roomIndex === r.id)
+      }));
+    };
     (window as any).__testHiddenProc = (skillId: string) => {
       const hiddenDef = DataLoader.getInstance().getHiddenSkill(skillId);
       if (!hiddenDef) {
@@ -353,6 +457,65 @@ export class MainScene extends Phaser.Scene {
       const spawnY = y ?? 10;
       const textureKey = `${def.id}-avatar`;
       return this.spawnEnemyUnit(def, spawnX, spawnY, this.textures.exists(textureKey) ? textureKey : 'wolf-avatar');
+    };
+
+    // Milestone 14 Debug Helpers
+    (window as any).__setActiveClass = (classId: string | null = 'vanguard', memberIdx: number = 0) => {
+      const targetMember = this.party[memberIdx] || this.party[0];
+      if (targetMember) {
+        targetMember.setActiveClass(classId);
+        targetMember.checkSkillUnlocks();
+        this.hud.update(this.player, this.progressionSystem, 0, this.party);
+        console.log(`[Debug] Active class set to '${classId}' on ${targetMember.entityName}`);
+      }
+    };
+    (window as any).__grantClassExp = (amount: number = 25, memberIdx: number = 0) => {
+      const targetMember = this.party[memberIdx] || this.party[0];
+      if (targetMember && targetMember.activeClass) {
+        const res = targetMember.progression.addClassExp(targetMember.activeClass, amount);
+        targetMember.checkSkillUnlocks();
+        this.hud.update(this.player, this.progressionSystem, 0, this.party);
+        console.log(`[Debug] Granted ${amount} Class EXP to active class '${targetMember.activeClass}' on ${targetMember.entityName}`);
+        return res;
+      }
+      console.warn(`[Debug] No active class equipped on ${targetMember?.entityName}`);
+      return false;
+    };
+    (window as any).__setClassLevel = (classId: string, level: number, memberIdx: number = 0) => {
+      const targetMember = this.party[memberIdx] || this.party[0];
+      if (targetMember) {
+        targetMember.progression.setClassLevel(classId, level);
+        targetMember.progression.checkClassUnlocks();
+        targetMember.checkSkillUnlocks();
+        this.hud.update(this.player, this.progressionSystem, 0, this.party);
+        console.log(`[Debug] Set class '${classId}' to Level ${level} on ${targetMember.entityName}`);
+      }
+    };
+    (window as any).__setupVanguardTestState = (memberIdx: number = 0) => {
+      const targetMember = this.party[memberIdx] || this.party[0];
+      if (targetMember) {
+        const p = targetMember.progression;
+        p.getProficiencyStat('short_swords').level = 30;
+        p.getProficiencyStat('short_swords').currentExp = 0;
+        p.getProficiencyStat('shields').level = 30;
+        p.getProficiencyStat('shields').currentExp = 0;
+        p.setClassLevel('fencer', 5);
+        p.setClassLevel('guardian', 5);
+        p.checkClassUnlocks();
+        targetMember.checkSkillUnlocks();
+        this.hud.update(this.player, this.progressionSystem, 0, this.party);
+        console.log(`[Debug] Setup Vanguard requirements on ${targetMember.entityName}`);
+      }
+    };
+    (window as any).__setVanguardLevel = (level: number = 40, memberIdx: number = 0) => {
+      const targetMember = this.party[memberIdx] || this.party[0];
+      if (targetMember) {
+        targetMember.progression.setClassLevel('vanguard', level);
+        targetMember.setActiveClass('vanguard');
+        targetMember.checkSkillUnlocks();
+        this.hud.update(this.player, this.progressionSystem, 0, this.party);
+        console.log(`[Debug] Set Vanguard to Level ${level} and active on ${targetMember.entityName}`);
+      }
     };
     (window as any).__spawnSwarmAround = (memberIdx: number = 0) => {
       const member = this.party[memberIdx] || this.player;
@@ -411,17 +574,17 @@ export class MainScene extends Phaser.Scene {
         return;
       }
 
-      // Check if clicking a foraging bush node (Milestone 10)
-      const clickedBush = this.foragingBushes.find((b) => {
-        const isGridMatch = b.x === clickedTileX && b.y === clickedTileY;
-        const dx = Math.abs(b.sprite.x - worldPoint.x);
-        const dy = Math.abs(b.sprite.y - worldPoint.y);
+      // Check if clicking a gathering node (Milestone 10, 13 & 17)
+      const clickedNode = this.gatheringNodes.find((n) => {
+        const isGridMatch = n.x === clickedTileX && n.y === clickedTileY;
+        const dx = Math.abs(n.sprite.x - worldPoint.x);
+        const dy = Math.abs(n.sprite.y - worldPoint.y);
         const isPosMatch = dx <= this.tileSize / 2 + 4 && dy <= this.tileSize / 2 + 4;
         return isGridMatch || isPosMatch;
       });
 
-      if (clickedBush) {
-        this.interactWithBush(clickedBush);
+      if (clickedNode) {
+        this.interactWithGatheringNode(clickedNode);
         return;
       }
 
@@ -436,10 +599,12 @@ export class MainScene extends Phaser.Scene {
       });
 
       if (clickedEnemy) {
+        this.cancelGatherChannel(this.player);
         this.engageEnemy(clickedEnemy);
       } else if (this.gridMatrix[clickedTileY]?.[clickedTileX] === 0) {
         // Click-to-Move to empty walkable tile
         console.log(`[Input] Clicked Tile: (${clickedTileX}, ${clickedTileY})`);
+        this.cancelGatherChannel(this.player);
         for (const member of this.party) {
           member.clearTarget();
         }
@@ -465,10 +630,8 @@ export class MainScene extends Phaser.Scene {
         this.player.claimedDestination = { ...leaderDest };
 
         if (this.player.state !== 'downed') {
-          const dynamicObs = this.getDynamicObstacles(this.player).filter(
-            obs => !this.party.some(m => m.gridPos.x === obs.x && m.gridPos.y === obs.y)
-          );
-          this.pathfinder.findPath(this.player.gridPos, leaderDest, dynamicObs).then((path) => {
+          const unitObs = this.getPartyUnitObstacles(this.player);
+          this.pathfinder.findPath(this.player.gridPos, leaderDest, unitObs).then((path) => {
             if (path.length > 0) {
               this.player.followPath(path);
             } else {
@@ -499,10 +662,8 @@ export class MainScene extends Phaser.Scene {
           claimed.add(`${compDest.x},${compDest.y}`);
           companion.claimedDestination = { ...compDest };
 
-          const compDynamicObs = this.getDynamicObstacles(companion).filter(
-            obs => !this.party.some(m => m.gridPos.x === obs.x && m.gridPos.y === obs.y)
-          );
-          this.pathfinder.findPath(companion.gridPos, compDest, compDynamicObs).then((path) => {
+          const compUnitObs = this.getPartyUnitObstacles(companion);
+          this.pathfinder.findPath(companion.gridPos, compDest, compUnitObs).then((path) => {
             if (path.length > 0) {
               companion.followPath(path);
             } else {
@@ -527,6 +688,33 @@ export class MainScene extends Phaser.Scene {
       }
     }
     return units;
+  }
+
+  public getFriendlyObstacles(excludeEntity?: Entity): GridPos[] {
+    const positions: GridPos[] = [];
+    for (const m of this.party) {
+      if (m !== excludeEntity && m.state !== 'dead' && m.state !== 'downed') {
+        positions.push(m.gridPos);
+      }
+    }
+    return positions;
+  }
+
+  public getEnemyObstacles(): GridPos[] {
+    const positions: GridPos[] = [];
+    for (const e of this.enemies) {
+      if (e.state !== 'dead' && e.state !== 'downed') {
+        positions.push(e.gridPos);
+      }
+    }
+    return positions;
+  }
+
+  public getPartyUnitObstacles(unit: Entity): { soft: GridPos[]; hard: GridPos[] } {
+    return {
+      soft: this.getFriendlyObstacles(unit),
+      hard: this.getEnemyObstacles()
+    };
   }
 
   public getDynamicObstacles(excludeEntity?: Entity): GridPos[] {
@@ -814,8 +1002,8 @@ export class MainScene extends Phaser.Scene {
       claimed.add(`${compDest.x},${compDest.y}`);
       companion.claimedDestination = { ...compDest };
 
-      const compDynamicObs = this.getDynamicObstacles(companion);
-      this.pathfinder.findPath(companion.gridPos, compDest, compDynamicObs).then((path) => {
+      const compUnitObs = this.getPartyUnitObstacles(companion);
+      this.pathfinder.findPath(companion.gridPos, compDest, compUnitObs).then((path) => {
         if (path.length > 0) {
           companion.followPath(path);
         } else {
@@ -825,8 +1013,8 @@ export class MainScene extends Phaser.Scene {
     }
 
     // Leader movement with transition on arrival (Leader-Arrival Rule)
-    const dynamicObs = this.getDynamicObstacles(this.player);
-    this.pathfinder.findPath(this.player.gridPos, leaderDest, dynamicObs).then((path) => {
+    const leaderUnitObs = this.getPartyUnitObstacles(this.player);
+    this.pathfinder.findPath(this.player.gridPos, leaderDest, leaderUnitObs).then((path) => {
       if (path.length > 0) {
         this.player.followPath(path, () => {
           this.executeTransitionToOutpost();
@@ -905,6 +1093,7 @@ export class MainScene extends Phaser.Scene {
         const wasDowned = targetEnemy.takeDamage(5);
         if (wasDowned) {
           console.log(`[Debug K Key] ${targetEnemy.entityName} was downed by debug hit!`);
+          this.onEnemyDefeated(targetEnemy);
         }
       }
     }
@@ -981,11 +1170,212 @@ export class MainScene extends Phaser.Scene {
       enemy.update(time, delta);
     }
 
+    // Milestone 17: Update Active Gathering Channels
+    for (const [character, channel] of Array.from(this.activeGatherChannels.entries())) {
+      if (character.state !== 'channeling' || character.hp <= 0 || (character.state as any) === 'downed' || (character.state as any) === 'dead') {
+        this.cancelGatherChannel(character);
+        continue;
+      }
+
+      channel.elapsedMs += delta;
+      const pct = Math.min(1, channel.elapsedMs / channel.durationMs);
+
+      // Keep progress bar aligned above character
+      channel.barContainer.setPosition(character.x, character.y - 28);
+
+      // Redraw fill
+      channel.barFill.clear();
+      const fillColorHex = channel.node.nodeDef.color || '#34d399';
+      const fillColor = Phaser.Display.Color.HexStringToColor(fillColorHex).color;
+      channel.barFill.fillStyle(fillColor, 1);
+      const fillW = Math.max(0, Math.floor(34 * pct));
+      if (fillW > 0) {
+        channel.barFill.fillRect(-17, -2, fillW, 4);
+      }
+      channel.labelText.setText(`${channel.node.nodeDef.actionVerb}... ${Math.floor(pct * 100)}%`);
+
+      if (channel.elapsedMs >= channel.durationMs) {
+        this.completeGatherChannel(character, channel);
+      }
+    }
+
     // Update Combat System
     this.combatSystem.update(time, delta);
 
+    // Milestone 16: Continuous Floor Timer Countdown
+    this.floorTimerRemainingMs -= delta;
+    if (this.floorTimerRemainingMs <= 0) {
+      this.repopulateRandomRoom();
+      this.floorTimerRemainingMs = this.floorTimerDurationMs;
+    }
+    if (this.hud) {
+      this.hud.updateFloorTimer(this.floorTimerRemainingMs, this.floorTimerDurationMs);
+    }
+
     // Update HUD Overlay
     this.hud.update(this.player, this.progressionSystem, time, this.party);
+  }
+
+  /**
+   * Milestone 16: Repopulates exactly one random combat-designated room with a fresh set of enemies
+   * using Milestone 13 room-population logic (pool & room-type-appropriate enemy counts).
+   */
+  public repopulateRandomRoom(): DungeonRoom | null {
+    if (!this.dungeon || !this.dungeon.rooms || this.dungeon.rooms.length === 0) {
+      return null;
+    }
+
+    // Restrict repopulation candidates strictly to combat rooms (excluding entrance and pure gathering)
+    const combatRooms = this.dungeon.rooms.filter(
+      (r) => r.type === 'light_combat' || r.type === 'heavy_combat'
+    );
+    if (combatRooms.length === 0) {
+      console.warn('[Floor Timer] No eligible combat rooms found for repopulation.');
+      return null;
+    }
+
+    // Pick exactly one random combat room
+    const targetRoom = combatRooms[Math.floor(Math.random() * combatRooms.length)];
+    const dataLoader = DataLoader.getInstance();
+    const dungeonConfig = dataLoader.getDungeonConfig();
+
+    // Strict scoped cleanup: Destroy and remove leftover corpses/units belonging only to this specific room
+    const inRoom = this.enemies.filter((e) => e.roomIndex === targetRoom.id);
+    for (const enemy of inRoom) {
+      enemy.destroy();
+    }
+
+    // Remove from this.enemies in-place
+    for (let i = this.enemies.length - 1; i >= 0; i--) {
+      if (this.enemies[i].roomIndex === targetRoom.id) {
+        this.enemies.splice(i, 1);
+      }
+    }
+
+    // Reconstruct interior walkable tiles in targetRoom (leaving 1 tile border from walls where possible)
+    const interiorTiles: GridPos[] = [];
+    const xStart = targetRoom.width > 3 ? targetRoom.x + 1 : targetRoom.x;
+    const xEnd = targetRoom.width > 3 ? targetRoom.x + targetRoom.width - 2 : targetRoom.x + targetRoom.width - 1;
+    const yStart = targetRoom.height > 3 ? targetRoom.y + 1 : targetRoom.y;
+    const yEnd = targetRoom.height > 3 ? targetRoom.y + targetRoom.height - 2 : targetRoom.y + targetRoom.height - 1;
+
+    for (let y = yStart; y <= yEnd; y++) {
+      for (let x = xStart; x <= xEnd; x++) {
+        if (this.gridMatrix[y]?.[x] === 0) {
+          // Do not spawn on entrance portal or occupied party member tiles
+          const onPortal = x === this.portalPos.x && y === this.portalPos.y;
+          const onParty = this.party.some((m) => m.gridPos.x === x && m.gridPos.y === y);
+          if (!onPortal && !onParty) {
+            interiorTiles.push({ x, y });
+          }
+        }
+      }
+    }
+
+    // Shuffle interior tiles
+    for (let i = interiorTiles.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      const temp = interiorTiles[i];
+      interiorTiles[i] = interiorTiles[j];
+      interiorTiles[j] = temp;
+    }
+
+    const roomConfig = dungeonConfig.roomTypes?.[targetRoom.type as keyof typeof dungeonConfig.roomTypes];
+    const [minE, maxE] = roomConfig?.enemiesRange ?? (
+      targetRoom.type === 'light_combat' ? [1, 2] : targetRoom.type === 'heavy_combat' ? [3, 5] : [1, 2]
+    );
+    const randCount = Math.floor(Math.random() * (maxE - minE + 1)) + minE;
+    const enemyCount = Math.min(interiorTiles.length, randCount);
+
+    const enemyPool = dungeonConfig.enemyPool && dungeonConfig.enemyPool.length > 0
+      ? dungeonConfig.enemyPool
+      : ['wolf', 'goblin', 'skeleton', 'undead'];
+
+    const spawnedEnemies: Enemy[] = [];
+    for (let i = 0; i < enemyCount; i++) {
+      const enemyId = enemyPool[Math.floor(Math.random() * enemyPool.length)];
+      const enemyDef = dataLoader.getEnemy(enemyId);
+      if (enemyDef) {
+        const texKey = `${enemyDef.id}-avatar`;
+        const tex = this.textures.exists(texKey) ? texKey : 'wolf-avatar';
+        const tile = interiorTiles[i];
+        const newEnemy = this.spawnEnemyUnit(enemyDef, tile.x, tile.y, tex);
+        newEnemy.roomIndex = targetRoom.id;
+        spawnedEnemies.push(newEnemy);
+      }
+    }
+
+    this.combatSystem.setEnemies(this.enemies);
+
+    console.log(
+      `%c[Floor Timer] ⏳ Floor timer expired! Repopulated Room #${targetRoom.id} (${targetRoom.type}) with ${spawnedEnemies.length} fresh enemies: [${spawnedEnemies.map((e) => e.entityName).join(', ')}]`,
+      'color: #ef4444; font-weight: bold;'
+    );
+
+    if (this.hud) {
+      this.hud.showToast(
+        `⚠️ The dungeon stirs... Room ${targetRoom.id} (${targetRoom.type.replace('_', ' ')}) has been repopulated!`,
+        'warn',
+        4000
+      );
+    }
+
+    return targetRoom;
+  }
+
+  public fastForwardFloorTimer(seconds: number = 60): void {
+    this.floorTimerRemainingMs -= seconds * 1000;
+    console.log(
+      `[Debug] Fast-forwarded floor timer by ${seconds}s. Remaining: ${(Math.max(0, this.floorTimerRemainingMs) / 1000).toFixed(1)}s`
+    );
+    if (this.floorTimerRemainingMs <= 0) {
+      this.repopulateRandomRoom();
+      this.floorTimerRemainingMs = this.floorTimerDurationMs;
+    }
+    if (this.hud) {
+      this.hud.updateFloorTimer(this.floorTimerRemainingMs, this.floorTimerDurationMs);
+    }
+  }
+
+  public triggerFloorRespawn(): void {
+    console.log('[Debug] Manually triggered floor respawn.');
+    this.repopulateRandomRoom();
+    this.floorTimerRemainingMs = this.floorTimerDurationMs;
+    if (this.hud) {
+      this.hud.updateFloorTimer(this.floorTimerRemainingMs, this.floorTimerDurationMs);
+    }
+  }
+
+  public toggleDebugAutoRespawn(): boolean {
+    this.debugAutoRespawnEnabled = !this.debugAutoRespawnEnabled;
+    const label = this.debugAutoRespawnEnabled ? 'ON (3s Respawn)' : 'OFF (Stay Dead)';
+    console.log(`%c[Debug Respawn] Per-enemy auto-respawn is now: ${label}`, 'color: #38bdf8; font-weight: bold;');
+    if (this.hud) {
+      this.hud.showToast(`🔄 Debug Auto-Respawn: ${label}`, this.debugAutoRespawnEnabled ? 'warn' : 'info', 2500);
+      this.hud.updateDebugAutoRespawnBtn(this.debugAutoRespawnEnabled);
+    }
+    return this.debugAutoRespawnEnabled;
+  }
+
+  public onEnemyDefeated(deadEnemy: Enemy): void {
+    this.targetReticle.setVisible(false);
+    deadEnemy.markDead();
+
+    if (this.debugAutoRespawnEnabled) {
+      console.log(`[Combat] ${deadEnemy.entityName} defeated. [DEBUG AUTO-RESPAWN ACTIVE] Respawn scheduled in 3 seconds.`);
+      this.time.delayedCall(3000, () => {
+        if (this.debugAutoRespawnEnabled && deadEnemy.state === 'dead') {
+          deadEnemy.respawn();
+        }
+      });
+    } else {
+      console.log(`[Combat] ${deadEnemy.entityName} defeated. Enemy stays dead (floor timer repopulation active).`);
+    }
+  }
+
+  public defeatEnemy(enemy: Enemy): void {
+    enemy.takeDamage(99999);
+    this.onEnemyDefeated(enemy);
   }
 
   public spawnEnemyUnit(enemyData: EnemyDef, x: number, y: number, textureKey: string, customName?: string): Enemy {
@@ -999,84 +1389,106 @@ export class MainScene extends Phaser.Scene {
     return enemy;
   }
 
-  // --- FORAGING & DUNGEON GATHERING NODES (Milestone 10) ---
+  // --- UNIVERSAL GATHERING SYSTEM: FORAGING, WOODCUTTING & MINING (Milestone 17) ---
 
-  public spawnForagingBush(x: number, y: number): ForagingBush {
+  public spawnGatheringNode(x: number, y: number, nodeTypeId: string = 'foraging_bush'): GatheringNode {
+    const dataLoader = DataLoader.getInstance();
+    const config = dataLoader.getGatheringNodesConfig();
+    const nodeDef: GatheringNodeDef = config?.nodes?.[nodeTypeId] || dataLoader.getGatheringNode(nodeTypeId) || {
+      id: nodeTypeId,
+      name: nodeTypeId.includes('tree') ? 'Tree' : nodeTypeId.includes('rock') ? 'Rock Vein' : 'Wild Herbs',
+      skillId: nodeTypeId.includes('tree') ? 'woodcutting' : nodeTypeId.includes('rock') ? 'mining' : 'foraging',
+      resourceId: nodeTypeId.includes('tree') ? 'wood' : nodeTypeId.includes('rock') ? 'ore' : 'wild_herbs',
+      yieldCount: nodeTypeId.includes('tree') ? 2 : 1,
+      expGranted: 15,
+      channelDurationMs: 2500,
+      respawnTimeMs: 15000,
+      textureKey: nodeTypeId.includes('tree') ? 'woodcutting-tree' : nodeTypeId.includes('rock') ? 'mining-rock' : 'foraging-bush',
+      textureDepletedKey: nodeTypeId.includes('tree') ? 'woodcutting-tree-depleted' : nodeTypeId.includes('rock') ? 'mining-rock-depleted' : 'foraging-bush-depleted',
+      label: nodeTypeId.includes('tree') ? 'Tree' : nodeTypeId.includes('rock') ? 'Rock Vein' : 'Wild Herbs',
+      depletedLabel: nodeTypeId.includes('tree') ? 'Stump' : nodeTypeId.includes('rock') ? 'Depleted' : 'Stripped',
+      color: nodeTypeId.includes('tree') ? '#f59e0b' : nodeTypeId.includes('rock') ? '#94a3b8' : '#34d399',
+      actionVerb: nodeTypeId.includes('tree') ? 'Logging' : nodeTypeId.includes('rock') ? 'Mining' : 'Foraging'
+    };
+
     const posX = x * this.tileSize + this.tileSize / 2;
     const posY = y * this.tileSize + this.tileSize / 2;
 
-    const sprite = this.add.sprite(posX, posY, 'foraging-bush')
+    const sprite = this.add.sprite(posX, posY, nodeDef.textureKey)
       .setDepth(posY - 2)
       .setInteractive({ useHandCursor: true });
 
-    const label = this.add.text(posX, posY - 16, 'Wild Herbs', {
+    const label = this.add.text(posX, posY - 16, nodeDef.label, {
       fontSize: '10px',
-      color: '#34d399',
+      color: nodeDef.color,
       fontStyle: 'bold',
       backgroundColor: 'rgba(0,0,0,0.6)',
       padding: { x: 3, y: 1 }
     }).setOrigin(0.5).setDepth(5000);
 
-    const bush: ForagingBush = {
+    const node: GatheringNode = {
       x,
       y,
+      nodeDef,
       sprite,
       label,
       isHarvested: false
     };
 
-    sprite.on('pointerdown', (_pointer: Phaser.Input.Pointer, _localX: number, _localY: number, event: Phaser.Types.Input.EventData) => {
+    sprite.on('pointerdown', (_pointer: Phaser.Input.Pointer, _localX: number, _localY: number, event?: Phaser.Types.Input.EventData) => {
       if (event && event.stopPropagation) event.stopPropagation();
-      this.interactWithBush(bush);
+      this.interactWithGatheringNode(node);
     });
 
-    this.foragingBushes.push(bush);
-    return bush;
+    this.gatheringNodes.push(node);
+    return node;
   }
 
-  public interactWithBush(bush: ForagingBush): void {
-    if (bush.isHarvested) {
-      this.hud.showToast('🌿 This bush has been stripped and is regrowing...', 'info', 2000);
+  public spawnForagingBush(x: number, y: number): GatheringNode {
+    return this.spawnGatheringNode(x, y, 'foraging_bush');
+  }
+
+  public interactWithGatheringNode(node: GatheringNode, character: Player = this.player): void {
+    if (node.isHarvested) {
+      this.hud.showToast(`🌿 ${node.nodeDef.name} is depleted. Stays depleted for remainder of visit.`, 'info', 2000);
       return;
     }
 
-    if (this.player.state === 'downed' || this.player.state === 'dead') return;
+    if (character.state === 'downed' || character.state === 'dead') return;
 
-    const dist = Math.hypot(this.player.gridPos.x - bush.x, this.player.gridPos.y - bush.y);
+    const dist = Math.hypot(character.gridPos.x - node.x, character.gridPos.y - node.y);
 
     if (dist <= 1.5) {
-      // Adjacent: harvest immediately
-      this.harvestBush(bush);
+      // Adjacent: start universal channel immediately
+      this.startGatherChannel(character, node);
     } else {
-      // Find open adjacent tile to bush and move there, then harvest
+      // Find open adjacent tile to node and move there, then channel
       const adjTiles = [
-        { x: bush.x + 1, y: bush.y },
-        { x: bush.x - 1, y: bush.y },
-        { x: bush.x, y: bush.y + 1 },
-        { x: bush.x, y: bush.y - 1 }
+        { x: node.x + 1, y: node.y },
+        { x: node.x - 1, y: node.y },
+        { x: node.x, y: node.y + 1 },
+        { x: node.x, y: node.y - 1 }
       ].filter(t => t.x > 0 && t.x < this.mapWidth - 1 && t.y > 0 && t.y < this.mapHeight - 1 && this.gridMatrix[t.y]?.[t.x] === 0);
 
-      adjTiles.sort((a, b) => Math.hypot(a.x - this.player.gridPos.x, a.y - this.player.gridPos.y) - Math.hypot(b.x - this.player.gridPos.x, b.y - this.player.gridPos.y));
+      adjTiles.sort((a, b) => Math.hypot(a.x - character.gridPos.x, a.y - character.gridPos.y) - Math.hypot(b.x - character.gridPos.x, b.y - character.gridPos.y));
 
       const targetTile = adjTiles[0];
       if (targetTile) {
         for (const member of this.party) {
           member.clearTarget();
         }
-        const dynamicObs = this.getDynamicObstacles(this.player).filter(
-          obs => !this.party.some(m => m.gridPos.x === obs.x && m.gridPos.y === obs.y)
-        );
-        this.pathfinder.findPath(this.player.gridPos, targetTile, dynamicObs).then((path) => {
+        const unitObs = this.getPartyUnitObstacles(character);
+        this.pathfinder.findPath(character.gridPos, targetTile, unitObs).then((path) => {
           if (path.length > 0) {
-            this.player.followPath(path);
+            character.followPath(path);
             const checkArrival = this.time.addEvent({
               delay: 150,
               repeat: 40,
               callback: () => {
-                if (Math.hypot(this.player.gridPos.x - bush.x, this.player.gridPos.y - bush.y) <= 1.5) {
+                if (Math.hypot(character.gridPos.x - node.x, character.gridPos.y - node.y) <= 1.5) {
                   checkArrival.remove();
-                  this.harvestBush(bush);
-                } else if (this.player.state !== 'moving') {
+                  this.startGatherChannel(character, node);
+                } else if (character.state !== 'moving') {
                   checkArrival.remove();
                 }
               }
@@ -1087,54 +1499,201 @@ export class MainScene extends Phaser.Scene {
     }
   }
 
-  public harvestBush(bush: ForagingBush): void {
-    if (bush.isHarvested) return;
+  public interactWithBush(bush: ForagingBush): void {
+    this.interactWithGatheringNode(bush, this.player);
+  }
 
-    bush.isHarvested = true;
-    bush.sprite.setTexture('foraging-bush-depleted');
-    bush.label.setText('Stripped');
-    bush.label.setColor('#9ca3af');
+  public startGatherChannel(character: Player, node: GatheringNode): boolean {
+    if (node.isHarvested || character.state === 'downed' || character.state === 'dead') {
+      return false;
+    }
 
-    const yieldCount = 1;
-    const expGranted = 15;
+    // Cancel any existing channel
+    this.cancelGatherChannel(character);
 
-    GameState.getInstance().addItem('wild_herbs', yieldCount);
-    this.progressionSystem.addProficiencyExp('foraging', expGranted);
+    // Halt movement and combat targets
+    character.state = 'channeling';
+    character.claimedDestination = null;
+    character.clearTarget();
+
+    const durationMs = node.nodeDef.channelDurationMs || 2500;
+
+    // Visual Progress Bar Container positioned above character
+    const posX = character.x;
+    const posY = character.y - 28;
+    const barContainer = this.add.container(posX, posY).setDepth(10001);
+
+    const barBg = this.add.graphics();
+    barBg.fillStyle(0x111827, 0.85);
+    barBg.fillRect(-18, -3, 36, 6);
+    barBg.lineStyle(1, 0x374151, 1);
+    barBg.strokeRect(-18, -3, 36, 6);
+
+    const barFill = this.add.graphics();
+
+    const labelText = this.add.text(0, -12, `${node.nodeDef.actionVerb}... 0%`, {
+      fontSize: '9px',
+      fontStyle: 'bold',
+      color: node.nodeDef.color || '#34d399',
+      backgroundColor: 'rgba(0,0,0,0.7)',
+      padding: { x: 3, y: 1 }
+    }).setOrigin(0.5);
+
+    barContainer.add([barBg, barFill, labelText]);
+
+    const channel: ActiveGatherChannel = {
+      character,
+      node,
+      durationMs,
+      elapsedMs: 0,
+      barContainer,
+      barBg,
+      barFill,
+      labelText
+    };
+
+    this.activeGatherChannels.set(character, channel);
+    console.log(`[Gathering] ⛏️ ${character.entityName} started channeling ${node.nodeDef.name} (${durationMs}ms)...`);
+    return true;
+  }
+
+  public completeGatherChannel(character: Player, channel: ActiveGatherChannel): void {
+    channel.barContainer.destroy();
+    this.activeGatherChannels.delete(character);
+
+    if (character.state === 'channeling') {
+      character.state = 'idle';
+    }
+
+    this.harvestGatheringNode(channel.node, character);
+  }
+
+  public harvestGatheringNode(node: GatheringNode, character: Player = this.player): void {
+    if (node.isHarvested) return;
+
+    node.isHarvested = true;
+    node.sprite.setTexture(node.nodeDef.textureDepletedKey);
+    node.label.setText(node.nodeDef.depletedLabel);
+    node.label.setColor('#9ca3af');
+
+    const yieldCount = node.nodeDef.yieldCount || 1;
+    const expGranted = node.nodeDef.expGranted || 15;
+
+    // Grant resources to GameState economy and inventory
+    if (node.nodeDef.resourceId === 'wood') {
+      GameState.getInstance().addWood(yieldCount);
+      GameState.getInstance().addItem('wood', yieldCount);
+    } else if (node.nodeDef.resourceId === 'ore') {
+      GameState.getInstance().addOre(yieldCount);
+      GameState.getInstance().addItem('ore', yieldCount);
+    } else {
+      GameState.getInstance().addItem(node.nodeDef.resourceId, yieldCount);
+    }
+
+    // Grant gathering EXP
+    character.progression.addProficiencyExp(node.nodeDef.skillId, expGranted);
 
     // Floating combat/gathering text
-    const posX = bush.x * this.tileSize + this.tileSize / 2;
-    const posY = bush.y * this.tileSize + this.tileSize / 2;
-    this.createFloatingText(posX, posY - 10, `+${yieldCount} Wild Herbs`, '#34d399');
-    this.createFloatingText(posX, posY - 24, `+${expGranted} Foraging EXP`, '#60a5fa');
+    const posX = node.x * this.tileSize + this.tileSize / 2;
+    const posY = node.y * this.tileSize + this.tileSize / 2;
+    this.createFloatingText(posX, posY - 10, `+${yieldCount} ${node.nodeDef.name}`, node.nodeDef.color);
+    const skillName = DataLoader.getInstance().getTrainableStatDef(node.nodeDef.skillId)?.name || node.nodeDef.skillId;
+    this.createFloatingText(posX, posY - 24, `+${expGranted} ${skillName} EXP`, '#60a5fa');
 
     // Bounce animation
     this.tweens.add({
-      targets: bush.sprite,
+      targets: node.sprite,
       scaleY: 0.8,
       duration: 120,
       yoyo: true,
       ease: 'Quad.easeInOut'
     });
 
-    console.log(`[Foraging] 🌿 Harvested ${yieldCount}x Wild Herbs! (+${expGranted} Foraging EXP)`);
-    this.hud.showToast(`🌿 Harvested Wild Herbs (+${expGranted} Foraging EXP)`, 'success', 2500);
+    console.log(`[Gathering] 🌿 Harvested ${yieldCount}x ${node.nodeDef.name}! (+${expGranted} ${skillName} EXP)`);
+    this.hud.showToast(`🌿 Harvested ${node.nodeDef.name} (+${expGranted} ${skillName} EXP)`, 'success', 2500);
 
-    // Independent timer per bush instance (15 seconds)
-    bush.respawnTimer = this.time.delayedCall(15000, () => {
-      bush.isHarvested = false;
-      bush.sprite.setTexture('foraging-bush');
-      bush.label.setText('Wild Herbs');
-      bush.label.setColor('#34d399');
+    // REAL GAMEPLAY LIFESPAN: Node stays depleted for remainder of floor visit!
+    // DEBUG ONLY: If debugGatheringRespawnEnabled is active, respawn after 15s
+    if (this.debugGatheringRespawnEnabled) {
+      console.log(`[Debug Respawn] Gathering node respawn scheduled in 15s for (${node.x}, ${node.y}).`);
+      node.respawnTimer = this.time.delayedCall(node.nodeDef.respawnTimeMs || 15000, () => {
+        if (this.debugGatheringRespawnEnabled && node.isHarvested) {
+          node.isHarvested = false;
+          node.sprite.setTexture(node.nodeDef.textureKey);
+          node.label.setText(node.nodeDef.label);
+          node.label.setColor(node.nodeDef.color);
 
-      this.tweens.add({
-        targets: bush.sprite,
-        scale: 1.15,
-        duration: 200,
-        yoyo: true,
-        ease: 'Back.easeOut'
+          this.tweens.add({
+            targets: node.sprite,
+            scale: 1.15,
+            duration: 200,
+            yoyo: true,
+            ease: 'Back.easeOut'
+          });
+          console.log(`[Gathering] 🌿 ${node.nodeDef.name} regrew at (${node.x}, ${node.y}) via debug auto-respawn!`);
+        }
       });
-      console.log(`[Foraging] 🌿 Wild Herbs regrew at (${bush.x}, ${bush.y})!`);
-    });
+    } else {
+      console.log(`[Gathering] ${node.nodeDef.name} at (${node.x}, ${node.y}) stays depleted for remainder of floor visit.`);
+    }
+  }
+
+  public harvestBush(bush: ForagingBush): void {
+    this.harvestGatheringNode(bush, this.player);
+  }
+
+  public interruptGatherChannel(character: Player, attacker?: Enemy): boolean {
+    const channel = this.activeGatherChannels.get(character);
+    if (!channel) return false;
+
+    console.log(`%c[Gather Interrupt] 💥 ${character.entityName}'s channel on ${channel.node.nodeDef.name} was INTERRUPTED by enemy attack!`, 'color: #ef4444; font-weight: bold;');
+
+    // 1. Immediately cancel: zero rewards, zero EXP
+    // 2. Bar resets to zero and is destroyed
+    channel.barContainer.destroy();
+    this.activeGatherChannels.delete(character);
+
+    // 3. Node remains unharvested (intact, ready for subsequent attempts)
+    channel.node.isHarvested = false;
+    channel.node.sprite.setTexture(channel.node.nodeDef.textureKey);
+    channel.node.label.setText(channel.node.nodeDef.label);
+    channel.node.label.setColor(channel.node.nodeDef.color);
+
+    // 4. Reset character state
+    character.state = 'idle';
+
+    // 5. Floating text & toast
+    this.createFloatingText(character.x, character.y - 20, 'INTERRUPTED!', '#ef4444');
+    this.hud.showToast(`⚠️ Channel interrupted! Entering combat!`, 'warn', 2500);
+
+    // 6. Immediate combat engagement with attacker
+    if (attacker && attacker.state !== 'dead' && attacker.state !== 'downed') {
+      this.engageEnemy(attacker, [character]);
+    }
+
+    return true;
+  }
+
+  public cancelGatherChannel(character: Player): boolean {
+    const channel = this.activeGatherChannels.get(character);
+    if (!channel) return false;
+
+    channel.barContainer.destroy();
+    this.activeGatherChannels.delete(character);
+    if (character.state === 'channeling') {
+      character.state = 'idle';
+    }
+    return true;
+  }
+
+  public toggleDebugGatheringRespawn(): boolean {
+    this.debugGatheringRespawnEnabled = !this.debugGatheringRespawnEnabled;
+    const label = this.debugGatheringRespawnEnabled ? 'ON (15s Respawn)' : 'OFF (Stay Depleted)';
+    console.log(`%c[Debug Respawn] Gathering node auto-respawn is now: ${label}`, 'color: #38bdf8; font-weight: bold;');
+    if (this.hud) {
+      this.hud.showToast(`🔄 Debug Gathering Respawn: ${label}`, this.debugGatheringRespawnEnabled ? 'warn' : 'info', 2500);
+    }
+    return this.debugGatheringRespawnEnabled;
   }
 
   public createFloatingText(x: number, y: number, textString: string, colorHex: string): void {

@@ -168,6 +168,33 @@ export class TextureGenerator {
       g.destroy();
     }
 
+    // 6b. Burn Status Indicator Texture (Orange Flame)
+    if (!scene.textures.exists('burn-icon')) {
+      const size = 12;
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      // Outer bright orange flame
+      g.fillStyle(0xf97316, 1);
+      g.beginPath();
+      g.moveTo(size / 2, 0);
+      g.lineTo(size - 1, size / 2 + 2);
+      g.lineTo(size * 0.75, size);
+      g.lineTo(size * 0.25, size);
+      g.lineTo(1, size / 2 + 2);
+      g.closePath();
+      g.fillPath();
+      // Inner hot yellow flame tongue
+      g.fillStyle(0xfde047, 1);
+      g.beginPath();
+      g.moveTo(size / 2, 3);
+      g.lineTo(size - 3, size / 2 + 3);
+      g.lineTo(size / 2, size - 1);
+      g.lineTo(3, size / 2 + 3);
+      g.closePath();
+      g.fillPath();
+      g.generateTexture('burn-icon', size, size);
+      g.destroy();
+    }
+
     // 7. Outpost Grass Tile
     if (!scene.textures.exists('tile-outpost-grass')) {
       const g = scene.make.graphics({ x: 0, y: 0 });
@@ -632,6 +659,123 @@ export class TextureGenerator {
       g.lineBetween(16, 16, 22, 12);
 
       g.generateTexture('foraging-bush-depleted', tileSize, tileSize);
+      g.destroy();
+    }
+
+    // 22. Woodcutting Tree (Lush tree with timber trunk)
+    if (!scene.textures.exists('woodcutting-tree')) {
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      // Ground shadow
+      g.fillStyle(0x14532d, 0.5);
+      g.fillEllipse(tileSize / 2, tileSize - 4, 14, 6);
+
+      // Tree trunk
+      g.fillStyle(0x78350f, 1);
+      g.fillRect(tileSize / 2 - 3, 16, 6, 13);
+      g.lineStyle(1, 0x451a03, 0.7);
+      g.lineBetween(tileSize / 2, 17, tileSize / 2, 28);
+
+      // Deep canopy shadow
+      g.fillStyle(0x166534, 0.95);
+      g.fillCircle(tileSize / 2, 12, 11);
+
+      // Mid vibrant canopy layers
+      g.fillStyle(0x15803d, 1);
+      g.fillCircle(tileSize / 2 - 5, 13, 7);
+      g.fillCircle(tileSize / 2 + 5, 13, 7);
+      g.fillCircle(tileSize / 2, 7, 8);
+
+      // Top sun-kissed foliage highlights
+      g.fillStyle(0x22c55e, 1);
+      g.fillCircle(tileSize / 2 - 3, 6, 4.5);
+      g.fillCircle(tileSize / 2 + 3, 7, 4);
+      g.fillCircle(tileSize / 2, 11, 4);
+
+      g.generateTexture('woodcutting-tree', tileSize, tileSize);
+      g.destroy();
+    }
+
+    // 23. Woodcutting Tree Depleted (Harvested timber stump)
+    if (!scene.textures.exists('woodcutting-tree-depleted')) {
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      // Ground shadow
+      g.fillStyle(0x1f2937, 0.5);
+      g.fillEllipse(tileSize / 2, tileSize - 5, 13, 5);
+
+      // Stump base
+      g.fillStyle(0x78350f, 1);
+      g.fillRect(tileSize / 2 - 4, 19, 8, 8);
+      g.lineStyle(1, 0x451a03, 0.8);
+      g.lineBetween(tileSize / 2 - 1, 20, tileSize / 2 - 1, 26);
+
+      // Cut top face showing wood rings
+      g.fillStyle(0xd97706, 1);
+      g.fillEllipse(tileSize / 2, 19, 7.5, 3.5);
+      g.lineStyle(1, 0x92400e, 0.9);
+      g.strokeEllipse(tileSize / 2, 19, 4.5, 2);
+
+      // Scattered woodchips
+      g.fillStyle(0xf59e0b, 0.9);
+      g.fillCircle(tileSize / 2 - 7, 24, 1);
+      g.fillCircle(tileSize / 2 + 6, 25, 1.2);
+      g.fillCircle(tileSize / 2 + 8, 22, 1);
+
+      g.generateTexture('woodcutting-tree-depleted', tileSize, tileSize);
+      g.destroy();
+    }
+
+    // 24. Mining Rock (Ore vein boulder with visible mineral glints)
+    if (!scene.textures.exists('mining-rock')) {
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      // Base shadow
+      g.fillStyle(0x0f172a, 0.6);
+      g.fillEllipse(tileSize / 2, tileSize - 4, 14, 6);
+
+      // Rugged stone base
+      g.fillStyle(0x475569, 1);
+      g.fillCircle(tileSize / 2, tileSize / 2 + 3, 10);
+      g.fillCircle(tileSize / 2 - 4, tileSize / 2 + 1, 7);
+      g.fillCircle(tileSize / 2 + 4, tileSize / 2 + 2, 8);
+
+      // Highlighted stone facets
+      g.fillStyle(0x64748b, 1);
+      g.fillCircle(tileSize / 2 - 2, tileSize / 2 - 2, 6);
+      g.fillCircle(tileSize / 2 + 3, tileSize / 2 - 1, 5);
+
+      // Embedded raw ore veins (golden amber & iron/silver glints)
+      g.fillStyle(0xf59e0b, 1);
+      g.fillCircle(tileSize / 2 - 3, tileSize / 2 + 1, 2);
+      g.fillCircle(tileSize / 2 + 4, tileSize / 2, 1.8);
+      g.fillStyle(0xfbbf24, 1);
+      g.fillCircle(tileSize / 2 + 1, tileSize / 2 + 4, 1.5);
+      g.fillCircle(tileSize / 2 - 4, tileSize / 2 - 3, 1.5);
+
+      // Metallic sparkle glint
+      g.fillStyle(0x38bdf8, 1);
+      g.fillCircle(tileSize / 2 + 2, tileSize / 2 - 3, 1.5);
+
+      g.generateTexture('mining-rock', tileSize, tileSize);
+      g.destroy();
+    }
+
+    // 25. Mining Rock Depleted (Mined rubble & cracked stone fragments)
+    if (!scene.textures.exists('mining-rock-depleted')) {
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      // Ground shadow
+      g.fillStyle(0x1e293b, 0.4);
+      g.fillEllipse(tileSize / 2, tileSize - 4, 11, 4);
+
+      // Chipped small rubble stones
+      g.fillStyle(0x334155, 0.9);
+      g.fillCircle(tileSize / 2 - 4, tileSize / 2 + 5, 4);
+      g.fillCircle(tileSize / 2 + 3, tileSize / 2 + 6, 3.5);
+      g.fillCircle(tileSize / 2, tileSize / 2 + 7, 2.5);
+
+      g.fillStyle(0x475569, 0.85);
+      g.fillCircle(tileSize / 2 - 2, tileSize / 2 + 4, 2);
+      g.fillCircle(tileSize / 2 + 5, tileSize / 2 + 5, 1.5);
+
+      g.generateTexture('mining-rock-depleted', tileSize, tileSize);
       g.destroy();
     }
   }

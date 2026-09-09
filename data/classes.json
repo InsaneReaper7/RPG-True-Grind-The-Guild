@@ -20,7 +20,10 @@
       "requirements": [
         { "type": "proficiency", "target": "shields", "value": 10 }
       ],
-      "fantasy": "Learning to hold the line"
+      "fantasy": "Learning to hold the line",
+      "hiddenSkillBonuses": {
+        "block": 0.05
+      }
     },
     {
       "id": "vanguard",
@@ -32,17 +35,54 @@
         { "type": "classLevel", "target": "fencer", "value": 5 },
         { "type": "classLevel", "target": "guardian", "value": 5 }
       ],
-      "fantasy": "Defensive frontline fighter"
+      "fantasy": "Defensive frontline fighter",
+      "hiddenSkillBonuses": {
+        "block": 0.05,
+        "counterattack": 0.05
+      }
+    },
+    {
+      "id": "medic",
+      "name": "Medic",
+      "tier": "novice",
+      "requirements": [
+        { "type": "proficiency", "target": "healing_magic", "value": 10 }
+      ],
+      "fantasy": "Knows one spell and it's a good one",
+      "hiddenSkillBonuses": {
+        "health_regen": 0.05
+      }
+    },
+    {
+      "id": "staff_adept",
+      "name": "Staff Adept",
+      "tier": "novice",
+      "requirements": [
+        { "type": "proficiency", "target": "staff", "value": 10 }
+      ],
+      "fantasy": "Student of the quarterstaff and conduit arts"
     },
     {
       "id": "combat_medic",
       "name": "Combat Medic",
       "tier": "novice",
       "requirements": [
+        { "type": "proficiency", "target": "healing_magic", "value": 30 },
         { "type": "activityCount", "target": "Ally Revived", "value": 5 }
       ],
-      "fantasy": "Field triage specialist keeping allies on their feet",
-      "_knownGapComment": "Original design requires Healing Magic Level 30. Dropped for Milestone 11 since magic schools do not exist yet. Revisit once magic schools are added."
+      "fantasy": "Field triage specialist keeping allies on their feet"
+    },
+    {
+      "id": "ember_adept",
+      "name": "Ember Adept",
+      "tier": "novice",
+      "requirements": [
+        { "type": "proficiency", "target": "fire_magic", "value": 10 }
+      ],
+      "fantasy": "Can light a candle. Sometimes a person.",
+      "hiddenSkillBonuses": {
+        "mana_regen": 0.05
+      }
     }
   ]
 }

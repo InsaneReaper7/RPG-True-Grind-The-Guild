@@ -213,15 +213,53 @@ export class Entity extends Phaser.GameObjects.Container {
     this.updateStatusVisuals();
   }
 
+  public hasStatusEffect(effectId: string): boolean {
+    return this.activeStatusEffects.has(effectId);
+  }
+
+  public getStatusEffect(effectId: string): ActiveStatusEffect | undefined {
+    return this.activeStatusEffects.get(effectId);
+  }
+
+  public clearStatusEffects(): void {
+    this.activeStatusEffects.clear();
+    this.updateStatusVisuals();
+  }
+
   public removeStatusEffect(effectId: string): void {
     this.activeStatusEffects.delete(effectId);
     this.updateStatusVisuals();
   }
 
   private updateStatusVisuals(): void {
-    if (this.activeStatusEffects.has('bleed')) {
+    if (this.activeStatusEffects.has('burn')) {
+      this.avatarSprite.setTint(0xff7700);
+      if (this.statusIconSprite) {
+        if (this.scene?.textures?.exists('burn-icon')) {
+          this.statusIconSprite.setTexture('burn-icon');
+        }
+        this.statusIconSprite.setVisible(true);
+      }
+    } else if (this.activeStatusEffects.has('bleed')) {
       this.avatarSprite.setTint(0xff6666);
-      if (this.statusIconSprite) this.statusIconSprite.setVisible(true);
+      if (this.statusIconSprite) {
+        if (this.scene?.textures?.exists('bleed-icon')) {
+          this.statusIconSprite.setTexture('bleed-icon');
+        }
+        this.statusIconSprite.setVisible(true);
+      }
+    } else if (this.activeStatusEffects.has('stun')) {
+      this.avatarSprite.setTint(0xfacc15);
+      if (this.statusIconSprite) this.statusIconSprite.setVisible(false);
+    } else if (this.activeStatusEffects.has('guard_up')) {
+      this.avatarSprite.setTint(0x38bdf8);
+      if (this.statusIconSprite) this.statusIconSprite.setVisible(false);
+    } else if (this.activeStatusEffects.has('unbreakable')) {
+      this.avatarSprite.setTint(0xf59e0b);
+      if (this.statusIconSprite) this.statusIconSprite.setVisible(false);
+    } else if (this.activeStatusEffects.has('taunted')) {
+      this.avatarSprite.setTint(0xf97316);
+      if (this.statusIconSprite) this.statusIconSprite.setVisible(false);
     } else {
       this.avatarSprite.clearTint();
       if (this.statusIconSprite) this.statusIconSprite.setVisible(false);
@@ -237,11 +275,13 @@ export class Entity extends Phaser.GameObjects.Container {
       activeEffect.remainingMs -= deltaMs;
       activeEffect.nextTickMs -= deltaMs;
 
-      if (activeEffect.nextTickMs <= 0 && activeEffect.remainingMs > 0) {
+      if (activeEffect.nextTickMs <= 0 && activeEffect.remainingMs >= 0) {
         // DoT Tick occurs independent of combat loop!
         const damage = activeEffect.def.damagePerTick;
         console.log(`[DoT] ${this.entityName} takes ${damage} damage from ${activeEffect.def.name}!`);
-        this.createFloatingDamageText(damage, 0xef4444);
+        const colorHex = activeEffect.def.color || '#ef4444';
+        const colorNum = parseInt(colorHex.replace('#', ''), 16) || 0xef4444;
+        this.createFloatingDamageText(damage, colorNum);
         this.takeDamage(damage);
         activeEffect.nextTickMs += activeEffect.def.tickIntervalMs;
       }
@@ -279,6 +319,10 @@ export class Entity extends Phaser.GameObjects.Container {
     this.hpBarBg.clear();
     this.hpBarFill.clear();
     this.critBarFill.clear();
+
+    if (this.state === 'dead') {
+      return;
+    }
 
     const barWidth = 32;
     const barHeight = 3;

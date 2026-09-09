@@ -245,11 +245,16 @@ async function runTests() {
   assert.equal(combatMedicDef.tier, 'novice', 'Combat Medic must be novice tier');
   assert.deepEqual(
     combatMedicDef.requirements,
-    [{ type: 'activityCount', target: 'Ally Revived', value: 5 }],
-    'Combat Medic must require exactly 5 Ally Revived activities'
+    [
+      { type: 'proficiency', target: 'healing_magic', value: 30 },
+      { type: 'activityCount', target: 'Ally Revived', value: 5 }
+    ],
+    'Combat Medic must require Healing Magic 30 and 5 Ally Revived activities'
   );
 
   const heroProg = new ProgressionSystem(classesData);
+  heroProg.getProficiencyStat('healing_magic').level = 30;
+  heroProg.checkClassUnlocks(); // Unlocks Medic
   const hero = createMockPlayer('hero', 'Guild Hero', 3, 3, shortSwords, heroProg);
   const companion = createMockPlayer('comp1', 'Companion One', 4, 3, shortSwords, new ProgressionSystem(classesData));
 

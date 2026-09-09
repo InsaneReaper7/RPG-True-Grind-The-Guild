@@ -29,6 +29,12 @@ export class HUD {
   private hudBandageRowEl: HTMLElement | null;
   private playerBandageTextEl: HTMLElement | null;
   private hudApplyBandageBtn: HTMLElement | null;
+  private hudEnergyPotionRowEl: HTMLElement | null;
+  private playerEnergyPotionTextEl: HTMLElement | null;
+  private hudDrinkEnergyPotionBtn: HTMLElement | null;
+  private hudManaPotionRowEl: HTMLElement | null;
+  private playerManaPotionTextEl: HTMLElement | null;
+  private hudDrinkManaPotionBtn: HTMLElement | null;
   private discoveredSkillsSectionEl: HTMLElement | null;
   private discoveredSkillsListEl: HTMLElement | null;
   private skillDiscoveredModalEl: HTMLElement | null;
@@ -74,6 +80,9 @@ export class HUD {
   private unsubscribeExpListener: (() => void) | null = null;
   private static isDebugSkillsVisible: boolean = false;
   private renderedDebugSkillsKey: string = '';
+  private loadoutMemberSelectEl: HTMLSelectElement | null = null;
+  private selectedLoadoutMemberIndex: number = 0;
+  private lastRenderedLoadoutKey: string = '';
 
   // Announcement Queue
   private announcementQueue: AnnouncementItem[] = [];
@@ -92,9 +101,17 @@ export class HUD {
   private alchemyModalProfEl: HTMLElement | null;
   private alchemyModalWoodEl: HTMLElement | null;
   private alchemyModalBandagesEl: HTMLElement | null;
+  private alchemyModalEnergyPotionsEl: HTMLElement | null;
+  private alchemyModalManaPotionsEl: HTMLElement | null;
   private alchemyRecipesContainerEl: HTMLElement | null;
   private alchemyPlayerStatusEl: HTMLElement | null;
   private alchemyApplyBandageBtn: HTMLElement | null;
+
+  // Milestone 19 Debug Buttons
+  private debugBtnGrantEnergyPotion: HTMLElement | null;
+  private debugBtnGrantManaPotion: HTMLElement | null;
+  private debugBtnDrainEnergy: HTMLElement | null;
+  private debugBtnRestoreEnergy: HTMLElement | null;
 
   // Milestone 6 Debug Buttons
   private debugBtnPowerStrike: HTMLElement | null;
@@ -133,6 +150,17 @@ export class HUD {
   private debugBtnGrantDaggersExp: HTMLElement | null;
   private debugBtnGrantDualWieldExp: HTMLElement | null;
 
+  // Milestone 14 Elements (Active Class & Debug Buttons)
+  private activeClassContainerEl: HTMLElement | null;
+  private activeClassCurrentBadgeEl: HTMLElement | null;
+  private debugBtnActiveFencer: HTMLElement | null;
+  private debugBtnActiveGuardian: HTMLElement | null;
+  private debugBtnActiveVanguard: HTMLElement | null;
+  private debugBtnActiveNone: HTMLElement | null;
+  private debugBtnSetupVanguardReqs: HTMLElement | null;
+  private debugBtnVanguardLv40: HTMLElement | null;
+  private debugBtnGrantClassExp: HTMLElement | null;
+
   // Milestone 10 Modal Elements (Cooking Station)
   private cookingModalEl: HTMLElement | null;
   private closeCookingBtn: HTMLElement | null;
@@ -146,6 +174,12 @@ export class HUD {
   private cookingExpStatusEl: HTMLElement | null;
   private cookingRecipesContainerEl: HTMLElement | null;
   private cookingDishesContainerEl: HTMLElement | null;
+
+  // Milestone 16 Elements (Floor Timer & Respawn Debug)
+  private floorTimerBadgeEl: HTMLElement | null;
+  private debugBtnFastForwardFloorTimer: HTMLElement | null;
+  private debugBtnTriggerFloorRespawn: HTMLElement | null;
+  private debugBtnToggleAutoRespawn: HTMLElement | null;
 
   private static activeInstance: HUD | null = null;
   private static hasGlobalListeners: boolean = false;
@@ -225,6 +259,17 @@ export class HUD {
       }
     });
 
+    this.loadoutMemberSelectEl = document.getElementById('loadout-member-select') as HTMLSelectElement | null;
+    this.loadoutMemberSelectEl?.addEventListener('change', () => {
+      if (this.loadoutMemberSelectEl) {
+        this.selectedLoadoutMemberIndex = parseInt(this.loadoutMemberSelectEl.value, 10) || 0;
+        const targetMember = (this.currentParty && this.currentParty[this.selectedLoadoutMemberIndex]) || this.currentPlayer;
+        if (targetMember) {
+          this.renderLoadoutModal(targetMember, targetMember.progression);
+        }
+      }
+    });
+
     // Clear EXP Log button
     this.debugClearExpLogBtn?.addEventListener('click', () => {
       ProgressionSystem.clearExpLog();
@@ -239,6 +284,9 @@ export class HUD {
     });
 
     // Hydrate existing EXP log transactions if any exist
+    if (this.debugExpLogListEl) {
+      this.debugExpLogListEl.innerHTML = '';
+    }
     const existingLogs = ProgressionSystem.getExpLog();
     for (const tx of existingLogs) {
       this.appendExpLogEntry(tx);
@@ -249,6 +297,12 @@ export class HUD {
     this.hudBandageRowEl = document.getElementById('hud-bandage-row');
     this.playerBandageTextEl = document.getElementById('player-bandage-text');
     this.hudApplyBandageBtn = document.getElementById('hud-apply-bandage-btn');
+    this.hudEnergyPotionRowEl = document.getElementById('hud-energy-potion-row');
+    this.playerEnergyPotionTextEl = document.getElementById('player-energy-potion-text');
+    this.hudDrinkEnergyPotionBtn = document.getElementById('hud-drink-energy-potion-btn');
+    this.hudManaPotionRowEl = document.getElementById('hud-mana-potion-row');
+    this.playerManaPotionTextEl = document.getElementById('player-mana-potion-text');
+    this.hudDrinkManaPotionBtn = document.getElementById('hud-drink-mana-potion-btn');
 
     this.researchTreeModalEl = document.getElementById('research-tree-modal');
     this.closeResearchBtn = document.getElementById('close-research-btn');
@@ -260,9 +314,17 @@ export class HUD {
     this.alchemyModalProfEl = document.getElementById('alchemy-modal-prof');
     this.alchemyModalWoodEl = document.getElementById('alchemy-modal-wood');
     this.alchemyModalBandagesEl = document.getElementById('alchemy-modal-bandages');
+    this.alchemyModalEnergyPotionsEl = document.getElementById('alchemy-modal-energy-potions');
+    this.alchemyModalManaPotionsEl = document.getElementById('alchemy-modal-mana-potions');
     this.alchemyRecipesContainerEl = document.getElementById('alchemy-recipes-container');
     this.alchemyPlayerStatusEl = document.getElementById('alchemy-player-status');
     this.alchemyApplyBandageBtn = document.getElementById('alchemy-apply-bandage-btn');
+
+    // Milestone 19 Debug Buttons
+    this.debugBtnGrantEnergyPotion = document.getElementById('debug-btn-grant-energy-potion');
+    this.debugBtnGrantManaPotion = document.getElementById('debug-btn-grant-mana-potion');
+    this.debugBtnDrainEnergy = document.getElementById('debug-btn-drain-energy');
+    this.debugBtnRestoreEnergy = document.getElementById('debug-btn-restore-energy');
 
     this.debugBtnPowerStrike = document.getElementById('debug-btn-power-strike');
     this.debugBtnThrust = document.getElementById('debug-btn-thrust');
@@ -296,6 +358,17 @@ export class HUD {
     this.debugBtnGrantDaggersExp = document.getElementById('debug-btn-grant-daggers-exp');
     this.debugBtnGrantDualWieldExp = document.getElementById('debug-btn-grant-dual-wield-exp');
 
+    // Milestone 14 Elements
+    this.activeClassContainerEl = document.getElementById('active-class-container');
+    this.activeClassCurrentBadgeEl = document.getElementById('active-class-current-badge');
+    this.debugBtnActiveFencer = document.getElementById('debug-btn-active-fencer');
+    this.debugBtnActiveGuardian = document.getElementById('debug-btn-active-guardian');
+    this.debugBtnActiveVanguard = document.getElementById('debug-btn-active-vanguard');
+    this.debugBtnActiveNone = document.getElementById('debug-btn-active-none');
+    this.debugBtnSetupVanguardReqs = document.getElementById('debug-btn-setup-vanguard-reqs');
+    this.debugBtnVanguardLv40 = document.getElementById('debug-btn-vanguard-lv40');
+    this.debugBtnGrantClassExp = document.getElementById('debug-btn-grant-class-exp');
+
     // Milestone 10 Elements (Cooking Station)
     this.cookingModalEl = document.getElementById('cooking-modal');
     this.closeCookingBtn = document.getElementById('close-cooking-btn');
@@ -310,6 +383,12 @@ export class HUD {
     this.cookingRecipesContainerEl = document.getElementById('cooking-recipes-container');
     this.cookingDishesContainerEl = document.getElementById('cooking-dishes-container');
 
+    // Milestone 16 Elements
+    this.floorTimerBadgeEl = document.getElementById('floor-timer-badge');
+    this.debugBtnFastForwardFloorTimer = document.getElementById('debug-btn-fast-forward-floor-timer');
+    this.debugBtnTriggerFloorRespawn = document.getElementById('debug-btn-trigger-floor-respawn');
+    this.debugBtnToggleAutoRespawn = document.getElementById('debug-btn-toggle-auto-respawn');
+
     if (this.hudCardEl) {
       this.hudCardEl.style.display = HUD.isHudCardVisible ? 'block' : 'none';
     }
@@ -322,6 +401,9 @@ export class HUD {
       }
     }
 
+    if (HUD.activeInstance && HUD.activeInstance !== this) {
+      HUD.activeInstance.destroy();
+    }
     HUD.activeInstance = this;
     this.setupListeners();
   }
@@ -561,11 +643,221 @@ export class HUD {
       };
     }
 
+    // Milestone 14 Debug Actions: 4 Explicit Active Class buttons + Vanguard Setup & Class EXP
+    if (this.debugBtnActiveFencer) {
+      this.debugBtnActiveFencer.onclick = () => {
+        const hero = HUD.activeInstance?.currentParty[0] || HUD.activeInstance?.currentPlayer;
+        if (hero) {
+          hero.setActiveClass('fencer');
+          HUD.activeInstance?.showToast('🎯 Hero Active Class set to Fencer', 'success');
+          if (HUD.activeInstance) {
+            HUD.activeInstance.update(hero, hero.progression, 0, HUD.activeInstance.currentParty);
+            if (HUD.activeInstance.isLoadoutModalOpen()) {
+              HUD.activeInstance.renderLoadoutModal(hero, hero.progression);
+            }
+          }
+        }
+      };
+    }
+    if (this.debugBtnActiveGuardian) {
+      this.debugBtnActiveGuardian.onclick = () => {
+        const hero = HUD.activeInstance?.currentParty[0] || HUD.activeInstance?.currentPlayer;
+        if (hero) {
+          hero.setActiveClass('guardian');
+          HUD.activeInstance?.showToast('🎯 Hero Active Class set to Guardian', 'success');
+          if (HUD.activeInstance) {
+            HUD.activeInstance.update(hero, hero.progression, 0, HUD.activeInstance.currentParty);
+            if (HUD.activeInstance.isLoadoutModalOpen()) {
+              HUD.activeInstance.renderLoadoutModal(hero, hero.progression);
+            }
+          }
+        }
+      };
+    }
+    if (this.debugBtnActiveVanguard) {
+      this.debugBtnActiveVanguard.onclick = () => {
+        const hero = HUD.activeInstance?.currentParty[0] || HUD.activeInstance?.currentPlayer;
+        if (hero) {
+          hero.setActiveClass('vanguard');
+          HUD.activeInstance?.showToast('🎯 Hero Active Class set to Vanguard', 'success');
+          if (HUD.activeInstance) {
+            HUD.activeInstance.update(hero, hero.progression, 0, HUD.activeInstance.currentParty);
+            if (HUD.activeInstance.isLoadoutModalOpen()) {
+              HUD.activeInstance.renderLoadoutModal(hero, hero.progression);
+            }
+          }
+        }
+      };
+    }
+    if (this.debugBtnActiveNone) {
+      this.debugBtnActiveNone.onclick = () => {
+        const hero = HUD.activeInstance?.currentParty[0] || HUD.activeInstance?.currentPlayer;
+        if (hero) {
+          hero.setActiveClass(null);
+          HUD.activeInstance?.showToast('🎯 Hero Active Class cleared (None)', 'info');
+          if (HUD.activeInstance) {
+            HUD.activeInstance.update(hero, hero.progression, 0, HUD.activeInstance.currentParty);
+            if (HUD.activeInstance.isLoadoutModalOpen()) {
+              HUD.activeInstance.renderLoadoutModal(hero, hero.progression);
+            }
+          }
+        }
+      };
+    }
+    if (this.debugBtnSetupVanguardReqs) {
+      this.debugBtnSetupVanguardReqs.onclick = () => {
+        const hero = HUD.activeInstance?.currentParty[0] || HUD.activeInstance?.currentPlayer;
+        if (hero) {
+          hero.progression.getProficiencyStat('short_swords').level = 30;
+          hero.progression.getProficiencyStat('short_swords').currentExp = 0;
+          hero.progression.getProficiencyStat('shields').level = 30;
+          hero.progression.getProficiencyStat('shields').currentExp = 0;
+          hero.progression.setClassLevel('fencer', 5);
+          hero.progression.setClassLevel('guardian', 5);
+          hero.progression.checkClassUnlocks();
+          hero.checkSkillUnlocks();
+          HUD.activeInstance?.showToast('🛡️ Vanguard Requirements Fulfilled! Class UNLOCKED!', 'success', 4000);
+          if (HUD.activeInstance) {
+            HUD.activeInstance.update(hero, hero.progression, 0, HUD.activeInstance.currentParty);
+            if (HUD.activeInstance.isLoadoutModalOpen()) {
+              HUD.activeInstance.renderLoadoutModal(hero, hero.progression);
+            }
+          }
+        }
+      };
+    }
+    if (this.debugBtnVanguardLv40) {
+      this.debugBtnVanguardLv40.onclick = () => {
+        const hero = HUD.activeInstance?.currentParty[0] || HUD.activeInstance?.currentPlayer;
+        if (hero) {
+          hero.progression.setClassLevel('vanguard', 40);
+          hero.setActiveClass('vanguard');
+          hero.checkSkillUnlocks();
+          HUD.activeInstance?.showToast('🛡️ Vanguard set to Lv40 (All 5 Vanguard Skills Unlocked)!', 'success', 4000);
+          if (HUD.activeInstance) {
+            HUD.activeInstance.update(hero, hero.progression, 0, HUD.activeInstance.currentParty);
+            if (HUD.activeInstance.isLoadoutModalOpen()) {
+              HUD.activeInstance.renderLoadoutModal(hero, hero.progression);
+            }
+          }
+        }
+      };
+    }
+    if (this.debugBtnGrantClassExp) {
+      this.debugBtnGrantClassExp.onclick = () => {
+        const hero = HUD.activeInstance?.currentParty[0] || HUD.activeInstance?.currentPlayer;
+        if (hero) {
+          if (hero.activeClass) {
+            hero.progression.addClassExp(hero.activeClass, 25);
+            HUD.activeInstance?.showToast(`✨ +25 Class EXP granted to ${hero.activeClass}`, 'success');
+            hero.checkSkillUnlocks();
+          } else {
+            HUD.activeInstance?.showToast('Hero has no active class equipped!', 'error');
+          }
+          if (HUD.activeInstance) {
+            HUD.activeInstance.update(hero, hero.progression, 0, HUD.activeInstance.currentParty);
+            if (HUD.activeInstance.isLoadoutModalOpen()) {
+              HUD.activeInstance.renderLoadoutModal(hero, hero.progression);
+            }
+          }
+        }
+      };
+    }
+
+    // Milestone 16 Debug Buttons
+    if (this.debugBtnFastForwardFloorTimer) {
+      this.debugBtnFastForwardFloorTimer.onclick = () => {
+        if (typeof (window as any).__fastForwardFloorTimer === 'function') {
+          (window as any).__fastForwardFloorTimer(60);
+        }
+      };
+    }
+    if (this.debugBtnTriggerFloorRespawn) {
+      this.debugBtnTriggerFloorRespawn.onclick = () => {
+        if (typeof (window as any).__triggerFloorRespawn === 'function') {
+          (window as any).__triggerFloorRespawn();
+        }
+      };
+    }
+    if (this.debugBtnToggleAutoRespawn) {
+      this.debugBtnToggleAutoRespawn.onclick = () => {
+        if (typeof (window as any).__toggleAutoRespawn === 'function') {
+          (window as any).__toggleAutoRespawn();
+        }
+      };
+    }
+
+    // Milestone 19 Potion HUD Button Handlers
+    if (this.hudDrinkEnergyPotionBtn) {
+      this.hudDrinkEnergyPotionBtn.onclick = () => {
+        HUD.activeInstance?.drinkEnergyPotion();
+      };
+    }
+    if (this.hudDrinkManaPotionBtn) {
+      this.hudDrinkManaPotionBtn.onclick = () => {
+        HUD.activeInstance?.drinkManaPotion();
+      };
+    }
+
+    // Milestone 19 Debug Buttons
+    if (this.debugBtnGrantEnergyPotion) {
+      this.debugBtnGrantEnergyPotion.onclick = () => {
+        GameState.getInstance().addItem('energy_potion', 1);
+        HUD.activeInstance?.showToast('🧪 Granted +1 Energy Potion', 'success');
+        const hero = HUD.activeInstance?.currentParty[0] || HUD.activeInstance?.currentPlayer;
+        if (hero && HUD.activeInstance?.currentProgression) {
+          HUD.activeInstance.update(hero, HUD.activeInstance.currentProgression, 0, HUD.activeInstance.currentParty);
+          if (HUD.activeInstance.isAlchemyModalOpen()) {
+            HUD.activeInstance.renderAlchemyModal(hero, HUD.activeInstance.currentProgression);
+          }
+        }
+      };
+    }
+    if (this.debugBtnGrantManaPotion) {
+      this.debugBtnGrantManaPotion.onclick = () => {
+        GameState.getInstance().addItem('mana_potion', 1);
+        HUD.activeInstance?.showToast('🧪 Granted +1 Mana Potion', 'success');
+        const hero = HUD.activeInstance?.currentParty[0] || HUD.activeInstance?.currentPlayer;
+        if (hero && HUD.activeInstance?.currentProgression) {
+          HUD.activeInstance.update(hero, HUD.activeInstance.currentProgression, 0, HUD.activeInstance.currentParty);
+          if (HUD.activeInstance.isAlchemyModalOpen()) {
+            HUD.activeInstance.renderAlchemyModal(hero, HUD.activeInstance.currentProgression);
+          }
+        }
+      };
+    }
+    if (this.debugBtnDrainEnergy) {
+      this.debugBtnDrainEnergy.onclick = () => {
+        const hero = HUD.activeInstance?.currentParty[0] || HUD.activeInstance?.currentPlayer;
+        if (hero) {
+          hero.energy = 0;
+          HUD.activeInstance?.showToast('⚡ Hero Energy drained to 0', 'warn');
+          if (HUD.activeInstance?.currentProgression) {
+            HUD.activeInstance.update(hero, HUD.activeInstance.currentProgression, 0, HUD.activeInstance.currentParty);
+          }
+        }
+      };
+    }
+    if (this.debugBtnRestoreEnergy) {
+      this.debugBtnRestoreEnergy.onclick = () => {
+        const hero = HUD.activeInstance?.currentParty[0] || HUD.activeInstance?.currentPlayer;
+        if (hero) {
+          hero.energy = hero.maxEnergy;
+          HUD.activeInstance?.showToast('⚡ Hero Energy restored to full', 'success');
+          if (HUD.activeInstance?.currentProgression) {
+            HUD.activeInstance.update(hero, HUD.activeInstance.currentProgression, 0, HUD.activeInstance.currentParty);
+          }
+        }
+      };
+    }
+
     // Expose debug helpers globally on window for console testing
     (window as any).debugGrantSkillBook = (id: string = 'book_power_strike') => HUD.activeInstance?.debugGrantSkillBook(id);
     (window as any).debugGrantResearchPoints = (amount: number = 10) => HUD.activeInstance?.debugGrantResearchPoints(amount);
     (window as any).debugApplyBleed = () => HUD.activeInstance?.debugApplyBleed();
     (window as any).debugApplyBandage = () => HUD.activeInstance?.applyBandage();
+    (window as any).debugDrinkEnergyPotion = () => HUD.activeInstance?.drinkEnergyPotion();
+    (window as any).debugDrinkManaPotion = () => HUD.activeInstance?.drinkManaPotion();
     (window as any).debugAdvanceDay = (days: number = 1) => HUD.activeInstance?.debugAdvanceDay(days);
     (window as any).debugGrantRation = (count: number = 1) => HUD.activeInstance?.debugGrantRation(count);
     (window as any).debugSetHunger = (amount: number) => {
@@ -604,7 +896,7 @@ export class HUD {
 
     if (!HUD.hasGlobalListeners) {
       HUD.hasGlobalListeners = true;
-      // Key listeners: Tab (toggle HUD panel), L (toggle Loadout modal), B (toggle Build mode), H (apply bandage), O (toggle Party modal), Escape (close modals)
+      // Key listeners: Tab (toggle HUD panel), L (toggle Loadout modal), B (toggle Build mode), H (apply bandage), E (drink energy potion), P (drink mana potion), O (toggle Party modal), Escape (close modals)
       window.addEventListener('keydown', (e) => {
         const active = HUD.activeInstance;
         if (!active) return;
@@ -625,6 +917,17 @@ export class HUD {
           }
         } else if (e.key === 'h' || e.key === 'H') {
           active.applyBandage();
+        } else if (e.key === 'e' || e.key === 'E') {
+          // If not typing in input or select element
+          const targetTag = (e.target as HTMLElement)?.tagName?.toLowerCase();
+          if (targetTag !== 'input' && targetTag !== 'textarea' && targetTag !== 'select') {
+            active.drinkEnergyPotion();
+          }
+        } else if (e.key === 'p' || e.key === 'P') {
+          const targetTag = (e.target as HTMLElement)?.tagName?.toLowerCase();
+          if (targetTag !== 'input' && targetTag !== 'textarea' && targetTag !== 'select') {
+            active.drinkManaPotion();
+          }
         } else if (e.key === 'o' || e.key === 'O' || e.code === 'KeyO') {
           active.togglePartyOverviewModal();
         } else if (e.key === 'y' || e.key === 'Y') {
@@ -815,9 +1118,13 @@ export class HUD {
 
     const name = memberName || progression.ownerName || 'Guild Hero';
     const stats = progression.getAllProficiencyStats();
+    const classStats = progression.getAllClassStats();
     let key = `${name}:`;
     for (const [id, stat] of stats.entries()) {
       key += `${id}:${stat.level}:${stat.currentExp},`;
+    }
+    for (const [id, stat] of classStats.entries()) {
+      key += `cls_${id}:${stat.level}:${stat.currentExp},`;
     }
 
     if (this.renderedDebugSkillsKey !== key) {
@@ -826,6 +1133,17 @@ export class HUD {
       for (const [id, stat] of stats.entries()) {
         const nextExp = LevelingSystem.expForNextLevel(stat.level);
         html += `<div class="debug-skill-row"><span class="debug-skill-id">${id}:</span> Level ${stat.level} (${stat.currentExp}/${nextExp} EXP)</div>`;
+      }
+      if (classStats.size > 0) {
+        html += `<div style="font-size: 10px; color: #f59e0b; font-weight: bold; margin-top: 4px; border-top: 1px solid rgba(245,158,11,0.2); padding-top: 2px;">CLASSES</div>`;
+        for (const [id, stat] of classStats.entries()) {
+          const nextExp = LevelingSystem.expForNextLevel(stat.level);
+          const clsDef = DataLoader.getInstance().getClass(id);
+          const clsName = clsDef?.name ?? id;
+          const isUnlocked = progression.isClassUnlocked(id);
+          const status = isUnlocked ? `Level ${stat.level} (${stat.currentExp}/${nextExp} EXP)` : `Locked`;
+          html += `<div class="debug-skill-row"><span class="debug-skill-id" style="color: #34d399;">${clsName}:</span> ${status}</div>`;
+        }
       }
       this.debugSkillsListEl.innerHTML = html;
     }
@@ -868,6 +1186,36 @@ export class HUD {
       // Strictly enforce: Loadout modal and build overlay cannot remain open in dungeon
       this.closeLoadoutModal();
       this.setBuildOverlayVisible(false);
+    } else if (this.floorTimerBadgeEl) {
+      this.floorTimerBadgeEl.style.display = 'none';
+    }
+  }
+
+  public updateFloorTimer(remainingMs: number, _totalDurationMs: number): void {
+    if (this.isOutpost) {
+      if (this.floorTimerBadgeEl) {
+        this.floorTimerBadgeEl.style.display = 'none';
+      }
+      return;
+    }
+
+    if (this.floorTimerBadgeEl) {
+      this.floorTimerBadgeEl.style.display = 'block';
+      const totalSec = Math.max(0, Math.ceil(remainingMs / 1000));
+      const mins = Math.floor(totalSec / 60);
+      const secs = totalSec % 60;
+      const formatted = `${mins}:${secs.toString().padStart(2, '0')}`;
+      this.floorTimerBadgeEl.innerText = `⏳ Floor Respawn: ${formatted}`;
+      this.floorTimerBadgeEl.style.color = totalSec <= 30 ? '#ef4444' : totalSec <= 60 ? '#f59e0b' : '#f87171';
+    }
+  }
+
+  public updateDebugAutoRespawnBtn(enabled: boolean): void {
+    if (this.debugBtnToggleAutoRespawn) {
+      this.debugBtnToggleAutoRespawn.innerText = `🔄 Toggle Debug 3s Respawn: ${enabled ? 'ON' : 'OFF'}`;
+      this.debugBtnToggleAutoRespawn.style.background = enabled ? '#b45309' : '#374151';
+      this.debugBtnToggleAutoRespawn.style.borderColor = enabled ? '#f59e0b' : '#4b5563';
+      this.debugBtnToggleAutoRespawn.style.color = enabled ? '#fef08a' : '#d1d5db';
     }
   }
 
@@ -895,7 +1243,8 @@ export class HUD {
     this.currentPlayer = player;
     this.currentProgression = progression;
 
-    this.renderLoadoutModal(player, progression);
+    const activeMember = (this.currentParty && this.currentParty[this.selectedLoadoutMemberIndex]) || player;
+    this.renderLoadoutModal(activeMember, activeMember.progression);
 
     if (this.loadoutModalEl) {
       this.loadoutModalEl.classList.add('active');
@@ -909,8 +1258,101 @@ export class HUD {
     const equipped = player.equippedSkillIds;
     const known = player.knownSkillIds;
 
+    // Populate Loadout member selector
+    if (this.loadoutMemberSelectEl) {
+      const party = (this.currentParty && this.currentParty.length > 0) ? this.currentParty : [player];
+      let optionsHtml = '';
+      for (let i = 0; i < party.length; i++) {
+        const m = party[i];
+        const label = i === 0 ? `${m.entityName || 'Hero'} (Leader)` : `${m.entityName || `Companion ${i}`}`;
+        optionsHtml += `<option value="${i}">${label}</option>`;
+      }
+      this.loadoutMemberSelectEl.innerHTML = optionsHtml;
+      if (this.selectedLoadoutMemberIndex < party.length) {
+        this.loadoutMemberSelectEl.value = this.selectedLoadoutMemberIndex.toString();
+      } else {
+        this.selectedLoadoutMemberIndex = 0;
+        this.loadoutMemberSelectEl.value = '0';
+      }
+    }
+
     if (this.slotsCountBadgeEl) {
       this.slotsCountBadgeEl.innerText = `${equipped.length} / 5 Slots`;
+    }
+
+    // 0. Render Active Class Selection Shelf (Milestone 14)
+    if (this.activeClassCurrentBadgeEl) {
+      if (player.activeClass) {
+        const clsDef = dataLoader.getClass(player.activeClass);
+        const clsLvl = progression.getClassLevel(player.activeClass);
+        this.activeClassCurrentBadgeEl.innerText = `Active: ${clsDef?.name ?? player.activeClass} (Lv ${clsLvl})`;
+      } else {
+        this.activeClassCurrentBadgeEl.innerText = 'Active: None';
+      }
+    }
+
+    if (this.activeClassContainerEl) {
+      this.activeClassContainerEl.innerHTML = '';
+      const classes = dataLoader.getClasses();
+      for (const cls of classes) {
+        const isUnlocked = progression.isClassUnlocked(cls.id);
+        // Hidden-Until-Earned: locked classes DO NOT render at all (zero cards, zero placeholders)
+        if (!isUnlocked) continue;
+
+        const isActive = player.activeClass === cls.id;
+        const clsStat = progression.getClassStat(cls.id);
+        const nextExp = LevelingSystem.expForNextLevel(clsStat.level);
+
+        const card = document.createElement('div');
+        card.className = `active-class-card ${isActive ? 'active-selected' : ''}`;
+
+        const badgeHtml = isActive
+          ? `<span class="active-class-badge badge-active">ACTIVE</span>`
+          : `<span class="active-class-badge" style="background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid #10b981;">UNLOCKED</span>`;
+
+        let actionBtnHtml = '';
+        if (isActive) {
+          actionBtnHtml = `<button type="button" class="active-class-btn btn-unequip" data-unequip-class="${cls.id}">Unequip</button>`;
+        } else {
+          actionBtnHtml = `<button type="button" class="active-class-btn btn-equip" data-equip-class="${cls.id}">Set Active</button>`;
+        }
+
+        card.innerHTML = `
+          <div class="active-class-card-header">
+            <span class="active-class-name">${cls.name}</span>
+            ${badgeHtml}
+          </div>
+          <div class="active-class-info">
+            <span>Level ${clsStat.level} (${clsStat.currentExp}/${nextExp} EXP)</span>
+          </div>
+          <div style="font-size: 10px; color: #9ca3af; font-style: italic;">${cls.fantasy}</div>
+          <div style="margin-top: auto; display: flex; justify-content: flex-end;">
+            ${actionBtnHtml}
+          </div>
+        `;
+
+        const equipBtn = card.querySelector(`[data-equip-class="${cls.id}"]`) as HTMLElement;
+        if (equipBtn) {
+          equipBtn.onclick = () => {
+            player.setActiveClass(cls.id);
+            this.showToast(`🎯 Active Class set to ${cls.name}`, 'success');
+            this.renderLoadoutModal(player, progression);
+            this.update(player, progression, 0, this.currentParty);
+          };
+        }
+
+        const unequipBtn = card.querySelector(`[data-unequip-class="${cls.id}"]`) as HTMLElement;
+        if (unequipBtn) {
+          unequipBtn.onclick = () => {
+            player.setActiveClass(null);
+            this.showToast('🎯 Active Class cleared (None)', 'info');
+            this.renderLoadoutModal(player, progression);
+            this.update(player, progression, 0, this.currentParty);
+          };
+        }
+
+        this.activeClassContainerEl.appendChild(card);
+      }
     }
 
     // 1. Render 5 Equip Slots
@@ -1001,6 +1443,8 @@ export class HUD {
 
       const isEquipped = equipped.includes(skillId);
       const isUnlocked = progression.isSkillUnlocked(skillDef, player);
+      // Hidden-Until-Earned: locked skills DO NOT render at all (zero cards, no "(Requires Class)" preview)
+      if (!isUnlocked) continue;
 
       const card = document.createElement('div');
       card.className = `skill-card ${isEquipped ? 'equipped-badge' : ''}`;
@@ -1014,9 +1458,7 @@ export class HUD {
 
       const statusBadge = isEquipped
         ? `<span style="font-size: 11px; font-weight: bold; color: #34d399;">✓ Equipped</span>`
-        : isUnlocked
-        ? `<button type="button" style="background: #2563eb; color: #fff; border: none; border-radius: 4px; padding: 3px 10px; font-size: 11px; font-weight: bold; cursor: pointer;" data-equip="${skillId}">+ Equip</button>`
-        : `<span style="font-size: 11px; color: #9ca3af;">(Requires Class)</span>`;
+        : `<button type="button" style="background: #2563eb; color: #fff; border: none; border-radius: 4px; padding: 3px 10px; font-size: 11px; font-weight: bold; cursor: pointer;" data-equip="${skillId}">+ Equip</button>`;
 
       card.innerHTML = `
         <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -1086,7 +1528,13 @@ export class HUD {
           const nextExp = LevelingSystem.expForNextLevel(stat.level);
           const isFencerUnlocked = progression.isClassUnlocked('fencer');
           const tierText = isFencerUnlocked ? 'Novice' : 'Unranked';
-          this.profEl.innerText = `Level ${stat.level} (${stat.currentExp}/${nextExp} EXP) [${tierText}]`;
+          let classSuffix = '';
+          if (player.activeClass) {
+            const clsDef = DataLoader.getInstance().getClass(player.activeClass);
+            const clsLvl = progression.getClassLevel(player.activeClass);
+            classSuffix = ` [${clsDef?.name ?? player.activeClass} Lv ${clsLvl}]`;
+          }
+          this.profEl.innerText = `Level ${stat.level} (${stat.currentExp}/${nextExp} EXP) [${tierText}]${classSuffix}`;
         }
       } else {
         this.hudProficiencyRowEl.style.display = 'none';
@@ -1130,6 +1578,30 @@ export class HUD {
         this.playerBandageTextEl.innerText = `${bandageCount}`;
       } else {
         this.hudBandageRowEl.style.display = 'none';
+      }
+    }
+
+    // 4b4. Energy Potion Stockpile
+    if (this.hudEnergyPotionRowEl && this.playerEnergyPotionTextEl) {
+      const energyPotCount = GameState.getInstance().getItemCount('energy_potion');
+      const isAlchemyUnlocked = GameState.getInstance().isBuildableUnlocked('alchemy_station');
+      if (energyPotCount > 0 || isAlchemyUnlocked) {
+        this.hudEnergyPotionRowEl.style.display = 'flex';
+        this.playerEnergyPotionTextEl.innerText = `${energyPotCount}`;
+      } else {
+        this.hudEnergyPotionRowEl.style.display = 'none';
+      }
+    }
+
+    // 4b5. Mana Potion Stockpile
+    if (this.hudManaPotionRowEl && this.playerManaPotionTextEl) {
+      const manaPotCount = GameState.getInstance().getItemCount('mana_potion');
+      const isAlchemyUnlocked = GameState.getInstance().isBuildableUnlocked('alchemy_station');
+      if (manaPotCount > 0 || isAlchemyUnlocked) {
+        this.hudManaPotionRowEl.style.display = 'flex';
+        this.playerManaPotionTextEl.innerText = `${manaPotCount}`;
+      } else {
+        this.hudManaPotionRowEl.style.display = 'none';
       }
     }
 
@@ -1255,6 +1727,9 @@ export class HUD {
       } else if (player.activeStatusEffects.has('bleed')) {
         this.playerStatusEl.innerText = 'Bleeding (DoT)';
         this.playerStatusEl.style.color = '#ef4444';
+      } else if (player.activeStatusEffects.has('burn')) {
+        this.playerStatusEl.innerText = 'Burning (DoT)';
+        this.playerStatusEl.style.color = '#f97316';
       } else {
         this.playerStatusEl.innerText = 'Normal';
         this.playerStatusEl.style.color = '#9ca3af';
@@ -1367,6 +1842,18 @@ export class HUD {
     // 11. Update Cooking Station modal live if open
     if (this.isCookingModalOpen()) {
       this.updateCookingStockpileLive();
+    }
+
+    // 12. Update Skill Loadout modal live if open
+    if (this.isLoadoutModalOpen()) {
+      const activeMember = (this.currentParty && this.currentParty[this.selectedLoadoutMemberIndex]) || player;
+      if (activeMember) {
+        const loadoutKey = `${activeMember.entityName}:${activeMember.activeClass}:${activeMember.progression.getSnapshotData().unlockedClasses.join(',')}:${activeMember.knownSkillIds.join(',')}:${activeMember.equippedSkillIds.join(',')}`;
+        if (this.lastRenderedLoadoutKey !== loadoutKey) {
+          this.lastRenderedLoadoutKey = loadoutKey;
+          this.renderLoadoutModal(activeMember, activeMember.progression);
+        }
+      }
     }
   }
 
@@ -1578,12 +2065,13 @@ export class HUD {
         `;
       }
 
-      // Main weapon options
+      // Main weapon options (all weapons except offhand-only and non-offensive spell disciplines)
       let mainOptions = '';
       for (const w of allWeapons) {
-        if (!w.twoHanded) {
+        if (w.category !== 'offhand' && (w.category !== 'magic' || w.baseDamage > 0)) {
           const sel = member.equippedWeapon.id === w.id ? 'selected' : '';
-          mainOptions += `<option value="${w.id}" ${sel}>${w.name} (Dmg: ${w.baseDamage})</option>`;
+          const tag = w.twoHanded ? '2H' : '1H';
+          mainOptions += `<option value="${w.id}" ${sel}>${w.name} (${tag} - Dmg: ${w.baseDamage})</option>`;
         }
       }
 
@@ -1633,12 +2121,24 @@ export class HUD {
         `;
       }
 
-      const offhandSelectHtml = `
-        <select class="party-select party-offhand-select" data-member-idx="${i}">
-          ${offhandOptions}
-        </select>
-        ${offhandStatusHtml}
-      `;
+      let offhandSelectHtml = '';
+      if (member.equippedWeapon?.twoHanded) {
+        offhandSelectHtml = `
+          <select class="party-select party-offhand-select" data-member-idx="${i}" disabled style="opacity: 0.5; cursor: not-allowed;">
+            <option value="none" selected>Disabled (Two-Handed Weapon)</option>
+          </select>
+          <div style="font-size: 10px; color: #9ca3af; margin-top: 2px;">
+            ⚠️ Two-Handed weapon prevents offhand gear
+          </div>
+        `;
+      } else {
+        offhandSelectHtml = `
+          <select class="party-select party-offhand-select" data-member-idx="${i}">
+            ${offhandOptions}
+          </select>
+          ${offhandStatusHtml}
+        `;
+      }
 
       // Skills chips
       let equippedSkillsHtml = '';
@@ -1658,7 +2158,11 @@ export class HUD {
       }
 
       // Available unequipped skills
-      const unequippedSkills = member.knownSkillIds.filter((id) => !member.equippedSkillIds.includes(id));
+      const unequippedSkills = member.knownSkillIds.filter((id) => {
+        if (member.equippedSkillIds.includes(id)) return false;
+        const def = dataLoader.getSkill(id);
+        return def ? member.progression.isSkillUnlocked(def, member) : false;
+      });
       let availableSkillsHtml = '';
       if (member.equippedSkillIds.length < 5 && unequippedSkills.length > 0) {
         const skillOpts = unequippedSkills.map((id) => {
@@ -1842,6 +2346,12 @@ export class HUD {
     memberName: string = 'Guild Hero',
     durationMs: number = 4000
   ): void {
+    if (this.isLoadoutModalOpen()) {
+      const activeMember = (this.currentParty && this.currentParty[this.selectedLoadoutMemberIndex]) || this.currentPlayer;
+      if (activeMember) {
+        this.renderLoadoutModal(activeMember, activeMember.progression);
+      }
+    }
     this.announcementQueue.push({
       type: 'class',
       data: classDef,
@@ -1856,6 +2366,12 @@ export class HUD {
     memberName: string = 'Guild Hero',
     durationMs: number = 4000
   ): void {
+    if (this.isLoadoutModalOpen()) {
+      const activeMember = (this.currentParty && this.currentParty[this.selectedLoadoutMemberIndex]) || this.currentPlayer;
+      if (activeMember) {
+        this.renderLoadoutModal(activeMember, activeMember.progression);
+      }
+    }
     this.announcementQueue.push({
       type: 'skill',
       data: skillDef,
@@ -1990,6 +2506,9 @@ export class HUD {
       this.unsubscribeExpListener();
       this.unsubscribeExpListener = null;
     }
+    if (HUD.activeInstance === this) {
+      HUD.activeInstance = null;
+    }
   }
 
   // --- RESEARCH TREE MODAL METHODS (Milestone 6) ---
@@ -2119,6 +2638,12 @@ export class HUD {
     if (this.alchemyModalBandagesEl) {
       this.alchemyModalBandagesEl.innerText = `🩹 ${gameState.getItemCount('bandage')}`;
     }
+    if (this.alchemyModalEnergyPotionsEl) {
+      this.alchemyModalEnergyPotionsEl.innerText = `⚡ ${gameState.getItemCount('energy_potion')}`;
+    }
+    if (this.alchemyModalManaPotionsEl) {
+      this.alchemyModalManaPotionsEl.innerText = `✨ ${gameState.getItemCount('mana_potion')}`;
+    }
 
     // 2b. Mood Modifier Banner
     const moodTier = dataLoader.getMoodTier(player.mood);
@@ -2127,36 +2652,62 @@ export class HUD {
     if (this.alchemyMoodValueEl && this.alchemyMoodEffectEl) {
       this.alchemyMoodValueEl.innerText = `${moodTier.name} (${Math.ceil(player.mood)}/100)`;
       if (moodTier.alchemyYieldBonus > 0) {
-        this.alchemyMoodEffectEl.innerText = `+${moodTier.alchemyYieldBonus * 100}% Crafting Yield (2x Bandages per craft!)`;
+        this.alchemyMoodEffectEl.innerText = `+${moodTier.alchemyYieldBonus * 100}% Crafting Yield (${yieldQuantity}x per craft!)`;
         this.alchemyMoodEffectEl.style.color = '#fef08a';
       } else {
-        this.alchemyMoodEffectEl.innerText = `Standard Yield (1x Bandage per craft)`;
+        this.alchemyMoodEffectEl.innerText = `Standard Yield (1x per craft)`;
         this.alchemyMoodEffectEl.style.color = '#9ca3af';
       }
     }
+
+    // Helper for ingredient name and icons
+    const getIngredientLabel = (ingId: string, count: number): string => {
+      switch (ingId) {
+        case 'wood': return `🪵 ${count} Wood`;
+        case 'wild_herbs': return `🌿 ${count} Wild Herbs`;
+        case 'ectoplasm': return `👻 ${count} Ectoplasm`;
+        default: return `${count} ${ingId}`;
+      }
+    };
+
+    const hasIngredient = (ingId: string, count: number): boolean => {
+      if (ingId === 'wood') {
+        return gameState.getWood() >= count;
+      }
+      return gameState.getItemCount(ingId) >= count;
+    };
 
     // 3. Recipes list
     if (this.alchemyRecipesContainerEl) {
       this.alchemyRecipesContainerEl.innerHTML = '';
       for (const recipe of alchemyRecipes) {
-        const woodCost = recipe.ingredients.wood || 0;
-        const hasWood = gameState.getWood() >= woodCost;
+        const ingredients = recipe.ingredients || {};
+        const ingredientEntries = Object.entries(ingredients);
+
+        // Check affordability across all ingredients
+        const canAffordAll = ingredientEntries.every(([ingId, cost]) => hasIngredient(ingId, cost));
+
+        const costLabelParts = ingredientEntries.map(([ingId, cost]) => getIngredientLabel(ingId, cost));
+        const costLabel = `Cost: ${costLabelParts.join(' + ')}`;
 
         const card = document.createElement('div');
         card.style.cssText = 'background: rgba(31, 41, 55, 0.85); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 8px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; gap: 12px;';
 
         const craftLabel = yieldQuantity > 1 ? `⚗️ Craft ${yieldQuantity}x (+${recipe.expGranted} EXP)` : `⚗️ Craft (+${recipe.expGranted} EXP)`;
-        const btnHtml = hasWood
-          ? `<button type="button" class="btn-action" style="background: #059669; border-color: #34d399; font-size: 12px; padding: 6px 14px;" data-craft-recipe="${recipe.id}">${craftLabel}</button>`
-          : `<button type="button" disabled style="background: #374151; color: #9ca3af; border: 1px solid #4b5563; border-radius: 6px; font-size: 12px; padding: 6px 14px; cursor: not-allowed;">Needs 🪵 ${woodCost} Wood</button>`;
+        const missingIng = ingredientEntries.find(([ingId, cost]) => !hasIngredient(ingId, cost));
+        const missingLabel = missingIng ? `Needs ${getIngredientLabel(missingIng[0], missingIng[1])}` : 'Missing items';
 
-        const yieldNotice = yieldQuantity > 1 ? `<span style="font-size: 11px; color: #34d399; font-weight: bold;">Yield: ${yieldQuantity}x Bandages</span>` : `<span style="font-size: 11px; color: #9ca3af;">Yield: 1x</span>`;
+        const btnHtml = canAffordAll
+          ? `<button type="button" class="btn-action" style="background: #059669; border-color: #34d399; font-size: 12px; padding: 6px 14px;" data-craft-recipe="${recipe.id}">${craftLabel}</button>`
+          : `<button type="button" disabled style="background: #374151; color: #9ca3af; border: 1px solid #4b5563; border-radius: 6px; font-size: 12px; padding: 6px 14px; cursor: not-allowed;">${missingLabel}</button>`;
+
+        const yieldNotice = yieldQuantity > 1 ? `<span style="font-size: 11px; color: #34d399; font-weight: bold;">Yield: ${yieldQuantity}x</span>` : `<span style="font-size: 11px; color: #9ca3af;">Yield: 1x</span>`;
 
         card.innerHTML = `
           <div style="flex: 1;">
             <div style="font-size: 14px; font-weight: bold; color: #34d399; display: flex; align-items: center; gap: 8px;">
               <span>${recipe.name}</span>
-              <span style="font-size: 11px; color: #fbbf24; font-weight: normal;">Cost: 🪵 ${woodCost} Wood</span>
+              <span style="font-size: 11px; color: #fbbf24; font-weight: normal;">${costLabel}</span>
               ${yieldNotice}
               <span style="font-size: 11px; color: #60a5fa; font-weight: normal;">+${recipe.expGranted} Alchemy EXP</span>
             </div>
@@ -2168,7 +2719,16 @@ export class HUD {
         const craftBtn = card.querySelector<HTMLButtonElement>(`[data-craft-recipe="${recipe.id}"]`);
         if (craftBtn) {
           craftBtn.onclick = () => {
-            if (gameState.consumeWood(woodCost)) {
+            // Re-verify all ingredients before consuming
+            const stillAffordable = ingredientEntries.every(([ingId, cost]) => hasIngredient(ingId, cost));
+            if (stillAffordable) {
+              for (const [ingId, cost] of ingredientEntries) {
+                if (ingId === 'wood') {
+                  gameState.consumeWood(cost);
+                } else {
+                  gameState.consumeItem(ingId, cost);
+                }
+              }
               gameState.addItem(recipe.id, yieldQuantity);
               progression.addProficiencyExp('alchemy', recipe.expGranted);
               const bonusText = yieldQuantity > 1 ? ` (${moodTier.name} ${yieldQuantity}x Bonus!)` : '';
@@ -2176,7 +2736,7 @@ export class HUD {
               this.renderAlchemyModal(player, progression);
               this.update(player, progression, 0);
             } else {
-              this.showToast(`Not enough wood to craft ${recipe.name}!`, 'error');
+              this.showToast(`Not enough ingredients to craft ${recipe.name}!`, 'error');
             }
           };
         }
@@ -2257,6 +2817,48 @@ export class HUD {
       return true;
     } else {
       this.showToast('No Bandages available in stockpile! Craft one at the Alchemy Station.', 'warn', 3000);
+      return false;
+    }
+  }
+
+  // --- DRINK POTIONS (Milestone 19) ---
+
+  public drinkEnergyPotion(): boolean {
+    const hero = this.currentParty[0] || this.currentPlayer;
+    if (!hero) return false;
+
+    const success = hero.drinkPotion('energy_potion');
+    if (success) {
+      this.showToast('⚡ Drank Energy Potion! +35 Energy & +2 EN/s buff (15s)', 'success', 3000);
+      if (this.currentProgression) {
+        this.update(hero, this.currentProgression, 0, this.currentParty);
+        if (this.isAlchemyModalOpen()) {
+          this.renderAlchemyModal(hero, this.currentProgression);
+        }
+      }
+      return true;
+    } else {
+      this.showToast('No Energy Potions available in stockpile!', 'warn', 2500);
+      return false;
+    }
+  }
+
+  public drinkManaPotion(): boolean {
+    const hero = this.currentParty[0] || this.currentPlayer;
+    if (!hero) return false;
+
+    const success = hero.drinkPotion('mana_potion');
+    if (success) {
+      this.showToast('✨ Drank Mana Potion! +35 Energy & +2 EN/s buff (15s)', 'success', 3000);
+      if (this.currentProgression) {
+        this.update(hero, this.currentProgression, 0, this.currentParty);
+        if (this.isAlchemyModalOpen()) {
+          this.renderAlchemyModal(hero, this.currentProgression);
+        }
+      }
+      return true;
+    } else {
+      this.showToast('No Mana Potions available in stockpile!', 'warn', 2500);
       return false;
     }
   }
@@ -2447,7 +3049,14 @@ export class HUD {
       case 'construction': return '#f59e0b';
       case 'alchemy': return '#10b981';
       case 'foraging': return '#4ade80';
+      case 'woodcutting': return '#ca8a04';
+      case 'mining': return '#94a3b8';
       case 'cooking': return '#f97316';
+      case 'staff': return '#fbbf24';
+      case 'healing_magic': return '#4ade80';
+      case 'fire_magic': return '#f97316';
+      case 'energy_regen': return '#38bdf8';
+      case 'mana_regen': return '#818cf8';
       default: return '#34d399';
     }
   }

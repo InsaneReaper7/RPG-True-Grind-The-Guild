@@ -8,8 +8,8 @@
   "moveSpeed": 120,
   "attackRangeTiles": 1,
   "startingWeaponId": "short_swords",
-  "knownSkillIds": ["power_strike", "first_aid"],
-  "equippedSkillIds": ["power_strike"],
+  "knownSkillIds": [],
+  "equippedSkillIds": [],
   "proficiencies": {
     "short_swords": { "level": 0, "currentExp": 0 },
     "daggers": { "level": 0, "currentExp": 0 },
@@ -23,9 +23,17 @@
     "counterattack": { "level": 0, "currentExp": 0 },
     "resilience": { "level": 0, "currentExp": 0 },
     "health_regen": { "level": 0, "currentExp": 0 },
-    "mana_regen": { "level": 0, "currentExp": 0 }
+    "mana_regen": { "level": 0, "currentExp": 0 },
+    "energy_regen": { "level": 0, "currentExp": 0 },
+    "staff": { "level": 0, "currentExp": 0 },
+    "healing_magic": { "level": 0, "currentExp": 0 },
+    "fire_magic": { "level": 0, "currentExp": 0 },
+    "foraging": { "level": 0, "currentExp": 0 },
+    "woodcutting": { "level": 0, "currentExp": 0 },
+    "mining": { "level": 0, "currentExp": 0 }
   },
   "resources": {
-    "wood": 1000
+    "wood": 1000,
+    "ore": 0
   }
 }

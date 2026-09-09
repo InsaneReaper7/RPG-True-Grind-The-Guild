@@ -26,7 +26,11 @@ import type {
   FoodDef,
   FoodsData,
   MoodTierDef,
-  MoodEffectsData
+  MoodEffectsData,
+  DungeonConfig,
+  GatheringNodesConfig,
+  GatheringNodeDef,
+  StartingKitDef
 } from '../types/game.ts';
 import { HiddenSkillSystem } from '../systems/HiddenSkillSystem.ts';
 
@@ -47,6 +51,8 @@ export class DataLoader {
   private cookingRecipesData!: CookingRecipesData;
   private foodsData!: FoodsData;
   private moodEffectsData!: MoodEffectsData;
+  private dungeonConfig!: DungeonConfig;
+  private gatheringNodesConfig!: GatheringNodesConfig;
 
   private constructor() {}
 
@@ -58,7 +64,7 @@ export class DataLoader {
   }
 
   public async loadAll(): Promise<void> {
-    const [player, weapons, classes, enemies, skills, statusEffects, buildables, rooms, hiddenSkills, skillBooks, researchTree, alchemyRecipes, cookingRecipes, foods, moodEffects] = await Promise.all([
+    const [player, weapons, classes, enemies, skills, statusEffects, buildables, rooms, hiddenSkills, skillBooks, researchTree, alchemyRecipes, cookingRecipes, foods, moodEffects, dungeon, gathering] = await Promise.all([
       fetch('/data/player.json').then((res) => res.json()),
       fetch('/data/weapons.json').then((res) => res.json()),
       fetch('/data/classes.json').then((res) => res.json()),
@@ -73,7 +79,9 @@ export class DataLoader {
       fetch('/data/alchemyRecipes.json').then((res) => res.json()),
       fetch('/data/cookingRecipes.json').then((res) => res.json()),
       fetch('/data/food.json').then((res) => res.json()),
-      fetch('/data/moodEffects.json').then((res) => res.json())
+      fetch('/data/moodEffects.json').then((res) => res.json()),
+      fetch('/data/dungeonConfig.json').then((res) => res.json()).catch(() => null),
+      fetch('/data/gatheringNodes.json').then((res) => res.json()).catch(() => null)
     ]);
 
     this.playerData = player as PlayerData;
@@ -91,10 +99,95 @@ export class DataLoader {
     this.cookingRecipesData = cookingRecipes as CookingRecipesData;
     this.foodsData = foods as FoodsData;
     this.moodEffectsData = moodEffects as MoodEffectsData;
+    if (dungeon) {
+      this.dungeonConfig = dungeon as DungeonConfig;
+    }
+    if (gathering) {
+      this.gatheringNodesConfig = gathering as GatheringNodesConfig;
+    } else {
+      this.gatheringNodesConfig = {
+        defaultChannelDurationMs: 2500,
+        interruptOnDamage: true,
+        debugRespawnTimeMs: 15000,
+        nodes: {
+          foraging_bush: {
+            id: 'foraging_bush',
+            name: 'Wild Herbs',
+            skillId: 'foraging',
+            resourceId: 'wild_herbs',
+            yieldCount: 1,
+            expGranted: 15,
+            channelDurationMs: 2500,
+            respawnTimeMs: 15000,
+            textureKey: 'foraging-bush',
+            textureDepletedKey: 'foraging-bush-depleted',
+            label: 'Wild Herbs',
+            depletedLabel: 'Stripped',
+            color: '#34d399',
+            actionVerb: 'Foraging'
+          },
+          woodcutting_tree: {
+            id: 'woodcutting_tree',
+            name: 'Tree',
+            skillId: 'woodcutting',
+            resourceId: 'wood',
+            yieldCount: 2,
+            expGranted: 15,
+            channelDurationMs: 2500,
+            respawnTimeMs: 15000,
+            textureKey: 'woodcutting-tree',
+            textureDepletedKey: 'woodcutting-tree-depleted',
+            label: 'Tree',
+            depletedLabel: 'Stump',
+            color: '#f59e0b',
+            actionVerb: 'Logging'
+          },
+          mining_rock: {
+            id: 'mining_rock',
+            name: 'Rock Vein',
+            skillId: 'mining',
+            resourceId: 'ore',
+            yieldCount: 1,
+            expGranted: 15,
+            channelDurationMs: 2500,
+            respawnTimeMs: 15000,
+            textureKey: 'mining-rock',
+            textureDepletedKey: 'mining-rock-depleted',
+            label: 'Rock Vein',
+            depletedLabel: 'Depleted',
+            color: '#94a3b8',
+            actionVerb: 'Mining'
+          }
+        }
+      };
+    }
 
     if (this.hiddenSkillsData?.hiddenSkills) {
       HiddenSkillSystem.getInstance().registerSkillDefs(this.hiddenSkillsData.hiddenSkills);
     }
+  }
+
+  public getDungeonConfig(): DungeonConfig {
+    return (
+      this.dungeonConfig || {
+        mapWidth: 48,
+        mapHeight: 48,
+        tileSize: 32,
+        roomCount: { min: 5, max: 7 },
+        roomSize: { minWidth: 7, maxWidth: 12, minHeight: 7, maxHeight: 12 },
+        corridorWidth: 1,
+        roomTypes: {
+          gathering: { weight: 25, bushesRange: [2, 4], enemiesRange: [0, 0] },
+          light_combat: { weight: 45, bushesRange: [1, 3], enemiesRange: [1, 2] },
+          heavy_combat: { weight: 30, bushesRange: [2, 5], enemiesRange: [3, 5] }
+        },
+        enemyPool: ['wolf', 'goblin', 'skeleton', 'undead']
+      }
+    );
+  }
+
+  public setDungeonConfig(config: DungeonConfig): void {
+    this.dungeonConfig = config;
   }
 
   public getRoomsData(): RoomsData {
@@ -142,8 +235,38 @@ export class DataLoader {
       .map((w) => w.id);
   }
 
+  public getMagicSchoolIds(): string[] {
+    if (!this.weaponsData?.weapons) {
+      return [
+        'arcane',
+        'fire_magic',
+        'water_magic',
+        'ice_magic',
+        'earth_magic',
+        'nature_magic',
+        'lightning_magic',
+        'wind_magic',
+        'healing_magic',
+        'holy_magic',
+        'dark_magic',
+        'druid_staff'
+      ];
+    }
+    return this.weaponsData.weapons
+      .filter((w) => w.category === 'magic')
+      .map((w) => w.id);
+  }
+
   public getClassesData(): ClassesData {
     return this.classesData;
+  }
+
+  public getClasses(): any[] {
+    return this.classesData?.classes ?? [];
+  }
+
+  public getClass(id: string): any | undefined {
+    return this.classesData?.classes?.find((c) => c.id === id);
   }
 
   public getEnemiesData(): EnemiesData {
@@ -156,6 +279,10 @@ export class DataLoader {
 
   public getSkillsData(): SkillsData {
     return this.skillsData;
+  }
+
+  public getSkills(): SkillDef[] {
+    return this.skillsData?.skills ?? [];
   }
 
   public getSkill(id: string): SkillDef | undefined {
@@ -188,12 +315,20 @@ export class DataLoader {
 
     const weapon = this.getWeapon(id);
     if (weapon) {
+      let description = `Proficiency with ${weapon.name.toLowerCase()} in melee and combat.`;
+      if (weapon.category === 'offhand') {
+        description = 'Proficiency with shields to block and deflect incoming attacks.';
+      } else if (weapon.id === 'healing_magic') {
+        description = 'Proficiency with healing magic to restore health to injured allies.';
+      } else if (weapon.id === 'fire_magic') {
+        description = 'Proficiency with fire magic to incinerate enemies with ranged flames.';
+      } else if (weapon.id === 'staff') {
+        description = 'Proficiency with two-handed staves in melee combat.';
+      }
       return {
         id: weapon.id,
         name: weapon.name,
-        description: weapon.category === 'offhand'
-          ? 'Proficiency with shields to block and deflect incoming attacks.'
-          : `Proficiency with ${weapon.name.toLowerCase()} in melee and combat.`
+        description
       };
     }
 
@@ -229,6 +364,22 @@ export class DataLoader {
       };
     }
 
+    if (id === 'woodcutting') {
+      return {
+        id: 'woodcutting',
+        name: 'Woodcutting',
+        description: 'Felling trees and harvesting logs and timber in dungeons and wilderness.'
+      };
+    }
+
+    if (id === 'mining') {
+      return {
+        id: 'mining',
+        name: 'Mining',
+        description: 'Quarrying stone, rock veins, and extracting raw ore from dungeons and caverns.'
+      };
+    }
+
     if (id === 'cooking') {
       return {
         id: 'cooking',
@@ -242,6 +393,14 @@ export class DataLoader {
       name: id.split('_').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),
       description: `Proficiency in ${id}.`
     };
+  }
+
+  public getGatheringNodesConfig(): GatheringNodesConfig {
+    return this.gatheringNodesConfig;
+  }
+
+  public getGatheringNode(id: string): GatheringNodeDef | undefined {
+    return this.gatheringNodesConfig?.nodes?.[id];
   }
 
   public getSkillBooksData(): SkillBooksData {
@@ -335,6 +494,53 @@ export class DataLoader {
         description: 'Standard performance.'
       }
     );
+  }
+
+  public getOffensiveMagicSchools(): WeaponDef[] {
+    if (!this.weaponsData?.weapons) {
+      return [];
+    }
+    return this.weaponsData.weapons.filter(
+      (w) => w.category === 'magic' && w.id !== 'healing_magic' && w.baseDamage > 0 && w.energyCostPerCast !== undefined
+    );
+  }
+
+  public getStartingKits(): StartingKitDef[] {
+    return [
+      {
+        id: 'sword_and_shield',
+        name: 'Sword and Shield',
+        description: 'Short Swords + Shields — feeds toward the Vanguard/Knight line.',
+        mainWeaponId: 'short_swords',
+        offhandWeaponId: 'shields'
+      },
+      {
+        id: '2h_longsword',
+        name: '2H Longsword',
+        description: 'Longswords — feeds toward the Dark Knight/Sword Saint line.',
+        mainWeaponId: 'longswords',
+        offhandWeaponId: null
+      },
+      {
+        id: 'bow_and_dagger',
+        name: 'Bow and Dagger',
+        description: 'Bows + Daggers — same kit as the Scout mentor NPC.',
+        mainWeaponId: 'bows',
+        offhandWeaponId: 'daggers'
+      },
+      {
+        id: 'random_magic_staff',
+        name: 'Random Magic Staff',
+        description: 'A randomly assigned starting magic school — feeds toward that school’s Tier 0/1 line.',
+        mainWeaponId: 'fire_magic',
+        offhandWeaponId: null,
+        isRandomMagic: true
+      }
+    ];
+  }
+
+  public getStartingKit(id: string): StartingKitDef | undefined {
+    return this.getStartingKits().find((k) => k.id === id);
   }
 }
 

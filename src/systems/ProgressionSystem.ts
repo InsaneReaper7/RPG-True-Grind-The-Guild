@@ -23,7 +23,8 @@ export class ProgressionSystem {
     'counterattack',
     'resilience',
     'health_regen',
-    'mana_regen'
+    'mana_regen',
+    'energy_regen'
   ];
 
   public ownerName: string = 'Guild Hero';
@@ -53,6 +54,10 @@ export class ProgressionSystem {
     ProgressionSystem.expLog = [];
   }
 
+  public static resetExpListeners(): void {
+    ProgressionSystem.expListeners = [];
+  }
+
   public static onExpGranted(cb: (tx: ExpTransaction) => void): () => void {
     ProgressionSystem.expListeners.push(cb);
     return () => {
@@ -65,6 +70,7 @@ export class ProgressionSystem {
 
   private proficiencies: Map<string, TrainableStat> = new Map();
   private classLevels: Map<string, number> = new Map();
+  private classStats: Map<string, TrainableStat> = new Map();
   private unlockedClasses: Set<string> = new Set();
   private activityCounts: Map<string, number> = new Map();
   private dualWieldUnlocked: boolean = false;
@@ -83,9 +89,15 @@ export class ProgressionSystem {
     this.proficiencies.set('short_swords', { level: 0, currentExp: 0 });
     this.proficiencies.set('daggers', { level: 0, currentExp: 0 });
     this.proficiencies.set('shields', { level: 0, currentExp: 0 });
+    this.proficiencies.set('staff', { level: 0, currentExp: 0 });
+    this.proficiencies.set('healing_magic', { level: 0, currentExp: 0 });
+    this.proficiencies.set('fire_magic', { level: 0, currentExp: 0 });
     this.proficiencies.set('dual_wielding', { level: 0, currentExp: 0 });
     this.proficiencies.set('construction', { level: 0, currentExp: 0 });
     this.proficiencies.set('alchemy', { level: 0, currentExp: 0 });
+    this.proficiencies.set('foraging', { level: 0, currentExp: 0 });
+    this.proficiencies.set('woodcutting', { level: 0, currentExp: 0 });
+    this.proficiencies.set('mining', { level: 0, currentExp: 0 });
     for (const hiddenId of ProgressionSystem.HIDDEN_SKILL_IDS) {
       this.proficiencies.set(hiddenId, { level: 0, currentExp: 0 });
     }
@@ -137,7 +149,74 @@ export class ProgressionSystem {
   }
 
   public getClassLevel(classId: string): number {
-    return this.classLevels.get(classId) || 0;
+    const stat = this.classStats.get(classId);
+    if (stat) return stat.level;
+    const lvl = this.classLevels.get(classId);
+    if (lvl !== undefined) return lvl;
+    return this.unlockedClasses.has(classId) ? 1 : 0;
+  }
+
+  public getClassStat(classId: string): TrainableStat {
+    let stat = this.classStats.get(classId);
+    if (!stat) {
+      const lvl = this.classLevels.get(classId);
+      if (lvl !== undefined && lvl > 0) {
+        stat = { level: lvl, currentExp: 0 };
+        this.classStats.set(classId, stat);
+      } else if (this.unlockedClasses.has(classId)) {
+        stat = { level: 1, currentExp: 0 };
+        this.classStats.set(classId, stat);
+      } else {
+        return { level: 0, currentExp: 0 };
+      }
+    }
+    return stat;
+  }
+
+  public getAllClassStats(): Map<string, TrainableStat> {
+    const copy = new Map<string, TrainableStat>();
+    for (const classId of this.unlockedClasses) {
+      copy.set(classId, { ...this.getClassStat(classId) });
+    }
+    return copy;
+  }
+
+  public addClassExp(classId: string, amount: number): { levelsGained: number; leveledUp: boolean } {
+    if (!this.unlockedClasses.has(classId)) {
+      return { levelsGained: 0, leveledUp: false };
+    }
+    const stat = this.getClassStat(classId);
+    const result = LevelingSystem.addExp(stat, amount);
+    this.classLevels.set(classId, stat.level);
+    const nextExp = LevelingSystem.expForNextLevel(stat.level);
+    console.log(`[Progression] +${amount} Class EXP for '${classId}' (${this.ownerName}). Current: Level ${stat.level} (${stat.currentExp}/${nextExp} EXP)`);
+
+    const tx: ExpTransaction = {
+      id: `class_${classId}`,
+      amount,
+      memberName: this.ownerName || 'Guild Hero',
+      timestamp: Date.now(),
+      currentLevel: stat.level,
+      currentExp: stat.currentExp,
+      nextExp
+    };
+    ProgressionSystem.recordExpTransaction(tx);
+
+    if (result.leveledUp) {
+      console.log(`[Progression] CLASS LEVEL UP! '${classId}' is now Level ${stat.level}!`);
+      this.checkClassUnlocks();
+    }
+    return result;
+  }
+
+  public setClassLevel(classId: string, level: number): void {
+    this.unlockedClasses.add(classId);
+    const stat = this.getClassStat(classId);
+    stat.level = level;
+    stat.currentExp = 0;
+    this.classLevels.set(classId, level);
+    console.log(`[Progression] Set class '${classId}' to Level ${level} (0 EXP) on ${this.ownerName}`);
+    this.checkClassUnlocks();
   }
 
   public getActivityCount(target: string): number {
@@ -197,6 +276,7 @@ export class ProgressionSystem {
       nextExp
     };
     ProgressionSystem.recordExpTransaction(tx);
+    console.log(`[Progression] Recorded tx '${tx.id}': +${tx.amount} EXP for ${tx.memberName}, resulting total: Level ${tx.currentLevel} (${tx.currentExp}/${tx.nextExp} EXP)`);
 
     if (result.leveledUp) {
       console.log(`[Progression] LEVEL UP! '${id}' is now Level ${stat.level}! (Gained ${result.levelsGained} level(s))`);
@@ -242,7 +322,10 @@ export class ProgressionSystem {
     for (const classDef of this.classesData.classes) {
       if (this.evaluateRequirements(classDef)) {
         this.unlockedClasses.add(classDef.id);
-        this.classLevels.set(classDef.id, 1);
+        if (!this.classStats.has(classDef.id)) {
+          this.classStats.set(classDef.id, { level: 1, currentExp: 0 });
+        }
+        this.classLevels.set(classDef.id, this.classStats.get(classDef.id)!.level);
         console.log(`[Progression] Class Unlocked: ${classDef.name} (${classDef.id}) for ${this.ownerName}!`);
 
         for (const cb of this.onUnlockCallbacks) {
@@ -335,6 +418,7 @@ export class ProgressionSystem {
   public getSnapshotData(): {
     proficiencies: Record<string, TrainableStat>;
     classLevels: Record<string, number>;
+    classStats?: Record<string, TrainableStat>;
     unlockedClasses: string[];
     activityCounts?: Record<string, number>;
   } {
@@ -346,6 +430,10 @@ export class ProgressionSystem {
     for (const [k, v] of this.classLevels.entries()) {
       classObj[k] = v;
     }
+    const classStatsObj: Record<string, TrainableStat> = {};
+    for (const [k, v] of this.classStats.entries()) {
+      classStatsObj[k] = { level: v.level, currentExp: v.currentExp };
+    }
     const actObj: Record<string, number> = {};
     for (const [k, v] of this.activityCounts.entries()) {
       actObj[k] = v;
@@ -353,6 +441,7 @@ export class ProgressionSystem {
     return {
       proficiencies: profObj,
       classLevels: classObj,
+      classStats: classStatsObj,
       unlockedClasses: Array.from(this.unlockedClasses),
       activityCounts: actObj
     };
@@ -361,6 +450,7 @@ export class ProgressionSystem {
   public loadSnapshotData(data: {
     proficiencies: Record<string, number | TrainableStat>;
     classLevels: Record<string, number>;
+    classStats?: Record<string, TrainableStat>;
     unlockedClasses: string[];
     activityCounts?: Record<string, number>;
   }): void {
@@ -378,9 +468,23 @@ export class ProgressionSystem {
     for (const [k, v] of Object.entries(data.classLevels)) {
       this.classLevels.set(k, v);
     }
+    this.classStats.clear();
+    if (data.classStats) {
+      for (const [k, v] of Object.entries(data.classStats)) {
+        this.classStats.set(k, { level: v.level ?? 0, currentExp: v.currentExp ?? 0 });
+      }
+    } else {
+      for (const [k, v] of Object.entries(data.classLevels)) {
+        this.classStats.set(k, { level: v, currentExp: 0 });
+      }
+    }
     this.unlockedClasses.clear();
     for (const c of data.unlockedClasses) {
       this.unlockedClasses.add(c);
+      if (!this.classStats.has(c)) {
+        const lvl = this.classLevels.get(c) ?? 1;
+        this.classStats.set(c, { level: lvl, currentExp: 0 });
+      }
     }
     this.activityCounts.clear();
     if (data.activityCounts) {

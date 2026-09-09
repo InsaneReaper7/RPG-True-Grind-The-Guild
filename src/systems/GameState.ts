@@ -8,13 +8,14 @@ export class GameState {
   private snapshot: PlayerSnapshot | null = null;
   private partySnapshots: CharacterSnapshot[] = [];
   private isInitialized: boolean = false;
-  private resources: { wood: number; [key: string]: number } = { wood: 100 };
+  private resources: { wood: number; ore: number; [key: string]: number } = { wood: 100, ore: 0 };
   private placedBuildables: PlacedBuildable[] = [];
   private researchPoints: number = 0;
   private unlockedBuildables: Set<string> = new Set(['floor', 'wall', 'door', 'bed', 'research_station']);
   private inventory: Map<string, number> = new Map();
   private bookLearnedSkills: Set<string> = new Set();
   private discoveredCookingRecipes: Set<string> = new Set();
+  private discoveredAlchemyRecipes: Set<string> = new Set(['bandage', 'energy_potion']);
 
   // Milestone 7: Day/Clock, Food & Mood Systems
   private currentGameDay: number = 1;
@@ -33,15 +34,43 @@ export class GameState {
     return GameState.instance;
   }
 
+  public resolveStartingKit(
+    kitId: string,
+    rng: () => number = Math.random
+  ): { mainWeaponId: string; offhandWeaponId: string | null } {
+    if (kitId === 'random_magic_staff') {
+      const pool = DataLoader.getInstance().getOffensiveMagicSchools();
+      if (pool.length === 0) {
+        throw new Error('Cannot resolve Random Magic Staff: No offensive magic schools available.');
+      }
+      const selected = pool[Math.floor(rng() * pool.length)];
+      return {
+        mainWeaponId: selected.id,
+        offhandWeaponId: null
+      };
+    } else if (kitId === 'sword_and_shield') {
+      return { mainWeaponId: 'short_swords', offhandWeaponId: 'shields' };
+    } else if (kitId === '2h_longsword') {
+      return { mainWeaponId: 'longswords', offhandWeaponId: null };
+    } else if (kitId === 'bow_and_dagger') {
+      return { mainWeaponId: 'bows', offhandWeaponId: 'daggers' };
+    }
+    return { mainWeaponId: kitId, offhandWeaponId: null };
+  }
+
   /**
    * One-time boot initialization from player.json data.
    * Never called again after initial game start.
    */
-  public initFromPlayerData(playerData: PlayerData): void {
+  public initFromPlayerData(playerData: PlayerData, startingKitId?: string): void {
     if (this.isInitialized) return;
 
-    const known = playerData.knownSkillIds ? [...playerData.knownSkillIds] : ['power_strike'];
-    const equipped = playerData.equippedSkillIds ? [...playerData.equippedSkillIds] : ['power_strike'];
+    const resolvedKit = startingKitId ? this.resolveStartingKit(startingKitId) : null;
+    const initialMainWeapon = resolvedKit ? resolvedKit.mainWeaponId : playerData.startingWeaponId;
+    const initialOffhandWeapon = resolvedKit ? resolvedKit.offhandWeaponId : null;
+
+    const known = playerData.knownSkillIds ? [...playerData.knownSkillIds] : [];
+    const equipped = playerData.equippedSkillIds ? [...playerData.equippedSkillIds] : [];
     const autocastObj: Record<string, boolean> = {};
     for (const s of equipped) {
       autocastObj[s] = true;
@@ -49,13 +78,17 @@ export class GameState {
 
     this.resources = {
       wood: playerData.resources?.wood ?? 0,
+      ore: (playerData.resources as any)?.ore ?? 0,
       ...(playerData.resources ?? {})
     };
 
     const seedProficiencies: Record<string, TrainableStat> = {
-      [playerData.startingWeaponId]: { level: 0, currentExp: 0 },
+      [initialMainWeapon]: { level: 0, currentExp: 0 },
       construction: { level: 0, currentExp: 0 }
     };
+    if (initialOffhandWeapon) {
+      seedProficiencies[initialOffhandWeapon] = { level: 0, currentExp: 0 };
+    }
 
     if (playerData.proficiencies) {
       for (const [k, v] of Object.entries(playerData.proficiencies)) {
@@ -84,8 +117,8 @@ export class GameState {
       mood: 80,
       currentGameDay: 1,
       foodItems: [],
-      equippedWeaponId: playerData.startingWeaponId,
-      offhandWeaponId: null
+      equippedWeaponId: initialMainWeapon,
+      offhandWeaponId: initialOffhandWeapon
     };
 
     const heroSnapshot: CharacterSnapshot = {
@@ -95,8 +128,8 @@ export class GameState {
       hp: playerData.maxHp,
       criticalHp: playerData.criticalHpMax,
       energy: playerData.maxEnergy,
-      equippedWeaponId: playerData.startingWeaponId,
-      offhandWeaponId: null,
+      equippedWeaponId: initialMainWeapon,
+      offhandWeaponId: initialOffhandWeapon,
       knownSkillIds: known,
       equippedSkillIds: equipped,
       autocastMap: autocastObj,
@@ -143,6 +176,35 @@ export class GameState {
     this.resources.wood = Math.max(0, amount);
     if (this.snapshot) {
       this.snapshot.resources.wood = this.resources.wood;
+    }
+  }
+
+  public getOre(): number {
+    return this.resources.ore ?? 0;
+  }
+
+  public consumeOre(amount: number): boolean {
+    if ((this.resources.ore ?? 0) >= amount) {
+      this.resources.ore -= amount;
+      if (this.snapshot) {
+        this.snapshot.resources.ore = this.resources.ore;
+      }
+      return true;
+    }
+    return false;
+  }
+
+  public addOre(amount: number): void {
+    this.resources.ore = (this.resources.ore ?? 0) + amount;
+    if (this.snapshot) {
+      this.snapshot.resources.ore = this.resources.ore;
+    }
+  }
+
+  public setOre(amount: number): void {
+    this.resources.ore = Math.max(0, amount);
+    if (this.snapshot) {
+      this.snapshot.resources.ore = this.resources.ore;
     }
   }
 
@@ -303,6 +365,27 @@ export class GameState {
 
   public getDiscoveredCookingRecipes(): string[] {
     return Array.from(this.discoveredCookingRecipes);
+  }
+
+  // --- Recipe Discovery (Alchemy System - Milestone 19) ---
+  public discoverAlchemyRecipe(recipeId: string): boolean {
+    if (!this.discoveredAlchemyRecipes.has(recipeId)) {
+      this.discoveredAlchemyRecipes.add(recipeId);
+      if (this.snapshot) {
+        this.snapshot.discoveredAlchemyRecipes = Array.from(this.discoveredAlchemyRecipes);
+      }
+      console.log(`[Alchemy] ✨ Recipe discovered: '${recipeId}'!`);
+      return true;
+    }
+    return false;
+  }
+
+  public isAlchemyRecipeDiscovered(recipeId: string): boolean {
+    return this.discoveredAlchemyRecipes.has(recipeId);
+  }
+
+  public getDiscoveredAlchemyRecipes(): string[] {
+    return Array.from(this.discoveredAlchemyRecipes);
   }
 
   public consumeOldestFood(foodId: string): FoodItemInstance | null {
@@ -480,6 +563,8 @@ export class GameState {
         proficiencies: { ...leader.proficiencies },
         classLevels: { ...leader.classLevels },
         unlockedClasses: [...leader.unlockedClasses],
+        classStats: leader.classStats ? { ...leader.classStats } : undefined,
+        activeClass: leader.activeClass ?? null,
         resources: { ...this.resources },
         placedBuildables: [...this.placedBuildables],
         researchPoints: this.researchPoints,
@@ -550,6 +635,8 @@ export class GameState {
       proficiencies: progData.proficiencies,
       classLevels: progData.classLevels,
       unlockedClasses: progData.unlockedClasses,
+      classStats: progData.classStats,
+      activeClass: player.activeClass,
       activityCounts: progData.activityCounts,
       resources: { ...this.resources },
       placedBuildables: [...this.placedBuildables],
@@ -564,7 +651,8 @@ export class GameState {
       equippedWeaponId: player.equippedWeapon.id,
       offhandWeaponId: player.offhandWeapon?.id ?? null,
       party: [...this.partySnapshots],
-      discoveredCookingRecipes: Array.from(this.discoveredCookingRecipes)
+      discoveredCookingRecipes: Array.from(this.discoveredCookingRecipes),
+      discoveredAlchemyRecipes: Array.from(this.discoveredAlchemyRecipes)
     };
 
     console.log(
@@ -602,7 +690,7 @@ export class GameState {
     player.equippedSkillIds = [...snap.equippedSkillIds];
 
     if (snap.resources) {
-      this.resources = { ...snap.resources };
+      this.resources = { ...snap.resources, wood: snap.resources.wood ?? 0, ore: snap.resources.ore ?? 0 };
     }
     if (snap.placedBuildables) {
       this.placedBuildables = [...snap.placedBuildables];
@@ -640,6 +728,9 @@ export class GameState {
     if (snap.discoveredCookingRecipes) {
       this.discoveredCookingRecipes = new Set(snap.discoveredCookingRecipes);
     }
+    if (snap.discoveredAlchemyRecipes) {
+      this.discoveredAlchemyRecipes = new Set(snap.discoveredAlchemyRecipes);
+    }
 
     player.autocastMap.clear();
     for (const [k, v] of Object.entries(snap.autocastMap)) {
@@ -650,8 +741,13 @@ export class GameState {
       proficiencies: snap.proficiencies,
       classLevels: snap.classLevels,
       unlockedClasses: snap.unlockedClasses,
-      activityCounts: snap.activityCounts
+      activityCounts: snap.activityCounts,
+      classStats: snap.classStats
     });
+
+    if (snap.activeClass !== undefined) {
+      player.activeClass = snap.activeClass;
+    }
 
     // Re-anchor remaining cooldowns in the new scene's relative clock
     const dataLoader = DataLoader.getInstance();

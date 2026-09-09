@@ -1,0 +1,55 @@
+{
+  "defaultChannelDurationMs": 2500,
+  "interruptOnDamage": true,
+  "debugRespawnTimeMs": 15000,
+  "nodes": {
+    "foraging_bush": {
+      "id": "foraging_bush",
+      "name": "Wild Herbs",
+      "skillId": "foraging",
+      "resourceId": "wild_herbs",
+      "yieldCount": 1,
+      "expGranted": 15,
+      "channelDurationMs": 2500,
+      "respawnTimeMs": 15000,
+      "textureKey": "foraging-bush",
+      "textureDepletedKey": "foraging-bush-depleted",
+      "label": "Wild Herbs",
+      "depletedLabel": "Stripped",
+      "color": "#34d399",
+      "actionVerb": "Foraging"
+    },
+    "woodcutting_tree": {
+      "id": "woodcutting_tree",
+      "name": "Tree",
+      "skillId": "woodcutting",
+      "resourceId": "wood",
+      "yieldCount": 2,
+      "expGranted": 15,
+      "channelDurationMs": 2500,
+      "respawnTimeMs": 15000,
+      "textureKey": "woodcutting-tree",
+      "textureDepletedKey": "woodcutting-tree-depleted",
+      "label": "Tree",
+      "depletedLabel": "Stump",
+      "color": "#f59e0b",
+      "actionVerb": "Logging"
+    },
+    "mining_rock": {
+      "id": "mining_rock",
+      "name": "Rock Vein",
+      "skillId": "mining",
+      "resourceId": "ore",
+      "yieldCount": 1,
+      "expGranted": 15,
+      "channelDurationMs": 2500,
+      "respawnTimeMs": 15000,
+      "textureKey": "mining-rock",
+      "textureDepletedKey": "mining-rock-depleted",
+      "label": "Rock Vein",
+      "depletedLabel": "Depleted",
+      "color": "#94a3b8",
+      "actionVerb": "Mining"
+    }
+  }
+}

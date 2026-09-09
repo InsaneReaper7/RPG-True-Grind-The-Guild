@@ -120,10 +120,28 @@
       "expPerProc": 1,
       "description": "Accelerates energy and mana recovery for spellcasters.",
       "tierEffects": [
-        { "level": 1, "description": "Passive energy regen out of combat (+2 Energy per tick)", "energyAmount": 2, "inCombat": false },
-        { "level": 30, "description": "Light energy regen in combat (+2 Energy per tick)", "energyAmount": 2, "inCombat": true },
-        { "level": 60, "description": "Increased energy regen rate (+4 Energy per tick)", "energyAmount": 4, "inCombat": true },
-        { "level": 90, "description": "Burst mana chance at low energy (+15 Energy burst)", "energyAmount": 6, "inCombat": true, "burstEnergy": true }
+        { "level": 1, "description": "Passive energy regen out of combat (+4 Energy per tick)", "energyAmount": 4, "inCombat": false },
+        { "level": 30, "description": "Light energy regen in combat (+5 Energy per tick)", "energyAmount": 5, "inCombat": true },
+        { "level": 60, "description": "Increased energy regen rate (+8 Energy per tick)", "energyAmount": 8, "inCombat": true },
+        { "level": 90, "description": "Burst mana chance at low energy (+20 Energy burst)", "energyAmount": 12, "inCombat": true, "burstEnergy": true }
+      ]
+    },
+    {
+      "id": "energy_regen",
+      "name": "Energy Regen",
+      "triggerType": "onOutOfCombatTick",
+      "eligibility": {
+        "gear": "none"
+      },
+      "baseProcChance": 0.10,
+      "procChancePerLevel": 0.01,
+      "expPerProc": 1,
+      "description": "Passively restores energy over time, primarily when out of combat.",
+      "tierEffects": [
+        { "level": 1, "description": "Passive energy regen out of combat (+4 Energy per tick)", "energyAmount": 4, "inCombat": false },
+        { "level": 30, "description": "Light energy regen in combat (+5 Energy per tick)", "energyAmount": 5, "inCombat": true },
+        { "level": 60, "description": "Increased energy regen rate (+8 Energy per tick)", "energyAmount": 8, "inCombat": true },
+        { "level": 90, "description": "Burst energy chance at low stamina (+20 Energy burst)", "energyAmount": 12, "inCombat": true, "burstEnergy": true }
       ]
     }
   ]
