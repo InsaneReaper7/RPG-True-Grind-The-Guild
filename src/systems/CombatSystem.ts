@@ -248,7 +248,9 @@ export class CombatSystem {
 
   public update(time: number, delta: number): void {
     const anyEnemyAggroed = this.enemies.some((e) => e.isAggroed && e.state !== 'dead' && e.state !== 'downed');
-    const inCombat = anyEnemyAggroed || time - this.lastCombatTimeMs < 4000;
+    const anyPartyEngaged = this.party.some((m) => m.state !== 'dead' && m.state !== 'downed' && m.targetEntity !== null && m.targetEntity.state !== 'dead' && m.targetEntity.state !== 'downed');
+    const anyEnemyTargetingParty = this.enemies.some((e) => e.state !== 'dead' && e.state !== 'downed' && e.targetEntity !== null && e.targetEntity.state !== 'dead' && e.targetEntity.state !== 'downed');
+    const inCombat = anyEnemyAggroed || anyPartyEngaged || anyEnemyTargetingParty || (time - this.lastCombatTimeMs < 4000);
 
     // Clear targets for any downed or dead party members
     for (const member of this.party) {
@@ -624,19 +626,7 @@ export class CombatSystem {
         continue;
       }
 
-      const isStaffWielder = member.equippedWeapon?.id === 'staff' || member.equippedWeapon?.category === 'staff';
-      const fireDef = isStaffWielder ? DataLoader.getInstance().getWeapon('fire_magic') : null;
-      const fireProfLevel = isStaffWielder ? member.progression.getProficiencyLevel('fire_magic') : 0;
-      const fireCostReduction = (fireDef?.levelBonus?.energyCostReductionPerLevel ?? 0.1) * fireProfLevel;
-      const fireEnergyCost = fireDef ? Math.max(1, Math.round((fireDef.energyCostPerCast ?? 22) - fireCostReduction)) : 22;
-      const canCastFireThroughStaff = isStaffWielder && fireDef !== null && member.energy >= fireEnergyCost;
-
-      // Dynamically adjust member's effective attack range:
-      // If holding Staff with >= fire energy, effective range is 4 tiles (Fire Magic conduit)
-      // If holding Staff with < fire energy, drop range to 1 tile (Staff melee fallback)
-      if (isStaffWielder) {
-        member.attackRangeTiles = canCastFireThroughStaff ? (fireDef?.attackRangeTiles ?? 4) : 1;
-      }
+      this.updateStaffDynamicRange(member);
 
       const target = member.targetEntity;
       const dx = Math.abs(member.gridPos.x - target.gridPos.x);
@@ -659,16 +649,7 @@ export class CombatSystem {
           member.stopMovement();
         }
         const dataLoader = DataLoader.getInstance();
-        // Weapon resolution: If Staff wielder has enough energy for Fire Magic, use Fire Magic profile;
-        // if out of energy, fall back to physical Staff melee strike.
-        const isStaff = member.equippedWeapon?.id === 'staff' || member.equippedWeapon?.category === 'staff';
-        const fireDefFromData = isStaff ? dataLoader.getWeapon('fire_magic') : null;
-        const fireLevel = isStaff ? member.progression.getProficiencyLevel('fire_magic') : 0;
-        const fireCostReduction = (fireDefFromData?.levelBonus?.energyCostReductionPerLevel ?? 0.1) * fireLevel;
-        const staffFireCost = fireDefFromData ? Math.max(1, Math.round((fireDefFromData.energyCostPerCast ?? 22) - fireCostReduction)) : 22;
-        const isCastingFireThroughStaff = isStaff && fireDefFromData !== null && member.energy >= staffFireCost;
-
-        const effectiveWeapon = isCastingFireThroughStaff ? fireDefFromData! : member.equippedWeapon;
+        const effectiveWeapon = this.getEffectiveWeaponForAttack(member);
         const weaponId = effectiveWeapon.id;
         const weaponLevel = member.progression.getProficiencyLevel(weaponId);
         const damageBonusPerLevel = effectiveWeapon.levelBonus?.damagePerLevel ?? 0;
@@ -700,10 +681,15 @@ export class CombatSystem {
 
           if (isOffCooldown && isAffordable && isWeaponReady) {
             usedSkill = true;
+            const preSkillEnergy = member.energy;
             member.energy -= skillDef.energyCost;
             member.lastSkillUseTimes.set(skillId, time);
             member.lastAttackTime = time;
             member.state = 'attacking';
+
+            console.log(
+              `[DIAG:Combat] ⚡ ${member.entityName} casts skill ${skillDef.name}! inCombat: ${member.inCombat}, Pre-EN: ${preSkillEnergy.toFixed(1)}, Post-EN: ${member.energy.toFixed(1)} (cost: ${skillDef.energyCost})`
+            );
 
             this.createSkillAttackEffect(member.x, member.y, target.x, target.y);
 
@@ -751,6 +737,8 @@ export class CombatSystem {
                 member.progression.addProficiencyExp('dual_wielding', 2);
               }
 
+              this.lastCombatTimeMs = time;
+              if (target.state !== 'dead' && target.state !== 'downed') (target as any).isAggroed = true;
               const targetDowned = target.takeDamage(skillDamage);
               if (targetDowned) {
                 this.handleTargetDefeated(member, target, weaponId);
@@ -769,7 +757,7 @@ export class CombatSystem {
               const costReduction = (effectiveWeapon.levelBonus?.energyCostReductionPerLevel ?? 0.1) * weaponLevel;
               energyCost = Math.max(1, Math.round(effectiveWeapon.energyCostPerCast - costReduction));
               if (member.energy < energyCost) {
-                // Not enough energy to cast spell (for pure spell wielder with no melee fallback)
+                this.updateStaffDynamicRange(member);
                 continue;
               }
               member.energy -= energyCost;
@@ -777,6 +765,10 @@ export class CombatSystem {
 
             member.lastAttackTime = time;
             member.state = 'attacking';
+
+            console.log(
+              `[DIAG:Combat] ⚔️ ${member.entityName} attacks ${target.entityName} with ${effectiveWeapon.name}! inCombat: ${member.inCombat}, Pre-EN: ${(member.energy + energyCost).toFixed(1)}, Post-EN: ${member.energy.toFixed(1)}, Range: ${member.attackRangeTiles}, Dist: ${distanceTiles}`
+            );
 
             const isFire = effectiveWeapon.id === 'fire_magic' || effectiveWeapon.category === 'magic';
             const attackColor = isFire ? 0xf97316 : 0x3b82f6;
@@ -817,6 +809,8 @@ export class CombatSystem {
                     console.log(`[Combat:AoE] ${enemy.entityName} caught in fire splash for ${splashDmg.toFixed(1)} damage!`);
                     this.createFloatingText(enemy.x, enemy.y - 10, `-${splashDmg.toFixed(1)} (Splash)`, '#f97316');
                     this.checkAndApplyBurn(member, enemy);
+                    this.lastCombatTimeMs = time;
+                    enemy.isAggroed = true;
                     const splashDowned = enemy.takeDamage(splashDmg);
                     if (splashDowned) {
                       this.handleTargetDefeated(member, enemy, weaponId);
@@ -831,6 +825,8 @@ export class CombatSystem {
                 this.createFloatingText(member.x, member.y - 20, `${effectiveWeapon.name} Level ${newLevel}!`, '#22c55e');
               }
 
+              this.lastCombatTimeMs = time;
+              if (target.state !== 'dead' && target.state !== 'downed') (target as any).isAggroed = true;
               let targetDowned = target.takeDamage(damage);
               if (targetDowned) {
                 this.handleTargetDefeated(member, target, weaponId);
@@ -871,6 +867,8 @@ export class CombatSystem {
                   this.createFloatingText(member.x, member.y - 20, `Dual Wield Level ${dwLv}!`, '#a855f7');
                 }
 
+                this.lastCombatTimeMs = time;
+                if (target.state !== 'dead' && target.state !== 'downed') (target as any).isAggroed = true;
                 const offTargetDowned = target.takeDamage(offEffectiveDamage);
                 if (offTargetDowned) {
                   this.handleTargetDefeated(member, target, offWpn.id);
@@ -881,6 +879,11 @@ export class CombatSystem {
         }
       } else {
         // Target is outside attack range: Party Member Pursuit & Surround Maintenance
+        if (member.attackRangeTiles === 1 && (member.equippedWeapon?.id === 'staff' || member.equippedWeapon?.id === 'fire_magic' || member.equippedWeapon?.category === 'staff' || member.equippedWeapon?.category === 'magic')) {
+          console.log(
+            `[DIAG:Combat] 🏃 ${member.entityName} DRY FALLBACK: Range is 1 (${member.energy.toFixed(1)} EN). Pursuing ${target.entityName} to melee distance (currently ${distanceTiles} tiles)...`
+          );
+        }
         const isStopped = !member.isMoving();
         const timeForRepath = time - member.lastCombatRepathTimeMs >= member.combatRepathIntervalMs;
 
@@ -1234,6 +1237,15 @@ export class CombatSystem {
         );
         member.lastSkillUseTimes.set('healing_magic', time);
       }
+      // If healer does not have an active combat target, acquire one from the party or nearest living enemy
+      if (!member.targetEntity || member.targetEntity.state === 'dead' || member.targetEntity.state === 'downed') {
+        const potentialTarget = this.party.find(m => m !== member && m.targetEntity && m.targetEntity.state !== 'dead' && m.targetEntity.state !== 'downed')?.targetEntity
+          || this.enemies.find(e => e.state !== 'dead' && e.state !== 'downed') || null;
+        if (potentialTarget) {
+          member.setTarget(potentialTarget);
+          console.log(`[DIAG:Combat] 🎯 ${member.entityName} acquired fallback enemy target: ${potentialTarget.entityName}`);
+        }
+      }
       return false; // Fall back to melee target attack
     }
 
@@ -1248,6 +1260,7 @@ export class CombatSystem {
     const targetAlly = damagedMembers[0];
 
     // Deduct energy and record cast times
+    const preHealEnergy = member.energy;
     member.energy -= energyCost;
     member.lastSkillUseTimes.set('healing_magic', time);
     member.lastAttackTime = time;
@@ -1257,6 +1270,9 @@ export class CombatSystem {
     const healAmount = Math.max(1, Math.round((healDef?.baseHealAmount ?? 8) + healBonus));
 
     const restored = targetAlly.heal(healAmount);
+    console.log(
+      `[DIAG:Combat] ✨ ${member.entityName} casts Heal on ${targetAlly.entityName}! inCombat: ${member.inCombat}, Pre-EN: ${preHealEnergy.toFixed(1)}, Post-EN: ${member.energy.toFixed(1)} (cost: ${energyCost})`
+    );
     console.log(
       `[Healing Magic] ✨ ${member.entityName} casts Heal on ${targetAlly.entityName}! Restored ${restored} HP. (Energy: ${member.energy}/${member.maxEnergy})`
     );
@@ -1550,6 +1566,15 @@ export class CombatSystem {
     if (enemy.state === 'dead' || enemy.state === 'downed') return;
     if (livingMembers.length === 0) return;
 
+    const now = (this.scene as any)?.time?.now ?? Date.now();
+    this.lastCombatTimeMs = now;
+    enemy.isAggroed = true;
+    if (!enemy.targetEntity || enemy.targetEntity.state === 'downed' || enemy.targetEntity.state === 'dead') {
+      enemy.targetEntity = livingMembers[0];
+      this.enemyTargets.set(enemy, livingMembers[0]);
+      enemy.state = 'chasing';
+    }
+
     // Pass 0: Purge stale targets ONLY for members being commanded
     for (const member of livingMembers) {
       if (member.targetEntity !== enemy) {
@@ -1611,7 +1636,6 @@ export class CombatSystem {
     }
 
     // Pass 3: Execute movement for members that need to travel
-    const now = (this.scene as any)?.time?.now ?? Date.now();
     for (const member of livingMembers) {
       const dest = memberDest.get(member);
       if (!dest) {
@@ -1665,24 +1689,34 @@ export class CombatSystem {
   }
 
   public updateStaffDynamicRange(member: Player): void {
-    const isStaffWielder = member.equippedWeapon?.id === 'staff' || member.equippedWeapon?.category === 'staff';
-    if (!isStaffWielder) return;
+    const isStaffOrFire = member.equippedWeapon?.id === 'staff' ||
+      member.equippedWeapon?.category === 'staff' ||
+      member.equippedWeapon?.id === 'fire_magic' ||
+      member.equippedWeapon?.category === 'magic';
+    if (!isStaffOrFire) return;
+
     const fireDef = DataLoader.getInstance().getWeapon('fire_magic');
     const fireProfLevel = member.progression.getProficiencyLevel('fire_magic');
     const fireCostReduction = (fireDef?.levelBonus?.energyCostReductionPerLevel ?? 0.1) * fireProfLevel;
     const fireEnergyCost = fireDef ? Math.max(1, Math.round((fireDef.energyCostPerCast ?? 22) - fireCostReduction)) : 22;
-    const canCastFireThroughStaff = fireDef !== null && member.energy >= fireEnergyCost;
-    member.attackRangeTiles = canCastFireThroughStaff ? (fireDef?.attackRangeTiles ?? 4) : 1;
+    const canCastFire = fireDef !== null && member.energy >= fireEnergyCost;
+    member.attackRangeTiles = canCastFire ? (fireDef?.attackRangeTiles ?? 4) : 1;
   }
 
   public getEffectiveWeaponForAttack(member: Player): WeaponDef {
-    const isStaff = member.equippedWeapon?.id === 'staff' || member.equippedWeapon?.category === 'staff';
-    if (!isStaff) return member.equippedWeapon;
-    const fireDefFromData = DataLoader.getInstance().getWeapon('fire_magic');
+    const isStaffOrFire = member.equippedWeapon?.id === 'staff' ||
+      member.equippedWeapon?.category === 'staff' ||
+      member.equippedWeapon?.id === 'fire_magic' ||
+      member.equippedWeapon?.category === 'magic';
+    if (!isStaffOrFire) return member.equippedWeapon;
+
+    const dataLoader = DataLoader.getInstance();
+    const fireDefFromData = dataLoader.getWeapon('fire_magic');
+    const staffDef = dataLoader.getWeapon('staff') || member.equippedWeapon;
     const fireLevel = member.progression.getProficiencyLevel('fire_magic');
     const fireCostReduction = (fireDefFromData?.levelBonus?.energyCostReductionPerLevel ?? 0.1) * fireLevel;
     const staffFireCost = fireDefFromData ? Math.max(1, Math.round((fireDefFromData.energyCostPerCast ?? 22) - fireCostReduction)) : 22;
-    const isCastingFireThroughStaff = fireDefFromData !== null && member.energy >= staffFireCost;
-    return isCastingFireThroughStaff ? fireDefFromData! : member.equippedWeapon;
+    const isCastingFire = fireDefFromData !== null && member.energy >= staffFireCost;
+    return isCastingFire ? fireDefFromData! : staffDef;
   }
 }

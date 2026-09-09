@@ -48,6 +48,8 @@ export class Player extends Entity {
   public energyPotionRegenPerSec: number = 0;
   public manaPotionRemainingMs: number = 0;
   public manaPotionRegenPerSec: number = 0;
+  public lastDiagRegenLog?: number;
+  public lastDiagInCombatLog?: number;
 
   constructor(
     scene: Phaser.Scene,
@@ -642,7 +644,21 @@ export class Player extends Entity {
     if (this.state !== 'downed' && this.state !== 'dead') {
       // 1. Passive Energy regeneration over time (strictly out-of-combat)
       if (!this.inCombat && this.energy < this.maxEnergy) {
+        const preEnergy = this.energy;
         this.energy = Math.min(this.maxEnergy, this.energy + (this.energyRegenPerSecond * delta) / 1000);
+        if (!this.lastDiagRegenLog || time - this.lastDiagRegenLog >= 2000) {
+          this.lastDiagRegenLog = time;
+          console.log(
+            `[DIAG:Regen] ${this.entityName} | inCombat: ${this.inCombat} | Energy: ${preEnergy.toFixed(1)} -> ${this.energy.toFixed(1)} (+${(this.energy - preEnergy).toFixed(2)})`
+          );
+        }
+      } else if (this.inCombat && this.energy < this.maxEnergy) {
+        if (!this.lastDiagInCombatLog || time - this.lastDiagInCombatLog >= 3000) {
+          this.lastDiagInCombatLog = time;
+          console.log(
+            `[DIAG:Regen] ${this.entityName} | inCombat: true | Passive regen BLOCKED | Energy: ${this.energy.toFixed(1)}/${this.maxEnergy}`
+          );
+        }
       }
 
       // 2. Hunger Drain over time
