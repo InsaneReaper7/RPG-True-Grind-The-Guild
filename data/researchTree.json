@@ -31,6 +31,13 @@
       "cost": 10,
       "prerequisites": [],
       "description": "Unlocks the Armorsmithing Bench for the Guild Outpost, enabling hide tailoring and silk weaving into armor."
+    },
+    {
+      "id": "research_digging",
+      "name": "Digging",
+      "cost": 10,
+      "prerequisites": [],
+      "description": "Unlocks excavation and dig spots in dungeons, uncovering buried resources, soil, and curiosities."
     }
   ]
 }

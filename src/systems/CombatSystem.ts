@@ -1524,8 +1524,8 @@ export class CombatSystem {
           if (!isRare || roll < 0.35) {
             gameState.addItem(h.item, 1);
             const itemName = h.item.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-            console.log(`[Loot] Harvested 1x ${itemName} from ${target.entityName}!`);
-            this.createFloatingText(target.x, target.y - 35, `+1 ${itemName}`, isRare ? '#f59e0b' : '#34d399');
+            const floatColor = target.enemyData.tier === 'epic' && isRare ? '#c084fc' : isRare ? '#f59e0b' : '#34d399';
+            this.createFloatingText(target.x, target.y - 35, `+1 ${itemName}`, floatColor);
           }
         }
       }

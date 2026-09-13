@@ -65,14 +65,15 @@ export class ResearchSystem {
   public canUnlockNode(node: ResearchNodeDef): { canUnlock: boolean; reason?: string } {
     const gameState = GameState.getInstance();
 
-    if (gameState.isBuildableUnlocked(node.targetBuildableId)) {
+    const isUnlocked = gameState.isResearchCompleted(node.id) || (node.targetBuildableId ? gameState.isBuildableUnlocked(node.targetBuildableId) : false);
+    if (isUnlocked) {
       return { canUnlock: false, reason: 'Already unlocked' };
     }
 
     // Check prerequisites
     if (node.prerequisites && node.prerequisites.length > 0) {
       for (const prereqId of node.prerequisites) {
-        if (!gameState.isBuildableUnlocked(prereqId)) {
+        if (!gameState.isResearchCompleted(prereqId) && !gameState.isBuildableUnlocked(prereqId)) {
           return { canUnlock: false, reason: `Requires prerequisite: ${prereqId}` };
         }
       }
@@ -104,8 +105,11 @@ export class ResearchSystem {
       return { success: false, reason: 'Failed to consume research points' };
     }
 
-    gameState.unlockBuildable(node.targetBuildableId);
-    console.log(`[ResearchSystem] ✨ Unlocked ${node.name} (${node.targetBuildableId}) for ${node.cost} Research Points!`);
+    gameState.completeResearch(node.id);
+    if (node.targetBuildableId) {
+      gameState.unlockBuildable(node.targetBuildableId);
+    }
+    console.log(`[ResearchSystem] ✨ Unlocked ${node.name} (${node.id}) for ${node.cost} Research Points!`);
 
     return {
       success: true,

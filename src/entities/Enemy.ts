@@ -20,6 +20,8 @@ export class Enemy extends Entity {
 
   public eliteAura?: Phaser.GameObjects.Graphics;
   public eliteLabel?: Phaser.GameObjects.Text;
+  public tierAura?: Phaser.GameObjects.Graphics;
+  public tierLabel?: Phaser.GameObjects.Text;
 
   constructor(
     scene: Phaser.Scene,
@@ -36,7 +38,7 @@ export class Enemy extends Entity {
     this.moveSpeed = enemyData.moveSpeed;
     this.spawnPos = { x, y };
 
-    // Milestone 20: Elite Tier Visual Distinction
+    // Milestone 20 & 29: Elite & Epic Tier Visual Distinction
     if (this.enemyData.tier === 'elite') {
       if (scene.add && typeof scene.add.graphics === 'function') {
         this.eliteAura = scene.add.graphics();
@@ -45,6 +47,7 @@ export class Enemy extends Entity {
         this.eliteAura.fillStyle(0xf59e0b, 0.18);
         this.eliteAura.fillCircle(0, 0, 18);
         this.addAt(this.eliteAura, 0); // Behind avatar
+        this.tierAura = this.eliteAura;
       }
       if (scene.add && typeof scene.add.text === 'function') {
         this.eliteLabel = scene.add.text(0, -this.tileSize / 2 - 17, '★ ELITE ★', {
@@ -55,6 +58,31 @@ export class Enemy extends Entity {
           padding: { x: 3, y: 1 }
         }).setOrigin(0.5);
         this.add(this.eliteLabel);
+        this.tierLabel = this.eliteLabel;
+      }
+    } else if (this.enemyData.tier === 'epic') {
+      if (scene.add && typeof scene.add.graphics === 'function') {
+        this.eliteAura = scene.add.graphics();
+        this.eliteAura.lineStyle(2.5, 0xa855f7, 0.9);
+        this.eliteAura.strokeCircle(0, 0, 20);
+        this.eliteAura.fillStyle(0xa855f7, 0.22);
+        this.eliteAura.fillCircle(0, 0, 20);
+        // Inner violet glow ring
+        this.eliteAura.lineStyle(1, 0xd8b4fe, 0.7);
+        this.eliteAura.strokeCircle(0, 0, 14);
+        this.addAt(this.eliteAura, 0); // Behind avatar
+        this.tierAura = this.eliteAura;
+      }
+      if (scene.add && typeof scene.add.text === 'function') {
+        this.eliteLabel = scene.add.text(0, -this.tileSize / 2 - 17, '✦ EPIC ✦', {
+          fontSize: '9px',
+          color: '#c084fc',
+          fontStyle: 'bold',
+          backgroundColor: 'rgba(0,0,0,0.85)',
+          padding: { x: 3, y: 1 }
+        }).setOrigin(0.5);
+        this.add(this.eliteLabel);
+        this.tierLabel = this.eliteLabel;
       }
     }
 
@@ -161,13 +189,23 @@ export class Enemy extends Entity {
   public override drawHpBar(): void {
     super.drawHpBar();
     // Milestone 20: Gold border around HP bar for Elite enemies
-    if (this.enemyData?.tier === 'elite' && this.state !== 'dead' && this.hpBarBg) {
-      const barWidth = 32;
-      const barHeight = 3;
-      const barX = -barWidth / 2;
-      const barY = -this.tileSize / 2 - 10;
-      this.hpBarBg.lineStyle(1.5, 0xf59e0b, 0.95);
-      this.hpBarBg.strokeRect(barX - 1, barY - 1, barWidth + 2, barHeight * 2 + 3);
+    // Milestone 29: Purple border around HP bar for Epic enemies
+    if (this.state !== 'dead' && this.hpBarBg) {
+      if (this.enemyData?.tier === 'elite') {
+        const barWidth = 32;
+        const barHeight = 3;
+        const barX = -barWidth / 2;
+        const barY = -this.tileSize / 2 - 10;
+        this.hpBarBg.lineStyle(1.5, 0xf59e0b, 0.95);
+        this.hpBarBg.strokeRect(barX - 1, barY - 1, barWidth + 2, barHeight * 2 + 3);
+      } else if (this.enemyData?.tier === 'epic') {
+        const barWidth = 32;
+        const barHeight = 3;
+        const barX = -barWidth / 2;
+        const barY = -this.tileSize / 2 - 10;
+        this.hpBarBg.lineStyle(1.5, 0xa855f7, 0.95);
+        this.hpBarBg.strokeRect(barX - 1, barY - 1, barWidth + 2, barHeight * 2 + 3);
+      }
     }
   }
 }

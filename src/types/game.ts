@@ -230,6 +230,7 @@ export interface PlayerSnapshot {
   placedBuildables?: PlacedBuildable[];
   researchPoints?: number;
   unlockedBuildables?: string[];
+  completedResearchIds?: string[];
   inventory?: Record<string, number>;
   bookLearnedSkills?: string[];
   hunger?: number;
@@ -260,7 +261,7 @@ export interface SkillBooksData {
 export interface ResearchNodeDef {
   id: string;
   name: string;
-  targetBuildableId: string;
+  targetBuildableId?: string;
   cost: number;
   prerequisites: string[];
   description: string;
@@ -570,6 +571,15 @@ export interface EnemySpawnDef {
   roomIndex: number;
 }
 
+export interface GatheringLootEntry {
+  itemId?: string;
+  resourceId?: string;
+  name?: string;
+  weight?: number;
+  count?: number;
+  yieldCount?: number;
+}
+
 export interface GatheringNodeDef {
   id: string;
   name: string;
@@ -585,6 +595,7 @@ export interface GatheringNodeDef {
   depletedLabel: string;
   color: string;
   actionVerb: string;
+  lootTable?: GatheringLootEntry[];
 }
 
 export interface GatheringNodesConfig {

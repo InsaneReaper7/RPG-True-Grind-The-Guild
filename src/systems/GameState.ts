@@ -12,6 +12,7 @@ export class GameState {
   private placedBuildables: PlacedBuildable[] = [];
   private researchPoints: number = 0;
   private unlockedBuildables: Set<string> = new Set(['floor', 'wall', 'door', 'bed', 'research_station']);
+  private completedResearchIds: Set<string> = new Set();
   private inventory: Map<string, number> = new Map();
   private bookLearnedSkills: Set<string> = new Set();
   private discoveredCookingRecipes: Set<string> = new Set();
@@ -246,6 +247,25 @@ export class GameState {
 
   public getUnlockedBuildables(): string[] {
     return Array.from(this.unlockedBuildables);
+  }
+
+  public isResearchCompleted(researchId: string): boolean {
+    return this.completedResearchIds.has(researchId);
+  }
+
+  public completeResearch(researchId: string): void {
+    this.completedResearchIds.add(researchId);
+    if (this.snapshot) {
+      this.snapshot.completedResearchIds = Array.from(this.completedResearchIds);
+    }
+  }
+
+  public getCompletedResearch(): string[] {
+    return Array.from(this.completedResearchIds);
+  }
+
+  public isDiggingUnlocked(): boolean {
+    return this.isResearchCompleted('research_digging') || this.isResearchCompleted('digging');
   }
 
   // --- Clock & Game Day System (Milestone 7) ---

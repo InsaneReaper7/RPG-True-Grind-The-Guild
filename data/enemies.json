@@ -140,6 +140,22 @@
         { "method": "salvage", "item": "steel_scrap", "tags": ["blacksmithing"] },
         { "method": "rare_drop", "item": "orc_emblem", "tags": ["enchanting", "blacksmithing"] }
       ]
+    },
+    {
+      "id": "void_knight",
+      "name": "Void Knight",
+      "tier": "epic",
+      "hp": 180,
+      "criticalHpMax": 90,
+      "meleeDamage": 22,
+      "aggroRadius": 7,
+      "attackIntervalMs": 1100,
+      "moveSpeed": 95,
+      "harvest": [
+        { "method": "salvage", "item": "void_plate", "tags": ["armorsmithing", "blacksmithing"] },
+        { "method": "salvage", "item": "void_essence", "tags": ["enchanting", "alchemy"] },
+        { "method": "rare_drop", "item": "void_core", "tags": ["enchanting", "jewelcrafting", "blacksmithing"], "note": "Pulsing epic core radiating concentrated planar void energy" }
+      ]
     }
   ]
 }

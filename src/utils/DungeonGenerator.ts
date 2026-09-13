@@ -6,6 +6,7 @@ import type {
   BushSpawnDef,
   GridPos
 } from '../types/game.ts';
+import { GameState } from '../systems/GameState.ts';
 
 export class DungeonGenerator {
   /**
@@ -13,8 +14,13 @@ export class DungeonGenerator {
    * based on the provided configuration.
    * @param config DungeonConfig parameters
    * @param rng Optional custom RNG function returning [0, 1) for deterministic testing
+   * @param options Optional generation options (e.g. isDiggingUnlocked override)
    */
-  public static generate(config: DungeonConfig, rng: () => number = Math.random): GeneratedDungeon {
+  public static generate(
+    config: DungeonConfig,
+    rng: () => number = Math.random,
+    options?: { isDiggingUnlocked?: boolean }
+  ): GeneratedDungeon {
     const width = config.mapWidth;
     const height = config.mapHeight;
 
@@ -408,11 +414,17 @@ export class DungeonGenerator {
           tileIdx++;
         }
 
-        // Gathering Nodes (Foraging Bushes, Woodcutting Trees, Mining Rocks)
+        // Gathering Nodes (Foraging Bushes, Woodcutting Trees, Mining Rocks, and Research-Gated Dig Spots)
         const [minB, maxB] = roomConfig?.bushesRange ?? (
           room.type === 'gathering' ? [2, 4] : room.type === 'light_combat' ? [1, 3] : room.type === 'heavy_combat' ? [2, 5] : [0, 0]
         );
+        const isDiggingUnlocked = options?.isDiggingUnlocked ?? (
+          typeof GameState !== 'undefined' ? GameState.getInstance().isDiggingUnlocked() : false
+        );
         const nodeTypes = ['foraging_bush', 'woodcutting_tree', 'mining_rock'];
+        if (isDiggingUnlocked) {
+          nodeTypes.push('dig_spot');
+        }
         const bushCount = Math.min(Math.max(0, interiorTiles.length - tileIdx), randInt(minB, maxB));
         for (let i = 0; i < bushCount; i++) {
           const nodeTypeId = nodeTypes[(rIdx + i) % nodeTypes.length];

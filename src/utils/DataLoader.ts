@@ -173,6 +173,28 @@ export class DataLoader {
             depletedLabel: 'Depleted',
             color: '#94a3b8',
             actionVerb: 'Mining'
+          },
+          dig_spot: {
+            id: 'dig_spot',
+            name: 'Dig Spot',
+            skillId: 'digging',
+            resourceId: 'dirt',
+            yieldCount: 1,
+            expGranted: 15,
+            channelDurationMs: 2500,
+            respawnTimeMs: 15000,
+            textureKey: 'dig-spot',
+            textureDepletedKey: 'dig-spot-depleted',
+            label: 'Dig Spot',
+            depletedLabel: 'Excavated',
+            color: '#b45309',
+            actionVerb: 'Digging',
+            lootTable: [
+              { itemId: 'dirt', name: 'Dirt', weight: 35, count: 1 },
+              { itemId: 'clay', name: 'Clay', weight: 30, count: 1 },
+              { itemId: 'seeds', name: 'Seeds', weight: 20, count: 1 },
+              { itemId: 'locked_box', name: 'Locked Box', weight: 15, count: 1 }
+            ]
           }
         }
       };
@@ -421,6 +443,14 @@ export class DataLoader {
         id: 'armorsmithing',
         name: 'Armorsmithing',
         description: 'Tailoring hides and weaving silk into protective armor at the armorsmithing bench.'
+      };
+    }
+
+    if (id === 'digging') {
+      return {
+        id: 'digging',
+        name: 'Digging',
+        description: 'Excavating earth and uncovering buried resources, soil, and curiosities in dungeons.'
       };
     }
 

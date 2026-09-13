@@ -3001,7 +3001,7 @@ export class HUD {
     this.researchNodesContainerEl.innerHTML = '';
 
     for (const node of researchNodes) {
-      const isUnlocked = gameState.isBuildableUnlocked(node.targetBuildableId);
+      const isUnlocked = gameState.isResearchCompleted(node.id) || (node.targetBuildableId ? gameState.isBuildableUnlocked(node.targetBuildableId) : false);
       const canUnlock = researchSystem.canUnlockNode(node);
 
       const card = document.createElement('div');
@@ -3032,7 +3032,11 @@ export class HUD {
         unlockBtn.onclick = () => {
           const result = researchSystem.unlockNode(node);
           if (result.success) {
-            this.showToast(`✨ Research Complete: ${node.name} unlocked in Build Mode!`, 'success', 3500);
+            if (node.id === 'research_digging' || node.id.includes('digging')) {
+              this.showToast(`✨ Research Complete: ${node.name} unlocked! Dig spots will now appear in dungeons.`, 'success', 3500);
+            } else {
+              this.showToast(`✨ Research Complete: ${node.name} unlocked in Build Mode!`, 'success', 3500);
+            }
             this.renderResearchTreeModal();
             if (this.currentProgression) {
               const constLevel = this.currentProgression.getProficiencyLevel('construction');
@@ -3510,6 +3514,7 @@ export class HUD {
       case 'cooking': return '#f97316';
       case 'blacksmithing': return '#94a3b8';
       case 'armorsmithing': return '#a3e635';
+      case 'digging': return '#b45309';
       case 'mace': return '#cbd5e1';
       case 'staff': return '#fbbf24';
       case 'healing_magic': return '#4ade80';

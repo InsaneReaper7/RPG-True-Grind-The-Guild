@@ -10,6 +10,7 @@ import { CombatSystem } from '../systems/CombatSystem';
 import { ProgressionSystem } from '../systems/ProgressionSystem';
 import { HUD } from '../ui/HUD';
 import { GameState } from '../systems/GameState';
+import { ResearchSystem } from '../systems/ResearchSystem';
 import { GridPos, EnemyDef, GeneratedDungeon, DungeonRoom, GatheringNodeDef } from '../types/game';
 import { HiddenSkillSystem } from '../systems/HiddenSkillSystem';
 import { TileClaimDebugOverlay } from '../ui/TileClaimDebugOverlay';
@@ -465,6 +466,10 @@ export class MainScene extends Phaser.Scene {
     (window as any).__triggerFloorRespawn = () => this.triggerFloorRespawn();
     (window as any).__toggleAutoRespawn = () => this.toggleDebugAutoRespawn();
     (window as any).__toggleDebugGatheringRespawn = () => this.toggleDebugGatheringRespawn();
+    (window as any).GameState = GameState;
+    (window as any).DataLoader = DataLoader;
+    (window as any).ResearchSystem = ResearchSystem;
+    (window as any).DungeonGenerator = DungeonGenerator;
     (window as any).__getGatheringNodes = () => this.gatheringNodes;
     (window as any).__startGatherChannel = (nodeIdx: number = 0, charIdx: number = 0) => {
       const node = this.gatheringNodes[nodeIdx];
@@ -1653,19 +1658,19 @@ export class MainScene extends Phaser.Scene {
     const config = dataLoader.getGatheringNodesConfig();
     const nodeDef: GatheringNodeDef = config?.nodes?.[nodeTypeId] || dataLoader.getGatheringNode(nodeTypeId) || {
       id: nodeTypeId,
-      name: nodeTypeId.includes('tree') ? 'Tree' : nodeTypeId.includes('rock') ? 'Rock Vein' : 'Wild Herbs',
-      skillId: nodeTypeId.includes('tree') ? 'woodcutting' : nodeTypeId.includes('rock') ? 'mining' : 'foraging',
-      resourceId: nodeTypeId.includes('tree') ? 'wood' : nodeTypeId.includes('rock') ? 'ore' : 'wild_herbs',
+      name: nodeTypeId.includes('tree') ? 'Tree' : nodeTypeId.includes('rock') ? 'Rock Vein' : nodeTypeId.includes('dig') ? 'Dig Spot' : 'Wild Herbs',
+      skillId: nodeTypeId.includes('tree') ? 'woodcutting' : nodeTypeId.includes('rock') ? 'mining' : nodeTypeId.includes('dig') ? 'digging' : 'foraging',
+      resourceId: nodeTypeId.includes('tree') ? 'wood' : nodeTypeId.includes('rock') ? 'ore' : nodeTypeId.includes('dig') ? 'dirt' : 'wild_herbs',
       yieldCount: nodeTypeId.includes('tree') ? 2 : 1,
       expGranted: 15,
       channelDurationMs: 2500,
       respawnTimeMs: 15000,
-      textureKey: nodeTypeId.includes('tree') ? 'woodcutting-tree' : nodeTypeId.includes('rock') ? 'mining-rock' : 'foraging-bush',
-      textureDepletedKey: nodeTypeId.includes('tree') ? 'woodcutting-tree-depleted' : nodeTypeId.includes('rock') ? 'mining-rock-depleted' : 'foraging-bush-depleted',
-      label: nodeTypeId.includes('tree') ? 'Tree' : nodeTypeId.includes('rock') ? 'Rock Vein' : 'Wild Herbs',
-      depletedLabel: nodeTypeId.includes('tree') ? 'Stump' : nodeTypeId.includes('rock') ? 'Depleted' : 'Stripped',
-      color: nodeTypeId.includes('tree') ? '#f59e0b' : nodeTypeId.includes('rock') ? '#94a3b8' : '#34d399',
-      actionVerb: nodeTypeId.includes('tree') ? 'Logging' : nodeTypeId.includes('rock') ? 'Mining' : 'Foraging'
+      textureKey: nodeTypeId.includes('tree') ? 'woodcutting-tree' : nodeTypeId.includes('rock') ? 'mining-rock' : nodeTypeId.includes('dig') ? 'dig-spot' : 'foraging-bush',
+      textureDepletedKey: nodeTypeId.includes('tree') ? 'woodcutting-tree-depleted' : nodeTypeId.includes('rock') ? 'mining-rock-depleted' : nodeTypeId.includes('dig') ? 'dig-spot-depleted' : 'foraging-bush-depleted',
+      label: nodeTypeId.includes('tree') ? 'Tree' : nodeTypeId.includes('rock') ? 'Rock Vein' : nodeTypeId.includes('dig') ? 'Dig Spot' : 'Wild Herbs',
+      depletedLabel: nodeTypeId.includes('tree') ? 'Stump' : nodeTypeId.includes('rock') ? 'Depleted' : nodeTypeId.includes('dig') ? 'Excavated' : 'Stripped',
+      color: nodeTypeId.includes('tree') ? '#f59e0b' : nodeTypeId.includes('rock') ? '#94a3b8' : nodeTypeId.includes('dig') ? '#b45309' : '#34d399',
+      actionVerb: nodeTypeId.includes('tree') ? 'Logging' : nodeTypeId.includes('rock') ? 'Mining' : nodeTypeId.includes('dig') ? 'Digging' : 'Foraging'
     };
 
     const posX = x * this.tileSize + this.tileSize / 2;
@@ -1940,7 +1945,7 @@ export class MainScene extends Phaser.Scene {
     }
   }
 
-  public harvestGatheringNode(node: GatheringNode, character: Player = this.player): void {
+  public harvestGatheringNode(node: GatheringNode, character: Player = this.player, lootRollFn?: () => number): void {
     if (node.isHarvested) return;
 
     node.isHarvested = true;
@@ -1951,15 +1956,36 @@ export class MainScene extends Phaser.Scene {
     const yieldCount = node.nodeDef.yieldCount || 1;
     const expGranted = node.nodeDef.expGranted || 15;
 
+    let awardedResourceId = node.nodeDef.resourceId;
+    let awardedItemName = node.nodeDef.name;
+    let awardedCount = yieldCount;
+
+    if (node.nodeDef.lootTable && node.nodeDef.lootTable.length > 0) {
+      const totalWeight = node.nodeDef.lootTable.reduce((sum, e) => sum + (e.weight ?? 1), 0);
+      const rollVal = (lootRollFn ? lootRollFn() : Math.random()) * totalWeight;
+      let acc = 0;
+      let selected = node.nodeDef.lootTable[0];
+      for (const entry of node.nodeDef.lootTable) {
+        acc += (entry.weight ?? 1);
+        if (rollVal <= acc) {
+          selected = entry;
+          break;
+        }
+      }
+      awardedResourceId = selected.itemId || selected.resourceId || node.nodeDef.resourceId;
+      awardedItemName = selected.name || awardedResourceId.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+      awardedCount = selected.count ?? (selected.yieldCount ?? yieldCount);
+    }
+
     // Grant resources to GameState economy and inventory
-    if (node.nodeDef.resourceId === 'wood') {
-      GameState.getInstance().addWood(yieldCount);
-      GameState.getInstance().addItem('wood', yieldCount);
-    } else if (node.nodeDef.resourceId === 'ore') {
-      GameState.getInstance().addOre(yieldCount);
-      GameState.getInstance().addItem('ore', yieldCount);
+    if (awardedResourceId === 'wood') {
+      GameState.getInstance().addWood(awardedCount);
+      GameState.getInstance().addItem('wood', awardedCount);
+    } else if (awardedResourceId === 'ore') {
+      GameState.getInstance().addOre(awardedCount);
+      GameState.getInstance().addItem('ore', awardedCount);
     } else {
-      GameState.getInstance().addItem(node.nodeDef.resourceId, yieldCount);
+      GameState.getInstance().addItem(awardedResourceId, awardedCount);
     }
 
     // Grant gathering EXP
@@ -1968,7 +1994,7 @@ export class MainScene extends Phaser.Scene {
     // Floating combat/gathering text
     const posX = node.x * this.tileSize + this.tileSize / 2;
     const posY = node.y * this.tileSize + this.tileSize / 2;
-    this.createFloatingText(posX, posY - 10, `+${yieldCount} ${node.nodeDef.name}`, node.nodeDef.color);
+    this.createFloatingText(posX, posY - 10, `+${awardedCount} ${awardedItemName}`, node.nodeDef.color);
     const skillName = DataLoader.getInstance().getTrainableStatDef(node.nodeDef.skillId)?.name || node.nodeDef.skillId;
     this.createFloatingText(posX, posY - 24, `+${expGranted} ${skillName} EXP`, '#60a5fa');
 
@@ -1981,8 +2007,9 @@ export class MainScene extends Phaser.Scene {
       ease: 'Quad.easeInOut'
     });
 
-    console.log(`[Gathering] 🌿 Harvested ${yieldCount}x ${node.nodeDef.name}! (+${expGranted} ${skillName} EXP)`);
-    this.hud.showToast(`🌿 Harvested ${node.nodeDef.name} (+${expGranted} ${skillName} EXP)`, 'success', 2500);
+    const actionToast = node.nodeDef.actionVerb === 'Digging' ? '⛏️ Dug up' : '🌿 Harvested';
+    console.log(`[Gathering] ${actionToast} ${awardedCount}x ${awardedItemName}! (+${expGranted} ${skillName} EXP)`);
+    this.hud.showToast(`${actionToast} ${awardedItemName} (+${expGranted} ${skillName} EXP)`, 'success', 2500);
 
     // REAL GAMEPLAY LIFESPAN: Node stays depleted for remainder of floor visit!
     // DEBUG ONLY: If debugGatheringRespawnEnabled is active, respawn after 15s

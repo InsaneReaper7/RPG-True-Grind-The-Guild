@@ -40,7 +40,8 @@
     "skeleton_archer",
     "undead",
     "spider",
-    "orc_warrior"
+    "orc_warrior",
+    "void_knight"
   ],
   "floorRespawnTimerSec": 300
 }

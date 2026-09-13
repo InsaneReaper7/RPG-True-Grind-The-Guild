@@ -294,6 +294,49 @@ export class TextureGenerator {
       g.destroy();
     }
 
+    // 4j. Void Knight Avatar Texture (Milestone 29: First Epic Tier - Obsidian Void Armor with Amethyst Horns & Visor)
+    if (!scene.textures.exists('void_knight-avatar')) {
+      const size = 30;
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      // Heavy obsidian armored hexagon
+      g.fillStyle(0x2e1065, 1); // Deep Midnight Void Purple
+      g.beginPath();
+      g.moveTo(size / 2, 2);
+      g.lineTo(size - 3, 8);
+      g.lineTo(size - 3, size - 8);
+      g.lineTo(size / 2, size - 2);
+      g.lineTo(3, size - 8);
+      g.lineTo(3, 8);
+      g.closePath();
+      g.fillPath();
+
+      // Royal Amethyst Plate Border
+      g.lineStyle(2, 0x9333ea, 1);
+      g.strokePath();
+
+      // Amethyst Void Spikes / Pauldrons
+      g.fillStyle(0x7e22ce, 1);
+      g.fillTriangle(3, 8, 0, 1, 8, 4);
+      g.fillTriangle(size - 3, 8, size, 1, size - 8, 4);
+
+      // Inner Dark Visor Faceplate
+      g.fillStyle(0x0f0b1e, 1);
+      g.fillRoundedRect(size / 2 - 8, size / 2 - 5, 16, 10, 2);
+
+      // Piercing glowing magenta-violet visor eye slits
+      g.fillStyle(0xf0abfc, 1);
+      g.fillRect(size / 2 - 6, size / 2 - 2, 4, 2);
+      g.fillRect(size / 2 + 2, size / 2 - 2, 4, 2);
+
+      // Glowing central Void Rune
+      g.lineStyle(1.5, 0xd8b4fe, 1);
+      g.lineBetween(size / 2, size / 2 + 4, size / 2, size - 5);
+      g.lineBetween(size / 2 - 4, size / 2 + 7, size / 2 + 4, size / 2 + 7);
+
+      g.generateTexture('void_knight-avatar', size, size);
+      g.destroy();
+    }
+
     // 5. Target Selection Reticle
     if (!scene.textures.exists('target-reticle')) {
       const size = 32;
@@ -1017,6 +1060,63 @@ export class TextureGenerator {
       g.fillCircle(tileSize / 2 + 5, tileSize / 2 + 5, 1.5);
 
       g.generateTexture('mining-rock-depleted', tileSize, tileSize);
+      g.destroy();
+    }
+
+    // 26. Dig Spot (Mound of turned earth with subtle glints)
+    if (!scene.textures.exists('dig-spot')) {
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      // Ground shadow
+      g.fillStyle(0x1c1917, 0.5);
+      g.fillEllipse(tileSize / 2, tileSize - 4, 14, 6);
+
+      // Base soil mound
+      g.fillStyle(0x78350f, 1);
+      g.fillEllipse(tileSize / 2, tileSize / 2 + 4, 12, 7);
+
+      // Layer of richer turned earth
+      g.fillStyle(0x92400e, 1);
+      g.fillEllipse(tileSize / 2 - 1, tileSize / 2 + 2, 9, 5);
+      g.fillCircle(tileSize / 2 + 2, tileSize / 2 + 3, 4);
+
+      // Soil highlights / clods
+      g.fillStyle(0xb45309, 1);
+      g.fillCircle(tileSize / 2 - 3, tileSize / 2 + 2, 2.5);
+      g.fillCircle(tileSize / 2 + 2, tileSize / 2 + 1, 2);
+      g.fillCircle(tileSize / 2, tileSize / 2 + 4, 1.8);
+
+      // Buried curiosity glint / shimmer
+      g.fillStyle(0xfde047, 0.95);
+      g.fillCircle(tileSize / 2 + 1, tileSize / 2, 1.5);
+      g.fillStyle(0xffffff, 0.8);
+      g.fillCircle(tileSize / 2 + 2, tileSize / 2 - 1, 1);
+
+      g.generateTexture('dig-spot', tileSize, tileSize);
+      g.destroy();
+    }
+
+    // 27. Dig Spot Depleted (Excavated pit with spoil heaps)
+    if (!scene.textures.exists('dig-spot-depleted')) {
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      // Outer shadow & disturbed rim
+      g.fillStyle(0x1c1917, 0.4);
+      g.fillEllipse(tileSize / 2, tileSize - 4, 13, 5);
+
+      // Scattered spoil heap rim
+      g.fillStyle(0x78350f, 0.85);
+      g.fillEllipse(tileSize / 2, tileSize / 2 + 4, 11, 6);
+
+      // Deep excavated hollow / pit
+      g.fillStyle(0x1c1917, 0.95);
+      g.fillEllipse(tileSize / 2, tileSize / 2 + 4, 8, 4);
+
+      // Loose pebbles/dirt fragments
+      g.fillStyle(0x92400e, 0.9);
+      g.fillCircle(tileSize / 2 - 6, tileSize / 2 + 5, 1.5);
+      g.fillCircle(tileSize / 2 + 5, tileSize / 2 + 6, 1.8);
+      g.fillCircle(tileSize / 2 + 3, tileSize / 2 + 2, 1.2);
+
+      g.generateTexture('dig-spot-depleted', tileSize, tileSize);
       g.destroy();
     }
   }

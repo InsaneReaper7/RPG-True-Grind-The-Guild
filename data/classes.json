@@ -145,6 +145,15 @@
       "hiddenSkillBonuses": {
         "resilience": 0.05
       }
+    },
+    {
+      "id": "excavator",
+      "name": "Excavator",
+      "tier": "novice",
+      "requirements": [
+        { "type": "proficiency", "target": "digging", "value": 10 }
+      ],
+      "fantasy": "Learning where the ground hides things"
     }
   ]
 }
