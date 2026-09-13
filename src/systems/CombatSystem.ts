@@ -1011,7 +1011,8 @@ export class CombatSystem {
 
             const isFire = effectiveWeapon.id === 'fire_magic';
             const isLightning = effectiveWeapon.id === 'lightning_magic';
-            const attackColor = isFire ? 0xf97316 : isLightning ? 0x38bdf8 : 0x3b82f6;
+            const isIce = effectiveWeapon.id === 'ice_magic';
+            const attackColor = isFire ? 0xf97316 : isLightning ? 0x38bdf8 : isIce ? 0x67e8f9 : 0x3b82f6;
             if (isLightning) {
               this.createLightningBoltEffect(member.x, member.y, target.x, target.y);
             } else {
@@ -1019,6 +1020,8 @@ export class CombatSystem {
             }
             if (isFire) {
               this.createFireExplosionEffect(target.x, target.y);
+            } else if (isIce) {
+              this.createFrostEffect(target.x, target.y);
             }
 
             const hitRoll = Math.random();
@@ -1038,13 +1041,14 @@ export class CombatSystem {
               console.log(
                 `[Combat] ${member.entityName} attacks ${target.entityName} with ${effectiveWeapon.name} for ${damage.toFixed(1)} damage! (Base: ${effectiveWeapon.baseDamage}, Lv ${weaponLevel} Bonus: +${(weaponLevel * damageBonusPerLevel).toFixed(1)}, Accuracy: ${(effectiveAccuracy * 100).toFixed(1)}%${isDW ? ` [DW Penalty -${(dwPenalty * 100).toFixed(0)}%]` : ''})`
               );
-              const dmgColor = isFire ? '#f97316' : isLightning ? '#38bdf8' : '#38bdf8';
+              const dmgColor = isFire ? '#f97316' : isLightning ? '#38bdf8' : isIce ? '#67e8f9' : '#38bdf8';
               this.createFloatingText(target.x, target.y - 10, `-${damage.toFixed(1)}`, dmgColor);
 
               this.checkAndApplyBleed(member, target, effectiveWeapon);
               this.checkAndApplyBurn(member, target, effectiveWeapon);
               this.checkAndApplyStun(member, target, effectiveWeapon);
               this.checkAndApplyShock(member, target, effectiveWeapon);
+              this.checkAndApplySlow(member, target, effectiveWeapon);
 
               // Chain targeting for weapons with chainTargets (e.g. Lightning Magic)
               if (effectiveWeapon.chainTargets && effectiveWeapon.chainTargets > 0) {
@@ -1446,6 +1450,34 @@ export class CombatSystem {
     }
   }
 
+  private checkAndApplySlow(attacker: Player, target: Entity, weaponOverride?: WeaponDef): void {
+    const weapon = weaponOverride ?? attacker.equippedWeapon;
+    if (!weapon.slowChance) return;
+
+    const weaponLevel = attacker.progression.getProficiencyLevel(weapon.proficiencyId ?? weapon.id);
+    const slowBonusPerLevel = weapon.levelBonus?.slowChancePerLevel ?? 0;
+    const effectiveSlowChance = weapon.slowChance + weaponLevel * slowBonusPerLevel;
+
+    if (Math.random() < effectiveSlowChance) {
+      const slowDef = DataLoader.getInstance().getStatusEffect('slow') || {
+        id: 'slow',
+        name: 'Slow',
+        durationMs: 3000,
+        tickIntervalMs: 1000,
+        damagePerTick: 0,
+        moveSpeedMultiplier: 0.5,
+        isHarmful: true,
+        color: '#67e8f9'
+      };
+      console.log(
+        `[StatusEffect] ❄️ Slow proc on ${target.entityName}! (Proc Chance: ${(effectiveSlowChance * 100).toFixed(1)}%)`
+      );
+      target.applyStatusEffect(slowDef);
+      this.createFloatingText(target.x, target.y - 25, 'SLOWED!', '#67e8f9');
+      this.createFrostEffect(target.x, target.y);
+    }
+  }
+
   private handleTargetDefeated(killer: Player, target: Entity, weaponId: string): void {
     console.log(`[Combat] ${target.entityName} defeated/downed by ${killer.entityName}!`);
     const result = killer.progression.addProficiencyExp(weaponId, 4);
@@ -1628,6 +1660,20 @@ export class CombatSystem {
       duration: 250,
       ease: 'Cubic.easeOut',
       onComplete: () => spark.destroy()
+    });
+  }
+
+  public createFrostEffect(x: number, y: number): void {
+    if (!this.scene?.add) return;
+    const frost = this.scene.add.circle(x, y, 14, 0x67e8f9, 0.7).setDepth(2001);
+    this.scene.tweens?.add({
+      targets: frost,
+      scaleX: 1.7,
+      scaleY: 1.7,
+      alpha: 0,
+      duration: 300,
+      ease: 'Cubic.easeOut',
+      onComplete: () => frost.destroy()
     });
   }
 

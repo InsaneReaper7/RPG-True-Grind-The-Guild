@@ -36,3 +36,23 @@ With a strict no-stacking rule where units cannot path through or share tiles wi
    - Introduce an explicit movement exception allowing a unit to path through an occupied enemy tile strictly when no alternative open route exists (possibly incurring a movement slow or stamina/energy cost).
 3. **Flocking / Repulsion Separation**:
    - Swarm enemies maintain separation behaviors that avoid forming an impenetrable 8-tile barrier around isolated targets.
+
+---
+
+## 3. Advanced Armor Stats & Full Equipment Paperdoll (Future Milestones)
+
+### Background & Milestone 28 Scope
+In Milestone 28, Helmet and Body Armor slots were introduced with flat Max HP bonuses to establish the two-slot foundation and resolve dangling crafting resources (Wolf Pelt and Spider Silk) without complicating damage formulas. Equipping is handled cleanly via dropdown selectors in the Party Overview modal.
+
+### Roadmap for Future Milestones
+- **Specialized Defensive Stats**:
+  - **Physical Damage Reduction**: Armor ratings mitigating flat or percentage physical damage from melee/ranged hits.
+  - **Magic Resistance / Warding**: Mitigating elemental school damage (Fire, Ice, Lightning) or granting status effect resistance (reducing burn/chill/shock chances).
+  - **Defensive Hidden Skill Synergy**: Bonuses to Block chance/mitigation %, Parry trigger rate, Counterattack damage, and Evasion rating.
+- **Weight & Encumbrance System**:
+  - Each armor piece and weapon having weight values (light hide, medium mail, heavy plate).
+  - High total encumbrance imposing movement speed penalties or higher energy costs for sprinting/skills.
+- **Full Drag-and-Drop Paperdoll Equipment Screen**:
+  - Visual paperdoll character equipment screen deferred until jewelry and accessory slots (Necklace, Ring, Accessory) are introduced.
+  - Interactive drag-and-drop paperdoll layout covering all slots simultaneously (Helmet, Body Armor, Weapons, Offhand, Necklace, Ring, Accessory) once the item catalogue spans all categories.
+

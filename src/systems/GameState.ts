@@ -579,6 +579,8 @@ export class GameState {
         foodItems: [...this.foodItems],
         equippedWeaponId: leader.equippedWeaponId,
         offhandWeaponId: leader.offhandWeaponId,
+        equippedHelmetId: leader.equippedHelmetId,
+        equippedBodyArmorId: leader.equippedBodyArmorId,
         party: [...this.partySnapshots]
       };
     }
@@ -652,6 +654,8 @@ export class GameState {
       foodItems: [...this.foodItems],
       equippedWeaponId: player.equippedWeapon.id,
       offhandWeaponId: player.offhandWeapon?.id ?? null,
+      equippedHelmetId: player.equippedHelmet?.id ?? null,
+      equippedBodyArmorId: player.equippedBodyArmor?.id ?? null,
       party: [...this.partySnapshots],
       discoveredCookingRecipes: Array.from(this.discoveredCookingRecipes),
       discoveredAlchemyRecipes: Array.from(this.discoveredAlchemyRecipes)
@@ -775,6 +779,20 @@ export class GameState {
     } else {
       player.offhandWeapon = null;
     }
+
+    if (snap.equippedHelmetId) {
+      const helmet = dataLoader.getArmor(snap.equippedHelmetId);
+      player.equippedHelmet = helmet ?? null;
+    } else {
+      player.equippedHelmet = null;
+    }
+    if (snap.equippedBodyArmorId) {
+      const bodyArmor = dataLoader.getArmor(snap.equippedBodyArmorId);
+      player.equippedBodyArmor = bodyArmor ?? null;
+    } else {
+      player.equippedBodyArmor = null;
+    }
+    player.recalculateMaxHp();
 
     // Downed state restoration
     // Two-bar system: Downed only occurs when BOTH Main HP and Critical HP reach zero.

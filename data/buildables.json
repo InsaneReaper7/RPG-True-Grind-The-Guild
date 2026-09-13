@@ -87,6 +87,18 @@
       "roomTag": "blacksmithing",
       "description": "Guild forge and anvil for smelting ore and crafting weapons. Requires a fully enclosed indoor room.",
       "lockedByDefault": true
+    },
+    {
+      "id": "armorsmithing_bench",
+      "name": "Armorsmithing Bench",
+      "woodCost": 25,
+      "footprint": { "width": 1, "height": 1 },
+      "rotatable": true,
+      "indoorRequired": true,
+      "walkable": false,
+      "roomTag": "armorsmithing",
+      "description": "Guild bench for tailoring hides and weaving silk into protective armor. Requires a fully enclosed indoor room.",
+      "lockedByDefault": true
     }
   ]
 }

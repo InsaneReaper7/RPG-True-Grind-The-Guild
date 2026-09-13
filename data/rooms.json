@@ -34,6 +34,13 @@
       "priority": 10,
       "requiredTags": ["blacksmithing"],
       "description": "Forge workshop with a blacksmithing station."
+    },
+    {
+      "id": "armory",
+      "name": "Armory Workshop",
+      "priority": 10,
+      "requiredTags": ["armorsmithing"],
+      "description": "Armorsmithing workshop with an armorsmithing bench."
     }
   ]
 }

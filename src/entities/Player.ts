@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { Entity } from './Entity.ts';
-import type { PlayerData, WeaponDef, CharacterSnapshot } from '../types/game.ts';
+import type { PlayerData, WeaponDef, CharacterSnapshot, ArmorDef } from '../types/game.ts';
 import { GameState } from '../systems/GameState.ts';
 import { DataLoader } from '../utils/DataLoader.ts';
 import { ProgressionSystem } from '../systems/ProgressionSystem.ts';
@@ -13,6 +13,9 @@ export class Player extends Entity {
   public currentRoomName: string | null = null;
   public equippedWeapon: WeaponDef;
   public offhandWeapon: WeaponDef | null = null;
+  public equippedHelmet: ArmorDef | null = null;
+  public equippedBodyArmor: ArmorDef | null = null;
+  public baseMaxHp: number = 50;
   public targetEntity: Entity | null = null;
   public lastAttackTime: number = 0;
   public attackRangeTiles: number = 1;
@@ -73,6 +76,7 @@ export class Player extends Entity {
     );
 
     this.id = playerData.id || 'hero';
+    this.baseMaxHp = playerData.maxHp;
     this.avatarTextureKey = avatarKey;
     this.moveSpeed = playerData.moveSpeed;
     this.equippedWeapon = startingWeapon;
@@ -180,6 +184,72 @@ export class Player extends Entity {
     }
     this.offhandWeapon = weapon;
     console.log(`[Player:${this.entityName}] Equipped offhand weapon: ${weapon.name}`);
+    return true;
+  }
+
+  public recalculateMaxHp(): void {
+    const helmetBonus = this.equippedHelmet?.hpBonus ?? 0;
+    const bodyBonus = this.equippedBodyArmor?.hpBonus ?? 0;
+    this.maxHp = this.baseMaxHp + helmetBonus + bodyBonus;
+    if (this.hp > this.maxHp) {
+      this.hp = this.maxHp;
+    }
+    this.drawHpBar();
+  }
+
+  public equipHelmet(armor: ArmorDef | null, isOutpost: boolean = false): boolean {
+    if (!isOutpost || this.inCombat) {
+      console.warn(`[Player:${this.entityName}] Cannot equip or unequip helmet outside the Outpost / during combat!`);
+      return false;
+    }
+    if (armor !== null && armor.slot !== 'helmet') {
+      console.warn(`[Player:${this.entityName}] Cannot equip ${armor.name} in helmet slot (slot is ${armor.slot})`);
+      return false;
+    }
+
+    const prevArmor = this.equippedHelmet;
+    if (prevArmor) {
+      // On unequip, subtract removed piece's HP bonus directly from current HP, floored at exactly 1
+      this.hp = Math.max(1, this.hp - prevArmor.hpBonus);
+    }
+
+    this.equippedHelmet = armor;
+    this.recalculateMaxHp();
+
+    if (armor) {
+      this.hp += armor.hpBonus;
+    }
+
+    this.drawHpBar();
+    console.log(`[Player:${this.entityName}] ${armor ? `Equipped helmet: ${armor.name} (+${armor.hpBonus} HP)` : 'Unequipped helmet'}. Current HP: ${this.hp}/${this.maxHp}`);
+    return true;
+  }
+
+  public equipBodyArmor(armor: ArmorDef | null, isOutpost: boolean = false): boolean {
+    if (!isOutpost || this.inCombat) {
+      console.warn(`[Player:${this.entityName}] Cannot equip or unequip body armor outside the Outpost / during combat!`);
+      return false;
+    }
+    if (armor !== null && armor.slot !== 'body') {
+      console.warn(`[Player:${this.entityName}] Cannot equip ${armor.name} in body armor slot (slot is ${armor.slot})`);
+      return false;
+    }
+
+    const prevArmor = this.equippedBodyArmor;
+    if (prevArmor) {
+      // On unequip, subtract removed piece's HP bonus directly from current HP, floored at exactly 1
+      this.hp = Math.max(1, this.hp - prevArmor.hpBonus);
+    }
+
+    this.equippedBodyArmor = armor;
+    this.recalculateMaxHp();
+
+    if (armor) {
+      this.hp += armor.hpBonus;
+    }
+
+    this.drawHpBar();
+    console.log(`[Player:${this.entityName}] ${armor ? `Equipped body armor: ${armor.name} (+${armor.hpBonus} HP)` : 'Unequipped body armor'}. Current HP: ${this.hp}/${this.maxHp}`);
     return true;
   }
 
@@ -476,6 +546,8 @@ export class Player extends Entity {
       energy: this.energy,
       equippedWeaponId: this.equippedWeapon.id,
       offhandWeaponId: this.offhandWeapon?.id ?? null,
+      equippedHelmetId: this.equippedHelmet?.id ?? null,
+      equippedBodyArmorId: this.equippedBodyArmor?.id ?? null,
       knownSkillIds: [...this.knownSkillIds],
       equippedSkillIds: [...this.equippedSkillIds],
       autocastMap: autocastObj,
@@ -524,6 +596,20 @@ export class Player extends Entity {
     } else {
       this.offhandWeapon = null;
     }
+
+    if (snapshot.equippedHelmetId) {
+      this.equippedHelmet = dataLoader.getArmor(snapshot.equippedHelmetId) ?? null;
+    } else {
+      this.equippedHelmet = null;
+    }
+
+    if (snapshot.equippedBodyArmorId) {
+      this.equippedBodyArmor = dataLoader.getArmor(snapshot.equippedBodyArmorId) ?? null;
+    } else {
+      this.equippedBodyArmor = null;
+    }
+
+    this.recalculateMaxHp();
 
     this.knownSkillIds = snapshot.knownSkillIds ? [...snapshot.knownSkillIds] : [];
     this.equippedSkillIds = snapshot.equippedSkillIds ? [...snapshot.equippedSkillIds] : [];

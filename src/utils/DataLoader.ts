@@ -25,6 +25,11 @@ import type {
   CookingRecipesData,
   BlacksmithRecipeDef,
   BlacksmithRecipesData,
+  ArmorDef,
+  ArmorsData,
+  ArmorSlot,
+  ArmorsmithRecipeDef,
+  ArmorsmithRecipesData,
   FoodDef,
   FoodsData,
   MoodTierDef,
@@ -52,6 +57,8 @@ export class DataLoader {
   private alchemyRecipesData!: AlchemyRecipesData;
   private cookingRecipesData!: CookingRecipesData;
   private blacksmithRecipesData!: BlacksmithRecipesData;
+  private armorsData!: ArmorsData;
+  private armorsmithRecipesData!: ArmorsmithRecipesData;
   private foodsData!: FoodsData;
   private moodEffectsData!: MoodEffectsData;
   private dungeonConfig!: DungeonConfig;
@@ -67,7 +74,7 @@ export class DataLoader {
   }
 
   public async loadAll(): Promise<void> {
-    const [player, weapons, classes, enemies, skills, statusEffects, buildables, rooms, hiddenSkills, skillBooks, researchTree, alchemyRecipes, cookingRecipes, blacksmithRecipes, foods, moodEffects, dungeon, gathering] = await Promise.all([
+    const [player, weapons, classes, enemies, skills, statusEffects, buildables, rooms, hiddenSkills, skillBooks, researchTree, alchemyRecipes, cookingRecipes, blacksmithRecipes, armors, armorsmithRecipes, foods, moodEffects, dungeon, gathering] = await Promise.all([
       fetch('/data/player.json').then((res) => res.json()),
       fetch('/data/weapons.json').then((res) => res.json()),
       fetch('/data/classes.json').then((res) => res.json()),
@@ -82,6 +89,8 @@ export class DataLoader {
       fetch('/data/alchemyRecipes.json').then((res) => res.json()),
       fetch('/data/cookingRecipes.json').then((res) => res.json()),
       fetch('/data/blacksmithRecipes.json').then((res) => res.json()),
+      fetch('/data/armors.json').then((res) => res.json()),
+      fetch('/data/armorsmithRecipes.json').then((res) => res.json()),
       fetch('/data/food.json').then((res) => res.json()),
       fetch('/data/moodEffects.json').then((res) => res.json()),
       fetch('/data/dungeonConfig.json').then((res) => res.json()).catch(() => null),
@@ -102,6 +111,8 @@ export class DataLoader {
     this.alchemyRecipesData = alchemyRecipes as AlchemyRecipesData;
     this.cookingRecipesData = cookingRecipes as CookingRecipesData;
     this.blacksmithRecipesData = blacksmithRecipes as BlacksmithRecipesData;
+    this.armorsData = armors as ArmorsData;
+    this.armorsmithRecipesData = armorsmithRecipes as ArmorsmithRecipesData;
     this.foodsData = foods as FoodsData;
     this.moodEffectsData = moodEffects as MoodEffectsData;
     if (dungeon) {
@@ -329,6 +340,8 @@ export class DataLoader {
         description = 'Proficiency with fire magic to incinerate enemies with ranged flames.';
       } else if (weapon.id === 'lightning_magic') {
         description = 'Proficiency with lightning magic to shock and chain arcs between enemies.';
+      } else if (weapon.id === 'ice_magic') {
+        description = 'Proficiency with ice magic to chill enemies and slow their movement.';
       } else if (weapon.id === 'staff' || weapon.id.endsWith('_staff')) {
         description = 'Proficiency with two-handed staves in melee combat.';
       }
@@ -400,6 +413,14 @@ export class DataLoader {
         id: 'blacksmithing',
         name: 'Blacksmithing',
         description: 'Smelting ore and forging weapons at the blacksmithing station.'
+      };
+    }
+
+    if (id === 'armorsmithing') {
+      return {
+        id: 'armorsmithing',
+        name: 'Armorsmithing',
+        description: 'Tailoring hides and weaving silk into protective armor at the armorsmithing bench.'
       };
     }
 
@@ -480,6 +501,34 @@ export class DataLoader {
 
   public getBlacksmithRecipe(id: string): BlacksmithRecipeDef | undefined {
     return this.blacksmithRecipesData?.recipes.find((r) => r.id === id);
+  }
+
+  public getArmorsData(): ArmorsData {
+    return this.armorsData;
+  }
+
+  public getAllArmors(): ArmorDef[] {
+    return this.armorsData?.armors ?? [];
+  }
+
+  public getArmor(id: string): ArmorDef | undefined {
+    return this.armorsData?.armors.find((a) => a.id === id);
+  }
+
+  public getArmorsBySlot(slot: ArmorSlot): ArmorDef[] {
+    return (this.armorsData?.armors ?? []).filter((a) => a.slot === slot);
+  }
+
+  public getArmorsmithRecipesData(): ArmorsmithRecipesData {
+    return this.armorsmithRecipesData;
+  }
+
+  public getArmorsmithRecipes(): ArmorsmithRecipeDef[] {
+    return this.armorsmithRecipesData?.recipes ?? [];
+  }
+
+  public getArmorsmithRecipe(id: string): ArmorsmithRecipeDef | undefined {
+    return this.armorsmithRecipesData?.recipes.find((r) => r.id === id);
   }
 
   public getFoodsData(): FoodsData {

@@ -10,7 +10,28 @@ export class Entity extends Phaser.GameObjects.Container {
   public maxCriticalHp: number;
   public entityName: string;
   public state: EntityState = 'idle';
-  public moveSpeed: number = 100; // pixels per second
+  public baseMoveSpeed: number = 100; // pixels per second
+
+  public get moveSpeed(): number {
+    let speed = this.baseMoveSpeed;
+    for (const [id, active] of this.activeStatusEffects) {
+      if (active.def?.moveSpeedMultiplier !== undefined) {
+        speed *= active.def.moveSpeedMultiplier;
+      } else if (id === 'slow') {
+        speed *= 0.5;
+      }
+    }
+    return speed;
+  }
+
+  public set moveSpeed(value: number) {
+    this.baseMoveSpeed = value;
+  }
+
+  public getEffectiveMoveSpeed(): number {
+    return this.moveSpeed;
+  }
+
   public claimedDestination: GridPos | null = null;
 
   public activeStatusEffects: Map<string, ActiveStatusEffect> = new Map();
@@ -373,6 +394,14 @@ export class Entity extends Phaser.GameObjects.Container {
     } else if (this.activeStatusEffects.has('blessed_weapons')) {
       this.avatarSprite.setTint(0xfacc15);
       if (this.statusIconSprite) this.statusIconSprite.setVisible(false);
+    } else if (this.activeStatusEffects.has('slow')) {
+      this.avatarSprite.setTint(0x67e8f9);
+      if (this.statusIconSprite) {
+        if (this.scene?.textures?.exists('slow-icon')) {
+          this.statusIconSprite.setTexture('slow-icon');
+        }
+        this.statusIconSprite.setVisible(true);
+      }
     } else {
       this.avatarSprite.clearTint();
       if (this.statusIconSprite) this.statusIconSprite.setVisible(false);

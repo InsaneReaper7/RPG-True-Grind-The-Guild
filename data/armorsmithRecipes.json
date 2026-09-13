@@ -1,0 +1,51 @@
+{
+  "_comment": "Armorsmithing Bench recipes. Tier-unlocked recipes consuming Wolf Pelt, Spider Silk, and other crafting materials.",
+  "recipes": [
+    {
+      "id": "leather_cap",
+      "name": "Leather Cap",
+      "resultArmorId": "leather_cap",
+      "requiredLevel": 0,
+      "ingredients": {
+        "wolf_pelt": 2
+      },
+      "expGranted": 25,
+      "description": "Craft a lightweight protective cap from cured wolf pelts."
+    },
+    {
+      "id": "leather_armor",
+      "name": "Leather Armor",
+      "resultArmorId": "leather_armor",
+      "requiredLevel": 0,
+      "ingredients": {
+        "wolf_pelt": 4
+      },
+      "expGranted": 35,
+      "description": "Craft a sturdy chestpiece from stitched wolf pelts."
+    },
+    {
+      "id": "silk_cowl",
+      "name": "Silk Cowl",
+      "resultArmorId": "silk_cowl",
+      "requiredLevel": 5,
+      "ingredients": {
+        "spider_silk": 3,
+        "wolf_pelt": 1
+      },
+      "expGranted": 55,
+      "description": "Weave lightweight spider silk into a protective cowl with leather trimming."
+    },
+    {
+      "id": "silk_robe",
+      "name": "Silk Robe",
+      "resultArmorId": "silk_robe",
+      "requiredLevel": 5,
+      "ingredients": {
+        "spider_silk": 5,
+        "wolf_pelt": 2
+      },
+      "expGranted": 75,
+      "description": "Weave a dense vestment of spider silk backed by supple wolf hide."
+    }
+  ]
+}

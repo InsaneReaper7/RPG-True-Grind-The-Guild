@@ -185,6 +185,15 @@ export class HUD {
   private blacksmithingRecipesContainerEl: HTMLElement | null;
   private blacksmithingStatusMsgEl: HTMLElement | null;
 
+  // Milestone 28 Modal Elements (Armorsmithing Bench)
+  private armorsmithingModalEl: HTMLElement | null;
+  private closeArmorsmithingBtn: HTMLElement | null;
+  private armorsmithingModalProfEl: HTMLElement | null;
+  private armorsmithingStockpileWolfPeltEl: HTMLElement | null;
+  private armorsmithingStockpileSpiderSilkEl: HTMLElement | null;
+  private armorsmithingRecipesContainerEl: HTMLElement | null;
+  private armorsmithingStatusMsgEl: HTMLElement | null;
+
   // Milestone 16 Elements (Floor Timer & Respawn Debug)
   private floorTimerBadgeEl: HTMLElement | null;
   private debugBtnFastForwardFloorTimer: HTMLElement | null;
@@ -469,6 +478,21 @@ export class HUD {
     if (this.closeBlacksmithingBtn) {
       this.closeBlacksmithingBtn.onclick = () => {
         HUD.activeInstance?.closeBlacksmithingModal();
+      };
+    }
+
+    // Milestone 28 Elements (Armorsmithing Bench)
+    this.armorsmithingModalEl = document.getElementById('armorsmithing-modal');
+    this.closeArmorsmithingBtn = document.getElementById('close-armorsmithing-btn');
+    this.armorsmithingModalProfEl = document.getElementById('armorsmithing-modal-prof');
+    this.armorsmithingStockpileWolfPeltEl = document.getElementById('armorsmithing-stockpile-wolf-pelt');
+    this.armorsmithingStockpileSpiderSilkEl = document.getElementById('armorsmithing-stockpile-spider-silk');
+    this.armorsmithingRecipesContainerEl = document.getElementById('armorsmithing-recipes-container');
+    this.armorsmithingStatusMsgEl = document.getElementById('armorsmithing-status-msg');
+
+    if (this.closeArmorsmithingBtn) {
+      this.closeArmorsmithingBtn.onclick = () => {
+        HUD.activeInstance?.closeArmorsmithingModal();
       };
     }
 
@@ -2026,9 +2050,11 @@ export class HUD {
       const isDw = m.progression.isDualWieldUnlocked();
       const mainWpn = m.equippedWeapon?.id || 'none';
       const offWpn = m.offhandWeapon?.id || 'none';
+      const helmet = m.equippedHelmet?.id || 'none';
+      const bodyArmor = m.equippedBodyArmor?.id || 'none';
       const equippedSkills = m.equippedSkillIds.join(',');
       const knownSkills = m.knownSkillIds.join(',');
-      return `${m.id}:${m.entityName}:${m.state}:${mainWpn}:${offWpn}:${isDw}:${equippedSkills}:${knownSkills}`;
+      return `${m.id}:${m.entityName}:${m.state}:${mainWpn}:${offWpn}:${helmet}:${bodyArmor}:${isDw}:${equippedSkills}:${knownSkills}`;
     }).join('|');
   }
 
@@ -2472,6 +2498,50 @@ export class HUD {
         `;
       }
 
+      // Helmets (Milestone 28)
+      const allHelmets = dataLoader.getArmorsBySlot('helmet');
+      let helmetOptions = `<option value="none" ${!member.equippedHelmet ? 'selected' : ''}>None (No Helmet)</option>`;
+      for (const h of allHelmets) {
+        const sel = member.equippedHelmet?.id === h.id ? 'selected' : '';
+        helmetOptions += `<option value="${h.id}" ${sel}>🪖 ${h.name} (+${h.hpBonus} HP)</option>`;
+      }
+
+      // Body Armors (Milestone 28)
+      const allBodyArmors = dataLoader.getArmorsBySlot('body');
+      let bodyOptions = `<option value="none" ${!member.equippedBodyArmor ? 'selected' : ''}>None (No Body Armor)</option>`;
+      for (const b of allBodyArmors) {
+        const sel = member.equippedBodyArmor?.id === b.id ? 'selected' : '';
+        bodyOptions += `<option value="${b.id}" ${sel}>🛡️ ${b.name} (+${b.hpBonus} HP)</option>`;
+      }
+
+      let helmetSelectHtml = '';
+      let bodySelectHtml = '';
+      if (!this.isOutpost) {
+        helmetSelectHtml = `
+          <select class="party-select party-helmet-select" data-member-idx="${i}" disabled style="opacity: 0.6; cursor: not-allowed;">
+            ${helmetOptions}
+          </select>
+          <div style="font-size: 9px; color: #f59e0b; margin-top: 1px;">🔒 Outpost only</div>
+        `;
+        bodySelectHtml = `
+          <select class="party-select party-body-select" data-member-idx="${i}" disabled style="opacity: 0.6; cursor: not-allowed;">
+            ${bodyOptions}
+          </select>
+          <div style="font-size: 9px; color: #f59e0b; margin-top: 1px;">🔒 Outpost only</div>
+        `;
+      } else {
+        helmetSelectHtml = `
+          <select class="party-select party-helmet-select" data-member-idx="${i}">
+            ${helmetOptions}
+          </select>
+        `;
+        bodySelectHtml = `
+          <select class="party-select party-body-select" data-member-idx="${i}">
+            ${bodyOptions}
+          </select>
+        `;
+      }
+
       // Skills chips
       let equippedSkillsHtml = '';
       for (const skillId of member.equippedSkillIds) {
@@ -2562,6 +2632,14 @@ export class HUD {
               <span style="color: #9ca3af; font-size: 10px;">Offhand Weapon:</span>
               ${offhandSelectHtml}
             </div>
+            <div>
+              <span style="color: #9ca3af; font-size: 10px;">Helmet:</span>
+              ${helmetSelectHtml}
+            </div>
+            <div>
+              <span style="color: #9ca3af; font-size: 10px;">Body Armor:</span>
+              ${bodySelectHtml}
+            </div>
           </div>
 
           <div class="party-equip-box">
@@ -2616,6 +2694,52 @@ export class HUD {
             }
           }
           this.renderPartyOverviewModal(true);
+        }
+      } else if (target.classList.contains('party-helmet-select')) {
+        const select = target as HTMLSelectElement;
+        const memberIdx = parseInt(select.dataset.memberIdx || '0', 10);
+        const member = this.currentParty[memberIdx];
+        if (member) {
+          if (!this.isOutpost) {
+            this.showToast('⚠️ Armor can only be equipped at the Outpost!', 'warn');
+            this.renderPartyOverviewModal(true);
+            return;
+          }
+          if (select.value === 'none') {
+            member.equipHelmet(null, this.isOutpost);
+          } else {
+            const armor = DataLoader.getInstance().getArmor(select.value);
+            if (armor) {
+              member.equipHelmet(armor, this.isOutpost);
+            }
+          }
+          this.renderPartyOverviewModal(true);
+          if (this.currentPlayer && this.currentProgression) {
+            this.update(this.currentPlayer, this.currentProgression, 0);
+          }
+        }
+      } else if (target.classList.contains('party-body-select')) {
+        const select = target as HTMLSelectElement;
+        const memberIdx = parseInt(select.dataset.memberIdx || '0', 10);
+        const member = this.currentParty[memberIdx];
+        if (member) {
+          if (!this.isOutpost) {
+            this.showToast('⚠️ Armor can only be equipped at the Outpost!', 'warn');
+            this.renderPartyOverviewModal(true);
+            return;
+          }
+          if (select.value === 'none') {
+            member.equipBodyArmor(null, this.isOutpost);
+          } else {
+            const armor = DataLoader.getInstance().getArmor(select.value);
+            if (armor) {
+              member.equipBodyArmor(armor, this.isOutpost);
+            }
+          }
+          this.renderPartyOverviewModal(true);
+          if (this.currentPlayer && this.currentProgression) {
+            this.update(this.currentPlayer, this.currentProgression, 0);
+          }
         }
       }
     };
@@ -3385,11 +3509,13 @@ export class HUD {
       case 'mining': return '#94a3b8';
       case 'cooking': return '#f97316';
       case 'blacksmithing': return '#94a3b8';
+      case 'armorsmithing': return '#a3e635';
       case 'mace': return '#cbd5e1';
       case 'staff': return '#fbbf24';
       case 'healing_magic': return '#4ade80';
       case 'fire_magic': return '#f97316';
       case 'lightning_magic': return '#38bdf8';
+      case 'ice_magic': return '#67e8f9';
       case 'energy_regen': return '#38bdf8';
       case 'mana_regen': return '#818cf8';
       default: return '#34d399';
@@ -3859,6 +3985,124 @@ export class HUD {
         }
 
         this.blacksmithingRecipesContainerEl.appendChild(card);
+      }
+    }
+  }
+
+  // --- ARMORSMITHING BENCH & ARMOR CRAFTING (Milestone 28) ---
+
+  public openArmorsmithingModal(player: Player, progression: ProgressionSystem): void {
+    this.currentPlayer = player;
+    this.currentProgression = progression;
+    if (this.armorsmithingModalEl) {
+      this.armorsmithingModalEl.classList.add('active');
+      this.renderArmorsmithingModal(player, progression);
+    }
+  }
+
+  public closeArmorsmithingModal(): void {
+    if (this.armorsmithingModalEl) {
+      this.armorsmithingModalEl.classList.remove('active');
+    }
+  }
+
+  public isArmorsmithingModalOpen(): boolean {
+    return this.armorsmithingModalEl?.classList.contains('active') ?? false;
+  }
+
+  public renderArmorsmithingModal(player: Player, progression: ProgressionSystem): void {
+    const gameState = GameState.getInstance();
+    const dataLoader = DataLoader.getInstance();
+
+    // 1. Proficiency Bar & Materials Stockpile
+    const asStat = progression.getProficiencyStat('armorsmithing');
+    if (this.armorsmithingModalProfEl) {
+      const nextExp = LevelingSystem.expForNextLevel(asStat.level);
+      this.armorsmithingModalProfEl.innerText = `Level ${asStat.level} (${asStat.currentExp}/${nextExp} EXP)`;
+    }
+
+    if (this.armorsmithingStockpileWolfPeltEl) {
+      this.setElementTextIfChanged(this.armorsmithingStockpileWolfPeltEl, `${gameState.getItemCount('wolf_pelt')}`);
+    }
+    if (this.armorsmithingStockpileSpiderSilkEl) {
+      this.setElementTextIfChanged(this.armorsmithingStockpileSpiderSilkEl, `${gameState.getItemCount('spider_silk')}`);
+    }
+
+    if (this.armorsmithingStatusMsgEl) {
+      this.armorsmithingStatusMsgEl.innerText = '';
+    }
+
+    // 2. Render Recipes
+    if (this.armorsmithingRecipesContainerEl) {
+      this.armorsmithingRecipesContainerEl.innerHTML = '';
+      const recipes = dataLoader.getArmorsmithRecipes();
+
+      for (const recipe of recipes) {
+        const isLevelUnlocked = asStat.level >= recipe.requiredLevel;
+        let canAfford = true;
+        for (const [item, qty] of Object.entries(recipe.ingredients)) {
+          if (gameState.getItemCount(item) < qty) {
+            canAfford = false;
+            break;
+          }
+        }
+
+        const armorDef = dataLoader.getArmor(recipe.resultArmorId);
+        const card = document.createElement('div');
+        card.style.cssText = `background: rgba(31, 41, 55, ${isLevelUnlocked ? '0.75' : '0.4'}); border: 1px solid ${isLevelUnlocked ? (canAfford ? 'rgba(163, 230, 53, 0.4)' : 'rgba(107, 114, 128, 0.3)') : 'rgba(239, 68, 68, 0.3)'}; border-radius: 8px; padding: 12px; display: flex; justify-content: space-between; align-items: center;`;
+
+        // Ingredients formatting
+        const ingDetails = Object.entries(recipe.ingredients).map(([item, qty]) => {
+          const have = gameState.getItemCount(item);
+          const ok = have >= qty;
+          const label = item.replace(/_/g, ' ');
+          return `<span style="color: ${ok ? '#4ade80' : '#f87171'}; font-weight: ${ok ? '500' : 'bold'};">${qty}x ${label} (${have}/${qty})</span>`;
+        }).join(', ');
+
+        const slotName = armorDef ? (armorDef.slot === 'helmet' ? 'Helmet' : 'Body Armor') : 'Armor';
+        const armorStats = armorDef ? `Slot: ${slotName} | Bonus: +${armorDef.hpBonus} Max HP` : '';
+
+        let actionBtnHtml = '';
+        if (!isLevelUnlocked) {
+          actionBtnHtml = `<span style="font-size: 11px; color: #ef4444; font-weight: bold; padding: 6px 12px; background: rgba(239, 68, 68, 0.1); border-radius: 4px;">🔒 Req. Armorsmithing Lv ${recipe.requiredLevel}</span>`;
+        } else if (!canAfford) {
+          actionBtnHtml = `<button type="button" class="btn-action" style="background: #374151; border-color: #4b5563; color: #9ca3af; cursor: not-allowed; font-size: 11px; padding: 6px 14px;" disabled>Insufficient Mats</button>`;
+        } else {
+          actionBtnHtml = `<button type="button" class="btn-action" style="background: #365314; border-color: #65a30d; font-size: 11px; padding: 6px 14px; font-weight: bold; color: #f7fee7;" data-armor-recipe="${recipe.id}">🛡️ Craft Armor</button>`;
+        }
+
+        card.innerHTML = `
+          <div style="flex: 1; padding-right: 12px;">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 2px;">
+              <span style="font-weight: bold; color: ${isLevelUnlocked ? '#f8fafc' : '#9ca3af'}; font-size: 13px;">${recipe.name}</span>
+              <span style="font-size: 10px; color: #bef264; background: rgba(163, 230, 53, 0.2); padding: 2px 6px; border-radius: 4px;">+${recipe.expGranted} EXP</span>
+              <span style="font-size: 10px; color: #86efac;">${armorStats}</span>
+            </div>
+            <div style="font-size: 11px; color: #9ca3af; margin-bottom: 6px;">${recipe.description}</div>
+            <div style="font-size: 11px; color: #d1d5db;">Cost: ${ingDetails}</div>
+          </div>
+          <div>${actionBtnHtml}</div>
+        `;
+
+        const btn = card.querySelector<HTMLButtonElement>(`[data-armor-recipe="${recipe.id}"]`);
+        if (btn) {
+          btn.onclick = () => {
+            // Consume materials
+            for (const [item, qty] of Object.entries(recipe.ingredients)) {
+              gameState.consumeItem(item, qty);
+            }
+            // Add crafted armor to inventory
+            gameState.addItem(recipe.resultArmorId, 1);
+            // Award Armorsmithing EXP
+            progression.addProficiencyExp('armorsmithing', recipe.expGranted);
+
+            this.showToast(`🛡️ Crafted 1x ${recipe.name}! (+${recipe.expGranted} Armorsmithing EXP)`, 'success', 2500);
+            this.renderArmorsmithingModal(player, progression);
+            this.update(player, progression, 0);
+          };
+        }
+
+        this.armorsmithingRecipesContainerEl.appendChild(card);
       }
     }
   }

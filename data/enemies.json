@@ -121,7 +121,7 @@
       "attackIntervalMs": 950,
       "moveSpeed": 110,
       "harvest": [
-        { "method": "collect", "item": "spider_silk", "tags": ["tailoring", "bowyer"] },
+        { "method": "collect", "item": "spider_silk", "tags": ["armorsmithing", "tailoring", "bowyer"] },
         { "method": "rare_drop", "item": "spider_venom", "tags": ["alchemy"] }
       ]
     },

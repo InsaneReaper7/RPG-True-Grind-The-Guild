@@ -32,7 +32,8 @@
     "woodcutting": { "level": 0, "currentExp": 0 },
     "mining": { "level": 0, "currentExp": 0 },
     "mace": { "level": 0, "currentExp": 0 },
-    "blacksmithing": { "level": 0, "currentExp": 0 }
+    "blacksmithing": { "level": 0, "currentExp": 0 },
+    "armorsmithing": { "level": 0, "currentExp": 0 }
   },
   "resources": {
     "wood": 1000,

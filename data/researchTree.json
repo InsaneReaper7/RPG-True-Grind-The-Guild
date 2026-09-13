@@ -23,6 +23,14 @@
       "cost": 10,
       "prerequisites": [],
       "description": "Unlocks the Blacksmithing Station for the Guild Outpost, enabling ore smelting and weapon forging."
+    },
+    {
+      "id": "research_armorsmithing_bench",
+      "name": "Armorsmithing Bench",
+      "targetBuildableId": "armorsmithing_bench",
+      "cost": 10,
+      "prerequisites": [],
+      "description": "Unlocks the Armorsmithing Bench for the Guild Outpost, enabling hide tailoring and silk weaving into armor."
     }
   ]
 }

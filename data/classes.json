@@ -109,6 +109,18 @@
       }
     },
     {
+      "id": "frost_initiate",
+      "name": "Frost Initiate",
+      "tier": "novice",
+      "requirements": [
+        { "type": "proficiency", "target": "ice_magic", "value": 10 }
+      ],
+      "fantasy": "First brush with true cold",
+      "hiddenSkillBonuses": {
+        "mana_regen": 0.05
+      }
+    },
+    {
       "id": "restoration_mage",
       "name": "Restoration Mage",
       "tier": "expert",
@@ -120,6 +132,18 @@
       "hiddenSkillBonuses": {
         "health_regen": 0.10,
         "mana_regen": 0.05
+      }
+    },
+    {
+      "id": "apprentice_armorer",
+      "name": "Apprentice Armorer",
+      "tier": "novice",
+      "requirements": [
+        { "type": "proficiency", "target": "armorsmithing", "value": 10 }
+      ],
+      "fantasy": "Shaping raw hide and silk into life-saving protection",
+      "hiddenSkillBonuses": {
+        "resilience": 0.05
       }
     }
   ]

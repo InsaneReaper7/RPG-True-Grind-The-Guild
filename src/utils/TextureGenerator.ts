@@ -348,6 +348,21 @@ export class TextureGenerator {
       g.destroy();
     }
 
+    // 6c. Slow Status Indicator Texture (Cyan Snowflake / Ice Crystal)
+    if (!scene.textures.exists('slow-icon')) {
+      const size = 12;
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      g.lineStyle(1.5, 0x67e8f9, 1);
+      g.lineBetween(size / 2, 1, size / 2, size - 1);
+      g.lineBetween(1, size / 2, size - 1, size / 2);
+      g.lineBetween(2, 2, size - 2, size - 2);
+      g.lineBetween(2, size - 2, size - 2, 2);
+      g.fillStyle(0xffffff, 1);
+      g.fillCircle(size / 2, size / 2, 1.5);
+      g.generateTexture('slow-icon', size, size);
+      g.destroy();
+    }
+
     // 7. Outpost Grass Tile
     if (!scene.textures.exists('tile-outpost-grass')) {
       const g = scene.make.graphics({ x: 0, y: 0 });
@@ -788,6 +803,42 @@ export class TextureGenerator {
       g.fillRect(20, 15, 5, 3);
 
       g.generateTexture('buildable-blacksmithing-station', tileSize, tileSize);
+      g.destroy();
+    }
+
+    // 20b. Armorsmithing Bench (Workbench with leather hide, tailor shears, and cuirass armor stand)
+    if (!scene.textures.exists('buildable-armorsmithing-bench')) {
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      // Sturdy wooden workbench surface
+      g.fillStyle(0x78350f, 1);
+      g.fillRoundedRect(2, 6, tileSize - 4, tileSize - 10, 3);
+      g.lineStyle(1.5, 0x451a03, 1);
+      g.strokeRoundedRect(2, 6, tileSize - 4, tileSize - 10, 3);
+
+      // Stretched leather pelt / hide on bench surface
+      g.fillStyle(0xb45309, 0.9);
+      g.fillRoundedRect(5, 9, 14, 10, 2);
+      g.lineStyle(1, 0x92400e, 1);
+      g.strokeRoundedRect(5, 9, 14, 10, 2);
+
+      // Tailor shears / needles (steel cross)
+      g.lineStyle(1.5, 0x94a3b8, 1);
+      g.lineBetween(7, 21, 13, 25);
+      g.lineBetween(13, 21, 7, 25);
+
+      // Cuirass / armor mannequin stand on right
+      g.fillStyle(0x475569, 1); // Dark steel / hardened leather
+      g.fillRoundedRect(20, 8, 9, 12, 2);
+      g.lineStyle(1, 0x38bdf8, 0.8); // Decorative trim
+      g.lineBetween(22, 11, 27, 11);
+      g.lineBetween(24, 11, 24, 18);
+
+      // Bench legs / shadow base
+      g.fillStyle(0x292524, 1);
+      g.fillRect(3, tileSize - 6, 4, 3);
+      g.fillRect(tileSize - 7, tileSize - 6, 4, 3);
+
+      g.generateTexture('buildable-armorsmithing-bench', tileSize, tileSize);
       g.destroy();
     }
 

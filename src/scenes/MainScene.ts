@@ -1287,6 +1287,11 @@ export class MainScene extends Phaser.Scene {
       this.selectAllMembers();
     }
 
+    // Milestone 26: Toggle Gathering Mode [F]
+    if (this.fKey && Phaser.Input.Keyboard.JustDown(this.fKey)) {
+      this.toggleGatheringMode();
+    }
+
 
     // Milestone 25: Number Keys [1]..[4]
     for (let i = 0; i < this.numKeys.length; i++) {
@@ -2088,7 +2093,7 @@ export class MainScene extends Phaser.Scene {
     }
     this.gatheringQueueWorkers.clear();
 
-    for (const [worker, node] of Array.from(this.gatheringWorkerNodeAssignments.entries())) {
+    for (const [worker] of Array.from(this.gatheringWorkerNodeAssignments.entries())) {
       this.gatheringWorkerNodeAssignments.delete(worker);
       worker.claimedDestination = null;
       if (worker.state === 'moving') {

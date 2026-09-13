@@ -1,0 +1,33 @@
+{
+  "_comment": "Modular armor registry. Defines armor pieces, equipment slots ('helmet' | 'body'), and flat HP bonuses.",
+  "armors": [
+    {
+      "id": "leather_cap",
+      "name": "Leather Cap",
+      "slot": "helmet",
+      "hpBonus": 15,
+      "description": "A supple cap sewn from wolf pelts. Increases Max HP by 15."
+    },
+    {
+      "id": "leather_armor",
+      "name": "Leather Armor",
+      "slot": "body",
+      "hpBonus": 25,
+      "description": "A stitched leather tunic reinforced with wolf hide. Increases Max HP by 25."
+    },
+    {
+      "id": "silk_cowl",
+      "name": "Silk Cowl",
+      "slot": "helmet",
+      "hpBonus": 30,
+      "description": "A tightly woven cowl spun from subterranean spider silk. Increases Max HP by 30."
+    },
+    {
+      "id": "silk_robe",
+      "name": "Silk Robe",
+      "slot": "body",
+      "hpBonus": 50,
+      "description": "An enchanted, resilient robe woven from pure spider silk. Increases Max HP by 50."
+    }
+  ]
+}

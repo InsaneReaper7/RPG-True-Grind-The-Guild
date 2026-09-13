@@ -19,6 +19,7 @@ export interface WeaponLevelBonus {
   burnChancePerLevel?: number;
   stunChancePerLevel?: number;
   shockChancePerLevel?: number;
+  slowChancePerLevel?: number;
 }
 
 export interface WeaponDef {
@@ -32,6 +33,7 @@ export interface WeaponDef {
   bleedChance?: number;
   burnChance?: number;
   shockChance?: number;
+  slowChance?: number;
   chainTargets?: number;
   chainHopRangeTiles?: number;
   chainDamageFalloff?: number;
@@ -188,6 +190,8 @@ export interface CharacterSnapshot {
   energy: number;
   equippedWeaponId: string;
   offhandWeaponId?: string | null;
+  equippedHelmetId?: string | null;
+  equippedBodyArmorId?: string | null;
   knownSkillIds: string[];
   equippedSkillIds: string[];
   autocastMap: Record<string, boolean>;
@@ -234,6 +238,8 @@ export interface PlayerSnapshot {
   foodItems?: FoodItemInstance[];
   equippedWeaponId?: string;
   offhandWeaponId?: string | null;
+  equippedHelmetId?: string | null;
+  equippedBodyArmorId?: string | null;
   party?: CharacterSnapshot[];
   discoveredCookingRecipes?: string[];
   discoveredAlchemyRecipes?: string[];
@@ -309,6 +315,34 @@ export interface BlacksmithRecipesData {
   recipes: BlacksmithRecipeDef[];
 }
 
+export type ArmorSlot = 'helmet' | 'body';
+
+export interface ArmorDef {
+  id: string;
+  name: string;
+  slot: ArmorSlot;
+  hpBonus: number;
+  description: string;
+}
+
+export interface ArmorsData {
+  armors: ArmorDef[];
+}
+
+export interface ArmorsmithRecipeDef {
+  id: string;
+  name: string;
+  resultArmorId: string;
+  requiredLevel: number;
+  ingredients: Record<string, number>;
+  expGranted: number;
+  description: string;
+}
+
+export interface ArmorsmithRecipesData {
+  recipes: ArmorsmithRecipeDef[];
+}
+
 export interface SkillDef {
   id: string;
   name: string;
@@ -347,6 +381,7 @@ export interface StatusEffectDef {
   disablesActions?: boolean;
   disablesMovement?: boolean;
   interruptsAttack?: boolean;
+  moveSpeedMultiplier?: number;
   isHarmful?: boolean;
   shieldAmount?: number;
   healPerTick?: number;
