@@ -194,7 +194,7 @@
     }
     #downed-banner {
       position: absolute;
-      bottom: 24px;
+      bottom: 112px;
       left: 50%;
       transform: translateX(-50%);
       background: rgba(185, 28, 28, 0.95);
@@ -208,9 +208,199 @@
       box-shadow: 0 0 20px rgba(239, 68, 68, 0.6);
       display: none;
       pointer-events: auto;
+      z-index: 120;
     }
     #downed-banner.active {
       display: block;
+    }
+    /* Party Portraits Dock (Milestone 25) */
+    #party-portraits-hud {
+      position: absolute;
+      bottom: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      pointer-events: auto;
+      z-index: 110;
+      user-select: none;
+    }
+    .party-portraits-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      padding: 0 4px;
+    }
+    .party-portraits-title {
+      font-size: 11px;
+      font-weight: 700;
+      color: #9ca3af;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+    }
+    .party-reselect-btn {
+      background: #4f46e5;
+      color: #ffffff;
+      border: 1px solid #818cf8;
+      border-radius: 4px;
+      padding: 2px 8px;
+      font-size: 10px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+      transition: all 0.15s;
+    }
+    .party-reselect-btn:hover {
+      background: #4338ca;
+      border-color: #a5b4fc;
+      transform: translateY(-1px);
+    }
+    .party-reselect-btn:active {
+      transform: translateY(0);
+    }
+    .party-portraits-grid {
+      display: flex;
+      gap: 8px;
+    }
+    .hud-portrait-card {
+      position: relative;
+      width: 108px;
+      background: rgba(17, 24, 39, 0.90);
+      backdrop-filter: blur(6px);
+      border: 2px solid rgba(75, 85, 99, 0.6);
+      border-radius: 8px;
+      padding: 5px 7px;
+      cursor: pointer;
+      transition: all 0.15s ease-in-out;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    }
+    .hud-portrait-card:hover {
+      border-color: #9ca3af;
+      transform: translateY(-2px);
+    }
+    .hud-portrait-card.selected {
+      border-color: #38bdf8;
+      background: rgba(15, 23, 42, 0.95);
+      box-shadow: 0 0 14px rgba(56, 189, 248, 0.75), inset 0 0 8px rgba(56, 189, 248, 0.25);
+      transform: translateY(-3px);
+    }
+    .hud-portrait-card.downed {
+      border-color: #ef4444;
+      background: rgba(69, 10, 10, 0.85);
+      box-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
+      animation: pulse-downed 1.5s infinite alternate;
+    }
+    .hud-portrait-card.empty {
+      border: 2px dashed rgba(75, 85, 99, 0.35);
+      background: rgba(17, 24, 39, 0.45);
+      cursor: default;
+      opacity: 0.6;
+    }
+    .hud-portrait-card.empty:hover {
+      border-color: rgba(75, 85, 99, 0.35);
+      transform: none;
+    }
+    .portrait-top-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 4px;
+    }
+    .portrait-avatar-box {
+      width: 22px;
+      height: 22px;
+      border-radius: 4px;
+      background: #374151;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 700;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .portrait-info {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+    }
+    .portrait-name {
+      font-size: 11px;
+      font-weight: 700;
+      color: #f3f4f6;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      line-height: 1.1;
+    }
+    .portrait-hotkey-badge {
+      font-size: 9px;
+      font-weight: 800;
+      color: #93c5fd;
+      background: rgba(30, 58, 138, 0.8);
+      border: 1px solid rgba(96, 165, 250, 0.5);
+      border-radius: 3px;
+      padding: 1px 3px;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+    .portrait-bars {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      margin-top: 1px;
+    }
+    .portrait-bar-wrap {
+      width: 100%;
+      height: 4px;
+      background: rgba(0, 0, 0, 0.6);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .portrait-bar-fill {
+      height: 100%;
+      transition: width 0.2s ease;
+    }
+    .portrait-bar-fill.fill-hp { background: #22c55e; }
+    .portrait-bar-fill.fill-crit { background: #a855f7; }
+    .portrait-bar-fill.fill-energy { background: #38bdf8; }
+    .portrait-status-tag {
+      font-size: 9px;
+      font-weight: 700;
+      text-align: center;
+      border-radius: 3px;
+      padding: 1px 0;
+      margin-top: 2px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      line-height: 1.1;
+    }
+    .hud-portrait-card.selected .portrait-status-tag {
+      color: #38bdf8;
+      background: rgba(56, 189, 248, 0.15);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+    }
+    .hud-portrait-card:not(.selected) .portrait-status-tag {
+      color: #6b7280;
+      background: transparent;
+      border: 1px solid transparent;
+    }
+    .hud-portrait-card.downed .portrait-status-tag {
+      color: #ef4444;
+      background: rgba(239, 68, 68, 0.2);
+      border: 1px solid rgba(239, 68, 68, 0.4);
+    }
+    .hud-portrait-card.empty .portrait-status-tag {
+      color: #4b5563;
     }
     /* Skill Loadout Modal (Outpost Only) */
     #skill-loadout-modal {
@@ -1179,6 +1369,76 @@
 
       <div id="downed-banner">
         ⚠️ DOWNED! Press <span style="color: #fef08a;">[R]</span> to Revive (50% Main HP)
+      </div>
+
+      <!-- Party Portraits Dock (Milestone 25) -->
+      <div id="party-portraits-hud">
+        <div class="party-portraits-header">
+          <span class="party-portraits-title">Party Control</span>
+          <button id="party-reselect-all-btn" class="party-reselect-btn" type="button" title="Reselect entire party (Hotkey: G)">👥 All [G]</button>
+        </div>
+        <div id="party-portraits-list" class="party-portraits-grid">
+          <div id="party-portrait-0" class="hud-portrait-card selected" data-member-index="0" title="Click: Select Hero [1] | Shift+Click: Multi-select">
+            <div class="portrait-top-row">
+              <div id="party-portrait-avatar-0" class="portrait-avatar-box">🛡️</div>
+              <div class="portrait-info">
+                <span id="party-portrait-name-0" class="portrait-name">Hero</span>
+              </div>
+              <span id="party-portrait-hotkey-0" class="portrait-hotkey-badge">[1]</span>
+            </div>
+            <div class="portrait-bars">
+              <div class="portrait-bar-wrap" title="Main HP"><div id="party-portrait-hp-bar-0" class="portrait-bar-fill fill-hp" style="width: 100%;"></div></div>
+              <div class="portrait-bar-wrap" title="Critical HP"><div id="party-portrait-crit-bar-0" class="portrait-bar-fill fill-crit" style="width: 100%;"></div></div>
+              <div class="portrait-bar-wrap" title="Energy"><div id="party-portrait-energy-bar-0" class="portrait-bar-fill fill-energy" style="width: 100%;"></div></div>
+            </div>
+            <div id="party-portrait-status-0" class="portrait-status-tag">✓ ACTIVE</div>
+          </div>
+          <div id="party-portrait-1" class="hud-portrait-card empty" data-member-index="1" title="Click: Select Companion 1 [2] | Shift+Click: Multi-select">
+            <div class="portrait-top-row">
+              <div id="party-portrait-avatar-1" class="portrait-avatar-box">🗡️</div>
+              <div class="portrait-info">
+                <span id="party-portrait-name-1" class="portrait-name">Valerie</span>
+              </div>
+              <span id="party-portrait-hotkey-1" class="portrait-hotkey-badge">[2]</span>
+            </div>
+            <div class="portrait-bars">
+              <div class="portrait-bar-wrap" title="Main HP"><div id="party-portrait-hp-bar-1" class="portrait-bar-fill fill-hp" style="width: 100%;"></div></div>
+              <div class="portrait-bar-wrap" title="Critical HP"><div id="party-portrait-crit-bar-1" class="portrait-bar-fill fill-crit" style="width: 100%;"></div></div>
+              <div class="portrait-bar-wrap" title="Energy"><div id="party-portrait-energy-bar-1" class="portrait-bar-fill fill-energy" style="width: 100%;"></div></div>
+            </div>
+            <div id="party-portrait-status-1" class="portrait-status-tag">EMPTY</div>
+          </div>
+          <div id="party-portrait-2" class="hud-portrait-card empty" data-member-index="2" title="Click: Select Companion 2 [3] | Shift+Click: Multi-select">
+            <div class="portrait-top-row">
+              <div id="party-portrait-avatar-2" class="portrait-avatar-box">⚔️</div>
+              <div class="portrait-info">
+                <span id="party-portrait-name-2" class="portrait-name">Kaelen</span>
+              </div>
+              <span id="party-portrait-hotkey-2" class="portrait-hotkey-badge">[3]</span>
+            </div>
+            <div class="portrait-bars">
+              <div class="portrait-bar-wrap" title="Main HP"><div id="party-portrait-hp-bar-2" class="portrait-bar-fill fill-hp" style="width: 100%;"></div></div>
+              <div class="portrait-bar-wrap" title="Critical HP"><div id="party-portrait-crit-bar-2" class="portrait-bar-fill fill-crit" style="width: 100%;"></div></div>
+              <div class="portrait-bar-wrap" title="Energy"><div id="party-portrait-energy-bar-2" class="portrait-bar-fill fill-energy" style="width: 100%;"></div></div>
+            </div>
+            <div id="party-portrait-status-2" class="portrait-status-tag">EMPTY</div>
+          </div>
+          <div id="party-portrait-3" class="hud-portrait-card empty" data-member-index="3" title="Click: Select Companion 3 [4] | Shift+Click: Multi-select">
+            <div class="portrait-top-row">
+              <div id="party-portrait-avatar-3" class="portrait-avatar-box">🔨</div>
+              <div class="portrait-info">
+                <span id="party-portrait-name-3" class="portrait-name">Barris</span>
+              </div>
+              <span id="party-portrait-hotkey-3" class="portrait-hotkey-badge">[4]</span>
+            </div>
+            <div class="portrait-bars">
+              <div class="portrait-bar-wrap" title="Main HP"><div id="party-portrait-hp-bar-3" class="portrait-bar-fill fill-hp" style="width: 100%;"></div></div>
+              <div class="portrait-bar-wrap" title="Critical HP"><div id="party-portrait-crit-bar-3" class="portrait-bar-fill fill-crit" style="width: 100%;"></div></div>
+              <div class="portrait-bar-wrap" title="Energy"><div id="party-portrait-energy-bar-3" class="portrait-bar-fill fill-energy" style="width: 100%;"></div></div>
+            </div>
+            <div id="party-portrait-status-3" class="portrait-status-tag">EMPTY</div>
+          </div>
+        </div>
       </div>
 
       <!-- Skill Loadout Modal (Outpost Scene Only) -->

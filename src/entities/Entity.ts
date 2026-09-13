@@ -166,20 +166,51 @@ export class Entity extends Phaser.GameObjects.Container {
    * Two-bar Damage System:
    * Damage comes off Main HP first. Once Main HP reaches 0, overflow damage reduces Critical HP.
    * Both HP bars reaching 0 triggers Downed state.
+   * Generic damage absorption shields (shieldHp) absorb damage before HP is reduced.
    */
   public takeDamage(amount: number): boolean {
     if (this.state === 'downed' || this.state === 'dead') return false;
 
+    let damageRemaining = amount;
+    if (damageRemaining > 0) {
+      for (const [effectId, activeEffect] of this.activeStatusEffects.entries()) {
+        if (activeEffect.shieldHp !== undefined && activeEffect.shieldHp > 0) {
+          if (activeEffect.shieldHp >= damageRemaining) {
+            activeEffect.shieldHp -= damageRemaining;
+            const absorbed = damageRemaining;
+            damageRemaining = 0;
+            console.log(`[Shield] ${this.entityName}'s ${activeEffect.def.name} absorbed ${absorbed} damage! (${activeEffect.shieldHp} shield remaining)`);
+            this.createFloatingText(`ABSORBED! (-${absorbed})`, '#38bdf8');
+            if (activeEffect.shieldHp <= 0) {
+              this.removeStatusEffect(effectId);
+            }
+            break;
+          } else {
+            const absorbed = activeEffect.shieldHp;
+            damageRemaining -= absorbed;
+            activeEffect.shieldHp = 0;
+            console.log(`[Shield] ${this.entityName}'s ${activeEffect.def.name} absorbed ${absorbed} damage and broke!`);
+            this.createFloatingText(`SHIELD BROKE! (-${absorbed})`, '#38bdf8');
+            this.removeStatusEffect(effectId);
+          }
+        }
+      }
+    }
+
+    if (damageRemaining <= 0) {
+      return false;
+    }
+
     if (this.hp > 0) {
-      if (this.hp >= amount) {
-        this.hp -= amount;
+      if (this.hp >= damageRemaining) {
+        this.hp -= damageRemaining;
       } else {
-        const overflow = amount - this.hp;
+        const overflow = damageRemaining - this.hp;
         this.hp = 0;
         this.criticalHp = Math.max(0, this.criticalHp - overflow);
       }
     } else {
-      this.criticalHp = Math.max(0, this.criticalHp - amount);
+      this.criticalHp = Math.max(0, this.criticalHp - damageRemaining);
     }
 
     this.drawHpBar();
@@ -189,6 +220,17 @@ export class Entity extends Phaser.GameObjects.Container {
       return true; // Entity entered Downed state
     }
     return false;
+  }
+
+  public heal(amount: number): number {
+    if (this.state === 'dead' || this.state === 'downed') return 0;
+    const oldHp = this.hp;
+    this.hp = Math.min(this.maxHp, this.hp + amount);
+    const restored = this.hp - oldHp;
+    if (restored > 0) {
+      this.drawHpBar();
+    }
+    return restored;
   }
 
   protected onDowned(): void {
@@ -207,7 +249,8 @@ export class Entity extends Phaser.GameObjects.Container {
     this.activeStatusEffects.set(effectDef.id, {
       def: effectDef,
       remainingMs: effectDef.durationMs,
-      nextTickMs: effectDef.tickIntervalMs
+      nextTickMs: effectDef.tickIntervalMs,
+      shieldHp: effectDef.shieldAmount !== undefined ? effectDef.shieldAmount : undefined
     });
 
     this.updateStatusVisuals();
@@ -229,6 +272,43 @@ export class Entity extends Phaser.GameObjects.Container {
   public removeStatusEffect(effectId: string): void {
     this.activeStatusEffects.delete(effectId);
     this.updateStatusVisuals();
+  }
+
+  /**
+   * Fully generic harmful status effect cleanser:
+   * Removes every active status effect where isHarmful === true.
+   * Zero hardcoded names; future debuffs automatically supported.
+   */
+  public removeHarmfulStatusEffects(): string[] {
+    const toRemove: string[] = [];
+    for (const [effectId, activeEffect] of this.activeStatusEffects.entries()) {
+      if (activeEffect.def?.isHarmful === true) {
+        toRemove.push(effectId);
+      }
+    }
+    for (const effectId of toRemove) {
+      this.removeStatusEffect(effectId);
+    }
+    return toRemove;
+  }
+
+  public hasActiveShield(): boolean {
+    for (const activeEffect of this.activeStatusEffects.values()) {
+      if (activeEffect.shieldHp !== undefined && activeEffect.shieldHp > 0) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  public getShieldHp(): number {
+    let total = 0;
+    for (const activeEffect of this.activeStatusEffects.values()) {
+      if (activeEffect.shieldHp !== undefined && activeEffect.shieldHp > 0) {
+        total += activeEffect.shieldHp;
+      }
+    }
+    return total;
   }
 
   public isDisabled(): boolean {
@@ -281,6 +361,18 @@ export class Entity extends Phaser.GameObjects.Container {
     } else if (this.activeStatusEffects.has('taunted')) {
       this.avatarSprite.setTint(0xf97316);
       if (this.statusIconSprite) this.statusIconSprite.setVisible(false);
+    } else if (this.activeStatusEffects.has('guardian_ward')) {
+      this.avatarSprite.setTint(0x38bdf8);
+      if (this.statusIconSprite) this.statusIconSprite.setVisible(false);
+    } else if (this.activeStatusEffects.has('barrier')) {
+      this.avatarSprite.setTint(0x818cf8);
+      if (this.statusIconSprite) this.statusIconSprite.setVisible(false);
+    } else if (this.activeStatusEffects.has('regenerate')) {
+      this.avatarSprite.setTint(0x22c55e);
+      if (this.statusIconSprite) this.statusIconSprite.setVisible(false);
+    } else if (this.activeStatusEffects.has('blessed_weapons')) {
+      this.avatarSprite.setTint(0xfacc15);
+      if (this.statusIconSprite) this.statusIconSprite.setVisible(false);
     } else {
       this.avatarSprite.clearTint();
       if (this.statusIconSprite) this.statusIconSprite.setVisible(false);
@@ -297,13 +389,20 @@ export class Entity extends Phaser.GameObjects.Container {
       activeEffect.nextTickMs -= deltaMs;
 
       if (activeEffect.nextTickMs <= 0 && activeEffect.remainingMs >= 0) {
-        // DoT Tick occurs independent of combat loop!
-        const damage = activeEffect.def.damagePerTick;
-        console.log(`[DoT] ${this.entityName} takes ${damage} damage from ${activeEffect.def.name}!`);
-        const colorHex = activeEffect.def.color || '#ef4444';
-        const colorNum = parseInt(colorHex.replace('#', ''), 16) || 0xef4444;
-        this.createFloatingDamageText(damage, colorNum);
-        this.takeDamage(damage);
+        if (activeEffect.def?.healPerTick && activeEffect.def.healPerTick > 0) {
+          const restored = this.heal(activeEffect.def.healPerTick);
+          console.log(`[HoT] ${this.entityName} heals ${restored} HP from ${activeEffect.def.name}!`);
+          const colorHex = activeEffect.def.color || '#22c55e';
+          this.createFloatingText(`+${restored} HP`, colorHex);
+        } else if (activeEffect.def && activeEffect.def.damagePerTick > 0) {
+          // DoT Tick occurs independent of combat loop!
+          const damage = activeEffect.def.damagePerTick;
+          console.log(`[DoT] ${this.entityName} takes ${damage} damage from ${activeEffect.def.name}!`);
+          const colorHex = activeEffect.def.color || '#ef4444';
+          const colorNum = parseInt(colorHex.replace('#', ''), 16) || 0xef4444;
+          this.createFloatingDamageText(damage, colorNum);
+          this.takeDamage(damage);
+        }
         activeEffect.nextTickMs += activeEffect.def.tickIntervalMs;
       }
 
@@ -315,6 +414,25 @@ export class Entity extends Phaser.GameObjects.Container {
     for (const effectId of toRemove) {
       this.removeStatusEffect(effectId);
     }
+  }
+
+  public createFloatingText(textString: string, colorHex: string): void {
+    if (!this.scene?.add) return;
+    const text = this.scene.add.text(this.x, this.y - 20, textString, {
+      fontSize: '12px',
+      color: colorHex,
+      fontStyle: 'bold'
+    });
+    text.setOrigin(0.5);
+    text.setDepth(this.y + 1000);
+
+    this.scene.tweens?.add({
+      targets: text,
+      y: text.y - 20,
+      alpha: 0,
+      duration: 800,
+      onComplete: () => text.destroy()
+    });
   }
 
   protected createFloatingDamageText(amount: number, color: number): void {

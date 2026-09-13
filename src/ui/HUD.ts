@@ -197,6 +197,20 @@ export class HUD {
   private isOutpost: boolean = false;
   private currentPlayer: Player | null = null;
   private currentProgression: ProgressionSystem | null = null;
+  // Milestone 25: Party Portrait Selection
+  private partyPortraitsHudEl: HTMLElement | null = null;
+  private partyReselectAllBtn: HTMLElement | null = null;
+  private portraitCardEls: (HTMLElement | null)[] = [];
+  private portraitNameEls: (HTMLElement | null)[] = [];
+  private portraitAvatarEls: (HTMLElement | null)[] = [];
+  private portraitHpBarEls: (HTMLElement | null)[] = [];
+  private portraitCritBarEls: (HTMLElement | null)[] = [];
+  private portraitEnergyBarEls: (HTMLElement | null)[] = [];
+  private portraitStatusEls: (HTMLElement | null)[] = [];
+  private portraitHotkeyEls: (HTMLElement | null)[] = [];
+  private selectedMemberIndices: Set<number> = new Set([0, 1, 2, 3]);
+  private onSelectMemberCallback?: (index: number, multiSelect: boolean) => void;
+  private onSelectAllMembersCallback?: () => void;
   private onBuildModeToggleCallback?: () => void;
   private onSelectBuildableCallback?: (id: string) => void;
   private lastBandageApplyTime: number = 0;
@@ -248,6 +262,44 @@ export class HUD {
     this.debugMemberSelectEl = document.getElementById('debug-member-select') as HTMLSelectElement | null;
     this.debugExpLogListEl = document.getElementById('debug-exp-log-list');
     this.debugClearExpLogBtn = document.getElementById('debug-clear-exp-log-btn');
+
+    // Milestone 25: Party Portrait Dock
+    this.partyPortraitsHudEl = document.getElementById('party-portraits-hud');
+    this.partyReselectAllBtn = document.getElementById('party-reselect-all-btn');
+    if (this.partyReselectAllBtn) {
+      this.partyReselectAllBtn.addEventListener('click', (e: MouseEvent) => {
+        e.stopPropagation();
+        this.triggerGroupReselect();
+      });
+    }
+
+    this.portraitCardEls = [];
+    this.portraitNameEls = [];
+    this.portraitAvatarEls = [];
+    this.portraitHpBarEls = [];
+    this.portraitCritBarEls = [];
+    this.portraitEnergyBarEls = [];
+    this.portraitStatusEls = [];
+    this.portraitHotkeyEls = [];
+
+    for (let i = 0; i < 4; i++) {
+      const card = document.getElementById(`party-portrait-${i}`);
+      this.portraitCardEls.push(card);
+      this.portraitNameEls.push(document.getElementById(`party-portrait-name-${i}`));
+      this.portraitAvatarEls.push(document.getElementById(`party-portrait-avatar-${i}`));
+      this.portraitHpBarEls.push(document.getElementById(`party-portrait-hp-bar-${i}`));
+      this.portraitCritBarEls.push(document.getElementById(`party-portrait-crit-bar-${i}`));
+      this.portraitEnergyBarEls.push(document.getElementById(`party-portrait-energy-bar-${i}`));
+      this.portraitStatusEls.push(document.getElementById(`party-portrait-status-${i}`));
+      this.portraitHotkeyEls.push(document.getElementById(`party-portrait-hotkey-${i}`));
+
+      if (card) {
+        card.addEventListener('click', (e: MouseEvent) => {
+          e.stopPropagation();
+          this.selectMemberByIndex(i, e.shiftKey);
+        });
+      }
+    }
 
     // Click to dismiss modals early (cancels auto-dismiss timer immediately)
     this.unlockModalEl?.addEventListener('click', () => {
@@ -962,6 +1014,17 @@ export class HUD {
           active.debugCycleHunger();
         } else if (e.key === 'm' || e.key === 'M') {
           active.debugCycleMood();
+        } else if (e.key === 'g' || e.key === 'G' || e.code === 'KeyG') {
+          const targetTag = (e.target as HTMLElement)?.tagName?.toLowerCase();
+          if (targetTag !== 'input' && targetTag !== 'textarea' && targetTag !== 'select') {
+            active.triggerGroupReselect();
+          }
+        } else if (e.key >= '1' && e.key <= '4') {
+          const targetTag = (e.target as HTMLElement)?.tagName?.toLowerCase();
+          if (targetTag !== 'input' && targetTag !== 'textarea' && targetTag !== 'select') {
+            const idx = parseInt(e.key, 10) - 1;
+            active.selectMemberByIndex(idx, e.shiftKey);
+          }
         } else if (e.key === 'Escape') {
           if (active.isAnnouncementShowing()) {
             active.dismissCurrentAnnouncement();
@@ -1215,6 +1278,10 @@ export class HUD {
     } else if (this.floorTimerBadgeEl) {
       this.floorTimerBadgeEl.style.display = 'none';
     }
+
+    if (this.partyPortraitsHudEl) {
+      this.partyPortraitsHudEl.style.display = isOutpost ? 'none' : 'flex';
+    }
   }
 
   public updateFloorTimer(remainingMs: number, _totalDurationMs: number): void {
@@ -1413,9 +1480,17 @@ export class HUD {
 
         const skillName = skillDef ? skillDef.name : skillId;
         const details = skillDef
-          ? skillDef.healAmount
+          ? skillDef.shieldAmount
+            ? `${skillDef.energyCost} EN | ${skillDef.cooldownMs / 1000}s CD | +${skillDef.shieldAmount} Shield`
+            : skillDef.healPerTick
+            ? `${skillDef.energyCost} EN | ${skillDef.cooldownMs / 1000}s CD | +${skillDef.healPerTick} HP/s HoT`
+            : skillDef.healAmount && skillDef.damageMultiplier
+            ? `${skillDef.energyCost} EN | ${skillDef.cooldownMs / 1000}s CD | ${(skillDef.damageMultiplier * 100).toFixed(0)}% DMG / +${skillDef.healAmount} HP`
+            : skillDef.healAmount
             ? `${skillDef.energyCost} EN | ${skillDef.cooldownMs / 1000}s CD | +${skillDef.healAmount} HP`
-            : `${skillDef.energyCost} EN | ${skillDef.cooldownMs / 1000}s CD | ${(skillDef.damageMultiplier ?? 1.0) * 100}% DMG`
+            : skillDef.damageMultiplier
+            ? `${skillDef.energyCost} EN | ${skillDef.cooldownMs / 1000}s CD | ${(skillDef.damageMultiplier * 100).toFixed(0)}% DMG`
+            : `${skillDef.energyCost} EN | ${skillDef.cooldownMs / 1000}s CD`
           : '';
 
         slotEl.innerHTML = `
@@ -1495,7 +1570,19 @@ export class HUD {
         <div class="skill-stats">
           <span>Cost: ${skillDef.energyCost} Energy</span>
           <span>Cooldown: ${skillDef.cooldownMs / 1000}s</span>
-          <span>${skillDef.healAmount ? `Heal: +${skillDef.healAmount} HP` : `Damage: ${(skillDef.damageMultiplier ?? 1.0) * 100}%`}</span>
+          <span>${
+            skillDef.shieldAmount
+              ? `Shield: +${skillDef.shieldAmount}`
+              : skillDef.healPerTick
+              ? `HoT: +${skillDef.healPerTick} HP/s`
+              : skillDef.healAmount && skillDef.damageMultiplier
+              ? `Nova: ${(skillDef.damageMultiplier * 100).toFixed(0)}% DMG / +${skillDef.healAmount} HP`
+              : skillDef.healAmount
+              ? `Heal: +${skillDef.healAmount} HP`
+              : skillDef.damageMultiplier
+              ? `Damage: ${(skillDef.damageMultiplier * 100).toFixed(0)}%`
+              : `Support`
+          }</span>
         </div>
       `;
 
@@ -1519,6 +1606,9 @@ export class HUD {
     } else if (this.currentParty.length === 0) {
       this.currentParty = [player];
     }
+
+    // Milestone 25: Update party portrait dock
+    this.updatePartyPortraits(this.currentParty);
 
     // 1. Main HP
     if (this.playerHpEl) {
@@ -1668,7 +1758,7 @@ export class HUD {
     // 5. Equipped Skills List with Cooldowns and Live Autocast Toggles
     if (this.hudSkillsListEl) {
       const dataLoader = DataLoader.getInstance();
-      const equipped = player.equippedSkillIds;
+      const equipped = player.equippedSkillIds || [];
       const equippedKey = equipped.join(',');
 
       // Only rebuild DOM rows if equipped skills set changed
@@ -1912,6 +2002,180 @@ export class HUD {
   public closePartyOverviewModal(): void {
     if (this.partyOverviewModalEl) {
       this.partyOverviewModalEl.classList.remove('active');
+    }
+  }
+
+  // --- PARTY PORTRAIT SELECTION (Milestone 25) ---
+
+  public setPartySelectionHandler(
+    onSelect: (index: number, multiSelect: boolean) => void,
+    onSelectAll: () => void
+  ): void {
+    this.onSelectMemberCallback = onSelect;
+    this.onSelectAllMembersCallback = onSelectAll;
+  }
+
+  public setSelectedMemberIndices(indices: Set<number> | number[]): void {
+    this.selectedMemberIndices = new Set(indices);
+    this.renderPartyPortraitSelection();
+  }
+
+  public getSelectedMemberIndices(): Set<number> {
+    return new Set(this.selectedMemberIndices);
+  }
+
+  public triggerGroupReselect(): void {
+    this.selectedMemberIndices.clear();
+    const count = Math.max(1, this.currentParty.length);
+    for (let i = 0; i < count; i++) {
+      this.selectedMemberIndices.add(i);
+    }
+    this.renderPartyPortraitSelection();
+    this.onSelectAllMembersCallback?.();
+  }
+
+  public selectMemberByIndex(index: number, multiSelect: boolean = false): void {
+    if (index >= this.currentParty.length) return; // Ignore clicks on empty slots
+
+    if (!multiSelect) {
+      this.selectedMemberIndices.clear();
+      this.selectedMemberIndices.add(index);
+    } else {
+      if (this.selectedMemberIndices.has(index)) {
+        if (this.selectedMemberIndices.size > 1) {
+          this.selectedMemberIndices.delete(index);
+        }
+      } else {
+        this.selectedMemberIndices.add(index);
+      }
+    }
+    this.renderPartyPortraitSelection();
+    this.onSelectMemberCallback?.(index, multiSelect);
+  }
+
+  public renderPartyPortraitSelection(): void {
+    for (let i = 0; i < 4; i++) {
+      const card = this.portraitCardEls[i];
+      const statusEl = this.portraitStatusEls[i];
+      if (!card) continue;
+
+      const isOccupied = i < this.currentParty.length;
+      if (!isOccupied) {
+        card.classList.remove('selected', 'downed');
+        card.classList.add('empty');
+        if (statusEl) statusEl.innerText = 'EMPTY';
+        continue;
+      }
+
+      card.classList.remove('empty');
+      const member = this.currentParty[i];
+      const isDowned = member.state === 'downed';
+
+      if (isDowned) {
+        card.classList.add('downed');
+      } else {
+        card.classList.remove('downed');
+      }
+
+      if (this.selectedMemberIndices.has(i)) {
+        card.classList.add('selected');
+        if (statusEl) {
+          statusEl.innerText = isDowned ? 'DOWNED' : '✓ ACTIVE';
+        }
+      } else {
+        card.classList.remove('selected');
+        if (statusEl) {
+          statusEl.innerText = isDowned ? 'DOWNED' : `[${i + 1}]`;
+        }
+      }
+    }
+  }
+
+  public updatePartyPortraits(party?: Player[]): void {
+    if (party && party.length > 0) {
+      this.currentParty = party;
+    }
+    const currentList = this.currentParty;
+
+    // Prune any selection indices that exceed the current party size
+    for (const idx of Array.from(this.selectedMemberIndices)) {
+      if (idx >= currentList.length) {
+        this.selectedMemberIndices.delete(idx);
+      }
+    }
+    if (this.selectedMemberIndices.size === 0 && currentList.length > 0) {
+      for (let i = 0; i < currentList.length; i++) {
+        this.selectedMemberIndices.add(i);
+      }
+    }
+
+    if (this.partyPortraitsHudEl) {
+      this.partyPortraitsHudEl.style.display = this.isOutpost ? 'none' : 'flex';
+    }
+
+    for (let i = 0; i < 4; i++) {
+      const card = this.portraitCardEls[i];
+      const nameEl = this.portraitNameEls[i];
+      const avatarEl = this.portraitAvatarEls[i];
+      const hpBarEl = this.portraitHpBarEls[i];
+      const critBarEl = this.portraitCritBarEls[i];
+      const energyBarEl = this.portraitEnergyBarEls[i];
+      const statusEl = this.portraitStatusEls[i];
+      const hotkeyEl = this.portraitHotkeyEls[i];
+
+      if (!card) continue;
+
+      if (i < currentList.length) {
+        const member = currentList[i];
+        card.classList.remove('empty');
+
+        if (nameEl) nameEl.innerText = member.entityName || (i === 0 ? 'Hero' : `Comp ${i}`);
+
+        if (avatarEl) {
+          const roleIcon = i === 0 ? '🛡️' : i === 1 ? '🗡️' : i === 2 ? '⚔️' : '🔨';
+          avatarEl.innerText = roleIcon;
+        }
+
+        if (hotkeyEl) hotkeyEl.innerText = `[${i + 1}]`;
+
+        const maxHp = Math.max(1, member.maxHp);
+        const hpPct = Math.max(0, Math.min(100, (member.hp / maxHp) * 100));
+        if (hpBarEl) hpBarEl.style.width = `${hpPct}%`;
+
+        const maxCrit = Math.max(1, member.maxCriticalHp);
+        const critPct = Math.max(0, Math.min(100, (member.criticalHp / maxCrit) * 100));
+        if (critBarEl) critBarEl.style.width = `${critPct}%`;
+
+        const maxEnergy = Math.max(1, member.maxEnergy);
+        const energyPct = Math.max(0, Math.min(100, (member.energy / maxEnergy) * 100));
+        if (energyBarEl) energyBarEl.style.width = `${energyPct}%`;
+
+        const isDowned = member.state === 'downed';
+        if (isDowned) {
+          card.classList.add('downed');
+        } else {
+          card.classList.remove('downed');
+        }
+
+        if (this.selectedMemberIndices.has(i)) {
+          card.classList.add('selected');
+          if (statusEl) statusEl.innerText = isDowned ? 'DOWNED' : '✓ ACTIVE';
+        } else {
+          card.classList.remove('selected');
+          if (statusEl) statusEl.innerText = isDowned ? 'DOWNED' : `[${i + 1}]`;
+        }
+      } else {
+        // Unoccupied slot
+        card.classList.remove('selected', 'downed');
+        card.classList.add('empty');
+        if (nameEl) nameEl.innerText = '(Empty)';
+        if (avatarEl) avatarEl.innerText = '👤';
+        if (hotkeyEl) hotkeyEl.innerText = `[${i + 1}]`;
+        if (hpBarEl) hpBarEl.style.width = '0%';
+        if (critBarEl) critBarEl.style.width = '0%';
+        if (energyBarEl) energyBarEl.style.width = '0%';
+        if (statusEl) statusEl.innerText = 'EMPTY';
+      }
     }
   }
 

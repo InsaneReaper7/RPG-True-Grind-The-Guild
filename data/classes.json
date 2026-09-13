@@ -107,6 +107,20 @@
       "hiddenSkillBonuses": {
         "mana_regen": 0.05
       }
+    },
+    {
+      "id": "restoration_mage",
+      "name": "Restoration Mage",
+      "tier": "expert",
+      "requirements": [
+        { "type": "proficiency", "target": "healing_magic", "value": 60 },
+        { "type": "classLevel", "target": "medic", "value": 15 }
+      ],
+      "fantasy": "Pure support specialist dedicated entirely to healing and party warding",
+      "hiddenSkillBonuses": {
+        "health_regen": 0.10,
+        "mana_regen": 0.05
+      }
     }
   ]
 }

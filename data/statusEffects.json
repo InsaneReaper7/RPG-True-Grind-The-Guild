@@ -6,6 +6,7 @@
       "durationMs": 6000,
       "tickIntervalMs": 1000,
       "damagePerTick": 3,
+      "isHarmful": true,
       "color": "#ef4444"
     },
     {
@@ -14,6 +15,7 @@
       "durationMs": 4000,
       "tickIntervalMs": 1000,
       "damagePerTick": 4,
+      "isHarmful": true,
       "color": "#f97316"
     },
     {
@@ -24,6 +26,7 @@
       "damagePerTick": 0,
       "disablesActions": true,
       "disablesMovement": true,
+      "isHarmful": true,
       "color": "#facc15"
     },
     {
@@ -35,6 +38,7 @@
       "disablesActions": true,
       "disablesMovement": true,
       "interruptsAttack": true,
+      "isHarmful": true,
       "color": "#06b6d4"
     },
     {
@@ -76,6 +80,42 @@
       "tickIntervalMs": 3000,
       "damagePerTick": 0,
       "color": "#eab308"
+    },
+    {
+      "id": "guardian_ward",
+      "name": "Guardian's Ward",
+      "durationMs": 8000,
+      "tickIntervalMs": 8000,
+      "damagePerTick": 0,
+      "shieldAmount": 35,
+      "color": "#38bdf8"
+    },
+    {
+      "id": "barrier",
+      "name": "Barrier",
+      "durationMs": 10000,
+      "tickIntervalMs": 10000,
+      "damagePerTick": 0,
+      "shieldAmount": 50,
+      "color": "#818cf8"
+    },
+    {
+      "id": "regenerate",
+      "name": "Regenerate",
+      "durationMs": 8000,
+      "tickIntervalMs": 1000,
+      "damagePerTick": 0,
+      "healPerTick": 6,
+      "color": "#22c55e"
+    },
+    {
+      "id": "blessed_weapons",
+      "name": "Blessed Weapons",
+      "durationMs": 60000,
+      "tickIntervalMs": 60000,
+      "damagePerTick": 0,
+      "holyBonusDamage": 5,
+      "color": "#facc15"
     }
   ]
 }

@@ -328,6 +328,9 @@ export interface SkillDef {
   rangeTiles?: number;
   strikeCount?: number;
   damagePerHitMultiplier?: number;
+  shieldAmount?: number;
+  tickIntervalMs?: number;
+  healPerTick?: number;
 }
 
 export interface SkillsData {
@@ -344,6 +347,10 @@ export interface StatusEffectDef {
   disablesActions?: boolean;
   disablesMovement?: boolean;
   interruptsAttack?: boolean;
+  isHarmful?: boolean;
+  shieldAmount?: number;
+  healPerTick?: number;
+  holyBonusDamage?: number;
 }
 
 export interface StatusEffectsData {
@@ -354,6 +361,7 @@ export interface ActiveStatusEffect {
   def: StatusEffectDef;
   remainingMs: number;
   nextTickMs: number;
+  shieldHp?: number;
 }
 
 export type HiddenSkillTriggerType =

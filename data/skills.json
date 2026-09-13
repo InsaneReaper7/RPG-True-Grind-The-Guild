@@ -100,6 +100,75 @@
       "description": "Quickly tends to wounds, restoring 20 HP to a damaged ally or self."
     },
     {
+      "id": "smite",
+      "name": "Smite",
+      "energyCost": 20,
+      "cooldownMs": 4000,
+      "damageMultiplier": 1.8,
+      "rangeTiles": 5,
+      "targetType": "enemy",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "combat_medic",
+          "value": 10
+        }
+      ],
+      "description": "A single-target offensive holy strike, dealing 180% damage to an enemy from up to 5 tiles away."
+    },
+    {
+      "id": "cleanse",
+      "name": "Cleanse",
+      "energyCost": 15,
+      "cooldownMs": 6000,
+      "rangeTiles": 5,
+      "targetType": "ally",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "combat_medic",
+          "value": 20
+        }
+      ],
+      "description": "Purifies a targeted ally or self, removing all active harmful status effects (Bleed, Burn, Shock, etc.)."
+    },
+    {
+      "id": "guardian_ward",
+      "name": "Guardian's Ward",
+      "energyCost": 25,
+      "cooldownMs": 12000,
+      "durationMs": 8000,
+      "shieldAmount": 35,
+      "rangeTiles": 5,
+      "targetType": "ally",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "combat_medic",
+          "value": 30
+        }
+      ],
+      "description": "Places a protective ward on an ally or self, absorbing up to 35 incoming damage for 8s."
+    },
+    {
+      "id": "holy_nova",
+      "name": "Holy Nova",
+      "energyCost": 35,
+      "cooldownMs": 15000,
+      "radiusTiles": 4,
+      "damageMultiplier": 2.0,
+      "healAmount": 30,
+      "targetType": "self",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "combat_medic",
+          "value": 40
+        }
+      ],
+      "description": "Combat Medic capstone: unleashes an explosion of holy energy in a 4-tile radius that simultaneously damages enemies for 200% damage and heals allies for 30 HP."
+    },
+    {
       "id": "shield_bash",
       "name": "Shield Bash",
       "energyCost": 18,
@@ -199,6 +268,92 @@
         }
       ],
       "description": "A devastating overhead strike dealing 180% weapon damage and stunning the target for 2s."
+    },
+    {
+      "id": "heal",
+      "name": "Heal",
+      "energyCost": 22,
+      "cooldownMs": 3000,
+      "healAmount": 35,
+      "rangeTiles": 5,
+      "targetType": "ally",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "restoration_mage",
+          "value": 1
+        }
+      ],
+      "description": "Restoration Mage baseline: channels restorative magic to instantly heal an ally or self for 35 HP."
+    },
+    {
+      "id": "regenerate",
+      "name": "Regenerate",
+      "energyCost": 20,
+      "cooldownMs": 8000,
+      "durationMs": 8000,
+      "tickIntervalMs": 1000,
+      "healPerTick": 6,
+      "rangeTiles": 5,
+      "targetType": "ally",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "restoration_mage",
+          "value": 10
+        }
+      ],
+      "description": "Applies a heal-over-time effect to an ally or self, restoring 6 HP every second for 8s (48 HP total)."
+    },
+    {
+      "id": "barrier",
+      "name": "Barrier",
+      "energyCost": 25,
+      "cooldownMs": 14000,
+      "durationMs": 10000,
+      "shieldAmount": 50,
+      "rangeTiles": 5,
+      "targetType": "ally",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "restoration_mage",
+          "value": 20
+        }
+      ],
+      "description": "Envelops an ally or self in a resilient magical barrier, absorbing up to 50 incoming damage for 10s."
+    },
+    {
+      "id": "blessed_weapons",
+      "name": "Blessed Weapons",
+      "energyCost": 30,
+      "cooldownMs": 30000,
+      "durationMs": 60000,
+      "targetType": "self",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "restoration_mage",
+          "value": 30
+        }
+      ],
+      "description": "Enchants all living party members' weapons with holy power for 60s, granting +5 Holy bonus damage on each attack."
+    },
+    {
+      "id": "mass_revive",
+      "name": "Mass Revive",
+      "energyCost": 40,
+      "cooldownMs": 45000,
+      "radiusTiles": 6,
+      "targetType": "self",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "restoration_mage",
+          "value": 40
+        }
+      ],
+      "description": "Restoration Mage capstone: calls upon divine grace to resurrect all downed allies within a 6-tile radius at once."
     }
   ]
 }

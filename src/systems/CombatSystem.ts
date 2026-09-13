@@ -798,6 +798,21 @@ export class CombatSystem {
             }
           }
         }
+        // Milestone 24: Smite ranged holy strike autocast (when outside melee range up to rangeTiles)
+        if (member.equippedSkillIds.includes('smite') && member.isAutocastEnabled('smite')) {
+          const smiteDef = dataLoader.getSkill('smite');
+          if (smiteDef && member.progression.isSkillUnlocked(smiteDef, member)) {
+            const isOffCd = !member.lastSkillUseTimes.has('smite') || (time - member.lastSkillUseTimes.get('smite')! >= smiteDef.cooldownMs);
+            const isAffordable = member.energy >= smiteDef.energyCost;
+            const maxRange = smiteDef.rangeTiles ?? 5;
+            if (isOffCd && isAffordable && distanceTiles <= maxRange) {
+              const castSuccess = this.castSkill(member, 'smite', target, time);
+              if (castSuccess) {
+                continue;
+              }
+            }
+          }
+        }
       }
 
       if (distanceTiles <= member.attackRangeTiles) {
@@ -917,11 +932,20 @@ export class CombatSystem {
               this.createFloatingText(target.x, target.y - 10, 'MISS', '#9ca3af');
             } else {
               const mult = skillDef.damageMultiplier ?? 1.0;
-              const skillDamage = effectiveBaseDamage * mult;
+              let skillDamage = effectiveBaseDamage * mult;
+              if (member.hasStatusEffect('blessed_weapons')) {
+                skillDamage += 5;
+                this.createFloatingText(target.x, target.y - 24, '+5 HOLY!', '#facc15');
+              }
               console.log(
                 `[Skill] ${member.entityName} casts ${skillDef.name}! Dealt ${skillDamage.toFixed(1)} damage (${mult * 100}% of ${effectiveBaseDamage.toFixed(2)})${isDW ? ` [DW Penalty -${(dwPenalty * 100).toFixed(0)}%]` : ''}`
               );
               this.createFloatingText(target.x, target.y - 10, `${skillDef.name.toUpperCase()}! -${skillDamage.toFixed(1)}`, '#f59e0b');
+
+              if (skillDef.id === 'smite') {
+                this.createHolySmiteEffect(member.x, member.y, target.x, target.y);
+                member.progression.addProficiencyExp('healing_magic', 2);
+              }
 
               if (skillDef.id === 'shield_bash') {
                 const stunDef = dataLoader.getStatusEffect('stun') || {
@@ -1006,7 +1030,11 @@ export class CombatSystem {
               );
               this.createFloatingText(target.x, target.y - 10, 'MISS', '#9ca3af');
             } else {
-              const damage = effectiveBaseDamage;
+              let damage = effectiveBaseDamage;
+              if (member.hasStatusEffect('blessed_weapons')) {
+                damage += 5;
+                this.createFloatingText(target.x, target.y - 24, '+5 HOLY!', '#facc15');
+              }
               console.log(
                 `[Combat] ${member.entityName} attacks ${target.entityName} with ${effectiveWeapon.name} for ${damage.toFixed(1)} damage! (Base: ${effectiveWeapon.baseDamage}, Lv ${weaponLevel} Bonus: +${(weaponLevel * damageBonusPerLevel).toFixed(1)}, Accuracy: ${(effectiveAccuracy * 100).toFixed(1)}%${isDW ? ` [DW Penalty -${(dwPenalty * 100).toFixed(0)}%]` : ''})`
               );
@@ -1125,10 +1153,15 @@ export class CombatSystem {
                 );
                 this.createFloatingText(target.x, target.y - 22, 'DW MISS', '#9ca3af');
               } else {
+                let offDmg = offEffectiveDamage;
+                if (member.hasStatusEffect('blessed_weapons')) {
+                  offDmg += 5;
+                  this.createFloatingText(target.x, target.y - 30, '+5 HOLY!', '#facc15');
+                }
                 console.log(
-                  `[Dual Wield] ⚔️ ${member.entityName} offhand strike with ${offWpn.name} hits ${target.entityName} for ${offEffectiveDamage.toFixed(1)} damage! (DW Penalty: -${(dwPenalty * 100).toFixed(0)}%, Hit Chance: ${(offEffectiveAccuracy * 100).toFixed(1)}%)`
+                  `[Dual Wield] ⚔️ ${member.entityName} offhand strike with ${offWpn.name} hits ${target.entityName} for ${offDmg.toFixed(1)} damage! (DW Penalty: -${(dwPenalty * 100).toFixed(0)}%, Hit Chance: ${(offEffectiveAccuracy * 100).toFixed(1)}%)`
                 );
-                this.createFloatingText(target.x, target.y - 22, `-${offEffectiveDamage.toFixed(1)} (DW)`, '#c084fc');
+                this.createFloatingText(target.x, target.y - 22, `-${offDmg.toFixed(1)} (DW)`, '#c084fc');
 
                 member.progression.addProficiencyExp(offProfId, 2);
                 const dwResult = member.progression.addProficiencyExp('dual_wielding', 2);
@@ -1141,7 +1174,7 @@ export class CombatSystem {
 
                 this.lastCombatTimeMs = time;
                 if ((target.state as string) !== 'dead' && (target.state as string) !== 'downed') (target as any).isAggroed = true;
-                const offTargetDowned = target.takeDamage(offEffectiveDamage);
+                const offTargetDowned = target.takeDamage(offDmg);
                 if (offTargetDowned) {
                   this.handleTargetDefeated(member, target, offProfId);
                 }
@@ -1598,6 +1631,55 @@ export class CombatSystem {
     });
   }
 
+  public createHolySmiteEffect(x1: number, y1: number, x2: number, y2: number): void {
+    if (!this.scene?.add) return;
+    const g = this.scene.add.graphics().setDepth(2000);
+    g.lineStyle(3, 0xfacc15, 0.9);
+    g.beginPath();
+    g.moveTo(x1, y1);
+    g.lineTo(x2, y2);
+    g.strokePath();
+
+    const burst = this.scene.add.circle(x2, y2, 16, 0xfacc15, 0.8).setDepth(2001);
+    this.scene.tweens?.add({
+      targets: [g, burst],
+      alpha: 0,
+      scaleX: 1.5,
+      scaleY: 1.5,
+      duration: 250,
+      onComplete: () => {
+        g.destroy();
+        burst.destroy();
+      }
+    });
+  }
+
+  public createHolyNovaEffect(x: number, y: number, radiusPx: number): void {
+    if (!this.scene?.add) return;
+    const ring = this.scene.add.circle(x, y, 10, 0xfef08a, 0.8).setDepth(2000);
+    this.scene.tweens?.add({
+      targets: ring,
+      radius: Math.max(30, radiusPx),
+      alpha: 0,
+      duration: 400,
+      ease: 'Quad.easeOut',
+      onComplete: () => ring.destroy()
+    });
+  }
+
+  public createCleanseEffect(x: number, y: number): void {
+    if (!this.scene?.add) return;
+    const flash = this.scene.add.circle(x, y, 20, 0x38bdf8, 0.75).setDepth(2000);
+    this.scene.tweens?.add({
+      targets: flash,
+      scaleX: 1.8,
+      scaleY: 1.8,
+      alpha: 0,
+      duration: 350,
+      onComplete: () => flash.destroy()
+    });
+  }
+
   public checkAndAutocastHealingMagic(member: Player, time: number): boolean {
     if (member.state === 'dead' || member.state === 'downed') return false;
 
@@ -1692,12 +1774,69 @@ export class CombatSystem {
       if (!member.isAutocastEnabled(skillId)) continue;
       const skillDef = dataLoader.getSkill(skillId);
       if (!skillDef || !member.progression.isSkillUnlocked(skillDef, member)) continue;
-      if (skillDef.targetType !== 'ally' && (!skillDef.healAmount || skillDef.healAmount <= 0)) continue;
 
       const lastUsed = member.lastSkillUseTimes.get(skillId) || 0;
       const isOffCooldown = time - lastUsed >= skillDef.cooldownMs;
       const isAffordable = member.energy >= skillDef.energyCost;
       if (!isOffCooldown || !isAffordable) continue;
+
+      // Milestone 24: Mass Revive autocast when downed allies in range
+      if (skillId === 'mass_revive') {
+        const radius = skillDef.radiusTiles ?? 6;
+        const cTile = { x: Math.floor(member.x / member.tileSize), y: Math.floor(member.y / member.tileSize) };
+        const downedInRadius = this.party.filter((m) => {
+          if (m === member || m.state !== 'downed') return false;
+          const mTile = { x: Math.floor(m.x / m.tileSize), y: Math.floor(m.y / m.tileSize) };
+          return Math.max(Math.abs(cTile.x - mTile.x), Math.abs(cTile.y - mTile.y)) <= radius;
+        });
+        if (downedInRadius.length > 0) {
+          return this.castSkill(member, skillId, member, time);
+        }
+        continue;
+      }
+
+      // Milestone 24: Cleanse autocast when any living ally has a harmful status effect (isHarmful === true)
+      if (skillId === 'cleanse') {
+        const debuffedMember = this.party.find(
+          (m) => m.state !== 'dead' && m.state !== 'downed' &&
+            Array.from(m.activeStatusEffects.values()).some((e) => e.def?.isHarmful === true)
+        );
+        if (debuffedMember) {
+          return this.castSkill(member, skillId, debuffedMember, time);
+        }
+        continue;
+      }
+
+      // Milestone 24: Guardian's Ward or Barrier damage absorption shields
+      if (skillId === 'guardian_ward' || skillId === 'barrier') {
+        const shieldTargets = this.party.filter(
+          (m) => m.state !== 'dead' && m.state !== 'downed' && !m.hasStatusEffect(skillId)
+        );
+        if (shieldTargets.length > 0) {
+          shieldTargets.sort((a, b) => {
+            const aInCombat = a.inCombat ? 1 : 0;
+            const bInCombat = b.inCombat ? 1 : 0;
+            if (aInCombat !== bInCombat) return bInCombat - aInCombat;
+            return (a.hp / a.maxHp) - (b.hp / b.maxHp);
+          });
+          return this.castSkill(member, skillId, shieldTargets[0], time);
+        }
+        continue;
+      }
+
+      // Milestone 24: Regenerate HoT autocast on damaged ally lacking HoT
+      if (skillId === 'regenerate') {
+        const hotCandidates = this.party.filter(
+          (m) => m.state !== 'dead' && m.state !== 'downed' && m.hp < m.maxHp && !m.hasStatusEffect('regenerate')
+        );
+        if (hotCandidates.length > 0) {
+          hotCandidates.sort((a, b) => (a.hp / a.maxHp) - (b.hp / b.maxHp));
+          return this.castSkill(member, skillId, hotCandidates[0], time);
+        }
+        continue;
+      }
+
+      if (skillDef.targetType !== 'ally' && (!skillDef.healAmount || skillDef.healAmount <= 0)) continue;
 
       // Find living damaged party members (prioritize other allies, then self)
       const damagedMembers = this.party.filter(
@@ -1729,6 +1868,31 @@ export class CombatSystem {
       const skillDef = dataLoader.getSkill(skillId);
       if (!skillDef || !member.progression.isSkillUnlocked(skillDef, member)) continue;
       if (skillDef.targetType !== 'self') continue;
+
+      // Milestone 24: Holy Nova autocast when threat/damaged allies nearby
+      if (skillId === 'holy_nova') {
+        const lastUsed = member.lastSkillUseTimes.get(skillId) || 0;
+        const isOffCooldown = time - lastUsed >= skillDef.cooldownMs;
+        const isAffordable = member.energy >= skillDef.energyCost;
+        if (!isOffCooldown || !isAffordable) continue;
+
+        const radius = skillDef.radiusTiles ?? 4;
+        const cTile = { x: Math.floor(member.x / member.tileSize), y: Math.floor(member.y / member.tileSize) };
+        const enemiesNearby = this.enemies.some((e) => {
+          if (e.state === 'dead' || e.state === 'downed') return false;
+          const eTile = { x: Math.floor(e.x / e.tileSize), y: Math.floor(e.y / e.tileSize) };
+          return Math.max(Math.abs(cTile.x - eTile.x), Math.abs(cTile.y - eTile.y)) <= radius;
+        });
+        const damagedAlliesNearby = this.party.some((a) => {
+          if (a.state === 'dead' || a.state === 'downed' || a.hp >= a.maxHp) return false;
+          const aTile = { x: Math.floor(a.x / a.tileSize), y: Math.floor(a.y / a.tileSize) };
+          return Math.max(Math.abs(cTile.x - aTile.x), Math.abs(cTile.y - aTile.y)) <= radius;
+        });
+        if (enemiesNearby || damagedAlliesNearby) {
+          return this.castSkill(member, skillId, member, time);
+        }
+        continue;
+      }
 
       // Don't recast if buff is already active
       if (member.hasStatusEffect(skillId)) continue;
@@ -1851,39 +2015,254 @@ export class CombatSystem {
         this.createFloatingText(caster.x, caster.y - 12, 'UNBREAKABLE!', '#f59e0b');
         console.log(`[Skill] ${caster.entityName} casts Unbreakable! Full damage immunity for 4s.`);
         return true;
+      } else if (skillId === 'blessed_weapons') {
+        const effDef = dataLoader.getStatusEffect('blessed_weapons') || {
+          id: 'blessed_weapons',
+          name: 'Blessed Weapons',
+          durationMs: skillDef.durationMs ?? 60000,
+          tickIntervalMs: 60000,
+          damagePerTick: 0,
+          holyBonusDamage: 5,
+          color: '#facc15'
+        };
+        for (const ally of this.party) {
+          if (ally.state !== 'dead' && ally.state !== 'downed') {
+            ally.applyStatusEffect(effDef);
+            this.createFloatingText(ally.x, ally.y - 12, 'BLESSED WEAPONS!', '#facc15');
+          }
+        }
+        caster.progression.addProficiencyExp('healing_magic', 2);
+        console.log(`[Skill] ${caster.entityName} casts Blessed Weapons! All living allies' weapons infused with Holy power.`);
+        return true;
+      } else if (skillId === 'holy_nova') {
+        const radius = skillDef.radiusTiles ?? 4;
+        const casterTile = {
+          x: Math.floor(caster.x / caster.tileSize),
+          y: Math.floor(caster.y / caster.tileSize)
+        };
+        let alliesHealed = 0;
+        const healAmt = skillDef.healAmount ?? 30;
+        for (const ally of this.party) {
+          if (ally.state === 'dead' || ally.state === 'downed') continue;
+          const aTile = {
+            x: Math.floor(ally.x / ally.tileSize),
+            y: Math.floor(ally.y / ally.tileSize)
+          };
+          if (Math.max(Math.abs(casterTile.x - aTile.x), Math.abs(casterTile.y - aTile.y)) <= radius) {
+            const restored = ally.heal(healAmt);
+            this.createHealEffect(ally.x, ally.y);
+            this.createFloatingText(ally.x, ally.y - 12, `+${restored} HP`, '#22c55e');
+            alliesHealed++;
+          }
+        }
+
+        let enemiesDamaged = 0;
+        const effectiveWeapon = this.getEffectiveWeaponForAttack(caster);
+        const weaponId = effectiveWeapon.proficiencyId ?? effectiveWeapon.id;
+        const weaponLevel = caster.progression.getProficiencyLevel(weaponId);
+        const dmgBonus = effectiveWeapon.levelBonus?.damagePerLevel ?? 0;
+        const rawBase = effectiveWeapon.baseDamage + weaponLevel * dmgBonus;
+        const moodTier = dataLoader.getMoodTier(caster.mood);
+        const effBase = rawBase * moodTier.combatDamageMultiplier;
+        const mult = skillDef.damageMultiplier ?? 2.0;
+        let holyDamage = Math.max(12, effBase * mult);
+        if (caster.hasStatusEffect('blessed_weapons')) {
+          holyDamage += 5;
+        }
+
+        for (const enemy of this.enemies) {
+          if (enemy.state === 'dead' || enemy.state === 'downed') continue;
+          const eTile = {
+            x: Math.floor(enemy.x / enemy.tileSize),
+            y: Math.floor(enemy.y / enemy.tileSize)
+          };
+          if (Math.max(Math.abs(casterTile.x - eTile.x), Math.abs(casterTile.y - eTile.y)) <= radius &&
+              this.pathfinder.hasLineOfSight(casterTile, eTile)) {
+            this.createSkillAttackEffect(caster.x, caster.y, enemy.x, enemy.y);
+            this.createFloatingText(enemy.x, enemy.y - 10, `HOLY NOVA! -${holyDamage.toFixed(1)}`, '#facc15');
+            const downed = enemy.takeDamage(holyDamage);
+            if (downed) {
+              this.handleTargetDefeated(caster, enemy, weaponId);
+            }
+            enemiesDamaged++;
+          }
+        }
+
+        this.createHolyNovaEffect(caster.x, caster.y, radius * caster.tileSize);
+        this.createFloatingText(caster.x, caster.y - 15, 'HOLY NOVA!', '#facc15');
+        caster.progression.addProficiencyExp('healing_magic', 3);
+        console.log(`[Skill] ${caster.entityName} casts Holy Nova! Simultaneously healed ${alliesHealed} allies and damaged ${enemiesDamaged} enemies.`);
+        return true;
+      } else if (skillId === 'mass_revive') {
+        const radius = skillDef.radiusTiles ?? 6;
+        const casterTile = {
+          x: Math.floor(caster.x / caster.tileSize),
+          y: Math.floor(caster.y / caster.tileSize)
+        };
+        const downedAllies = this.party.filter((m) => {
+          if (m === caster || m.state !== 'downed') return false;
+          const mTile = {
+            x: Math.floor(m.x / m.tileSize),
+            y: Math.floor(m.y / m.tileSize)
+          };
+          return Math.max(Math.abs(casterTile.x - mTile.x), Math.abs(casterTile.y - mTile.y)) <= radius;
+        });
+
+        if (downedAllies.length === 0) {
+          console.warn(`[Skill] Cannot cast Mass Revive: no downed allies within ${radius} tiles!`);
+          return false;
+        }
+
+        for (const downedAlly of downedAllies) {
+          downedAlly.revive(caster);
+          this.createHealEffect(downedAlly.x, downedAlly.y);
+          this.createFloatingText(downedAlly.x, downedAlly.y - 12, 'MASS REVIVED!', '#facc15');
+        }
+
+        this.createHolyNovaEffect(caster.x, caster.y, radius * caster.tileSize);
+        this.createFloatingText(caster.x, caster.y - 15, `MASS REVIVE! (${downedAllies.length})`, '#facc15');
+        caster.progression.addProficiencyExp('healing_magic', 4);
+        console.log(`[Skill] ${caster.entityName} casts Mass Revive! Revived ${downedAllies.length} downed allies at once.`);
+        return true;
       }
       return true;
     } else if (skillDef.targetType === 'ally' || (skillDef.healAmount && skillDef.healAmount > 0)) {
       let targetAlly = target as Player | undefined;
       if (!targetAlly || targetAlly.state === 'dead' || targetAlly.state === 'downed') {
-        const candidates = this.party.filter(
-          (m) => m.state !== 'dead' && m.state !== 'downed' && m.hp < m.maxHp
-        );
-        candidates.sort((a, b) => {
-          const aSelf = a === caster ? 1 : 0;
-          const bSelf = b === caster ? 1 : 0;
-          if (aSelf !== bSelf) return aSelf - bSelf;
-          return (a.hp / a.maxHp) - (b.hp / b.maxHp);
-        });
-        targetAlly = candidates[0] || caster;
+        if (skillId === 'cleanse') {
+          targetAlly = this.party.find(
+            (m) => m.state !== 'dead' && m.state !== 'downed' &&
+              Array.from(m.activeStatusEffects.values()).some((e) => e.def?.isHarmful === true)
+          ) || caster;
+        } else if (skillId === 'guardian_ward' || skillId === 'barrier') {
+          const candidates = this.party.filter(
+            (m) => m.state !== 'dead' && m.state !== 'downed' && !m.hasStatusEffect(skillId)
+          );
+          candidates.sort((a, b) => {
+            const aInCombat = a.inCombat ? 1 : 0;
+            const bInCombat = b.inCombat ? 1 : 0;
+            if (aInCombat !== bInCombat) return bInCombat - aInCombat;
+            return (a.hp / a.maxHp) - (b.hp / b.maxHp);
+          });
+          targetAlly = candidates[0] || caster;
+        } else if (skillId === 'regenerate') {
+          const candidates = this.party.filter(
+            (m) => m.state !== 'dead' && m.state !== 'downed' && m.hp < m.maxHp && !m.hasStatusEffect('regenerate')
+          );
+          candidates.sort((a, b) => (a.hp / a.maxHp) - (b.hp / b.maxHp));
+          targetAlly = candidates[0] || caster;
+        } else {
+          const candidates = this.party.filter(
+            (m) => m.state !== 'dead' && m.state !== 'downed' && m.hp < m.maxHp
+          );
+          candidates.sort((a, b) => {
+            const aSelf = a === caster ? 1 : 0;
+            const bSelf = b === caster ? 1 : 0;
+            if (aSelf !== bSelf) return aSelf - bSelf;
+            return (a.hp / a.maxHp) - (b.hp / b.maxHp);
+          });
+          targetAlly = candidates[0] || caster;
+        }
       }
 
       caster.energy -= skillDef.energyCost;
       caster.lastSkillUseTimes.set(skillId, time);
       caster.lastAttackTime = time;
 
-      const restored = targetAlly.heal(skillDef.healAmount || 20);
-      this.createHealEffect(targetAlly.x, targetAlly.y);
-      this.createFloatingText(targetAlly.x, targetAlly.y - 12, `+${restored} HP`, '#22c55e');
-
-      console.log(
-        `[Skill] ${caster.entityName} casts ${skillDef.name} on ${targetAlly.entityName}! Restored ${restored} HP. (Energy: ${caster.energy}/${caster.maxEnergy})`
-      );
-      return true;
+      if (skillId === 'cleanse') {
+        const removed = targetAlly.removeHarmfulStatusEffects();
+        this.createCleanseEffect(targetAlly.x, targetAlly.y);
+        this.createFloatingText(targetAlly.x, targetAlly.y - 12, 'CLEANSED!', '#38bdf8');
+        console.log(`[Skill] ${caster.entityName} casts Cleanse on ${targetAlly.entityName}! Removed: ${removed.join(', ') || 'None'}`);
+        caster.progression.addProficiencyExp('healing_magic', 2);
+        return true;
+      } else if (skillId === 'guardian_ward' || skillId === 'barrier') {
+        const effDef = dataLoader.getStatusEffect(skillId) || {
+          id: skillId,
+          name: skillDef.name,
+          durationMs: skillDef.durationMs ?? (skillId === 'barrier' ? 10000 : 8000),
+          tickIntervalMs: skillDef.durationMs ?? (skillId === 'barrier' ? 10000 : 8000),
+          damagePerTick: 0,
+          shieldAmount: skillDef.shieldAmount ?? (skillId === 'barrier' ? 50 : 35),
+          color: skillId === 'barrier' ? '#818cf8' : '#38bdf8'
+        };
+        targetAlly.applyStatusEffect(effDef);
+        this.createCleanseEffect(targetAlly.x, targetAlly.y);
+        this.createFloatingText(targetAlly.x, targetAlly.y - 12, `${skillDef.name.toUpperCase()}!`, effDef.color || '#38bdf8');
+        console.log(`[Skill] ${caster.entityName} casts ${skillDef.name} on ${targetAlly.entityName}! Absorbs up to ${effDef.shieldAmount} damage.`);
+        caster.progression.addProficiencyExp('healing_magic', 2);
+        return true;
+      } else if (skillId === 'regenerate') {
+        const effDef = dataLoader.getStatusEffect('regenerate') || {
+          id: 'regenerate',
+          name: 'Regenerate',
+          durationMs: skillDef.durationMs ?? 8000,
+          tickIntervalMs: skillDef.tickIntervalMs ?? 1000,
+          damagePerTick: 0,
+          healPerTick: skillDef.healPerTick ?? 6,
+          color: '#22c55e'
+        };
+        targetAlly.applyStatusEffect(effDef);
+        this.createHealEffect(targetAlly.x, targetAlly.y);
+        this.createFloatingText(targetAlly.x, targetAlly.y - 12, 'REGENERATE!', '#22c55e');
+        console.log(`[Skill] ${caster.entityName} casts Regenerate on ${targetAlly.entityName}! Ticking ${effDef.healPerTick} HP/s.`);
+        caster.progression.addProficiencyExp('healing_magic', 2);
+        return true;
+      } else {
+        const restored = targetAlly.heal(skillDef.healAmount || (skillId === 'heal' ? 35 : 20));
+        this.createHealEffect(targetAlly.x, targetAlly.y);
+        this.createFloatingText(targetAlly.x, targetAlly.y - 12, `+${restored} HP`, '#22c55e');
+        console.log(
+          `[Skill] ${caster.entityName} casts ${skillDef.name} on ${targetAlly.entityName}! Restored ${restored} HP. (Energy: ${caster.energy}/${caster.maxEnergy})`
+        );
+        caster.progression.addProficiencyExp('healing_magic', 2);
+        return true;
+      }
     } else {
       const enemyTarget = (target as Enemy) || (caster.targetEntity instanceof Enemy ? caster.targetEntity : null);
       if (!enemyTarget || enemyTarget.state === 'dead' || enemyTarget.state === 'downed') {
         return false;
+      }
+
+      if (skillId === 'smite') {
+        const curDist = Math.max(
+          Math.abs(Math.floor(caster.x / caster.tileSize) - Math.floor(enemyTarget.x / enemyTarget.tileSize)),
+          Math.abs(Math.floor(caster.y / caster.tileSize) - Math.floor(enemyTarget.y / enemyTarget.tileSize))
+        );
+        const maxRange = skillDef.rangeTiles ?? 5;
+        if (curDist > maxRange) {
+          console.warn(`[Skill] Cannot cast Smite: target is outside range (${curDist} > ${maxRange})`);
+          return false;
+        }
+
+        caster.energy -= skillDef.energyCost;
+        caster.lastSkillUseTimes.set(skillId, time);
+        caster.lastAttackTime = time;
+        caster.state = 'attacking';
+
+        this.createHolySmiteEffect(caster.x, caster.y, enemyTarget.x, enemyTarget.y);
+        const effectiveWeapon = this.getEffectiveWeaponForAttack(caster);
+        const weaponId = effectiveWeapon.proficiencyId ?? effectiveWeapon.id;
+        const weaponLevel = caster.progression.getProficiencyLevel(weaponId);
+        const dmgBonus = effectiveWeapon.levelBonus?.damagePerLevel ?? 0;
+        const rawBase = effectiveWeapon.baseDamage + weaponLevel * dmgBonus;
+        const moodTier = dataLoader.getMoodTier(caster.mood);
+        const effBase = rawBase * moodTier.combatDamageMultiplier;
+        const mult = skillDef.damageMultiplier ?? 1.8;
+        let skillDamage = Math.max(8, effBase * mult);
+
+        if (caster.hasStatusEffect('blessed_weapons')) {
+          skillDamage += 5;
+          this.createFloatingText(enemyTarget.x, enemyTarget.y - 24, '+5 HOLY!', '#facc15');
+        }
+
+        this.createFloatingText(enemyTarget.x, enemyTarget.y - 10, `SMITE! -${skillDamage.toFixed(1)}`, '#facc15');
+        const downed = enemyTarget.takeDamage(skillDamage);
+        if (downed) {
+          this.handleTargetDefeated(caster, enemyTarget, weaponId);
+        }
+        caster.progression.addProficiencyExp('healing_magic', 2);
+        return true;
       }
 
       if (skillId === 'shield_bash') {

@@ -91,6 +91,10 @@ export class MainScene extends Phaser.Scene {
   private pKey!: Phaser.Input.Keyboard.Key;
   private tKey!: Phaser.Input.Keyboard.Key;
   private hKey!: Phaser.Input.Keyboard.Key;
+  private gKey!: Phaser.Input.Keyboard.Key;
+  private numKeys: Phaser.Input.Keyboard.Key[] = [];
+  public selectedMembers: Set<Player> = new Set();
+  private selectionReticleGraphics!: Phaser.GameObjects.Graphics;
 
   private isCameraLocked: boolean = true;
   private targetReticle!: Phaser.GameObjects.Sprite;
@@ -140,6 +144,9 @@ export class MainScene extends Phaser.Scene {
       if (this.hud) {
         this.hud.destroy();
       }
+      if (this.selectionReticleGraphics) {
+        this.selectionReticleGraphics.destroy();
+      }
     });
 
     const dataLoader = DataLoader.getInstance();
@@ -185,6 +192,16 @@ export class MainScene extends Phaser.Scene {
     this.hud.setLocation('Dungeon Floor 1', false);
     GameState.getInstance().setSafeZone(false);
 
+    // Milestone 25: Wire HUD party portrait selection handler
+    this.hud.setPartySelectionHandler(
+      (index: number, multiSelect: boolean) => {
+        this.selectMemberByIndex(index, multiSelect);
+      },
+      () => {
+        this.selectAllMembers();
+      }
+    );
+
     // Progression & Skill Discovery Notifications
     this.bindProgressionEvents(this.progressionSystem, playerData.name || 'Hero');
 
@@ -217,6 +234,10 @@ export class MainScene extends Phaser.Scene {
         this.party.push(member);
       }
     }
+
+    // Milestone 25: Selection reticle graphics and default full-party selection
+    this.selectionReticleGraphics = this.add.graphics().setDepth(15);
+    this.selectAllMembers();
 
     // Spawn Portal to Outpost at dynamic portalPos
     this.portalSprite = this.add.sprite(
@@ -322,10 +343,20 @@ export class MainScene extends Phaser.Scene {
       this.hKey.on('down', () => {
         this.hud.applyBandage();
       });
+      this.gKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.G);
+      this.numKeys = [
+        this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ONE),
+        this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.TWO),
+        this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.THREE),
+        this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.FOUR)
+      ];
     }
 
     // Expose debug helpers on window for browser console testing
     (window as any).GameState = GameState;
+    (window as any).__selectMember = (index: number, multiSelect?: boolean) => this.selectMemberByIndex(index, multiSelect);
+    (window as any).__selectAllMembers = () => this.selectAllMembers();
+    (window as any).__getSelectedMembers = () => this.getSelectedMembers();
     (window as any).__grantExp = (statId: string = 'short_swords', amount: number = 25, memberIndex: number = 0) => {
       const targetMember = this.party[memberIndex] || this.party[0];
       return targetMember.progression.addProficiencyExp(statId, amount);
@@ -584,7 +615,8 @@ export class MainScene extends Phaser.Scene {
       });
 
       if (clickedNode) {
-        this.interactWithGatheringNode(clickedNode);
+        const activeSelected = this.getSelectedMembers().filter(m => m.state !== 'downed' && m.state !== 'dead');
+        this.interactWithGatheringNode(clickedNode, activeSelected[0] || this.player);
         return;
       }
 
@@ -599,18 +631,42 @@ export class MainScene extends Phaser.Scene {
       });
 
       if (clickedEnemy) {
-        this.cancelGatherChannel(this.player);
-        this.engageEnemy(clickedEnemy);
+        const activeSelected = this.getSelectedMembers().filter(m => m.state !== 'downed' && m.state !== 'dead');
+        if (activeSelected.length > 0) {
+          for (const m of activeSelected) {
+            this.cancelGatherChannel(m);
+          }
+          this.engageEnemy(clickedEnemy, activeSelected);
+        }
       } else if (this.gridMatrix[clickedTileY]?.[clickedTileX] === 0) {
         // Click-to-Move to empty walkable tile
-        console.log(`[Input] Clicked Tile: (${clickedTileX}, ${clickedTileY})`);
-        this.cancelGatherChannel(this.player);
-        for (const member of this.party) {
+        const activeSelected = this.getSelectedMembers().filter(m => m.state !== 'downed' && m.state !== 'dead');
+        if (activeSelected.length === 0) {
+          console.log('[Input] No living members currently selected to move');
+          return;
+        }
+
+        console.log(`[Input] Clicked Tile: (${clickedTileX}, ${clickedTileY}) for ${activeSelected.length} selected member(s)`);
+        for (const member of activeSelected) {
+          this.cancelGatherChannel(member);
           member.clearTarget();
         }
-        this.targetReticle.setVisible(false);
+
+        if (!this.party.some(m => m.targetEntity !== null)) {
+          this.targetReticle.setVisible(false);
+        }
 
         const claimed = new Set<string>();
+
+        // Pre-reserve unselected living members' current tiles and claimed destinations so moving members do not collide
+        for (const other of this.party) {
+          if (!activeSelected.includes(other) && other.state !== 'dead') {
+            claimed.add(`${other.gridPos.x},${other.gridPos.y}`);
+            if (other.claimedDestination) {
+              claimed.add(`${other.claimedDestination.x},${other.claimedDestination.y}`);
+            }
+          }
+        }
 
         const isTileBlockedForMove = (tx: number, ty: number, forEntity: Entity): boolean => {
           if (tx <= 0 || tx >= this.mapWidth - 1 || ty <= 0 || ty >= this.mapHeight - 1) return true;
@@ -621,26 +677,25 @@ export class MainScene extends Phaser.Scene {
           return false;
         };
 
-        // Leader movement
+        // Leader / Anchor movement (first in activeSelected)
+        const leader = activeSelected[0];
         let leaderDest: GridPos = { x: clickedTileX, y: clickedTileY };
-        if (isTileBlockedForMove(clickedTileX, clickedTileY, this.player)) {
-          leaderDest = this.findNearestOpenTileForPartyMove({ x: clickedTileX, y: clickedTileY }, this.player.gridPos, claimed, this.player);
+        if (isTileBlockedForMove(clickedTileX, clickedTileY, leader)) {
+          leaderDest = this.findNearestOpenTileForPartyMove({ x: clickedTileX, y: clickedTileY }, leader.gridPos, claimed, leader);
         }
         claimed.add(`${leaderDest.x},${leaderDest.y}`);
-        this.player.claimedDestination = { ...leaderDest };
+        leader.claimedDestination = { ...leaderDest };
 
-        if (this.player.state !== 'downed') {
-          const unitObs = this.getPartyUnitObstacles(this.player);
-          this.pathfinder.findPath(this.player.gridPos, leaderDest, unitObs).then((path) => {
-            if (path.length > 0) {
-              this.player.followPath(path);
-            } else {
-              this.player.claimedDestination = null;
-            }
-          });
-        }
+        const unitObs = this.getPartyUnitObstacles(leader);
+        this.pathfinder.findPath(leader.gridPos, leaderDest, unitObs).then((path) => {
+          if (path.length > 0) {
+            leader.followPath(path);
+          } else {
+            leader.claimedDestination = null;
+          }
+        });
 
-        // 2x2 Box Formation for Companions:
+        // 2x2 Box Formation for Companions in activeSelected:
         // Slot 0 (Leader): (0, 0)
         // Slot 1 (Front-Right): (1, 0)
         // Slot 2 (Back-Left): (0, 1)
@@ -652,10 +707,8 @@ export class MainScene extends Phaser.Scene {
           { x: 1, y: 1 }
         ];
 
-        for (let i = 1; i < this.party.length; i++) {
-          const companion = this.party[i];
-          if (companion.state === 'downed' || companion.state === 'dead') continue;
-
+        for (let i = 1; i < activeSelected.length; i++) {
+          const companion = activeSelected[i];
           const offset = formationOffsets[i] || { x: i % 2, y: Math.floor(i / 2) };
           const idealPos: GridPos = { x: leaderDest.x + offset.x, y: leaderDest.y + offset.y };
           const compDest = this.findNearestOpenTileForPartyMove(idealPos, companion.gridPos, claimed, companion);
@@ -944,9 +997,61 @@ export class MainScene extends Phaser.Scene {
     this.party.push(companion);
     GameState.getInstance().addCompanionToParty(companion, this.time.now);
     this.combatSystem.party = this.party;
+    this.tileClaimOverlay?.setParty(this.party);
+    if (this.selectedMembers.size === this.party.length - 1) {
+      this.selectedMembers.add(companion);
+    }
+    this.syncSelectionWithHud();
     this.hud.showToast(`👥 ${companionName} joined the party!`, 'success', 3000);
     console.log(`[MainScene] Spawned companion ${companionName} at (${spawnX}, ${spawnY}) with ${daggerWeapon.name}`);
     return true;
+  }
+
+  public selectMember(member: Player, multiSelect: boolean = false): void {
+    if (!this.party.includes(member)) return;
+
+    if (!multiSelect) {
+      this.selectedMembers.clear();
+      this.selectedMembers.add(member);
+    } else {
+      if (this.selectedMembers.has(member)) {
+        if (this.selectedMembers.size > 1) {
+          this.selectedMembers.delete(member);
+        }
+      } else {
+        this.selectedMembers.add(member);
+      }
+    }
+    this.syncSelectionWithHud();
+  }
+
+  public selectMemberByIndex(index: number, multiSelect: boolean = false): void {
+    const member = this.party[index];
+    if (member) {
+      this.selectMember(member, multiSelect);
+    }
+  }
+
+  public selectAllMembers(): void {
+    this.selectedMembers.clear();
+    for (const m of this.party) {
+      this.selectedMembers.add(m);
+    }
+    this.syncSelectionWithHud();
+  }
+
+  public getSelectedMembers(): Player[] {
+    return this.party.filter(m => this.selectedMembers.has(m));
+  }
+
+  private syncSelectionWithHud(): void {
+    const indices: number[] = [];
+    for (let i = 0; i < this.party.length; i++) {
+      if (this.selectedMembers.has(this.party[i])) {
+        indices.push(i);
+      }
+    }
+    this.hud?.setSelectedMemberIndices(indices);
   }
 
   private bindProgressionEvents(prog: ProgressionSystem, memberName?: string): void {
@@ -1065,6 +1170,33 @@ export class MainScene extends Phaser.Scene {
     // Standing Tile-Claim Debug Overlay update loop
     if (this.tileClaimOverlay) {
       this.tileClaimOverlay.update(time);
+    }
+
+    // Milestone 25: Reselect All Party Members [G]
+    if (this.gKey && Phaser.Input.Keyboard.JustDown(this.gKey)) {
+      this.selectAllMembers();
+    }
+
+    // Milestone 25: Number Keys [1]..[4]
+    for (let i = 0; i < this.numKeys.length; i++) {
+      const key = this.numKeys[i];
+      if (key && Phaser.Input.Keyboard.JustDown(key)) {
+        const isShift = this.input.keyboard?.checkDown(this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT), 0) ?? false;
+        this.selectMemberByIndex(i, isShift);
+      }
+    }
+
+    // Milestone 25: Render in-world selection circles under selected party members
+    if (this.selectionReticleGraphics) {
+      this.selectionReticleGraphics.clear();
+      for (const member of this.party) {
+        if (this.selectedMembers.has(member) && member.state !== 'dead') {
+          this.selectionReticleGraphics.lineStyle(2, 0x38bdf8, 0.85);
+          this.selectionReticleGraphics.strokeCircle(member.x, member.y + 10, 14);
+          this.selectionReticleGraphics.lineStyle(1, 0x60a5fa, 0.4);
+          this.selectionReticleGraphics.strokeCircle(member.x, member.y + 10, 17);
+        }
+      }
     }
     // Debug Revive key listener [R]
     if (this.rKey && Phaser.Input.Keyboard.JustDown(this.rKey)) {

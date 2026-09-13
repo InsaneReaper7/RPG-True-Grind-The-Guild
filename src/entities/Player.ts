@@ -388,7 +388,17 @@ export class Player extends Entity {
       const targetAlly = (target as Player) || this;
       this.energy -= skillDef.energyCost;
       this.lastSkillUseTimes.set(skillId, now);
-      targetAlly.heal(skillDef.healAmount || 20);
+      if (skillId === 'cleanse') {
+        targetAlly.removeHarmfulStatusEffects();
+      } else if (skillId === 'guardian_ward' || skillId === 'barrier') {
+        const effDef = dataLoader.getStatusEffect(skillId);
+        if (effDef) targetAlly.applyStatusEffect(effDef);
+      } else if (skillId === 'regenerate') {
+        const effDef = dataLoader.getStatusEffect('regenerate');
+        if (effDef) targetAlly.applyStatusEffect(effDef);
+      } else {
+        targetAlly.heal(skillDef.healAmount || 20);
+      }
       return true;
     }
     return false;
