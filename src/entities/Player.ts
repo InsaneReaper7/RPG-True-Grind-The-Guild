@@ -499,10 +499,9 @@ export class Player extends Entity {
     this.energy = snapshot.energy;
 
     let normalizedWeaponId = snapshot.equippedWeaponId;
-    if (normalizedWeaponId === 'fire_magic') {
-      normalizedWeaponId = 'fire_staff';
-    } else if (normalizedWeaponId === 'healing_magic') {
-      normalizedWeaponId = 'healing_staff';
+    const rawWeapon = dataLoader.getWeapon(normalizedWeaponId);
+    if (rawWeapon && (rawWeapon.category === 'magic' || rawWeapon.conduitWeaponId)) {
+      normalizedWeaponId = dataLoader.getConduitForSpell(rawWeapon).id;
     }
     const mainWeapon = dataLoader.getWeapon(normalizedWeaponId);
     if (mainWeapon) {

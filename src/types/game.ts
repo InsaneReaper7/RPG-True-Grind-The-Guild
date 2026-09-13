@@ -17,6 +17,8 @@ export interface WeaponLevelBonus {
   healPerLevel?: number;
   energyCostReductionPerLevel?: number;
   burnChancePerLevel?: number;
+  stunChancePerLevel?: number;
+  shockChancePerLevel?: number;
 }
 
 export interface WeaponDef {
@@ -29,6 +31,10 @@ export interface WeaponDef {
   baseAccuracy?: number;
   bleedChance?: number;
   burnChance?: number;
+  shockChance?: number;
+  chainTargets?: number;
+  chainHopRangeTiles?: number;
+  chainDamageFalloff?: number;
   attackRangeTiles?: number;
   aoeRadiusTiles?: number;
   aoeSplashPercent?: number;
@@ -36,6 +42,10 @@ export interface WeaponDef {
   baseMitigation?: number;
   baseHealAmount?: number;
   energyCostPerCast?: number;
+  stunChance?: number;
+  proficiencyId?: string;
+  conduitWeaponId?: string;
+  spellWeaponId?: string;
   levelBonus?: WeaponLevelBonus;
 }
 
@@ -285,6 +295,20 @@ export interface CookingRecipesData {
   recipes: CookingRecipeDef[];
 }
 
+export interface BlacksmithRecipeDef {
+  id: string;
+  name: string;
+  resultWeaponId: string;
+  requiredLevel: number;
+  ingredients: Record<string, number>;
+  expGranted: number;
+  description: string;
+}
+
+export interface BlacksmithRecipesData {
+  recipes: BlacksmithRecipeDef[];
+}
+
 export interface SkillDef {
   id: string;
   name: string;
@@ -300,6 +324,10 @@ export interface SkillDef {
   durationMs?: number;
   radiusTiles?: number;
   damageImmunity?: boolean;
+  accuracyBonus?: number;
+  rangeTiles?: number;
+  strikeCount?: number;
+  damagePerHitMultiplier?: number;
 }
 
 export interface SkillsData {
@@ -313,6 +341,9 @@ export interface StatusEffectDef {
   tickIntervalMs: number;
   damagePerTick: number;
   color?: string;
+  disablesActions?: boolean;
+  disablesMovement?: boolean;
+  interruptsAttack?: boolean;
 }
 
 export interface StatusEffectsData {

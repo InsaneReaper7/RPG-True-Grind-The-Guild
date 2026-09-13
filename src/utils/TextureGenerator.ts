@@ -753,8 +753,45 @@ export class TextureGenerator {
       g.generateTexture('buildable-cooking-station', tileSize, tileSize);
       g.destroy();
     }
+    // 20. Blacksmithing Station (Forge with anvil and glowing embers)
+    if (!scene.textures.exists('buildable-blacksmithing-station')) {
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      // Stone forge base
+      g.fillStyle(0x4b5563, 1);
+      g.fillRoundedRect(3, 3, tileSize - 6, tileSize - 6, 4);
+      g.lineStyle(1.5, 0x374151, 1);
+      g.strokeRoundedRect(3, 3, tileSize - 6, tileSize - 6, 4);
 
-    // 20. Foraging Bush (Lush with wild herbs and berries)
+      // Forge opening with glowing embers
+      g.fillStyle(0x111827, 1);
+      g.fillRoundedRect(5, 14, 14, 12, 2);
+      g.fillStyle(0xdc2626, 0.9); // Red-hot embers
+      g.fillCircle(12, 22, 4);
+      g.fillStyle(0xf97316, 0.95); // Orange glow
+      g.fillCircle(12, 21, 2.5);
+      g.fillStyle(0xfbbf24, 1); // Hot core
+      g.fillCircle(12, 20, 1.2);
+
+      // Anvil on right side
+      g.fillStyle(0x1f2937, 1);
+      g.fillRect(20, 16, 8, 3); // Anvil top
+      g.fillRect(22, 19, 4, 6); // Anvil body
+      g.fillRect(20, 25, 8, 2); // Anvil base
+      // Anvil horn
+      g.fillStyle(0x374151, 1);
+      g.fillRect(18, 16, 3, 2);
+
+      // Hammer leaning against anvil
+      g.lineStyle(2, 0x78350f, 1);
+      g.lineBetween(26, 10, 22, 16);
+      g.fillStyle(0x6b7280, 1);
+      g.fillRect(20, 15, 5, 3);
+
+      g.generateTexture('buildable-blacksmithing-station', tileSize, tileSize);
+      g.destroy();
+    }
+
+    // 21. Foraging Bush (Lush with wild herbs and berries)
     if (!scene.textures.exists('foraging-bush')) {
       const g = scene.make.graphics({ x: 0, y: 0 });
       // Base dark green shadow foliage

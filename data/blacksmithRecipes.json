@@ -1,0 +1,42 @@
+{
+  "recipes": [
+    {
+      "id": "mace",
+      "name": "Iron Mace",
+      "resultWeaponId": "mace",
+      "requiredLevel": 0,
+      "ingredients": {
+        "ore": 4,
+        "wood": 2
+      },
+      "expGranted": 25,
+      "description": "A solid iron mace forged from raw ore. Reliable blunt-force weapon capable of stunning enemies."
+    },
+    {
+      "id": "heavy_mace",
+      "name": "Heavy War Mace",
+      "resultWeaponId": "heavy_mace",
+      "requiredLevel": 5,
+      "ingredients": {
+        "ore": 6,
+        "steel_scrap": 3,
+        "orc_heavy_hide": 1
+      },
+      "expGranted": 50,
+      "description": "A reinforced war mace incorporating salvaged orc steel and hardened hide grip. Superior impact force."
+    },
+    {
+      "id": "spiked_morningstar",
+      "name": "Spiked Morningstar",
+      "resultWeaponId": "spiked_morningstar",
+      "requiredLevel": 10,
+      "ingredients": {
+        "ore": 8,
+        "steel_scrap": 5,
+        "orc_heavy_hide": 2
+      },
+      "expGranted": 80,
+      "description": "A brutal spiked morningstar forged from the finest orcish steel. Devastating stun potential."
+    }
+  ]
+}

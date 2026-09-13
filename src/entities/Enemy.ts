@@ -74,8 +74,8 @@ export class Enemy extends Entity {
     // Fresh hit resets out-of-aggro timer
     this.outOfAggroTimerMs = 0;
 
-    // If stunned, maintain stun and do not resume pursuit until stun clears
-    if (this.hasStatusEffect('stun')) {
+    // If disabled (stunned, shocked, etc.), maintain disable state and do not resume pursuit until cleared
+    if (this.isDisabled()) {
       return super.takeDamage(amount);
     }
 

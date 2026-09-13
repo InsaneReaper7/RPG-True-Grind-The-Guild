@@ -27,6 +27,13 @@
       "priority": 10,
       "requiredTags": ["alchemy"],
       "description": "Brewing laboratory with an alchemy station."
+    },
+    {
+      "id": "smithy",
+      "name": "Smithy",
+      "priority": 10,
+      "requiredTags": ["blacksmithing"],
+      "description": "Forge workshop with a blacksmithing station."
     }
   ]
 }

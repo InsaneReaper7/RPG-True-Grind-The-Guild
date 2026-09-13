@@ -83,6 +83,30 @@
       "hiddenSkillBonuses": {
         "mana_regen": 0.05
       }
+    },
+    {
+      "id": "bludgeoner",
+      "name": "Bludgeoner",
+      "tier": "novice",
+      "requirements": [
+        { "type": "proficiency", "target": "mace", "value": 10 }
+      ],
+      "fantasy": "Heavy impacts and broken defenses",
+      "hiddenSkillBonuses": {
+        "resilience": 0.05
+      }
+    },
+    {
+      "id": "spark_adept",
+      "name": "Spark Adept",
+      "tier": "novice",
+      "requirements": [
+        { "type": "proficiency", "target": "lightning_magic", "value": 10 }
+      ],
+      "fantasy": "Static shocks with intent",
+      "hiddenSkillBonuses": {
+        "mana_regen": 0.05
+      }
     }
   ]
 }

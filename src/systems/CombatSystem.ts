@@ -246,6 +246,29 @@ export class CombatSystem {
     return candidates[0].tile;
   }
 
+  /**
+   * Milestone 22: Opens the Riposte window (3s) following a successful Evade or Parry proc.
+   */
+  public openRiposteWindow(target: Player, enemy: Entity): void {
+    const dataLoader = DataLoader.getInstance();
+    const riposteDef = dataLoader.getSkill('riposte');
+    if (!riposteDef || !target.progression.isSkillUnlocked(riposteDef, target)) {
+      return;
+    }
+    const effDef = dataLoader.getStatusEffect('riposte_window') || {
+      id: 'riposte_window',
+      name: 'Riposte Ready',
+      durationMs: 3000,
+      tickIntervalMs: 3000,
+      damagePerTick: 0,
+      color: '#eab308'
+    };
+    target.applyStatusEffect(effDef);
+    (target as any).lastRiposteTarget = enemy;
+    this.createFloatingText(target.x, target.y - 12, 'RIPOSTE READY!', '#eab308');
+    console.log(`[Combat] ⚡ Riposte window opened for ${target.entityName} against ${enemy.entityName}!`);
+  }
+
   public isTileClaimedOrOccupiedByOther(
     tx: number,
     ty: number,
@@ -353,8 +376,8 @@ export class CombatSystem {
       const enemy = this.enemies[i];
       if (enemy.state === 'downed' || enemy.state === 'dead') continue;
 
-      // Stun check: stunned enemy halts movement and cannot act
-      if (enemy.hasStatusEffect('stun')) {
+      // Disable check: disabled enemy (stunned, shocked, etc.) halts movement and cannot act
+      if (typeof enemy.isDisabled === 'function' ? enemy.isDisabled() : (enemy.hasStatusEffect('stun') || enemy.hasStatusEffect('shock'))) {
         enemy.stopMovement();
         continue;
       }
@@ -576,6 +599,7 @@ export class CombatSystem {
                   console.log(`[Combat] 💨 ${target.entityName} EVADED attack from ${enemy.entityName}! (0 damage)`);
                   this.createAttackEffect(enemy.x, enemy.y, target.x, target.y, 0x60a5fa);
                   this.createFloatingText(target.x, target.y - 12, 'EVADED!', '#60a5fa');
+                  this.openRiposteWindow(target, enemy);
                   if (target.hasStatusEffect('retaliate')) {
                     target.removeStatusEffect('retaliate');
                     this.executePlayerCounterattack(target, enemy, { procced: true, damageMultiplier: 1.0, canCrit: true, chainAttack: false });
@@ -590,6 +614,7 @@ export class CombatSystem {
                   console.log(`[Combat] ⚔️ ${target.entityName} PARRIED attack from ${enemy.entityName}! (0 damage)`);
                   this.createAttackEffect(enemy.x, enemy.y, target.x, target.y, 0xfacc15);
                   this.createFloatingText(target.x, target.y - 12, 'PARRIED!', '#facc15');
+                  this.openRiposteWindow(target, enemy);
                   if (target.hasStatusEffect('retaliate')) {
                     target.removeStatusEffect('retaliate');
                     this.executePlayerCounterattack(target, enemy, { procced: true, damageMultiplier: 1.0, canCrit: true, chainAttack: false });
@@ -729,6 +754,11 @@ export class CombatSystem {
       if (member.state === 'downed' || member.state === 'dead') continue;
       member.inCombat = inCombat;
 
+      if (typeof member.isDisabled === 'function' ? member.isDisabled() : (member.hasStatusEffect('stun') || member.hasStatusEffect('shock'))) {
+        member.stopMovement();
+        continue;
+      }
+
       // Unconditionally prioritize ally healing via Healing Magic if equipped with Staff
       const castHeal = this.checkAndAutocastHealingMagic(member, time);
       if (castHeal) {
@@ -750,6 +780,25 @@ export class CombatSystem {
       const dx = Math.abs(member.gridPos.x - target.gridPos.x);
       const dy = Math.abs(member.gridPos.y - target.gridPos.y);
       const distanceTiles = Math.max(dx, dy);
+      const dataLoader = DataLoader.getInstance();
+
+      // Milestone 22: Fleche approach gap-closer autocast (when outside melee range up to rangeTiles)
+      if (distanceTiles > member.attackRangeTiles && member.targetEntity) {
+        if (member.equippedSkillIds.includes('fleche') && member.isAutocastEnabled('fleche')) {
+          const flecheDef = dataLoader.getSkill('fleche');
+          if (flecheDef && member.progression.isSkillUnlocked(flecheDef, member)) {
+            const isOffCd = !member.lastSkillUseTimes.has('fleche') || (time - member.lastSkillUseTimes.get('fleche')! >= flecheDef.cooldownMs);
+            const isAffordable = member.energy >= flecheDef.energyCost;
+            const maxRange = flecheDef.rangeTiles ?? 5;
+            if (isOffCd && isAffordable && distanceTiles <= maxRange) {
+              const castSuccess = this.castSkill(member, 'fleche', target, time);
+              if (castSuccess) {
+                continue;
+              }
+            }
+          }
+        }
+      }
 
       if (distanceTiles <= member.attackRangeTiles) {
         const hasUnreachedDest = member.claimedDestination &&
@@ -768,7 +817,7 @@ export class CombatSystem {
         }
         const dataLoader = DataLoader.getInstance();
         const effectiveWeapon = this.getEffectiveWeaponForAttack(member);
-        const weaponId = effectiveWeapon.id;
+        const weaponId = effectiveWeapon.proficiencyId ?? effectiveWeapon.id;
         const weaponLevel = member.progression.getProficiencyLevel(weaponId);
         const damageBonusPerLevel = effectiveWeapon.levelBonus?.damagePerLevel ?? 0;
         const accuracyBonusPerLevel = effectiveWeapon.levelBonus?.accuracyPerLevel ?? 0;
@@ -792,8 +841,10 @@ export class CombatSystem {
           const skillDef = dataLoader.getSkill(skillId);
           if (!skillDef || !member.progression.isSkillUnlocked(skillDef, member)) continue;
 
-          const lastUsed = member.lastSkillUseTimes.get(skillId) || 0;
-          const isOffCooldown = time - lastUsed >= skillDef.cooldownMs;
+          // Milestone 22: Riposte requires active riposte_window
+          if (skillId === 'riposte' && !member.hasStatusEffect('riposte_window')) continue;
+
+          const isOffCooldown = !member.lastSkillUseTimes.has(skillId) || (time - member.lastSkillUseTimes.get(skillId)! >= skillDef.cooldownMs);
           const isAffordable = member.energy >= skillDef.energyCost;
           const isWeaponReady = time - member.lastAttackTime >= effectiveWeapon.attackIntervalMs;
 
@@ -809,14 +860,59 @@ export class CombatSystem {
               `[DIAG:Combat] ⚡ ${member.entityName} casts skill ${skillDef.name}! inCombat: ${member.inCombat}, Pre-EN: ${preSkillEnergy.toFixed(1)}, Post-EN: ${member.energy.toFixed(1)} (cost: ${skillDef.energyCost})`
             );
 
+            // Milestone 22: Riposte reactive counter-strike
+            if (skillId === 'riposte') {
+              member.removeStatusEffect('riposte_window');
+              this.executePlayerCounterattack(member, target as Enemy, {
+                procced: true,
+                damageMultiplier: skillDef.damageMultiplier ?? 1.8,
+                canCrit: true,
+                chainAttack: false
+              });
+              this.createFloatingText(member.x, member.y - 12, 'RIPOSTE!', '#eab308');
+              this.lastCombatTimeMs = time;
+              break;
+            }
+
+            // Milestone 22: Blade Dance rapid multi-hit combo
+            if (skillId === 'blade_dance') {
+              const strikeCount = skillDef.strikeCount ?? 4;
+              const damagePerHit = skillDef.damagePerHitMultiplier ?? 0.8;
+              const strikeDamage = effectiveBaseDamage * damagePerHit;
+              console.log(
+                `[Skill] ${member.entityName} unleashes Blade Dance! (${strikeCount} strikes for ${strikeDamage.toFixed(1)} each)`
+              );
+              for (let i = 1; i <= strikeCount; i++) {
+                if (target.state === 'dead' || target.state === 'downed') break;
+                this.createSkillAttackEffect(member.x, member.y, target.x, target.y);
+                this.createFloatingText(target.x, target.y - 10 - (i * 6), `BLADE DANCE! -${strikeDamage.toFixed(1)}`, '#f59e0b');
+                this.checkAndApplyBleed(member, target);
+                const targetDowned = target.takeDamage(strikeDamage);
+                if (targetDowned) {
+                  this.handleTargetDefeated(member, target, weaponId);
+                  break;
+                }
+              }
+              const result = member.progression.addProficiencyExp(weaponId, 2);
+              if (result.leveledUp) {
+                const newLevel = member.progression.getProficiencyLevel(weaponId);
+                this.createFloatingText(member.x, member.y - 20, `${effectiveWeapon.name} Level ${newLevel}!`, '#22c55e');
+              }
+              this.lastCombatTimeMs = time;
+              break;
+            }
+
             this.createSkillAttackEffect(member.x, member.y, target.x, target.y);
 
+            // Milestone 22: Reconcile accuracyBonus (e.g. Thrust +30%)
+            const skillAccBonus = skillDef.accuracyBonus ?? 0;
+            const effectiveSkillAccuracy = Math.min(1.0, effectiveAccuracy + skillAccBonus);
             const hitRoll = Math.random();
-            const isHit = hitRoll < effectiveAccuracy;
+            const isHit = hitRoll < effectiveSkillAccuracy;
 
             if (!isHit) {
               console.log(
-                `[Skill] ${member.entityName} casts ${skillDef.name} but MISSED! (Hit Chance: ${(effectiveAccuracy * 100).toFixed(1)}%${isDW ? ` [DW Penalty -${(dwPenalty * 100).toFixed(0)}%]` : ''}, Roll: ${(hitRoll * 100).toFixed(1)}%)`
+                `[Skill] ${member.entityName} casts ${skillDef.name} but MISSED! (Hit Chance: ${(effectiveSkillAccuracy * 100).toFixed(1)}%${isDW ? ` [DW Penalty -${(dwPenalty * 100).toFixed(0)}%]` : ''}, Roll: ${(hitRoll * 100).toFixed(1)}%)`
               );
               this.createFloatingText(target.x, target.y - 10, 'MISS', '#9ca3af');
             } else {
@@ -844,6 +940,7 @@ export class CombatSystem {
 
               this.checkAndApplyBleed(member, target);
               this.checkAndApplyBurn(member, target);
+              this.checkAndApplyStun(member, target);
 
               const result = member.progression.addProficiencyExp(weaponId, 2);
               if (result.leveledUp) {
@@ -889,8 +986,13 @@ export class CombatSystem {
             );
 
             const isFire = effectiveWeapon.id === 'fire_magic';
-            const attackColor = isFire ? 0xf97316 : 0x3b82f6;
-            this.createAttackEffect(member.x, member.y, target.x, target.y, attackColor);
+            const isLightning = effectiveWeapon.id === 'lightning_magic';
+            const attackColor = isFire ? 0xf97316 : isLightning ? 0x38bdf8 : 0x3b82f6;
+            if (isLightning) {
+              this.createLightningBoltEffect(member.x, member.y, target.x, target.y);
+            } else {
+              this.createAttackEffect(member.x, member.y, target.x, target.y, attackColor);
+            }
             if (isFire) {
               this.createFireExplosionEffect(target.x, target.y);
             }
@@ -908,11 +1010,60 @@ export class CombatSystem {
               console.log(
                 `[Combat] ${member.entityName} attacks ${target.entityName} with ${effectiveWeapon.name} for ${damage.toFixed(1)} damage! (Base: ${effectiveWeapon.baseDamage}, Lv ${weaponLevel} Bonus: +${(weaponLevel * damageBonusPerLevel).toFixed(1)}, Accuracy: ${(effectiveAccuracy * 100).toFixed(1)}%${isDW ? ` [DW Penalty -${(dwPenalty * 100).toFixed(0)}%]` : ''})`
               );
-              const dmgColor = isFire ? '#f97316' : '#38bdf8';
+              const dmgColor = isFire ? '#f97316' : isLightning ? '#38bdf8' : '#38bdf8';
               this.createFloatingText(target.x, target.y - 10, `-${damage.toFixed(1)}`, dmgColor);
 
-              this.checkAndApplyBleed(member, target);
-              this.checkAndApplyBurn(member, target);
+              this.checkAndApplyBleed(member, target, effectiveWeapon);
+              this.checkAndApplyBurn(member, target, effectiveWeapon);
+              this.checkAndApplyStun(member, target, effectiveWeapon);
+              this.checkAndApplyShock(member, target, effectiveWeapon);
+
+              // Chain targeting for weapons with chainTargets (e.g. Lightning Magic)
+              if (effectiveWeapon.chainTargets && effectiveWeapon.chainTargets > 0) {
+                const maxHops = effectiveWeapon.chainTargets;
+                const hopRange = effectiveWeapon.chainHopRangeTiles ?? 3;
+                const falloff = effectiveWeapon.chainDamageFalloff ?? 0.30;
+                const chainedEnemies = new Set<Entity>([target]);
+                let currentSource: Entity = target;
+                let currentDmg = damage;
+
+                for (let hop = 1; hop <= maxHops; hop++) {
+                  let closestEnemy: Enemy | null = null;
+                  let closestDist = Infinity;
+
+                  for (const candidate of this.enemies) {
+                    if (candidate.state === 'dead' || candidate.state === 'downed') continue;
+                    if (chainedEnemies.has(candidate)) continue;
+
+                    const cdx = Math.abs(candidate.gridPos.x - currentSource.gridPos.x);
+                    const cdy = Math.abs(candidate.gridPos.y - currentSource.gridPos.y);
+                    const dist = Math.max(cdx, cdy);
+                    if (dist > 0 && dist <= hopRange && dist < closestDist) {
+                      closestDist = dist;
+                      closestEnemy = candidate;
+                    }
+                  }
+
+                  if (!closestEnemy) {
+                    // Gracefully terminate chain if no eligible unchained enemies in hop range
+                    break;
+                  }
+
+                  chainedEnemies.add(closestEnemy);
+                  currentDmg = currentDmg * (1 - falloff);
+                  console.log(`[Combat:Chain] ⚡ Chain hop ${hop} arcs to ${closestEnemy.entityName} for ${currentDmg.toFixed(1)} damage!`);
+                  this.createLightningChainEffect(currentSource.x, currentSource.y, closestEnemy.x, closestEnemy.y);
+                  this.createFloatingText(closestEnemy.x, closestEnemy.y - 10, `-${currentDmg.toFixed(1)} (Chain)`, '#38bdf8');
+                  this.checkAndApplyShock(member, closestEnemy, effectiveWeapon);
+                  this.lastCombatTimeMs = time;
+                  closestEnemy.isAggroed = true;
+                  const chainDowned = closestEnemy.takeDamage(currentDmg);
+                  if (chainDowned) {
+                    this.handleTargetDefeated(member, closestEnemy, weaponId);
+                  }
+                  currentSource = closestEnemy;
+                }
+              }
 
               // Ranged AoE splash if weapon has aoeRadiusTiles
               if (effectiveWeapon.aoeRadiusTiles && effectiveWeapon.aoeRadiusTiles > 0) {
@@ -926,7 +1077,7 @@ export class CombatSystem {
                   if (Math.max(edx, edy) <= aoeRadius) {
                     console.log(`[Combat:AoE] ${enemy.entityName} caught in fire splash for ${splashDmg.toFixed(1)} damage!`);
                     this.createFloatingText(enemy.x, enemy.y - 10, `-${splashDmg.toFixed(1)} (Splash)`, '#f97316');
-                    this.checkAndApplyBurn(member, enemy);
+                    this.checkAndApplyBurn(member, enemy, effectiveWeapon);
                     this.lastCombatTimeMs = time;
                     enemy.isAggroed = true;
                     const splashDowned = enemy.takeDamage(splashDmg);
@@ -954,7 +1105,8 @@ export class CombatSystem {
             // DUAL WIELDING: Offhand weapon attack strike
             if (isDW && member.offhandWeapon && target.state !== 'downed' && target.state !== 'dead') {
               const offWpn = member.offhandWeapon;
-              const offLevel = member.progression.getProficiencyLevel(offWpn.id);
+              const offProfId = offWpn.proficiencyId ?? offWpn.id;
+              const offLevel = member.progression.getProficiencyLevel(offProfId);
               const offBonusDmg = offWpn.levelBonus?.damagePerLevel ?? 0;
               const offBonusAcc = offWpn.levelBonus?.accuracyPerLevel ?? 0;
               const offRawDamage = offWpn.baseDamage + offLevel * offBonusDmg;
@@ -978,18 +1130,20 @@ export class CombatSystem {
                 );
                 this.createFloatingText(target.x, target.y - 22, `-${offEffectiveDamage.toFixed(1)} (DW)`, '#c084fc');
 
-                member.progression.addProficiencyExp(offWpn.id, 2);
+                member.progression.addProficiencyExp(offProfId, 2);
                 const dwResult = member.progression.addProficiencyExp('dual_wielding', 2);
                 if (dwResult.leveledUp) {
                   const dwLv = member.progression.getProficiencyLevel('dual_wielding');
                   this.createFloatingText(member.x, member.y - 20, `Dual Wield Level ${dwLv}!`, '#a855f7');
                 }
 
+                this.checkAndApplyStun(member, target, offWpn);
+
                 this.lastCombatTimeMs = time;
                 if ((target.state as string) !== 'dead' && (target.state as string) !== 'downed') (target as any).isAggroed = true;
                 const offTargetDowned = target.takeDamage(offEffectiveDamage);
                 if (offTargetDowned) {
-                  this.handleTargetDefeated(member, target, offWpn.id);
+                  this.handleTargetDefeated(member, target, offProfId);
                 }
               }
             }
@@ -997,7 +1151,7 @@ export class CombatSystem {
         }
       } else {
         // Target is outside attack range: Party Member Pursuit & Surround Maintenance
-        if (member.attackRangeTiles === 1 && (member.equippedWeapon?.id === 'fire_staff' || member.equippedWeapon?.id === 'fire_magic')) {
+        if (member.attackRangeTiles === 1 && (member.equippedWeapon?.category === 'magic' || member.equippedWeapon?.id.endsWith('_staff') || member.equippedWeapon?.spellWeaponId)) {
           console.log(
             `[DIAG:Combat] 🏃 ${member.entityName} DRY FALLBACK: Range is 1 (${member.energy.toFixed(1)} EN). Pursuing ${target.entityName} to melee distance (currently ${distanceTiles} tiles)...`
           );
@@ -1091,7 +1245,7 @@ export class CombatSystem {
         const context: CombatContext = {
           equippedWeapon: member.equippedWeapon,
           equippedOffhand: member.offhandWeapon,
-          hasShield: member.hasShield(),
+          hasShield: typeof member.hasShield === 'function' ? member.hasShield() : (member.offhandWeapon?.category === 'offhand'),
           hasMagicProficiency,
           inCombat,
           hasEnergyPotionBuff: member.energyPotionRemainingMs > 0,
@@ -1159,8 +1313,8 @@ export class CombatSystem {
     }
   }
 
-  private checkAndApplyBleed(attacker: Player, target: Entity): void {
-    const weapon = attacker.equippedWeapon;
+  private checkAndApplyBleed(attacker: Player, target: Entity, weaponOverride?: WeaponDef): void {
+    const weapon = weaponOverride ?? attacker.equippedWeapon;
     if (weapon.bleedChance && Math.random() < weapon.bleedChance) {
       const bleedDef = DataLoader.getInstance().getStatusEffect('bleed');
       if (bleedDef) {
@@ -1171,11 +1325,11 @@ export class CombatSystem {
     }
   }
 
-  private checkAndApplyBurn(attacker: Player, target: Entity): void {
-    const weapon = attacker.equippedWeapon;
+  private checkAndApplyBurn(attacker: Player, target: Entity, weaponOverride?: WeaponDef): void {
+    const weapon = weaponOverride ?? attacker.equippedWeapon;
     if (!weapon.burnChance) return;
 
-    const weaponLevel = attacker.progression.getProficiencyLevel(weapon.id);
+    const weaponLevel = attacker.progression.getProficiencyLevel(weapon.proficiencyId ?? weapon.id);
     const burnBonusPerLevel = weapon.levelBonus?.burnChancePerLevel ?? 0;
     const effectiveBurnChance = weapon.burnChance + weaponLevel * burnBonusPerLevel;
 
@@ -1191,6 +1345,74 @@ export class CombatSystem {
     }
   }
 
+  private checkAndApplyStun(attacker: Player, target: Entity, weaponOverride?: WeaponDef): void {
+    const weapon = weaponOverride ?? attacker.equippedWeapon;
+    if (!weapon.stunChance) return;
+
+    const weaponLevel = attacker.progression.getProficiencyLevel(weapon.proficiencyId ?? weapon.id);
+    const stunBonusPerLevel = weapon.levelBonus?.stunChancePerLevel ?? 0;
+    const effectiveStunChance = weapon.stunChance + weaponLevel * stunBonusPerLevel;
+
+    if (Math.random() < effectiveStunChance) {
+      const stunDef = DataLoader.getInstance().getStatusEffect('stun') || {
+        id: 'stun',
+        name: 'Stun',
+        durationMs: 2000,
+        tickIntervalMs: 2000,
+        damagePerTick: 0,
+        disablesActions: true,
+        disablesMovement: true,
+        color: '#facc15'
+      };
+      console.log(
+        `[StatusEffect] Stun proc on ${target.entityName}! (Proc Chance: ${(effectiveStunChance * 100).toFixed(1)}%)`
+      );
+      target.applyStatusEffect(stunDef);
+      target.stopMovement();
+      this.createFloatingText(target.x, target.y - 25, 'STUNNED!', '#facc15');
+    }
+  }
+
+  private checkAndApplyShock(attacker: Player, target: Entity, weaponOverride?: WeaponDef): void {
+    const weapon = weaponOverride ?? attacker.equippedWeapon;
+    if (!weapon.shockChance) return;
+
+    const weaponLevel = attacker.progression.getProficiencyLevel(weapon.proficiencyId ?? weapon.id);
+    const shockBonusPerLevel = weapon.levelBonus?.shockChancePerLevel ?? 0;
+    const effectiveShockChance = weapon.shockChance + weaponLevel * shockBonusPerLevel;
+
+    if (Math.random() < effectiveShockChance) {
+      const shockDef = DataLoader.getInstance().getStatusEffect('shock') || {
+        id: 'shock',
+        name: 'Shock',
+        durationMs: 1000,
+        tickIntervalMs: 1000,
+        damagePerTick: 0,
+        disablesActions: true,
+        disablesMovement: true,
+        interruptsAttack: true,
+        color: '#06b6d4'
+      };
+      console.log(
+        `[StatusEffect] ⚡ Shock proc on ${target.entityName}! (Proc Chance: ${(effectiveShockChance * 100).toFixed(1)}%)`
+      );
+      target.applyStatusEffect(shockDef);
+      if (shockDef.disablesMovement) {
+        target.stopMovement();
+      }
+      if (shockDef.interruptsAttack) {
+        if ('lastAttackTimeMs' in target) {
+          (target as any).lastAttackTimeMs = Date.now();
+        }
+        if ('state' in target && (target as any).state === 'attacking') {
+          (target as any).state = 'chasing';
+        }
+      }
+      this.createFloatingText(target.x, target.y - 25, 'SHOCKED!', '#06b6d4');
+      this.createShockSparksEffect(target.x, target.y);
+    }
+  }
+
   private handleTargetDefeated(killer: Player, target: Entity, weaponId: string): void {
     console.log(`[Combat] ${target.entityName} defeated/downed by ${killer.entityName}!`);
     const result = killer.progression.addProficiencyExp(weaponId, 4);
@@ -1200,7 +1422,7 @@ export class CombatSystem {
     }
 
     if (killer.isDualWielding() && killer.offhandWeapon) {
-      killer.progression.addProficiencyExp(killer.offhandWeapon.id, 2);
+      killer.progression.addProficiencyExp(killer.offhandWeapon.proficiencyId ?? killer.offhandWeapon.id, 2);
       killer.progression.addProficiencyExp('dual_wielding', 2);
     }
 
@@ -1279,7 +1501,7 @@ export class CombatSystem {
     });
     text.setOrigin(0.5);
 
-    this.scene.tweens.add({
+    this.scene.tweens?.add({
       targets: text,
       y: y - 18,
       alpha: 0,
@@ -1317,6 +1539,62 @@ export class CombatSystem {
         burst.destroy();
         core.destroy();
       }
+    });
+  }
+
+  public createLightningBoltEffect(x1: number, y1: number, x2: number, y2: number): void {
+    if (!this.scene?.add) return;
+    const g = this.scene.add.graphics().setDepth(2000);
+    g.lineStyle(2, 0x38bdf8, 0.9);
+
+    const midX = (x1 + x2) / 2 + (Math.random() - 0.5) * 16;
+    const midY = (y1 + y2) / 2 + (Math.random() - 0.5) * 16;
+    g.beginPath();
+    g.moveTo(x1, y1);
+    g.lineTo(midX, midY);
+    g.lineTo(x2, y2);
+    g.strokePath();
+
+    this.scene.tweens?.add({
+      targets: g,
+      alpha: 0,
+      duration: 180,
+      onComplete: () => g.destroy()
+    });
+  }
+
+  public createLightningChainEffect(x1: number, y1: number, x2: number, y2: number): void {
+    if (!this.scene?.add) return;
+    const g = this.scene.add.graphics().setDepth(2000);
+    g.lineStyle(2, 0x06b6d4, 0.9);
+
+    const midX = (x1 + x2) / 2 + (Math.random() - 0.5) * 12;
+    const midY = (y1 + y2) / 2 + (Math.random() - 0.5) * 12;
+    g.beginPath();
+    g.moveTo(x1, y1);
+    g.lineTo(midX, midY);
+    g.lineTo(x2, y2);
+    g.strokePath();
+
+    this.scene.tweens?.add({
+      targets: g,
+      alpha: 0,
+      duration: 160,
+      onComplete: () => g.destroy()
+    });
+  }
+
+  public createShockSparksEffect(x: number, y: number): void {
+    if (!this.scene?.add) return;
+    const spark = this.scene.add.circle(x, y, 12, 0x06b6d4, 0.7).setDepth(2001);
+    this.scene.tweens?.add({
+      targets: spark,
+      scaleX: 1.6,
+      scaleY: 1.6,
+      alpha: 0,
+      duration: 250,
+      ease: 'Cubic.easeOut',
+      onComplete: () => spark.destroy()
     });
   }
 
@@ -1619,6 +1897,120 @@ export class CombatSystem {
         }
       }
 
+      // Milestone 22: Riposte reactive counter-strike
+      if (skillId === 'riposte') {
+        if (!caster.hasStatusEffect('riposte_window')) {
+          console.warn(`[Skill] Cannot cast Riposte: must immediately follow an evasion or parry proc!`);
+          return false;
+        }
+        caster.removeStatusEffect('riposte_window');
+        caster.energy -= skillDef.energyCost;
+        caster.lastSkillUseTimes.set(skillId, time);
+        caster.lastAttackTime = time;
+        caster.state = 'attacking';
+
+        this.executePlayerCounterattack(caster, enemyTarget, {
+          procced: true,
+          damageMultiplier: skillDef.damageMultiplier ?? 1.8,
+          canCrit: true,
+          chainAttack: false
+        });
+        this.createFloatingText(caster.x, caster.y - 12, 'RIPOSTE!', '#eab308');
+        return true;
+      }
+
+      // Milestone 22: Fleche gap-closing dash-strike
+      if (skillId === 'fleche') {
+        const curDist = Math.max(
+          Math.abs(Math.floor(caster.x / caster.tileSize) - Math.floor(enemyTarget.x / enemyTarget.tileSize)),
+          Math.abs(Math.floor(caster.y / caster.tileSize) - Math.floor(enemyTarget.y / enemyTarget.tileSize))
+        );
+        const maxRange = skillDef.rangeTiles ?? 5;
+        if (curDist > maxRange) {
+          console.warn(`[Skill] Cannot cast Fleche: target is outside range (${curDist} > ${maxRange})`);
+          return false;
+        }
+
+        if (curDist > 1) {
+          const openTile = this.findOpenAttackTileForMember(enemyTarget, caster);
+          if (openTile) {
+            const oldX = caster.x;
+            const oldY = caster.y;
+            caster.setGridPosition(openTile.x, openTile.y);
+            this.createAttackEffect(oldX, oldY, caster.x, caster.y, 0x60a5fa);
+          }
+        }
+
+        caster.energy -= skillDef.energyCost;
+        caster.lastSkillUseTimes.set(skillId, time);
+        caster.lastAttackTime = time;
+        caster.state = 'attacking';
+
+        this.createSkillAttackEffect(caster.x, caster.y, enemyTarget.x, enemyTarget.y);
+        const weapon = caster.equippedWeapon;
+        const weaponLevel = caster.progression.getProficiencyLevel(weapon.id);
+        const dmgBonus = weapon.levelBonus?.damagePerLevel ?? 0;
+        const rawBase = weapon.baseDamage + weaponLevel * dmgBonus;
+        const moodTier = dataLoader.getMoodTier(caster.mood);
+        const effBase = rawBase * moodTier.combatDamageMultiplier;
+        const skillDamage = effBase * (skillDef.damageMultiplier ?? 1.6);
+
+        this.createFloatingText(enemyTarget.x, enemyTarget.y - 10, `FLECHE! -${skillDamage.toFixed(1)}`, '#38bdf8');
+        this.checkAndApplyBleed(caster, enemyTarget);
+        const downed = enemyTarget.takeDamage(skillDamage);
+        if (downed) {
+          this.handleTargetDefeated(caster, enemyTarget, weapon.id);
+        }
+        return true;
+      }
+
+      // Milestone 22: Blade Dance multi-hit capstone combo
+      if (skillId === 'blade_dance') {
+        const curDist = Math.max(
+          Math.abs(Math.floor(caster.x / caster.tileSize) - Math.floor(enemyTarget.x / enemyTarget.tileSize)),
+          Math.abs(Math.floor(caster.y / caster.tileSize) - Math.floor(enemyTarget.y / enemyTarget.tileSize))
+        );
+        if (curDist > 1) {
+          console.warn(`[Skill] Cannot cast Blade Dance: target is outside melee range (${curDist} > 1)`);
+          return false;
+        }
+
+        caster.energy -= skillDef.energyCost;
+        caster.lastSkillUseTimes.set(skillId, time);
+        caster.lastAttackTime = time;
+        caster.state = 'attacking';
+
+        const strikeCount = skillDef.strikeCount ?? 4;
+        const damagePerHit = skillDef.damagePerHitMultiplier ?? 0.8;
+        const weapon = caster.equippedWeapon;
+        const weaponLevel = caster.progression.getProficiencyLevel(weapon.id);
+        const dmgBonus = weapon.levelBonus?.damagePerLevel ?? 0;
+        const rawBase = weapon.baseDamage + weaponLevel * dmgBonus;
+        const moodTier = dataLoader.getMoodTier(caster.mood);
+        const effBase = rawBase * moodTier.combatDamageMultiplier;
+        const strikeDamage = effBase * damagePerHit;
+
+        for (let i = 1; i <= strikeCount; i++) {
+          if ((enemyTarget.state as string) === 'dead' || (enemyTarget.state as string) === 'downed') {
+            break;
+          }
+          this.createSkillAttackEffect(caster.x, caster.y, enemyTarget.x, enemyTarget.y);
+          this.createFloatingText(
+            enemyTarget.x,
+            enemyTarget.y - 10 - (i * 6),
+            `BLADE DANCE! -${strikeDamage.toFixed(1)}`,
+            '#f59e0b'
+          );
+          this.checkAndApplyBleed(caster, enemyTarget);
+          const downed = enemyTarget.takeDamage(strikeDamage);
+          if (downed) {
+            this.handleTargetDefeated(caster, enemyTarget, weapon.id);
+            break;
+          }
+        }
+        return true;
+      }
+
       caster.energy -= skillDef.energyCost;
       caster.lastSkillUseTimes.set(skillId, time);
       caster.lastAttackTime = time;
@@ -1813,23 +2205,29 @@ export class CombatSystem {
   }
 
   public updateStaffDynamicRange(member: Player): void {
-    const weaponId = member.equippedWeapon?.id;
-    if (weaponId === 'fire_staff' || weaponId === 'fire_magic') {
-      const fireDef = DataLoader.getInstance().getWeapon('fire_magic');
-      const fireProfLevel = member.progression.getProficiencyLevel('fire_magic');
-      const fireCostReduction = (fireDef?.levelBonus?.energyCostReductionPerLevel ?? 0.1) * fireProfLevel;
-      const fireEnergyCost = fireDef ? Math.max(1, Math.round((fireDef.energyCostPerCast ?? 22) - fireCostReduction)) : 22;
-      const canCastFire = fireDef !== null && member.energy >= fireEnergyCost;
-      member.attackRangeTiles = canCastFire ? (fireDef?.attackRangeTiles ?? 4) : 1;
+    const dataLoader = DataLoader.getInstance();
+    const equipped = member.equippedWeapon;
+    if (!equipped) return;
+
+    // Check if equipped weapon is a spell directly or a conduit item
+    const spellDef = equipped.category === 'magic'
+      ? equipped
+      : dataLoader.getSpellForConduit(equipped);
+
+    if (spellDef) {
+      if (spellDef.id === 'healing_magic' || (spellDef.baseDamage === 0 && !spellDef.attackRangeTiles)) {
+        member.attackRangeTiles = 1;
+        return;
+      }
+      const spellProfLevel = member.progression.getProficiencyLevel(spellDef.proficiencyId ?? spellDef.id);
+      const costReduction = (spellDef.levelBonus?.energyCostReductionPerLevel ?? 0.1) * spellProfLevel;
+      const energyCost = Math.max(1, Math.round((spellDef.energyCostPerCast ?? 20) - costReduction));
+      const canCast = member.energy >= energyCost;
+      member.attackRangeTiles = canCast ? (spellDef.attackRangeTiles ?? 4) : 1;
       return;
     }
 
-    if (
-      weaponId === 'healing_staff' ||
-      weaponId === 'healing_magic' ||
-      weaponId === 'staff' ||
-      member.equippedWeapon?.category === 'staff'
-    ) {
+    if (equipped.id === 'staff' || equipped.category === 'staff' || equipped.id.endsWith('_staff')) {
       member.attackRangeTiles = 1;
       return;
     }
@@ -1837,24 +2235,31 @@ export class CombatSystem {
 
   public getEffectiveWeaponForAttack(member: Player): WeaponDef {
     const dataLoader = DataLoader.getInstance();
-    const weaponId = member.equippedWeapon?.id;
+    const equipped = member.equippedWeapon;
+    if (!equipped) return member.equippedWeapon;
 
-    if (weaponId === 'fire_staff' || weaponId === 'fire_magic') {
-      const fireDefFromData = dataLoader.getWeapon('fire_magic');
+    // Check if equipped weapon is a spell directly or a conduit item
+    const spellDef = equipped.category === 'magic'
+      ? equipped
+      : dataLoader.getSpellForConduit(equipped);
+
+    if (spellDef) {
+      if (spellDef.id === 'healing_magic' || (spellDef.baseDamage === 0 && !spellDef.attackRangeTiles)) {
+        const staffDef = dataLoader.getWeapon('staff') || member.equippedWeapon;
+        return staffDef;
+      }
+      const spellProfLevel = member.progression.getProficiencyLevel(spellDef.proficiencyId ?? spellDef.id);
+      const costReduction = (spellDef.levelBonus?.energyCostReductionPerLevel ?? 0.1) * spellProfLevel;
+      const energyCost = Math.max(1, Math.round((spellDef.energyCostPerCast ?? 20) - costReduction));
+      const canCast = member.energy >= energyCost;
+      if (canCast) {
+        return spellDef;
+      }
       const staffDef = dataLoader.getWeapon('staff') || member.equippedWeapon;
-      const fireLevel = member.progression.getProficiencyLevel('fire_magic');
-      const fireCostReduction = (fireDefFromData?.levelBonus?.energyCostReductionPerLevel ?? 0.1) * fireLevel;
-      const staffFireCost = fireDefFromData ? Math.max(1, Math.round((fireDefFromData.energyCostPerCast ?? 22) - fireCostReduction)) : 22;
-      const isCastingFire = fireDefFromData !== null && member.energy >= staffFireCost;
-      return isCastingFire ? fireDefFromData! : staffDef;
+      return staffDef;
     }
 
-    if (
-      weaponId === 'healing_staff' ||
-      weaponId === 'healing_magic' ||
-      weaponId === 'staff' ||
-      member.equippedWeapon?.category === 'staff'
-    ) {
+    if (equipped.id === 'staff' || equipped.category === 'staff' || equipped.id.endsWith('_staff')) {
       const staffDef = dataLoader.getWeapon('staff') || member.equippedWeapon;
       return staffDef;
     }

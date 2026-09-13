@@ -21,14 +21,66 @@
       "energyCost": 20,
       "cooldownMs": 3000,
       "damageMultiplier": 1.5,
+      "accuracyBonus": 0.3,
       "requirements": [
         {
           "type": "classLevel",
           "target": "fencer",
-          "value": 1
+          "value": 10
         }
       ],
-      "description": "A rapid piercing thrust dealing 150% weapon damage."
+      "description": "A fast, high-accuracy piercing thrust dealing 150% weapon damage with an increased hit chance."
+    },
+    {
+      "id": "riposte",
+      "name": "Riposte",
+      "energyCost": 15,
+      "cooldownMs": 4000,
+      "damageMultiplier": 1.8,
+      "targetType": "enemy",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "fencer",
+          "value": 20
+        }
+      ],
+      "description": "A guaranteed counter-strike usable only immediately after evading or parrying an attack, dealing 180% weapon damage."
+    },
+    {
+      "id": "fleche",
+      "name": "Fleche",
+      "energyCost": 25,
+      "cooldownMs": 8000,
+      "damageMultiplier": 1.6,
+      "rangeTiles": 5,
+      "targetType": "enemy",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "fencer",
+          "value": 30
+        }
+      ],
+      "description": "A running lunge dash-strike that instantly closes distance to a target up to 5 tiles away and deals 160% weapon damage on arrival."
+    },
+    {
+      "id": "blade_dance",
+      "name": "Blade Dance",
+      "energyCost": 35,
+      "cooldownMs": 15000,
+      "damageMultiplier": 3.2,
+      "strikeCount": 4,
+      "damagePerHitMultiplier": 0.8,
+      "targetType": "enemy",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "fencer",
+          "value": 40
+        }
+      ],
+      "description": "The duelist's capstone: delivers 4 rapid strikes against the target dealing a total of 320% weapon damage."
     },
     {
       "id": "first_aid",
@@ -130,6 +182,23 @@
         }
       ],
       "description": "Hardens will and armor to become completely impervious to all damage for 4s."
+    },
+    {
+      "id": "crushing_blow",
+      "name": "Crushing Blow",
+      "energyCost": 22,
+      "cooldownMs": 5000,
+      "damageMultiplier": 1.8,
+      "stunDurationMs": 2000,
+      "targetType": "enemy",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "bludgeoner",
+          "value": 1
+        }
+      ],
+      "description": "A devastating overhead strike dealing 180% weapon damage and stunning the target for 2s."
     }
   ]
 }

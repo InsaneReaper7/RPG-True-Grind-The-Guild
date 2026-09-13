@@ -15,6 +15,14 @@
       "cost": 10,
       "prerequisites": [],
       "description": "Unlocks the Cooking Station for the Guild Outpost, enabling recipe discovery, food preparation, and cooking."
+    },
+    {
+      "id": "research_blacksmithing_station",
+      "name": "Blacksmithing Station",
+      "targetBuildableId": "blacksmithing_station",
+      "cost": 10,
+      "prerequisites": [],
+      "description": "Unlocks the Blacksmithing Station for the Guild Outpost, enabling ore smelting and weapon forging."
     }
   ]
 }

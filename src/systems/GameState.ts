@@ -39,13 +39,15 @@ export class GameState {
     rng: () => number = Math.random
   ): { mainWeaponId: string; offhandWeaponId: string | null } {
     if (kitId === 'random_magic_staff') {
-      const pool = DataLoader.getInstance().getOffensiveMagicSchools();
+      const dataLoader = DataLoader.getInstance();
+      const pool = dataLoader.getOffensiveMagicSchools();
       if (pool.length === 0) {
         throw new Error('Cannot resolve Random Magic Staff: No offensive magic schools available.');
       }
       const selected = pool[Math.floor(rng() * pool.length)];
+      const conduit = dataLoader.getConduitForSpell(selected);
       return {
-        mainWeaponId: selected.id,
+        mainWeaponId: conduit.id,
         offhandWeaponId: null
       };
     } else if (kitId === 'sword_and_shield') {

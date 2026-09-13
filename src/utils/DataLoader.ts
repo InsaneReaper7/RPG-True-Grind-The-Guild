@@ -23,6 +23,8 @@ import type {
   AlchemyRecipesData,
   CookingRecipeDef,
   CookingRecipesData,
+  BlacksmithRecipeDef,
+  BlacksmithRecipesData,
   FoodDef,
   FoodsData,
   MoodTierDef,
@@ -49,6 +51,7 @@ export class DataLoader {
   private researchTreeData!: ResearchTreeData;
   private alchemyRecipesData!: AlchemyRecipesData;
   private cookingRecipesData!: CookingRecipesData;
+  private blacksmithRecipesData!: BlacksmithRecipesData;
   private foodsData!: FoodsData;
   private moodEffectsData!: MoodEffectsData;
   private dungeonConfig!: DungeonConfig;
@@ -64,7 +67,7 @@ export class DataLoader {
   }
 
   public async loadAll(): Promise<void> {
-    const [player, weapons, classes, enemies, skills, statusEffects, buildables, rooms, hiddenSkills, skillBooks, researchTree, alchemyRecipes, cookingRecipes, foods, moodEffects, dungeon, gathering] = await Promise.all([
+    const [player, weapons, classes, enemies, skills, statusEffects, buildables, rooms, hiddenSkills, skillBooks, researchTree, alchemyRecipes, cookingRecipes, blacksmithRecipes, foods, moodEffects, dungeon, gathering] = await Promise.all([
       fetch('/data/player.json').then((res) => res.json()),
       fetch('/data/weapons.json').then((res) => res.json()),
       fetch('/data/classes.json').then((res) => res.json()),
@@ -78,6 +81,7 @@ export class DataLoader {
       fetch('/data/researchTree.json').then((res) => res.json()),
       fetch('/data/alchemyRecipes.json').then((res) => res.json()),
       fetch('/data/cookingRecipes.json').then((res) => res.json()),
+      fetch('/data/blacksmithRecipes.json').then((res) => res.json()),
       fetch('/data/food.json').then((res) => res.json()),
       fetch('/data/moodEffects.json').then((res) => res.json()),
       fetch('/data/dungeonConfig.json').then((res) => res.json()).catch(() => null),
@@ -97,6 +101,7 @@ export class DataLoader {
     this.researchTreeData = researchTree as ResearchTreeData;
     this.alchemyRecipesData = alchemyRecipes as AlchemyRecipesData;
     this.cookingRecipesData = cookingRecipes as CookingRecipesData;
+    this.blacksmithRecipesData = blacksmithRecipes as BlacksmithRecipesData;
     this.foodsData = foods as FoodsData;
     this.moodEffectsData = moodEffects as MoodEffectsData;
     if (dungeon) {
@@ -322,7 +327,9 @@ export class DataLoader {
         description = 'Proficiency with healing magic to restore health to injured allies.';
       } else if (weapon.id === 'fire_magic') {
         description = 'Proficiency with fire magic to incinerate enemies with ranged flames.';
-      } else if (weapon.id === 'staff' || weapon.id === 'healing_staff' || weapon.id === 'fire_staff') {
+      } else if (weapon.id === 'lightning_magic') {
+        description = 'Proficiency with lightning magic to shock and chain arcs between enemies.';
+      } else if (weapon.id === 'staff' || weapon.id.endsWith('_staff')) {
         description = 'Proficiency with two-handed staves in melee combat.';
       }
       return {
@@ -385,6 +392,14 @@ export class DataLoader {
         id: 'cooking',
         name: 'Cooking',
         description: 'Preparing meals, discovering recipes, and crafting quality dishes at cooking stations.'
+      };
+    }
+
+    if (id === 'blacksmithing') {
+      return {
+        id: 'blacksmithing',
+        name: 'Blacksmithing',
+        description: 'Smelting ore and forging weapons at the blacksmithing station.'
       };
     }
 
@@ -455,6 +470,18 @@ export class DataLoader {
     return this.cookingRecipesData?.recipes.find((r) => r.id === id);
   }
 
+  public getBlacksmithRecipesData(): BlacksmithRecipesData {
+    return this.blacksmithRecipesData;
+  }
+
+  public getBlacksmithRecipes(): BlacksmithRecipeDef[] {
+    return this.blacksmithRecipesData?.recipes ?? [];
+  }
+
+  public getBlacksmithRecipe(id: string): BlacksmithRecipeDef | undefined {
+    return this.blacksmithRecipesData?.recipes.find((r) => r.id === id);
+  }
+
   public getFoodsData(): FoodsData {
     return this.foodsData;
   }
@@ -503,6 +530,30 @@ export class DataLoader {
     return this.weaponsData.weapons.filter(
       (w) => w.category === 'magic' && w.id !== 'healing_magic' && w.baseDamage > 0 && w.energyCostPerCast !== undefined
     );
+  }
+
+  public getConduitForSpell(spellDef: WeaponDef): WeaponDef {
+    if (spellDef.conduitWeaponId) {
+      const conduit = this.getWeapon(spellDef.conduitWeaponId);
+      if (conduit) return conduit;
+    }
+    const fallbackId = spellDef.id.endsWith('_magic')
+      ? spellDef.id.replace(/_magic$/, '_staff')
+      : `${spellDef.id}_staff`;
+    const fallbackConduit = this.getWeapon(fallbackId);
+    if (fallbackConduit) return fallbackConduit;
+    return spellDef;
+  }
+
+  public getSpellForConduit(conduitDef: WeaponDef): WeaponDef | null {
+    if (conduitDef.spellWeaponId) {
+      return this.getWeapon(conduitDef.spellWeaponId) ?? null;
+    }
+    if (conduitDef.id.endsWith('_staff')) {
+      const fallbackSpellId = conduitDef.id.replace(/_staff$/, '_magic');
+      return this.getWeapon(fallbackSpellId) ?? null;
+    }
+    return null;
   }
 
   public getStartingKits(): StartingKitDef[] {

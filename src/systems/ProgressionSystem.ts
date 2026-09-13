@@ -79,8 +79,8 @@ export class ProgressionSystem {
   private onSkillDiscoveredCallbacks: ((event: SkillDiscoveredEvent) => void)[] = [];
   private onDualWieldUnlockedCallbacks: (() => void)[] = [];
 
-  constructor(classesData: ClassesData, ownerName: string = 'Guild Hero') {
-    this.classesData = classesData;
+  constructor(classesData?: ClassesData, ownerName: string = 'Guild Hero') {
+    this.classesData = classesData ?? DataLoader.getInstance().getClassesData();
     this.ownerName = ownerName;
     this.initDefaultProficiencies();
   }
@@ -89,12 +89,16 @@ export class ProgressionSystem {
     this.proficiencies.set('short_swords', { level: 0, currentExp: 0 });
     this.proficiencies.set('daggers', { level: 0, currentExp: 0 });
     this.proficiencies.set('shields', { level: 0, currentExp: 0 });
+    this.proficiencies.set('mace', { level: 0, currentExp: 0 });
     this.proficiencies.set('staff', { level: 0, currentExp: 0 });
     this.proficiencies.set('healing_magic', { level: 0, currentExp: 0 });
     this.proficiencies.set('fire_magic', { level: 0, currentExp: 0 });
+    this.proficiencies.set('lightning_magic', { level: 0, currentExp: 0 });
     this.proficiencies.set('dual_wielding', { level: 0, currentExp: 0 });
     this.proficiencies.set('construction', { level: 0, currentExp: 0 });
     this.proficiencies.set('alchemy', { level: 0, currentExp: 0 });
+    this.proficiencies.set('cooking', { level: 0, currentExp: 0 });
+    this.proficiencies.set('blacksmithing', { level: 0, currentExp: 0 });
     this.proficiencies.set('foraging', { level: 0, currentExp: 0 });
     this.proficiencies.set('woodcutting', { level: 0, currentExp: 0 });
     this.proficiencies.set('mining', { level: 0, currentExp: 0 });
@@ -339,8 +343,16 @@ export class ProgressionSystem {
     return this.unlockedClasses.has(classId);
   }
 
-  public isSkillUnlocked(skill: SkillDef, player?: { isSkillLearnedFromBook?: (id: string) => boolean }): boolean {
+  public isSkillUnlocked(
+    skill: SkillDef,
+    player?: { isSkillLearnedFromBook?: (id: string) => boolean; knownSkillIds?: string[] }
+  ): boolean {
     if (player?.isSkillLearnedFromBook?.(skill.id)) {
+      return true;
+    }
+    // Grandfather rule: If player already knows this skill (e.g. from an earlier milestone/save/snapshot),
+    // it remains unlocked and usable even if requirements have since increased.
+    if (player?.knownSkillIds && player.knownSkillIds.includes(skill.id)) {
       return true;
     }
     return skill.requirements.every((req: Requirement) => {
@@ -374,9 +386,21 @@ export class ProgressionSystem {
       eligibleIds = ['short_swords', 'daggers', 'katana', 'mace', 'spears'];
     }
 
-    let qualifiedCount = 0;
+    // Resolve weapon IDs to their proficiency IDs (e.g. heavy_mace -> mace)
+    // and deduplicate so variant weapons sharing a proficiency count once
+    const uniqueProfIds = new Set<string>();
     for (const weaponId of eligibleIds) {
-      if (this.getProficiencyLevel(weaponId) >= 30) {
+      let profId = weaponId;
+      try {
+        const wpnDef = DataLoader.getInstance().getWeapon(weaponId);
+        if (wpnDef?.proficiencyId) profId = wpnDef.proficiencyId;
+      } catch { /* fallback to weaponId */ }
+      uniqueProfIds.add(profId);
+    }
+
+    let qualifiedCount = 0;
+    for (const profId of uniqueProfIds) {
+      if (this.getProficiencyLevel(profId) >= 30) {
         qualifiedCount++;
       }
     }

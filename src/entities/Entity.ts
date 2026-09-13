@@ -231,6 +231,24 @@ export class Entity extends Phaser.GameObjects.Container {
     this.updateStatusVisuals();
   }
 
+  public isDisabled(): boolean {
+    for (const [id, active] of this.activeStatusEffects) {
+      if (active.def?.disablesActions || id === 'stun' || id === 'shock') {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  public isMovementDisabled(): boolean {
+    for (const [id, active] of this.activeStatusEffects) {
+      if (active.def?.disablesMovement || id === 'stun' || id === 'shock') {
+        return true;
+      }
+    }
+    return false;
+  }
+
   private updateStatusVisuals(): void {
     if (this.activeStatusEffects.has('burn')) {
       this.avatarSprite.setTint(0xff7700);
@@ -250,6 +268,9 @@ export class Entity extends Phaser.GameObjects.Container {
       }
     } else if (this.activeStatusEffects.has('stun')) {
       this.avatarSprite.setTint(0xfacc15);
+      if (this.statusIconSprite) this.statusIconSprite.setVisible(false);
+    } else if (this.activeStatusEffects.has('shock')) {
+      this.avatarSprite.setTint(0x06b6d4);
       if (this.statusIconSprite) this.statusIconSprite.setVisible(false);
     } else if (this.activeStatusEffects.has('guard_up')) {
       this.avatarSprite.setTint(0x38bdf8);

@@ -175,6 +175,16 @@ export class HUD {
   private cookingRecipesContainerEl: HTMLElement | null;
   private cookingDishesContainerEl: HTMLElement | null;
 
+  // Milestone 21 Modal Elements (Blacksmithing Station)
+  private blacksmithingModalEl: HTMLElement | null;
+  private closeBlacksmithingBtn: HTMLElement | null;
+  private blacksmithingModalProfEl: HTMLElement | null;
+  private blacksmithingStockpileOreEl: HTMLElement | null;
+  private blacksmithingStockpileSteelScrapEl: HTMLElement | null;
+  private blacksmithingStockpileOrcHeavyHideEl: HTMLElement | null;
+  private blacksmithingRecipesContainerEl: HTMLElement | null;
+  private blacksmithingStatusMsgEl: HTMLElement | null;
+
   // Milestone 16 Elements (Floor Timer & Respawn Debug)
   private floorTimerBadgeEl: HTMLElement | null;
   private debugBtnFastForwardFloorTimer: HTMLElement | null;
@@ -382,6 +392,22 @@ export class HUD {
     this.cookingExpStatusEl = document.getElementById('cooking-exp-status');
     this.cookingRecipesContainerEl = document.getElementById('cooking-recipes-container');
     this.cookingDishesContainerEl = document.getElementById('cooking-dishes-container');
+
+    // Milestone 21 Elements (Blacksmithing Station)
+    this.blacksmithingModalEl = document.getElementById('blacksmithing-modal');
+    this.closeBlacksmithingBtn = document.getElementById('close-blacksmithing-btn');
+    this.blacksmithingModalProfEl = document.getElementById('blacksmithing-modal-prof');
+    this.blacksmithingStockpileOreEl = document.getElementById('blacksmithing-stockpile-ore');
+    this.blacksmithingStockpileSteelScrapEl = document.getElementById('blacksmithing-stockpile-steel-scrap');
+    this.blacksmithingStockpileOrcHeavyHideEl = document.getElementById('blacksmithing-stockpile-orc-heavy-hide');
+    this.blacksmithingRecipesContainerEl = document.getElementById('blacksmithing-recipes-container');
+    this.blacksmithingStatusMsgEl = document.getElementById('blacksmithing-status-msg');
+
+    if (this.closeBlacksmithingBtn) {
+      this.closeBlacksmithingBtn.onclick = () => {
+        HUD.activeInstance?.closeBlacksmithingModal();
+      };
+    }
 
     // Milestone 16 Elements
     this.floorTimerBadgeEl = document.getElementById('floor-timer-badge');
@@ -1516,8 +1542,9 @@ export class HUD {
       this.weaponEl.innerText = player.equippedWeapon.name;
     }
 
-    const weaponId = player.equippedWeapon.id;
-    const profId = (weaponId === 'healing_staff' || weaponId === 'fire_staff') ? 'staff' : weaponId;
+    const weaponDef = player.equippedWeapon;
+    const weaponId = weaponDef.id;
+    const profId = weaponDef.proficiencyId ?? ((weaponId.endsWith('_staff') || weaponId === 'staff') ? 'staff' : weaponId);
     const stat = progression.getProficiencyStat(profId);
     if (this.hudProficiencyRowEl) {
       if (stat.level >= 1) {
@@ -3053,9 +3080,12 @@ export class HUD {
       case 'woodcutting': return '#ca8a04';
       case 'mining': return '#94a3b8';
       case 'cooking': return '#f97316';
+      case 'blacksmithing': return '#94a3b8';
+      case 'mace': return '#cbd5e1';
       case 'staff': return '#fbbf24';
       case 'healing_magic': return '#4ade80';
       case 'fire_magic': return '#f97316';
+      case 'lightning_magic': return '#38bdf8';
       case 'energy_regen': return '#38bdf8';
       case 'mana_regen': return '#818cf8';
       default: return '#34d399';
@@ -3404,6 +3434,127 @@ export class HUD {
 
           this.cookingDishesContainerEl.appendChild(row);
         }
+      }
+    }
+  }
+
+  // --- BLACKSMITHING STATION & WEAPON FORGING (Milestone 21) ---
+
+  public openBlacksmithingModal(player: Player, progression: ProgressionSystem): void {
+    this.currentPlayer = player;
+    this.currentProgression = progression;
+    if (this.blacksmithingModalEl) {
+      this.blacksmithingModalEl.classList.add('active');
+      this.renderBlacksmithingModal(player, progression);
+    }
+  }
+
+  public closeBlacksmithingModal(): void {
+    if (this.blacksmithingModalEl) {
+      this.blacksmithingModalEl.classList.remove('active');
+    }
+  }
+
+  public isBlacksmithingModalOpen(): boolean {
+    return this.blacksmithingModalEl?.classList.contains('active') ?? false;
+  }
+
+  public renderBlacksmithingModal(player: Player, progression: ProgressionSystem): void {
+    const gameState = GameState.getInstance();
+    const dataLoader = DataLoader.getInstance();
+
+    // 1. Proficiency Bar & Materials Stockpile
+    const bsStat = progression.getProficiencyStat('blacksmithing');
+    if (this.blacksmithingModalProfEl) {
+      const nextExp = LevelingSystem.expForNextLevel(bsStat.level);
+      this.blacksmithingModalProfEl.innerText = `Level ${bsStat.level} (${bsStat.currentExp}/${nextExp} EXP)`;
+    }
+
+    if (this.blacksmithingStockpileOreEl) {
+      this.setElementTextIfChanged(this.blacksmithingStockpileOreEl, `${gameState.getItemCount('ore')}`);
+    }
+    if (this.blacksmithingStockpileSteelScrapEl) {
+      this.setElementTextIfChanged(this.blacksmithingStockpileSteelScrapEl, `${gameState.getItemCount('steel_scrap')}`);
+    }
+    if (this.blacksmithingStockpileOrcHeavyHideEl) {
+      this.setElementTextIfChanged(this.blacksmithingStockpileOrcHeavyHideEl, `${gameState.getItemCount('orc_heavy_hide')}`);
+    }
+
+    if (this.blacksmithingStatusMsgEl) {
+      this.blacksmithingStatusMsgEl.innerText = '';
+    }
+
+    // 2. Render Recipes
+    if (this.blacksmithingRecipesContainerEl) {
+      this.blacksmithingRecipesContainerEl.innerHTML = '';
+      const recipes = dataLoader.getBlacksmithRecipes();
+
+      for (const recipe of recipes) {
+        const isLevelUnlocked = bsStat.level >= recipe.requiredLevel;
+        let canAfford = true;
+        for (const [item, qty] of Object.entries(recipe.ingredients)) {
+          if (gameState.getItemCount(item) < qty) {
+            canAfford = false;
+            break;
+          }
+        }
+
+        const weaponDef = dataLoader.getWeapon(recipe.resultWeaponId);
+        const card = document.createElement('div');
+        card.style.cssText = `background: rgba(31, 41, 55, ${isLevelUnlocked ? '0.75' : '0.4'}); border: 1px solid ${isLevelUnlocked ? (canAfford ? 'rgba(148, 163, 184, 0.4)' : 'rgba(107, 114, 128, 0.3)') : 'rgba(239, 68, 68, 0.3)'}; border-radius: 8px; padding: 12px; display: flex; justify-content: space-between; align-items: center;`;
+
+        // Ingredients formatting
+        const ingDetails = Object.entries(recipe.ingredients).map(([item, qty]) => {
+          const have = gameState.getItemCount(item);
+          const ok = have >= qty;
+          const label = item.replace(/_/g, ' ');
+          return `<span style="color: ${ok ? '#4ade80' : '#f87171'}; font-weight: ${ok ? '500' : 'bold'};">${qty}x ${label} (${have}/${qty})</span>`;
+        }).join(', ');
+
+        const stunPct = weaponDef?.stunChance ? (weaponDef.stunChance * 100).toFixed(0) : '0';
+        const weaponStats = weaponDef ? `Base Dmg: ${weaponDef.baseDamage} | Stun: ${stunPct}% | Speed: ${weaponDef.attackIntervalMs}ms` : '';
+
+        let actionBtnHtml = '';
+        if (!isLevelUnlocked) {
+          actionBtnHtml = `<span style="font-size: 11px; color: #ef4444; font-weight: bold; padding: 6px 12px; background: rgba(239, 68, 68, 0.1); border-radius: 4px;">🔒 Req. Blacksmithing Lv ${recipe.requiredLevel}</span>`;
+        } else if (!canAfford) {
+          actionBtnHtml = `<button type="button" class="btn-action" style="background: #374151; border-color: #4b5563; color: #9ca3af; cursor: not-allowed; font-size: 11px; padding: 6px 14px;" disabled>Insufficient Mats</button>`;
+        } else {
+          actionBtnHtml = `<button type="button" class="btn-action" style="background: #334155; border-color: #64748b; font-size: 11px; padding: 6px 14px; font-weight: bold; color: #f8fafc;" data-forge-recipe="${recipe.id}">🔨 Forge Weapon</button>`;
+        }
+
+        card.innerHTML = `
+          <div style="flex: 1; padding-right: 12px;">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 2px;">
+              <span style="font-weight: bold; color: ${isLevelUnlocked ? '#f8fafc' : '#9ca3af'}; font-size: 13px;">${recipe.name}</span>
+              <span style="font-size: 10px; color: #cbd5e1; background: rgba(148, 163, 184, 0.2); padding: 2px 6px; border-radius: 4px;">+${recipe.expGranted} EXP</span>
+              <span style="font-size: 10px; color: #94a3b8;">${weaponStats}</span>
+            </div>
+            <div style="font-size: 11px; color: #9ca3af; margin-bottom: 6px;">${recipe.description}</div>
+            <div style="font-size: 11px; color: #d1d5db;">Cost: ${ingDetails}</div>
+          </div>
+          <div>${actionBtnHtml}</div>
+        `;
+
+        const btn = card.querySelector<HTMLButtonElement>(`[data-forge-recipe="${recipe.id}"]`);
+        if (btn) {
+          btn.onclick = () => {
+            // Consume materials
+            for (const [item, qty] of Object.entries(recipe.ingredients)) {
+              gameState.consumeItem(item, qty);
+            }
+            // Add forged weapon to inventory
+            gameState.addItem(recipe.resultWeaponId, 1);
+            // Award Blacksmithing EXP
+            progression.addProficiencyExp('blacksmithing', recipe.expGranted);
+
+            this.showToast(`🔨 Forged 1x ${recipe.name}! (+${recipe.expGranted} Blacksmithing EXP)`, 'success', 2500);
+            this.renderBlacksmithingModal(player, progression);
+            this.update(player, progression, 0);
+          };
+        }
+
+        this.blacksmithingRecipesContainerEl.appendChild(card);
       }
     }
   }
