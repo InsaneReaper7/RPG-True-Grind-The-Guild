@@ -126,8 +126,9 @@ export class DungeonGenerator {
     }
 
     // 3. Carve Corridors connecting all rooms
+    const cWidth = Math.max(2, config.corridorWidth || 2);
+
     const carveCorridor = (x1: number, y1: number, x2: number, y2: number) => {
-      const cWidth = config.corridorWidth || 1;
       const horizontalFirst = rng() < 0.5;
 
       const carveH = (startX: number, endX: number, fixedY: number) => {
@@ -156,12 +157,27 @@ export class DungeonGenerator {
         }
       };
 
+      // Carve full cWidth x cWidth corner block to eliminate diagonal notches at turns
+      const carveCorner = (cornerX: number, cornerY: number) => {
+        for (let wx = 0; wx < cWidth; wx++) {
+          for (let wy = 0; wy < cWidth; wy++) {
+            const tx = cornerX + wx;
+            const ty = cornerY + wy;
+            if (tx > 0 && tx < width - 1 && ty > 0 && ty < height - 1) {
+              gridMatrix[ty][tx] = 0;
+            }
+          }
+        }
+      };
+
       if (horizontalFirst) {
         carveH(x1, x2, y1);
         carveV(y1, y2, x2);
+        carveCorner(x2, y1);
       } else {
         carveV(y1, y2, x1);
         carveH(x1, x2, y2);
+        carveCorner(x1, y2);
       }
     };
 
@@ -187,7 +203,63 @@ export class DungeonGenerator {
       carveCorridor(rooms[idxA].centerX, rooms[idxA].centerY, rooms[idxB].centerX, rooms[idxB].centerY);
     }
 
-    // 4. Connectivity Verification via BFS
+    // 4. Widen Room Doorways/Entrances along perimeters to minimum cWidth
+    const widenRoomDoorways = () => {
+      for (const r of rooms) {
+        const widenWall = (isHoriz: boolean, fixedCoord: number, minVar: number, maxVar: number) => {
+          let run = 0;
+          let runStart = -1;
+          for (let v = minVar; v <= maxVar; v++) {
+            const x = isHoriz ? v : fixedCoord;
+            const y = isHoriz ? fixedCoord : v;
+            if (gridMatrix[y]?.[x] === 0) {
+              if (run === 0) runStart = v;
+              run++;
+            } else {
+              if (run > 0 && run < cWidth) {
+                applyWiden(isHoriz, fixedCoord, runStart, run, minVar, maxVar);
+              }
+              run = 0;
+            }
+          }
+          if (run > 0 && run < cWidth) {
+            applyWiden(isHoriz, fixedCoord, runStart, run, minVar, maxVar);
+          }
+        };
+
+        const applyWiden = (
+          isHoriz: boolean,
+          fixedCoord: number,
+          runStart: number,
+          runLen: number,
+          minVar: number,
+          maxVar: number
+        ) => {
+          const needed = cWidth - runLen;
+          for (let step = 0; step < needed; step++) {
+            let widenIdx = runStart + runLen + step;
+            if (widenIdx > maxVar) {
+              widenIdx = runStart - 1 - step;
+            }
+            if (widenIdx >= minVar && widenIdx <= maxVar) {
+              const x = isHoriz ? widenIdx : fixedCoord;
+              const y = isHoriz ? fixedCoord : widenIdx;
+              if (y > 0 && y < height - 1 && x > 0 && x < width - 1) {
+                gridMatrix[y][x] = 0;
+              }
+            }
+          }
+        };
+
+        if (r.y - 1 >= 0) widenWall(true, r.y - 1, r.x, r.x + r.width - 1);
+        if (r.y + r.height < height) widenWall(true, r.y + r.height, r.x, r.x + r.width - 1);
+        if (r.x - 1 >= 0) widenWall(false, r.x - 1, r.y, r.y + r.height - 1);
+        if (r.x + r.width < width) widenWall(false, r.x + r.width, r.y, r.y + r.height - 1);
+      }
+    };
+    widenRoomDoorways();
+
+    // 5. Connectivity Verification via BFS
     const verifyConnectivityAndRepair = () => {
       const visited = new Set<string>();
       const queue: GridPos[] = [{ x: rooms[0].centerX, y: rooms[0].centerY }];
@@ -216,12 +288,17 @@ export class DungeonGenerator {
       }
 
       // Check if all room centers were visited
+      let repaired = false;
       for (let i = 1; i < rooms.length; i++) {
         const key = `${rooms[i].centerX},${rooms[i].centerY}`;
         if (!visited.has(key)) {
           // Unconnected room detected: carve direct corridor to room 0
           carveCorridor(rooms[i].centerX, rooms[i].centerY, rooms[0].centerX, rooms[0].centerY);
+          repaired = true;
         }
+      }
+      if (repaired) {
+        widenRoomDoorways();
       }
     };
     verifyConnectivityAndRepair();

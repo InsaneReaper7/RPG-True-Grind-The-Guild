@@ -13,7 +13,7 @@
     "minHeight": 7,
     "maxHeight": 12
   },
-  "corridorWidth": 1,
+  "corridorWidth": 2,
   "roomTypes": {
     "gathering": {
       "weight": 25,

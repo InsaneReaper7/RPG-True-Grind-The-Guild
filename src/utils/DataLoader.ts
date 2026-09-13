@@ -180,7 +180,7 @@ export class DataLoader {
         tileSize: 32,
         roomCount: { min: 5, max: 7 },
         roomSize: { minWidth: 7, maxWidth: 12, minHeight: 7, maxHeight: 12 },
-        corridorWidth: 1,
+        corridorWidth: 2,
         roomTypes: {
           gathering: { weight: 25, bushesRange: [2, 4], enemiesRange: [0, 0] },
           light_combat: { weight: 45, bushesRange: [1, 3], enemiesRange: [1, 2] },
