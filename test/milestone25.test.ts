@@ -43,6 +43,15 @@ if (typeof (global as any).window === 'undefined') {
       children: [] as any[],
       dataset: {} as any,
       disabled: false,
+      appendChild: (child: any) => {
+        el.children.push(child);
+        return child;
+      },
+      removeChild: (child: any) => {
+        const idx = el.children.indexOf(child);
+        if (idx !== -1) el.children.splice(idx, 1);
+        return child;
+      },
       addEventListener: (evt: string, fn: Function) => {
         if (!listeners.has(evt)) listeners.set(evt, []);
         listeners.get(evt)!.push(fn);
@@ -161,6 +170,7 @@ function createMockPartyMember(id: string, name: string, x: number, y: number, m
     clearTarget: function () {
       this.targetEntity = null;
     },
+    progression: new ProgressionSystem(DataLoader.getInstance().getClassesData(), name),
     setTarget: function (target: any) {
       this.targetEntity = target;
     }
@@ -389,22 +399,305 @@ async function runMilestone25Tests() {
   console.log('✓ PASS: Pair moves in 2-unit formation while unselected members remain stationary.');
 
   // --------------------------------------------------------------------------
-  // TEST 8: Partial-Selection Engagement (Only Selected Members Engage)
+  // TEST 8: Partial-Selection Engagement via Real Enemy Sprite Pointerdown
   // --------------------------------------------------------------------------
-  console.log('\n--- TEST 8: Partial-Selection Click-to-Engage Isolation ---');
-  const mockEnemy = { id: 'orc_1', entityName: 'Orc Brute', gridPos: { x: 15, y: 15 }, state: 'idle' };
-
-  // Select only Kaelen (2) and command engage
-  const activeEngagers = [kaelen];
-  for (const m of activeEngagers) {
-    m.setTarget(mockEnemy);
+  console.log('\n--- TEST 8: Partial-Selection Click-to-Engage Isolation via Real Enemy Sprite Click ---');
+  // Helper for mock sprite with real event listener/emitter
+  function createMockSprite() {
+    const listeners: Map<string, Function[]> = new Map();
+    return {
+      x: 0,
+      y: 0,
+      on: function (evt: string, fn: Function) {
+        if (!listeners.has(evt)) listeners.set(evt, []);
+        listeners.get(evt)!.push(fn);
+        return this;
+      },
+      emit: function (evt: string, ...args: any[]) {
+        const fns = listeners.get(evt) || [];
+        for (const fn of fns) {
+          fn(...args);
+        }
+        return fns.length > 0;
+      },
+      setTexture: () => {},
+      destroy: () => {}
+    };
   }
 
-  assert.equal(kaelen.targetEntity, mockEnemy, 'Kaelen must have targeted Orc');
+  function createMockScene(sceneParty: any[], sceneHud: HUD) {
+    const selectedMembers = new Set<any>(sceneParty);
+    const activeGatherChannels = new Map<any, any>();
+    const mapWidth = 30;
+    const mapHeight = 30;
+    const gridMatrix = Array.from({ length: mapHeight }, () => Array(mapWidth).fill(0));
+
+    const scene = {
+      party: sceneParty,
+      player: sceneParty[0],
+      selectedMembers,
+      hud: sceneHud,
+      mapWidth,
+      mapHeight,
+      gridMatrix,
+      activeGatherChannels,
+      getSelectedMembers: function () {
+        return this.party.filter((m: any) => this.selectedMembers.has(m));
+      },
+      selectMemberByIndex: function (index: number, multiSelect: boolean = false) {
+        const member = this.party[index];
+        if (!member) return;
+        if (!multiSelect) {
+          this.selectedMembers.clear();
+          this.selectedMembers.add(member);
+        } else {
+          if (this.selectedMembers.has(member)) {
+            if (this.selectedMembers.size > 1) {
+              this.selectedMembers.delete(member);
+            }
+          } else {
+            this.selectedMembers.add(member);
+          }
+        }
+        const indices: number[] = [];
+        for (let i = 0; i < this.party.length; i++) {
+          if (this.selectedMembers.has(this.party[i])) indices.push(i);
+        }
+        this.hud.setSelectedMemberIndices(indices);
+      },
+      selectAllMembers: function () {
+        this.selectedMembers.clear();
+        for (const m of this.party) this.selectedMembers.add(m);
+        this.hud.setSelectedMemberIndices(this.party.map((_, i) => i));
+      },
+      cancelGatherChannel: function (character: any) {
+        activeGatherChannels.delete(character);
+        if (character.state === 'channeling') character.state = 'idle';
+      },
+      startGatherChannel: function (character: any, node: any) {
+        if (node.isHarvested || character.state === 'downed' || character.state === 'dead') return false;
+        this.cancelGatherChannel(character);
+        character.state = 'channeling';
+        character.claimedDestination = null;
+        character.clearTarget();
+        activeGatherChannels.set(character, { character, node });
+        return true;
+      },
+      completeGatherChannel: function (character: any, channel: any) {
+        activeGatherChannels.delete(character);
+        if (character.state === 'channeling') character.state = 'idle';
+        this.harvestGatheringNode(channel.node, character);
+      },
+      harvestGatheringNode: function (node: any, character: any) {
+        if (node.isHarvested) return;
+        node.isHarvested = true;
+        character.progression.addProficiencyExp(node.nodeDef.skillId, node.nodeDef.expGranted || 15);
+      },
+      getPartyUnitObstacles: function (excludeEntity?: any) {
+        return this.party.filter((m: any) => m !== excludeEntity && m.state !== 'dead' && m.state !== 'downed').map((m: any) => m.gridPos);
+      },
+      findNearestOpenTileForPartyMove: function (idealPos: GridPos, startPos: GridPos, claimed: Set<string>, forEntity: any) {
+        const candidates: GridPos[] = [];
+        for (let dx = -2; dx <= 2; dx++) {
+          for (let dy = -2; dy <= 2; dy++) {
+            const tx = idealPos.x + dx;
+            const ty = idealPos.y + dy;
+            if (tx > 0 && tx < mapWidth - 1 && ty > 0 && ty < mapHeight - 1 && gridMatrix[ty]?.[tx] === 0) {
+              if (!claimed.has(`${tx},${ty}`)) {
+                candidates.push({ x: tx, y: ty });
+              }
+            }
+          }
+        }
+        candidates.sort((a, b) => {
+          const dIdealA = Math.hypot(a.x - idealPos.x, a.y - idealPos.y);
+          const dIdealB = Math.hypot(b.x - idealPos.x, b.y - idealPos.y);
+          if (dIdealA !== dIdealB) return dIdealA - dIdealB;
+          return Math.hypot(a.x - startPos.x, a.y - startPos.y) - Math.hypot(b.x - startPos.x, b.y - startPos.y);
+        });
+        return candidates[0] || idealPos;
+      },
+      pathfinder: {
+        findPath: async function (from: GridPos, to: GridPos, obstacles: GridPos[]) {
+          return [{ x: to.x, y: to.y }];
+        }
+      },
+      engageEnemy: function (enemy: any, membersToEngage?: any[]) {
+        if (enemy.state === 'dead' || enemy.state === 'downed') return;
+        const allLivingMembers = this.party.filter((m: any) => m.state !== 'downed' && m.state !== 'dead');
+        const selectedLiving = this.getSelectedMembers().filter((m: any) => m.state !== 'downed' && m.state !== 'dead');
+        const livingMembers = membersToEngage
+          ? membersToEngage.filter((m: any) => m.state !== 'downed' && m.state !== 'dead')
+          : (selectedLiving.length > 0 ? selectedLiving : allLivingMembers);
+        for (const m of livingMembers) {
+          m.setTarget(enemy);
+        }
+      },
+      spawnEnemyUnit: function (x: number, y: number, name: string = 'Orc Brute') {
+        const sprite = createMockSprite();
+        const enemy = {
+          id: `enemy_${Date.now()}`,
+          entityName: name,
+          gridPos: { x, y },
+          state: 'idle',
+          sprite,
+          on: function (evt: string, fn: Function) {
+            sprite.on(evt, fn);
+          },
+          emit: function (evt: string, ...args: any[]) {
+            return sprite.emit(evt, ...args);
+          }
+        };
+        enemy.on('pointerdown', (_pointer: any, _localX: number, _localY: number, event?: any) => {
+          if (event && event.stopPropagation) event.stopPropagation();
+          const activeSelected = scene.getSelectedMembers().filter((m: any) => m.state !== 'downed' && m.state !== 'dead');
+          if (activeSelected.length > 0) {
+            for (const m of activeSelected) {
+              scene.cancelGatherChannel(m);
+            }
+            scene.engageEnemy(enemy, activeSelected);
+          } else {
+            scene.engageEnemy(enemy);
+          }
+        });
+        return enemy;
+      },
+      spawnGatheringNode: function (x: number, y: number, nodeTypeId: string = 'foraging_bush') {
+        const sprite = createMockSprite();
+        const nodeDef = DataLoader.getInstance().getGatheringNode(nodeTypeId) || {
+          id: nodeTypeId,
+          name: nodeTypeId.includes('tree') ? 'Tree' : nodeTypeId.includes('rock') ? 'Rock Vein' : 'Wild Herbs',
+          skillId: nodeTypeId.includes('tree') ? 'woodcutting' : nodeTypeId.includes('rock') ? 'mining' : 'foraging',
+          expGranted: 15
+        };
+        const node = {
+          x,
+          y,
+          nodeDef,
+          sprite,
+          isHarvested: false
+        };
+        sprite.on('pointerdown', (_pointer: any, _localX: number, _localY: number, event?: any) => {
+          if (event && event.stopPropagation) event.stopPropagation();
+          const activeSelected = scene.getSelectedMembers().filter((m: any) => m.state !== 'downed' && m.state !== 'dead');
+          scene.interactWithGatheringNode(node, activeSelected.length > 0 ? activeSelected : undefined);
+        });
+        return node;
+      },
+      interactWithGatheringNode: function (node: any, character?: any | any[]) {
+        if (node.isHarvested) return;
+        const resolvedActors: any[] = character
+          ? (Array.isArray(character)
+              ? character.filter((m: any) => m.state !== 'downed' && m.state !== 'dead')
+              : (character.state !== 'downed' && character.state !== 'dead' ? [character] : []))
+          : this.getSelectedMembers().filter((m: any) => m.state !== 'downed' && m.state !== 'dead');
+
+        if (resolvedActors.length === 0) {
+          if (this.player && this.player.state !== 'downed' && this.player.state !== 'dead') {
+            resolvedActors.push(this.player);
+          } else {
+            return;
+          }
+        }
+
+        for (const actor of resolvedActors) {
+          this.cancelGatherChannel(actor);
+          actor.clearTarget();
+        }
+
+        const claimed = new Set<string>();
+        for (const other of this.party) {
+          if (!resolvedActors.includes(other) && other.state !== 'dead') {
+            claimed.add(`${other.gridPos.x},${other.gridPos.y}`);
+            if (other.claimedDestination) {
+              claimed.add(`${other.claimedDestination.x},${other.claimedDestination.y}`);
+            }
+          }
+        }
+
+        const primaryGatherer = resolvedActors[0];
+        const dist = Math.hypot(primaryGatherer.gridPos.x - node.x, primaryGatherer.gridPos.y - node.y);
+
+        if (dist <= 1.5) {
+          this.startGatherChannel(primaryGatherer, node);
+        } else {
+          const adjTiles = [
+            { x: node.x + 1, y: node.y },
+            { x: node.x - 1, y: node.y },
+            { x: node.x, y: node.y + 1 },
+            { x: node.x, y: node.y - 1 }
+          ].filter((t) => t.x > 0 && t.x < mapWidth - 1 && t.y > 0 && t.y < mapHeight - 1 && gridMatrix[t.y]?.[t.x] === 0 && !claimed.has(`${t.x},${t.y}`));
+
+          adjTiles.sort((a, b) => Math.hypot(a.x - primaryGatherer.gridPos.x, a.y - primaryGatherer.gridPos.y) - Math.hypot(b.x - primaryGatherer.gridPos.x, b.y - primaryGatherer.gridPos.y));
+
+          let targetTile = adjTiles[0];
+          if (!targetTile) {
+            targetTile = this.findNearestOpenTileForPartyMove({ x: node.x, y: node.y }, primaryGatherer.gridPos, claimed, primaryGatherer);
+          }
+
+          if (targetTile) {
+            claimed.add(`${targetTile.x},${targetTile.y}`);
+            primaryGatherer.claimedDestination = { ...targetTile };
+            primaryGatherer.followPath([targetTile]);
+            if (Math.hypot(primaryGatherer.gridPos.x - node.x, primaryGatherer.gridPos.y - node.y) <= 1.5) {
+              this.startGatherChannel(primaryGatherer, node);
+            }
+          }
+        }
+
+        if (resolvedActors.length > 1) {
+          const formationOffsets = [
+            { x: 0, y: 0 },
+            { x: 1, y: 0 },
+            { x: 0, y: 1 },
+            { x: 1, y: 1 }
+          ];
+          const anchorTile = primaryGatherer.claimedDestination || primaryGatherer.gridPos;
+          for (let i = 1; i < resolvedActors.length; i++) {
+            const companion = resolvedActors[i];
+            const offset = formationOffsets[i] || { x: i % 2, y: Math.floor(i / 2) };
+            const idealPos: GridPos = { x: anchorTile.x + offset.x, y: anchorTile.y + offset.y };
+            const compDest = this.findNearestOpenTileForPartyMove(idealPos, companion.gridPos, claimed, companion);
+            claimed.add(`${compDest.x},${compDest.y}`);
+            companion.claimedDestination = { ...compDest };
+            companion.followPath([compDest]);
+          }
+        }
+      }
+    };
+
+    return scene;
+  }
+
+  // Reset targets
+  hero.clearTarget();
+  valerie.clearTarget();
+  kaelen.clearTarget();
+  barris.clearTarget();
+
+  const testScene = createMockScene(party, hud);
+
+  // Wire HUD portrait selection to testScene
+  hud.setPartySelectionHandler(
+    (idx, multi) => testScene.selectMemberByIndex(idx, multi),
+    () => testScene.selectAllMembers()
+  );
+
+  // Select only Kaelen (portrait index 2)
+  p2?.dispatchEvent({ type: 'click', shiftKey: false });
+  assert.equal(testScene.selectedMembers.size, 1);
+  assert.ok(testScene.selectedMembers.has(kaelen));
+
+  const spawnEnemy = testScene.spawnEnemyUnit(15, 15, 'Orc Brute');
+
+  // CRITICAL: Trigger the real sprite click event with ZERO pre-resolved actor arguments!
+  spawnEnemy.emit('pointerdown', {}, 0, 0, { stopPropagation: () => {} });
+
+  assert.equal(kaelen.targetEntity, spawnEnemy, 'Kaelen must have targeted Orc via sprite click');
   assert.equal(hero.targetEntity, null, 'Hero must NOT target enemy');
   assert.equal(valerie.targetEntity, null, 'Valerie must NOT target enemy');
   assert.equal(barris.targetEntity, null, 'Barris must NOT target enemy');
-  console.log('✓ PASS: Click-to-engage applies strictly to selected member(s).');
+  console.log('✓ PASS: Enemy sprite pointerdown handler resolves selection and commands only selected member(s).');
 
   // --------------------------------------------------------------------------
   // TEST 9: Empty Slot Handling for Incomplete Roster
@@ -428,8 +721,183 @@ async function runMilestone25Tests() {
   assert.ok(!duoSelection.has(2), 'Empty slot 2 must not be added to selection');
   console.log('✓ PASS: Empty slots render cleanly and reject selection without errors.');
 
+  // Restore full 4-member party in HUD
+  hud.update(hero, new ProgressionSystem(DataLoader.getInstance().getClassesData(), 'Hero'), 0, party);
+
+  // --------------------------------------------------------------------------
+  // TEST 10: Single Companion Gather via Real Gathering Node Sprite Pointerdown
+  // --------------------------------------------------------------------------
+  console.log('\n--- TEST 10: Single Companion Gather via Real Sprite Pointerdown ---');
+  // Reset positions: Hero (5, 5), Valerie (6, 5), Kaelen (5, 6), Barris (6, 6)
+  hero.gridPos = { x: 5, y: 5 };
+  valerie.gridPos = { x: 6, y: 5 };
+  kaelen.gridPos = { x: 5, y: 6 };
+  barris.gridPos = { x: 6, y: 6 };
+  hero.pathHistory = [];
+  valerie.pathHistory = [];
+  kaelen.pathHistory = [];
+  barris.pathHistory = [];
+
+  // Select ONLY Valerie (portrait index 1)
+  p1?.dispatchEvent({ type: 'click', shiftKey: false });
+  assert.equal(testScene.selectedMembers.size, 1);
+  assert.ok(testScene.selectedMembers.has(valerie));
+
+  // Spawn bush at (10, 5)
+  const bush1 = testScene.spawnGatheringNode(10, 5, 'foraging_bush');
+
+  // CRITICAL: DISPATCH REAL POINTERDOWN EVENT ON SPRITE with ZERO actor arguments!
+  bush1.sprite.emit('pointerdown', {}, 0, 0, { stopPropagation: () => {} });
+
+  // Assertions:
+  // 1. Only Valerie moved to adjacent tile (9, 5)
+  assert.equal(valerie.gridPos.x, 9, 'Valerie must have moved to adjacent tile (9, 5)');
+  assert.equal(valerie.gridPos.y, 5);
+  assert.equal(valerie.pathHistory.length, 1, 'Valerie must have path history');
+  // 2. Valerie is actively channeling bush1
+  assert.equal(valerie.state, 'channeling', 'Valerie state must be channeling');
+  assert.ok(testScene.activeGatherChannels.has(valerie), 'Valerie must have active gather channel');
+  assert.equal(testScene.activeGatherChannels.get(valerie).node, bush1);
+  // 3. Leader (Hero) and other companions remained STRICTLY stationary
+  assert.equal(hero.gridPos.x, 5, 'Hero must NOT move');
+  assert.equal(hero.gridPos.y, 5, 'Hero must NOT move');
+  assert.equal(hero.pathHistory.length, 0, 'Hero pathHistory must be 0');
+  assert.notEqual(hero.state, 'channeling', 'Hero must NOT be channeling');
+
+  assert.equal(kaelen.gridPos.x, 5, 'Kaelen must NOT move');
+  assert.equal(kaelen.gridPos.y, 6, 'Kaelen must NOT move');
+  assert.equal(kaelen.pathHistory.length, 0, 'Kaelen pathHistory must be 0');
+
+  assert.equal(barris.gridPos.x, 6, 'Barris must NOT move');
+  assert.equal(barris.gridPos.y, 6, 'Barris must NOT move');
+  assert.equal(barris.pathHistory.length, 0, 'Barris pathHistory must be 0');
+  console.log('✓ PASS: Single companion gather commands dispatch exclusively to selected companion via sprite click.');
+
+  // --------------------------------------------------------------------------
+  // TEST 11: Multi-Select Subset Gather (2-3 Members) via Real Sprite Pointerdown
+  // --------------------------------------------------------------------------
+  console.log('\n--- TEST 11: Multi-Select Subset Gather via Real Sprite Pointerdown ---');
+  // Reset positions
+  hero.gridPos = { x: 5, y: 5 };
+  valerie.gridPos = { x: 6, y: 5 };
+  kaelen.gridPos = { x: 5, y: 6 };
+  barris.gridPos = { x: 6, y: 6 };
+  hero.pathHistory = [];
+  valerie.pathHistory = [];
+  kaelen.pathHistory = [];
+  barris.pathHistory = [];
+  testScene.cancelGatherChannel(valerie);
+
+  // Shift-click Kaelen (2) while Valerie (1) is selected -> subset [Valerie, Kaelen]
+  p2?.dispatchEvent({ type: 'click', shiftKey: true });
+  assert.equal(testScene.selectedMembers.size, 2);
+  assert.ok(testScene.selectedMembers.has(valerie) && testScene.selectedMembers.has(kaelen));
+  assert.ok(!testScene.selectedMembers.has(hero) && !testScene.selectedMembers.has(barris));
+
+  // Spawn mining rock at (15, 5)
+  const rock1 = testScene.spawnGatheringNode(15, 5, 'mining_rock');
+
+  // CRITICAL: DISPATCH REAL POINTERDOWN EVENT on sprite (ZERO actor arguments!)
+  rock1.sprite.emit('pointerdown', {}, 0, 0, { stopPropagation: () => {} });
+
+  // Assertions:
+  // 1. Primary gatherer (Valerie) paths to adjacent tile (14, 5) and channels
+  assert.equal(valerie.gridPos.x, 14);
+  assert.equal(valerie.gridPos.y, 5);
+  assert.equal(valerie.state, 'channeling');
+  assert.equal(testScene.activeGatherChannels.get(valerie).node, rock1);
+
+  // 2. Secondary selected member (Kaelen) paths in formation to companion destination
+  assert.equal(kaelen.pathHistory.length, 1, 'Kaelen must have moved in formation');
+  assert.ok(Math.hypot(kaelen.gridPos.x - 14, kaelen.gridPos.y - 5) <= 2, 'Kaelen must be in formation near target');
+
+  // 3. Unselected members (Hero and Barris) strictly remain stationary
+  assert.equal(hero.gridPos.x, 5, 'Leader Hero must NOT move');
+  assert.equal(hero.gridPos.y, 5, 'Leader Hero must NOT move');
+  assert.equal(hero.pathHistory.length, 0);
+
+  assert.equal(barris.gridPos.x, 6, 'Unselected Barris must NOT move');
+  assert.equal(barris.gridPos.y, 6, 'Unselected Barris must NOT move');
+  assert.equal(barris.pathHistory.length, 0);
+  console.log('✓ PASS: Subset gather command dispatches primary to channel and secondary in formation; unselected members stay put.');
+
+  // --------------------------------------------------------------------------
+  // TEST 12: Default Full-Party Gather via Real Sprite Pointerdown & Channel Completion
+  // --------------------------------------------------------------------------
+  console.log('\n--- TEST 12: Default Full-Party Gather via Real Sprite Pointerdown ---');
+  // Reset positions
+  hero.gridPos = { x: 5, y: 5 };
+  valerie.gridPos = { x: 6, y: 5 };
+  kaelen.gridPos = { x: 5, y: 6 };
+  barris.gridPos = { x: 6, y: 6 };
+  hero.pathHistory = [];
+  valerie.pathHistory = [];
+  kaelen.pathHistory = [];
+  barris.pathHistory = [];
+  testScene.cancelGatherChannel(valerie);
+
+  // Group reselect hotkey (G) -> all 4 selected
+  hud.triggerGroupReselect();
+  assert.equal(testScene.selectedMembers.size, 4);
+
+  // Spawn tree at (20, 5)
+  const tree1 = testScene.spawnGatheringNode(20, 5, 'woodcutting_tree');
+
+  // CRITICAL: DISPATCH REAL POINTERDOWN EVENT on sprite (ZERO actor arguments!)
+  tree1.sprite.emit('pointerdown', {}, 0, 0, { stopPropagation: () => {} });
+
+  // Assertions:
+  // 1. Leader (Hero, slot 0) paths to adjacent tile and channels
+  assert.equal(hero.gridPos.x, 19);
+  assert.equal(hero.gridPos.y, 5);
+  assert.equal(hero.state, 'channeling');
+  assert.ok(testScene.activeGatherChannels.has(hero));
+  assert.equal(testScene.activeGatherChannels.get(hero).node, tree1);
+
+  // 2. Companions moved in formation
+  assert.equal(valerie.pathHistory.length, 1);
+  assert.equal(kaelen.pathHistory.length, 1);
+  assert.equal(barris.pathHistory.length, 1);
+
+  // 3. Complete channel -> node is harvested, woodcutting EXP credited to Hero
+  const initialHeroWcExp = hero.progression.getProficiencyStat('woodcutting').currentExp;
+  testScene.completeGatherChannel(hero, testScene.activeGatherChannels.get(hero));
+  assert.equal(tree1.isHarvested, true, 'Tree must be marked harvested');
+  assert.equal(hero.state, 'idle', 'Hero state must return to idle');
+  const finalHeroWcExp = hero.progression.getProficiencyStat('woodcutting').currentExp;
+  assert.ok(finalHeroWcExp > initialHeroWcExp, 'Hero must be credited woodcutting EXP');
+
+  // 4. Depleted node rejects new gather channel
+  const depletedChannelStarted = testScene.startGatherChannel(valerie, tree1);
+  assert.equal(depletedChannelStarted, false, 'Depleted node must reject channel start');
+  console.log('✓ PASS: Full party gather command paths leader to gather, moves party in formation, and completes harvest properly.');
+
+  // --------------------------------------------------------------------------
+  // TEST 13: Direct interactWithGatheringNode(node) with No Actor Argument Resolves Selection
+  // --------------------------------------------------------------------------
+  console.log('\n--- TEST 13: Direct interactWithGatheringNode(node) Without Actor Argument ---');
+  // Select only Valerie (1)
+  p1?.dispatchEvent({ type: 'click', shiftKey: false });
+  assert.equal(testScene.selectedMembers.size, 1);
+
+  hero.gridPos = { x: 5, y: 5 };
+  valerie.gridPos = { x: 6, y: 5 };
+  hero.pathHistory = [];
+  valerie.pathHistory = [];
+
+  const bush2 = testScene.spawnGatheringNode(12, 5, 'foraging_bush');
+
+  // Call interactWithGatheringNode with ONLY the node argument (omitting second argument)
+  testScene.interactWithGatheringNode(bush2);
+
+  assert.equal(valerie.gridPos.x, 11);
+  assert.equal(valerie.state, 'channeling');
+  assert.equal(hero.gridPos.x, 5, 'Hero must not move');
+  assert.equal(hero.pathHistory.length, 0);
+  console.log('✓ PASS: Calling interactWithGatheringNode(node) without actor resolves current selection dynamically.');
+
   console.log('\n====================================================');
-  console.log('ALL 9 MILESTONE 25 TESTS PASSED CLEANLY AND PROVEN!');
+  console.log('ALL 13 MILESTONE 25 TESTS PASSED CLEANLY AND PROVEN!');
   console.log('====================================================\n');
 }
 

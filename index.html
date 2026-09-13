@@ -262,6 +262,46 @@
     .party-reselect-btn:active {
       transform: translateY(0);
     }
+    .gathering-mode-btn {
+      background: #059669;
+      color: #ffffff;
+      border: 1px solid #34d399;
+      border-radius: 4px;
+      padding: 2px 8px;
+      font-size: 10px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+      transition: all 0.15s;
+      margin-left: 6px;
+    }
+    .gathering-mode-btn:hover {
+      background: #047857;
+      border-color: #6ee7b7;
+      transform: translateY(-1px);
+    }
+    .gathering-mode-btn.active {
+      background: #10b981;
+      border-color: #a7f3d0;
+      box-shadow: 0 0 8px rgba(52, 211, 153, 0.6);
+    }
+    .gathering-mode-banner {
+      position: absolute;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(6, 78, 59, 0.92);
+      border: 1px solid #34d399;
+      border-radius: 6px;
+      padding: 6px 16px;
+      color: #ecfdf5;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      pointer-events: none;
+      z-index: 10000;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5), 0 0 10px rgba(52, 211, 153, 0.4);
+    }
     .party-portraits-grid {
       display: flex;
       gap: 8px;
@@ -1371,11 +1411,18 @@
         ⚠️ DOWNED! Press <span style="color: #fef08a;">[R]</span> to Revive (50% Main HP)
       </div>
 
+      <div id="gathering-mode-banner" class="gathering-mode-banner" style="display: none;">
+        🌿 GATHERING MODE ACTIVE — Drag area to queue nodes [F / Esc to exit]
+      </div>
+
       <!-- Party Portraits Dock (Milestone 25) -->
       <div id="party-portraits-hud">
         <div class="party-portraits-header">
           <span class="party-portraits-title">Party Control</span>
-          <button id="party-reselect-all-btn" class="party-reselect-btn" type="button" title="Reselect entire party (Hotkey: G)">👥 All [G]</button>
+          <div style="display: flex; align-items: center;">
+            <button id="party-reselect-all-btn" class="party-reselect-btn" type="button" title="Reselect entire party (Hotkey: G)">👥 All [G]</button>
+            <button id="gathering-mode-toggle-btn" class="gathering-mode-btn" type="button" title="Toggle Gathering Mode (Hotkey: F)">🌿 Gather [F]</button>
+          </div>
         </div>
         <div id="party-portraits-list" class="party-portraits-grid">
           <div id="party-portrait-0" class="hud-portrait-card selected" data-member-index="0" title="Click: Select Hero [1] | Shift+Click: Multi-select">

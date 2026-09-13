@@ -208,6 +208,8 @@ export class HUD {
   private portraitEnergyBarEls: (HTMLElement | null)[] = [];
   private portraitStatusEls: (HTMLElement | null)[] = [];
   private portraitHotkeyEls: (HTMLElement | null)[] = [];
+  private gatheringModeBannerEl: HTMLElement | null = null;
+  private gatheringModeBtnEl: HTMLElement | null = null;
   private selectedMemberIndices: Set<number> = new Set([0, 1, 2, 3]);
   private onSelectMemberCallback?: (index: number, multiSelect: boolean) => void;
   private onSelectAllMembersCallback?: () => void;
@@ -270,6 +272,20 @@ export class HUD {
       this.partyReselectAllBtn.addEventListener('click', (e: MouseEvent) => {
         e.stopPropagation();
         this.triggerGroupReselect();
+      });
+    }
+
+    this.gatheringModeBannerEl = document.getElementById('gathering-mode-banner');
+    this.gatheringModeBtnEl = document.getElementById('gathering-mode-toggle-btn');
+    if (this.gatheringModeBtnEl) {
+      this.gatheringModeBtnEl.addEventListener('click', (e: MouseEvent) => {
+        e.stopPropagation();
+        if (!this.isOutpost) {
+          const scene = (window as any).game?.scene?.getScene('MainScene');
+          if (scene && typeof scene.toggleGatheringMode === 'function') {
+            scene.toggleGatheringMode();
+          }
+        }
       });
     }
 
@@ -1019,6 +1035,16 @@ export class HUD {
           if (targetTag !== 'input' && targetTag !== 'textarea' && targetTag !== 'select') {
             active.triggerGroupReselect();
           }
+        } else if (e.key === 'f' || e.key === 'F' || e.code === 'KeyF') {
+          const targetTag = (e.target as HTMLElement)?.tagName?.toLowerCase();
+          if (targetTag !== 'input' && targetTag !== 'textarea' && targetTag !== 'select') {
+            if (!active.isOutpost) {
+              const scene = (window as any).game?.scene?.getScene('MainScene');
+              if (scene && typeof scene.toggleGatheringMode === 'function') {
+                scene.toggleGatheringMode();
+              }
+            }
+          }
         } else if (e.key >= '1' && e.key <= '4') {
           const targetTag = (e.target as HTMLElement)?.tagName?.toLowerCase();
           if (targetTag !== 'input' && targetTag !== 'textarea' && targetTag !== 'select') {
@@ -1026,6 +1052,12 @@ export class HUD {
             active.selectMemberByIndex(idx, e.shiftKey);
           }
         } else if (e.key === 'Escape') {
+          if (!active.isOutpost) {
+            const scene = (window as any).game?.scene?.getScene('MainScene');
+            if (scene && scene.isGatheringMode && typeof scene.toggleGatheringMode === 'function') {
+              scene.toggleGatheringMode(false);
+            }
+          }
           if (active.isAnnouncementShowing()) {
             active.dismissCurrentAnnouncement();
           }
@@ -1043,6 +1075,19 @@ export class HUD {
           }
         }
       });
+    }
+  }
+
+  public setGatheringModeActive(active: boolean): void {
+    if (this.gatheringModeBannerEl) {
+      this.gatheringModeBannerEl.style.display = active ? 'block' : 'none';
+    }
+    if (this.gatheringModeBtnEl) {
+      if (active) {
+        this.gatheringModeBtnEl.classList.add('active');
+      } else {
+        this.gatheringModeBtnEl.classList.remove('active');
+      }
     }
   }
 

@@ -92,9 +92,19 @@ export class MainScene extends Phaser.Scene {
   private tKey!: Phaser.Input.Keyboard.Key;
   private hKey!: Phaser.Input.Keyboard.Key;
   private gKey!: Phaser.Input.Keyboard.Key;
+  private fKey!: Phaser.Input.Keyboard.Key;
   private numKeys: Phaser.Input.Keyboard.Key[] = [];
   public selectedMembers: Set<Player> = new Set();
   private selectionReticleGraphics!: Phaser.GameObjects.Graphics;
+
+  // Milestone 26: Gathering Mode
+  public isGatheringMode: boolean = false;
+  private isGatheringDrag: boolean = false;
+  private gatherDragStart: { x: number; y: number } | null = null;
+  private gatheringMarqueeGraphics!: Phaser.GameObjects.Graphics;
+  public gatheringQueue: GatheringNode[] = [];
+  public gatheringQueueWorkers: Set<Player> = new Set();
+  public gatheringWorkerNodeAssignments: Map<Player, GatheringNode> = new Map();
 
   private isCameraLocked: boolean = true;
   private targetReticle!: Phaser.GameObjects.Sprite;
@@ -127,6 +137,18 @@ export class MainScene extends Phaser.Scene {
     }
     this.gatheringNodes = [];
 
+    // Milestone 26: Initialize Gathering Mode Graphics and State
+    if (this.gatheringMarqueeGraphics) {
+      this.gatheringMarqueeGraphics.destroy();
+    }
+    this.gatheringMarqueeGraphics = this.add.graphics().setDepth(10002);
+    this.isGatheringMode = false;
+    this.isGatheringDrag = false;
+    this.gatherDragStart = null;
+    this.gatheringQueue = [];
+    this.gatheringQueueWorkers.clear();
+    this.gatheringWorkerNodeAssignments.clear();
+
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       if (this.tileClaimOverlay) {
         this.tileClaimOverlay.destroy();
@@ -146,6 +168,9 @@ export class MainScene extends Phaser.Scene {
       }
       if (this.selectionReticleGraphics) {
         this.selectionReticleGraphics.destroy();
+      }
+      if (this.gatheringMarqueeGraphics) {
+        this.gatheringMarqueeGraphics.destroy();
       }
     });
 
@@ -344,6 +369,7 @@ export class MainScene extends Phaser.Scene {
         this.hud.applyBandage();
       });
       this.gKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.G);
+      this.fKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.F);
       this.numKeys = [
         this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ONE),
         this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.TWO),
@@ -354,6 +380,18 @@ export class MainScene extends Phaser.Scene {
 
     // Expose debug helpers on window for browser console testing
     (window as any).GameState = GameState;
+    (window as any).__toggleGatheringMode = (force?: boolean) => this.toggleGatheringMode(force);
+    (window as any).__startGatheringQueue = (nodes: GatheringNode[]) => this.startGatheringQueue(nodes);
+    (window as any).__getGatheringQueue = () => ({
+      queue: this.gatheringQueue,
+      workers: Array.from(this.gatheringQueueWorkers).map(w => w.entityName),
+      assignments: Array.from(this.gatheringWorkerNodeAssignments.entries()).map(([w, n]) => ({
+        worker: w.entityName,
+        node: n.nodeDef.name,
+        nodePos: { x: n.x, y: n.y }
+      })),
+      isModeActive: this.isGatheringMode
+    });
     (window as any).__selectMember = (index: number, multiSelect?: boolean) => this.selectMemberByIndex(index, multiSelect);
     (window as any).__selectAllMembers = () => this.selectAllMembers();
     (window as any).__getSelectedMembers = () => this.getSelectedMembers();
@@ -591,11 +629,20 @@ export class MainScene extends Phaser.Scene {
       this.cameras.main.setZoom(newZoom);
     });
 
-    // Pointer Click Interactions (Click-to-Move / Click-to-Engage / Portal)
+    // Pointer Click Interactions (Click-to-Move / Click-to-Engage / Portal / Gathering Mode Drag)
     this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
       if (this.isTransitioning) return;
 
       const worldPoint = this.cameras.main.getWorldPoint(pointer.x, pointer.y);
+
+      // Milestone 26: Gathering Mode Drag Marquee Selection
+      if (this.isGatheringMode) {
+        this.gatherDragStart = { x: worldPoint.x, y: worldPoint.y };
+        this.isGatheringDrag = true;
+        this.gatheringMarqueeGraphics.clear();
+        return;
+      }
+
       const clickedTileX = Math.floor(worldPoint.x / this.tileSize);
       const clickedTileY = Math.floor(worldPoint.y / this.tileSize);
 
@@ -616,7 +663,8 @@ export class MainScene extends Phaser.Scene {
 
       if (clickedNode) {
         const activeSelected = this.getSelectedMembers().filter(m => m.state !== 'downed' && m.state !== 'dead');
-        this.interactWithGatheringNode(clickedNode, activeSelected[0] || this.player);
+        if (activeSelected.length === 0) return;
+        this.interactWithGatheringNode(clickedNode, activeSelected);
         return;
       }
 
@@ -723,6 +771,68 @@ export class MainScene extends Phaser.Scene {
               companion.claimedDestination = null;
             }
           });
+        }
+      }
+    });
+
+    // Milestone 26: Gathering Mode Drag Marquee PointerMove
+    this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
+      if (this.isGatheringDrag && this.gatherDragStart) {
+        const worldPoint = this.cameras.main.getWorldPoint(pointer.x, pointer.y);
+        const minX = Math.min(this.gatherDragStart.x, worldPoint.x);
+        const maxX = Math.max(this.gatherDragStart.x, worldPoint.x);
+        const minY = Math.min(this.gatherDragStart.y, worldPoint.y);
+        const maxY = Math.max(this.gatherDragStart.y, worldPoint.y);
+        const width = maxX - minX;
+        const height = maxY - minY;
+
+        this.gatheringMarqueeGraphics.clear();
+        this.gatheringMarqueeGraphics.fillStyle(0x34d399, 0.2);
+        this.gatheringMarqueeGraphics.fillRect(minX, minY, width, height);
+        this.gatheringMarqueeGraphics.lineStyle(2, 0x10b981, 0.95);
+        this.gatheringMarqueeGraphics.strokeRect(minX, minY, width, height);
+      }
+    });
+
+    // Milestone 26: Gathering Mode Drag Marquee PointerUp
+    this.input.on('pointerup', (pointer: Phaser.Input.Pointer) => {
+      if (this.isGatheringDrag && this.gatherDragStart) {
+        const worldPoint = this.cameras.main.getWorldPoint(pointer.x, pointer.y);
+        let minX = Math.min(this.gatherDragStart.x, worldPoint.x);
+        let maxX = Math.max(this.gatherDragStart.x, worldPoint.x);
+        let minY = Math.min(this.gatherDragStart.y, worldPoint.y);
+        let maxY = Math.max(this.gatherDragStart.y, worldPoint.y);
+
+        this.isGatheringDrag = false;
+        this.gatherDragStart = null;
+        this.gatheringMarqueeGraphics.clear();
+
+        // If drag was very small (single click or micro-drag), expand by half a tile for forgiving selection
+        if (maxX - minX < 6 && maxY - minY < 6) {
+          minX -= this.tileSize / 2;
+          maxX += this.tileSize / 2;
+          minY -= this.tileSize / 2;
+          maxY += this.tileSize / 2;
+        }
+
+        const selectedNodes = this.gatheringNodes.filter((node) => {
+          if (node.isHarvested) return false;
+          const nodeCenterX = node.x * this.tileSize + this.tileSize / 2;
+          const nodeCenterY = node.y * this.tileSize + this.tileSize / 2;
+          const inCenter = nodeCenterX >= minX && nodeCenterX <= maxX && nodeCenterY >= minY && nodeCenterY <= maxY;
+          const tileMinX = Math.floor(minX / this.tileSize);
+          const tileMaxX = Math.floor(maxX / this.tileSize);
+          const tileMinY = Math.floor(minY / this.tileSize);
+          const tileMaxY = Math.floor(maxY / this.tileSize);
+          const inTile = node.x >= tileMinX && node.x <= tileMaxX && node.y >= tileMinY && node.y <= tileMaxY;
+          return inCenter || inTile;
+        });
+
+        if (selectedNodes.length === 0) {
+          this.hud?.showToast('No gathering nodes in selected area.', 'info', 2000);
+        } else {
+          this.startGatheringQueue(selectedNodes);
+          this.toggleGatheringMode(false);
         }
       }
     });
@@ -1149,9 +1259,10 @@ export class MainScene extends Phaser.Scene {
     console.log(`[Input] Engaged Enemy: ${enemy.entityName} at (${enemy.gridPos.x}, ${enemy.gridPos.y})`);
 
     const allLivingMembers = this.party.filter(m => m.state !== 'downed' && m.state !== 'dead');
+    const selectedLiving = this.getSelectedMembers ? this.getSelectedMembers().filter(m => m.state !== 'downed' && m.state !== 'dead') : [];
     const livingMembers = membersToEngage
       ? membersToEngage.filter(m => m.state !== 'downed' && m.state !== 'dead')
-      : allLivingMembers;
+      : (selectedLiving.length > 0 ? selectedLiving : allLivingMembers);
 
     if (livingMembers.length === 0) return;
 
@@ -1175,6 +1286,19 @@ export class MainScene extends Phaser.Scene {
     // Milestone 25: Reselect All Party Members [G]
     if (this.gKey && Phaser.Input.Keyboard.JustDown(this.gKey)) {
       this.selectAllMembers();
+    }
+
+    // Milestone 26: Toggle Gathering Mode [F]
+    if (this.fKey && Phaser.Input.Keyboard.JustDown(this.fKey)) {
+      this.toggleGatheringMode();
+    }
+
+    // Milestone 26: Escape exits Gathering Mode
+    if (this.isGatheringMode && this.input.keyboard) {
+      const escKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
+      if (Phaser.Input.Keyboard.JustDown(escKey)) {
+        this.toggleGatheringMode(false);
+      }
     }
 
     // Milestone 25: Number Keys [1]..[4]
@@ -1515,8 +1639,17 @@ export class MainScene extends Phaser.Scene {
     if (customName) enemy.entityName = customName;
     this.enemies.push(enemy);
     enemy.on('pointerdown', (_pointer: Phaser.Input.Pointer, _localX: number, _localY: number, event?: Phaser.Types.Input.EventData) => {
+      if (this.isGatheringMode) return;
       if (event && event.stopPropagation) event.stopPropagation();
-      this.engageEnemy(enemy);
+      const activeSelected = this.getSelectedMembers ? this.getSelectedMembers().filter(m => m.state !== 'downed' && m.state !== 'dead') : [];
+      if (activeSelected.length > 0) {
+        for (const m of activeSelected) {
+          this.cancelGatherChannel(m);
+        }
+        this.engageEnemy(enemy, activeSelected);
+      } else {
+        this.engageEnemy(enemy);
+      }
     });
     return enemy;
   }
@@ -1568,8 +1701,10 @@ export class MainScene extends Phaser.Scene {
     };
 
     sprite.on('pointerdown', (_pointer: Phaser.Input.Pointer, _localX: number, _localY: number, event?: Phaser.Types.Input.EventData) => {
+      if (this.isGatheringMode) return;
       if (event && event.stopPropagation) event.stopPropagation();
-      this.interactWithGatheringNode(node);
+      const activeSelected = this.getSelectedMembers ? this.getSelectedMembers().filter(m => m.state !== 'downed' && m.state !== 'dead') : [];
+      this.interactWithGatheringNode(node, activeSelected.length > 0 ? activeSelected : undefined);
     });
 
     this.gatheringNodes.push(node);
@@ -1580,19 +1715,53 @@ export class MainScene extends Phaser.Scene {
     return this.spawnGatheringNode(x, y, 'foraging_bush');
   }
 
-  public interactWithGatheringNode(node: GatheringNode, character: Player = this.player): void {
+  public interactWithGatheringNode(node: GatheringNode, character?: Player | Player[]): void {
     if (node.isHarvested) {
-      this.hud.showToast(`🌿 ${node.nodeDef.name} is depleted. Stays depleted for remainder of visit.`, 'info', 2000);
+      this.hud?.showToast(`🌿 ${node.nodeDef.name} is depleted. Stays depleted for remainder of visit.`, 'info', 2000);
       return;
     }
 
-    if (character.state === 'downed' || character.state === 'dead') return;
+    const resolvedActors: Player[] = character
+      ? (Array.isArray(character)
+          ? character.filter(m => m.state !== 'downed' && m.state !== 'dead')
+          : (character.state !== 'downed' && character.state !== 'dead' ? [character] : []))
+      : (this.getSelectedMembers ? this.getSelectedMembers().filter(m => m.state !== 'downed' && m.state !== 'dead') : []);
 
-    const dist = Math.hypot(character.gridPos.x - node.x, character.gridPos.y - node.y);
+    if (resolvedActors.length === 0) {
+      if (this.player && this.player.state !== 'downed' && this.player.state !== 'dead') {
+        resolvedActors.push(this.player);
+      } else {
+        return;
+      }
+    }
+
+    // Cancel existing gather channels and clear targets ONLY for resolvedActors
+    for (const actor of resolvedActors) {
+      this.cancelGatherChannel(actor);
+      actor.clearTarget();
+    }
+    if (!this.party.some(m => m.targetEntity !== null)) {
+      this.targetReticle?.setVisible(false);
+    }
+
+    const claimed = new Set<string>();
+
+    // Pre-reserve unselected living members' current tiles and claimed destinations so moving members do not collide
+    for (const other of this.party) {
+      if (!resolvedActors.includes(other) && other.state !== 'dead') {
+        claimed.add(`${other.gridPos.x},${other.gridPos.y}`);
+        if (other.claimedDestination) {
+          claimed.add(`${other.claimedDestination.x},${other.claimedDestination.y}`);
+        }
+      }
+    }
+
+    const primaryGatherer = resolvedActors[0];
+    const dist = Math.hypot(primaryGatherer.gridPos.x - node.x, primaryGatherer.gridPos.y - node.y);
 
     if (dist <= 1.5) {
       // Adjacent: start universal channel immediately
-      this.startGatherChannel(character, node);
+      this.startGatherChannel(primaryGatherer, node);
     } else {
       // Find open adjacent tile to node and move there, then channel
       const adjTiles = [
@@ -1600,31 +1769,69 @@ export class MainScene extends Phaser.Scene {
         { x: node.x - 1, y: node.y },
         { x: node.x, y: node.y + 1 },
         { x: node.x, y: node.y - 1 }
-      ].filter(t => t.x > 0 && t.x < this.mapWidth - 1 && t.y > 0 && t.y < this.mapHeight - 1 && this.gridMatrix[t.y]?.[t.x] === 0);
+      ].filter(t => t.x > 0 && t.x < this.mapWidth - 1 && t.y > 0 && t.y < this.mapHeight - 1 && this.gridMatrix[t.y]?.[t.x] === 0 && !claimed.has(`${t.x},${t.y}`));
 
-      adjTiles.sort((a, b) => Math.hypot(a.x - character.gridPos.x, a.y - character.gridPos.y) - Math.hypot(b.x - character.gridPos.x, b.y - character.gridPos.y));
+      adjTiles.sort((a, b) => Math.hypot(a.x - primaryGatherer.gridPos.x, a.y - primaryGatherer.gridPos.y) - Math.hypot(b.x - primaryGatherer.gridPos.x, b.y - primaryGatherer.gridPos.y));
 
-      const targetTile = adjTiles[0];
+      let targetTile = adjTiles[0];
+      if (!targetTile) {
+        targetTile = this.findNearestOpenTileForPartyMove({ x: node.x, y: node.y }, primaryGatherer.gridPos, claimed, primaryGatherer);
+      }
+
       if (targetTile) {
-        for (const member of this.party) {
-          member.clearTarget();
-        }
-        const unitObs = this.getPartyUnitObstacles(character);
-        this.pathfinder.findPath(character.gridPos, targetTile, unitObs).then((path) => {
+        claimed.add(`${targetTile.x},${targetTile.y}`);
+        primaryGatherer.claimedDestination = { ...targetTile };
+
+        const unitObs = this.getPartyUnitObstacles(primaryGatherer);
+        this.pathfinder.findPath(primaryGatherer.gridPos, targetTile, unitObs).then((path) => {
           if (path.length > 0) {
-            character.followPath(path);
+            primaryGatherer.followPath(path, () => {
+              if (Math.hypot(primaryGatherer.gridPos.x - node.x, primaryGatherer.gridPos.y - node.y) <= 1.5) {
+                this.startGatherChannel(primaryGatherer, node);
+              }
+            });
             const checkArrival = this.time.addEvent({
               delay: 150,
               repeat: 40,
               callback: () => {
-                if (Math.hypot(character.gridPos.x - node.x, character.gridPos.y - node.y) <= 1.5) {
+                if (Math.hypot(primaryGatherer.gridPos.x - node.x, primaryGatherer.gridPos.y - node.y) <= 1.5) {
                   checkArrival.remove();
-                  this.startGatherChannel(character, node);
-                } else if (character.state !== 'moving') {
+                  this.startGatherChannel(primaryGatherer, node);
+                } else if (primaryGatherer.state !== 'moving') {
                   checkArrival.remove();
                 }
               }
             });
+          } else {
+            primaryGatherer.claimedDestination = null;
+          }
+        });
+      }
+    }
+
+    // 2x2 Box Formation for Companions in resolvedActors when multi-selected
+    if (resolvedActors.length > 1) {
+      const formationOffsets = [
+        { x: 0, y: 0 },
+        { x: 1, y: 0 },
+        { x: 0, y: 1 },
+        { x: 1, y: 1 }
+      ];
+      const anchorTile = primaryGatherer.claimedDestination || primaryGatherer.gridPos;
+      for (let i = 1; i < resolvedActors.length; i++) {
+        const companion = resolvedActors[i];
+        const offset = formationOffsets[i] || { x: i % 2, y: Math.floor(i / 2) };
+        const idealPos: GridPos = { x: anchorTile.x + offset.x, y: anchorTile.y + offset.y };
+        const compDest = this.findNearestOpenTileForPartyMove(idealPos, companion.gridPos, claimed, companion);
+        claimed.add(`${compDest.x},${compDest.y}`);
+        companion.claimedDestination = { ...compDest };
+
+        const compUnitObs = this.getPartyUnitObstacles(companion);
+        this.pathfinder.findPath(companion.gridPos, compDest, compUnitObs).then((path) => {
+          if (path.length > 0) {
+            companion.followPath(path);
+          } else {
+            companion.claimedDestination = null;
           }
         });
       }
@@ -1632,7 +1839,7 @@ export class MainScene extends Phaser.Scene {
   }
 
   public interactWithBush(bush: ForagingBush): void {
-    this.interactWithGatheringNode(bush, this.player);
+    this.interactWithGatheringNode(bush);
   }
 
   public startGatherChannel(character: Player, node: GatheringNode): boolean {
@@ -1698,6 +1905,22 @@ export class MainScene extends Phaser.Scene {
     }
 
     this.harvestGatheringNode(channel.node, character);
+
+    // Milestone 26: Advance Gathering Queue
+    if (this.gatheringWorkerNodeAssignments.has(character)) {
+      this.gatheringWorkerNodeAssignments.delete(character);
+
+      // Filter remaining unharvested nodes in queue
+      const remainingUnclaimed = this.gatheringQueue.filter(n => !n.isHarvested);
+      if (remainingUnclaimed.length > 0) {
+        this.processGatheringQueue();
+      } else if (this.gatheringWorkerNodeAssignments.size === 0) {
+        console.log('[Gathering Queue] All nodes harvested! Workers hold position.');
+        this.hud?.showToast('🌿 Gathering queue complete!', 'success', 2500);
+      }
+      // Section 11.2a: Once the queue is exhausted, members remain wherever they last gathered
+      // rather than auto-returning to formation. (character remains idle at current position)
+    }
   }
 
   public harvestGatheringNode(node: GatheringNode, character: Player = this.player): void {
@@ -1791,6 +2014,15 @@ export class MainScene extends Phaser.Scene {
     channel.node.label.setText(channel.node.nodeDef.label);
     channel.node.label.setColor(channel.node.nodeDef.color);
 
+    // Milestone 26: Release worker assignment and return unharvested node back to gatheringQueue
+    if (this.gatheringWorkerNodeAssignments.has(character)) {
+      const assignedNode = this.gatheringWorkerNodeAssignments.get(character);
+      this.gatheringWorkerNodeAssignments.delete(character);
+      if (assignedNode && !assignedNode.isHarvested && !this.gatheringQueue.includes(assignedNode)) {
+        this.gatheringQueue.unshift(assignedNode);
+      }
+    }
+
     // 4. Reset character state
     character.state = 'idle';
 
@@ -1802,6 +2034,9 @@ export class MainScene extends Phaser.Scene {
     if (attacker && attacker.state !== 'dead' && attacker.state !== 'downed') {
       this.engageEnemy(attacker, [character]);
     }
+
+    // Milestone 26: Re-process queue so remaining workers continue working without stalling
+    this.processGatheringQueue();
 
     return true;
   }
@@ -1815,7 +2050,183 @@ export class MainScene extends Phaser.Scene {
     if (character.state === 'channeling') {
       character.state = 'idle';
     }
+
+    // Milestone 26: Release worker assignment and return unharvested node back to queue
+    if (this.gatheringWorkerNodeAssignments.has(character)) {
+      const assignedNode = this.gatheringWorkerNodeAssignments.get(character);
+      this.gatheringWorkerNodeAssignments.delete(character);
+      if (assignedNode && !assignedNode.isHarvested && !this.gatheringQueue.includes(assignedNode)) {
+        this.gatheringQueue.unshift(assignedNode);
+      }
+    }
     return true;
+  }
+
+  // --- MILESTONE 26: GATHERING MODE & PARALLEL QUEUE PROCESSING ---
+
+  public toggleGatheringMode(forceState?: boolean): boolean {
+    this.isGatheringMode = forceState !== undefined ? forceState : !this.isGatheringMode;
+    if (!this.isGatheringMode) {
+      this.isGatheringDrag = false;
+      this.gatherDragStart = null;
+      this.gatheringMarqueeGraphics?.clear();
+      this.hud?.showToast('🌿 Gathering Mode: OFF', 'info', 1500);
+      this.hud?.setGatheringModeActive(false);
+      console.log('[Gathering Mode] Deactivated');
+    } else {
+      this.hud?.showToast('🌿 Gathering Mode: ACTIVE — Drag area to queue nodes', 'success', 2500);
+      this.hud?.setGatheringModeActive(true);
+      console.log('[Gathering Mode] Activated');
+    }
+    // CRITICAL: selectedMembers is NOT modified or reset!
+    return this.isGatheringMode;
+  }
+
+  public startGatheringQueue(nodes: GatheringNode[]): void {
+    const validNodes = Array.from(new Set(nodes)).filter(n => !n.isHarvested);
+    if (validNodes.length === 0) return;
+
+    // Respect current Portrait Selection state!
+    const activeSelected = this.getSelectedMembers ? this.getSelectedMembers().filter(m => m.state !== 'downed' && m.state !== 'dead') : [];
+    const workers = activeSelected.length > 0
+      ? activeSelected
+      : this.party.filter(m => m.state !== 'downed' && m.state !== 'dead');
+
+    if (workers.length === 0) {
+      console.log('[Gathering Queue] No living workers available to gather');
+      return;
+    }
+
+    this.gatheringQueue = [...validNodes];
+    this.gatheringQueueWorkers = new Set(workers);
+    this.gatheringWorkerNodeAssignments.clear();
+
+    console.log(`[Gathering Queue] Started queue with ${this.gatheringQueue.length} nodes for ${workers.length} worker(s): ${workers.map(w => w.entityName).join(', ')}`);
+    this.hud?.showToast(`🌿 Queued ${this.gatheringQueue.length} gathering node(s) for ${workers.length} member(s)!`, 'success', 2500);
+
+    this.processGatheringQueue();
+  }
+
+  public processGatheringQueue(): void {
+    if (this.gatheringQueueWorkers.size === 0) return;
+
+    const claimed = new Set<string>();
+    for (const member of this.party) {
+      if (member.state !== 'dead') {
+        claimed.add(`${member.gridPos.x},${member.gridPos.y}`);
+        if (member.claimedDestination) {
+          claimed.add(`${member.claimedDestination.x},${member.claimedDestination.y}`);
+        }
+      }
+    }
+
+    for (const worker of Array.from(this.gatheringQueueWorkers)) {
+      if (worker.state === 'downed' || worker.state === 'dead' || worker.targetEntity !== null) {
+        continue;
+      }
+      if (this.gatheringWorkerNodeAssignments.has(worker) || this.activeGatherChannels.has(worker)) {
+        continue;
+      }
+
+      const assignedNodes = new Set(this.gatheringWorkerNodeAssignments.values());
+      const availableNodes = this.gatheringQueue.filter(n => !n.isHarvested && !assignedNodes.has(n));
+
+      if (availableNodes.length === 0) {
+        continue;
+      }
+
+      availableNodes.sort((a, b) => {
+        const distA = Math.hypot(a.x - worker.gridPos.x, a.y - worker.gridPos.y);
+        const distB = Math.hypot(b.x - worker.gridPos.x, b.y - worker.gridPos.y);
+        return distA - distB;
+      });
+
+      const targetNode = availableNodes[0];
+      const qIdx = this.gatheringQueue.indexOf(targetNode);
+      if (qIdx !== -1) {
+        this.gatheringQueue.splice(qIdx, 1);
+      }
+      this.gatheringWorkerNodeAssignments.set(worker, targetNode);
+
+      this.dispatchWorkerToNode(worker, targetNode, claimed);
+    }
+  }
+
+  public dispatchWorkerToNode(worker: Player, node: GatheringNode, claimed?: Set<string>): void {
+    this.cancelGatherChannel(worker);
+    worker.clearTarget();
+
+    const dist = Math.hypot(worker.gridPos.x - node.x, worker.gridPos.y - node.y);
+    if (dist <= 1.5) {
+      this.startGatherChannel(worker, node);
+      return;
+    }
+
+    const claimedTiles = claimed || new Set<string>();
+    if (!claimed) {
+      for (const member of this.party) {
+        if (member !== worker && member.state !== 'dead') {
+          claimedTiles.add(`${member.gridPos.x},${member.gridPos.y}`);
+          if (member.claimedDestination) {
+            claimedTiles.add(`${member.claimedDestination.x},${member.claimedDestination.y}`);
+          }
+        }
+      }
+    }
+
+    const adjTiles = [
+      { x: node.x + 1, y: node.y },
+      { x: node.x - 1, y: node.y },
+      { x: node.x, y: node.y + 1 },
+      { x: node.x, y: node.y - 1 }
+    ].filter(t => t.x > 0 && t.x < this.mapWidth - 1 && t.y > 0 && t.y < this.mapHeight - 1 && this.gridMatrix[t.y]?.[t.x] === 0 && !claimedTiles.has(`${t.x},${t.y}`));
+
+    adjTiles.sort((a, b) => Math.hypot(a.x - worker.gridPos.x, a.y - worker.gridPos.y) - Math.hypot(b.x - worker.gridPos.x, b.y - worker.gridPos.y));
+
+    let targetTile = adjTiles[0];
+    if (!targetTile) {
+      targetTile = this.findNearestOpenTileForPartyMove({ x: node.x, y: node.y }, worker.gridPos, claimedTiles, worker);
+    }
+
+    if (targetTile) {
+      claimedTiles.add(`${targetTile.x},${targetTile.y}`);
+      worker.claimedDestination = { ...targetTile };
+
+      const unitObs = this.getPartyUnitObstacles(worker);
+      this.pathfinder.findPath(worker.gridPos, targetTile, unitObs).then((path) => {
+        if (path.length > 0) {
+          worker.followPath(path, () => {
+            if (Math.hypot(worker.gridPos.x - node.x, worker.gridPos.y - node.y) <= 1.5) {
+              this.startGatherChannel(worker, node);
+            }
+          });
+          const checkArrival = this.time.addEvent({
+            delay: 150,
+            repeat: 40,
+            callback: () => {
+              if (Math.hypot(worker.gridPos.x - node.x, worker.gridPos.y - node.y) <= 1.5) {
+                checkArrival.remove();
+                this.startGatherChannel(worker, node);
+              } else if (worker.state !== 'moving') {
+                checkArrival.remove();
+              }
+            }
+          });
+        } else {
+          worker.claimedDestination = null;
+          this.gatheringWorkerNodeAssignments.delete(worker);
+          if (!node.isHarvested && !this.gatheringQueue.includes(node)) {
+            this.gatheringQueue.push(node);
+          }
+        }
+      });
+    } else {
+      worker.claimedDestination = null;
+      this.gatheringWorkerNodeAssignments.delete(worker);
+      if (!node.isHarvested && !this.gatheringQueue.includes(node)) {
+        this.gatheringQueue.push(node);
+      }
+    }
   }
 
   public toggleDebugGatheringRespawn(): boolean {
