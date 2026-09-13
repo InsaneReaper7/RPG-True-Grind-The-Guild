@@ -832,7 +832,6 @@ export class MainScene extends Phaser.Scene {
           this.hud?.showToast('No gathering nodes in selected area.', 'info', 2000);
         } else {
           this.startGatheringQueue(selectedNodes);
-          this.toggleGatheringMode(false);
         }
       }
     });
@@ -1288,18 +1287,6 @@ export class MainScene extends Phaser.Scene {
       this.selectAllMembers();
     }
 
-    // Milestone 26: Toggle Gathering Mode [F]
-    if (this.fKey && Phaser.Input.Keyboard.JustDown(this.fKey)) {
-      this.toggleGatheringMode();
-    }
-
-    // Milestone 26: Escape exits Gathering Mode
-    if (this.isGatheringMode && this.input.keyboard) {
-      const escKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
-      if (Phaser.Input.Keyboard.JustDown(escKey)) {
-        this.toggleGatheringMode(false);
-      }
-    }
 
     // Milestone 25: Number Keys [1]..[4]
     for (let i = 0; i < this.numKeys.length; i++) {
@@ -1744,6 +1731,24 @@ export class MainScene extends Phaser.Scene {
       this.targetReticle?.setVisible(false);
     }
 
+    // Manual single-click override: Release node from background gathering queue and conflicting worker assignments
+    const qIdx = this.gatheringQueue.indexOf(node);
+    if (qIdx !== -1) {
+      this.gatheringQueue.splice(qIdx, 1);
+    }
+    for (const [worker, assignedNode] of Array.from(this.gatheringWorkerNodeAssignments.entries())) {
+      if (assignedNode === node && !resolvedActors.includes(worker)) {
+        this.gatheringWorkerNodeAssignments.delete(worker);
+        worker.claimedDestination = null;
+        if (worker.state === 'moving') {
+          worker.stopMovement();
+        }
+        if (this.activeGatherChannels.has(worker)) {
+          this.cancelGatherChannel(worker);
+        }
+      }
+    }
+
     const claimed = new Set<string>();
 
     // Pre-reserve unselected living members' current tiles and claimed destinations so moving members do not collide
@@ -1847,8 +1852,12 @@ export class MainScene extends Phaser.Scene {
       return false;
     }
 
-    // Cancel any existing channel
-    this.cancelGatherChannel(character);
+    // Cancel any existing channel container
+    const existingChannel = this.activeGatherChannels.get(character);
+    if (existingChannel) {
+      existingChannel.barContainer.destroy();
+      this.activeGatherChannels.delete(character);
+    }
 
     // Halt movement and combat targets
     character.state = 'channeling';
@@ -1917,6 +1926,9 @@ export class MainScene extends Phaser.Scene {
       } else if (this.gatheringWorkerNodeAssignments.size === 0) {
         console.log('[Gathering Queue] All nodes harvested! Workers hold position.');
         this.hud?.showToast('🌿 Gathering queue complete!', 'success', 2500);
+        if (this.isGatheringMode) {
+          this.toggleGatheringMode(false);
+        }
       }
       // Section 11.2a: Once the queue is exhausted, members remain wherever they last gathered
       // rather than auto-returning to formation. (character remains idle at current position)
@@ -2042,24 +2054,57 @@ export class MainScene extends Phaser.Scene {
   }
 
   public cancelGatherChannel(character: Player): boolean {
+    let hadActivity = false;
+
     const channel = this.activeGatherChannels.get(character);
-    if (!channel) return false;
-
-    channel.barContainer.destroy();
-    this.activeGatherChannels.delete(character);
-    if (character.state === 'channeling') {
-      character.state = 'idle';
-    }
-
-    // Milestone 26: Release worker assignment and return unharvested node back to queue
-    if (this.gatheringWorkerNodeAssignments.has(character)) {
-      const assignedNode = this.gatheringWorkerNodeAssignments.get(character);
-      this.gatheringWorkerNodeAssignments.delete(character);
-      if (assignedNode && !assignedNode.isHarvested && !this.gatheringQueue.includes(assignedNode)) {
-        this.gatheringQueue.unshift(assignedNode);
+    if (channel) {
+      hadActivity = true;
+      channel.barContainer.destroy();
+      this.activeGatherChannels.delete(character);
+      if (character.state === 'channeling') {
+        character.state = 'idle';
       }
     }
-    return true;
+
+    // Milestone 26: Release worker assignment and clear claimed destination
+    if (this.gatheringWorkerNodeAssignments.has(character)) {
+      hadActivity = true;
+      this.gatheringWorkerNodeAssignments.delete(character);
+      character.claimedDestination = null;
+    }
+    return hadActivity;
+  }
+
+  public clearGatheringQueue(cancelActiveChannels: boolean = true): void {
+    console.log(`[Gathering Queue] Clearing queue (${this.gatheringQueue.length} nodes, ${this.gatheringWorkerNodeAssignments.size} assignments, ${this.activeGatherChannels.size} active channels)`);
+    this.gatheringQueue = [];
+
+    // Clear any moving / assigned worker in gatheringQueueWorkers
+    for (const worker of Array.from(this.gatheringQueueWorkers)) {
+      worker.claimedDestination = null;
+      if (worker.state === 'moving') {
+        worker.stopMovement();
+      }
+    }
+    this.gatheringQueueWorkers.clear();
+
+    for (const [worker, node] of Array.from(this.gatheringWorkerNodeAssignments.entries())) {
+      this.gatheringWorkerNodeAssignments.delete(worker);
+      worker.claimedDestination = null;
+      if (worker.state === 'moving') {
+        worker.stopMovement();
+      }
+      if (cancelActiveChannels && this.activeGatherChannels.has(worker)) {
+        this.cancelGatherChannel(worker);
+      }
+    }
+    this.gatheringWorkerNodeAssignments.clear();
+
+    if (cancelActiveChannels) {
+      for (const worker of Array.from(this.activeGatherChannels.keys())) {
+        this.cancelGatherChannel(worker);
+      }
+    }
   }
 
   // --- MILESTONE 26: GATHERING MODE & PARALLEL QUEUE PROCESSING ---
@@ -2070,6 +2115,7 @@ export class MainScene extends Phaser.Scene {
       this.isGatheringDrag = false;
       this.gatherDragStart = null;
       this.gatheringMarqueeGraphics?.clear();
+      this.clearGatheringQueue(true);
       this.hud?.showToast('🌿 Gathering Mode: OFF', 'info', 1500);
       this.hud?.setGatheringModeActive(false);
       console.log('[Gathering Mode] Deactivated');
@@ -2153,7 +2199,14 @@ export class MainScene extends Phaser.Scene {
   }
 
   public dispatchWorkerToNode(worker: Player, node: GatheringNode, claimed?: Set<string>): void {
-    this.cancelGatherChannel(worker);
+    const existingChannel = this.activeGatherChannels.get(worker);
+    if (existingChannel) {
+      existingChannel.barContainer.destroy();
+      this.activeGatherChannels.delete(worker);
+      if (worker.state === 'channeling') {
+        worker.state = 'idle';
+      }
+    }
     worker.clearTarget();
 
     const dist = Math.hypot(worker.gridPos.x - node.x, worker.gridPos.y - node.y);
@@ -2198,6 +2251,8 @@ export class MainScene extends Phaser.Scene {
           worker.followPath(path, () => {
             if (Math.hypot(worker.gridPos.x - node.x, worker.gridPos.y - node.y) <= 1.5) {
               this.startGatherChannel(worker, node);
+            } else {
+              this.cancelGatherChannel(worker);
             }
           });
           const checkArrival = this.time.addEvent({
@@ -2209,6 +2264,9 @@ export class MainScene extends Phaser.Scene {
                 this.startGatherChannel(worker, node);
               } else if (worker.state !== 'moving') {
                 checkArrival.remove();
+                if (Math.hypot(worker.gridPos.x - node.x, worker.gridPos.y - node.y) > 1.5) {
+                  this.cancelGatherChannel(worker);
+                }
               }
             }
           });

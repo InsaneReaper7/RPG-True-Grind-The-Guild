@@ -280,12 +280,7 @@ export class HUD {
     if (this.gatheringModeBtnEl) {
       this.gatheringModeBtnEl.addEventListener('click', (e: MouseEvent) => {
         e.stopPropagation();
-        if (!this.isOutpost) {
-          const scene = (window as any).game?.scene?.getScene('MainScene');
-          if (scene && typeof scene.toggleGatheringMode === 'function') {
-            scene.toggleGatheringMode();
-          }
-        }
+        this.triggerGatheringModeToggle();
       });
     }
 
@@ -1038,12 +1033,7 @@ export class HUD {
         } else if (e.key === 'f' || e.key === 'F' || e.code === 'KeyF') {
           const targetTag = (e.target as HTMLElement)?.tagName?.toLowerCase();
           if (targetTag !== 'input' && targetTag !== 'textarea' && targetTag !== 'select') {
-            if (!active.isOutpost) {
-              const scene = (window as any).game?.scene?.getScene('MainScene');
-              if (scene && typeof scene.toggleGatheringMode === 'function') {
-                scene.toggleGatheringMode();
-              }
-            }
+            active.triggerGatheringModeToggle();
           }
         } else if (e.key >= '1' && e.key <= '4') {
           const targetTag = (e.target as HTMLElement)?.tagName?.toLowerCase();
@@ -1052,12 +1042,7 @@ export class HUD {
             active.selectMemberByIndex(idx, e.shiftKey);
           }
         } else if (e.key === 'Escape') {
-          if (!active.isOutpost) {
-            const scene = (window as any).game?.scene?.getScene('MainScene');
-            if (scene && scene.isGatheringMode && typeof scene.toggleGatheringMode === 'function') {
-              scene.toggleGatheringMode(false);
-            }
-          }
+          active.triggerGatheringModeToggle(false);
           if (active.isAnnouncementShowing()) {
             active.dismissCurrentAnnouncement();
           }
@@ -1076,6 +1061,16 @@ export class HUD {
         }
       });
     }
+  }
+
+  public triggerGatheringModeToggle(forceState?: boolean): boolean {
+    if (!this.isOutpost) {
+      const scene = (window as any).game?.scene?.getScene('MainScene');
+      if (scene && typeof scene.toggleGatheringMode === 'function') {
+        return scene.toggleGatheringMode(forceState);
+      }
+    }
+    return false;
   }
 
   public setGatheringModeActive(active: boolean): void {
