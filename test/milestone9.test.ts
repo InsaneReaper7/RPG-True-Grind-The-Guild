@@ -242,8 +242,11 @@ async function runTests() {
   const initialBone = gameState.getItemCount('bone');
   const initialEcto = gameState.getItemCount('ectoplasm');
 
-  // Verify harvest tables in data
-  assert.ok(goblinDef.harvest.some(h => h.item === 'monster_meat' && h.tags.includes('cooking')));
+  // Verify harvest tables in data (allowing corpseHarvest for butchering items per M32)
+  assert.ok(
+    goblinDef.harvest.some(h => h.item === 'monster_meat' && h.tags.includes('cooking')) ||
+    (goblinDef.corpseHarvest?.butchering?.item === 'monster_meat' && (goblinDef.corpseHarvest?.butchering?.tags?.includes('cooking') ?? true))
+  );
   assert.ok(goblinDef.harvest.some(h => h.item === 'goblin_ear' && h.tags.includes('alchemy')));
   assert.ok(skeletonDef.harvest.some(h => h.item === 'bone' && h.tags.includes('blacksmithing')));
   assert.ok(skeletonDef.harvest.some(h => h.item === 'ectoplasm' && h.tags.includes('alchemy')));

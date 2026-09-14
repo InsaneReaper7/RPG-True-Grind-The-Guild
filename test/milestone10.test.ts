@@ -59,21 +59,33 @@ async function runTests() {
   // ==========================================================================
   const wolfDef = dataLoader.getEnemy('wolf');
   assert.ok(wolfDef, 'Wolf definition must exist in enemies.json');
-  assert.ok(wolfDef.harvest && wolfDef.harvest.length >= 3, 'Wolf must have at least 3 harvest items');
+  // Per M32: Wolf items span on-kill harvest and corpseHarvest
+  const allWolfYields: Array<{ item: string; tags?: string[] }> = [
+    ...(wolfDef.harvest || []),
+    ...(wolfDef.corpseHarvest ? [
+      wolfDef.corpseHarvest.skinning ? { item: wolfDef.corpseHarvest.skinning.item, tags: wolfDef.corpseHarvest.skinning.tags } : null,
+      wolfDef.corpseHarvest.butchering ? { item: wolfDef.corpseHarvest.butchering.item, tags: wolfDef.corpseHarvest.butchering.tags } : null
+    ].filter(Boolean) as Array<{ item: string; tags?: string[] }> : [])
+  ];
+  assert.ok(allWolfYields.length >= 3, 'Wolf must have at least 3 harvest items across drop tables');
 
-  const wolfMeatDrop = wolfDef.harvest.find((h) => h.item === 'wolf_meat');
-  assert.ok(wolfMeatDrop, 'Wolf must drop "wolf_meat"');
-  assert.ok(wolfMeatDrop.tags.includes('cooking'), 'wolf_meat must be tagged for cooking');
+  const wolfMeatDrop = allWolfYields.find((h) => h.item === 'wolf_meat');
+  assert.ok(wolfMeatDrop, 'Wolf must provide "wolf_meat"');
+  assert.ok(wolfMeatDrop.tags && wolfMeatDrop.tags.includes('cooking'), 'wolf_meat must be tagged for cooking');
 
-  const wolfPeltDrop = wolfDef.harvest.find((h) => h.item === 'wolf_pelt');
-  assert.ok(wolfPeltDrop, 'Wolf must drop "wolf_pelt"');
+  const wolfPeltDrop = allWolfYields.find((h) => h.item === 'wolf_pelt');
+  assert.ok(wolfPeltDrop, 'Wolf must provide "wolf_pelt"');
 
-  const wolfClawDrop = wolfDef.harvest.find((h) => h.item === 'wolf_claw');
-  assert.ok(wolfClawDrop, 'Wolf must drop "wolf_claw"');
+  const wolfClawDrop = allWolfYields.find((h) => h.item === 'wolf_claw');
+  assert.ok(wolfClawDrop, 'Wolf must provide "wolf_claw"');
 
   const goblinDef = dataLoader.getEnemy('goblin')!;
-  const monsterMeatDrop = goblinDef.harvest.find((h) => h.item === 'monster_meat');
-  assert.ok(monsterMeatDrop, 'Goblin must drop "monster_meat"');
+  const allGoblinYields = [
+    ...(goblinDef.harvest || []),
+    ...(goblinDef.corpseHarvest?.butchering ? [{ item: goblinDef.corpseHarvest.butchering.item }] : [])
+  ];
+  const monsterMeatDrop = allGoblinYields.find((h) => h.item === 'monster_meat');
+  assert.ok(monsterMeatDrop, 'Goblin must provide "monster_meat"');
   assert.notEqual(wolfMeatDrop.item, monsterMeatDrop.item, 'Wolf Meat and Monster Meat must be distinct items');
   console.log('✔ Test 2 passed: Wolf harvest drops verified (wolf_meat, wolf_pelt, wolf_claw) and distinct from Goblin');
 

@@ -22,6 +22,15 @@ export class Enemy extends Entity {
   public eliteLabel?: Phaser.GameObjects.Text;
   public tierAura?: Phaser.GameObjects.Graphics;
   public tierLabel?: Phaser.GameObjects.Text;
+  public isSkinned: boolean = false;
+  public isButchered: boolean = false;
+  public corpseNode?: any = null;
+
+  public isEnraged: boolean = false;
+  public initialAttackIntervalMs: number;
+  public enragedAttackIntervalMs: number;
+  public initialMoveSpeed: number;
+  public enragedMoveSpeed: number;
 
   constructor(
     scene: Phaser.Scene,
@@ -37,8 +46,12 @@ export class Enemy extends Entity {
     this.enemyData = enemyData;
     this.moveSpeed = enemyData.moveSpeed;
     this.spawnPos = { x, y };
+    this.initialAttackIntervalMs = enemyData.attackIntervalMs;
+    this.enragedAttackIntervalMs = Math.round(enemyData.attackIntervalMs * 0.68);
+    this.initialMoveSpeed = enemyData.moveSpeed;
+    this.enragedMoveSpeed = Math.round(enemyData.moveSpeed * 1.31);
 
-    // Milestone 20 & 29: Elite & Epic Tier Visual Distinction
+    // Milestone 20, 29 & 34: Elite, Epic & Boss Tier Visual Distinction
     if (this.enemyData.tier === 'elite') {
       if (scene.add && typeof scene.add.graphics === 'function') {
         this.eliteAura = scene.add.graphics();
@@ -84,6 +97,39 @@ export class Enemy extends Entity {
         this.add(this.eliteLabel);
         this.tierLabel = this.eliteLabel;
       }
+    } else if (this.enemyData.tier === 'boss') {
+      if (scene.add && typeof scene.add.graphics === 'function') {
+        this.eliteAura = scene.add.graphics();
+        // Outer crimson blazing circle
+        this.eliteAura.lineStyle(3, 0xdc2626, 0.95);
+        this.eliteAura.strokeCircle(0, 0, 24);
+        this.eliteAura.fillStyle(0xef4444, 0.28);
+        this.eliteAura.fillCircle(0, 0, 24);
+        // Four cardinal crest spikes
+        this.eliteAura.lineStyle(2, 0xdc2626, 0.9);
+        if (typeof (this.eliteAura as any).lineBetween === 'function') {
+          (this.eliteAura as any).lineBetween(0, -28, 0, -22);
+          (this.eliteAura as any).lineBetween(0, 22, 0, 28);
+          (this.eliteAura as any).lineBetween(-28, 0, -22, 0);
+          (this.eliteAura as any).lineBetween(22, 0, 28, 0);
+        }
+        // Inner fiery amber core ring
+        this.eliteAura.lineStyle(1.5, 0xf59e0b, 0.85);
+        this.eliteAura.strokeCircle(0, 0, 16);
+        this.addAt(this.eliteAura, 0); // Behind avatar
+        this.tierAura = this.eliteAura;
+      }
+      if (scene.add && typeof scene.add.text === 'function') {
+        this.eliteLabel = scene.add.text(0, -this.tileSize / 2 - 18, '👑 BOSS 👑', {
+          fontSize: '10px',
+          color: '#ef4444',
+          fontStyle: 'bold',
+          backgroundColor: 'rgba(50,0,0,0.85)',
+          padding: { x: 4, y: 1 }
+        }).setOrigin(0.5);
+        this.add(this.eliteLabel);
+        this.tierLabel = this.eliteLabel;
+      }
     }
 
     // Enable direct sprite/container click interactive hit area
@@ -114,7 +160,51 @@ export class Enemy extends Entity {
       }
     }
 
-    return super.takeDamage(amount);
+    const isDowned = super.takeDamage(amount);
+
+    // Milestone 34: Boss Tier Enrage Phase Trigger at Critical HP (<= 50% HP)
+    if (this.enemyData.tier === 'boss' && !this.isEnraged && this.state !== 'dead' && this.state !== 'downed') {
+      if (this.hp <= this.criticalHp) {
+        this.triggerEnrage();
+      }
+    }
+
+    return isDowned;
+  }
+
+  /**
+   * Enters Boss Enrage phase: dramatically speeds up attack rate and move speed with intensified visuals.
+   */
+  public triggerEnrage(): void {
+    this.isEnraged = true;
+    this.enemyData.attackIntervalMs = this.enragedAttackIntervalMs;
+    this.moveSpeed = this.enragedMoveSpeed;
+    console.log(`%c[Combat:Enrage] 🔥 ${this.entityName} has ENRAGED! Attack interval dropped to ${this.enemyData.attackIntervalMs}ms, Move speed increased to ${this.moveSpeed}!`, 'color: #ef4444; font-weight: bold;');
+    
+    // Avatar red tint
+    if (this.avatarSprite && typeof this.avatarSprite.setTint === 'function') {
+      this.avatarSprite.setTint(0xff8888);
+    }
+    // Intensified enrage aura
+    if (this.eliteAura) {
+      this.eliteAura.clear();
+      this.eliteAura.lineStyle(3.5, 0xff0000, 1.0);
+      this.eliteAura.strokeCircle(0, 0, 26);
+      this.eliteAura.fillStyle(0xdc2626, 0.38);
+      this.eliteAura.fillCircle(0, 0, 26);
+      if (typeof (this.eliteAura as any).lineBetween === 'function') {
+        (this.eliteAura as any).lineBetween(0, -32, 0, -24);
+        (this.eliteAura as any).lineBetween(0, 24, 0, 32);
+        (this.eliteAura as any).lineBetween(-32, 0, -24, 0);
+        (this.eliteAura as any).lineBetween(24, 0, 32, 0);
+      }
+      this.eliteAura.lineStyle(2, 0xf59e0b, 0.9);
+      this.eliteAura.strokeCircle(0, 0, 18);
+    }
+    if (this.eliteLabel) {
+      this.eliteLabel.setText('🔥 ENRAGED BOSS 🔥');
+      this.eliteLabel.setStyle({ color: '#ff2222' });
+    }
   }
 
   protected override onDowned(): void {
@@ -163,6 +253,12 @@ export class Enemy extends Entity {
     this.lastAttackTime = 0;
     this.targetEntity = null;
     this.tauntSource = null;
+    this.isSkinned = false;
+    this.isButchered = false;
+    this.corpseNode = null;
+    this.isEnraged = false;
+    this.enemyData.attackIntervalMs = this.initialAttackIntervalMs;
+    this.moveSpeed = this.initialMoveSpeed;
     this.activeStatusEffects.clear();
     this.stopMovement();
     this.setGridPosition(this.spawnPos.x, this.spawnPos.y);
@@ -178,9 +274,29 @@ export class Enemy extends Entity {
     }
     if (this.eliteAura) {
       this.eliteAura.setVisible(true);
+      if (this.enemyData.tier === 'boss') {
+        this.eliteAura.clear();
+        this.eliteAura.lineStyle(3, 0xdc2626, 0.95);
+        this.eliteAura.strokeCircle(0, 0, 24);
+        this.eliteAura.fillStyle(0xef4444, 0.28);
+        this.eliteAura.fillCircle(0, 0, 24);
+        this.eliteAura.lineStyle(2, 0xdc2626, 0.9);
+        if (typeof (this.eliteAura as any).lineBetween === 'function') {
+          (this.eliteAura as any).lineBetween(0, -28, 0, -22);
+          (this.eliteAura as any).lineBetween(0, 22, 0, 28);
+          (this.eliteAura as any).lineBetween(-28, 0, -22, 0);
+          (this.eliteAura as any).lineBetween(22, 0, 28, 0);
+        }
+        this.eliteAura.lineStyle(1.5, 0xf59e0b, 0.85);
+        this.eliteAura.strokeCircle(0, 0, 16);
+      }
     }
     if (this.eliteLabel) {
       this.eliteLabel.setVisible(true);
+      if (this.enemyData.tier === 'boss') {
+        this.eliteLabel.setText('👑 BOSS 👑');
+        this.eliteLabel.setStyle({ color: '#ef4444' });
+      }
     }
     this.drawHpBar();
     console.log(`[Respawn] ${this.entityName} completely reset and respawned at (${this.spawnPos.x}, ${this.spawnPos.y}) with full HP!`);
@@ -190,6 +306,7 @@ export class Enemy extends Entity {
     super.drawHpBar();
     // Milestone 20: Gold border around HP bar for Elite enemies
     // Milestone 29: Purple border around HP bar for Epic enemies
+    // Milestone 34: Crimson border around HP bar for Boss enemies
     if (this.state !== 'dead' && this.hpBarBg) {
       if (this.enemyData?.tier === 'elite') {
         const barWidth = 32;
@@ -204,6 +321,13 @@ export class Enemy extends Entity {
         const barX = -barWidth / 2;
         const barY = -this.tileSize / 2 - 10;
         this.hpBarBg.lineStyle(1.5, 0xa855f7, 0.95);
+        this.hpBarBg.strokeRect(barX - 1, barY - 1, barWidth + 2, barHeight * 2 + 3);
+      } else if (this.enemyData?.tier === 'boss') {
+        const barWidth = 36;
+        const barHeight = 4;
+        const barX = -barWidth / 2;
+        const barY = -this.tileSize / 2 - 12;
+        this.hpBarBg.lineStyle(2, 0xdc2626, 1.0);
         this.hpBarBg.strokeRect(barX - 1, barY - 1, barWidth + 2, barHeight * 2 + 3);
       }
     }

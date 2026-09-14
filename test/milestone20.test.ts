@@ -260,20 +260,27 @@ async function runMilestone20Tests() {
     }
   }
 
-  // Verify dungeonConfig enemyPool has all entries and no dangling IDs
+  // Verify dungeonConfig enemyPool has all common entries, orc_warrior is excluded, and no dangling IDs
   const dungeonConfig = dataLoader.getDungeonConfig();
   assert.ok(dungeonConfig && dungeonConfig.enemyPool, 'dungeonConfig.enemyPool must exist');
   for (const poolId of dungeonConfig.enemyPool) {
     const found = dataLoader.getEnemy(poolId);
     assert.ok(found, `dungeonConfig.enemyPool ID '${poolId}' must exist in enemies.json`);
   }
-  for (const id of expectedEnemyIds) {
-    assert.ok(dungeonConfig.enemyPool.includes(id), `dungeonConfig.enemyPool must include '${id}'`);
+  const commonEnemyIds = expectedEnemyIds.filter((id) => id !== 'orc_warrior');
+  for (const id of commonEnemyIds) {
+    assert.ok(dungeonConfig.enemyPool.includes(id), `dungeonConfig.enemyPool must include common enemy '${id}'`);
   }
-  console.log('✓ PASS: All 9 enemies verified for schema completeness and zero dangling pool IDs.');
+  assert.equal(
+    dungeonConfig.enemyPool.includes('orc_warrior'),
+    false,
+    "dungeonConfig.enemyPool must NOT include 'orc_warrior' (separated into elite tier roll)"
+  );
+  assert.equal(dungeonConfig.eliteEnemyId, 'orc_warrior', "dungeonConfig.eliteEnemyId must be 'orc_warrior'");
+  console.log('✓ PASS: All 9 enemies verified for schema completeness, enemyPool contains strictly common enemies, and orc_warrior is registered as eliteEnemyId.');
 
   // =========================================================================
-  // TEST 2: Zero-Code Dungeon Generation & Floor Respawn Integration
+  // TEST 2: Dungeon Generation & Pool Integration
   // =========================================================================
   console.log('\n--- TEST 2: Dungeon Generation & Pool Integration ---');
   let rngSeed = 42;
@@ -287,10 +294,17 @@ async function runMilestone20Tests() {
   assert.ok(generatedDungeon.enemySpawns.length > 0, 'Dungeon must spawn enemies');
 
   const spawnedEnemyIds = new Set(generatedDungeon.enemySpawns.map((s) => s.enemyId));
-  console.log(`  Spanned ${generatedDungeon.enemySpawns.length} enemies with distinct types:`, Array.from(spawnedEnemyIds));
+  console.log(`  Spawned ${generatedDungeon.enemySpawns.length} enemies with distinct types:`, Array.from(spawnedEnemyIds));
+
+  const allowedSpawnIds = new Set([
+    ...dungeonConfig.enemyPool,
+    dungeonConfig.eliteEnemyId,
+    dungeonConfig.epicEnemyId,
+    dungeonConfig.bossEnemyId
+  ].filter(Boolean));
 
   for (const s of generatedDungeon.enemySpawns) {
-    assert.ok(dungeonConfig.enemyPool.includes(s.enemyId), `Spawned enemy '${s.enemyId}' must come from enemyPool`);
+    assert.ok(allowedSpawnIds.has(s.enemyId), `Spawned enemy '${s.enemyId}' must come from enemyPool or be elite/epic/boss`);
     assert.ok(dataLoader.getEnemy(s.enemyId), `Spawned enemy '${s.enemyId}' must resolve from DataLoader`);
   }
   console.log('✓ PASS: Procedural dungeon generation populated enemies directly from the expanded pool.');
@@ -419,7 +433,7 @@ async function runMilestone20Tests() {
   // TEST 7: M19 Staff-Fallback vs Ranged Enemy Tactical Interaction
   // =========================================================================
   console.log('\n--- TEST 7: Staff-Fallback vs Ranged Enemy Tactical Interaction ---');
-  const staffDef = dataLoader.getWeapon('staff')!;
+  const staffDef = dataLoader.getWeapon('fire_staff') || dataLoader.getWeapon('staff')!;
   const mageHero = createMockHero('mage', 'Guild Mage', 10, 10, staffDef, prog);
 
   // With full energy, staff dynamic range evaluates to 4 (Fire Magic casting range)

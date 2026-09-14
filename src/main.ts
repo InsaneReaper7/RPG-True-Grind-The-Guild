@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { DataLoader } from './utils/DataLoader';
 import { GameState } from './systems/GameState';
+import { ResearchSystem } from './systems/ResearchSystem';
 import { MainScene } from './scenes/MainScene';
 import { OutpostScene } from './scenes/OutpostScene';
 
@@ -30,6 +31,7 @@ async function bootstrap() {
   (window as any).game = game;
   (window as any).GameState = GameState;
   (window as any).DataLoader = DataLoader;
+  (window as any).ResearchSystem = ResearchSystem;
 
   window.addEventListener('resize', () => {
     game.scale.refresh();

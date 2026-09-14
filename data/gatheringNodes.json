@@ -72,6 +72,38 @@
         { "itemId": "seeds", "name": "Seeds", "weight": 20, "count": 1 },
         { "itemId": "locked_box", "name": "Locked Box", "weight": 15, "count": 1 }
       ]
+    },
+    "corpse_skinning": {
+      "id": "corpse_skinning",
+      "name": "Animal Corpse",
+      "skillId": "skinning",
+      "resourceId": "wolf_pelt",
+      "yieldCount": 1,
+      "expGranted": 15,
+      "channelDurationMs": 2500,
+      "respawnTimeMs": 0,
+      "textureKey": "wolf-avatar",
+      "textureDepletedKey": "wolf-avatar",
+      "label": "Corpse (Skinning)",
+      "depletedLabel": "Spent Corpse",
+      "color": "#eab308",
+      "actionVerb": "Skinning"
+    },
+    "corpse_butchering": {
+      "id": "corpse_butchering",
+      "name": "Eligible Corpse",
+      "skillId": "butchering",
+      "resourceId": "monster_meat",
+      "yieldCount": 1,
+      "expGranted": 15,
+      "channelDurationMs": 2500,
+      "respawnTimeMs": 0,
+      "textureKey": "goblin-avatar",
+      "textureDepletedKey": "goblin-avatar",
+      "label": "Corpse (Butchering)",
+      "depletedLabel": "Spent Corpse",
+      "color": "#ef4444",
+      "actionVerb": "Butchering"
     }
   }
 }

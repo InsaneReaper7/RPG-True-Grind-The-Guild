@@ -337,6 +337,71 @@ export class TextureGenerator {
       g.destroy();
     }
 
+    // 4k. Abyssal Colossus Avatar Texture (Milestone 34: Boss Tier - Titanic Armored Construct with Molten Fissures & Horned Dread Crest)
+    if (!scene.textures.exists('abyssal_colossus-avatar')) {
+      const size = 36;
+      const g = scene.make.graphics({ x: 0, y: 0 });
+
+      // Outer titanic armor frame (dark obsidian / charcoal)
+      g.fillStyle(0x18181b, 1);
+      g.beginPath();
+      g.moveTo(size / 2, 3);
+      g.lineTo(size - 3, 9);
+      g.lineTo(size - 2, size - 7);
+      g.lineTo(size / 2, size - 2);
+      g.lineTo(2, size - 7);
+      g.lineTo(3, 9);
+      g.closePath();
+      g.fillPath();
+
+      // Heavy Blood-Crimson Carapace Border
+      g.lineStyle(2.5, 0xdc2626, 1);
+      g.strokePath();
+
+      // Twin Molten Magma Horns / Crest Spikes
+      g.fillStyle(0x991b1b, 1);
+      g.fillTriangle(3, 9, 1, 1, 9, 5);
+      g.fillTriangle(size - 3, 9, size - 1, 1, size - 9, 5);
+      // Horn flame tips
+      g.fillStyle(0xf97316, 1);
+      g.fillTriangle(3, 7, 1, 1, 7, 4);
+      g.fillTriangle(size - 3, 7, size - 1, 1, size - 7, 4);
+
+      // Heavy Spiked Pauldrons
+      g.fillStyle(0x7f1d1d, 1);
+      g.fillRect(0, 14, 5, 8);
+      g.fillRect(size - 5, 14, 5, 8);
+
+      // Molten magma body fissures
+      g.lineStyle(1.5, 0xef4444, 1);
+      g.lineBetween(size / 2, 10, size / 2, size - 8);
+      g.lineBetween(size / 2 - 7, 18, size / 2 + 7, 18);
+      g.lineBetween(size / 2 - 5, 25, size / 2 + 5, 25);
+
+      // Blazing Core / Visor
+      g.fillStyle(0x450a0a, 1);
+      g.fillRoundedRect(size / 2 - 9, 11, 18, 9, 2);
+
+      // Blazing Fiery Eyes & Heart Core
+      g.fillStyle(0xfacc15, 1);
+      g.fillRect(size / 2 - 7, 13, 4, 3);
+      g.fillRect(size / 2 + 3, 13, 4, 3);
+
+      // Molten white-hot eye pupils
+      g.fillStyle(0xffffff, 1);
+      g.fillRect(size / 2 - 5, 14, 2, 2);
+      g.fillRect(size / 2 + 3, 14, 2, 2);
+
+      // Magma Heart Core
+      g.fillStyle(0xf97316, 1);
+      g.fillCircle(size / 2, 23, 3);
+      g.fillStyle(0xfef08a, 1);
+      g.fillCircle(size / 2, 23, 1.5);
+
+      g.generateTexture('abyssal_colossus-avatar', size, size);
+      g.destroy();
+    }
+
     // 5. Target Selection Reticle
     if (!scene.textures.exists('target-reticle')) {
       const size = 32;
@@ -1117,6 +1182,33 @@ export class TextureGenerator {
       g.fillCircle(tileSize / 2 + 3, tileSize / 2 + 2, 1.2);
 
       g.generateTexture('dig-spot-depleted', tileSize, tileSize);
+      g.destroy();
+    }
+
+    // 14. Milestone 31: Revive Icon Texture (Golden halo badge with luminous white resurrection cross)
+    if (!scene.textures.exists('revive-icon')) {
+      const size = 24;
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      // Outer golden glow halo
+      g.fillStyle(0xf59e0b, 0.4);
+      g.fillCircle(size / 2, size / 2, size / 2);
+      // Dark slate circular badge
+      g.fillStyle(0x0f172a, 0.9);
+      g.fillCircle(size / 2, size / 2, size / 2 - 2);
+      // Golden border ring
+      g.lineStyle(1.5, 0xfacc15, 1);
+      g.strokeCircle(size / 2, size / 2, size / 2 - 2);
+      // Pure white & gold medical / holy cross
+      g.fillStyle(0xffffff, 1);
+      // Vertical bar
+      g.fillRect(size / 2 - 2, size / 2 - 6, 4, 12);
+      // Horizontal bar
+      g.fillRect(size / 2 - 6, size / 2 - 2, 12, 4);
+      // Golden center pip
+      g.fillStyle(0xfacc15, 1);
+      g.fillCircle(size / 2, size / 2, 1.5);
+
+      g.generateTexture('revive-icon', size, size);
       g.destroy();
     }
   }

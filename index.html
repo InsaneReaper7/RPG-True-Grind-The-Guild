@@ -500,14 +500,15 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      width: 920px;
-      max-width: calc(100% - 32px);
-      max-height: calc(100% - 32px);
+      width: 1080px;
+      max-width: calc(100% - 24px);
+      height: 860px;
+      max-height: calc(100% - 24px);
       background: rgba(17, 24, 39, 0.98);
       backdrop-filter: blur(10px);
       border: 2px solid #8b5cf6;
       border-radius: 12px;
-      padding: 18px 22px;
+      padding: 16px 20px;
       box-shadow: 0 0 35px rgba(139, 92, 246, 0.35);
       display: none;
       flex-direction: column;
@@ -517,16 +518,22 @@
     #party-overview-modal.active {
       display: flex;
     }
+    .party-overview-layout {
+      display: flex;
+      gap: 14px;
+      flex: 1;
+      min-height: 0;
+      overflow: hidden;
+      margin-top: 4px;
+    }
     .party-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
       gap: 12px;
       flex: 1;
       min-height: 0;
       overflow-y: auto;
-      max-height: calc(100% - 50px);
-      padding-right: 4px;
-      margin-top: 8px;
+      padding-right: 6px;
     }
     .party-card {
       background: rgba(31, 41, 55, 0.9);
@@ -536,6 +543,206 @@
       display: flex;
       flex-direction: column;
       gap: 8px;
+    }
+    /* Visual Paperdoll (Milestone 35) */
+    .paperdoll-container {
+      background: rgba(15, 23, 42, 0.75);
+      border: 1px solid rgba(139, 92, 246, 0.3);
+      border-radius: 8px;
+      padding: 8px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .paperdoll-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 10px;
+      font-weight: 700;
+      color: #a78bfa;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .paperdoll-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 6px;
+    }
+    .equip-slot-box {
+      background: rgba(31, 41, 55, 0.85);
+      border: 1px dashed rgba(156, 163, 175, 0.4);
+      border-radius: 6px;
+      padding: 5px 6px;
+      min-height: 52px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      transition: border-color 0.15s ease, background 0.15s ease;
+      user-select: none;
+    }
+    .equip-slot-box.equipped {
+      border-style: solid;
+      border-color: rgba(139, 92, 246, 0.5);
+      background: rgba(31, 41, 55, 0.95);
+    }
+    .equip-slot-box.drag-over-valid {
+      border-color: #22c55e !important;
+      background: rgba(34, 197, 94, 0.2) !important;
+      box-shadow: 0 0 8px rgba(34, 197, 94, 0.4);
+    }
+    .equip-slot-box.drag-over-invalid {
+      border-color: #ef4444 !important;
+      background: rgba(239, 68, 68, 0.2) !important;
+      box-shadow: 0 0 8px rgba(239, 68, 68, 0.4);
+    }
+    .equip-slot-box.locked {
+      opacity: 0.5;
+      background: rgba(17, 24, 39, 0.6);
+      cursor: not-allowed;
+    }
+    .slot-label {
+      font-size: 9px;
+      font-weight: 700;
+      color: #9ca3af;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .slot-item-info {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-top: 2px;
+    }
+    .slot-item-icon {
+      font-size: 13px;
+      line-height: 1;
+    }
+    .slot-item-text {
+      font-size: 10px;
+      font-weight: 600;
+      color: #f3f4f6;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 85px;
+    }
+    .slot-item-stat {
+      font-size: 9px;
+      color: #86efac;
+      margin-top: 1px;
+    }
+    .slot-empty-text {
+      font-size: 9px;
+      color: #6b7280;
+      font-style: italic;
+      margin-top: 2px;
+    }
+    .slot-unequip-btn {
+      background: rgba(239, 68, 68, 0.2);
+      color: #f87171;
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      border-radius: 3px;
+      width: 15px;
+      height: 15px;
+      font-size: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      position: absolute;
+      top: 3px;
+      right: 3px;
+      padding: 0;
+      line-height: 1;
+    }
+    .slot-unequip-btn:hover {
+      background: #dc2626;
+      color: white;
+    }
+    /* Equipment Inventory Panel (Milestone 35) */
+    .party-equipment-inventory {
+      width: 310px;
+      flex-shrink: 0;
+      background: rgba(17, 24, 39, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-height: 0;
+    }
+    .inventory-panel-header {
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      padding-bottom: 8px;
+    }
+    .inventory-panel-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: #38bdf8;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .inventory-panel-subtitle {
+      font-size: 10px;
+      color: #9ca3af;
+      margin-top: 2px;
+    }
+    .inventory-filter-tabs {
+      display: flex;
+      gap: 4px;
+      margin-top: 6px;
+    }
+    .inv-filter-btn {
+      background: #1f2937;
+      color: #9ca3af;
+      border: 1px solid #374151;
+      border-radius: 4px;
+      padding: 2px 7px;
+      font-size: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .inv-filter-btn.active {
+      background: #3b82f6;
+      color: #ffffff;
+      border-color: #60a5fa;
+    }
+    .inventory-item-list {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      flex: 1;
+      overflow-y: auto;
+      padding-right: 4px;
+      min-height: 0;
+    }
+    .inventory-item-card {
+      background: rgba(31, 41, 55, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 6px;
+      padding: 5px 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: grab;
+      transition: all 0.15s ease;
+      user-select: none;
+    }
+    .inventory-item-card:hover {
+      border-color: #8b5cf6;
+      background: rgba(49, 46, 129, 0.4);
+      transform: translateX(2px);
+    }
+    .inventory-item-card.is-dragging {
+      opacity: 0.4;
+      border-color: #38bdf8;
     }
     .party-card.downed {
       border-color: #ef4444;
@@ -1242,6 +1449,12 @@
             <button id="hud-drink-mana-potion-btn" type="button" style="background: #9333ea; color: white; border: none; border-radius: 4px; padding: 1px 6px; font-size: 10px; font-weight: bold; cursor: pointer; margin-left: 6px;">Drink [P]</button>
           </span>
         </div>
+        <div class="hud-stat" id="hud-revive-potion-row" style="display: none;">
+          <span>Revive Potion:</span>
+          <span class="hud-stat-value" style="color: #facc15;">
+            <span id="player-revive-potion-text">0</span>
+          </span>
+        </div>
         <div class="hud-stat">
           <span>Status:</span>
           <span id="player-status-text" class="hud-stat-value" style="color: #9ca3af;">Normal</span>
@@ -1347,6 +1560,9 @@
             <button id="debug-btn-grant-mana-potion" class="debug-btn" type="button" style="background: #7e22ce; color: #e9d5ff; border: 1px solid #c084fc;">🧪 Grant +1 Mana Potion</button>
             <button id="debug-btn-drain-energy" class="debug-btn" type="button" style="background: #991b1b; color: #fee2e2; border: 1px solid #ef4444;">⚡ Drain Energy to 0</button>
             <button id="debug-btn-restore-energy" class="debug-btn" type="button" style="background: #15803d; color: #dcfce7; border: 1px solid #22c55e;">⚡ Restore Full Energy</button>
+
+            <div class="debug-grid-category">MILESTONE 31: REVIVE POTION</div>
+            <button id="debug-btn-grant-revive-potion" class="debug-btn" type="button" style="background: #a16207; color: #fef08a; border: 1px solid #facc15; grid-column: 1 / -1;">💛 Grant +1 Revive Potion</button>
           </div>
         </div>
       </div>
@@ -1565,7 +1781,7 @@
           </div>
           <button id="close-alchemy-btn" class="modal-close-btn" type="button">✕</button>
         </div>
-        <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; background: rgba(31, 41, 55, 0.7); padding: 8px 12px; border-radius: 6px; margin-bottom: 14px; border: 1px solid rgba(255,255,255,0.1); font-size: 11px;">
+        <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; background: rgba(31, 41, 55, 0.7); padding: 8px 12px; border-radius: 6px; margin-bottom: 14px; border: 1px solid rgba(255,255,255,0.1); font-size: 11px;">
           <div>
             <span style="color: #9ca3af;">Alchemy:</span>
             <div id="alchemy-modal-prof" style="color: #10b981; font-weight: bold;">Untrained</div>
@@ -1585,6 +1801,10 @@
           <div>
             <span style="color: #9ca3af;">Mana Pot:</span>
             <div id="alchemy-modal-mana-potions" style="color: #c084fc; font-weight: bold;">✨ 0</div>
+          </div>
+          <div>
+            <span style="color: #9ca3af;">Revive Pot:</span>
+            <div id="alchemy-modal-revive-potions" style="color: #facc15; font-weight: bold;">💛 0</div>
           </div>
         </div>
         <div id="alchemy-mood-banner" style="background: rgba(16, 185, 129, 0.15); border: 1px solid #10b981; border-radius: 6px; padding: 6px 10px; margin-bottom: 12px; font-size: 11px; color: #6ee7b7; display: flex; justify-content: space-between; align-items: center;">
@@ -1748,20 +1968,37 @@
 
         <div id="armorsmithing-status-msg" style="font-size: 12px; color: #fbbf24; font-style: italic; min-height: 18px;"></div>
       </div>
-      <!-- Party Overview Modal (Milestone 8) -->
+      <!-- Party Overview Modal (Milestone 8 & Milestone 35) -->
       <div id="party-overview-modal">
         <div class="modal-header">
           <div>
-            <div class="modal-title" style="color: #a78bfa;">👥 Guild Party Overview</div>
-            <div class="modal-subtitle">Manage party members, equipment, dual wielding, and skill loadouts. [O]</div>
+            <div class="modal-title" style="color: #a78bfa;">👥 Guild Party Overview & Equipment Paperdoll</div>
+            <div class="modal-subtitle">Manage party members, visual paperdoll equipment, drag-and-drop gear, dual wielding, and skill loadouts. [O]</div>
           </div>
           <div style="display: flex; gap: 8px; align-items: center;">
             <button id="party-spawn-companion-btn" class="btn-action" style="background: #6d28d9; border-color: #8b5cf6; padding: 4px 10px; font-size: 11px;" type="button">+ Spawn Companion</button>
             <button id="close-party-btn" class="modal-close-btn" type="button">✕</button>
           </div>
         </div>
-        <div id="party-overview-roster" class="party-grid">
-          <!-- Dynamically populated up to 4 character cards -->
+        <div class="party-overview-layout">
+          <div id="party-overview-roster" class="party-grid">
+            <!-- Dynamically populated up to 4 character cards with paperdolls -->
+          </div>
+          <div id="party-overview-inventory" class="party-equipment-inventory">
+            <div class="inventory-panel-header">
+              <div class="inventory-panel-title">🎒 Equipment Stash</div>
+              <div class="inventory-panel-subtitle">Drag & drop onto matching paperdoll slots</div>
+              <div class="inventory-filter-tabs">
+                <button class="inv-filter-btn active" data-filter="all" type="button">All</button>
+                <button class="inv-filter-btn" data-filter="weapons" type="button">Weapons</button>
+                <button class="inv-filter-btn" data-filter="armor" type="button">Armor</button>
+                <button class="inv-filter-btn" data-filter="jewelry" type="button">Jewelry</button>
+              </div>
+            </div>
+            <div id="party-inventory-item-list" class="inventory-item-list">
+              <!-- Dynamically populated with draggable equipment cards -->
+            </div>
+          </div>
         </div>
       </div>
     </div>

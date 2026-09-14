@@ -36,7 +36,7 @@ export class Entity extends Phaser.GameObjects.Container {
 
   public activeStatusEffects: Map<string, ActiveStatusEffect> = new Map();
 
-  protected avatarSprite: Phaser.GameObjects.Sprite;
+  public avatarSprite: Phaser.GameObjects.Sprite;
   protected statusIconSprite?: Phaser.GameObjects.Sprite;
   protected hpBarBg: Phaser.GameObjects.Graphics;
   protected hpBarFill: Phaser.GameObjects.Graphics;
@@ -235,6 +235,10 @@ export class Entity extends Phaser.GameObjects.Container {
     }
 
     this.drawHpBar();
+
+    if (this.scene && typeof (this.scene as any).interruptReviveChannel === 'function') {
+      (this.scene as any).interruptReviveChannel(this);
+    }
 
     if (this.hp <= 0 && this.criticalHp <= 0) {
       this.onDowned();

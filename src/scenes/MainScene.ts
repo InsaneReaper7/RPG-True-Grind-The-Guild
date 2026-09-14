@@ -23,6 +23,9 @@ export interface GatheringNode {
   label: Phaser.GameObjects.Text;
   isHarvested: boolean;
   respawnTimer?: Phaser.Time.TimerEvent;
+  corpseEnemy?: Enemy;
+  isSkinned?: boolean;
+  isButchered?: boolean;
 }
 
 export type ForagingBush = GatheringNode;
@@ -31,6 +34,18 @@ export interface ActiveGatherChannel {
   character: Player;
   node: GatheringNode;
   durationMs: number;
+  elapsedMs: number;
+  barContainer: Phaser.GameObjects.Container;
+  barBg: Phaser.GameObjects.Graphics;
+  barFill: Phaser.GameObjects.Graphics;
+  labelText: Phaser.GameObjects.Text;
+}
+
+// Milestone 31: Item-Based Revive Channel
+export interface ActiveReviveChannel {
+  character: Player; // reviver
+  targetAlly: Player; // downed ally being revived
+  durationMs: number; // 3000ms
   elapsedMs: number;
   barContainer: Phaser.GameObjects.Container;
   barBg: Phaser.GameObjects.Graphics;
@@ -62,6 +77,9 @@ export class MainScene extends Phaser.Scene {
   private floorTimerDurationMs: number = 300000;
   private floorTimerRemainingMs: number = 300000;
 
+  // Milestone 34: Boss Encounter
+  public bossEncounterAnnounced: boolean = false;
+
   // Milestone 17: Gathering Channel & Debug Respawn
   public debugGatheringRespawnEnabled: boolean = false;
   public gatheringNodes: GatheringNode[] = [];
@@ -72,6 +90,7 @@ export class MainScene extends Phaser.Scene {
     this.gatheringNodes = nodes;
   }
   private activeGatherChannels: Map<Player, ActiveGatherChannel> = new Map();
+  private activeReviveChannels: Map<Player, ActiveReviveChannel> = new Map();
 
   private portalSprite!: Phaser.GameObjects.Sprite;
   private portalPos: GridPos = { x: 2, y: 2 };
@@ -131,6 +150,10 @@ export class MainScene extends Phaser.Scene {
       channel.barContainer.destroy();
     }
     this.activeGatherChannels.clear();
+    for (const channel of this.activeReviveChannels.values()) {
+      channel.barContainer.destroy();
+    }
+    this.activeReviveChannels.clear();
     for (const node of this.gatheringNodes) {
       if (node.respawnTimer) {
         node.respawnTimer.remove();
@@ -158,6 +181,10 @@ export class MainScene extends Phaser.Scene {
         channel.barContainer.destroy();
       }
       this.activeGatherChannels.clear();
+      for (const channel of this.activeReviveChannels.values()) {
+        channel.barContainer.destroy();
+      }
+      this.activeReviveChannels.clear();
       for (const node of this.gatheringNodes) {
         if (node.respawnTimer) {
           node.respawnTimer.remove();
@@ -184,9 +211,10 @@ export class MainScene extends Phaser.Scene {
       throw new Error(`Starting weapon '${playerData.startingWeaponId}' not found in data/weapons.json`);
     }
 
-    // 1. Procedural Dungeon Generation (Milestone 13)
+    // 1. Procedural Dungeon Generation (Milestone 13 / 34)
     const dungeonConfig = dataLoader.getDungeonConfig();
-    this.dungeon = DungeonGenerator.generate(dungeonConfig);
+    const floorNumber = GameState.getInstance().incrementDungeonFloorCount();
+    this.dungeon = DungeonGenerator.generate(dungeonConfig, Math.random, { floorNumber });
     this.mapWidth = this.dungeon.width;
     this.mapHeight = this.dungeon.height;
     this.gridMatrix = this.dungeon.gridMatrix;
@@ -215,7 +243,8 @@ export class MainScene extends Phaser.Scene {
     // 4. Initialize Systems & HUD
     this.progressionSystem = new ProgressionSystem(classesData, playerData.name || 'Hero');
     this.hud = new HUD();
-    this.hud.setLocation('Dungeon Floor 1', false);
+    const hasBossRoom = this.dungeon.rooms.some((r) => r.type === 'boss');
+    this.hud.setLocation(`Dungeon Floor ${floorNumber}${hasBossRoom ? ' (Boss)' : ''}`, false);
     GameState.getInstance().setSafeZone(false);
 
     // Milestone 25: Wire HUD party portrait selection handler
@@ -348,6 +377,7 @@ export class MainScene extends Phaser.Scene {
     this.tileClaimOverlay = new TileClaimDebugOverlay(this, this.party, this.enemies, this.tileSize);
     (window as any).__tileClaimOverlay = this.tileClaimOverlay;
     (window as any).__toggleTileClaimOverlay = () => this.tileClaimOverlay.toggle();
+    (window as any).__scene = this;
 
     // Input Controls: WASD, Space, R, K, X, Z, C, P, T
     if (this.input.keyboard) {
@@ -487,6 +517,25 @@ export class MainScene extends Phaser.Scene {
       }
       return false;
     };
+    // Milestone 31: Revive Channel Window Helpers
+    (window as any).__startReviveChannel = (targetIdx: number = 0, reviverIdx: number = 0) => {
+      const target = this.party[targetIdx];
+      const reviver = this.party[reviverIdx];
+      if (target && reviver) {
+        return this.startReviveChannel(reviver, target);
+      }
+      return false;
+    };
+    (window as any).__interruptReviveChannel = (charIdx: number = 0, enemyIdx: number = 0) => {
+      const char = this.party[charIdx];
+      const enemy = this.enemies[enemyIdx];
+      if (char) {
+        return this.interruptReviveChannel(char, enemy);
+      }
+      return false;
+    };
+    (window as any).__getActiveReviveChannels = () => this.activeReviveChannels;
+    (window as any).__grantItem = (itemId: string, count: number = 1) => GameState.getInstance().addItem(itemId, count);
     (window as any).__getGatheringState = () => ({
       debugGatheringRespawnEnabled: this.debugGatheringRespawnEnabled,
       totalNodes: this.gatheringNodes.length,
@@ -657,6 +706,20 @@ export class MainScene extends Phaser.Scene {
         return;
       }
 
+      // Milestone 31: Check if a downed ally's clickable revive icon was clicked
+      const clickedDownedAlly = this.party.find((m) => {
+        if (m.state !== 'downed') return false;
+        const isGridMatch = m.gridPos.x === clickedTileX && m.gridPos.y === clickedTileY;
+        const isIconMatch = Math.hypot(m.x - worldPoint.x, (m.y - 24) - worldPoint.y) <= 18;
+        const isBodyMatch = Math.abs(m.x - worldPoint.x) <= this.tileSize / 2 + 4 && Math.abs(m.y - worldPoint.y) <= this.tileSize / 2 + 4;
+        return isIconMatch || isGridMatch || isBodyMatch;
+      });
+
+      if (clickedDownedAlly) {
+        this.interactReviveAlly(clickedDownedAlly);
+        return;
+      }
+
       // Check if clicking a gathering node (Milestone 10, 13 & 17)
       const clickedNode = this.gatheringNodes.find((n) => {
         const isGridMatch = n.x === clickedTileX && n.y === clickedTileY;
@@ -688,6 +751,7 @@ export class MainScene extends Phaser.Scene {
         if (activeSelected.length > 0) {
           for (const m of activeSelected) {
             this.cancelGatherChannel(m);
+            this.cancelReviveChannel(m);
           }
           this.engageEnemy(clickedEnemy, activeSelected);
         }
@@ -702,6 +766,7 @@ export class MainScene extends Phaser.Scene {
         console.log(`[Input] Clicked Tile: (${clickedTileX}, ${clickedTileY}) for ${activeSelected.length} selected member(s)`);
         for (const member of activeSelected) {
           this.cancelGatherChannel(member);
+          this.cancelReviveChannel(member);
           member.clearTarget();
         }
 
@@ -1287,6 +1352,28 @@ export class MainScene extends Phaser.Scene {
       this.tileClaimOverlay.update(time);
     }
 
+    // Milestone 34: Boss Encounter Room Trigger
+    if (!this.bossEncounterAnnounced && this.dungeon && this.dungeon.rooms) {
+      const bossRoom = this.dungeon.rooms.find((r) => r.type === 'boss');
+      if (bossRoom) {
+        const inBossRoom = this.party.some((m) => {
+          return m.gridPos.x >= bossRoom.x &&
+                 m.gridPos.x < bossRoom.x + bossRoom.width &&
+                 m.gridPos.y >= bossRoom.y &&
+                 m.gridPos.y < bossRoom.y + bossRoom.height;
+        });
+        if (inBossRoom) {
+          this.bossEncounterAnnounced = true;
+          const boss = this.enemies.find((e) => e.enemyData?.tier === 'boss');
+          const bossName = boss ? boss.entityName : 'Abyssal Colossus';
+          console.log(`%c[Boss Encounter] ☠️ ENTERED BOSS CHAMBER! ${bossName} has awakened!`, 'color: #ef4444; font-size: 14px; font-weight: bold;');
+          if (this.hud) {
+            this.hud.showToast(`☠️ BOSS ENCOUNTER: ${bossName} has awakened!`, 'warn', 5000);
+          }
+        }
+      }
+    }
+
     // Milestone 25: Reselect All Party Members [G]
     if (this.gKey && Phaser.Input.Keyboard.JustDown(this.gKey)) {
       this.selectAllMembers();
@@ -1452,6 +1539,39 @@ export class MainScene extends Phaser.Scene {
       }
     }
 
+    // Milestone 31: Update Active Revive Channels
+    for (const [character, channel] of Array.from(this.activeReviveChannels.entries())) {
+      if (
+        character.state !== 'channeling' ||
+        character.hp <= 0 ||
+        (character.state as any) === 'downed' ||
+        (character.state as any) === 'dead' ||
+        channel.targetAlly.state !== 'downed'
+      ) {
+        this.cancelReviveChannel(character);
+        continue;
+      }
+
+      channel.elapsedMs += delta;
+      const pct = Math.min(1, channel.elapsedMs / channel.durationMs);
+
+      // Keep progress bar aligned above reviver
+      channel.barContainer.setPosition(character.x, character.y - 28);
+
+      // Redraw fill in golden amber
+      channel.barFill.clear();
+      channel.barFill.fillStyle(0xfacc15, 1);
+      const fillW = Math.max(0, Math.floor(34 * pct));
+      if (fillW > 0) {
+        channel.barFill.fillRect(-17, -2, fillW, 4);
+      }
+      channel.labelText.setText(`Reviving... ${Math.floor(pct * 100)}%`);
+
+      if (channel.elapsedMs >= channel.durationMs) {
+        this.completeReviveChannel(character, channel);
+      }
+    }
+
     // Update Combat System
     this.combatSystem.update(time, delta);
 
@@ -1495,6 +1615,13 @@ export class MainScene extends Phaser.Scene {
     // Strict scoped cleanup: Destroy and remove leftover corpses/units belonging only to this specific room
     const inRoom = this.enemies.filter((e) => e.roomIndex === targetRoom.id);
     for (const enemy of inRoom) {
+      if (enemy.corpseNode) {
+        const cIdx = this.gatheringNodes.indexOf(enemy.corpseNode);
+        if (cIdx !== -1) this.gatheringNodes.splice(cIdx, 1);
+        enemy.corpseNode.sprite?.destroy();
+        enemy.corpseNode.label?.destroy();
+        enemy.corpseNode = null;
+      }
       enemy.destroy();
     }
 
@@ -1544,9 +1671,23 @@ export class MainScene extends Phaser.Scene {
       ? dungeonConfig.enemyPool
       : ['wolf', 'goblin', 'skeleton', 'undead'];
 
+    // In Heavy Combat rooms, evaluate rare Epic or Elite champion roll (NEVER Boss)
+    let specialEnemyId: string | null = null;
+    if (targetRoom.type === 'heavy_combat') {
+      const epicChance = dungeonConfig.epicChance ?? 0.05;
+      const eliteChance = dungeonConfig.eliteChance ?? 0.12;
+      if (Math.random() < epicChance) {
+        specialEnemyId = dungeonConfig.epicEnemyId || 'void_knight';
+      } else if (Math.random() < eliteChance) {
+        specialEnemyId = dungeonConfig.eliteEnemyId || 'orc_warrior';
+      }
+    }
+
     const spawnedEnemies: Enemy[] = [];
     for (let i = 0; i < enemyCount; i++) {
-      const enemyId = enemyPool[Math.floor(Math.random() * enemyPool.length)];
+      const enemyId = (i === 0 && specialEnemyId)
+        ? specialEnemyId
+        : enemyPool[Math.floor(Math.random() * enemyPool.length)];
       const enemyDef = dataLoader.getEnemy(enemyId);
       if (enemyDef) {
         const texKey = `${enemyDef.id}-avatar`;
@@ -1613,6 +1754,7 @@ export class MainScene extends Phaser.Scene {
   public onEnemyDefeated(deadEnemy: Enemy): void {
     this.targetReticle.setVisible(false);
     deadEnemy.markDead();
+    this.checkAndCreateCorpseGatheringNode(deadEnemy);
 
     if (this.debugAutoRespawnEnabled) {
       console.log(`[Combat] ${deadEnemy.entityName} defeated. [DEBUG AUTO-RESPAWN ACTIVE] Respawn scheduled in 3 seconds.`);
@@ -1631,6 +1773,203 @@ export class MainScene extends Phaser.Scene {
     this.onEnemyDefeated(enemy);
   }
 
+  public isEnemyAnimalType(enemyId: string): boolean {
+    const id = enemyId.toLowerCase();
+    return id === 'wolf' || id === 'spider';
+  }
+
+  public isEnemyUndeadOrSkeleton(enemyId: string): boolean {
+    const id = enemyId.toLowerCase();
+    return id.includes('skeleton') || id.includes('undead');
+  }
+
+  public isEnemyButcherEligible(enemyId: string): boolean {
+    return !this.isEnemyUndeadOrSkeleton(enemyId);
+  }
+
+  public checkAndCreateCorpseGatheringNode(deadEnemy: Enemy): GatheringNode | null {
+    const gameState = GameState.getInstance();
+    const enemyId = deadEnemy.enemyData.id.toLowerCase();
+    const isAnimal = this.isEnemyAnimalType(enemyId);
+    const isButcherEligible = this.isEnemyButcherEligible(enemyId);
+    const skinningUnlocked = gameState.isSkinningUnlocked();
+    const butcheringUnlocked = gameState.isButcheringUnlocked();
+
+    // Animal type corpses (Wolf, Spider): strictly requires Skinning unlocked
+    if (isAnimal) {
+      if (!skinningUnlocked) {
+        console.log(`[Corpse Gathering] Animal corpse (${deadEnemy.entityName}) not harvestable: Skinning research not unlocked.`);
+        return null;
+      }
+      return this.spawnCorpseGatheringNode(deadEnemy, 'skinning');
+    }
+
+    // Non-animal butcher-eligible corpses (Goblin, Goblin Archer, etc.)
+    if (isButcherEligible) {
+      const hasMeat = !!deadEnemy.enemyData.corpseHarvest?.butchering?.item;
+      if (!hasMeat) {
+        console.log(`[Corpse Gathering] Corpse (${deadEnemy.entityName}) is eligible but has no meat yield defined.`);
+        return null;
+      }
+      if (!butcheringUnlocked) {
+        console.log(`[Corpse Gathering] Corpse (${deadEnemy.entityName}) not harvestable: Butchering research not unlocked.`);
+        return null;
+      }
+      return this.spawnCorpseGatheringNode(deadEnemy, 'butchering');
+    }
+
+    return null;
+  }
+
+  public spawnCorpseGatheringNode(deadEnemy: Enemy, actionType: 'skinning' | 'butchering'): GatheringNode {
+    const isSkinning = actionType === 'skinning';
+    const corpseHarvest = deadEnemy.enemyData.corpseHarvest;
+    const harvestDef = isSkinning ? corpseHarvest?.skinning : corpseHarvest?.butchering;
+
+    const defaultResource = isSkinning
+      ? (deadEnemy.enemyData.id === 'wolf' ? 'wolf_pelt' : 'spider_silk')
+      : (deadEnemy.enemyData.id === 'wolf' ? 'wolf_meat' : 'monster_meat');
+
+    const resourceId = harvestDef?.item || defaultResource;
+    const actionVerb = isSkinning ? 'Skinning' : 'Butchering';
+    const skillId = isSkinning ? 'skinning' : 'butchering';
+    const color = isSkinning ? '#eab308' : '#ef4444';
+    const labelText = `${deadEnemy.entityName} Corpse (${actionVerb})`;
+
+    const nodeDef: GatheringNodeDef = {
+      id: `corpse_${skillId}_${deadEnemy.enemyData.id}_${Date.now()}_${Math.random()}`,
+      name: `${deadEnemy.entityName} Corpse`,
+      skillId,
+      resourceId,
+      yieldCount: harvestDef?.count || 1,
+      expGranted: harvestDef?.exp || 15,
+      channelDurationMs: 2500,
+      respawnTimeMs: 0,
+      textureKey: deadEnemy.avatarSprite?.texture?.key || (deadEnemy.enemyData.id === 'spider' ? 'spider-avatar' : 'wolf-avatar'),
+      textureDepletedKey: deadEnemy.avatarSprite?.texture?.key || (deadEnemy.enemyData.id === 'spider' ? 'spider-avatar' : 'wolf-avatar'),
+      label: labelText,
+      depletedLabel: 'Spent Corpse',
+      color,
+      actionVerb
+    };
+
+    const posX = deadEnemy.x;
+    const posY = deadEnemy.y;
+
+    const sprite = this.add.sprite(posX, posY, nodeDef.textureKey)
+      .setDepth(posY - 1)
+      .setAngle(90)
+      .setAlpha(0.6)
+      .setInteractive({ useHandCursor: true });
+
+    const label = this.add.text(posX, posY - 18, labelText, {
+      fontSize: '9px',
+      color,
+      fontStyle: 'bold',
+      backgroundColor: 'rgba(0,0,0,0.7)',
+      padding: { x: 3, y: 1 }
+    }).setOrigin(0.5).setDepth(5001);
+
+    const node: GatheringNode = {
+      x: deadEnemy.gridPos.x,
+      y: deadEnemy.gridPos.y,
+      nodeDef,
+      sprite,
+      label,
+      isHarvested: false,
+      corpseEnemy: deadEnemy,
+      isSkinned: isSkinning ? false : true,
+      isButchered: false
+    };
+
+    deadEnemy.corpseNode = node;
+
+    sprite.on('pointerdown', (_pointer: Phaser.Input.Pointer, _localX: number, _localY: number, event?: Phaser.Types.Input.EventData) => {
+      if (this.isGatheringMode) return;
+      if (event && event.stopPropagation) event.stopPropagation();
+      const activeSelected = this.getSelectedMembers ? this.getSelectedMembers().filter(m => m.state !== 'downed' && m.state !== 'dead') : [];
+      this.interactWithGatheringNode(node, activeSelected.length > 0 ? activeSelected : undefined);
+    });
+
+    this.gatheringNodes.push(node);
+    console.log(`[Corpse Gathering] Spawned ${nodeDef.label} at (${node.x}, ${node.y}).`);
+    return node;
+  }
+
+  public canSkinCorpse(enemy: Enemy): { canHarvest: boolean; reason?: string } {
+    if (enemy.state !== 'dead') {
+      return { canHarvest: false, reason: 'Enemy is still alive' };
+    }
+    if (!GameState.getInstance().isSkinningUnlocked()) {
+      return { canHarvest: false, reason: 'Skinning research not unlocked' };
+    }
+    if (!this.isEnemyAnimalType(enemy.enemyData.id)) {
+      return { canHarvest: false, reason: 'Enemy is not an animal (only Wolf and Spider can be skinned)' };
+    }
+    if (enemy.isSkinned || (enemy.corpseNode && enemy.corpseNode.isSkinned)) {
+      return { canHarvest: false, reason: 'Corpse has already been skinned' };
+    }
+    return { canHarvest: true };
+  }
+
+  public canButcherCorpse(enemy: Enemy): { canHarvest: boolean; reason?: string } {
+    if (enemy.state !== 'dead') {
+      return { canHarvest: false, reason: 'Enemy is still alive' };
+    }
+    if (!GameState.getInstance().isButcheringUnlocked()) {
+      return { canHarvest: false, reason: 'Butchering research not unlocked' };
+    }
+    if (this.isEnemyUndeadOrSkeleton(enemy.enemyData.id)) {
+      return { canHarvest: false, reason: 'Cannot butcher undead or skeletal remains' };
+    }
+    // Check ordering gate: if animal-type, skinning MUST be completed first!
+    if (this.isEnemyAnimalType(enemy.enemyData.id) && !enemy.isSkinned && (!enemy.corpseNode || !enemy.corpseNode.isSkinned)) {
+      return { canHarvest: false, reason: 'Must skin corpse before butchering' };
+    }
+    if (enemy.isButchered || (enemy.corpseNode && enemy.corpseNode.isButchered)) {
+      return { canHarvest: false, reason: 'Corpse has already been butchered' };
+    }
+    return { canHarvest: true };
+  }
+
+  public attemptSkinCorpse(enemy: Enemy, actor?: Player): { success: boolean; reason?: string } {
+    const check = this.canSkinCorpse(enemy);
+    if (!check.canHarvest) {
+      if (this.hud) {
+        this.hud.showToast(`⚠️ Cannot skin: ${check.reason}`, 'warn', 2500);
+      }
+      return { success: false, reason: check.reason };
+    }
+
+    let node = enemy.corpseNode;
+    if (!node || node.isHarvested) {
+      node = this.spawnCorpseGatheringNode(enemy, 'skinning');
+    }
+
+    const resolvedActor = actor || (this.getSelectedMembers ? this.getSelectedMembers().find(m => m.state !== 'downed' && m.state !== 'dead') : undefined) || this.player;
+    this.interactWithGatheringNode(node, resolvedActor);
+    return { success: true };
+  }
+
+  public attemptButcherCorpse(enemy: Enemy, actor?: Player): { success: boolean; reason?: string } {
+    const check = this.canButcherCorpse(enemy);
+    if (!check.canHarvest) {
+      if (this.hud) {
+        this.hud.showToast(`⚠️ Cannot butcher: ${check.reason}`, 'warn', 2500);
+      }
+      return { success: false, reason: check.reason };
+    }
+
+    let node = enemy.corpseNode;
+    if (!node || node.nodeDef.skillId !== 'butchering' || node.isHarvested) {
+      node = this.spawnCorpseGatheringNode(enemy, 'butchering');
+    }
+
+    const resolvedActor = actor || (this.getSelectedMembers ? this.getSelectedMembers().find(m => m.state !== 'downed' && m.state !== 'dead') : undefined) || this.player;
+    this.interactWithGatheringNode(node, resolvedActor);
+    return { success: true };
+  }
+
   public spawnEnemyUnit(enemyData: EnemyDef, x: number, y: number, textureKey: string, customName?: string): Enemy {
     const enemy = new Enemy(this, x, y, enemyData, textureKey, this.tileSize);
     if (customName) enemy.entityName = customName;
@@ -1638,6 +1977,13 @@ export class MainScene extends Phaser.Scene {
     enemy.on('pointerdown', (_pointer: Phaser.Input.Pointer, _localX: number, _localY: number, event?: Phaser.Types.Input.EventData) => {
       if (this.isGatheringMode) return;
       if (event && event.stopPropagation) event.stopPropagation();
+      if (enemy.state === 'dead') {
+        if (enemy.corpseNode && !enemy.corpseNode.isHarvested) {
+          const activeSelected = this.getSelectedMembers ? this.getSelectedMembers().filter(m => m.state !== 'downed' && m.state !== 'dead') : [];
+          this.interactWithGatheringNode(enemy.corpseNode, activeSelected.length > 0 ? activeSelected : undefined);
+        }
+        return;
+      }
       const activeSelected = this.getSelectedMembers ? this.getSelectedMembers().filter(m => m.state !== 'downed' && m.state !== 'dead') : [];
       if (activeSelected.length > 0) {
         for (const m of activeSelected) {
@@ -1978,14 +2324,16 @@ export class MainScene extends Phaser.Scene {
     }
 
     // Grant resources to GameState economy and inventory
-    if (awardedResourceId === 'wood') {
-      GameState.getInstance().addWood(awardedCount);
-      GameState.getInstance().addItem('wood', awardedCount);
-    } else if (awardedResourceId === 'ore') {
-      GameState.getInstance().addOre(awardedCount);
-      GameState.getInstance().addItem('ore', awardedCount);
-    } else {
-      GameState.getInstance().addItem(awardedResourceId, awardedCount);
+    if (awardedResourceId && awardedResourceId !== '') {
+      if (awardedResourceId === 'wood') {
+        GameState.getInstance().addWood(awardedCount);
+        GameState.getInstance().addItem('wood', awardedCount);
+      } else if (awardedResourceId === 'ore') {
+        GameState.getInstance().addOre(awardedCount);
+        GameState.getInstance().addItem('ore', awardedCount);
+      } else {
+        GameState.getInstance().addItem(awardedResourceId, awardedCount);
+      }
     }
 
     // Grant gathering EXP
@@ -1994,7 +2342,9 @@ export class MainScene extends Phaser.Scene {
     // Floating combat/gathering text
     const posX = node.x * this.tileSize + this.tileSize / 2;
     const posY = node.y * this.tileSize + this.tileSize / 2;
-    this.createFloatingText(posX, posY - 10, `+${awardedCount} ${awardedItemName}`, node.nodeDef.color);
+    if (awardedResourceId && awardedResourceId !== '') {
+      this.createFloatingText(posX, posY - 10, `+${awardedCount} ${awardedItemName}`, node.nodeDef.color);
+    }
     const skillName = DataLoader.getInstance().getTrainableStatDef(node.nodeDef.skillId)?.name || node.nodeDef.skillId;
     this.createFloatingText(posX, posY - 24, `+${expGranted} ${skillName} EXP`, '#60a5fa');
 
@@ -2007,13 +2357,74 @@ export class MainScene extends Phaser.Scene {
       ease: 'Quad.easeInOut'
     });
 
-    const actionToast = node.nodeDef.actionVerb === 'Digging' ? '⛏️ Dug up' : '🌿 Harvested';
-    console.log(`[Gathering] ${actionToast} ${awardedCount}x ${awardedItemName}! (+${expGranted} ${skillName} EXP)`);
-    this.hud.showToast(`${actionToast} ${awardedItemName} (+${expGranted} ${skillName} EXP)`, 'success', 2500);
+    const actionToast = node.nodeDef.actionVerb === 'Digging'
+      ? '⛏️ Dug up'
+      : node.nodeDef.actionVerb === 'Skinning'
+      ? '🔪 Skinned'
+      : node.nodeDef.actionVerb === 'Butchering'
+      ? '🥩 Butchered'
+      : '🌿 Harvested';
+
+    if (awardedResourceId && awardedResourceId !== '') {
+      console.log(`[Gathering] ${actionToast} ${awardedCount}x ${awardedItemName}! (+${expGranted} ${skillName} EXP)`);
+      this.hud?.showToast(`${actionToast} ${awardedItemName} (+${expGranted} ${skillName} EXP)`, 'success', 2500);
+    } else {
+      console.log(`[Gathering] ${actionToast} (+${expGranted} ${skillName} EXP)`);
+      this.hud?.showToast(`${actionToast} (+${expGranted} ${skillName} EXP)`, 'info', 2500);
+    }
+
+    // Milestone 32: Sequential Order & Dual-Action Handling on Corpses
+    if (node.corpseEnemy) {
+      const corpseEnemy = node.corpseEnemy;
+      if (node.nodeDef.skillId === 'skinning') {
+        node.isSkinned = true;
+        corpseEnemy.isSkinned = true;
+
+        // Check if eligible for Phase 2: Butchering (e.g. Wolf)
+        const isButcherEligible = this.isEnemyButcherEligible(corpseEnemy.enemyData.id);
+        const hasMeat = !!corpseEnemy.enemyData.corpseHarvest?.butchering?.item;
+        const butcheringUnlocked = GameState.getInstance().isButcheringUnlocked();
+
+        if (isButcherEligible && hasMeat && butcheringUnlocked && !node.isButchered) {
+          // Wolf remains active and transitions to Phase 2 (Butchering)!
+          node.isHarvested = false;
+          const meatDef = corpseEnemy.enemyData.corpseHarvest?.butchering;
+          const meatResource = meatDef?.item || (corpseEnemy.enemyData.id === 'wolf' ? 'wolf_meat' : 'monster_meat');
+          node.nodeDef.skillId = 'butchering';
+          node.nodeDef.resourceId = meatResource;
+          node.nodeDef.actionVerb = 'Butchering';
+          node.nodeDef.color = '#ef4444';
+          node.nodeDef.name = `${corpseEnemy.entityName} Corpse`;
+          node.nodeDef.label = `${corpseEnemy.entityName} Corpse (Butchering)`;
+          node.nodeDef.expGranted = meatDef?.exp || 15;
+          node.nodeDef.yieldCount = meatDef?.count || 1;
+          node.label.setText(node.nodeDef.label);
+          node.label.setColor('#ef4444');
+          console.log(`[Corpse Gathering] ${corpseEnemy.entityName} skinned! Corpse transitioned to Butchering.`);
+          this.hud?.showToast(`🐺 ${corpseEnemy.entityName} skinned! Meat can now be butchered.`, 'info', 2500);
+          return;
+        } else {
+          node.isHarvested = true;
+          node.label.setText(node.nodeDef.depletedLabel);
+          node.label.setColor('#9ca3af');
+          node.sprite.setAlpha(0.25);
+          return;
+        }
+      } else if (node.nodeDef.skillId === 'butchering') {
+        node.isButchered = true;
+        corpseEnemy.isButchered = true;
+        node.isHarvested = true;
+        node.label.setText(node.nodeDef.depletedLabel);
+        node.label.setColor('#9ca3af');
+        node.sprite.setAlpha(0.25);
+        console.log(`[Corpse Gathering] ${corpseEnemy.entityName} butchered! Corpse fully spent.`);
+        return;
+      }
+    }
 
     // REAL GAMEPLAY LIFESPAN: Node stays depleted for remainder of floor visit!
-    // DEBUG ONLY: If debugGatheringRespawnEnabled is active, respawn after 15s
-    if (this.debugGatheringRespawnEnabled) {
+    // DEBUG ONLY: If debugGatheringRespawnEnabled is active, respawn after 15s (non-corpse nodes only)
+    if (this.debugGatheringRespawnEnabled && !node.corpseEnemy) {
       console.log(`[Debug Respawn] Gathering node respawn scheduled in 15s for (${node.x}, ${node.y}).`);
       node.respawnTimer = this.time.delayedCall(node.nodeDef.respawnTimeMs || 15000, () => {
         if (this.debugGatheringRespawnEnabled && node.isHarvested) {
@@ -2105,6 +2516,264 @@ export class MainScene extends Phaser.Scene {
       character.claimedDestination = null;
     }
     return hadActivity;
+  }
+
+  // =========================================================================
+  // Milestone 31: Item-Based Revive Channel Methods
+  // =========================================================================
+
+  public findReviveChannelByParticipant(participant: Player): ActiveReviveChannel | undefined {
+    for (const channel of this.activeReviveChannels.values()) {
+      if (channel.character === participant || channel.targetAlly === participant) {
+        return channel;
+      }
+    }
+    return undefined;
+  }
+
+  public interactReviveAlly(downedAlly: Player): boolean {
+    if (downedAlly.state !== 'downed') {
+      return false;
+    }
+
+    const gameState = GameState.getInstance();
+    if (gameState.getItemCount('revive_potion') < 1) {
+      this.createFloatingText(downedAlly.x, downedAlly.y - 12, 'NEED REVIVE POTION!', '#f59e0b');
+      this.hud?.showToast('⚠️ Requires a Revive Potion! Craft one at the Alchemy Station.', 'warn', 2500);
+      return false;
+    }
+
+    // Pick living reviver: active selected member or closest living ally
+    const livingSelected = this.getSelectedMembers().filter(m => m.state !== 'downed' && m.state !== 'dead' && m !== downedAlly);
+    let reviver: Player | undefined = livingSelected[0];
+
+    if (!reviver) {
+      const livingParty = this.party.filter(m => m.state !== 'downed' && m.state !== 'dead' && m !== downedAlly);
+      if (livingParty.length === 0) {
+        this.hud?.showToast('⚠️ No conscious party members available to revive!', 'error', 2500);
+        return false;
+      }
+      livingParty.sort((a, b) => Math.hypot(a.gridPos.x - downedAlly.gridPos.x, a.gridPos.y - downedAlly.gridPos.y) - Math.hypot(b.gridPos.x - downedAlly.gridPos.x, b.gridPos.y - downedAlly.gridPos.y));
+      reviver = livingParty[0];
+    }
+
+    const dist = Math.hypot(reviver.gridPos.x - downedAlly.gridPos.x, reviver.gridPos.y - downedAlly.gridPos.y);
+    if (dist <= 1.5) {
+      return this.startReviveChannel(reviver, downedAlly);
+    }
+
+    // Path to open adjacent tile to downedAlly
+    const claimed = new Set<string>();
+    for (const other of this.party) {
+      if (other !== reviver && other.state !== 'dead') {
+        claimed.add(`${other.gridPos.x},${other.gridPos.y}`);
+        if (other.claimedDestination) {
+          claimed.add(`${other.claimedDestination.x},${other.claimedDestination.y}`);
+        }
+      }
+    }
+
+    const adjTiles = [
+      { x: downedAlly.gridPos.x + 1, y: downedAlly.gridPos.y },
+      { x: downedAlly.gridPos.x - 1, y: downedAlly.gridPos.y },
+      { x: downedAlly.gridPos.x, y: downedAlly.gridPos.y + 1 },
+      { x: downedAlly.gridPos.x, y: downedAlly.gridPos.y - 1 }
+    ].filter(t => t.x > 0 && t.x < this.mapWidth - 1 && t.y > 0 && t.y < this.mapHeight - 1 && this.gridMatrix[t.y]?.[t.x] === 0 && !claimed.has(`${t.x},${t.y}`));
+
+    adjTiles.sort((a, b) => Math.hypot(a.x - reviver!.gridPos.x, a.y - reviver!.gridPos.y) - Math.hypot(b.x - reviver!.gridPos.x, b.y - reviver!.gridPos.y));
+
+    let targetTile = adjTiles[0];
+    if (!targetTile) {
+      targetTile = this.findNearestOpenTileForPartyMove(downedAlly.gridPos, reviver.gridPos, claimed, reviver);
+    }
+
+    if (targetTile) {
+      this.cancelGatherChannel(reviver);
+      this.cancelReviveChannel(reviver);
+      reviver.clearTarget();
+      claimed.add(`${targetTile.x},${targetTile.y}`);
+      reviver.claimedDestination = { ...targetTile };
+
+      const unitObs = this.getPartyUnitObstacles(reviver);
+      this.pathfinder.findPath(reviver.gridPos, targetTile, unitObs).then((path) => {
+        if (path.length > 0) {
+          reviver!.followPath(path, () => {
+            if (downedAlly.state === 'downed' && Math.hypot(reviver!.gridPos.x - downedAlly.gridPos.x, reviver!.gridPos.y - downedAlly.gridPos.y) <= 1.5) {
+              this.startReviveChannel(reviver!, downedAlly);
+            }
+          });
+
+          const checkArrival = this.time.addEvent({
+            delay: 150,
+            repeat: 40,
+            callback: () => {
+              if (downedAlly.state !== 'downed') {
+                checkArrival.remove();
+              } else if (Math.hypot(reviver!.gridPos.x - downedAlly.gridPos.x, reviver!.gridPos.y - downedAlly.gridPos.y) <= 1.5) {
+                checkArrival.remove();
+                this.startReviveChannel(reviver!, downedAlly);
+              } else if (reviver!.state !== 'moving') {
+                checkArrival.remove();
+              }
+            }
+          });
+        } else {
+          reviver!.claimedDestination = null;
+        }
+      });
+      return true;
+    }
+
+    return false;
+  }
+
+  public startReviveChannel(character: Player, targetAlly: Player): boolean {
+    if (targetAlly.state !== 'downed' || character.state === 'downed' || character.state === 'dead') {
+      return false;
+    }
+
+    if (GameState.getInstance().getItemCount('revive_potion') < 1) {
+      this.createFloatingText(targetAlly.x, targetAlly.y - 12, 'NEED REVIVE POTION!', '#f59e0b');
+      this.hud?.showToast('⚠️ Requires a Revive Potion! Craft one at the Alchemy Station.', 'warn', 2500);
+      return false;
+    }
+
+    const existing = this.activeReviveChannels.get(character);
+    if (existing) {
+      existing.barContainer.destroy();
+      this.activeReviveChannels.delete(character);
+    }
+    this.cancelGatherChannel(character);
+
+    character.state = 'channeling';
+    character.claimedDestination = null;
+    character.clearTarget();
+    character.stopMovement();
+
+    const durationMs = 3000;
+
+    // Visual Progress Bar Container positioned above reviver
+    const posX = character.x;
+    const posY = character.y - 28;
+    const barContainer = this.add.container(posX, posY).setDepth(10001);
+
+    const barBg = this.add.graphics();
+    barBg.fillStyle(0x111827, 0.85);
+    barBg.fillRect(-18, -3, 36, 6);
+    barBg.lineStyle(1, 0x374151, 1);
+    barBg.strokeRect(-18, -3, 36, 6);
+
+    const barFill = this.add.graphics();
+
+    const labelText = this.add.text(0, -12, 'Reviving... 0%', {
+      fontSize: '9px',
+      fontStyle: 'bold',
+      color: '#facc15',
+      backgroundColor: 'rgba(0,0,0,0.7)',
+      padding: { x: 3, y: 1 }
+    }).setOrigin(0.5);
+
+    barContainer.add([barBg, barFill, labelText]);
+
+    const channel: ActiveReviveChannel = {
+      character,
+      targetAlly,
+      durationMs,
+      elapsedMs: 0,
+      barContainer,
+      barBg,
+      barFill,
+      labelText
+    };
+
+    this.activeReviveChannels.set(character, channel);
+    console.log(`[Revive] 💛 ${character.entityName} started reviving ${targetAlly.entityName} (3000ms)...`);
+    this.hud?.showToast(`💛 Reviving ${targetAlly.entityName}... (3s)`, 'info', 2000);
+    return true;
+  }
+
+  public completeReviveChannel(character: Player, channel: ActiveReviveChannel): void {
+    channel.barContainer.destroy();
+    this.activeReviveChannels.delete(character);
+
+    if (character.state === 'channeling') {
+      character.state = 'idle';
+    }
+
+    // Guard: ensure target ally is still downed (did not die / was not externally revived)
+    if (channel.targetAlly.state !== 'downed') {
+      console.warn(`[Revive] Target ally ${channel.targetAlly.entityName} is no longer downed (state: ${channel.targetAlly.state}). Aborting completion without consuming potion.`);
+      return;
+    }
+
+    const gameState = GameState.getInstance();
+    if (gameState.getItemCount('revive_potion') < 1) {
+      console.warn('[Revive] No Revive Potion in inventory at completion time!');
+      this.hud?.showToast('⚠️ Revive failed: No Revive Potion in inventory!', 'error');
+      return;
+    }
+
+    // 1. Consume 1 Revive Potion
+    gameState.consumeItem('revive_potion', 1);
+
+    // 2. Revive target ally (increments 'Ally Revived' activity count on character)
+    channel.targetAlly.revive(character);
+
+    // 3. Grant +5 Healing Magic EXP to reviver
+    if (character.progression) {
+      character.progression.addProficiencyExp('healing_magic', 5);
+    }
+
+    // 4. Visual & toast feedback
+    this.createFloatingText(channel.targetAlly.x, channel.targetAlly.y - 12, 'REVIVED!', '#facc15');
+    this.createFloatingText(character.x, character.y - 15, '+5 Healing Magic EXP', '#4ade80');
+    this.hud?.showToast(`✨ ${character.entityName} revived ${channel.targetAlly.entityName}! (+5 Healing Magic EXP)`, 'success', 2500);
+
+    // 5. Update HUD
+    this.hud?.update(this.player, this.progressionSystem, this.time.now, this.party);
+  }
+
+  public interruptReviveChannel(participant: Player, attacker?: Enemy): boolean {
+    const channel = this.findReviveChannelByParticipant(participant);
+    if (!channel) return false;
+
+    console.log(`%c[Revive Interrupt] 💥 Revive channel on ${channel.targetAlly.entityName} by ${channel.character.entityName} was INTERRUPTED!`, 'color: #ef4444; font-weight: bold;');
+
+    // 1. Destroy progress bar and remove channel
+    channel.barContainer.destroy();
+    this.activeReviveChannels.delete(channel.character);
+
+    // 2. Reset reviver state
+    if (channel.character.state === 'channeling') {
+      channel.character.state = 'idle';
+    }
+
+    // 3. Revive Potion is NOT consumed!
+    // 4. Target ally stays downed (or dead if lethal damage landed)
+
+    // 5. Floating text & toast
+    this.createFloatingText(channel.character.x, channel.character.y - 20, 'INTERRUPTED!', '#ef4444');
+    this.hud?.showToast('⚠️ Revive interrupted! Entering combat!', 'warn', 2500);
+
+    // 6. Immediate combat engagement with attacker (reusing existing hardened engageEnemy)
+    if (attacker && attacker.state !== 'dead' && attacker.state !== 'downed') {
+      this.engageEnemy(attacker, [channel.character]);
+    }
+
+    return true;
+  }
+
+  public cancelReviveChannel(character: Player): boolean {
+    const channel = this.activeReviveChannels.get(character);
+    if (channel) {
+      channel.barContainer.destroy();
+      this.activeReviveChannels.delete(character);
+      if (character.state === 'channeling') {
+        character.state = 'idle';
+      }
+      return true;
+    }
+    return false;
   }
 
   public clearGatheringQueue(cancelActiveChannels: boolean = true): void {

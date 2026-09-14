@@ -12,10 +12,12 @@
       "attackIntervalMs": 1200,
       "moveSpeed": 90,
       "harvest": [
-        { "method": "skinning", "item": "wolf_pelt", "tags": ["armorsmithing"] },
-        { "method": "butchering", "item": "wolf_meat", "tags": ["cooking"] },
         { "method": "rare_drop", "item": "wolf_claw", "tags": ["blacksmithing", "bowyer", "jewelcrafting"] }
-      ]
+      ],
+      "corpseHarvest": {
+        "skinning": { "item": "wolf_pelt", "name": "Wolf Pelt", "count": 1, "exp": 15, "tags": ["armorsmithing"] },
+        "butchering": { "item": "wolf_meat", "name": "Wolf Meat", "count": 1, "exp": 15, "tags": ["cooking"] }
+      }
     },
     {
       "id": "slime",
@@ -42,9 +44,11 @@
       "attackIntervalMs": 950,
       "moveSpeed": 105,
       "harvest": [
-        { "method": "butchering", "item": "monster_meat", "tags": ["cooking"], "note": "lower Chef dish-quality ceiling than wolf_meat" },
         { "method": "rare_drop", "item": "goblin_ear", "tags": ["alchemy"] }
-      ]
+      ],
+      "corpseHarvest": {
+        "butchering": { "item": "monster_meat", "name": "Monster Meat", "count": 1, "exp": 15, "tags": ["cooking"], "note": "lower Chef dish-quality ceiling than wolf_meat" }
+      }
     },
     {
       "id": "goblin_archer",
@@ -58,10 +62,12 @@
       "moveSpeed": 95,
       "attackRangeTiles": 4,
       "harvest": [
-        { "method": "butchering", "item": "monster_meat", "tags": ["cooking"] },
         { "method": "salvage", "item": "bowstring", "tags": ["bowyer"] },
         { "method": "rare_drop", "item": "feather", "tags": ["bowyer", "fletching"] }
-      ]
+      ],
+      "corpseHarvest": {
+        "butchering": { "item": "monster_meat", "name": "Monster Meat", "count": 1, "exp": 15, "tags": ["cooking"] }
+      }
     },
     {
       "id": "skeleton",
@@ -121,9 +127,11 @@
       "attackIntervalMs": 950,
       "moveSpeed": 110,
       "harvest": [
-        { "method": "collect", "item": "spider_silk", "tags": ["armorsmithing", "tailoring", "bowyer"] },
         { "method": "rare_drop", "item": "spider_venom", "tags": ["alchemy"] }
-      ]
+      ],
+      "corpseHarvest": {
+        "skinning": { "item": "spider_silk", "name": "Spider Silk", "count": 1, "exp": 15, "tags": ["armorsmithing", "tailoring", "bowyer"] }
+      }
     },
     {
       "id": "orc_warrior",
@@ -155,6 +163,24 @@
         { "method": "salvage", "item": "void_plate", "tags": ["armorsmithing", "blacksmithing"] },
         { "method": "salvage", "item": "void_essence", "tags": ["enchanting", "alchemy"] },
         { "method": "rare_drop", "item": "void_core", "tags": ["enchanting", "jewelcrafting", "blacksmithing"], "note": "Pulsing epic core radiating concentrated planar void energy" }
+      ]
+    },
+    {
+      "id": "abyssal_colossus",
+      "name": "Abyssal Colossus",
+      "tier": "boss",
+      "hp": 450,
+      "criticalHpMax": 225,
+      "meleeDamage": 36,
+      "aggroRadius": 8,
+      "attackIntervalMs": 1400,
+      "moveSpeed": 80,
+      "attackRangeTiles": 1,
+      "harvest": [
+        { "method": "salvage", "item": "colossus_core", "tags": ["blacksmithing", "armorsmithing", "enchanting"], "note": "Ancient pulsating heart forged of solidified cataclysmic magma and raw planar energy" },
+        { "method": "salvage", "item": "abyssal_ingot", "tags": ["blacksmithing", "armorsmithing"], "note": "Titanic indestructible dark metal slab harvested from the dread colossus" },
+        { "method": "salvage", "item": "dread_essence", "tags": ["alchemy", "enchanting"], "note": "Concentrated dread energy distilled from centuries of dungeon slumber" },
+        { "method": "rare_drop", "item": "heart_of_the_colossus", "tags": ["jewelcrafting", "enchanting", "blacksmithing", "armorsmithing"], "note": "Legendary pinnacle artifact radiating immense planar power. The ultimate treasure of the deep dungeon." }
       ]
     }
   ]

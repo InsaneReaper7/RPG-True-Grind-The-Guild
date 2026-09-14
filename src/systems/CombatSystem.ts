@@ -680,9 +680,63 @@ export class CombatSystem {
 
                   const wasUnengaged = target.targetEntity === null;
                   const targetDowned = target.takeDamage(actualDamage);
-                  if (actualDamage > 0 && this.scene && typeof (this.scene as any).interruptGatherChannel === 'function') {
-                    (this.scene as any).interruptGatherChannel(target, enemy);
+                  if (actualDamage > 0 && this.scene) {
+                    if (typeof (this.scene as any).interruptGatherChannel === 'function') {
+                      (this.scene as any).interruptGatherChannel(target, enemy);
+                    }
+                    if (typeof (this.scene as any).interruptReviveChannel === 'function') {
+                      (this.scene as any).interruptReviveChannel(target, enemy);
+                    }
                   }
+
+                  // Milestone 34: Boss Unique Mechanic — Titanic Cleave Shockwave
+                  if (enemy.enemyData.tier === 'boss' && actualDamage > 0) {
+                    const splashDamage = Math.max(1, Math.round(actualDamage * 0.5));
+                    for (const member of this.party) {
+                      if (member !== target && member.state !== 'downed' && member.state !== 'dead') {
+                        const dist = Math.hypot(member.gridPos.x - enemy.gridPos.x, member.gridPos.y - enemy.gridPos.y);
+                        if (dist <= 1.5) {
+                          const memDowned = member.takeDamage(splashDamage);
+                          this.createAttackEffect(enemy.x, enemy.y, member.x, member.y, 0xdc2626);
+                          this.createFloatingText(member.x, member.y - 18, `-${splashDamage} (CLEAVE!)`, '#f87171');
+                          console.log(`[Combat:Boss Cleave] 💥 ${enemy.entityName} cleave hits ${member.entityName} for ${splashDamage} damage!`);
+                          if (this.scene) {
+                            if (typeof (this.scene as any).interruptGatherChannel === 'function') {
+                              (this.scene as any).interruptGatherChannel(member, enemy);
+                            }
+                            if (typeof (this.scene as any).interruptReviveChannel === 'function') {
+                              (this.scene as any).interruptReviveChannel(member, enemy);
+                            }
+                          }
+                          if (memDowned) {
+                            console.log(`[Combat] ${member.entityName} was downed by Boss cleave shockwave!`);
+                            member.clearTarget();
+                          }
+                        }
+                      }
+                    }
+                  }
+
+                  // Milestone 34: Boss Unique Mechanic — Earthshaker Tremor (30% stun chance on hit)
+                  if (enemy.enemyData.tier === 'boss' && actualDamage > 0 && !targetDowned) {
+                    if (Math.random() < 0.30) {
+                      const stunEffect = {
+                        id: 'stun',
+                        name: 'Stun',
+                        durationMs: 2000,
+                        tickIntervalMs: 2000,
+                        damagePerTick: 0,
+                        disablesActions: true,
+                        disablesMovement: true,
+                        isHarmful: true,
+                        color: '#facc15'
+                      };
+                      target.applyStatusEffect(stunEffect);
+                      this.createFloatingText(target.x, target.y - 28, 'EARTHSHAKER! STUNNED!', '#facc15');
+                      console.log(`[Combat:Boss Tremor] ⚡ ${enemy.entityName} strikes with Earthshaker Tremor! ${target.entityName} is STUNNED (2s)!`);
+                    }
+                  }
+
                   if (targetDowned) {
                     console.log(`[Combat] ${target.entityName} has been downed by enemy attack!`);
                     target.clearTarget();
@@ -1491,14 +1545,17 @@ export class CombatSystem {
       killer.progression.addProficiencyExp('dual_wielding', 2);
     }
 
-    // Milestone 14: Class EXP kill hook (flat +25 Class EXP specifically to active class only)
+    // Milestone 14 & 34: Class EXP kill hook (scaled by enemy tier: Common +25, Elite +50, Epic +100, Boss +250)
     if (killer.activeClass) {
-      const classResult = killer.progression.addClassExp(killer.activeClass, 25);
+      const tier = (target instanceof Enemy) ? target.enemyData.tier : 'common';
+      const classExpAmount = tier === 'boss' ? 250 : tier === 'epic' ? 100 : tier === 'elite' ? 50 : 25;
+      const classResult = killer.progression.addClassExp(killer.activeClass, classExpAmount);
       const activeName = killer.activeClass.toUpperCase();
-      this.createFloatingText(killer.x, killer.y - 12, `+25 ${activeName} EXP`, '#f59e0b');
+      const expColor = tier === 'boss' ? '#ef4444' : tier === 'epic' ? '#c084fc' : '#f59e0b';
+      this.createFloatingText(killer.x, killer.y - 12, `+${classExpAmount} ${activeName} EXP`, expColor);
       if (classResult.leveledUp) {
         const newClassLvl = killer.progression.getClassLevel(killer.activeClass);
-        this.createFloatingText(killer.x, killer.y - 30, `Class Level Up! ${activeName} Lv ${newClassLvl}!`, '#f59e0b');
+        this.createFloatingText(killer.x, killer.y - 30, `Class Level Up! ${activeName} Lv ${newClassLvl}!`, expColor);
         killer.checkSkillUnlocks();
       }
     }
@@ -1515,16 +1572,20 @@ export class CombatSystem {
 
     if (target instanceof Enemy) {
       this.enemyTargets.delete(target);
-      // Roll and award harvest drops
+      // Roll and award harvest drops (excluding Skinning and Butchering items moved to manual corpse interaction)
       if (target.enemyData.harvest && target.enemyData.harvest.length > 0) {
         const gameState = GameState.getInstance();
+        const isBoss = target.enemyData.tier === 'boss';
         for (const h of target.enemyData.harvest) {
+          if (h.method === 'skinning' || h.method === 'butchering') continue;
+          if (['wolf_pelt', 'spider_silk', 'wolf_meat', 'monster_meat'].includes(h.item)) continue;
           const isRare = h.method === 'rare_drop';
           const roll = Math.random();
-          if (!isRare || roll < 0.35) {
+          const rareThreshold = isBoss ? 0.60 : 0.35;
+          if (!isRare || roll < rareThreshold) {
             gameState.addItem(h.item, 1);
             const itemName = h.item.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-            const floatColor = target.enemyData.tier === 'epic' && isRare ? '#c084fc' : isRare ? '#f59e0b' : '#34d399';
+            const floatColor = isBoss ? '#ef4444' : target.enemyData.tier === 'epic' && isRare ? '#c084fc' : isRare ? '#f59e0b' : '#34d399';
             this.createFloatingText(target.x, target.y - 35, `+1 ${itemName}`, floatColor);
           }
         }

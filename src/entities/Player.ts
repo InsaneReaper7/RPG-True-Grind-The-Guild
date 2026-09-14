@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { Entity } from './Entity.ts';
-import type { PlayerData, WeaponDef, CharacterSnapshot, ArmorDef } from '../types/game.ts';
+import type { PlayerData, WeaponDef, CharacterSnapshot, ArmorDef, ArmorSlot } from '../types/game.ts';
+import { getArmorHpSplit } from '../types/game.ts';
 import { GameState } from '../systems/GameState.ts';
 import { DataLoader } from '../utils/DataLoader.ts';
 import { ProgressionSystem } from '../systems/ProgressionSystem.ts';
@@ -15,7 +16,11 @@ export class Player extends Entity {
   public offhandWeapon: WeaponDef | null = null;
   public equippedHelmet: ArmorDef | null = null;
   public equippedBodyArmor: ArmorDef | null = null;
+  public equippedNecklace: ArmorDef | null = null;
+  public equippedRing: ArmorDef | null = null;
+  public equippedAccessory: ArmorDef | null = null;
   public baseMaxHp: number = 50;
+  public baseMaxCriticalHp: number = 25;
   public targetEntity: Entity | null = null;
   public lastAttackTime: number = 0;
   public attackRangeTiles: number = 1;
@@ -54,6 +59,10 @@ export class Player extends Entity {
   public lastDiagRegenLog?: number;
   public lastDiagInCombatLog?: number;
 
+  // Milestone 31: Clickable Revive Icon for Downed Ally
+  public reviveIconSprite?: Phaser.GameObjects.Sprite;
+  private reviveIconTween?: Phaser.Tweens.Tween;
+
   constructor(
     scene: Phaser.Scene,
     x: number,
@@ -77,6 +86,7 @@ export class Player extends Entity {
 
     this.id = playerData.id || 'hero';
     this.baseMaxHp = playerData.maxHp;
+    this.baseMaxCriticalHp = playerData.criticalHpMax ?? 25;
     this.avatarTextureKey = avatarKey;
     this.moveSpeed = playerData.moveSpeed;
     this.equippedWeapon = startingWeapon;
@@ -188,69 +198,105 @@ export class Player extends Entity {
   }
 
   public recalculateMaxHp(): void {
-    const helmetBonus = this.equippedHelmet?.hpBonus ?? 0;
-    const bodyBonus = this.equippedBodyArmor?.hpBonus ?? 0;
-    this.maxHp = this.baseMaxHp + helmetBonus + bodyBonus;
+    let bonusMainHp = 0;
+    let bonusCritHp = 0;
+
+    const pieces = [
+      this.equippedHelmet,
+      this.equippedBodyArmor,
+      this.equippedNecklace,
+      this.equippedRing,
+      this.equippedAccessory
+    ];
+
+    for (const p of pieces) {
+      if (p) {
+        const { mainHpBonus, criticalHpBonus } = getArmorHpSplit(p);
+        bonusMainHp += mainHpBonus;
+        bonusCritHp += criticalHpBonus;
+      }
+    }
+
+    this.maxHp = this.baseMaxHp + bonusMainHp;
+    this.maxCriticalHp = this.baseMaxCriticalHp + bonusCritHp;
+
     if (this.hp > this.maxHp) {
       this.hp = this.maxHp;
     }
+    if (this.criticalHp > this.maxCriticalHp) {
+      this.criticalHp = this.maxCriticalHp;
+    }
     this.drawHpBar();
+  }
+
+  public equipArmorSlot(slot: ArmorSlot, armor: ArmorDef | null, isOutpost: boolean = false): boolean {
+    if (!isOutpost || this.inCombat) {
+      console.warn(`[Player:${this.entityName}] Cannot equip or unequip ${slot} outside the Outpost / during combat!`);
+      return false;
+    }
+    if (armor !== null && armor.slot !== slot) {
+      console.warn(`[Player:${this.entityName}] Cannot equip ${armor.name} in ${slot} slot (slot is ${armor.slot})`);
+      return false;
+    }
+
+    let prevArmor: ArmorDef | null = null;
+    switch (slot) {
+      case 'helmet': prevArmor = this.equippedHelmet; break;
+      case 'body': prevArmor = this.equippedBodyArmor; break;
+      case 'necklace': prevArmor = this.equippedNecklace; break;
+      case 'ring': prevArmor = this.equippedRing; break;
+      case 'accessory': prevArmor = this.equippedAccessory; break;
+    }
+
+    if (prevArmor) {
+      const prevSplit = getArmorHpSplit(prevArmor);
+      // Main HP can freely drop to 0 (normal Critical warning state)
+      this.hp = Math.max(0, this.hp - prevSplit.mainHpBonus);
+      // Critical HP is strictly floored at exactly 1
+      this.criticalHp = Math.max(1, this.criticalHp - prevSplit.criticalHpBonus);
+    }
+
+    switch (slot) {
+      case 'helmet': this.equippedHelmet = armor; break;
+      case 'body': this.equippedBodyArmor = armor; break;
+      case 'necklace': this.equippedNecklace = armor; break;
+      case 'ring': this.equippedRing = armor; break;
+      case 'accessory': this.equippedAccessory = armor; break;
+    }
+
+    this.recalculateMaxHp();
+
+    if (armor) {
+      const newSplit = getArmorHpSplit(armor);
+      this.hp += newSplit.mainHpBonus;
+      this.criticalHp += newSplit.criticalHpBonus;
+      if (this.hp > this.maxHp) this.hp = this.maxHp;
+      if (this.criticalHp > this.maxCriticalHp) this.criticalHp = this.maxCriticalHp;
+    }
+
+    this.drawHpBar();
+    console.log(`[Player:${this.entityName}] ${armor ? `Equipped ${slot}: ${armor.name} (+${armor.hpBonus} HP)` : `Unequipped ${slot}`}. Current HP: ${this.hp}/${this.maxHp}, Crit HP: ${this.criticalHp}/${this.maxCriticalHp}`);
+    return true;
   }
 
   public equipHelmet(armor: ArmorDef | null, isOutpost: boolean = false): boolean {
-    if (!isOutpost || this.inCombat) {
-      console.warn(`[Player:${this.entityName}] Cannot equip or unequip helmet outside the Outpost / during combat!`);
-      return false;
-    }
-    if (armor !== null && armor.slot !== 'helmet') {
-      console.warn(`[Player:${this.entityName}] Cannot equip ${armor.name} in helmet slot (slot is ${armor.slot})`);
-      return false;
-    }
-
-    const prevArmor = this.equippedHelmet;
-    if (prevArmor) {
-      // On unequip, subtract removed piece's HP bonus directly from current HP, floored at exactly 1
-      this.hp = Math.max(1, this.hp - prevArmor.hpBonus);
-    }
-
-    this.equippedHelmet = armor;
-    this.recalculateMaxHp();
-
-    if (armor) {
-      this.hp += armor.hpBonus;
-    }
-
-    this.drawHpBar();
-    console.log(`[Player:${this.entityName}] ${armor ? `Equipped helmet: ${armor.name} (+${armor.hpBonus} HP)` : 'Unequipped helmet'}. Current HP: ${this.hp}/${this.maxHp}`);
-    return true;
+    return this.equipArmorSlot('helmet', armor, isOutpost);
   }
 
   public equipBodyArmor(armor: ArmorDef | null, isOutpost: boolean = false): boolean {
-    if (!isOutpost || this.inCombat) {
-      console.warn(`[Player:${this.entityName}] Cannot equip or unequip body armor outside the Outpost / during combat!`);
-      return false;
-    }
-    if (armor !== null && armor.slot !== 'body') {
-      console.warn(`[Player:${this.entityName}] Cannot equip ${armor.name} in body armor slot (slot is ${armor.slot})`);
-      return false;
-    }
+    return this.equipArmorSlot('body', armor, isOutpost);
+  }
 
-    const prevArmor = this.equippedBodyArmor;
-    if (prevArmor) {
-      // On unequip, subtract removed piece's HP bonus directly from current HP, floored at exactly 1
-      this.hp = Math.max(1, this.hp - prevArmor.hpBonus);
-    }
+  public equipNecklace(armor: ArmorDef | null, isOutpost: boolean = false): boolean {
+    return this.equipArmorSlot('necklace', armor, isOutpost);
+  }
 
-    this.equippedBodyArmor = armor;
-    this.recalculateMaxHp();
+  public equipRing(armor: ArmorDef | null, isOutpost: boolean = false): boolean {
+    return this.equipArmorSlot('ring', armor, isOutpost);
+  }
 
-    if (armor) {
-      this.hp += armor.hpBonus;
-    }
-
-    this.drawHpBar();
-    console.log(`[Player:${this.entityName}] ${armor ? `Equipped body armor: ${armor.name} (+${armor.hpBonus} HP)` : 'Unequipped body armor'}. Current HP: ${this.hp}/${this.maxHp}`);
-    return true;
+  public equipAccessory(armor: ArmorDef | null, isOutpost: boolean = false): boolean {
+    return this.equipArmorSlot('accessory', armor, isOutpost);
   }
 
   public isDualWielding(): boolean {
@@ -409,6 +455,60 @@ export class Player extends Entity {
     }
   }
 
+  protected override onDowned(): void {
+    super.onDowned();
+    this.showReviveIcon();
+  }
+
+  public showReviveIcon(): void {
+    if (this.reviveIconSprite || !this.scene?.add) return;
+
+    const posX = this.x;
+    const posY = this.y - 24;
+    const textureKey = this.scene.textures?.exists('revive-icon') ? 'revive-icon' : undefined;
+
+    if (textureKey) {
+      this.reviveIconSprite = this.scene.add.sprite(posX, posY, textureKey);
+    } else {
+      this.reviveIconSprite = this.scene.add.sprite(posX, posY, 'player-avatar');
+      this.reviveIconSprite.setTint(0xfacc15);
+    }
+
+    this.reviveIconSprite.setDepth(10002);
+    this.reviveIconSprite.setInteractive({ useHandCursor: true });
+
+    this.reviveIconSprite.on('pointerdown', (_pointer: Phaser.Input.Pointer, _localX: number, _localY: number, event?: Phaser.Types.Input.EventData) => {
+      event?.stopPropagation();
+      console.log(`[ReviveIcon] Clicked revive icon for ${this.entityName}`);
+      if (typeof (this.scene as any).interactReviveAlly === 'function') {
+        (this.scene as any).interactReviveAlly(this);
+      }
+    });
+
+    if (this.scene.tweens) {
+      this.reviveIconTween = this.scene.tweens.add({
+        targets: this.reviveIconSprite,
+        y: posY - 4,
+        scale: 1.1,
+        duration: 700,
+        yoyo: true,
+        repeat: -1,
+        ease: 'Sine.easeInOut'
+      });
+    }
+  }
+
+  public hideReviveIcon(): void {
+    if (this.reviveIconTween) {
+      this.reviveIconTween.stop();
+      this.reviveIconTween = undefined;
+    }
+    if (this.reviveIconSprite) {
+      this.reviveIconSprite.destroy();
+      this.reviveIconSprite = undefined;
+    }
+  }
+
   public revive(reviver?: Player): void {
     if (this.state !== 'downed') return;
 
@@ -421,6 +521,7 @@ export class Player extends Entity {
     this.avatarSprite.setAngle(0);
     this.avatarSprite.setAlpha(1);
     this.drawHpBar();
+    this.hideReviveIcon();
     console.log(`[Player] Revived with ${this.hp} Main HP and ${this.criticalHp} Critical HP!`);
 
     // Track Ally Revived activity on the reviver (or leader/first non-downed living ally)
@@ -548,6 +649,9 @@ export class Player extends Entity {
       offhandWeaponId: this.offhandWeapon?.id ?? null,
       equippedHelmetId: this.equippedHelmet?.id ?? null,
       equippedBodyArmorId: this.equippedBodyArmor?.id ?? null,
+      equippedNecklaceId: this.equippedNecklace?.id ?? null,
+      equippedRingId: this.equippedRing?.id ?? null,
+      equippedAccessoryId: this.equippedAccessory?.id ?? null,
       knownSkillIds: [...this.knownSkillIds],
       equippedSkillIds: [...this.equippedSkillIds],
       autocastMap: autocastObj,
@@ -609,7 +713,34 @@ export class Player extends Entity {
       this.equippedBodyArmor = null;
     }
 
+    if (snapshot.equippedNecklaceId) {
+      this.equippedNecklace = dataLoader.getArmor(snapshot.equippedNecklaceId) ?? null;
+    } else {
+      this.equippedNecklace = null;
+    }
+
+    if (snapshot.equippedRingId) {
+      this.equippedRing = dataLoader.getArmor(snapshot.equippedRingId) ?? null;
+    } else {
+      this.equippedRing = null;
+    }
+
+    if (snapshot.equippedAccessoryId) {
+      this.equippedAccessory = dataLoader.getArmor(snapshot.equippedAccessoryId) ?? null;
+    } else {
+      this.equippedAccessory = null;
+    }
+
     this.recalculateMaxHp();
+
+    // Ensure HP does not exceed new maxHp after split recalculation
+    this.hp = Math.min(this.maxHp, snapshot.hp);
+    // If character was at full Critical HP prior to the split, top up to new maxCriticalHp
+    if (snapshot.criticalHp >= 25) {
+      this.criticalHp = this.maxCriticalHp;
+    } else {
+      this.criticalHp = Math.min(this.maxCriticalHp, snapshot.criticalHp);
+    }
 
     this.knownSkillIds = snapshot.knownSkillIds ? [...snapshot.knownSkillIds] : [];
     this.equippedSkillIds = snapshot.equippedSkillIds ? [...snapshot.equippedSkillIds] : [];
@@ -662,10 +793,12 @@ export class Player extends Entity {
       this.state = 'downed';
       this.avatarSprite.setAngle(90);
       this.avatarSprite.setAlpha(0.6);
+      this.showReviveIcon();
     } else {
       this.state = 'idle';
       this.avatarSprite.setAngle(0);
       this.avatarSprite.setAlpha(1);
+      this.hideReviveIcon();
     }
 
     this.drawHpBar();
@@ -833,5 +966,10 @@ export class Player extends Entity {
 
       this.mood = Math.max(0, Math.min(this.maxMood, this.mood + (moodDeltaPerSec * delta) / 1000));
     }
+  }
+
+  public override destroy(fromScene?: boolean): void {
+    this.hideReviveIcon();
+    super.destroy(fromScene);
   }
 }

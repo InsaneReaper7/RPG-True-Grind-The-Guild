@@ -1,6 +1,7 @@
 import type { Player } from '../entities/Player.ts';
 import { ProgressionSystem } from '../systems/ProgressionSystem.ts';
-import type { ClassDef, HiddenSkillDef, TrainableStat, FoodQuality, ExpTransaction } from '../types/game.ts';
+import type { ClassDef, HiddenSkillDef, TrainableStat, FoodQuality, ExpTransaction, ArmorSlot } from '../types/game.ts';
+import { getArmorHpSplit } from '../types/game.ts';
 import { DataLoader } from '../utils/DataLoader.ts';
 import { GameState } from '../systems/GameState.ts';
 import { BuildingSystem } from '../systems/BuildingSystem.ts';
@@ -35,6 +36,8 @@ export class HUD {
   private hudManaPotionRowEl: HTMLElement | null;
   private playerManaPotionTextEl: HTMLElement | null;
   private hudDrinkManaPotionBtn: HTMLElement | null;
+  private hudRevivePotionRowEl: HTMLElement | null;
+  private playerRevivePotionTextEl: HTMLElement | null;
   private discoveredSkillsSectionEl: HTMLElement | null;
   private discoveredSkillsListEl: HTMLElement | null;
   private skillDiscoveredModalEl: HTMLElement | null;
@@ -103,13 +106,15 @@ export class HUD {
   private alchemyModalBandagesEl: HTMLElement | null;
   private alchemyModalEnergyPotionsEl: HTMLElement | null;
   private alchemyModalManaPotionsEl: HTMLElement | null;
+  private alchemyModalRevivePotionsEl: HTMLElement | null;
   private alchemyRecipesContainerEl: HTMLElement | null;
   private alchemyPlayerStatusEl: HTMLElement | null;
   private alchemyApplyBandageBtn: HTMLElement | null;
 
-  // Milestone 19 Debug Buttons
+  // Milestone 19 & 31 Debug Buttons
   private debugBtnGrantEnergyPotion: HTMLElement | null;
   private debugBtnGrantManaPotion: HTMLElement | null;
+  private debugBtnGrantRevivePotion: HTMLElement | null;
   private debugBtnDrainEnergy: HTMLElement | null;
   private debugBtnRestoreEnergy: HTMLElement | null;
 
@@ -143,6 +148,12 @@ export class HUD {
   private currentParty: Player[] = [];
   private renderedPartyRosterKey: string = '';
   private lastPartyStatsUpdateTime: number = 0;
+
+  // Milestone 35 Elements (Paperdoll & Equipment Stash)
+  private partyOverviewInventoryEl: HTMLElement | null;
+  private partyInventoryItemListEl: HTMLElement | null;
+  private partyInventoryFilter: 'all' | 'weapons' | 'armor' | 'jewelry' = 'all';
+  public activeDragPayload: { itemId: string; itemType: 'weapon' | 'armor'; itemSlot: string; sourceSlot?: string; sourceMemberIdx?: number } | null = null;
 
   // Milestone 8 Debug Buttons
   private debugBtnSpawnCompanion: HTMLElement | null;
@@ -385,6 +396,8 @@ export class HUD {
     this.hudManaPotionRowEl = document.getElementById('hud-mana-potion-row');
     this.playerManaPotionTextEl = document.getElementById('player-mana-potion-text');
     this.hudDrinkManaPotionBtn = document.getElementById('hud-drink-mana-potion-btn');
+    this.hudRevivePotionRowEl = document.getElementById('hud-revive-potion-row');
+    this.playerRevivePotionTextEl = document.getElementById('player-revive-potion-text');
 
     this.researchTreeModalEl = document.getElementById('research-tree-modal');
     this.closeResearchBtn = document.getElementById('close-research-btn');
@@ -398,13 +411,15 @@ export class HUD {
     this.alchemyModalBandagesEl = document.getElementById('alchemy-modal-bandages');
     this.alchemyModalEnergyPotionsEl = document.getElementById('alchemy-modal-energy-potions');
     this.alchemyModalManaPotionsEl = document.getElementById('alchemy-modal-mana-potions');
+    this.alchemyModalRevivePotionsEl = document.getElementById('alchemy-modal-revive-potions');
     this.alchemyRecipesContainerEl = document.getElementById('alchemy-recipes-container');
     this.alchemyPlayerStatusEl = document.getElementById('alchemy-player-status');
     this.alchemyApplyBandageBtn = document.getElementById('alchemy-apply-bandage-btn');
 
-    // Milestone 19 Debug Buttons
+    // Milestone 19 & 31 Debug Buttons
     this.debugBtnGrantEnergyPotion = document.getElementById('debug-btn-grant-energy-potion');
     this.debugBtnGrantManaPotion = document.getElementById('debug-btn-grant-mana-potion');
+    this.debugBtnGrantRevivePotion = document.getElementById('debug-btn-grant-revive-potion');
     this.debugBtnDrainEnergy = document.getElementById('debug-btn-drain-energy');
     this.debugBtnRestoreEnergy = document.getElementById('debug-btn-restore-energy');
 
@@ -428,12 +443,15 @@ export class HUD {
     this.alchemyMoodValueEl = document.getElementById('alchemy-mood-value');
     this.alchemyMoodEffectEl = document.getElementById('alchemy-mood-effect');
 
-    // Milestone 8 Elements
+    // Milestone 8 & Milestone 35 Elements
     this.partyOverviewModalEl = document.getElementById('party-overview-modal');
     this.closePartyBtn = document.getElementById('close-party-btn');
     this.partySpawnCompanionBtn = document.getElementById('party-spawn-companion-btn');
     this.partyOverviewRosterEl = document.getElementById('party-overview-roster');
+    this.partyOverviewInventoryEl = document.getElementById('party-overview-inventory');
+    this.partyInventoryItemListEl = document.getElementById('party-inventory-item-list');
     this.openPartyBtn = document.getElementById('open-party-btn');
+    this.initPartyInventoryFilterTabs();
 
     this.debugBtnSpawnCompanion = document.getElementById('debug-btn-spawn-companion');
     this.debugBtnLv30SwordsDaggers = document.getElementById('debug-btn-lv30-swords-daggers');
@@ -930,6 +948,19 @@ export class HUD {
       this.debugBtnGrantManaPotion.onclick = () => {
         GameState.getInstance().addItem('mana_potion', 1);
         HUD.activeInstance?.showToast('🧪 Granted +1 Mana Potion', 'success');
+        const hero = HUD.activeInstance?.currentParty[0] || HUD.activeInstance?.currentPlayer;
+        if (hero && HUD.activeInstance?.currentProgression) {
+          HUD.activeInstance.update(hero, HUD.activeInstance.currentProgression, 0, HUD.activeInstance.currentParty);
+          if (HUD.activeInstance.isAlchemyModalOpen()) {
+            HUD.activeInstance.renderAlchemyModal(hero, HUD.activeInstance.currentProgression);
+          }
+        }
+      };
+    }
+    if (this.debugBtnGrantRevivePotion) {
+      this.debugBtnGrantRevivePotion.onclick = () => {
+        GameState.getInstance().addItem('revive_potion', 1);
+        HUD.activeInstance?.showToast('💛 Granted +1 Revive Potion', 'success');
         const hero = HUD.activeInstance?.currentParty[0] || HUD.activeInstance?.currentPlayer;
         if (hero && HUD.activeInstance?.currentProgression) {
           HUD.activeInstance.update(hero, HUD.activeInstance.currentProgression, 0, HUD.activeInstance.currentParty);
@@ -1787,6 +1818,18 @@ export class HUD {
       }
     }
 
+    // 4b6. Revive Potion Stockpile
+    if (this.hudRevivePotionRowEl && this.playerRevivePotionTextEl) {
+      const revivePotCount = GameState.getInstance().getItemCount('revive_potion');
+      const isAlchemyUnlocked = GameState.getInstance().isBuildableUnlocked('alchemy_station');
+      if (revivePotCount > 0 || isAlchemyUnlocked) {
+        this.hudRevivePotionRowEl.style.display = 'flex';
+        this.playerRevivePotionTextEl.innerText = `${revivePotCount}`;
+      } else {
+        this.hudRevivePotionRowEl.style.display = 'none';
+      }
+    }
+
     // 4c. Discovered Defensive & Regen Skills (Strictly hidden until Level >= 1)
     if (this.discoveredSkillsSectionEl && this.discoveredSkillsListEl) {
       const dataLoader = DataLoader.getInstance();
@@ -2052,9 +2095,12 @@ export class HUD {
       const offWpn = m.offhandWeapon?.id || 'none';
       const helmet = m.equippedHelmet?.id || 'none';
       const bodyArmor = m.equippedBodyArmor?.id || 'none';
+      const necklace = m.equippedNecklace?.id || 'none';
+      const ring = m.equippedRing?.id || 'none';
+      const accessory = m.equippedAccessory?.id || 'none';
       const equippedSkills = m.equippedSkillIds.join(',');
       const knownSkills = m.knownSkillIds.join(',');
-      return `${m.id}:${m.entityName}:${m.state}:${mainWpn}:${offWpn}:${helmet}:${bodyArmor}:${isDw}:${equippedSkills}:${knownSkills}`;
+      return `${m.id}:${m.entityName}:${m.state}:${mainWpn}:${offWpn}:${helmet}:${bodyArmor}:${necklace}:${ring}:${accessory}:${isDw}:${equippedSkills}:${knownSkills}`;
     }).join('|');
   }
 
@@ -2388,7 +2434,6 @@ export class HUD {
     }
 
     const dataLoader = DataLoader.getInstance();
-    const allWeapons = dataLoader.getAllWeapons();
     let html = '';
 
     const avatarColors = ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b'];
@@ -2423,124 +2468,202 @@ export class HUD {
         `;
       }
 
-      // Main weapon options (physical items and staff conduits, excluding offhand and pure magic spell disciplines)
-      let mainOptions = '';
-      for (const w of allWeapons) {
-        if (w.category !== 'offhand' && w.category !== 'magic') {
-          const sel = member.equippedWeapon.id === w.id ? 'selected' : '';
-          const tag = w.twoHanded ? '2H' : '1H';
-          mainOptions += `<option value="${w.id}" ${sel}>${w.name} (${tag} - Dmg: ${w.baseDamage})</option>`;
-        }
-      }
-
-      // Offhand options
-      let offhandOptions = `<option value="none" ${!member.offhandWeapon ? 'selected' : ''}>None (Single Wield)</option>`;
-
-      // Shields are always available without requiring Dual Wielding
-      for (const w of allWeapons) {
-        if (w.category === 'offhand' || w.id === 'shields') {
-          const sel = member.offhandWeapon?.id === w.id ? 'selected' : '';
-          offhandOptions += `<option value="${w.id}" ${sel}>🛡️ ${w.name} (Shield)</option>`;
-        }
-      }
-
-      // One-handed melee weapons for Dual Wielding (if unlocked)
-      if (isDwUnlocked) {
-        for (const w of allWeapons) {
-          if (!w.twoHanded && w.category === 'melee_1h') {
-            const sel = member.offhandWeapon?.id === w.id ? 'selected' : '';
-            offhandOptions += `<option value="${w.id}" ${sel}>⚔️ ${w.name} (Offhand - Dmg: ${w.baseDamage})</option>`;
-          }
-        }
-      }
-
-      const isShieldEquipped = typeof member.hasShield === 'function' ? member.hasShield() : false;
+      // Visual Paperdoll Slots (Milestone 35)
+      const isOutpost = this.isOutpost;
+      const isTwoHandedMain = member.equippedWeapon?.twoHanded ?? false;
       const isDwActive = typeof member.isDualWielding === 'function' ? member.isDualWielding() : false;
+      const isShieldEquipped = typeof member.hasShield === 'function' ? member.hasShield() : false;
+
+      // 1. Helmet
+      const helmet = member.equippedHelmet;
+      const helmetHtml = `
+        <div class="equip-slot-box ${helmet ? 'equipped' : ''}" data-slot="helmet" data-member-idx="${i}" style="grid-column: 2; grid-row: 1;">
+          <div class="slot-label">
+            <span>🪖 Helmet</span>
+            ${!isOutpost ? '<span style="font-size: 8px; color: #f59e0b;">🔒 Outpost</span>' : ''}
+          </div>
+          <div class="slot-item-info">
+            <span class="slot-item-icon">🪖</span>
+            <div>
+              <div class="slot-item-text" title="${helmet?.name || 'Empty'}">${helmet ? helmet.name : '<span class="slot-empty-text">Empty Helmet</span>'}</div>
+              ${helmet ? `<div class="slot-item-stat">+${helmet.hpBonus} HP</div>` : ''}
+            </div>
+          </div>
+          ${helmet ? `<button class="slot-unequip-btn" data-slot="helmet" data-member-idx="${i}" type="button" title="Unequip Helmet">&times;</button>` : ''}
+        </div>
+      `;
+
+      // 2. Main-hand
+      const mainWpn = member.equippedWeapon;
+      const mainHtml = `
+        <div class="equip-slot-box equipped" data-slot="main" data-member-idx="${i}" style="grid-column: 1; grid-row: 2;">
+          <div class="slot-label">
+            <span>⚔️ Main Hand</span>
+          </div>
+          <div class="slot-item-info">
+            <span class="slot-item-icon">⚔️</span>
+            <div>
+              <div class="slot-item-text" title="${mainWpn?.name || 'Empty'}">${mainWpn?.name || 'Empty'}</div>
+              <div class="slot-item-stat">${mainWpn?.twoHanded ? '2H' : '1H'} - Dmg: ${mainWpn?.baseDamage ?? 0}</div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      // 3. Necklace
+      const necklace = member.equippedNecklace;
+      const necklaceHtml = `
+        <div class="equip-slot-box ${necklace ? 'equipped' : ''}" data-slot="necklace" data-member-idx="${i}" style="grid-column: 2; grid-row: 2;">
+          <div class="slot-label">
+            <span>📿 Necklace</span>
+            ${!isOutpost ? '<span style="font-size: 8px; color: #f59e0b;">🔒 Outpost</span>' : ''}
+          </div>
+          <div class="slot-item-info">
+            <span class="slot-item-icon">📿</span>
+            <div>
+              <div class="slot-item-text" title="${necklace?.name || 'Empty'}">${necklace ? necklace.name : '<span class="slot-empty-text">Empty Necklace</span>'}</div>
+              ${necklace ? `<div class="slot-item-stat">+${necklace.hpBonus} HP</div>` : ''}
+            </div>
+          </div>
+          ${necklace ? `<button class="slot-unequip-btn" data-slot="necklace" data-member-idx="${i}" type="button" title="Unequip Necklace">&times;</button>` : ''}
+        </div>
+      `;
+
+      // 4. Off-hand
+      const offWpn = member.offhandWeapon;
+      let offhandHtml = '';
+      if (isTwoHandedMain) {
+        offhandHtml = `
+          <div class="equip-slot-box locked" data-slot="offhand" data-member-idx="${i}" style="grid-column: 3; grid-row: 2;">
+            <div class="slot-label">
+              <span>🛡️ Off-Hand</span>
+            </div>
+            <div class="slot-item-info">
+              <span class="slot-item-icon">⚠️</span>
+              <div>
+                <div class="slot-item-text" style="color: #ef4444;">Blocked (2H)</div>
+                <div style="font-size: 8px; color: #9ca3af;">2H prevents offhand</div>
+              </div>
+            </div>
+          </div>
+        `;
+      } else {
+        offhandHtml = `
+          <div class="equip-slot-box ${offWpn ? 'equipped' : ''}" data-slot="offhand" data-member-idx="${i}" style="grid-column: 3; grid-row: 2;">
+            <div class="slot-label">
+              <span>🛡️ Off-Hand</span>
+            </div>
+            <div class="slot-item-info">
+              <span class="slot-item-icon">${isShieldEquipped ? '🛡️' : (offWpn ? '⚔️' : '🛡️')}</span>
+              <div>
+                <div class="slot-item-text" title="${offWpn?.name || 'Empty'}">${offWpn ? offWpn.name : '<span class="slot-empty-text">Empty Off-Hand</span>'}</div>
+                ${offWpn ? `<div class="slot-item-stat">${isShieldEquipped ? 'Shield Block' : `Dmg: ${offWpn.baseDamage}`}</div>` : ''}
+              </div>
+            </div>
+            ${offWpn ? `<button class="slot-unequip-btn" data-slot="offhand" data-member-idx="${i}" type="button" title="Unequip Off-Hand">&times;</button>` : ''}
+          </div>
+        `;
+      }
+
+      // 5. Ring
+      const ring = member.equippedRing;
+      const ringHtml = `
+        <div class="equip-slot-box ${ring ? 'equipped' : ''}" data-slot="ring" data-member-idx="${i}" style="grid-column: 1; grid-row: 3;">
+          <div class="slot-label">
+            <span>💍 Ring</span>
+            ${!isOutpost ? '<span style="font-size: 8px; color: #f59e0b;">🔒 Outpost</span>' : ''}
+          </div>
+          <div class="slot-item-info">
+            <span class="slot-item-icon">💍</span>
+            <div>
+              <div class="slot-item-text" title="${ring?.name || 'Empty'}">${ring ? ring.name : '<span class="slot-empty-text">Empty Ring</span>'}</div>
+              ${ring ? `<div class="slot-item-stat">+${ring.hpBonus} HP</div>` : ''}
+            </div>
+          </div>
+          ${ring ? `<button class="slot-unequip-btn" data-slot="ring" data-member-idx="${i}" type="button" title="Unequip Ring">&times;</button>` : ''}
+        </div>
+      `;
+
+      // 6. Body Armor
+      const bodyArmor = member.equippedBodyArmor;
+      const bodyHtml = `
+        <div class="equip-slot-box ${bodyArmor ? 'equipped' : ''}" data-slot="body" data-member-idx="${i}" style="grid-column: 2; grid-row: 3;">
+          <div class="slot-label">
+            <span>🛡️ Body Armor</span>
+            ${!isOutpost ? '<span style="font-size: 8px; color: #f59e0b;">🔒 Outpost</span>' : ''}
+          </div>
+          <div class="slot-item-info">
+            <span class="slot-item-icon">🛡️</span>
+            <div>
+              <div class="slot-item-text" title="${bodyArmor?.name || 'Empty'}">${bodyArmor ? bodyArmor.name : '<span class="slot-empty-text">Empty Body</span>'}</div>
+              ${bodyArmor ? `<div class="slot-item-stat">+${bodyArmor.hpBonus} HP</div>` : ''}
+            </div>
+          </div>
+          ${bodyArmor ? `<button class="slot-unequip-btn" data-slot="body" data-member-idx="${i}" type="button" title="Unequip Body Armor">&times;</button>` : ''}
+        </div>
+      `;
+
+      // 7. Accessory
+      const accessory = member.equippedAccessory;
+      const accessoryHtml = `
+        <div class="equip-slot-box ${accessory ? 'equipped' : ''}" data-slot="accessory" data-member-idx="${i}" style="grid-column: 3; grid-row: 3;">
+          <div class="slot-label">
+            <span>🔮 Accessory</span>
+            ${!isOutpost ? '<span style="font-size: 8px; color: #f59e0b;">🔒 Outpost</span>' : ''}
+          </div>
+          <div class="slot-item-info">
+            <span class="slot-item-icon">🔮</span>
+            <div>
+              <div class="slot-item-text" title="${accessory?.name || 'Empty'}">${accessory ? accessory.name : '<span class="slot-empty-text">Empty Accessory</span>'}</div>
+              ${accessory ? `<div class="slot-item-stat">+${accessory.hpBonus} HP</div>` : ''}
+            </div>
+          </div>
+          ${accessory ? `<button class="slot-unequip-btn" data-slot="accessory" data-member-idx="${i}" type="button" title="Unequip Accessory">&times;</button>` : ''}
+        </div>
+      `;
 
       let offhandStatusHtml = '';
       if (isDwActive) {
         offhandStatusHtml = `
-          <div data-party-dw-penalty="${i}" style="font-size: 10px; color: ${dwPenaltyPct === 0 ? '#4ade80' : '#fbbf24'}; margin-top: 2px;">
+          <div data-party-dw-penalty="${i}" style="font-size: 10px; color: ${dwPenaltyPct === 0 ? '#4ade80' : '#fbbf24'}; margin-top: 3px;">
             Dual Wield Penalty: -${dwPenaltyPct}% Hit Rate (DW Lv ${dwStat.level})
           </div>
         `;
       } else if (isShieldEquipped) {
         const shieldStat = member.progression.getProficiencyStat('shields');
         offhandStatusHtml = `
-          <div data-party-shield-status="${i}" style="font-size: 10px; color: #38bdf8; margin-top: 2px;">
+          <div data-party-shield-status="${i}" style="font-size: 10px; color: #38bdf8; margin-top: 3px;">
             Shield Active: Block & Mitigation (Shields Lv ${shieldStat.level})
           </div>
         `;
       } else if (!isDwUnlocked) {
         offhandStatusHtml = `
-          <div style="font-size: 10px; color: #6b7280; margin-top: 2px;">
+          <div style="font-size: 10px; color: #6b7280; margin-top: 3px;">
             🔒 Dual Wielding Locked (Requires 2 1H Melee Lv30+)
           </div>
         `;
       }
 
-      let offhandSelectHtml = '';
-      if (member.equippedWeapon?.twoHanded) {
-        offhandSelectHtml = `
-          <select class="party-select party-offhand-select" data-member-idx="${i}" disabled style="opacity: 0.5; cursor: not-allowed;">
-            <option value="none" selected>Disabled (Two-Handed Weapon)</option>
-          </select>
-          <div style="font-size: 10px; color: #9ca3af; margin-top: 2px;">
-            ⚠️ Two-Handed weapon prevents offhand gear
+      const paperdollHtml = `
+        <div class="paperdoll-container">
+          <div class="paperdoll-header">
+            <span>Visual Equipment Paperdoll</span>
+            <span style="font-size: 9px; color: ${isOutpost ? '#4ade80' : '#f59e0b'};">
+              ${isOutpost ? '🏠 Outpost Equippable' : '🔒 Armor Outpost Only'}
+            </span>
           </div>
-        `;
-      } else {
-        offhandSelectHtml = `
-          <select class="party-select party-offhand-select" data-member-idx="${i}">
-            ${offhandOptions}
-          </select>
+          <div class="paperdoll-grid">
+            ${helmetHtml}
+            ${mainHtml}
+            ${necklaceHtml}
+            ${offhandHtml}
+            ${ringHtml}
+            ${bodyHtml}
+            ${accessoryHtml}
+          </div>
           ${offhandStatusHtml}
-        `;
-      }
-
-      // Helmets (Milestone 28)
-      const allHelmets = dataLoader.getArmorsBySlot('helmet');
-      let helmetOptions = `<option value="none" ${!member.equippedHelmet ? 'selected' : ''}>None (No Helmet)</option>`;
-      for (const h of allHelmets) {
-        const sel = member.equippedHelmet?.id === h.id ? 'selected' : '';
-        helmetOptions += `<option value="${h.id}" ${sel}>🪖 ${h.name} (+${h.hpBonus} HP)</option>`;
-      }
-
-      // Body Armors (Milestone 28)
-      const allBodyArmors = dataLoader.getArmorsBySlot('body');
-      let bodyOptions = `<option value="none" ${!member.equippedBodyArmor ? 'selected' : ''}>None (No Body Armor)</option>`;
-      for (const b of allBodyArmors) {
-        const sel = member.equippedBodyArmor?.id === b.id ? 'selected' : '';
-        bodyOptions += `<option value="${b.id}" ${sel}>🛡️ ${b.name} (+${b.hpBonus} HP)</option>`;
-      }
-
-      let helmetSelectHtml = '';
-      let bodySelectHtml = '';
-      if (!this.isOutpost) {
-        helmetSelectHtml = `
-          <select class="party-select party-helmet-select" data-member-idx="${i}" disabled style="opacity: 0.6; cursor: not-allowed;">
-            ${helmetOptions}
-          </select>
-          <div style="font-size: 9px; color: #f59e0b; margin-top: 1px;">🔒 Outpost only</div>
-        `;
-        bodySelectHtml = `
-          <select class="party-select party-body-select" data-member-idx="${i}" disabled style="opacity: 0.6; cursor: not-allowed;">
-            ${bodyOptions}
-          </select>
-          <div style="font-size: 9px; color: #f59e0b; margin-top: 1px;">🔒 Outpost only</div>
-        `;
-      } else {
-        helmetSelectHtml = `
-          <select class="party-select party-helmet-select" data-member-idx="${i}">
-            ${helmetOptions}
-          </select>
-        `;
-        bodySelectHtml = `
-          <select class="party-select party-body-select" data-member-idx="${i}">
-            ${bodyOptions}
-          </select>
-        `;
-      }
+        </div>
+      `;
 
       // Skills chips
       let equippedSkillsHtml = '';
@@ -2620,27 +2743,7 @@ export class HUD {
             </div>
           </div>
 
-          <div class="party-equip-box">
-            <div style="font-weight: bold; color: #60a5fa; font-size: 10px; text-transform: uppercase;">Equipment</div>
-            <div>
-              <span style="color: #9ca3af; font-size: 10px;">Main Weapon:</span>
-              <select class="party-select party-main-select" data-member-idx="${i}">
-                ${mainOptions}
-              </select>
-            </div>
-            <div>
-              <span style="color: #9ca3af; font-size: 10px;">Offhand Weapon:</span>
-              ${offhandSelectHtml}
-            </div>
-            <div>
-              <span style="color: #9ca3af; font-size: 10px;">Helmet:</span>
-              ${helmetSelectHtml}
-            </div>
-            <div>
-              <span style="color: #9ca3af; font-size: 10px;">Body Armor:</span>
-              ${bodySelectHtml}
-            </div>
-          </div>
+          ${paperdollHtml}
 
           <div class="party-equip-box">
             <div style="font-weight: bold; color: #fbbf24; font-size: 10px; text-transform: uppercase;">Proficiencies</div>
@@ -2663,86 +2766,373 @@ export class HUD {
     }
 
     this.partyOverviewRosterEl.innerHTML = html;
+    this.renderPartyInventoryPanel();
     this.attachPartyOverviewEvents();
+  }
+
+  public initPartyInventoryFilterTabs(): void {
+    const filterBtns = document.querySelectorAll<HTMLButtonElement>('.inv-filter-btn');
+    filterBtns.forEach(btn => {
+      btn.onclick = () => {
+        filterBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        this.partyInventoryFilter = (btn.dataset.filter as any) || 'all';
+        this.renderPartyInventoryPanel();
+      };
+    });
+  }
+
+  public renderPartyInventoryPanel(): void {
+    if (!this.partyInventoryItemListEl) {
+      this.partyInventoryItemListEl = document.getElementById('party-inventory-item-list');
+    }
+    if (!this.partyOverviewInventoryEl) {
+      this.partyOverviewInventoryEl = document.getElementById('party-overview-inventory');
+    }
+    const listEl = this.partyInventoryItemListEl;
+    if (!listEl) return;
+    if (this.partyOverviewInventoryEl) {
+      this.partyOverviewInventoryEl.style.display = 'flex';
+    }
+
+    const dataLoader = DataLoader.getInstance();
+    const gameState = GameState.getInstance();
+    const allWeapons = dataLoader.getAllWeapons();
+    const allArmors = dataLoader.getAllArmors();
+
+    interface InventoryDisplayItem {
+      id: string;
+      name: string;
+      type: 'weapon' | 'armor';
+      slot: string;
+      displaySlot: string;
+      icon: string;
+      statText: string;
+      count: number;
+    }
+
+    const items: InventoryDisplayItem[] = [];
+
+    if (this.partyInventoryFilter === 'all' || this.partyInventoryFilter === 'weapons') {
+      for (const w of allWeapons) {
+        if (w.category !== 'magic' || w.conduitWeaponId || w.spellWeaponId || w.baseDamage > 0) {
+          const isShield = w.category === 'offhand' || w.id === 'shields';
+          const icon = isShield ? '🛡️' : (w.category === 'ranged' ? '🏹' : (w.category === 'magic' ? '✨' : '⚔️'));
+          const slot = isShield ? 'offhand' : 'main';
+          const displaySlot = isShield ? 'Shield / Off-Hand' : (w.twoHanded ? '2H Weapon' : '1H Weapon');
+          const count = gameState.getItemCount(w.id);
+          items.push({
+            id: w.id,
+            name: w.name,
+            type: 'weapon',
+            slot,
+            displaySlot,
+            icon,
+            statText: `Dmg: ${w.baseDamage}` + (w.baseBlock ? ` | Block: ${Math.round(w.baseBlock * 100)}%` : ''),
+            count
+          });
+        }
+      }
+    }
+
+    if (this.partyInventoryFilter === 'all' || this.partyInventoryFilter === 'armor') {
+      for (const a of allArmors) {
+        if (a.slot === 'helmet' || a.slot === 'body') {
+          const icon = a.slot === 'helmet' ? '🪖' : '🛡️';
+          const count = gameState.getItemCount(a.id);
+          items.push({
+            id: a.id,
+            name: a.name,
+            type: 'armor',
+            slot: a.slot,
+            displaySlot: a.slot === 'helmet' ? 'Helmet' : 'Body Armor',
+            icon,
+            statText: `+${a.hpBonus} HP`,
+            count
+          });
+        }
+      }
+    }
+
+    if (this.partyInventoryFilter === 'all' || this.partyInventoryFilter === 'jewelry') {
+      for (const a of allArmors) {
+        if (a.slot === 'necklace' || a.slot === 'ring' || a.slot === 'accessory') {
+          const icon = a.slot === 'necklace' ? '📿' : (a.slot === 'ring' ? '💍' : '🔮');
+          const count = gameState.getItemCount(a.id);
+          items.push({
+            id: a.id,
+            name: a.name,
+            type: 'armor',
+            slot: a.slot,
+            displaySlot: a.slot.charAt(0).toUpperCase() + a.slot.slice(1),
+            icon,
+            statText: `+${a.hpBonus} HP`,
+            count
+          });
+        }
+      }
+    }
+
+    let html = '';
+    for (const item of items) {
+      const countBadge = item.count > 0 ? `<span style="font-size: 9px; color: #a78bfa; background: rgba(139, 92, 246, 0.2); padding: 1px 5px; border-radius: 3px; font-weight: bold;">x${item.count}</span>` : '';
+      html += `
+        <div class="inventory-item-card" draggable="true" data-item-id="${item.id}" data-item-type="${item.type}" data-item-slot="${item.slot}">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="font-size: 14px;">${item.icon}</span>
+            <div>
+              <div style="font-size: 11px; font-weight: 600; color: #f3f4f6;">${item.name}</div>
+              <div style="font-size: 9px; color: #9ca3af;">${item.displaySlot} · <span style="color: #86efac;">${item.statText}</span></div>
+            </div>
+          </div>
+          <div>${countBadge}</div>
+        </div>
+      `;
+    }
+
+    listEl.innerHTML = html;
+    this.attachInventoryDragEvents();
+  }
+
+  private attachInventoryDragEvents(): void {
+    const listEl = document.getElementById('party-inventory-item-list');
+    if (!listEl) return;
+
+    const cards = listEl.querySelectorAll<HTMLElement>('.inventory-item-card');
+    cards.forEach(card => {
+      card.ondragstart = (e: DragEvent) => {
+        const itemId = card.dataset.itemId || '';
+        const itemType = (card.dataset.itemType || 'weapon') as 'weapon' | 'armor';
+        const itemSlot = card.dataset.itemSlot || '';
+        this.activeDragPayload = { itemId, itemType, itemSlot };
+        if (e.dataTransfer) {
+          e.dataTransfer.effectAllowed = 'copyMove';
+          e.dataTransfer.setData('text/plain', JSON.stringify(this.activeDragPayload));
+        }
+        card.classList.add('is-dragging');
+      };
+
+      card.ondragend = () => {
+        card.classList.remove('is-dragging');
+        this.activeDragPayload = null;
+        if (this.partyOverviewRosterEl) {
+          this.partyOverviewRosterEl.querySelectorAll('.equip-slot-box').forEach(slot => {
+            slot.classList.remove('drag-over-valid', 'drag-over-invalid');
+          });
+        }
+      };
+    });
+  }
+
+  public checkSlotCompatibility(
+    targetSlot: string,
+    payload: { itemId: string; itemType: 'weapon' | 'armor'; itemSlot: string },
+    member: Player
+  ): boolean {
+    const dataLoader = DataLoader.getInstance();
+
+    if (payload.itemType === 'armor') {
+      const armor = dataLoader.getArmor(payload.itemId);
+      if (!armor) return false;
+      return armor.slot === targetSlot;
+    }
+
+    if (payload.itemType === 'weapon') {
+      const weapon = dataLoader.getWeapon(payload.itemId);
+      if (!weapon) return false;
+
+      if (targetSlot === 'main') {
+        return weapon.category !== 'offhand' && weapon.id !== 'shields';
+      }
+
+      if (targetSlot === 'offhand') {
+        if (member.equippedWeapon?.twoHanded) return false;
+        if (weapon.category === 'offhand' || weapon.id === 'shields') return true;
+        if (weapon.category === 'melee_1h' && !weapon.twoHanded && member.progression.isDualWieldUnlocked()) return true;
+        return false;
+      }
+    }
+
+    return false;
+  }
+
+  public handleSlotDrop(
+    targetSlot: string,
+    payload: { itemId: string; itemType: 'weapon' | 'armor'; itemSlot: string },
+    member: Player
+  ): boolean {
+    const dataLoader = DataLoader.getInstance();
+
+    // 1. Incompatible slot assignment
+    if (['helmet', 'body', 'necklace', 'ring', 'accessory'].includes(targetSlot)) {
+      if (payload.itemType !== 'armor') {
+        this.showToast(`❌ Incompatible slot! Only armor can be equipped in ${targetSlot}.`, 'error');
+        return false;
+      }
+      const armor = dataLoader.getArmor(payload.itemId);
+      if (!armor || armor.slot !== targetSlot) {
+        this.showToast(`❌ Incompatible slot! Cannot equip ${armor?.name || payload.itemId} in ${targetSlot} slot.`, 'error');
+        return false;
+      }
+
+      // Outpost restriction check (calls underlying method which strictly checks this)
+      if (!this.isOutpost) {
+        this.showToast('⚠️ Armor can only be equipped at the Outpost!', 'warn');
+        return false;
+      }
+
+      const success = member.equipArmorSlot(targetSlot as ArmorSlot, armor, this.isOutpost);
+      if (success) {
+        this.showToast(`🛡️ Equipped ${armor.name} in ${targetSlot}!`, 'success');
+        this.renderPartyOverviewModal(true);
+        if (this.currentPlayer && this.currentProgression) {
+          this.update(this.currentPlayer, this.currentProgression, 0);
+        }
+      }
+      return success;
+    }
+
+    if (targetSlot === 'main') {
+      if (payload.itemType !== 'weapon') {
+        this.showToast(`❌ Incompatible slot! Only weapons can be equipped in Main Hand.`, 'error');
+        return false;
+      }
+      const weapon = dataLoader.getWeapon(payload.itemId);
+      if (!weapon || weapon.category === 'offhand' || weapon.id === 'shields') {
+        this.showToast(`❌ Shields must be equipped in the Off-Hand!`, 'error');
+        return false;
+      }
+
+      member.equipWeapon(weapon);
+      this.showToast(`⚔️ Equipped ${weapon.name} in Main Hand!`, 'success');
+      this.renderPartyOverviewModal(true);
+      if (this.currentPlayer && this.currentProgression) {
+        this.update(this.currentPlayer, this.currentProgression, 0);
+      }
+      return true;
+    }
+
+    if (targetSlot === 'offhand') {
+      if (payload.itemType !== 'weapon') {
+        this.showToast(`❌ Incompatible slot! Only shields and offhand weapons can be equipped in Off-Hand.`, 'error');
+        return false;
+      }
+      const weapon = dataLoader.getWeapon(payload.itemId);
+      if (!weapon) return false;
+
+      if (member.equippedWeapon?.twoHanded) {
+        this.showToast('⚠️ Cannot equip offhand while wielding a two-handed weapon!', 'warn');
+        return false;
+      }
+
+      const isShield = weapon.category === 'offhand' || weapon.id === 'shields';
+      if (!isShield && !member.progression.isDualWieldUnlocked()) {
+        this.showToast('🔒 Dual Wielding locked! Requires two 1H melee weapon proficiencies Lv 30+.', 'warn');
+        return false;
+      }
+
+      const success = member.equipOffhandWeapon(weapon);
+      if (success) {
+        this.showToast(`${isShield ? '🛡️' : '⚔️'} Equipped ${weapon.name} in Off-Hand!`, 'success');
+        this.renderPartyOverviewModal(true);
+        if (this.currentPlayer && this.currentProgression) {
+          this.update(this.currentPlayer, this.currentProgression, 0);
+        }
+      } else {
+        this.showToast(`❌ Cannot equip ${weapon.name} in Off-Hand!`, 'error');
+      }
+      return success;
+    }
+
+    return false;
   }
 
   private attachPartyOverviewEvents(): void {
     if (!this.partyOverviewRosterEl) return;
 
-    this.partyOverviewRosterEl.onchange = (e) => {
-      const target = e.target as HTMLElement;
-      if (target.classList.contains('party-main-select')) {
-        const select = target as HTMLSelectElement;
-        const memberIdx = parseInt(select.dataset.memberIdx || '0', 10);
-        const member = this.currentParty[memberIdx];
-        const weapon = DataLoader.getInstance().getWeapon(select.value);
-        if (member && weapon) {
-          member.equipWeapon(weapon);
-          this.renderPartyOverviewModal(true);
+    // Slot Drag and Drop Events
+    const slotBoxes = this.partyOverviewRosterEl.querySelectorAll<HTMLElement>('.equip-slot-box');
+    slotBoxes.forEach(slotBox => {
+      const targetSlot = slotBox.dataset.slot || '';
+      const memberIdx = parseInt(slotBox.dataset.memberIdx || '0', 10);
+      const member = this.currentParty[memberIdx];
+
+      slotBox.ondragover = (e: DragEvent) => {
+        e.preventDefault();
+        if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
+
+        const payload = this.activeDragPayload;
+        if (!payload || !member) return;
+
+        const isCompatible = this.checkSlotCompatibility(targetSlot, payload, member);
+        if (isCompatible) {
+          slotBox.classList.add('drag-over-valid');
+          slotBox.classList.remove('drag-over-invalid');
+        } else {
+          slotBox.classList.add('drag-over-invalid');
+          slotBox.classList.remove('drag-over-valid');
         }
-      } else if (target.classList.contains('party-offhand-select')) {
-        const select = target as HTMLSelectElement;
-        const memberIdx = parseInt(select.dataset.memberIdx || '0', 10);
-        const member = this.currentParty[memberIdx];
-        if (member) {
-          if (select.value === 'none') {
-            member.equipOffhandWeapon(null);
-          } else {
-            const weapon = DataLoader.getInstance().getWeapon(select.value);
-            if (weapon) {
-              member.equipOffhandWeapon(weapon);
-            }
-          }
-          this.renderPartyOverviewModal(true);
+      };
+
+      slotBox.ondragleave = () => {
+        slotBox.classList.remove('drag-over-valid', 'drag-over-invalid');
+      };
+
+      slotBox.ondrop = (e: DragEvent) => {
+        e.preventDefault();
+        slotBox.classList.remove('drag-over-valid', 'drag-over-invalid');
+
+        let payload = this.activeDragPayload;
+        if (!payload && e.dataTransfer) {
+          try {
+            const raw = e.dataTransfer.getData('text/plain');
+            if (raw) payload = JSON.parse(raw);
+          } catch (_) {}
         }
-      } else if (target.classList.contains('party-helmet-select')) {
-        const select = target as HTMLSelectElement;
-        const memberIdx = parseInt(select.dataset.memberIdx || '0', 10);
+        this.activeDragPayload = null;
+
+        if (!payload || !member) return;
+
+        this.handleSlotDrop(targetSlot, payload, member);
+      };
+    });
+
+    // Slot Unequip Button Events
+    const unequipBtns = this.partyOverviewRosterEl.querySelectorAll<HTMLElement>('.slot-unequip-btn');
+    unequipBtns.forEach(btn => {
+      btn.onclick = (e) => {
+        e.stopPropagation();
+        const slot = btn.dataset.slot || '';
+        const memberIdx = parseInt(btn.dataset.memberIdx || '0', 10);
         const member = this.currentParty[memberIdx];
-        if (member) {
-          if (!this.isOutpost) {
-            this.showToast('⚠️ Armor can only be equipped at the Outpost!', 'warn');
-            this.renderPartyOverviewModal(true);
-            return;
-          }
-          if (select.value === 'none') {
-            member.equipHelmet(null, this.isOutpost);
-          } else {
-            const armor = DataLoader.getInstance().getArmor(select.value);
-            if (armor) {
-              member.equipHelmet(armor, this.isOutpost);
-            }
-          }
-          this.renderPartyOverviewModal(true);
-          if (this.currentPlayer && this.currentProgression) {
-            this.update(this.currentPlayer, this.currentProgression, 0);
-          }
-        }
-      } else if (target.classList.contains('party-body-select')) {
-        const select = target as HTMLSelectElement;
-        const memberIdx = parseInt(select.dataset.memberIdx || '0', 10);
-        const member = this.currentParty[memberIdx];
-        if (member) {
-          if (!this.isOutpost) {
-            this.showToast('⚠️ Armor can only be equipped at the Outpost!', 'warn');
-            this.renderPartyOverviewModal(true);
-            return;
-          }
-          if (select.value === 'none') {
-            member.equipBodyArmor(null, this.isOutpost);
-          } else {
-            const armor = DataLoader.getInstance().getArmor(select.value);
-            if (armor) {
-              member.equipBodyArmor(armor, this.isOutpost);
-            }
-          }
+        if (!member) return;
+
+        if (slot === 'offhand') {
+          member.equipOffhandWeapon(null);
+          this.showToast('Unequipped offhand gear', 'info');
           this.renderPartyOverviewModal(true);
           if (this.currentPlayer && this.currentProgression) {
             this.update(this.currentPlayer, this.currentProgression, 0);
           }
+          return;
         }
-      }
-    };
+
+        if (['helmet', 'body', 'necklace', 'ring', 'accessory'].includes(slot)) {
+          if (!this.isOutpost) {
+            this.showToast('⚠️ Armor can only be unequipped at the Outpost!', 'warn');
+            return;
+          }
+          const success = member.equipArmorSlot(slot as ArmorSlot, null, this.isOutpost);
+          if (success) {
+            this.showToast(`Unequipped ${slot}`, 'info');
+            this.renderPartyOverviewModal(true);
+            if (this.currentPlayer && this.currentProgression) {
+              this.update(this.currentPlayer, this.currentProgression, 0);
+            }
+          }
+        }
+      };
+    });
 
     this.partyOverviewRosterEl.onclick = (e) => {
       const target = e.target as HTMLElement;
@@ -3013,8 +3403,13 @@ export class HUD {
       } else if (canUnlock.canUnlock) {
         buttonHtml = `<button type="button" class="btn-action" style="background: #0284c7; border-color: #38bdf8; font-size: 12px; padding: 6px 12px;" data-unlock-node="${node.id}">🔬 Unlock (${node.cost} Pts)</button>`;
       } else {
-        buttonHtml = `<button type="button" disabled style="background: #374151; color: #9ca3af; border: 1px solid #4b5563; border-radius: 6px; font-size: 12px; padding: 6px 12px; cursor: not-allowed;">Locked (${node.cost} Pts)</button>`;
+        const lockTitle = canUnlock.reason || `Locked (${node.cost} Pts)`;
+        buttonHtml = `<button type="button" disabled title="${lockTitle}" style="background: #374151; color: #9ca3af; border: 1px solid #4b5563; border-radius: 6px; font-size: 12px; padding: 6px 12px; cursor: not-allowed;">Locked (${node.cost} Pts)</button>`;
       }
+
+      const lockWarningHtml = (!isUnlocked && !canUnlock.canUnlock && canUnlock.reason)
+        ? `<div style="font-size: 10px; color: #fbbf24; margin-top: 3px;">🔒 ${canUnlock.reason}</div>`
+        : '';
 
       card.innerHTML = `
         <div style="flex: 1;">
@@ -3023,6 +3418,7 @@ export class HUD {
             <span style="font-size: 11px; color: #38bdf8; font-weight: normal;">Cost: ${node.cost} RP</span>
           </div>
           <div style="font-size: 11px; color: #9ca3af; margin-top: 3px;">${node.description}</div>
+          ${lockWarningHtml}
         </div>
         <div>${buttonHtml}</div>
       `;
@@ -3034,6 +3430,10 @@ export class HUD {
           if (result.success) {
             if (node.id === 'research_digging' || node.id.includes('digging')) {
               this.showToast(`✨ Research Complete: ${node.name} unlocked! Dig spots will now appear in dungeons.`, 'success', 3500);
+            } else if (node.id === 'research_skinning' || node.id.includes('skinning')) {
+              this.showToast(`✨ Research Complete: Harvest Enemy Skin unlocked! Animal corpses can now be skinned in dungeons.`, 'success', 3500);
+            } else if (node.id === 'research_butchering' || node.id.includes('butchering')) {
+              this.showToast(`✨ Research Complete: Harvest Enemy Meat unlocked! Eligible monster corpses can now be butchered in dungeons.`, 'success', 3500);
             } else {
               this.showToast(`✨ Research Complete: ${node.name} unlocked in Build Mode!`, 'success', 3500);
             }
@@ -3103,6 +3503,9 @@ export class HUD {
     }
     if (this.alchemyModalManaPotionsEl) {
       this.alchemyModalManaPotionsEl.innerText = `✨ ${gameState.getItemCount('mana_potion')}`;
+    }
+    if (this.alchemyModalRevivePotionsEl) {
+      this.alchemyModalRevivePotionsEl.innerText = `💛 ${gameState.getItemCount('revive_potion')}`;
     }
 
     // 2b. Mood Modifier Banner
@@ -3515,6 +3918,8 @@ export class HUD {
       case 'blacksmithing': return '#94a3b8';
       case 'armorsmithing': return '#a3e635';
       case 'digging': return '#b45309';
+      case 'skinning': return '#eab308';
+      case 'butchering': return '#ef4444';
       case 'mace': return '#cbd5e1';
       case 'staff': return '#fbbf24';
       case 'healing_magic': return '#4ade80';
@@ -4064,8 +4469,16 @@ export class HUD {
           return `<span style="color: ${ok ? '#4ade80' : '#f87171'}; font-weight: ${ok ? '500' : 'bold'};">${qty}x ${label} (${have}/${qty})</span>`;
         }).join(', ');
 
-        const slotName = armorDef ? (armorDef.slot === 'helmet' ? 'Helmet' : 'Body Armor') : 'Armor';
-        const armorStats = armorDef ? `Slot: ${slotName} | Bonus: +${armorDef.hpBonus} Max HP` : '';
+        const slotNameMap: Record<string, string> = {
+          helmet: 'Helmet',
+          body: 'Body Armor',
+          necklace: 'Necklace',
+          ring: 'Ring',
+          accessory: 'Accessory'
+        };
+        const slotName = armorDef ? (slotNameMap[armorDef.slot] || 'Armor') : 'Armor';
+        const split = armorDef ? getArmorHpSplit(armorDef) : { mainHpBonus: 0, criticalHpBonus: 0 };
+        const armorStats = armorDef ? `Slot: ${slotName} | +${armorDef.hpBonus} HP (+${split.mainHpBonus} Main / +${split.criticalHpBonus} Crit)` : '';
 
         let actionBtnHtml = '';
         if (!isLevelUnlocked) {

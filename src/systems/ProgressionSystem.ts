@@ -105,6 +105,8 @@ export class ProgressionSystem {
     this.proficiencies.set('mining', { level: 0, currentExp: 0 });
     this.proficiencies.set('armorsmithing', { level: 0, currentExp: 0 });
     this.proficiencies.set('digging', { level: 0, currentExp: 0 });
+    this.proficiencies.set('skinning', { level: 0, currentExp: 0 });
+    this.proficiencies.set('butchering', { level: 0, currentExp: 0 });
     for (const hiddenId of ProgressionSystem.HIDDEN_SKILL_IDS) {
       this.proficiencies.set(hiddenId, { level: 0, currentExp: 0 });
     }

@@ -46,6 +46,42 @@
       },
       "expGranted": 75,
       "description": "Weave a dense vestment of spider silk backed by supple wolf hide."
+    },
+    {
+      "id": "bone_necklace",
+      "name": "Bone Necklace",
+      "resultArmorId": "bone_necklace",
+      "requiredLevel": 1,
+      "ingredients": {
+        "bone": 3,
+        "spider_silk": 1
+      },
+      "expGranted": 35,
+      "description": "Strung monster bones threaded with resilient spider silk into a protective talisman."
+    },
+    {
+      "id": "wolf_claw_ring",
+      "name": "Wolf Claw Ring",
+      "resultArmorId": "wolf_claw_ring",
+      "requiredLevel": 2,
+      "ingredients": {
+        "wolf_claw": 2,
+        "bone": 1
+      },
+      "expGranted": 45,
+      "description": "Carve and bind beast claws and bone into a ring of endurance."
+    },
+    {
+      "id": "venom_charm",
+      "name": "Venom Charm",
+      "resultArmorId": "venom_charm",
+      "requiredLevel": 4,
+      "ingredients": {
+        "spider_venom": 2,
+        "spider_silk": 2
+      },
+      "expGranted": 60,
+      "description": "Stabilize spider venom within an intricate silk weave to craft a protective ward."
     }
   ]
 }

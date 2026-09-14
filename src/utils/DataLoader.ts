@@ -454,6 +454,22 @@ export class DataLoader {
       };
     }
 
+    if (id === 'skinning') {
+      return {
+        id: 'skinning',
+        name: 'Skinning',
+        description: 'Harvesting pelts, hides, and fine silk from defeated animal creatures.'
+      };
+    }
+
+    if (id === 'butchering') {
+      return {
+        id: 'butchering',
+        name: 'Butchering',
+        description: 'Carving usable meat and cuts from eligible defeated monster corpses.'
+      };
+    }
+
     return {
       id,
       name: id.split('_').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),

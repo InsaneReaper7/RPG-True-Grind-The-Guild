@@ -29,6 +29,11 @@
       "weight": 30,
       "bushesRange": [2, 5],
       "enemiesRange": [3, 5]
+    },
+    "boss": {
+      "weight": 0,
+      "bushesRange": [0, 0],
+      "enemiesRange": [1, 1]
     }
   },
   "enemyPool": [
@@ -39,9 +44,15 @@
     "skeleton",
     "skeleton_archer",
     "undead",
-    "spider",
-    "orc_warrior",
-    "void_knight"
+    "spider"
   ],
+  "bossEnemyId": "abyssal_colossus",
+  "bossMilestoneInterval": 5,
+  "bossRandomChance": 0.02,
+  "bossRoom": true,
+  "eliteEnemyId": "orc_warrior",
+  "eliteChance": 0.12,
+  "epicEnemyId": "void_knight",
+  "epicChance": 0.05,
   "floorRespawnTimerSec": 300
 }

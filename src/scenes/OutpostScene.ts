@@ -11,6 +11,7 @@ import { GridPos, PlacedBuildable } from '../types/game';
 import { BuildingSystem } from '../systems/BuildingSystem';
 import { RoomClassifier, ClassifiedRoom } from '../systems/RoomClassifier';
 import { HiddenSkillSystem } from '../systems/HiddenSkillSystem';
+import { ActiveReviveChannel } from './MainScene';
 
 export class OutpostScene extends Phaser.Scene {
   private mapWidth: number = 20;
@@ -23,6 +24,7 @@ export class OutpostScene extends Phaser.Scene {
   public get player(): Player {
     return this.party[0];
   }
+  private activeReviveChannels: Map<Player, ActiveReviveChannel> = new Map();
   private progressionSystem!: ProgressionSystem;
   private hud!: HUD;
   private buildingSystem!: BuildingSystem;
@@ -490,8 +492,26 @@ export class OutpostScene extends Phaser.Scene {
       }
 
       // Normal Play Mode
-      // Downed state blocks Normal Mode actions
+      // Downed state blocks Normal Mode actions unless clicking revive
       if (this.player.state === 'downed') {
+        const isIconMatch = Math.hypot(this.player.x - worldPoint.x, (this.player.y - 24) - worldPoint.y) <= 18;
+        if (isIconMatch) {
+          this.interactReviveAlly(this.player);
+        }
+        return;
+      }
+
+      // Milestone 31: Check if any downed ally's clickable revive icon was clicked
+      const clickedDownedAlly = this.party.find((m) => {
+        if (m.state !== 'downed') return false;
+        const isGridMatch = m.gridPos.x === clickedTileX && m.gridPos.y === clickedTileY;
+        const isIconMatch = Math.hypot(m.x - worldPoint.x, (m.y - 24) - worldPoint.y) <= 18;
+        const isBodyMatch = Math.abs(m.x - worldPoint.x) <= this.tileSize / 2 + 4 && Math.abs(m.y - worldPoint.y) <= this.tileSize / 2 + 4;
+        return isIconMatch || isGridMatch || isBodyMatch;
+      });
+
+      if (clickedDownedAlly) {
+        this.interactReviveAlly(clickedDownedAlly);
         return;
       }
 
@@ -1569,7 +1589,239 @@ export class OutpostScene extends Phaser.Scene {
     for (const member of this.party) {
       member.update(time, delta);
     }
+
+    // Milestone 31: Update Active Revive Channels in OutpostScene
+    for (const [character, channel] of Array.from(this.activeReviveChannels.entries())) {
+      if (
+        character.state !== 'channeling' ||
+        character.hp <= 0 ||
+        (character.state as any) === 'downed' ||
+        (character.state as any) === 'dead' ||
+        channel.targetAlly.state !== 'downed'
+      ) {
+        this.cancelReviveChannel(character);
+        continue;
+      }
+
+      channel.elapsedMs += delta;
+      const pct = Math.min(1, channel.elapsedMs / channel.durationMs);
+      channel.barContainer.setPosition(character.x, character.y - 28);
+      channel.barFill.clear();
+      channel.barFill.fillStyle(0xfacc15, 1);
+      const fillW = Math.max(0, Math.floor(34 * pct));
+      if (fillW > 0) {
+        channel.barFill.fillRect(-17, -2, fillW, 4);
+      }
+      channel.labelText.setText(`Reviving... ${Math.floor(pct * 100)}%`);
+
+      if (channel.elapsedMs >= channel.durationMs) {
+        this.completeReviveChannel(character, channel);
+      }
+    }
+
     this.updatePlayerRoomLookup(false);
     this.hud.update(this.player, this.progressionSystem, time, this.party);
+  }
+
+  // =========================================================================
+  // Milestone 31: Item-Based Revive Channel Methods (OutpostScene)
+  // =========================================================================
+
+  public findReviveChannelByParticipant(participant: Player): ActiveReviveChannel | undefined {
+    for (const channel of this.activeReviveChannels.values()) {
+      if (channel.character === participant || channel.targetAlly === participant) {
+        return channel;
+      }
+    }
+    return undefined;
+  }
+
+  public interactReviveAlly(downedAlly: Player): boolean {
+    if (downedAlly.state !== 'downed') return false;
+
+    const gameState = GameState.getInstance();
+    if (gameState.getItemCount('revive_potion') < 1) {
+      this.createFloatingText(downedAlly.x, downedAlly.y - 12, 'NEED REVIVE POTION!', '#f59e0b');
+      this.hud?.showToast('⚠️ Requires a Revive Potion! Craft one at the Alchemy Station.', 'warn', 2500);
+      return false;
+    }
+
+    const livingParty = this.party.filter(m => m.state !== 'downed' && m.state !== 'dead' && m !== downedAlly);
+    if (livingParty.length === 0) {
+      this.hud?.showToast('⚠️ No conscious party members available to revive!', 'error', 2500);
+      return false;
+    }
+    livingParty.sort((a, b) => Math.hypot(a.gridPos.x - downedAlly.gridPos.x, a.gridPos.y - downedAlly.gridPos.y) - Math.hypot(b.gridPos.x - downedAlly.gridPos.x, b.gridPos.y - downedAlly.gridPos.y));
+    const reviver = livingParty[0];
+
+    const dist = Math.hypot(reviver.gridPos.x - downedAlly.gridPos.x, reviver.gridPos.y - downedAlly.gridPos.y);
+    if (dist <= 1.5) {
+      return this.startReviveChannel(reviver, downedAlly);
+    }
+
+    const claimed = new Set<string>();
+    for (const other of this.party) {
+      if (other !== reviver && other.state !== 'dead') {
+        claimed.add(`${other.gridPos.x},${other.gridPos.y}`);
+        if (other.claimedDestination) {
+          claimed.add(`${other.claimedDestination.x},${other.claimedDestination.y}`);
+        }
+      }
+    }
+
+    const adjTiles = [
+      { x: downedAlly.gridPos.x + 1, y: downedAlly.gridPos.y },
+      { x: downedAlly.gridPos.x - 1, y: downedAlly.gridPos.y },
+      { x: downedAlly.gridPos.x, y: downedAlly.gridPos.y + 1 },
+      { x: downedAlly.gridPos.x, y: downedAlly.gridPos.y - 1 }
+    ].filter(t => t.x >= 0 && t.x < this.mapWidth && t.y >= 0 && t.y < this.mapHeight && !claimed.has(`${t.x},${t.y}`));
+
+    adjTiles.sort((a, b) => Math.hypot(a.x - reviver.gridPos.x, a.y - reviver.gridPos.y) - Math.hypot(b.x - reviver.gridPos.x, b.y - reviver.gridPos.y));
+    const targetTile = adjTiles[0];
+
+    if (targetTile) {
+      this.cancelReviveChannel(reviver);
+      reviver.clearTarget();
+      claimed.add(`${targetTile.x},${targetTile.y}`);
+      reviver.claimedDestination = { ...targetTile };
+
+      const dynamicObs = this.getDynamicObstacles(reviver);
+      this.pathfinder.findPath(reviver.gridPos, targetTile, dynamicObs).then((path) => {
+        if (path.length > 0) {
+          reviver.followPath(path, () => {
+            if (downedAlly.state === 'downed' && Math.hypot(reviver.gridPos.x - downedAlly.gridPos.x, reviver.gridPos.y - downedAlly.gridPos.y) <= 1.5) {
+              this.startReviveChannel(reviver, downedAlly);
+            }
+          });
+        } else {
+          reviver.claimedDestination = null;
+        }
+      });
+      return true;
+    }
+    return false;
+  }
+
+  public startReviveChannel(character: Player, targetAlly: Player): boolean {
+    if (targetAlly.state !== 'downed' || character.state === 'downed' || character.state === 'dead') {
+      return false;
+    }
+
+    if (GameState.getInstance().getItemCount('revive_potion') < 1) {
+      this.createFloatingText(targetAlly.x, targetAlly.y - 12, 'NEED REVIVE POTION!', '#f59e0b');
+      this.hud?.showToast('⚠️ Requires a Revive Potion! Craft one at the Alchemy Station.', 'warn', 2500);
+      return false;
+    }
+
+    const existing = this.activeReviveChannels.get(character);
+    if (existing) {
+      existing.barContainer.destroy();
+      this.activeReviveChannels.delete(character);
+    }
+
+    character.state = 'channeling';
+    character.claimedDestination = null;
+    character.clearTarget();
+    character.stopMovement();
+
+    const durationMs = 3000;
+    const posX = character.x;
+    const posY = character.y - 28;
+    const barContainer = this.add.container(posX, posY).setDepth(10001);
+
+    const barBg = this.add.graphics();
+    barBg.fillStyle(0x111827, 0.85);
+    barBg.fillRect(-18, -3, 36, 6);
+    barBg.lineStyle(1, 0x374151, 1);
+    barBg.strokeRect(-18, -3, 36, 6);
+
+    const barFill = this.add.graphics();
+    const labelText = this.add.text(0, -12, 'Reviving... 0%', {
+      fontSize: '9px',
+      fontStyle: 'bold',
+      color: '#facc15',
+      backgroundColor: 'rgba(0,0,0,0.7)',
+      padding: { x: 3, y: 1 }
+    }).setOrigin(0.5);
+
+    barContainer.add([barBg, barFill, labelText]);
+
+    const channel: ActiveReviveChannel = {
+      character,
+      targetAlly,
+      durationMs,
+      elapsedMs: 0,
+      barContainer,
+      barBg,
+      barFill,
+      labelText
+    };
+
+    this.activeReviveChannels.set(character, channel);
+    console.log(`[Revive] 💛 ${character.entityName} started reviving ${targetAlly.entityName} (3000ms)...`);
+    this.hud?.showToast(`💛 Reviving ${targetAlly.entityName}... (3s)`, 'info', 2000);
+    return true;
+  }
+
+  public completeReviveChannel(character: Player, channel: ActiveReviveChannel): void {
+    channel.barContainer.destroy();
+    this.activeReviveChannels.delete(character);
+
+    if (character.state === 'channeling') {
+      character.state = 'idle';
+    }
+
+    if (channel.targetAlly.state !== 'downed') {
+      console.warn(`[Revive] Target ally ${channel.targetAlly.entityName} is no longer downed. Aborting completion.`);
+      return;
+    }
+
+    const gameState = GameState.getInstance();
+    if (gameState.getItemCount('revive_potion') < 1) {
+      this.hud?.showToast('⚠️ Revive failed: No Revive Potion in inventory!', 'error');
+      return;
+    }
+
+    gameState.consumeItem('revive_potion', 1);
+    channel.targetAlly.revive(character);
+
+    if (character.progression) {
+      character.progression.addProficiencyExp('healing_magic', 5);
+    }
+
+    this.createFloatingText(channel.targetAlly.x, channel.targetAlly.y - 12, 'REVIVED!', '#facc15');
+    this.createFloatingText(character.x, character.y - 15, '+5 Healing Magic EXP', '#4ade80');
+    this.hud?.showToast(`✨ ${character.entityName} revived ${channel.targetAlly.entityName}! (+5 Healing Magic EXP)`, 'success', 2500);
+    this.hud?.update(this.player, this.progressionSystem, this.time.now, this.party);
+  }
+
+  public interruptReviveChannel(participant: Player): boolean {
+    const channel = this.findReviveChannelByParticipant(participant);
+    if (!channel) return false;
+
+    console.log(`%c[Revive Interrupt] 💥 Revive channel on ${channel.targetAlly.entityName} was INTERRUPTED!`, 'color: #ef4444; font-weight: bold;');
+    channel.barContainer.destroy();
+    this.activeReviveChannels.delete(channel.character);
+
+    if (channel.character.state === 'channeling') {
+      channel.character.state = 'idle';
+    }
+
+    this.createFloatingText(channel.character.x, channel.character.y - 20, 'INTERRUPTED!', '#ef4444');
+    this.hud?.showToast('⚠️ Revive interrupted!', 'warn', 2500);
+    return true;
+  }
+
+  public cancelReviveChannel(character: Player): boolean {
+    const channel = this.activeReviveChannels.get(character);
+    if (channel) {
+      channel.barContainer.destroy();
+      this.activeReviveChannels.delete(character);
+      if (character.state === 'channeling') {
+        character.state = 'idle';
+      }
+      return true;
+    }
+    return false;
   }
 }

@@ -1,33 +1,61 @@
 {
-  "_comment": "Modular armor registry. Defines armor pieces, equipment slots ('helmet' | 'body'), and flat HP bonuses.",
+  "_comment": "Modular armor registry. Defines armor pieces, equipment slots ('helmet' | 'body' | 'necklace' | 'ring' | 'accessory'), flat HP bonuses, and per-item HP split ratio (default 50/50 across Main HP and Critical HP).",
   "armors": [
     {
       "id": "leather_cap",
       "name": "Leather Cap",
       "slot": "helmet",
       "hpBonus": 15,
-      "description": "A supple cap sewn from wolf pelts. Increases Max HP by 15."
+      "splitRatio": "50/50",
+      "description": "A supple cap sewn from wolf pelts. Increases Max HP by 8 and Critical HP by 7."
     },
     {
       "id": "leather_armor",
       "name": "Leather Armor",
       "slot": "body",
       "hpBonus": 25,
-      "description": "A stitched leather tunic reinforced with wolf hide. Increases Max HP by 25."
+      "splitRatio": "50/50",
+      "description": "A stitched leather tunic reinforced with wolf hide. Increases Max HP by 13 and Critical HP by 12."
     },
     {
       "id": "silk_cowl",
       "name": "Silk Cowl",
       "slot": "helmet",
       "hpBonus": 30,
-      "description": "A tightly woven cowl spun from subterranean spider silk. Increases Max HP by 30."
+      "splitRatio": "50/50",
+      "description": "A tightly woven cowl spun from subterranean spider silk. Increases Max HP by 15 and Critical HP by 15."
     },
     {
       "id": "silk_robe",
       "name": "Silk Robe",
       "slot": "body",
       "hpBonus": 50,
-      "description": "An enchanted, resilient robe woven from pure spider silk. Increases Max HP by 50."
+      "splitRatio": "50/50",
+      "description": "An enchanted, resilient robe woven from pure spider silk. Increases Max HP by 25 and Critical HP by 25."
+    },
+    {
+      "id": "bone_necklace",
+      "name": "Bone Necklace",
+      "slot": "necklace",
+      "hpBonus": 20,
+      "splitRatio": "50/50",
+      "description": "A protective talisman strung with carved monster bones and silk. Increases Max HP by 10 and Critical HP by 10."
+    },
+    {
+      "id": "wolf_claw_ring",
+      "name": "Wolf Claw Ring",
+      "slot": "ring",
+      "hpBonus": 14,
+      "splitRatio": "50/50",
+      "description": "A polished band crafted from sharp wolf claws and bone. Increases Max HP by 7 and Critical HP by 7."
+    },
+    {
+      "id": "venom_charm",
+      "name": "Venom Charm",
+      "slot": "accessory",
+      "hpBonus": 26,
+      "splitRatio": "50/50",
+      "description": "A resilient ward vial containing stabilized spider venom and silk. Increases Max HP by 13 and Critical HP by 13."
     }
   ]
 }

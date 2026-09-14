@@ -14,12 +14,12 @@ export class DungeonGenerator {
    * based on the provided configuration.
    * @param config DungeonConfig parameters
    * @param rng Optional custom RNG function returning [0, 1) for deterministic testing
-   * @param options Optional generation options (e.g. isDiggingUnlocked override)
+   * @param options Optional generation options (e.g. isDiggingUnlocked, floorNumber, forceBoss)
    */
   public static generate(
     config: DungeonConfig,
     rng: () => number = Math.random,
-    options?: { isDiggingUnlocked?: boolean }
+    options?: { isDiggingUnlocked?: boolean; floorNumber?: number; forceBoss?: boolean }
   ): GeneratedDungeon {
     const width = config.mapWidth;
     const height = config.mapHeight;
@@ -314,10 +314,47 @@ export class DungeonGenerator {
     rooms[0].type = 'entrance';
     const portalPos: GridPos = { x: rooms[0].centerX, y: rooms[0].centerY };
 
-    // From remaining rooms, guarantee at least 1 Gathering, 1 Light Combat, 1 Heavy Combat
+    // Milestone 34 / Rarity Correction: Dedicated Boss Encounter Room
+    // Determines if Boss room should spawn based on:
+    // 1. Explicit override in options (e.g. forceBoss: true / false for tests)
+    // 2. Guaranteed milestone interval (every 5th floor generation: floors 5, 10, 15...)
+    // 3. Low-probability independent roll on non-milestone floors (e.g. 2% bossRandomChance)
+    let shouldSpawnBossRoom = false;
+    if (rooms.length >= 2) {
+      if (options?.forceBoss !== undefined) {
+        shouldSpawnBossRoom = options.forceBoss;
+      } else {
+        const floorNumber = options?.floorNumber ?? (
+          typeof GameState !== 'undefined' ? GameState.getInstance().getDungeonFloorCount() : 1
+        );
+        const milestoneInterval = config.bossMilestoneInterval ?? 5;
+        const isMilestone = floorNumber > 0 && floorNumber % milestoneInterval === 0;
+        const isRandomBoss = rng() < (config.bossRandomChance ?? 0.02);
+        shouldSpawnBossRoom = (isMilestone || isRandomBoss) && (config.bossRoom ?? true);
+      }
+    }
+
+    let bossRoomIdx = -1;
+    if (shouldSpawnBossRoom) {
+      let maxDist = -1;
+      for (let i = 1; i < rooms.length; i++) {
+        const dist = Math.hypot(rooms[i].centerX - rooms[0].centerX, rooms[i].centerY - rooms[0].centerY);
+        if (dist > maxDist) {
+          maxDist = dist;
+          bossRoomIdx = i;
+        }
+      }
+      if (bossRoomIdx !== -1) {
+        rooms[bossRoomIdx].type = 'boss';
+      }
+    }
+
+    // From remaining non-entrance, non-boss rooms, guarantee at least 1 Gathering, 1 Light Combat, 1 Heavy Combat
     const nonEntranceIndices: number[] = [];
     for (let i = 1; i < rooms.length; i++) {
-      nonEntranceIndices.push(i);
+      if (i !== bossRoomIdx) {
+        nonEntranceIndices.push(i);
+      }
     }
 
     // Shuffle non-entrance room indices
@@ -394,7 +431,17 @@ export class DungeonGenerator {
         interiorTiles[j] = temp;
       }
 
-      if (room.type !== 'entrance') {
+      if (room.type === 'boss') {
+        // Milestone 34: Dedicated Boss Encounter Room - Spawn exactly 1 Boss at room center
+        const bossId = config.bossEnemyId || 'abyssal_colossus';
+        enemySpawns.push({
+          enemyId: bossId,
+          x: room.centerX,
+          y: room.centerY,
+          roomIndex: rIdx
+        });
+        // 0 bushes spawned in Boss chamber
+      } else if (room.type !== 'entrance') {
         const roomConfig = config.roomTypes?.[room.type as keyof typeof config.roomTypes];
         let tileIdx = 0;
 
@@ -403,8 +450,23 @@ export class DungeonGenerator {
           room.type === 'light_combat' ? [1, 2] : room.type === 'heavy_combat' ? [3, 5] : [0, 0]
         );
         const enemyCount = Math.min(Math.max(0, interiorTiles.length - tileIdx), randInt(minE, maxE));
+
+        // Rarity Correction: In Heavy Combat rooms, roll for rare Epic or Elite champions
+        let specialEnemyId: string | null = null;
+        if (room.type === 'heavy_combat') {
+          const epicChance = config.epicChance ?? 0.05;
+          const eliteChance = config.eliteChance ?? 0.12;
+          if (rng() < epicChance) {
+            specialEnemyId = config.epicEnemyId || 'void_knight';
+          } else if (rng() < eliteChance) {
+            specialEnemyId = config.eliteEnemyId || 'orc_warrior';
+          }
+        }
+
         for (let i = 0; i < enemyCount; i++) {
-          const enemyId = enemyPool[Math.floor(rng() * enemyPool.length)];
+          const enemyId = (i === 0 && specialEnemyId)
+            ? specialEnemyId
+            : enemyPool[Math.floor(rng() * enemyPool.length)];
           enemySpawns.push({
             enemyId,
             x: interiorTiles[tileIdx].x,

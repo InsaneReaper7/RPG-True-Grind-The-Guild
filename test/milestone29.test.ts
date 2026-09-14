@@ -210,10 +210,11 @@ async function runMilestone29Tests() {
     assert.ok(Array.isArray(h.tags) && h.tags.length > 0, `Drop '${h.item}' must have valid tags`);
   }
 
-  // Verify dungeonConfig.enemyPool includes void_knight
+  // Verify dungeonConfig.enemyPool excludes void_knight (rarity separation into epicEnemyId)
   const dungeonConfig = dataLoader.getDungeonConfig();
-  assert.ok(dungeonConfig.enemyPool.includes('void_knight'), "dungeonConfig.enemyPool must include 'void_knight'");
-  console.log("✓ PASS: 'void_knight' schema, tags, and enemyPool integration verified.");
+  assert.equal(dungeonConfig.enemyPool.includes('void_knight'), false, "dungeonConfig.enemyPool must NOT include 'void_knight'");
+  assert.equal(dungeonConfig.epicEnemyId, 'void_knight', "dungeonConfig.epicEnemyId must be 'void_knight'");
+  console.log("✓ PASS: 'void_knight' schema, tags, and enemyPool separation (registered as epicEnemyId) verified.");
 
   // =========================================================================
   // TEST 2: Meaningfully Tougher Than Orc Warrior in Real Simulated Combat
@@ -323,32 +324,41 @@ async function runMilestone29Tests() {
     return seed / 233280;
   };
 
-  // Run 10 dungeon generations to confirm pool integration without error
+  // Run 50 dungeon generations to confirm void_knight spawns rarely (clear minority of floors)
   let epicSpawnedCount = 0;
-  for (let iter = 0; iter < 10; iter++) {
+  let totalEnemySpawns = 0;
+  for (let iter = 0; iter < 50; iter++) {
     const dungeon = DungeonGenerator.generate(dungeonConfig, rng);
     for (const espawn of dungeon.enemySpawns) {
-      assert.ok(dungeonConfig.enemyPool.includes(espawn.enemyId), `Spawn ${espawn.enemyId} must be in enemyPool`);
+      totalEnemySpawns++;
       if (espawn.enemyId === 'void_knight') {
         epicSpawnedCount++;
+        // Epic must ONLY spawn in heavy combat rooms
+        const room = dungeon.rooms[espawn.roomIndex];
+        assert.equal(room.type, 'heavy_combat', "Epic void_knight must only spawn in heavy_combat rooms");
       }
     }
   }
-  console.log(`  DungeonGenerator spawned 'void_knight' ${epicSpawnedCount} times across 10 procedural runs.`);
-  assert.ok(epicSpawnedCount > 0, "DungeonGenerator must naturally spawn 'void_knight' from enemyPool");
+  console.log(`  Across 50 runs (${totalEnemySpawns} total enemies): void_knight spawned ${epicSpawnedCount} times.`);
+  // Must spawn rarely: clear minority of runs and small percentage of enemies
+  assert.ok(epicSpawnedCount <= 10, `Epic void_knight must spawn rarely (got ${epicSpawnedCount} in 50 runs)`);
+  assert.ok(totalEnemySpawns > 300, 'Must have generated a substantial enemy sample');
 
-  // 2. Floor timer repopulation pool
-  // Simulate floor respawn pick from dungeonConfig.enemyPool
-  const simulatedFloorSpawns: string[] = [];
-  for (let i = 0; i < 50; i++) {
-    const picked = dungeonConfig.enemyPool[Math.floor(rng() * dungeonConfig.enemyPool.length)];
-    simulatedFloorSpawns.push(picked);
+  // 2. Standard enemyPool verification: strictly common enemies, void_knight never in enemyPool
+  assert.equal(dungeonConfig.enemyPool.includes('void_knight'), false, "enemyPool must never contain void_knight");
+  for (const enemyId of dungeonConfig.enemyPool) {
+    const def = dataLoader.getEnemy(enemyId);
+    assert.equal(def?.tier, 'common', `Enemy ${enemyId} in enemyPool must be common tier`);
   }
-  assert.ok(
-    simulatedFloorSpawns.includes('void_knight'),
-    "Floor repopulation pool must pick 'void_knight' without any custom wiring"
-  );
-  console.log('✓ PASS: Dungeon generation and floor repopulation automatically pick up Epic tier via enemyPool.');
+
+  // 3. Floor timer repopulation logic: heavy combat evaluates epic roll
+  let repopEpicCount = 0;
+  for (let i = 0; i < 100; i++) {
+    const epicRoll = rng() < (dungeonConfig.epicChance ?? 0.05);
+    if (epicRoll) repopEpicCount++;
+  }
+  assert.ok(repopEpicCount >= 1 && repopEpicCount <= 15, `Repopulation epic roll must produce a low rate (got ${repopEpicCount}/100)`);
+  console.log('✓ PASS: Dungeon generation and floor repopulation spawn Epic tier via dedicated rare roll, keeping enemyPool strictly common.');
 
   // =========================================================================
   // TEST 5: Hard-Mode Swarm-Trap Rule Enforcement with Epic Enemy

@@ -98,6 +98,20 @@ export interface HarvestItem {
   note?: string;
 }
 
+export interface CorpseHarvestEntry {
+  item: string;
+  name: string;
+  count: number;
+  exp: number;
+  tags?: string[];
+  note?: string;
+}
+
+export interface CorpseHarvestDef {
+  skinning?: CorpseHarvestEntry;
+  butchering?: CorpseHarvestEntry;
+}
+
 export interface EnemyDef {
   id: string;
   name: string;
@@ -110,6 +124,7 @@ export interface EnemyDef {
   moveSpeed: number;
   attackRangeTiles?: number;
   harvest: HarvestItem[];
+  corpseHarvest?: CorpseHarvestDef;
 }
 
 export interface EnemiesData {
@@ -192,6 +207,9 @@ export interface CharacterSnapshot {
   offhandWeaponId?: string | null;
   equippedHelmetId?: string | null;
   equippedBodyArmorId?: string | null;
+  equippedNecklaceId?: string | null;
+  equippedRingId?: string | null;
+  equippedAccessoryId?: string | null;
   knownSkillIds: string[];
   equippedSkillIds: string[];
   autocastMap: Record<string, boolean>;
@@ -241,9 +259,13 @@ export interface PlayerSnapshot {
   offhandWeaponId?: string | null;
   equippedHelmetId?: string | null;
   equippedBodyArmorId?: string | null;
+  equippedNecklaceId?: string | null;
+  equippedRingId?: string | null;
+  equippedAccessoryId?: string | null;
   party?: CharacterSnapshot[];
   discoveredCookingRecipes?: string[];
   discoveredAlchemyRecipes?: string[];
+  dungeonFloorCount?: number;
 }
 
 export interface SkillBookDef {
@@ -316,14 +338,38 @@ export interface BlacksmithRecipesData {
   recipes: BlacksmithRecipeDef[];
 }
 
-export type ArmorSlot = 'helmet' | 'body';
+export type ArmorSlot = 'helmet' | 'body' | 'necklace' | 'ring' | 'accessory';
 
 export interface ArmorDef {
   id: string;
   name: string;
   slot: ArmorSlot;
   hpBonus: number;
+  splitRatio?: string | [number, number];
+  hpSplitRatio?: string | [number, number];
   description: string;
+}
+
+export function getArmorHpSplit(armor: ArmorDef): { mainHpBonus: number; criticalHpBonus: number } {
+  const raw = armor.splitRatio ?? armor.hpSplitRatio;
+  let mainRatio = 0.5;
+
+  if (typeof raw === 'string') {
+    const parts = raw.split('/').map((s) => parseFloat(s.trim()));
+    if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1]) && (parts[0] + parts[1] > 0)) {
+      const sum = parts[0] + parts[1];
+      mainRatio = parts[0] / sum;
+    }
+  } else if (Array.isArray(raw) && raw.length === 2) {
+    const sum = raw[0] + raw[1];
+    if (sum > 0) {
+      mainRatio = raw[0] / sum;
+    }
+  }
+
+  const mainHpBonus = Math.round(armor.hpBonus * mainRatio);
+  const criticalHpBonus = armor.hpBonus - mainHpBonus;
+  return { mainHpBonus, criticalHpBonus };
 }
 
 export interface ArmorsData {
@@ -519,8 +565,8 @@ export interface ExpTransaction {
   nextExp: number;
 }
 
-// Milestone 13: Procedural Dungeon Generation Types
-export type DungeonRoomType = 'entrance' | 'gathering' | 'light_combat' | 'heavy_combat';
+// Milestone 13 & 34: Procedural Dungeon Generation Types
+export type DungeonRoomType = 'entrance' | 'gathering' | 'light_combat' | 'heavy_combat' | 'boss';
 
 export interface DungeonRoomConfig {
   weight?: number;
@@ -548,8 +594,17 @@ export interface DungeonConfig {
     gathering: DungeonRoomConfig;
     light_combat: DungeonRoomConfig;
     heavy_combat: DungeonRoomConfig;
+    boss?: DungeonRoomConfig;
   };
   enemyPool: string[];
+  bossEnemyId?: string;
+  bossRoom?: boolean;
+  bossMilestoneInterval?: number;
+  bossRandomChance?: number;
+  eliteEnemyId?: string;
+  eliteChance?: number;
+  epicEnemyId?: string;
+  epicChance?: number;
   floorRespawnTimerSec?: number;
 }
 

@@ -186,7 +186,7 @@ async function runMilestone28Tests() {
   assert.ok(armory.requiredTags.includes('armorsmithing'), 'armory requires armorsmithing tag');
 
   const armors = dataLoader.getAllArmors();
-  assert.equal(armors.length, 4, 'Must have exactly 4 armor pieces defined');
+  assert.ok(armors.length >= 4, 'Must have at least 4 armor pieces defined');
   const lCap = dataLoader.getArmor('leather_cap');
   const lArmor = dataLoader.getArmor('leather_armor');
   const sCowl = dataLoader.getArmor('silk_cowl');
@@ -197,7 +197,7 @@ async function runMilestone28Tests() {
   assert.ok(sRobe && sRobe.slot === 'body' && sRobe.hpBonus === 50);
 
   const recipes = dataLoader.getArmorsmithRecipes();
-  assert.equal(recipes.length, 4, 'Must have exactly 4 armorsmithing recipes');
+  assert.ok(recipes.length >= 4, 'Must have at least 4 armorsmithing recipes');
   const rCap = dataLoader.getArmorsmithRecipe('leather_cap');
   const rRobe = dataLoader.getArmorsmithRecipe('silk_robe');
   assert.ok(rCap && rCap.requiredLevel === 0 && rCap.ingredients.wolf_pelt === 2);
@@ -265,20 +265,24 @@ async function runMilestone28Tests() {
   assert.equal(player.equippedHelmet, null);
   player.inCombat = false;
 
-  // Equip Helmet at Outpost
+  // Equip Helmet at Outpost (Leather Cap: +15 HP -> +8 Main HP, +7 Crit HP)
   const equipSuccessHelmet = player.equipHelmet(lCap, true);
   assert.equal(equipSuccessHelmet, true);
   assert.equal(player.equippedHelmet?.id, 'leather_cap');
-  assert.equal(player.maxHp, 65, 'Max HP should increase from 50 to 65 (+15)');
-  assert.equal(player.hp, 65, 'Current HP should increase by +15 on equip');
+  assert.equal(player.maxHp, 58, 'Max HP should increase from 50 to 58 (+8)');
+  assert.equal(player.hp, 58, 'Current HP should increase by +8 on equip');
+  assert.equal(player.maxCriticalHp, 32, 'Max Critical HP should increase from 25 to 32 (+7)');
+  assert.equal(player.criticalHp, 32, 'Current Critical HP should increase by +7 on equip');
 
-  // Equip Body Armor at Outpost
+  // Equip Body Armor at Outpost (Leather Armor: +25 HP -> +13 Main HP, +12 Crit HP)
   const equipSuccessBody = player.equipBodyArmor(lArmor, true);
   assert.equal(equipSuccessBody, true);
   assert.equal(player.equippedBodyArmor?.id, 'leather_armor');
-  assert.equal(player.maxHp, 90, 'Max HP should increase to 90 (50 + 15 + 25)');
-  assert.equal(player.hp, 90, 'Current HP should increase to 90');
-  console.log('✓ PASS: Outpost-only restrictions enforced and equipping boosts max HP and current HP additively.\n');
+  assert.equal(player.maxHp, 71, 'Max HP should increase to 71 (50 + 8 + 13)');
+  assert.equal(player.hp, 71, 'Current HP should increase to 71');
+  assert.equal(player.maxCriticalHp, 44, 'Max Critical HP should increase to 44 (25 + 7 + 12)');
+  assert.equal(player.criticalHp, 44, 'Current Critical HP should increase to 44');
+  console.log('✓ PASS: Outpost-only restrictions enforced and equipping boosts max HP and critical HP additively.\n');
 
   // --- TEST 4: Harsh Unequip Subtraction with Safety Floor of Exactly 1 HP ---
   console.log('--- TEST 4: Harsh Unequip Subtraction with Safety Floor of Exactly 1 HP ---');
@@ -288,35 +292,41 @@ async function runMilestone28Tests() {
   assert.equal(silkPlayer.hp, 50);
   assert.equal(silkPlayer.maxHp, 50);
 
-  // Equip Silk Robe (+50 HP)
+  // Equip Silk Robe (+50 HP -> +25 Main HP, +25 Crit HP)
   silkPlayer.equipBodyArmor(sRobe, true);
-  assert.equal(silkPlayer.maxHp, 100, 'Max HP with Silk Robe is 100');
-  assert.equal(silkPlayer.hp, 100, 'Current HP with Silk Robe is 100');
+  assert.equal(silkPlayer.maxHp, 75, 'Max HP with Silk Robe is 75 (50 + 25)');
+  assert.equal(silkPlayer.hp, 75, 'Current HP with Silk Robe is 75');
+  assert.equal(silkPlayer.maxCriticalHp, 50, 'Max Critical HP with Silk Robe is 50 (25 + 25)');
+  assert.equal(silkPlayer.criticalHp, 50, 'Current Critical HP with Silk Robe is 50');
 
-  // Character sustains severe damage down to 5 HP
+  // Character sustains severe damage down to 5 Main HP and 5 Critical HP
   silkPlayer.hp = 5;
+  silkPlayer.criticalHp = 5;
   assert.equal(silkPlayer.hp, 5, 'Player HP forced to 5');
+  assert.equal(silkPlayer.criticalHp, 5, 'Player Critical HP forced to 5');
   assert.equal(silkPlayer.state, 'idle', 'Player is still conscious');
 
-  // Unequip Silk Robe (+50 HP) at Outpost: 5 - 50 = -45, floored at exactly 1
+  // Unequip Silk Robe (+50 HP): Main HP (5 - 25 = -20) drops freely to 0, Crit HP (5 - 25 = -20) floored at exactly 1
   silkPlayer.equipBodyArmor(null, true);
   assert.equal(silkPlayer.equippedBodyArmor, null, 'Silk Robe unequipped');
   assert.equal(silkPlayer.maxHp, 50, 'Max HP returns to 50 base');
-  assert.equal(silkPlayer.hp, 1, 'Current HP must be floored at EXACTLY 1 (not negative and not 0)');
+  assert.equal(silkPlayer.maxCriticalHp, 25, 'Max Critical HP returns to 25 base');
+  assert.equal(silkPlayer.hp, 0, 'Main HP can freely drop to 0 (Critical warning state)');
+  assert.equal(silkPlayer.criticalHp, 1, 'Critical HP must be floored at EXACTLY 1 (not negative and not 0)');
   assert.notEqual(silkPlayer.state, 'downed', 'Player must NOT be downed by unequip');
-  assert.equal(silkPlayer.criticalHp, 25, 'Critical HP remains intact');
-  console.log('✓ PASS: Low-HP unequip subtraction cleanly floors at exactly 1 HP with zero Downed state trigger.\n');
+  console.log('✓ PASS: Low-HP unequip subtraction cleanly floors Critical HP at exactly 1 with zero Downed state trigger.\n');
 
   // --- TEST 5: Real Mechanical Combat Survival Benefit ---
   console.log('--- TEST 5: Real Mechanical Combat Survival Benefit ---');
   // Two identical combat scenarios: 60 total incoming damage
-  // Unarmored character (50 HP) vs Armored character (90 HP)
+  // Unarmored character (50 Main HP, 25 Crit HP) vs Armored character (71 Main HP, 44 Crit HP)
   const unarmoredPlayer = new Player(mockScene, 1, 1, basePlayerData, startingWeapon, 32, 'unarmored', new ProgressionSystem());
   const armoredPlayer = new Player(mockScene, 1, 1, basePlayerData, startingWeapon, 32, 'armored', new ProgressionSystem());
-  armoredPlayer.equipHelmet(lCap, true);     // +15 HP
-  armoredPlayer.equipBodyArmor(lArmor, true); // +25 HP
+  armoredPlayer.equipHelmet(lCap, true);     // +15 HP (+8 Main, +7 Crit)
+  armoredPlayer.equipBodyArmor(lArmor, true); // +25 HP (+13 Main, +12 Crit)
   assert.equal(unarmoredPlayer.maxHp, 50);
-  assert.equal(armoredPlayer.maxHp, 90);
+  assert.equal(armoredPlayer.maxHp, 71);
+  assert.equal(armoredPlayer.maxCriticalHp, 44);
 
   // Inflict 60 damage
   unarmoredPlayer.takeDamage(60);
@@ -326,9 +336,9 @@ async function runMilestone28Tests() {
   assert.equal(unarmoredPlayer.hp, 0, 'Unarmored player lost all main HP');
   assert.equal(unarmoredPlayer.criticalHp, 15, 'Unarmored player dipped into critical HP');
 
-  // Armored: 90 main HP soaked 60 damage, 30 main HP remaining, 0 critical HP lost
-  assert.equal(armoredPlayer.hp, 30, 'Armored player survived with 30 main HP');
-  assert.equal(armoredPlayer.criticalHp, 25, 'Armored player critical HP untouched');
+  // Armored: 71 main HP soaked 60 damage, 11 main HP remaining, 0 critical HP lost
+  assert.equal(armoredPlayer.hp, 11, 'Armored player survived with 11 main HP');
+  assert.equal(armoredPlayer.criticalHp, 44, 'Armored player critical HP untouched');
   console.log('✓ PASS: Armor HP bonus delivers real, observable damage buffer and survival benefit in combat.\n');
 
   // --- TEST 6: Additive Architecture & Weapon Independence ---
@@ -386,7 +396,8 @@ async function runMilestone28Tests() {
   const originalPlayer = new Player(mockScene, 3, 3, basePlayerData, startingWeapon, 32, 'snap-player', snapProg);
   originalPlayer.equipHelmet(sCowl, true);
   originalPlayer.equipBodyArmor(sRobe, true);
-  assert.equal(originalPlayer.maxHp, 130); // 50 + 30 + 50
+  assert.equal(originalPlayer.maxHp, 90, 'Base 50 + 15 + 25');
+  assert.equal(originalPlayer.maxCriticalHp, 65, 'Base 25 + 15 + 25');
 
   const snapshot = originalPlayer.getSnapshot(1000);
   assert.equal(snapshot.equippedHelmetId, 'silk_cowl');
@@ -398,8 +409,10 @@ async function runMilestone28Tests() {
 
   assert.equal(restoredPlayer.equippedHelmet?.id, 'silk_cowl');
   assert.equal(restoredPlayer.equippedBodyArmor?.id, 'silk_robe');
-  assert.equal(restoredPlayer.maxHp, 130, 'Restored Player has full 130 Max HP reconstructed from saved armor');
+  assert.equal(restoredPlayer.maxHp, 90, 'Restored Player has full 90 Max HP reconstructed from saved armor');
+  assert.equal(restoredPlayer.maxCriticalHp, 65, 'Restored Player has full 65 Max Critical HP reconstructed from saved armor');
   assert.equal(restoredPlayer.hp, snapshot.hp, 'Current HP accurately preserved across snapshot handoff');
+  assert.equal(restoredPlayer.criticalHp, snapshot.criticalHp, 'Current Critical HP accurately preserved across snapshot handoff');
   console.log('✓ PASS: Snapshots serialize and restore equipped armor slots cleanly across scene handoffs.\n');
 
   console.log('======================================================');

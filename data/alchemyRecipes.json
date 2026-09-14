@@ -37,6 +37,16 @@
       "buffRegenPerSec": 2,
       "targetRegenSkill": "mana_regen",
       "description": "An infused distillation of ethereal ectoplasm and wild herbs. Instantly restores 35 Energy/Mana, grants +2 Energy/s for 15s, and accelerates Mana Regen skill growth."
+    },
+    {
+      "id": "revive_potion",
+      "name": "Revive Potion",
+      "ingredients": {
+        "wild_herbs": 3,
+        "ectoplasm": 1
+      },
+      "expGranted": 40,
+      "description": "A potent revitalizing elixir brewed from ectoplasm and wild herbs. Channel for 3 seconds to revive a fallen ally to 50% HP."
     }
   ]
 }

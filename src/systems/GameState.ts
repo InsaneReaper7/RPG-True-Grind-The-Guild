@@ -25,6 +25,7 @@ export class GameState {
   private foodItems: FoodItemInstance[] = [];
   private isSafeZone: boolean = false;
   public onSpoilageCallback?: (spoiledCount: number) => void;
+  private dungeonFloorCount: number = 0;
 
   private constructor() {}
 
@@ -121,7 +122,8 @@ export class GameState {
       currentGameDay: 1,
       foodItems: [],
       equippedWeaponId: initialMainWeapon,
-      offhandWeaponId: initialOffhandWeapon
+      offhandWeaponId: initialOffhandWeapon,
+      dungeonFloorCount: 0
     };
 
     const heroSnapshot: CharacterSnapshot = {
@@ -266,6 +268,14 @@ export class GameState {
 
   public isDiggingUnlocked(): boolean {
     return this.isResearchCompleted('research_digging') || this.isResearchCompleted('digging');
+  }
+
+  public isSkinningUnlocked(): boolean {
+    return this.isResearchCompleted('research_skinning') || this.isResearchCompleted('skinning');
+  }
+
+  public isButcheringUnlocked(): boolean {
+    return this.isResearchCompleted('research_butchering') || this.isResearchCompleted('butchering');
   }
 
   // --- Clock & Game Day System (Milestone 7) ---
@@ -601,7 +611,11 @@ export class GameState {
         offhandWeaponId: leader.offhandWeaponId,
         equippedHelmetId: leader.equippedHelmetId,
         equippedBodyArmorId: leader.equippedBodyArmorId,
-        party: [...this.partySnapshots]
+        equippedNecklaceId: leader.equippedNecklaceId,
+        equippedRingId: leader.equippedRingId,
+        equippedAccessoryId: leader.equippedAccessoryId,
+        party: [...this.partySnapshots],
+        dungeonFloorCount: this.dungeonFloorCount
       };
     }
     console.log(
@@ -676,9 +690,13 @@ export class GameState {
       offhandWeaponId: player.offhandWeapon?.id ?? null,
       equippedHelmetId: player.equippedHelmet?.id ?? null,
       equippedBodyArmorId: player.equippedBodyArmor?.id ?? null,
+      equippedNecklaceId: player.equippedNecklace?.id ?? null,
+      equippedRingId: player.equippedRing?.id ?? null,
+      equippedAccessoryId: player.equippedAccessory?.id ?? null,
       party: [...this.partySnapshots],
       discoveredCookingRecipes: Array.from(this.discoveredCookingRecipes),
-      discoveredAlchemyRecipes: Array.from(this.discoveredAlchemyRecipes)
+      discoveredAlchemyRecipes: Array.from(this.discoveredAlchemyRecipes),
+      dungeonFloorCount: this.dungeonFloorCount
     };
 
     console.log(
@@ -757,6 +775,9 @@ export class GameState {
     if (snap.discoveredAlchemyRecipes) {
       this.discoveredAlchemyRecipes = new Set(snap.discoveredAlchemyRecipes);
     }
+    if (snap.dungeonFloorCount !== undefined) {
+      this.dungeonFloorCount = snap.dungeonFloorCount;
+    }
 
     player.autocastMap.clear();
     for (const [k, v] of Object.entries(snap.autocastMap)) {
@@ -812,7 +833,33 @@ export class GameState {
     } else {
       player.equippedBodyArmor = null;
     }
+    if (snap.equippedNecklaceId) {
+      const necklace = dataLoader.getArmor(snap.equippedNecklaceId);
+      player.equippedNecklace = necklace ?? null;
+    } else {
+      player.equippedNecklace = null;
+    }
+    if (snap.equippedRingId) {
+      const ring = dataLoader.getArmor(snap.equippedRingId);
+      player.equippedRing = ring ?? null;
+    } else {
+      player.equippedRing = null;
+    }
+    if (snap.equippedAccessoryId) {
+      const accessory = dataLoader.getArmor(snap.equippedAccessoryId);
+      player.equippedAccessory = accessory ?? null;
+    } else {
+      player.equippedAccessory = null;
+    }
     player.recalculateMaxHp();
+
+    // Ensure HP and Critical HP are safely clamped to the recalculated maxes
+    player.hp = Math.min(player.maxHp, snap.hp);
+    if (snap.criticalHp >= 25 && player.maxCriticalHp > 25) {
+      player.criticalHp = player.maxCriticalHp;
+    } else {
+      player.criticalHp = Math.min(player.maxCriticalHp, snap.criticalHp);
+    }
 
     // Downed state restoration
     // Two-bar system: Downed only occurs when BOTH Main HP and Critical HP reach zero.
@@ -844,5 +891,24 @@ export class GameState {
       `  Day: ${this.currentGameDay}, Hunger: ${player.hunger.toFixed(1)}, Mood: ${player.mood.toFixed(1)}, Rations: ${this.getFoodItemCount('ration')}`,
       'color: #4ade80; font-weight: bold;'
     );
+  }
+
+  public getDungeonFloorCount(): number {
+    return this.dungeonFloorCount;
+  }
+
+  public setDungeonFloorCount(count: number): void {
+    this.dungeonFloorCount = count;
+    if (this.snapshot) {
+      this.snapshot.dungeonFloorCount = count;
+    }
+  }
+
+  public incrementDungeonFloorCount(): number {
+    this.dungeonFloorCount++;
+    if (this.snapshot) {
+      this.snapshot.dungeonFloorCount = this.dungeonFloorCount;
+    }
+    return this.dungeonFloorCount;
   }
 }

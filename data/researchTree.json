@@ -13,7 +13,7 @@
       "name": "Cooking Station",
       "targetBuildableId": "cooking_station",
       "cost": 10,
-      "prerequisites": [],
+      "prerequisites": ["research_butchering"],
       "description": "Unlocks the Cooking Station for the Guild Outpost, enabling recipe discovery, food preparation, and cooking."
     },
     {
@@ -29,7 +29,7 @@
       "name": "Armorsmithing Bench",
       "targetBuildableId": "armorsmithing_bench",
       "cost": 10,
-      "prerequisites": [],
+      "prerequisites": ["research_skinning"],
       "description": "Unlocks the Armorsmithing Bench for the Guild Outpost, enabling hide tailoring and silk weaving into armor."
     },
     {
@@ -38,6 +38,20 @@
       "cost": 10,
       "prerequisites": [],
       "description": "Unlocks excavation and dig spots in dungeons, uncovering buried resources, soil, and curiosities."
+    },
+    {
+      "id": "research_skinning",
+      "name": "Harvest Enemy Skin",
+      "cost": 10,
+      "prerequisites": [],
+      "description": "Unlocks Skinning, allowing pelts, hides, and silk to be harvested from animal corpses in dungeons."
+    },
+    {
+      "id": "research_butchering",
+      "name": "Harvest Enemy Meat",
+      "cost": 10,
+      "prerequisites": [],
+      "description": "Unlocks Butchering, allowing raw meat to be carved from eligible non-undead corpses in dungeons."
     }
   ]
 }
