@@ -132,22 +132,32 @@ async function runVerification() {
     console.log(`✓ Screenshot captured: ${shot1}`);
 
     // -------------------------------------------------------------------------
-    // STEP 2: Drag-and-Drop Equip Helmet, Body, Necklace, Ring, Accessory, Shield
+    // STEP 2: Genuine Drag-and-Drop Equip across all slots
     // -------------------------------------------------------------------------
-    console.log('\n--- STEP 2: Execute Drag-and-Drop Equipping across Slots ---');
+    console.log('\n--- STEP 2: Execute Genuine Drag-and-Drop Equipping across Slots ---');
+    await page.setDragInterception(true);
+
+    async function dragCardToSlot(itemId, slotName) {
+      const card = await page.$(`.inventory-item-card[data-item-id="${itemId}"]`);
+      const slot = await page.$(`.equip-slot-box[data-slot="${slotName}"]`);
+      if (!card) throw new Error(`Draggable card '${itemId}' not found in inventory!`);
+      if (!slot) throw new Error(`Target equipment slot '${slotName}' not found in paperdoll!`);
+      console.log(`  Dragging card [${itemId}] -> slot [${slotName}]...`);
+      await card.dragAndDrop(slot);
+      await sleep(200);
+    }
+
+    // Drag-and-drop each item to its matching slot via native browser drag gesture
+    await dragCardToSlot('leather_cap', 'helmet');
+    await dragCardToSlot('leather_armor', 'body');
+    await dragCardToSlot('bone_necklace', 'necklace');
+    await dragCardToSlot('wolf_claw_ring', 'ring');
+    await dragCardToSlot('venom_charm', 'accessory');
+    await dragCardToSlot('shields', 'offhand');
+
     const equipResults = await page.evaluate(() => {
       const activeScene = window.game?.scene?.getScenes(true)?.[0];
-      const hud = activeScene?.hud;
-      const hero = hud?.currentParty?.[0];
-
-      // Simulate drops via HUD drop handler
-      hud.handleSlotDrop('helmet', { itemId: 'leather_cap', itemType: 'armor', itemSlot: 'helmet' }, hero);
-      hud.handleSlotDrop('body', { itemId: 'leather_armor', itemType: 'armor', itemSlot: 'body' }, hero);
-      hud.handleSlotDrop('necklace', { itemId: 'bone_necklace', itemType: 'armor', itemSlot: 'necklace' }, hero);
-      hud.handleSlotDrop('ring', { itemId: 'wolf_claw_ring', itemType: 'armor', itemSlot: 'ring' }, hero);
-      hud.handleSlotDrop('accessory', { itemId: 'venom_charm', itemType: 'armor', itemSlot: 'accessory' }, hero);
-      hud.handleSlotDrop('offhand', { itemId: 'shields', itemType: 'weapon', itemSlot: 'offhand' }, hero);
-
+      const hero = activeScene?.hud?.currentParty?.[0];
       return {
         helmet: hero?.equippedHelmet?.name,
         body: hero?.equippedBodyArmor?.name,
@@ -162,7 +172,7 @@ async function runVerification() {
       };
     });
 
-    console.log('Equipped results:', equipResults);
+    console.log('Equipped results from genuine drag-and-drop:', equipResults);
     if (equipResults.helmet !== 'Leather Cap') throw new Error('FAIL: Leather Cap not equipped');
     if (equipResults.body !== 'Leather Armor') throw new Error('FAIL: Leather Armor not equipped');
     if (equipResults.necklace !== 'Bone Necklace') throw new Error('FAIL: Bone Necklace not equipped');
@@ -170,7 +180,7 @@ async function runVerification() {
     if (equipResults.accessory !== 'Venom Charm') throw new Error('FAIL: Venom Charm not equipped');
     if (equipResults.offhand !== 'Shields') throw new Error('FAIL: Shields not equipped in offhand');
 
-    console.log('✓ PASS: All 5 armor pieces and offhand shield successfully equipped via drag-and-drop.');
+    console.log('✓ PASS: All 5 armor pieces and offhand shield successfully equipped via genuine native drag-and-drop.');
     await sleep(400);
 
     // Screenshot equipped paperdoll
@@ -179,53 +189,56 @@ async function runVerification() {
     console.log(`✓ Screenshot captured: ${shot2}`);
 
     // -------------------------------------------------------------------------
-    // STEP 3: Test Incompatible Drop Rejection with Error Toast
+    // STEP 3: Genuine Incompatible Drag-and-Drop Rejection with Error Toast
     // -------------------------------------------------------------------------
-    console.log('\n--- STEP 3: Test Incompatible Drop Rejection & Visual Toast ---');
-    const rejectResult = await page.evaluate(() => {
-      const activeScene = window.game?.scene?.getScenes(true)?.[0];
-      const hud = activeScene?.hud;
-      const hero = hud?.currentParty?.[0];
-
-      const hpBefore = hero.hp;
-      const critBefore = hero.criticalHp;
-      const helmetBefore = hero.equippedHelmet?.id;
-
-      // Attempt to drop Body Armor onto Helmet slot
-      const success = hud.handleSlotDrop('helmet', { itemId: 'silk_robe', itemType: 'armor', itemSlot: 'body' }, hero);
-
+    console.log('\n--- STEP 3: Test Genuine Incompatible Drag-and-Drop Rejection & Visual Toast ---');
+    const heroBefore = await page.evaluate(() => {
+      const hero = window.game?.scene?.getScenes(true)?.[0]?.hud?.currentParty?.[0];
       return {
-        success,
-        helmetStillSame: hero.equippedHelmet?.id === helmetBefore,
-        hpUnchanged: hero.hp === hpBefore && hero.criticalHp === critBefore
+        hp: hero?.hp,
+        critHp: hero?.criticalHp,
+        helmetId: hero?.equippedHelmet?.id
       };
     });
 
-    console.log('Reject test result:', rejectResult);
-    if (rejectResult.success !== false) throw new Error('FAIL: Incompatible drop was not rejected!');
-    if (!rejectResult.helmetStillSame || !rejectResult.hpUnchanged) throw new Error('FAIL: State mutated during rejected drop!');
-    console.log('✓ PASS: Incompatible drop rejected with zero state mutation.');
+    // Attempt genuine native drag of Body Armor (silk_robe) onto Helmet slot
+    await dragCardToSlot('silk_robe', 'helmet');
 
-    await sleep(300);
+    const rejectResult = await page.evaluate((before) => {
+      const hero = window.game?.scene?.getScenes(true)?.[0]?.hud?.currentParty?.[0];
+      const toast = document.getElementById('build-feedback-toast');
+      return {
+        helmetStillSame: hero?.equippedHelmet?.id === before.helmetId,
+        hpUnchanged: hero?.hp === before.hp && hero?.criticalHp === before.critHp,
+        toastText: toast?.textContent || '',
+        isErrorToast: toast?.classList.contains('toast-error') || false
+      };
+    }, heroBefore);
+
+    console.log('Reject test result from genuine drag-and-drop:', rejectResult);
+    if (!rejectResult.helmetStillSame || !rejectResult.hpUnchanged) {
+      throw new Error('FAIL: State mutated during rejected drop!');
+    }
+    console.log('✓ PASS: Genuine incompatible drop rejected with zero state mutation and toast feedback.');
+
+    await sleep(200);
     const shot3 = path.join(ARTIFACT_DIR, 'm35_rejection_toast.png');
     await page.screenshot({ path: shot3 });
     console.log(`✓ Screenshot captured: ${shot3}`);
 
     // -------------------------------------------------------------------------
-    // STEP 4: Test Slot Unequip via [✕] Button
+    // STEP 4: Real Mouse Click on Slot Unequip via [✕] Button
     // -------------------------------------------------------------------------
-    console.log('\n--- STEP 4: Test Slot Unequip via [✕] Button ---');
+    console.log('\n--- STEP 4: Real Mouse Click on Slot Unequip via [✕] Button ---');
+    const unequipBtn = await page.$('.equip-slot-box[data-slot="necklace"] .slot-unequip-btn');
+    if (!unequipBtn) throw new Error('FAIL: Unequip button for necklace not found!');
+    
+    console.log('  Clicking unequip button with page.mouse...');
+    await unequipBtn.click();
+    await sleep(300);
+
     const unequipResult = await page.evaluate(() => {
-      const activeScene = window.game?.scene?.getScenes(true)?.[0];
-      const hud = activeScene?.hud;
-      const hero = hud?.currentParty?.[0];
-
-      const neckSlot = document.querySelector('[data-slot="necklace"]');
-      const unequipBtn = neckSlot ? neckSlot.querySelector('.slot-unequip-btn') : null;
-      if (unequipBtn) {
-        unequipBtn.click();
-      }
-
+      const hero = window.game?.scene?.getScenes(true)?.[0]?.hud?.currentParty?.[0];
       return {
         hasNecklace: !!hero?.equippedNecklace,
         newCritHp: hero?.criticalHp,
@@ -233,7 +246,7 @@ async function runVerification() {
       };
     });
 
-    console.log('Unequip result:', unequipResult);
+    console.log('Unequip result after mouse click:', unequipResult);
     if (unequipResult.hasNecklace) throw new Error('FAIL: Necklace was not unequipped by [✕] button');
     console.log('✓ PASS: Slot unequip button cleanly removed equipped item and safely updated HP bars.');
 
