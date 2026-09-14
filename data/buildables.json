@@ -99,6 +99,18 @@
       "roomTag": "armorsmithing",
       "description": "Guild bench for tailoring hides and weaving silk into protective armor. Requires a fully enclosed indoor room.",
       "lockedByDefault": true
+    },
+    {
+      "id": "bowyer_station",
+      "name": "Bowyer Station",
+      "woodCost": 25,
+      "footprint": { "width": 1, "height": 1 },
+      "rotatable": true,
+      "indoorRequired": true,
+      "walkable": false,
+      "roomTag": "bowyer",
+      "description": "Guild bowcrafting workbench for shaping staves, strings, and crafting ranged bows. Requires a fully enclosed indoor room.",
+      "lockedByDefault": true
     }
   ]
 }

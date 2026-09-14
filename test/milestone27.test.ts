@@ -411,6 +411,7 @@ async function runMilestone27Tests() {
   let fireCount = 0;
   let lightningCount = 0;
   let iceCount = 0;
+  let holyCount = 0;
 
   for (let i = 0; i < 300; i++) {
     const resolved = gameState.resolveStartingKit('random_magic_staff');
@@ -420,17 +421,20 @@ async function runMilestone27Tests() {
       lightningCount++;
     } else if (resolved.mainWeaponId === 'ice_staff') {
       iceCount++;
+    } else if (resolved.mainWeaponId === 'holy_staff') {
+      holyCount++;
     } else {
       assert.fail(`Unexpected weapon resolved from random_magic_staff: ${resolved.mainWeaponId}`);
     }
   }
 
-  console.log(`  300 Random Rolls Breakdown: Fire=${fireCount}, Lightning=${lightningCount}, Ice=${iceCount}`);
-  assert.ok(fireCount >= 60, `Fire staff rolled sufficiently (${fireCount} >= 60)`);
-  assert.ok(lightningCount >= 60, `Lightning staff rolled sufficiently (${lightningCount} >= 60)`);
-  assert.ok(iceCount >= 60, `Ice staff rolled sufficiently (${iceCount} >= 60)`);
-  assert.equal(fireCount + lightningCount + iceCount, 300, 'All 300 rolls mapped to the 3 valid conduit staves');
-  console.log('✓ PASS: Random Magic Staff pool spans all 3 schools with genuine statistical variation.\n');
+  console.log(`  300 Random Rolls Breakdown: Fire=${fireCount}, Lightning=${lightningCount}, Ice=${iceCount}, Holy=${holyCount}`);
+  assert.ok(fireCount >= 40, `Fire staff rolled sufficiently (${fireCount} >= 40)`);
+  assert.ok(lightningCount >= 40, `Lightning staff rolled sufficiently (${lightningCount} >= 40)`);
+  assert.ok(iceCount >= 40, `Ice staff rolled sufficiently (${iceCount} >= 40)`);
+  assert.ok(holyCount >= 40, `Holy staff rolled sufficiently (${holyCount} >= 40)`);
+  assert.equal(fireCount + lightningCount + iceCount + holyCount, 300, 'All 300 rolls mapped to valid conduit staves');
+  console.log('✓ PASS: Random Magic Staff pool spans all offensive schools with genuine statistical variation.\n');
 
   // =========================================================================
   // TEST 3: Slow Status Effect & Real Physical Movement Reduction

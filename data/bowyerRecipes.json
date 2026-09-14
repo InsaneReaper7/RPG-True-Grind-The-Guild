@@ -1,0 +1,43 @@
+{
+  "_comment": "Bowyer Station recipes. Consumes wood, spider silk, bone, and wolf claws to craft bows and grant Bowyer exp.",
+  "recipes": [
+    {
+      "id": "hunting_bow",
+      "name": "Hunting Bow",
+      "resultWeaponId": "bows",
+      "requiredLevel": 0,
+      "ingredients": {
+        "wood": 4,
+        "spider_silk": 2
+      },
+      "expGranted": 25,
+      "description": "A supple curved bow crafted from seasoned timber and strung with resilient spider silk."
+    },
+    {
+      "id": "composite_bow",
+      "name": "Composite Bow",
+      "resultWeaponId": "composite_bow",
+      "requiredLevel": 5,
+      "ingredients": {
+        "wood": 6,
+        "bone": 2,
+        "spider_silk": 3
+      },
+      "expGranted": 50,
+      "description": "A layered bow reinforced with monster bone laminations for increased tension and draw power."
+    },
+    {
+      "id": "war_bow",
+      "name": "War Bow",
+      "resultWeaponId": "war_bow",
+      "requiredLevel": 10,
+      "ingredients": {
+        "wood": 8,
+        "wolf_claw": 2,
+        "spider_silk": 4
+      },
+      "expGranted": 80,
+      "description": "A heavy war bow fitted with curved beast-claw nocks for devastating long-range strikes."
+    }
+  ]
+}

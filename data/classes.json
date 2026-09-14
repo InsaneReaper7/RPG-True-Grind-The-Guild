@@ -121,6 +121,18 @@
       }
     },
     {
+      "id": "acolyte",
+      "name": "Acolyte",
+      "tier": "novice",
+      "requirements": [
+        { "type": "proficiency", "target": "holy_magic", "value": 10 }
+      ],
+      "fantasy": "Recently devout",
+      "hiddenSkillBonuses": {
+        "mana_regen": 0.05
+      }
+    },
+    {
       "id": "restoration_mage",
       "name": "Restoration Mage",
       "tier": "expert",
@@ -154,6 +166,41 @@
         { "type": "proficiency", "target": "digging", "value": 10 }
       ],
       "fantasy": "Learning where the ground hides things"
+    },
+    {
+      "id": "marksman",
+      "name": "Marksman",
+      "tier": "novice",
+      "requirements": [
+        { "type": "proficiency", "target": "bows", "value": 10 }
+      ],
+      "fantasy": "First nocked arrow",
+      "hiddenSkillBonuses": {
+        "evasion": 0.05
+      }
+    },
+    {
+      "id": "apprentice_bowyer",
+      "name": "Apprentice Bowyer",
+      "tier": "novice",
+      "requirements": [
+        { "type": "proficiency", "target": "bowyer", "value": 10 }
+      ],
+      "fantasy": "Carving timber and weaving strings into flexible ranged bows"
+    },
+    {
+      "id": "scout",
+      "name": "Scout",
+      "tier": "adept",
+      "requirements": [
+        { "type": "proficiency", "target": "daggers", "value": 10 },
+        { "type": "proficiency", "target": "bows", "value": 15 }
+      ],
+      "fantasy": "Deliberately the lowest-threshold hybrid in the game — mobile wilderness scout and outpost pioneer",
+      "hiddenSkillBonuses": {
+        "evasion": 0.05,
+        "counterattack": 0.05
+      }
     }
   ]
 }

@@ -205,6 +205,16 @@ export class HUD {
   private armorsmithingRecipesContainerEl: HTMLElement | null;
   private armorsmithingStatusMsgEl: HTMLElement | null;
 
+  // Milestone 36 Elements (Bowyer Station)
+  private bowyerModalEl: HTMLElement | null;
+  private closeBowyerBtn: HTMLElement | null;
+  private bowyerModalProfEl: HTMLElement | null;
+  private bowyerStockpileWoodEl: HTMLElement | null;
+  private bowyerStockpileSpiderSilkEl: HTMLElement | null;
+  private bowyerStockpileBoneClawEl: HTMLElement | null;
+  private bowyerRecipesContainerEl: HTMLElement | null;
+  private bowyerStatusMsgEl: HTMLElement | null;
+
   // Milestone 16 Elements (Floor Timer & Respawn Debug)
   private floorTimerBadgeEl: HTMLElement | null;
   private debugBtnFastForwardFloorTimer: HTMLElement | null;
@@ -511,6 +521,22 @@ export class HUD {
     if (this.closeArmorsmithingBtn) {
       this.closeArmorsmithingBtn.onclick = () => {
         HUD.activeInstance?.closeArmorsmithingModal();
+      };
+    }
+
+    // Milestone 36 Elements (Bowyer Station)
+    this.bowyerModalEl = document.getElementById('bowyer-modal');
+    this.closeBowyerBtn = document.getElementById('close-bowyer-btn');
+    this.bowyerModalProfEl = document.getElementById('bowyer-modal-prof');
+    this.bowyerStockpileWoodEl = document.getElementById('bowyer-stockpile-wood');
+    this.bowyerStockpileSpiderSilkEl = document.getElementById('bowyer-stockpile-spider-silk');
+    this.bowyerStockpileBoneClawEl = document.getElementById('bowyer-stockpile-bone-claw');
+    this.bowyerRecipesContainerEl = document.getElementById('bowyer-recipes-container');
+    this.bowyerStatusMsgEl = document.getElementById('bowyer-status-msg');
+
+    if (this.closeBowyerBtn) {
+      this.closeBowyerBtn.onclick = () => {
+        HUD.activeInstance?.closeBowyerModal();
       };
     }
 
@@ -1104,6 +1130,10 @@ export class HUD {
           active.closeLoadoutModal();
           active.closeResearchTreeModal();
           active.closeAlchemyModal();
+          active.closeCookingModal?.();
+          active.closeBlacksmithingModal?.();
+          active.closeArmorsmithingModal?.();
+          active.closeBowyerModal?.();
           active.closePartyOverviewModal();
           if (active.isBuildOverlayVisible()) {
             active.onBuildModeToggleCallback?.();
@@ -3926,6 +3956,7 @@ export class HUD {
       case 'fire_magic': return '#f97316';
       case 'lightning_magic': return '#38bdf8';
       case 'ice_magic': return '#67e8f9';
+      case 'holy_magic': return '#facc15';
       case 'energy_regen': return '#38bdf8';
       case 'mana_regen': return '#818cf8';
       default: return '#34d399';
@@ -4521,6 +4552,128 @@ export class HUD {
         }
 
         this.armorsmithingRecipesContainerEl.appendChild(card);
+      }
+    }
+  }
+
+  // --- BOWYER STATION & BOW CRAFTING (Milestone 36) ---
+
+  public openBowyerModal(player: Player, progression: ProgressionSystem): void {
+    this.currentPlayer = player;
+    this.currentProgression = progression;
+    if (this.bowyerModalEl) {
+      this.bowyerModalEl.classList.add('active');
+      this.renderBowyerModal(player, progression);
+    }
+  }
+
+  public closeBowyerModal(): void {
+    if (this.bowyerModalEl) {
+      this.bowyerModalEl.classList.remove('active');
+    }
+  }
+
+  public isBowyerModalOpen(): boolean {
+    return this.bowyerModalEl?.classList.contains('active') ?? false;
+  }
+
+  public renderBowyerModal(player: Player, progression: ProgressionSystem): void {
+    const gameState = GameState.getInstance();
+    const dataLoader = DataLoader.getInstance();
+
+    // 1. Proficiency Bar & Materials Stockpile
+    const byStat = progression.getProficiencyStat('bowyer');
+    if (this.bowyerModalProfEl) {
+      const nextExp = LevelingSystem.expForNextLevel(byStat.level);
+      this.bowyerModalProfEl.innerText = `Level ${byStat.level} (${byStat.currentExp}/${nextExp} EXP)`;
+    }
+
+    if (this.bowyerStockpileWoodEl) {
+      this.setElementTextIfChanged(this.bowyerStockpileWoodEl, `${gameState.getItemCount('wood')}`);
+    }
+    if (this.bowyerStockpileSpiderSilkEl) {
+      this.setElementTextIfChanged(this.bowyerStockpileSpiderSilkEl, `${gameState.getItemCount('spider_silk')}`);
+    }
+    if (this.bowyerStockpileBoneClawEl) {
+      const bones = gameState.getItemCount('bone');
+      const claws = gameState.getItemCount('wolf_claw');
+      this.setElementTextIfChanged(this.bowyerStockpileBoneClawEl, `${bones} Bones / ${claws} Claws`);
+    }
+
+    if (this.bowyerStatusMsgEl) {
+      this.bowyerStatusMsgEl.innerText = '';
+    }
+
+    // 2. Render Recipes
+    if (this.bowyerRecipesContainerEl) {
+      this.bowyerRecipesContainerEl.innerHTML = '';
+      const recipes = dataLoader.getBowyerRecipes();
+
+      for (const recipe of recipes) {
+        const isLevelUnlocked = byStat.level >= recipe.requiredLevel;
+        let canAfford = true;
+        for (const [item, qty] of Object.entries(recipe.ingredients)) {
+          if (gameState.getItemCount(item) < qty) {
+            canAfford = false;
+            break;
+          }
+        }
+
+        const weaponDef = dataLoader.getWeapon(recipe.resultWeaponId);
+        const card = document.createElement('div');
+        card.style.cssText = `background: rgba(31, 41, 55, ${isLevelUnlocked ? '0.75' : '0.4'}); border: 1px solid ${isLevelUnlocked ? (canAfford ? 'rgba(251, 191, 36, 0.4)' : 'rgba(107, 114, 128, 0.3)') : 'rgba(239, 68, 68, 0.3)'}; border-radius: 8px; padding: 12px; display: flex; justify-content: space-between; align-items: center;`;
+
+        // Ingredients formatting
+        const ingDetails = Object.entries(recipe.ingredients).map(([item, qty]) => {
+          const have = gameState.getItemCount(item);
+          const ok = have >= qty;
+          const label = item.replace(/_/g, ' ');
+          return `<span style="color: ${ok ? '#4ade80' : '#f87171'}; font-weight: ${ok ? '500' : 'bold'};">${qty}x ${label} (${have}/${qty})</span>`;
+        }).join(', ');
+
+        const weaponStats = weaponDef ? `Range: ${weaponDef.attackRangeTiles ?? 4} | Dmg: ${weaponDef.baseDamage} | Spd: ${weaponDef.attackIntervalMs}ms | Acc: ${Math.round((weaponDef.baseAccuracy ?? 0.6) * 100)}%` : '';
+
+        let actionBtnHtml = '';
+        if (!isLevelUnlocked) {
+          actionBtnHtml = `<span style="font-size: 11px; color: #ef4444; font-weight: bold; padding: 6px 12px; background: rgba(239, 68, 68, 0.1); border-radius: 4px;">🔒 Req. Bowyer Lv ${recipe.requiredLevel}</span>`;
+        } else if (!canAfford) {
+          actionBtnHtml = `<button type="button" class="btn-action" style="background: #374151; border-color: #4b5563; color: #9ca3af; cursor: not-allowed; font-size: 11px; padding: 6px 14px;" disabled>Insufficient Mats</button>`;
+        } else {
+          actionBtnHtml = `<button type="button" class="btn-action" style="background: #78350f; border-color: #b45309; font-size: 11px; padding: 6px 14px; font-weight: bold; color: #fef3c7;" data-bow-recipe="${recipe.id}">🏹 Craft Bow</button>`;
+        }
+
+        card.innerHTML = `
+          <div style="flex: 1; padding-right: 12px;">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 2px;">
+              <span style="font-weight: bold; color: ${isLevelUnlocked ? '#f8fafc' : '#9ca3af'}; font-size: 13px;">${recipe.name}</span>
+              <span style="font-size: 10px; color: #fde68a; background: rgba(245, 158, 11, 0.2); padding: 2px 6px; border-radius: 4px;">+${recipe.expGranted} EXP</span>
+              <span style="font-size: 10px; color: #fbbf24;">${weaponStats}</span>
+            </div>
+            <div style="font-size: 11px; color: #9ca3af; margin-bottom: 6px;">${recipe.description}</div>
+            <div style="font-size: 11px; color: #d1d5db;">Cost: ${ingDetails}</div>
+          </div>
+          <div>${actionBtnHtml}</div>
+        `;
+
+        const btn = card.querySelector<HTMLButtonElement>(`[data-bow-recipe="${recipe.id}"]`);
+        if (btn) {
+          btn.onclick = () => {
+            // Consume materials
+            for (const [item, qty] of Object.entries(recipe.ingredients)) {
+              gameState.consumeItem(item, qty);
+            }
+            // Add crafted bow to inventory
+            gameState.addItem(recipe.resultWeaponId, 1);
+            // Award Bowyer EXP
+            progression.addProficiencyExp('bowyer', recipe.expGranted);
+
+            this.showToast(`🏹 Crafted 1x ${recipe.name}! (+${recipe.expGranted} Bowyer EXP)`, 'success', 2500);
+            this.renderBowyerModal(player, progression);
+            this.update(player, progression, 0);
+          };
+        }
+
+        this.bowyerRecipesContainerEl.appendChild(card);
       }
     }
   }

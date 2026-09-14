@@ -896,6 +896,9 @@ export class CombatSystem {
         const moodTier = dataLoader.getMoodTier(member.mood);
         const effectiveBaseDamage = rawBaseDamage * moodTier.combatDamageMultiplier;
 
+        const speedBonus = (effectiveWeapon.levelBonus?.attackSpeedPerLevel ?? 0) * weaponLevel;
+        const effectiveAttackInterval = Math.max(300, effectiveWeapon.attackIntervalMs / (1 + speedBonus));
+
         // Dual Wielding accuracy penalty calculation
         const isDW = member.isDualWielding();
         const dwPenalty = isDW ? member.progression.getDualWieldPenalty() : 0;
@@ -915,7 +918,7 @@ export class CombatSystem {
 
           const isOffCooldown = !member.lastSkillUseTimes.has(skillId) || (time - member.lastSkillUseTimes.get(skillId)! >= skillDef.cooldownMs);
           const isAffordable = member.energy >= skillDef.energyCost;
-          const isWeaponReady = time - member.lastAttackTime >= effectiveWeapon.attackIntervalMs;
+          const isWeaponReady = time - member.lastAttackTime >= effectiveAttackInterval;
 
           if (isOffCooldown && isAffordable && isWeaponReady) {
             usedSkill = true;
@@ -1043,7 +1046,7 @@ export class CombatSystem {
 
         // Standard weapon attack if no skill fired
         if (!usedSkill) {
-          if (time - member.lastAttackTime >= effectiveWeapon.attackIntervalMs) {
+          if (time - member.lastAttackTime >= effectiveAttackInterval) {
             // Energy check for weapons that cost energy per cast (e.g. Magic Schools)
             let energyCost = 0;
             if (effectiveWeapon.energyCostPerCast && effectiveWeapon.energyCostPerCast > 0) {
@@ -1060,15 +1063,19 @@ export class CombatSystem {
             member.state = 'attacking';
 
             console.log(
-              `[DIAG:Combat] ⚔️ ${member.entityName} attacks ${target.entityName} with ${effectiveWeapon.name}! inCombat: ${member.inCombat}, Pre-EN: ${(member.energy + energyCost).toFixed(1)}, Post-EN: ${member.energy.toFixed(1)}, Range: ${member.attackRangeTiles}, Dist: ${distanceTiles}`
+              `[DIAG:Combat] ⚔️ ${member.entityName} attacks ${target.entityName} with ${effectiveWeapon.name}! inCombat: ${member.inCombat}, Pre-EN: ${((member.energy ?? 0) + energyCost).toFixed(1)}, Post-EN: ${(member.energy ?? 0).toFixed(1)}, Range: ${member.attackRangeTiles}, Dist: ${distanceTiles}`
             );
 
             const isFire = effectiveWeapon.id === 'fire_magic';
             const isLightning = effectiveWeapon.id === 'lightning_magic';
             const isIce = effectiveWeapon.id === 'ice_magic';
-            const attackColor = isFire ? 0xf97316 : isLightning ? 0x38bdf8 : isIce ? 0x67e8f9 : 0x3b82f6;
+            const isHoly = effectiveWeapon.id === 'holy_magic';
+            const isRangedBow = effectiveWeapon.category === 'ranged' || effectiveWeapon.proficiencyId === 'bows' || effectiveWeapon.id === 'bows';
+            const attackColor = isFire ? 0xf97316 : isLightning ? 0x38bdf8 : isIce ? 0x67e8f9 : isHoly ? 0xfacc15 : isRangedBow ? 0xf59e0b : 0x3b82f6;
             if (isLightning) {
               this.createLightningBoltEffect(member.x, member.y, target.x, target.y);
+            } else if (isHoly) {
+              this.createHolySmiteEffect(member.x, member.y, target.x, target.y);
             } else {
               this.createAttackEffect(member.x, member.y, target.x, target.y, attackColor);
             }
@@ -1076,6 +1083,8 @@ export class CombatSystem {
               this.createFireExplosionEffect(target.x, target.y);
             } else if (isIce) {
               this.createFrostEffect(target.x, target.y);
+            } else if (isHoly) {
+              this.createHolyImpactEffect(target.x, target.y);
             }
 
             const hitRoll = Math.random();
@@ -1095,7 +1104,7 @@ export class CombatSystem {
               console.log(
                 `[Combat] ${member.entityName} attacks ${target.entityName} with ${effectiveWeapon.name} for ${damage.toFixed(1)} damage! (Base: ${effectiveWeapon.baseDamage}, Lv ${weaponLevel} Bonus: +${(weaponLevel * damageBonusPerLevel).toFixed(1)}, Accuracy: ${(effectiveAccuracy * 100).toFixed(1)}%${isDW ? ` [DW Penalty -${(dwPenalty * 100).toFixed(0)}%]` : ''})`
               );
-              const dmgColor = isFire ? '#f97316' : isLightning ? '#38bdf8' : isIce ? '#67e8f9' : '#38bdf8';
+              const dmgColor = isFire ? '#f97316' : isLightning ? '#38bdf8' : isIce ? '#67e8f9' : isHoly ? '#facc15' : isRangedBow ? '#f59e0b' : '#38bdf8';
               this.createFloatingText(target.x, target.y - 10, `-${damage.toFixed(1)}`, dmgColor);
 
               this.checkAndApplyBleed(member, target, effectiveWeapon);
@@ -1103,6 +1112,9 @@ export class CombatSystem {
               this.checkAndApplyStun(member, target, effectiveWeapon);
               this.checkAndApplyShock(member, target, effectiveWeapon);
               this.checkAndApplySlow(member, target, effectiveWeapon);
+              if (isHoly) {
+                this.applyHolyRadiance(member, target, effectiveWeapon, weaponLevel);
+              }
 
               // Chain targeting for weapons with chainTargets (e.g. Lightning Magic)
               if (effectiveWeapon.chainTargets && effectiveWeapon.chainTargets > 0) {
@@ -1532,6 +1544,54 @@ export class CombatSystem {
     }
   }
 
+  public applyHolyRadiance(
+    caster: Player,
+    _target: Entity,
+    weaponDef: WeaponDef,
+    weaponLevel: number
+  ): void {
+    const baseHeal = weaponDef.radianceHealAmount ?? 3;
+    const healBonusPerLevel = weaponDef.levelBonus?.radianceHealPerLevel ?? 0.1;
+    const healAmount = Math.max(1, Math.round(baseHeal + weaponLevel * healBonusPerLevel));
+
+    const radiusTiles = weaponDef.attackRangeTiles ?? 4;
+    const casterTile = {
+      x: Math.floor(caster.x / caster.tileSize),
+      y: Math.floor(caster.y / caster.tileSize)
+    };
+
+    const candidates = this.party && this.party.length > 0 ? this.party : [caster];
+    let bestCandidate: Player | null = null;
+    let lowestHpRatio = 1.0;
+
+    for (const ally of candidates) {
+      if (ally.state === 'dead' || ally.state === 'downed') continue;
+      const aTile = {
+        x: Math.floor(ally.x / ally.tileSize),
+        y: Math.floor(ally.y / ally.tileSize)
+      };
+      const dist = Math.max(Math.abs(casterTile.x - aTile.x), Math.abs(casterTile.y - aTile.y));
+      if (dist <= radiusTiles) {
+        const hpRatio = ally.hp / ally.maxHp;
+        if (hpRatio < lowestHpRatio) {
+          lowestHpRatio = hpRatio;
+          bestCandidate = ally;
+        }
+      }
+    }
+
+    if (bestCandidate) {
+      const restored = bestCandidate.heal(healAmount);
+      if (restored > 0) {
+        this.createHealEffect(bestCandidate.x, bestCandidate.y);
+        this.createFloatingText(bestCandidate.x, bestCandidate.y - 14, `+${restored} HP (Radiance)`, '#22c55e');
+        console.log(
+          `[Combat:Holy] ☀️ Radiance pulse healed ${bestCandidate.entityName} for ${restored} HP! (HP: ${bestCandidate.hp}/${bestCandidate.maxHp})`
+        );
+      }
+    }
+  }
+
   private handleTargetDefeated(killer: Player, target: Entity, weaponId: string): void {
     console.log(`[Combat] ${target.entityName} defeated/downed by ${killer.entityName}!`);
     const result = killer.progression.addProficiencyExp(weaponId, 4);
@@ -1735,6 +1795,20 @@ export class CombatSystem {
       duration: 300,
       ease: 'Cubic.easeOut',
       onComplete: () => frost.destroy()
+    });
+  }
+
+  public createHolyImpactEffect(x: number, y: number): void {
+    if (!this.scene?.add) return;
+    const impact = this.scene.add.circle(x, y, 14, 0xfacc15, 0.7).setDepth(2001);
+    this.scene.tweens?.add({
+      targets: impact,
+      scaleX: 1.7,
+      scaleY: 1.7,
+      alpha: 0,
+      duration: 300,
+      ease: 'Cubic.easeOut',
+      onComplete: () => impact.destroy()
     });
   }
 
@@ -2710,6 +2784,11 @@ export class CombatSystem {
       const energyCost = Math.max(1, Math.round((spellDef.energyCostPerCast ?? 20) - costReduction));
       const canCast = member.energy >= energyCost;
       member.attackRangeTiles = canCast ? (spellDef.attackRangeTiles ?? 4) : 1;
+      return;
+    }
+
+    if (equipped.category === 'ranged') {
+      member.attackRangeTiles = equipped.attackRangeTiles ?? 4;
       return;
     }
 

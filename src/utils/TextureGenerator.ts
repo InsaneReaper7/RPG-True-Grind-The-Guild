@@ -950,6 +950,47 @@ export class TextureGenerator {
       g.destroy();
     }
 
+    // 20c. Bowyer Station (Workbench with carved bow stave, curved recurve bow, and fletched arrows)
+    if (!scene.textures.exists('buildable-bowyer-station')) {
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      // Sturdy oak workbench top
+      g.fillStyle(0x78350f, 1);
+      g.fillRoundedRect(2, 6, tileSize - 4, tileSize - 10, 3);
+      g.lineStyle(1.5, 0x451a03, 1);
+      g.strokeRoundedRect(2, 6, tileSize - 4, tileSize - 10, 3);
+
+      // Carved wooden bow stave on workbench
+      g.fillStyle(0xb45309, 1);
+      g.fillRoundedRect(5, 10, 15, 4, 1);
+      // Bow shaping drawknife / clamp
+      g.lineStyle(1.5, 0x94a3b8, 1);
+      g.lineBetween(8, 8, 16, 8);
+
+      // Curved recurve bow on right side
+      g.lineStyle(2, 0xd97706, 1);
+      g.beginPath();
+      g.arc(24, 16, 7, -Math.PI / 2, Math.PI / 2, false);
+      g.strokePath();
+
+      // White silk bowstring
+      g.lineStyle(1, 0xffffff, 0.9);
+      g.lineBetween(24, 9, 24, 23);
+
+      // Fletched arrow resting diagonally
+      g.lineStyle(1.5, 0x78350f, 1); // Arrow shaft
+      g.lineBetween(6, 23, 18, 15);
+      g.fillStyle(0x38bdf8, 1); // Cyan arrow fletching
+      g.fillTriangle(6, 23, 8, 20, 10, 24);
+
+      // Bench legs / shadow base
+      g.fillStyle(0x292524, 1);
+      g.fillRect(3, tileSize - 6, 4, 3);
+      g.fillRect(tileSize - 7, tileSize - 6, 4, 3);
+
+      g.generateTexture('buildable-bowyer-station', tileSize, tileSize);
+      g.destroy();
+    }
+
     // 21. Foraging Bush (Lush with wild herbs and berries)
     if (!scene.textures.exists('foraging-bush')) {
       const g = scene.make.graphics({ x: 0, y: 0 });

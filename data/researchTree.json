@@ -52,6 +52,14 @@
       "cost": 10,
       "prerequisites": [],
       "description": "Unlocks Butchering, allowing raw meat to be carved from eligible non-undead corpses in dungeons."
+    },
+    {
+      "id": "research_bowyer_station",
+      "name": "Bowyer Station",
+      "targetBuildableId": "bowyer_station",
+      "cost": 10,
+      "prerequisites": [],
+      "description": "Unlocks the Bowyer Station for the Guild Outpost, enabling the crafting and shaping of wooden bows and strings."
     }
   ]
 }

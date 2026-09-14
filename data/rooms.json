@@ -41,6 +41,13 @@
       "priority": 10,
       "requiredTags": ["armorsmithing"],
       "description": "Armorsmithing workshop with an armorsmithing bench."
+    },
+    {
+      "id": "bowyer_workshop",
+      "name": "Bowyer Workshop",
+      "priority": 10,
+      "requiredTags": ["bowyer"],
+      "description": "Bowcrafting workshop with a bowyer station."
     }
   ]
 }

@@ -568,6 +568,12 @@ export class OutpostScene extends Phaser.Scene {
         return;
       }
 
+      // Check if clicking a placed Bowyer Station
+      if (this.isPlacedBowyerStation(clickedTileX, clickedTileY)) {
+        this.hud.openBowyerModal(this.player, this.progressionSystem);
+        return;
+      }
+
       // Check if portal clicked
       if (clickedTileX === this.portalPos.x && clickedTileY === this.portalPos.y) {
         this.triggerPortalTransition();
@@ -969,6 +975,7 @@ export class OutpostScene extends Phaser.Scene {
     else if (def.id === 'cooking_station') texture = 'buildable-cooking-station';
     else if (def.id === 'blacksmithing_station') texture = 'buildable-blacksmithing-station';
     else if (def.id === 'armorsmithing_bench') texture = 'buildable-armorsmithing-bench';
+    else if (def.id === 'bowyer_station') texture = 'buildable-bowyer-station';
 
     this.hoverGhostSprite.setTexture(texture);
     this.hoverGhostSprite.setAngle(def.rotatable ? this.currentRotation : 0);
@@ -1272,6 +1279,10 @@ export class OutpostScene extends Phaser.Scene {
       sprite = this.add.sprite(posX, posY, 'buildable-armorsmithing-bench')
         .setAngle(item.rotation)
         .setDepth(posY);
+    } else if (item.id === 'bowyer_station') {
+      sprite = this.add.sprite(posX, posY, 'buildable-bowyer-station')
+        .setAngle(item.rotation)
+        .setDepth(posY);
     } else {
       sprite = this.add.sprite(posX, posY, 'buildable-wood-floor').setDepth(1);
     }
@@ -1354,6 +1365,11 @@ export class OutpostScene extends Phaser.Scene {
   private isPlacedArmorsmithingBench(x: number, y: number): boolean {
     const placed = this.getPlacedBuildableAt(x, y);
     return placed?.id === 'armorsmithing_bench';
+  }
+
+  private isPlacedBowyerStation(x: number, y: number): boolean {
+    const placed = this.getPlacedBuildableAt(x, y);
+    return placed?.id === 'bowyer_station';
   }
 
   private isPlacedBed(x: number, y: number): boolean {

@@ -95,6 +95,7 @@ export class ProgressionSystem {
     this.proficiencies.set('fire_magic', { level: 0, currentExp: 0 });
     this.proficiencies.set('lightning_magic', { level: 0, currentExp: 0 });
     this.proficiencies.set('ice_magic', { level: 0, currentExp: 0 });
+    this.proficiencies.set('holy_magic', { level: 0, currentExp: 0 });
     this.proficiencies.set('dual_wielding', { level: 0, currentExp: 0 });
     this.proficiencies.set('construction', { level: 0, currentExp: 0 });
     this.proficiencies.set('alchemy', { level: 0, currentExp: 0 });
@@ -107,6 +108,8 @@ export class ProgressionSystem {
     this.proficiencies.set('digging', { level: 0, currentExp: 0 });
     this.proficiencies.set('skinning', { level: 0, currentExp: 0 });
     this.proficiencies.set('butchering', { level: 0, currentExp: 0 });
+    this.proficiencies.set('bows', { level: 0, currentExp: 0 });
+    this.proficiencies.set('bowyer', { level: 0, currentExp: 0 });
     for (const hiddenId of ProgressionSystem.HIDDEN_SKILL_IDS) {
       this.proficiencies.set(hiddenId, { level: 0, currentExp: 0 });
     }

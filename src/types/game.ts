@@ -20,6 +20,7 @@ export interface WeaponLevelBonus {
   stunChancePerLevel?: number;
   shockChancePerLevel?: number;
   slowChancePerLevel?: number;
+  radianceHealPerLevel?: number;
 }
 
 export interface WeaponDef {
@@ -34,6 +35,7 @@ export interface WeaponDef {
   burnChance?: number;
   shockChance?: number;
   slowChance?: number;
+  radianceHealAmount?: number;
   chainTargets?: number;
   chainHopRangeTiles?: number;
   chainDamageFalloff?: number;
@@ -336,6 +338,20 @@ export interface BlacksmithRecipeDef {
 
 export interface BlacksmithRecipesData {
   recipes: BlacksmithRecipeDef[];
+}
+
+export interface BowyerRecipeDef {
+  id: string;
+  name: string;
+  resultWeaponId: string;
+  requiredLevel: number;
+  ingredients: Record<string, number>;
+  expGranted: number;
+  description: string;
+}
+
+export interface BowyerRecipesData {
+  recipes: BowyerRecipeDef[];
 }
 
 export type ArmorSlot = 'helmet' | 'body' | 'necklace' | 'ring' | 'accessory';

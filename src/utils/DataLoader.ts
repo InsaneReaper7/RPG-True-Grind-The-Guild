@@ -30,6 +30,8 @@ import type {
   ArmorSlot,
   ArmorsmithRecipeDef,
   ArmorsmithRecipesData,
+  BowyerRecipeDef,
+  BowyerRecipesData,
   FoodDef,
   FoodsData,
   MoodTierDef,
@@ -57,6 +59,7 @@ export class DataLoader {
   private alchemyRecipesData!: AlchemyRecipesData;
   private cookingRecipesData!: CookingRecipesData;
   private blacksmithRecipesData!: BlacksmithRecipesData;
+  private bowyerRecipesData!: BowyerRecipesData;
   private armorsData!: ArmorsData;
   private armorsmithRecipesData!: ArmorsmithRecipesData;
   private foodsData!: FoodsData;
@@ -74,7 +77,7 @@ export class DataLoader {
   }
 
   public async loadAll(): Promise<void> {
-    const [player, weapons, classes, enemies, skills, statusEffects, buildables, rooms, hiddenSkills, skillBooks, researchTree, alchemyRecipes, cookingRecipes, blacksmithRecipes, armors, armorsmithRecipes, foods, moodEffects, dungeon, gathering] = await Promise.all([
+    const [player, weapons, classes, enemies, skills, statusEffects, buildables, rooms, hiddenSkills, skillBooks, researchTree, alchemyRecipes, cookingRecipes, blacksmithRecipes, bowyerRecipes, armors, armorsmithRecipes, foods, moodEffects, dungeon, gathering] = await Promise.all([
       fetch('/data/player.json').then((res) => res.json()),
       fetch('/data/weapons.json').then((res) => res.json()),
       fetch('/data/classes.json').then((res) => res.json()),
@@ -89,6 +92,7 @@ export class DataLoader {
       fetch('/data/alchemyRecipes.json').then((res) => res.json()),
       fetch('/data/cookingRecipes.json').then((res) => res.json()),
       fetch('/data/blacksmithRecipes.json').then((res) => res.json()),
+      fetch('/data/bowyerRecipes.json').then((res) => res.json()),
       fetch('/data/armors.json').then((res) => res.json()),
       fetch('/data/armorsmithRecipes.json').then((res) => res.json()),
       fetch('/data/food.json').then((res) => res.json()),
@@ -111,6 +115,7 @@ export class DataLoader {
     this.alchemyRecipesData = alchemyRecipes as AlchemyRecipesData;
     this.cookingRecipesData = cookingRecipes as CookingRecipesData;
     this.blacksmithRecipesData = blacksmithRecipes as BlacksmithRecipesData;
+    this.bowyerRecipesData = bowyerRecipes as BowyerRecipesData;
     this.armorsData = armors as ArmorsData;
     this.armorsmithRecipesData = armorsmithRecipes as ArmorsmithRecipesData;
     this.foodsData = foods as FoodsData;
@@ -364,6 +369,8 @@ export class DataLoader {
         description = 'Proficiency with lightning magic to shock and chain arcs between enemies.';
       } else if (weapon.id === 'ice_magic') {
         description = 'Proficiency with ice magic to chill enemies and slow their movement.';
+      } else if (weapon.id === 'holy_magic') {
+        description = 'Proficiency with holy magic to punish the wicked and mend allies with radiant light.';
       } else if (weapon.id === 'staff' || weapon.id.endsWith('_staff')) {
         description = 'Proficiency with two-handed staves in melee combat.';
       }
@@ -470,6 +477,22 @@ export class DataLoader {
       };
     }
 
+    if (id === 'bows') {
+      return {
+        id: 'bows',
+        name: 'Bows',
+        description: 'Archery proficiency, bow handling, and ranged accuracy.'
+      };
+    }
+
+    if (id === 'bowyer') {
+      return {
+        id: 'bowyer',
+        name: 'Bowyer',
+        description: 'Guild bowcrafting, shaping seasoned staves, and crafting ranged weapons.'
+      };
+    }
+
     return {
       id,
       name: id.split('_').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),
@@ -547,6 +570,18 @@ export class DataLoader {
 
   public getBlacksmithRecipe(id: string): BlacksmithRecipeDef | undefined {
     return this.blacksmithRecipesData?.recipes.find((r) => r.id === id);
+  }
+
+  public getBowyerRecipesData(): BowyerRecipesData {
+    return this.bowyerRecipesData;
+  }
+
+  public getBowyerRecipes(): BowyerRecipeDef[] {
+    return this.bowyerRecipesData?.recipes ?? [];
+  }
+
+  public getBowyerRecipe(id: string): BowyerRecipeDef | undefined {
+    return this.bowyerRecipesData?.recipes.find((r) => r.id === id);
   }
 
   public getArmorsData(): ArmorsData {
