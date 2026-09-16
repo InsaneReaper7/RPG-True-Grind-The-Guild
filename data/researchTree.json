@@ -60,6 +60,14 @@
       "cost": 10,
       "prerequisites": [],
       "description": "Unlocks the Bowyer Station for the Guild Outpost, enabling the crafting and shaping of wooden bows and strings."
+    },
+    {
+      "id": "research_gardening",
+      "name": "Gardening",
+      "targetBuildableId": "planting_plot",
+      "cost": 10,
+      "prerequisites": [],
+      "description": "Unlocks planting plots for cultivating crops in the Outpost and begins the study of agriculture."
     }
   ]
 }

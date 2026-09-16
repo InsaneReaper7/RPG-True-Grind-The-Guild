@@ -36,7 +36,9 @@
     "armorsmithing": { "level": 0, "currentExp": 0 },
     "digging": { "level": 0, "currentExp": 0 },
     "skinning": { "level": 0, "currentExp": 0 },
-    "butchering": { "level": 0, "currentExp": 0 }
+    "butchering": { "level": 0, "currentExp": 0 },
+    "lockpicking": { "level": 0, "currentExp": 0 },
+    "gardening": { "level": 0, "currentExp": 0 }
   },
   "resources": {
     "wood": 1000,

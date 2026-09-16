@@ -111,6 +111,33 @@
       "roomTag": "bowyer",
       "description": "Guild bowcrafting workbench for shaping staves, strings, and crafting ranged bows. Requires a fully enclosed indoor room.",
       "lockedByDefault": true
+    },
+    {
+      "id": "planting_plot",
+      "name": "Planting Plot",
+      "woodCost": 0,
+      "clayCost": 3,
+      "footprint": { "width": 1, "height": 1 },
+      "rotatable": false,
+      "indoorRequired": false,
+      "walkable": true,
+      "lockedByDefault": true,
+      "description": "Tilled soil plot for planting seeds and cultivating vegetables. Costs 3 Clay to construct."
+    },
+    {
+      "id": "seed_maker",
+      "name": "Seed Maker",
+      "woodCost": 25,
+      "clayCost": 0,
+      "footprint": { "width": 1, "height": 1 },
+      "rotatable": true,
+      "indoorRequired": false,
+      "walkable": false,
+      "requiredProficiency": {
+        "proficiency": "gardening",
+        "level": 25
+      },
+      "description": "Extracts viable seeds from fresh produce. Place in Outpost, insert 1 vegetable, wait for processing, and collect 2 seeds."
     }
   ]
 }

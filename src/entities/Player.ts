@@ -531,15 +531,8 @@ export class Player extends Entity {
     }
   }
 
-  public heal(amount: number): number {
-    if (this.state === 'dead' || this.state === 'downed') return 0;
-    const oldHp = this.hp;
-    this.hp = Math.min(this.maxHp, this.hp + amount);
-    const restored = this.hp - oldHp;
-    if (restored > 0) {
-      this.drawHpBar();
-    }
-    return restored;
+  public override heal(amount: number): number {
+    return super.heal(amount);
   }
 
   public useSkill(skillId: string, target?: Entity | Player, time?: number): boolean {

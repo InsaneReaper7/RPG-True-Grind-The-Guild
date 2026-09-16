@@ -248,10 +248,20 @@ export class Entity extends Phaser.GameObjects.Container {
   }
 
   public heal(amount: number): number {
-    if (this.state === 'dead' || this.state === 'downed') return 0;
-    const oldHp = this.hp;
-    this.hp = Math.min(this.maxHp, this.hp + amount);
-    const restored = this.hp - oldHp;
+    if (this.state === 'dead' || this.state === 'downed' || amount <= 0) return 0;
+
+    // Fill Critical HP first
+    const missingCrit = Math.max(0, this.maxCriticalHp - this.criticalHp);
+    const critHeal = Math.min(amount, missingCrit);
+    this.criticalHp += critHeal;
+
+    // Overflow into Main HP once Critical HP is completely full
+    const remainingHeal = amount - critHeal;
+    const missingMain = Math.max(0, this.maxHp - this.hp);
+    const mainHeal = Math.min(remainingHeal, missingMain);
+    this.hp += mainHeal;
+
+    const restored = critHeal + mainHeal;
     if (restored > 0) {
       this.drawHpBar();
     }

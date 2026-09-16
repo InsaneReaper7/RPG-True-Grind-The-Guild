@@ -1,7 +1,8 @@
 import type { Player } from '../entities/Player.ts';
 import { ProgressionSystem } from './ProgressionSystem.ts';
-import type { PlayerData, PlayerSnapshot, CharacterSnapshot, PlacedBuildable, TrainableStat, FoodItemInstance, FoodQuality } from '../types/game.ts';
+import type { PlayerData, PlayerSnapshot, CharacterSnapshot, PlacedBuildable, TrainableStat, FoodItemInstance, FoodQuality, LockpickAttemptResult, PlantingPlotData, SeedMakerData } from '../types/game.ts';
 import { DataLoader } from '../utils/DataLoader.ts';
+import { LockpickingSystem } from './LockpickingSystem.ts';
 
 export class GameState {
   private static instance: GameState;
@@ -278,7 +279,11 @@ export class GameState {
     return this.isResearchCompleted('research_butchering') || this.isResearchCompleted('butchering');
   }
 
-  // --- Clock & Game Day System (Milestone 7) ---
+  public isGardeningUnlocked(): boolean {
+    return this.isResearchCompleted('research_gardening') || this.isResearchCompleted('gardening');
+  }
+
+  // --- Clock & Game Day System (Milestone 7 & 39) ---
   public getCurrentGameDay(): number {
     return this.currentGameDay;
   }
@@ -305,6 +310,8 @@ export class GameState {
    */
   public updateClock(deltaMs: number): boolean {
     this.dayProgressMs += deltaMs;
+    this.updateGardeningPlots();
+    this.updateSeedMakers();
     if (this.dayProgressMs >= this.dayDurationMs) {
       const daysToAdvance = Math.floor(this.dayProgressMs / this.dayDurationMs);
       this.dayProgressMs = this.dayProgressMs % this.dayDurationMs;
@@ -321,12 +328,143 @@ export class GameState {
   public advanceGameDay(days: number = 1): number {
     this.currentGameDay += days;
     console.log(`%c[Clock] 🌅 Game Day advanced by +${days} -> Day ${this.currentGameDay}`, 'color: #f59e0b; font-weight: bold;');
+    this.updateGardeningPlots();
     const spoiled = this.checkFoodSpoilage();
     if (this.snapshot) {
       this.snapshot.currentGameDay = this.currentGameDay;
       this.snapshot.foodItems = [...this.foodItems];
     }
     return spoiled;
+  }
+
+  // --- Gardening System (Milestone 39) ---
+  public getPlot(x: number, y: number): PlacedBuildable | undefined {
+    return this.placedBuildables.find((b) => b.id === 'planting_plot' && b.x === x && b.y === y);
+  }
+
+  public getPlotState(x: number, y: number): PlantingPlotData | undefined {
+    const plot = this.getPlot(x, y);
+    if (!plot) return undefined;
+    if (!plot.gardeningData) {
+      plot.gardeningData = {
+        state: 'empty',
+        plantedAtDay: 0,
+        plantedAtDayProgress: 0,
+        growthDays: 1
+      };
+    }
+    return plot.gardeningData;
+  }
+
+  public plantCrop(x: number, y: number, seedItemId: string = 'seeds'): boolean {
+    const plot = this.getPlot(x, y);
+    if (!plot) return false;
+    const state = this.getPlotState(x, y);
+    if (!state || state.state !== 'empty') return false;
+
+    if (this.getItemCount(seedItemId) < 1) return false;
+    this.consumeItem(seedItemId, 1);
+
+    state.state = 'growing';
+    state.plantedCropId = seedItemId;
+    state.plantedAtDay = this.currentGameDay;
+    state.plantedAtDayProgress = this.getDayProgress();
+    state.growthDays = 1;
+    return true;
+  }
+
+  public harvestCrop(x: number, y: number): { success: boolean; produceId: string; count: number } | null {
+    const plot = this.getPlot(x, y);
+    if (!plot) return null;
+    const state = this.getPlotState(x, y);
+    if (!state || state.state !== 'ready') return null;
+
+    state.state = 'empty';
+    state.plantedCropId = undefined;
+    const produceId = 'vegetable';
+    const count = 2; // Confirmed +2 vegetables per harvest
+    this.addItem(produceId, count);
+    return { success: true, produceId, count };
+  }
+
+  public updateGardeningPlots(): void {
+    const currentDay = this.currentGameDay;
+    const currentProgress = this.getDayProgress();
+
+    for (const b of this.placedBuildables) {
+      if (b.id === 'planting_plot' && b.gardeningData && b.gardeningData.state === 'growing') {
+        const elapsedDays = (currentDay - b.gardeningData.plantedAtDay) + (currentProgress - b.gardeningData.plantedAtDayProgress);
+        if (elapsedDays >= b.gardeningData.growthDays) {
+          b.gardeningData.state = 'ready';
+          console.log(`[Gardening] 🥕 Crop at (${b.x}, ${b.y}) is fully grown and ready for harvest!`);
+        }
+      }
+    }
+  }
+
+  // --- Seed Maker System (Milestone 39) ---
+  public getSeedMaker(x: number, y: number): PlacedBuildable | undefined {
+    return this.placedBuildables.find((b) => b.id === 'seed_maker' && b.x === x && b.y === y);
+  }
+
+  public getSeedMakerState(x: number, y: number): SeedMakerData | undefined {
+    const sm = this.getSeedMaker(x, y);
+    if (!sm) return undefined;
+    if (!sm.seedMakerData) {
+      sm.seedMakerData = {
+        state: 'idle',
+        startedTimeMs: 0,
+        durationMs: 10000,
+        inputItem: 'vegetable',
+        outputItem: 'seeds',
+        outputCount: 2
+      };
+    }
+    return sm.seedMakerData;
+  }
+
+  public insertSeedMakerProduce(x: number, y: number, produceId: string = 'vegetable', durationMs: number = 10000): boolean {
+    const sm = this.getSeedMaker(x, y);
+    if (!sm) return false;
+    const state = this.getSeedMakerState(x, y);
+    if (!state || state.state !== 'idle') return false;
+
+    if (this.getItemCount(produceId) < 1) return false;
+    this.consumeItem(produceId, 1);
+
+    state.state = 'processing';
+    state.inputItem = produceId;
+    state.outputItem = 'seeds';
+    state.outputCount = 2;
+    state.startedTimeMs = Date.now();
+    state.durationMs = durationMs;
+    return true;
+  }
+
+  public collectSeedMakerSeeds(x: number, y: number): { success: boolean; count: number } | null {
+    const sm = this.getSeedMaker(x, y);
+    if (!sm) return null;
+    const state = this.getSeedMakerState(x, y);
+    if (!state || state.state !== 'ready') return null;
+
+    const count = state.outputCount || 2;
+    const outputItem = state.outputItem || 'seeds';
+    state.state = 'idle';
+    this.addItem(outputItem, count);
+    return { success: true, count };
+  }
+
+  public updateSeedMakers(nowMs: number = Date.now()): void {
+    for (const b of this.placedBuildables) {
+      if (b.id === 'seed_maker' && b.seedMakerData && b.seedMakerData.state === 'processing') {
+        const start = b.seedMakerData.startedTimeMs ?? 0;
+        const dur = b.seedMakerData.durationMs ?? 10000;
+        if (nowMs - start >= dur) {
+          b.seedMakerData.state = 'ready';
+          console.log(`[SeedMaker] ✨ Seed Maker at (${b.x}, ${b.y}) finished processing! Seeds ready for collection.`);
+        }
+      }
+    }
   }
 
   // --- Food & Spoilage System (Milestone 7) ---
@@ -506,6 +644,22 @@ export class GameState {
       return true;
     }
     return false;
+  }
+
+  // --- Lockpicking System (Milestone 38) ---
+  public attemptLockpick(
+    memberProgression: ProgressionSystem,
+    memberName: string = 'Guild Hero',
+    rng: () => number = Math.random,
+    playerEntity?: any
+  ): LockpickAttemptResult {
+    const result = LockpickingSystem.getInstance().attemptUnlock(memberProgression, memberName, rng, playerEntity);
+    if (this.snapshot) {
+      this.snapshot.inventory = Object.fromEntries(this.inventory);
+      this.snapshot.researchPoints = this.researchPoints;
+      this.snapshot.resources = { ...this.resources };
+    }
+    return result;
   }
 
   // --- Book-Learned Skills (Cross-class usability) ---

@@ -493,6 +493,22 @@ export class DataLoader {
       };
     }
 
+    if (id === 'lockpicking') {
+      return {
+        id: 'lockpicking',
+        name: 'Lockpicking',
+        description: 'Bypassing locks, manipulating mechanical tumblers, and opening sealed containers.'
+      };
+    }
+
+    if (id === 'gardening') {
+      return {
+        id: 'gardening',
+        name: 'Gardening',
+        description: 'Cultivating crops, tending planting plots, and extracting seeds at the outpost.'
+      };
+    }
+
     return {
       id,
       name: id.split('_').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),

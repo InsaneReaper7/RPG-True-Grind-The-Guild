@@ -1,6 +1,6 @@
 import type { Player } from '../entities/Player.ts';
 import { ProgressionSystem } from '../systems/ProgressionSystem.ts';
-import type { ClassDef, HiddenSkillDef, TrainableStat, FoodQuality, ExpTransaction, ArmorSlot } from '../types/game.ts';
+import type { ClassDef, HiddenSkillDef, TrainableStat, FoodQuality, ExpTransaction, ArmorSlot, ResearchNodeDef } from '../types/game.ts';
 import { getArmorHpSplit } from '../types/game.ts';
 import { DataLoader } from '../utils/DataLoader.ts';
 import { GameState } from '../systems/GameState.ts';
@@ -99,6 +99,7 @@ export class HUD {
   private closeResearchBtn: HTMLElement | null;
   private researchPointsCountEl: HTMLElement | null;
   private researchNodesContainerEl: HTMLElement | null;
+  private handleResearchTreeResize: (() => void) | null = null;
   private alchemyModalEl: HTMLElement | null;
   private closeAlchemyBtn: HTMLElement | null;
   private alchemyModalProfEl: HTMLElement | null;
@@ -152,7 +153,7 @@ export class HUD {
   // Milestone 35 Elements (Paperdoll & Equipment Stash)
   private partyOverviewInventoryEl: HTMLElement | null;
   private partyInventoryItemListEl: HTMLElement | null;
-  private partyInventoryFilter: 'all' | 'weapons' | 'armor' | 'jewelry' = 'all';
+  private partyInventoryFilter: 'all' | 'weapons' | 'armor' | 'jewelry' | 'items' = 'all';
   public activeDragPayload: { itemId: string; itemType: 'weapon' | 'armor'; itemSlot: string; sourceSlot?: string; sourceMemberIdx?: number } | null = null;
 
   // Milestone 8 Debug Buttons
@@ -1021,7 +1022,73 @@ export class HUD {
       };
     }
 
+    // Milestone 38 Debug Buttons: Lockpicking & Locked Box
+    const debugBtnGrantLockedBox = document.getElementById('debug-btn-grant-locked-box');
+    if (debugBtnGrantLockedBox) {
+      debugBtnGrantLockedBox.onclick = () => {
+        GameState.getInstance().addItem('locked_box', 1);
+        HUD.activeInstance?.showToast('📦 Granted +1 Locked Box', 'success');
+        HUD.activeInstance?.renderPartyInventoryPanel();
+      };
+    }
+
+    const debugBtnGrant5LockedBoxes = document.getElementById('debug-btn-grant-5-locked-boxes');
+    if (debugBtnGrant5LockedBoxes) {
+      debugBtnGrant5LockedBoxes.onclick = () => {
+        GameState.getInstance().addItem('locked_box', 5);
+        HUD.activeInstance?.showToast('📦 Granted +5 Locked Boxes', 'success');
+        HUD.activeInstance?.renderPartyInventoryPanel();
+      };
+    }
+
+    const debugBtnGrantLockpickingExp = document.getElementById('debug-btn-grant-lockpicking-exp');
+    if (debugBtnGrantLockpickingExp) {
+      debugBtnGrantLockpickingExp.onclick = () => {
+        const hero = HUD.activeInstance?.currentParty[0] || HUD.activeInstance?.currentPlayer;
+        if (hero) {
+          hero.progression.addProficiencyExp('lockpicking', 25);
+          HUD.activeInstance?.showToast('🗝️ Granted +25 Lockpicking EXP to Hero', 'success');
+          HUD.activeInstance?.updatePartyOverviewLiveStats();
+        }
+      };
+    }
+
+    const debugBtnSetLockpickingLv10 = document.getElementById('debug-btn-set-lockpicking-lv10');
+    if (debugBtnSetLockpickingLv10) {
+      debugBtnSetLockpickingLv10.onclick = () => {
+        const hero = HUD.activeInstance?.currentParty[0] || HUD.activeInstance?.currentPlayer;
+        if (hero) {
+          const stat = hero.progression.getProficiencyStat('lockpicking');
+          stat.level = 10;
+          stat.currentExp = 0;
+          hero.progression.checkClassUnlocks();
+          HUD.activeInstance?.showToast('🗝️ Set Hero Lockpicking to Level 10!', 'success');
+          HUD.activeInstance?.updatePartyOverviewLiveStats();
+        }
+      };
+    }
+
+    const debugBtnGrantLockpick = document.getElementById('debug-btn-grant-lockpick');
+    if (debugBtnGrantLockpick) {
+      debugBtnGrantLockpick.onclick = () => {
+        GameState.getInstance().addItem('lockpick', 3);
+        HUD.activeInstance?.showToast('🗝️ Granted +3 Lockpicks', 'success');
+        HUD.activeInstance?.renderPartyInventoryPanel();
+      };
+    }
+
     // Expose debug helpers globally on window for console testing
+    (window as any).debugGrantLockpick = (count: number = 3) => {
+      GameState.getInstance().addItem('lockpick', count);
+      HUD.activeInstance?.renderPartyInventoryPanel();
+    };
+    (window as any).debugGrantLockedBox = (count: number = 1) => {
+      GameState.getInstance().addItem('locked_box', count);
+      HUD.activeInstance?.renderPartyInventoryPanel();
+    };
+    (window as any).debugAttemptLockpick = (memberIndex?: number) => {
+      HUD.activeInstance?.handleLockpickBox(memberIndex);
+    };
     (window as any).debugGrantSkillBook = (id: string = 'book_power_strike') => HUD.activeInstance?.debugGrantSkillBook(id);
     (window as any).debugGrantResearchPoints = (amount: number = 10) => HUD.activeInstance?.debugGrantResearchPoints(amount);
     (window as any).debugApplyBleed = () => HUD.activeInstance?.debugApplyBleed();
@@ -1222,13 +1289,20 @@ export class HUD {
           if (b.lockedByDefault && !gameState.isBuildableUnlocked(b.id)) {
             continue; // Gated behind Research Tree!
           }
+          if (b.requiredProficiency) {
+            const currentLevel = this.currentProgression ? this.currentProgression.getProficiencyLevel(b.requiredProficiency.proficiency) : 0;
+            if (currentLevel < b.requiredProficiency.level) {
+              continue; // Gated behind profession level (e.g. Seed Maker @ Gardening 25)!
+            }
+          }
           const effCost = BuildingSystem.getEffectiveBuildCost(b.woodCost, constructionLevel);
           const isActive = b.id === selectedId;
           const displayName = b.name.replace('Wood ', '');
+          const costBadgeHtml = (b.clayCost && b.clayCost > 0) ? `🏺 ${b.clayCost} Clay` : `🪵 ${effCost}`;
           html += `
             <div class="palette-item ${isActive ? 'active' : ''}" data-buildable-id="${b.id}">
               <span class="palette-name">${displayName}</span>
-              <span class="palette-cost" id="cost-badge-${b.id}">🪵 ${effCost}</span>
+              <span class="palette-cost" id="cost-badge-${b.id}">${costBadgeHtml}</span>
             </div>
           `;
         }
@@ -2903,10 +2977,72 @@ export class HUD {
       }
     }
 
+    if (this.partyInventoryFilter === 'all' || this.partyInventoryFilter === 'items') {
+      const lockpickCount = gameState.getItemCount('lockpick');
+      if (lockpickCount > 0 || this.partyInventoryFilter === 'items') {
+        items.push({
+          id: 'lockpick',
+          name: 'Lockpick',
+          type: 'item' as any,
+          slot: 'none',
+          displaySlot: 'Tool',
+          icon: '🗝️',
+          statText: 'Required to Pick Locks',
+          count: lockpickCount
+        } as any);
+      }
+
+      const brokenCount = gameState.getItemCount('broken_lockbox');
+      if (brokenCount > 0 || this.partyInventoryFilter === 'items') {
+        items.push({
+          id: 'broken_lockbox',
+          name: 'Broken Lockbox',
+          type: 'item' as any,
+          slot: 'none',
+          displaySlot: 'Damaged Container',
+          icon: '🗃️',
+          statText: 'Smelt for 2 Steel Scrap',
+          count: brokenCount
+        } as any);
+      }
+
+      const boxCount = gameState.getItemCount('locked_box');
+      if (boxCount > 0 || this.partyInventoryFilter === 'items') {
+        items.push({
+          id: 'locked_box',
+          name: 'Locked Box',
+          type: 'item' as any,
+          slot: 'none',
+          displaySlot: 'Locked Container',
+          icon: '📦',
+          statText: `Requires Lockpick (${lockpickCount} on hand)`,
+          count: boxCount,
+          isBox: true
+        } as any);
+      }
+    }
+
     let html = '';
     for (const item of items) {
       const countBadge = item.count > 0 ? `<span style="font-size: 9px; color: #a78bfa; background: rgba(139, 92, 246, 0.2); padding: 1px 5px; border-radius: 3px; font-weight: bold;">x${item.count}</span>` : '';
-      html += `
+      if ((item as any).isBox) {
+        html += `
+        <div class="inventory-item-card" data-item-id="${item.id}" data-item-type="item" data-item-slot="none" draggable="false">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="font-size: 16px;">${item.icon}</span>
+            <div>
+              <div style="font-size: 11px; font-weight: 600; color: #fef08a;">${item.name}</div>
+              <div style="font-size: 9px; color: #9ca3af;">${item.displaySlot} · <span style="color: #f59e0b;">${item.statText}</span></div>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            ${countBadge}
+            <button class="inv-pick-lock-btn btn-action" data-item-id="${item.id}" type="button" style="background: #b45309; border-color: #f59e0b; padding: 3px 8px; font-size: 10px; cursor: pointer; color: #fef08a; border-radius: 4px;" ${item.count <= 0 ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : ''}>🗝️ Pick Lock</button>
+          </div>
+        </div>
+        `;
+      } else {
+        html += `
         <div class="inventory-item-card" draggable="true" data-item-id="${item.id}" data-item-type="${item.type}" data-item-slot="${item.slot}">
           <div style="display: flex; align-items: center; gap: 6px;">
             <span style="font-size: 14px;">${item.icon}</span>
@@ -2917,11 +3053,20 @@ export class HUD {
           </div>
           <div>${countBadge}</div>
         </div>
-      `;
+        `;
+      }
     }
 
     listEl.innerHTML = html;
     this.attachInventoryDragEvents();
+
+    const pickButtons = listEl.querySelectorAll<HTMLButtonElement>('.inv-pick-lock-btn');
+    pickButtons.forEach((btn) => {
+      btn.onclick = (e) => {
+        e.stopPropagation();
+        this.handleLockpickBox();
+      };
+    });
   }
 
   private attachInventoryDragEvents(): void {
@@ -3387,23 +3532,85 @@ export class HUD {
     }
   }
 
-  // --- RESEARCH TREE MODAL METHODS (Milestone 6) ---
+  // --- RESEARCH TREE MODAL METHODS (Milestone 6 & 4X Visual Overhaul) ---
 
   public openResearchTreeModal(): void {
     if (this.researchTreeModalEl) {
       this.researchTreeModalEl.classList.add('active');
       this.renderResearchTreeModal();
+
+      if (!this.handleResearchTreeResize) {
+        this.handleResearchTreeResize = () => {
+          if (this.isResearchTreeModalOpen()) {
+            this.drawResearchTreeConnectors();
+          }
+        };
+        window.addEventListener('resize', this.handleResearchTreeResize);
+      }
     }
   }
 
   public closeResearchTreeModal(): void {
     if (this.researchTreeModalEl) {
       this.researchTreeModalEl.classList.remove('active');
+      if (this.handleResearchTreeResize) {
+        window.removeEventListener('resize', this.handleResearchTreeResize);
+        this.handleResearchTreeResize = null;
+      }
     }
   }
 
   public isResearchTreeModalOpen(): boolean {
     return this.researchTreeModalEl?.classList.contains('active') ?? false;
+  }
+
+  /**
+   * Computes genuine graph depth (longest path from any root) for research tree nodes.
+   * Root nodes with no prerequisites have depth 0.
+   * Dependent nodes have depth = 1 + max(depth of all prerequisites).
+   */
+  public computeResearchTiers(nodes: ResearchNodeDef[]): Map<string, number> {
+    const nodeMap = new Map<string, ResearchNodeDef>();
+    for (const n of nodes) {
+      nodeMap.set(n.id, n);
+    }
+
+    const memo = new Map<string, number>();
+
+    const getDepth = (nodeId: string, visited: Set<string>): number => {
+      if (memo.has(nodeId)) {
+        return memo.get(nodeId)!;
+      }
+      if (visited.has(nodeId)) {
+        // Cycle protection fallback
+        return 0;
+      }
+      const node = nodeMap.get(nodeId);
+      if (!node || !node.prerequisites || node.prerequisites.length === 0) {
+        memo.set(nodeId, 0);
+        return 0;
+      }
+
+      visited.add(nodeId);
+      let maxPrereqDepth = -1;
+      for (const prereqId of node.prerequisites) {
+        const prereqDepth = getDepth(prereqId, new Set(visited));
+        if (prereqDepth > maxPrereqDepth) {
+          maxPrereqDepth = prereqDepth;
+        }
+      }
+      visited.delete(nodeId);
+
+      const depth = maxPrereqDepth + 1;
+      memo.set(nodeId, depth);
+      return depth;
+    };
+
+    const depths = new Map<string, number>();
+    for (const n of nodes) {
+      depths.set(n.id, getDepth(n.id, new Set()));
+    }
+    return depths;
   }
 
   public renderResearchTreeModal(): void {
@@ -3414,72 +3621,434 @@ export class HUD {
     const gameState = GameState.getInstance();
     const researchSystem = ResearchSystem.getInstance();
 
+    const currentPoints = gameState.getResearchPoints();
     if (this.researchPointsCountEl) {
-      this.researchPointsCountEl.innerText = `🔬 ${gameState.getResearchPoints()}`;
+      this.researchPointsCountEl.innerText = `🔬 ${currentPoints}`;
+    }
+
+    const nodeMap = new Map<string, ResearchNodeDef>();
+    researchNodes.forEach((n) => nodeMap.set(n.id, n));
+
+    let completedCount = 0;
+    for (const node of researchNodes) {
+      const isCompleted = gameState.isResearchCompleted(node.id) || (node.targetBuildableId ? gameState.isBuildableUnlocked(node.targetBuildableId) : false);
+      if (isCompleted) completedCount++;
+    }
+
+    const progressSummaryEl = document.getElementById('research-progress-summary');
+    if (progressSummaryEl) {
+      progressSummaryEl.innerText = `${completedCount} / ${researchNodes.length} Researched`;
     }
 
     this.researchNodesContainerEl.innerHTML = '';
 
-    for (const node of researchNodes) {
-      const isUnlocked = gameState.isResearchCompleted(node.id) || (node.targetBuildableId ? gameState.isBuildableUnlocked(node.targetBuildableId) : false);
-      const canUnlock = researchSystem.canUnlockNode(node);
+    // Canvas wrapper that houses both the SVG connectors and the node cards
+    const canvas = document.createElement('div');
+    canvas.id = 'research-tree-canvas';
+    canvas.className = 'research-tree-canvas';
 
-      const card = document.createElement('div');
-      card.style.cssText = 'background: rgba(31, 41, 55, 0.85); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 8px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; gap: 12px;';
+    // SVG overlay for dependency lines
+    const svg = (typeof document.createElementNS === 'function')
+      ? document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+      : document.createElement('svg') as any;
+    svg.id = 'research-tree-svg';
+    svg.setAttribute('class', 'research-tree-svg');
+    canvas.appendChild(svg);
 
-      let buttonHtml = '';
-      if (isUnlocked) {
-        buttonHtml = `<span style="font-size: 12px; font-weight: bold; color: #34d399; background: rgba(5, 150, 105, 0.25); border: 1px solid #10b981; border-radius: 4px; padding: 4px 10px;">✓ Unlocked</span>`;
-      } else if (canUnlock.canUnlock) {
-        buttonHtml = `<button type="button" class="btn-action" style="background: #0284c7; border-color: #38bdf8; font-size: 12px; padding: 6px 12px;" data-unlock-node="${node.id}">🔬 Unlock (${node.cost} Pts)</button>`;
-      } else {
-        const lockTitle = canUnlock.reason || `Locked (${node.cost} Pts)`;
-        buttonHtml = `<button type="button" disabled title="${lockTitle}" style="background: #374151; color: #9ca3af; border: 1px solid #4b5563; border-radius: 6px; font-size: 12px; padding: 6px 12px; cursor: not-allowed;">Locked (${node.cost} Pts)</button>`;
-      }
+    // Columns container
+    const columnsContainer = document.createElement('div');
+    columnsContainer.className = 'research-tier-columns';
 
-      const lockWarningHtml = (!isUnlocked && !canUnlock.canUnlock && canUnlock.reason)
-        ? `<div style="font-size: 10px; color: #fbbf24; margin-top: 3px;">🔒 ${canUnlock.reason}</div>`
-        : '';
+    // Compute topological tier depths
+    const tierMap = this.computeResearchTiers(researchNodes);
+    let maxTier = 0;
+    tierMap.forEach((t) => {
+      if (t > maxTier) maxTier = t;
+    });
 
-      card.innerHTML = `
-        <div style="flex: 1;">
-          <div style="font-size: 14px; font-weight: bold; color: #f3f4f6; display: flex; align-items: center; gap: 8px;">
-            <span>${node.name}</span>
-            <span style="font-size: 11px; color: #38bdf8; font-weight: normal;">Cost: ${node.cost} RP</span>
-          </div>
-          <div style="font-size: 11px; color: #9ca3af; margin-top: 3px;">${node.description}</div>
-          ${lockWarningHtml}
-        </div>
-        <div>${buttonHtml}</div>
-      `;
-
-      const unlockBtn = card.querySelector<HTMLButtonElement>(`[data-unlock-node="${node.id}"]`);
-      if (unlockBtn) {
-        unlockBtn.onclick = () => {
-          const result = researchSystem.unlockNode(node);
-          if (result.success) {
-            if (node.id === 'research_digging' || node.id.includes('digging')) {
-              this.showToast(`✨ Research Complete: ${node.name} unlocked! Dig spots will now appear in dungeons.`, 'success', 3500);
-            } else if (node.id === 'research_skinning' || node.id.includes('skinning')) {
-              this.showToast(`✨ Research Complete: Harvest Enemy Skin unlocked! Animal corpses can now be skinned in dungeons.`, 'success', 3500);
-            } else if (node.id === 'research_butchering' || node.id.includes('butchering')) {
-              this.showToast(`✨ Research Complete: Harvest Enemy Meat unlocked! Eligible monster corpses can now be butchered in dungeons.`, 'success', 3500);
-            } else {
-              this.showToast(`✨ Research Complete: ${node.name} unlocked in Build Mode!`, 'success', 3500);
-            }
-            this.renderResearchTreeModal();
-            if (this.currentProgression) {
-              const constLevel = this.currentProgression.getProficiencyLevel('construction');
-              this.updateBuildOverlay(gameState.getWood(), 0, 'floor', constLevel);
-            }
-          } else {
-            this.showToast(result.reason || 'Could not unlock facility', 'error');
-          }
-        };
-      }
-
-      this.researchNodesContainerEl.appendChild(card);
+    const tierGroups: ResearchNodeDef[][] = [];
+    for (let i = 0; i <= maxTier; i++) {
+      tierGroups.push([]);
     }
+    for (const node of researchNodes) {
+      const t = tierMap.get(node.id) ?? 0;
+      tierGroups[t].push(node);
+    }
+
+    // Heuristic layout optimization:
+    // Sort Tier 0 so nodes with dependents in Tier 1 appear first (e.g. Skinning, Butchering).
+    // Sort Tier 1 so dependent nodes align opposite to their prerequisites.
+    if (tierGroups.length > 1) {
+      const tier1Prereqs = new Set<string>();
+      for (const t1Node of tierGroups[1]) {
+        for (const p of (t1Node.prerequisites || [])) {
+          tier1Prereqs.add(p);
+        }
+      }
+
+      tierGroups[0].sort((a, b) => {
+        const aHasDep = tier1Prereqs.has(a.id) ? 1 : 0;
+        const bHasDep = tier1Prereqs.has(b.id) ? 1 : 0;
+        return bHasDep - aHasDep;
+      });
+
+      const tier0Indices = new Map<string, number>();
+      tierGroups[0].forEach((node, idx) => {
+        tier0Indices.set(node.id, idx);
+      });
+
+      tierGroups[1].sort((a, b) => {
+        const aPrereqIdx = Math.min(...(a.prerequisites || []).map((p: string) => tier0Indices.get(p) ?? 999));
+        const bPrereqIdx = Math.min(...(b.prerequisites || []).map((p: string) => tier0Indices.get(p) ?? 999));
+        return aPrereqIdx - bPrereqIdx;
+      });
+    }
+
+    const NODE_ICONS: Record<string, string> = {
+      research_skinning: '🔪',
+      research_butchering: '🥩',
+      research_armorsmithing_bench: '🛡️',
+      research_cooking_station: '🍳',
+      research_blacksmithing_station: '⚒️',
+      research_bowyer_station: '🏹',
+      research_alchemy_station: '⚗️',
+      research_digging: '⛏️',
+      research_gardening: '🌱'
+    };
+
+    const romanNumerals = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII'];
+    const tierSubtitles = ['Foundational Disciplines', 'Advanced Specializations', 'Mastery & Expansion'];
+
+    for (let t = 0; t <= maxTier; t++) {
+      const colEl = document.createElement('div');
+      colEl.className = 'research-tier-column';
+
+      const tierHeader = document.createElement('div');
+      tierHeader.className = 'research-tier-header';
+      const roman = romanNumerals[t] || `${t + 1}`;
+      const subtitle = tierSubtitles[t] || 'Research Tier';
+      tierHeader.innerHTML = `<span>TIER ${roman} • ${subtitle}</span><span style="color: #64748b; font-size: 10px;">${tierGroups[t].length} Technologies</span>`;
+      colEl.appendChild(tierHeader);
+
+      for (const node of tierGroups[t]) {
+        const isCompleted = gameState.isResearchCompleted(node.id) || (node.targetBuildableId ? gameState.isBuildableUnlocked(node.targetBuildableId) : false);
+        const canUnlockCheck = researchSystem.canUnlockNode(node);
+
+        const prerequisites = node.prerequisites || [];
+        const missingPrereqs = prerequisites.filter((p: string) => !gameState.isResearchCompleted(p) && !gameState.isBuildableUnlocked(p));
+        const isLocked = !isCompleted && missingPrereqs.length > 0;
+        const isAvailable = !isCompleted && !isLocked;
+
+        const card = document.createElement('div');
+        card.id = `research-card-${node.id}`;
+        card.dataset.nodeId = node.id;
+        card.className = `research-node-card ${isCompleted ? 'node-completed' : (isAvailable ? 'node-available' : 'node-locked')}`;
+
+        // Left socket (input anchor) if node has prerequisites
+        if (prerequisites.length > 0) {
+          const socketLeft = document.createElement('div');
+          socketLeft.className = `node-socket node-socket-left ${isCompleted ? 'socket-completed' : (isAvailable ? 'socket-available' : 'socket-locked')}`;
+          card.appendChild(socketLeft);
+        }
+
+        // Right socket (output anchor) if node is a prerequisite for any other node
+        const isPrereqForAny = researchNodes.some((other) => (other.prerequisites || []).includes(node.id));
+        if (isPrereqForAny) {
+          const socketRight = document.createElement('div');
+          socketRight.className = `node-socket node-socket-right ${isCompleted ? 'socket-completed' : (isAvailable ? 'socket-available' : 'socket-locked')}`;
+          card.appendChild(socketRight);
+        }
+
+        // Status badge
+        let badgeHtml = '';
+        if (isCompleted) {
+          badgeHtml = `<span class="node-status-badge badge-completed">✓ Researched</span>`;
+        } else if (isAvailable) {
+          badgeHtml = `<span class="node-status-badge badge-available">⚡ Available</span>`;
+        } else {
+          badgeHtml = `<span class="node-status-badge badge-locked">🔒 Locked</span>`;
+        }
+
+        // Prerequisite alert box (if locked)
+        let prereqAlertHtml = '';
+        if (isLocked) {
+          const pills = prerequisites.map((pId: string) => {
+            const pNode = nodeMap.get(pId);
+            const pName = pNode?.name || pId;
+            const pDone = gameState.isResearchCompleted(pId) || gameState.isBuildableUnlocked(pId);
+            return pDone
+              ? `<span class="node-prereq-pill pill-met" data-prereq-target="${pId}">✓ ${pName}</span>`
+              : `<span class="node-prereq-pill pill-missing" data-prereq-target="${pId}">🔒 Requires: ${pName}</span>`;
+          }).join('');
+
+          prereqAlertHtml = `
+            <div class="node-prereq-alert">
+              <div class="node-prereq-alert-title">🔒 Prerequisite Needed:</div>
+              <div class="node-prereq-pills">${pills}</div>
+            </div>
+          `;
+        }
+
+        // Action button / status indicator
+        let buttonHtml = '';
+        if (isCompleted) {
+          buttonHtml = `<span style="font-size: 11px; font-weight: bold; color: #34d399; background: rgba(5, 150, 105, 0.25); border: 1px solid #10b981; border-radius: 4px; padding: 4px 10px; display: inline-flex; align-items: center; gap: 4px;">✓ Complete</span>`;
+        } else if (isAvailable && canUnlockCheck.canUnlock) {
+          buttonHtml = `<button type="button" class="btn-research-action btn-unlock-ready" data-unlock-node="${node.id}">🔬 Unlock (${node.cost} Pts)</button>`;
+        } else if (isAvailable) {
+          const lockTitle = canUnlockCheck.reason || `Need ${node.cost} RP`;
+          buttonHtml = `<button type="button" disabled class="btn-research-action btn-unlock-disabled" data-unlock-node="${node.id}" title="${lockTitle}">Need ${node.cost} RP (${currentPoints})</button>`;
+        } else {
+          const missingNames = missingPrereqs.map((p: string) => nodeMap.get(p)?.name || p).join(', ');
+          buttonHtml = `<button type="button" disabled class="btn-research-action btn-unlock-disabled" data-unlock-node="${node.id}" title="Locked: Requires ${missingNames}">🔒 Locked</button>`;
+        }
+
+        const icon = NODE_ICONS[node.id] || '🔬';
+
+        card.innerHTML += `
+          <div class="node-card-header">
+            <div class="node-icon-title">
+              <span class="node-icon">${icon}</span>
+              <span class="node-title-text" title="${node.name}">${node.name}</span>
+            </div>
+            ${badgeHtml}
+          </div>
+          <div class="node-description-text">${node.description}</div>
+          ${prereqAlertHtml}
+          <div class="node-card-footer">
+            <span class="node-cost-label">Cost: <strong>${node.cost} RP</strong></span>
+            <div>${buttonHtml}</div>
+          </div>
+        `;
+
+        // Attach unlock click handler
+        const unlockBtn = card.querySelector<HTMLButtonElement>(`[data-unlock-node="${node.id}"]`);
+        if (unlockBtn && !unlockBtn.disabled) {
+          unlockBtn.onclick = () => {
+            const result = researchSystem.unlockNode(node);
+            if (result.success) {
+              if (node.id === 'research_digging' || node.id.includes('digging')) {
+                this.showToast(`✨ Research Complete: ${node.name} unlocked! Dig spots will now appear in dungeons.`, 'success', 3500);
+              } else if (node.id === 'research_skinning' || node.id.includes('skinning')) {
+                this.showToast(`✨ Research Complete: Harvest Enemy Skin unlocked! Animal corpses can now be skinned in dungeons.`, 'success', 3500);
+              } else if (node.id === 'research_butchering' || node.id.includes('butchering')) {
+                this.showToast(`✨ Research Complete: Harvest Enemy Meat unlocked! Eligible monster corpses can now be butchered in dungeons.`, 'success', 3500);
+              } else {
+                this.showToast(`✨ Research Complete: ${node.name} unlocked in Build Mode!`, 'success', 3500);
+              }
+              this.renderResearchTreeModal();
+              if (this.currentProgression) {
+                const constLevel = this.currentProgression.getProficiencyLevel('construction');
+                this.updateBuildOverlay(gameState.getWood(), 0, 'floor', constLevel);
+              }
+            } else {
+              this.showToast(result.reason || 'Could not unlock facility', 'error');
+            }
+          };
+        }
+
+        colEl.appendChild(card);
+      }
+
+      columnsContainer.appendChild(colEl);
+    }
+
+    canvas.appendChild(columnsContainer);
+    this.researchNodesContainerEl.appendChild(canvas);
+
+    // Draw SVG dependency lines & attach hover handlers
+    this.drawResearchTreeConnectors();
+    this.attachResearchTreeHoverHandlers();
+
+    // Re-draw in next frame for accurate browser bounding rect calculations
+    if (typeof requestAnimationFrame !== 'undefined') {
+      requestAnimationFrame(() => {
+        this.drawResearchTreeConnectors();
+      });
+    }
+  }
+
+  /**
+   * Draws smooth Bezier connector lines with directional arrowheads between prerequisite nodes
+   * and dependent nodes on the research tree SVG overlay.
+   */
+  public drawResearchTreeConnectors(): void {
+    const canvas = document.getElementById('research-tree-canvas');
+    const svg = document.getElementById('research-tree-svg') as SVGSVGElement | null;
+    if (!canvas || !svg) return;
+
+    // Define SVG filters and arrow markers
+    svg.innerHTML = `
+      <defs>
+        <marker id="arrow-completed" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M 0 1 L 10 5 L 0 9 z" fill="#10b981" />
+        </marker>
+        <marker id="arrow-available" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M 0 1 L 10 5 L 0 9 z" fill="#38bdf8" />
+        </marker>
+        <marker id="arrow-locked" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M 0 1 L 10 5 L 0 9 z" fill="#64748b" />
+        </marker>
+        <filter id="glow-cyan" x="-20%" y="-20%" width="140%" height="140%">
+          <feDropShadow dx="0" dy="0" stdDeviation="2.5" flood-color="#38bdf8" flood-opacity="0.6"/>
+        </filter>
+        <filter id="glow-green" x="-20%" y="-20%" width="140%" height="140%">
+          <feDropShadow dx="0" dy="0" stdDeviation="2.5" flood-color="#10b981" flood-opacity="0.6"/>
+        </filter>
+      </defs>
+    `;
+
+    const dataLoader = DataLoader.getInstance();
+    const researchNodes = dataLoader.getResearchNodes();
+    const gameState = GameState.getInstance();
+
+    const canvasRect = (typeof canvas.getBoundingClientRect === 'function')
+      ? canvas.getBoundingClientRect()
+      : { left: 0, top: 0, right: 0, bottom: 0, width: 0, height: 0 };
+
+    for (const node of researchNodes) {
+      if (!node.prerequisites || node.prerequisites.length === 0) continue;
+
+      const targetCard = document.getElementById(`research-card-${node.id}`);
+      if (!targetCard) continue;
+
+      const targetRect = (typeof targetCard.getBoundingClientRect === 'function')
+        ? targetCard.getBoundingClientRect()
+        : { left: 0, top: 0, right: 0, bottom: 0, width: 0, height: 0 };
+
+      const endX = targetRect.left - canvasRect.left;
+      const endY = (targetRect.top + targetRect.height / 2) - canvasRect.top;
+
+      const isChildCompleted = gameState.isResearchCompleted(node.id) || (node.targetBuildableId ? gameState.isBuildableUnlocked(node.targetBuildableId) : false);
+
+      for (const prereqId of node.prerequisites) {
+        const sourceCard = document.getElementById(`research-card-${prereqId}`);
+        if (!sourceCard) continue;
+
+        const sourceRect = (typeof sourceCard.getBoundingClientRect === 'function')
+          ? sourceCard.getBoundingClientRect()
+          : { left: 0, top: 0, right: 0, bottom: 0, width: 0, height: 0 };
+
+        const startX = sourceRect.right - canvasRect.left;
+        const startY = (sourceRect.top + sourceRect.height / 2) - canvasRect.top;
+
+        const prereqDef = dataLoader.getResearchNode(prereqId);
+        const isPrereqCompleted = gameState.isResearchCompleted(prereqId) || (prereqDef?.targetBuildableId ? gameState.isBuildableUnlocked(prereqDef.targetBuildableId) : false);
+
+        const dx = Math.max(30, (endX - startX) * 0.5);
+        const d = `M ${startX} ${startY} C ${startX + dx} ${startY}, ${endX - dx} ${endY}, ${endX} ${endY}`;
+
+        const path = (typeof document.createElementNS === 'function')
+          ? document.createElementNS('http://www.w3.org/2000/svg', 'path')
+          : document.createElement('path') as any;
+
+        path.setAttribute('d', d);
+        path.setAttribute('fill', 'none');
+        path.setAttribute('data-source-node', prereqId);
+        path.setAttribute('data-target-node', node.id);
+        path.classList.add('research-connector-line');
+
+        if (isPrereqCompleted) {
+          if (isChildCompleted) {
+            path.setAttribute('stroke', '#10b981');
+            path.setAttribute('stroke-width', '2.5');
+            path.setAttribute('filter', 'url(#glow-green)');
+            path.setAttribute('marker-end', 'url(#arrow-completed)');
+          } else {
+            path.setAttribute('stroke', '#38bdf8');
+            path.setAttribute('stroke-width', '2.5');
+            path.setAttribute('filter', 'url(#glow-cyan)');
+            path.setAttribute('marker-end', 'url(#arrow-available)');
+          }
+        } else {
+          path.setAttribute('stroke', '#64748b');
+          path.setAttribute('stroke-width', '2');
+          path.setAttribute('stroke-dasharray', '5 4');
+          path.setAttribute('marker-end', 'url(#arrow-locked)');
+        }
+
+        svg.appendChild(path);
+      }
+    }
+  }
+
+  /**
+   * Attaches interactive hover highlighting:
+   * - Hovering a prerequisite badge highlights the prerequisite card and connector line.
+   * - Hovering a tech card highlights all its incoming and outgoing connector lines and connected cards.
+   */
+  private attachResearchTreeHoverHandlers(): void {
+    const canvas = document.getElementById('research-tree-canvas');
+    if (!canvas) return;
+
+    // Prerequisite pill hover
+    const pills = canvas.querySelectorAll<HTMLElement>('.node-prereq-pill');
+    pills.forEach((pill) => {
+      const targetId = pill.dataset.prereqTarget;
+      if (!targetId) return;
+
+      const parentCard = pill.closest('.research-node-card') as HTMLElement | null;
+      const parentNodeId = parentCard?.dataset.nodeId;
+
+      pill.onmouseenter = () => {
+        const targetCard = document.getElementById(`research-card-${targetId}`);
+        targetCard?.classList.add('highlight-node');
+
+        if (parentNodeId) {
+          const line = canvas.querySelector(`.research-connector-line[data-source-node="${targetId}"][data-target-node="${parentNodeId}"]`);
+          line?.classList.add('line-highlight');
+        }
+      };
+
+      pill.onmouseleave = () => {
+        const targetCard = document.getElementById(`research-card-${targetId}`);
+        targetCard?.classList.remove('highlight-node');
+
+        if (parentNodeId) {
+          const line = canvas.querySelector(`.research-connector-line[data-source-node="${targetId}"][data-target-node="${parentNodeId}"]`);
+          line?.classList.remove('line-highlight');
+        }
+      };
+    });
+
+    // Card hover
+    const cards = canvas.querySelectorAll<HTMLElement>('.research-node-card');
+    cards.forEach((card) => {
+      const nodeId = card.dataset.nodeId;
+      if (!nodeId) return;
+
+      card.onmouseenter = () => {
+        const outgoingLines = canvas.querySelectorAll(`.research-connector-line[data-source-node="${nodeId}"]`);
+        outgoingLines.forEach((l) => {
+          l.classList.add('line-highlight');
+          const targetId = (l as SVGElement).dataset.targetNode;
+          if (targetId) document.getElementById(`research-card-${targetId}`)?.classList.add('highlight-node');
+        });
+
+        const incomingLines = canvas.querySelectorAll(`.research-connector-line[data-target-node="${nodeId}"]`);
+        incomingLines.forEach((l) => {
+          l.classList.add('line-highlight');
+          const sourceId = (l as SVGElement).dataset.sourceNode;
+          if (sourceId) document.getElementById(`research-card-${sourceId}`)?.classList.add('highlight-node');
+        });
+      };
+
+      card.onmouseleave = () => {
+        const outgoingLines = canvas.querySelectorAll(`.research-connector-line[data-source-node="${nodeId}"]`);
+        outgoingLines.forEach((l) => {
+          l.classList.remove('line-highlight');
+          const targetId = (l as SVGElement).dataset.targetNode;
+          if (targetId) document.getElementById(`research-card-${targetId}`)?.classList.remove('highlight-node');
+        });
+
+        const incomingLines = canvas.querySelectorAll(`.research-connector-line[data-target-node="${nodeId}"]`);
+        incomingLines.forEach((l) => {
+          l.classList.remove('line-highlight');
+          const sourceId = (l as SVGElement).dataset.sourceNode;
+          if (sourceId) document.getElementById(`research-card-${sourceId}`)?.classList.remove('highlight-node');
+        });
+      };
+    });
   }
 
   // --- ALCHEMY CRAFTING MODAL METHODS (Milestone 6) ---
@@ -3926,6 +4495,40 @@ export class HUD {
     return ate;
   }
 
+  public handleLockpickBox(memberIndex?: number): void {
+    const gameState = GameState.getInstance();
+    if (gameState.getItemCount('locked_box') <= 0) {
+      this.showToast('⚠️ No Locked Box in inventory to pick!', 'error');
+      return;
+    }
+
+    if (gameState.getItemCount('lockpick') <= 0) {
+      this.showToast('⚠️ No Lockpicks in inventory! Craft Lockpicks at the Blacksmithing Bench (1 Steel Scrap).', 'warn');
+      return;
+    }
+
+    const activeMember = (memberIndex !== undefined && this.currentParty[memberIndex])
+      ? this.currentParty[memberIndex]
+      : (this.currentParty[0] || this.currentPlayer);
+
+    if (!activeMember) return;
+
+    const memberName = activeMember.name || 'Guild Hero';
+    const result = gameState.attemptLockpick(activeMember.progression, memberName, Math.random, activeMember);
+
+    if (result.success) {
+      const lootSummary = result.rewards.map((r) => `${r.name} x${r.count}`).join(', ');
+      this.showToast(`✨ Success! ${memberName} picked the lock (Roll ${result.rollsAttempted}, +${result.expGained} EXP)!\nFound: ${lootSummary}`, 'success', 4000);
+    } else if (result.boxBroken) {
+      this.showToast(`💥 Box shattered! All 3 lockpicks failed and the lock jammed into a Broken Lockbox! ${memberName} (+${result.expGained} EXP gamble bonus)`, 'error', 3500);
+    } else {
+      this.showToast(`⚠️ Lockpicking stopped! Spent ${result.lockpicksConsumed} lockpick${result.lockpicksConsumed === 1 ? '' : 's'}. Locked Box preserved intact! ${memberName} (+${result.expGained} EXP)`, 'warn', 3000);
+    }
+
+    this.renderPartyInventoryPanel();
+    this.renderPartyOverviewModal();
+  }
+
   public getStatDisplayName(statId: string): string {
     const dataLoader = DataLoader.getInstance();
     const statDef = dataLoader.getTrainableStatDef(statId);
@@ -3959,6 +4562,8 @@ export class HUD {
       case 'holy_magic': return '#facc15';
       case 'energy_regen': return '#38bdf8';
       case 'mana_regen': return '#818cf8';
+      case 'lockpicking': return '#f59e0b';
+      case 'gardening': return '#22c55e';
       default: return '#34d399';
     }
   }
@@ -4370,7 +4975,7 @@ export class HUD {
           }
         }
 
-        const weaponDef = dataLoader.getWeapon(recipe.resultWeaponId);
+        const weaponDef = recipe.resultWeaponId ? dataLoader.getWeapon(recipe.resultWeaponId) : undefined;
         const card = document.createElement('div');
         card.style.cssText = `background: rgba(31, 41, 55, ${isLevelUnlocked ? '0.75' : '0.4'}); border: 1px solid ${isLevelUnlocked ? (canAfford ? 'rgba(148, 163, 184, 0.4)' : 'rgba(107, 114, 128, 0.3)') : 'rgba(239, 68, 68, 0.3)'}; border-radius: 8px; padding: 12px; display: flex; justify-content: space-between; align-items: center;`;
 
@@ -4383,7 +4988,11 @@ export class HUD {
         }).join(', ');
 
         const stunPct = weaponDef?.stunChance ? (weaponDef.stunChance * 100).toFixed(0) : '0';
-        const weaponStats = weaponDef ? `Base Dmg: ${weaponDef.baseDamage} | Stun: ${stunPct}% | Speed: ${weaponDef.attackIntervalMs}ms` : '';
+        const weaponStats = weaponDef
+          ? `Base Dmg: ${weaponDef.baseDamage} | Stun: ${stunPct}% | Speed: ${weaponDef.attackIntervalMs}ms`
+          : (recipe.resultItemId === 'steel_scrap'
+              ? 'Smelting · Yields 2x Steel Scrap'
+              : (recipe.resultItemId === 'lockpick' ? 'Tool · Required for Lockpicking' : ''));
 
         let actionBtnHtml = '';
         if (!isLevelUnlocked) {
@@ -4391,7 +5000,10 @@ export class HUD {
         } else if (!canAfford) {
           actionBtnHtml = `<button type="button" class="btn-action" style="background: #374151; border-color: #4b5563; color: #9ca3af; cursor: not-allowed; font-size: 11px; padding: 6px 14px;" disabled>Insufficient Mats</button>`;
         } else {
-          actionBtnHtml = `<button type="button" class="btn-action" style="background: #334155; border-color: #64748b; font-size: 11px; padding: 6px 14px; font-weight: bold; color: #f8fafc;" data-forge-recipe="${recipe.id}">🔨 Forge Weapon</button>`;
+          const btnLabel = recipe.id === 'smelt_broken_lockbox'
+            ? '🔥 Smelt Box'
+            : (weaponDef ? '🔨 Forge Weapon' : '🔨 Craft Tool');
+          actionBtnHtml = `<button type="button" class="btn-action" style="background: #334155; border-color: #64748b; font-size: 11px; padding: 6px 14px; font-weight: bold; color: #f8fafc;" data-forge-recipe="${recipe.id}">${btnLabel}</button>`;
         }
 
         card.innerHTML = `
@@ -4414,12 +5026,15 @@ export class HUD {
             for (const [item, qty] of Object.entries(recipe.ingredients)) {
               gameState.consumeItem(item, qty);
             }
-            // Add forged weapon to inventory
-            gameState.addItem(recipe.resultWeaponId, 1);
+            // Add forged weapon or crafted item to inventory
+            const resultId = recipe.resultItemId || recipe.resultWeaponId || recipe.id;
+            const resultQty = recipe.resultCount ?? 1;
+            gameState.addItem(resultId, resultQty);
             // Award Blacksmithing EXP
             progression.addProficiencyExp('blacksmithing', recipe.expGranted);
 
-            this.showToast(`🔨 Forged 1x ${recipe.name}! (+${recipe.expGranted} Blacksmithing EXP)`, 'success', 2500);
+            const actionVerb = recipe.id === 'smelt_broken_lockbox' ? 'Smelted' : (weaponDef ? 'Forged' : 'Crafted');
+            this.showToast(`🔨 ${actionVerb} ${resultQty}x ${recipe.name}! (+${recipe.expGranted} Blacksmithing EXP)`, 'success', 2500);
             this.renderBlacksmithingModal(player, progression);
             this.update(player, progression, 0);
           };

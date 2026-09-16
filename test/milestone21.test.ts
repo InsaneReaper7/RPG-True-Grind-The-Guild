@@ -210,7 +210,7 @@ async function runMilestone21Tests() {
   // Test 3: Tier-Unlocked Blacksmith Recipes & Crafting Consumption
   console.log('Test 3: Tier-Unlocked Blacksmith Recipes & Crafting Consumption...');
   const recipes = dataLoader.getBlacksmithRecipes();
-  assert.equal(recipes.length, 3, 'Must have exactly 3 blacksmith recipes');
+  assert.ok(recipes.length >= 3, 'Must have at least 3 blacksmith recipes');
   
   const rMace = dataLoader.getBlacksmithRecipe('mace');
   assert.ok(rMace);

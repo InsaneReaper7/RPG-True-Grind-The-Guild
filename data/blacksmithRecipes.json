@@ -37,6 +37,30 @@
       },
       "expGranted": 80,
       "description": "A brutal spiked morningstar forged from the finest orcish steel. Devastating stun potential."
+    },
+    {
+      "id": "lockpick",
+      "name": "Lockpick",
+      "resultItemId": "lockpick",
+      "resultCount": 1,
+      "requiredLevel": 0,
+      "ingredients": {
+        "steel_scrap": 1
+      },
+      "expGranted": 10,
+      "description": "A slender steel pick forged from scrap metal. Essential tool required to pick Locked Boxes."
+    },
+    {
+      "id": "smelt_broken_lockbox",
+      "name": "Smelt Broken Lockbox",
+      "resultItemId": "steel_scrap",
+      "resultCount": 2,
+      "requiredLevel": 0,
+      "ingredients": {
+        "broken_lockbox": 1
+      },
+      "expGranted": 15,
+      "description": "Smelt a ruined lockbox in the forge to reclaim 2 Steel Scrap."
     }
   ]
 }

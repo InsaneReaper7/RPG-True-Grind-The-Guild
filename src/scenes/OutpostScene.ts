@@ -53,6 +53,7 @@ export class OutpostScene extends Phaser.Scene {
   private gridMatrix: number[][] = [];
   private baseWallSet: Set<string> = new Set();
   private placedSprites: Map<string, Phaser.GameObjects.Sprite | Phaser.GameObjects.Image> = new Map();
+  private harvestIcons: Map<string, { sprite: Phaser.GameObjects.Sprite; tween?: Phaser.Tweens.Tween; type: 'plot' | 'seed_maker' }> = new Map();
 
   // Cursor Hover Reticle & Ghost Preview
   private hoverHighlightSprite!: Phaser.GameObjects.Sprite;
@@ -538,6 +539,34 @@ export class OutpostScene extends Phaser.Scene {
         return;
       }
 
+      // Check if clicking an interactive Harvest Icon (Milestone 39)
+      for (const [key, iconData] of Array.from(this.harvestIcons.entries())) {
+        const [ix, iy] = key.split(',').map(Number);
+        const iconDist = Math.hypot((ix * this.tileSize + this.tileSize / 2) - worldPoint.x, (iy * this.tileSize - 12) - worldPoint.y);
+        if (iconDist <= 18) {
+          if (iconData.type === 'plot') {
+            const plot = this.getPlacedBuildableAt(ix, iy);
+            if (plot) { this.interactPlantingPlot(plot); return; }
+          } else {
+            const sm = this.getPlacedBuildableAt(ix, iy);
+            if (sm) { this.interactSeedMaker(sm); return; }
+          }
+        }
+      }
+
+      // Check if clicking a placed Planting Plot
+      const clickedPlacedItem = this.getPlacedBuildableAt(clickedTileX, clickedTileY);
+      if (clickedPlacedItem?.id === 'planting_plot') {
+        this.interactPlantingPlot(clickedPlacedItem);
+        return;
+      }
+
+      // Check if clicking a placed Seed Maker
+      if (clickedPlacedItem?.id === 'seed_maker') {
+        this.interactSeedMaker(clickedPlacedItem);
+        return;
+      }
+
       // Check if clicking a placed Research Station
       if (this.isPlacedStation(clickedTileX, clickedTileY)) {
         this.hud.openResearchTreeModal();
@@ -976,6 +1005,8 @@ export class OutpostScene extends Phaser.Scene {
     else if (def.id === 'blacksmithing_station') texture = 'buildable-blacksmithing-station';
     else if (def.id === 'armorsmithing_bench') texture = 'buildable-armorsmithing-bench';
     else if (def.id === 'bowyer_station') texture = 'buildable-bowyer-station';
+    else if (def.id === 'planting_plot') texture = 'buildable-planting-plot';
+    else if (def.id === 'seed_maker') texture = 'buildable-seed-maker';
 
     this.hoverGhostSprite.setTexture(texture);
     this.hoverGhostSprite.setAngle(def.rotatable ? this.currentRotation : 0);
@@ -1044,6 +1075,8 @@ export class OutpostScene extends Phaser.Scene {
     if (!blueprint) return;
 
     const playerPos = this.player?.gridPos ?? { x: -1, y: -1 };
+    const gardeningLevel = this.progressionSystem.getProficiencyLevel('gardening');
+    const currentClay = GameState.getInstance().getItemCount('clay');
     let validation = this.buildingSystem.canPlace(
       blueprint,
       tileX,
@@ -1054,7 +1087,9 @@ export class OutpostScene extends Phaser.Scene {
       (x, y) => this.isPlacedDoor(x, y),
       (x, y) => this.isSolidFurnitureOrStation(x, y),
       GameState.getInstance().getWood(),
-      constLevel
+      constLevel,
+      currentClay,
+      gardeningLevel
     );
 
     if (validation.valid && !blueprint.walkable && this.party.some((m) => m.gridPos.x === tileX && m.gridPos.y === tileY)) {
@@ -1094,6 +1129,8 @@ export class OutpostScene extends Phaser.Scene {
     if (!blueprint) return;
 
     const constLevel = this.progressionSystem.getProficiencyLevel('construction');
+    const gardeningLevel = this.progressionSystem.getProficiencyLevel('gardening');
+    const currentClay = GameState.getInstance().getItemCount('clay');
     const effectiveCost = BuildingSystem.getEffectiveBuildCost(blueprint.woodCost, constLevel);
 
     const playerPos = this.player?.gridPos ?? { x: -1, y: -1 };
@@ -1107,7 +1144,9 @@ export class OutpostScene extends Phaser.Scene {
       (tx, ty) => this.isPlacedDoor(tx, ty),
       (tx, ty) => this.isSolidFurnitureOrStation(tx, ty),
       GameState.getInstance().getWood(),
-      constLevel
+      constLevel,
+      currentClay,
+      gardeningLevel
     );
 
     if (validation.valid && !blueprint.walkable && this.party.some((m) => m.gridPos.x === x && m.gridPos.y === y)) {
@@ -1122,15 +1161,28 @@ export class OutpostScene extends Phaser.Scene {
       return;
     }
 
-    // Deduct wood using effective cost
-    const success = GameState.getInstance().consumeWood(effectiveCost);
-    if (!success) {
-      console.log(`[BuildMode:Place] Tile: (${x}, ${y}) | Result: REJECTED | Reason: Not enough wood`);
-      this.hud.showToast(`Not enough Wood! Requires ${effectiveCost} Wood.`, 'error');
-      return;
+    // Deduct wood using effective cost if woodCost > 0
+    if (blueprint.woodCost > 0) {
+      const success = GameState.getInstance().consumeWood(effectiveCost);
+      if (!success) {
+        console.log(`[BuildMode:Place] Tile: (${x}, ${y}) | Result: REJECTED | Reason: Not enough wood`);
+        this.hud.showToast(`Not enough Wood! Requires ${effectiveCost} Wood.`, 'error');
+        return;
+      }
     }
 
-    console.log(`[BuildMode:Place] Tile: (${x}, ${y}) | Result: PLACED ${blueprint.name} (-${effectiveCost} Wood)`);
+    // Deduct clay if clayCost > 0
+    if (blueprint.clayCost && blueprint.clayCost > 0) {
+      const success = GameState.getInstance().consumeItem('clay', blueprint.clayCost);
+      if (!success) {
+        console.log(`[BuildMode:Place] Tile: (${x}, ${y}) | Result: REJECTED | Reason: Not enough clay`);
+        this.hud.showToast(`Not enough Clay! Requires ${blueprint.clayCost} Clay.`, 'error');
+        return;
+      }
+    }
+
+    const costLabel = (blueprint.clayCost && blueprint.clayCost > 0) ? `-${blueprint.clayCost} Clay` : `-${effectiveCost} Wood`;
+    console.log(`[BuildMode:Place] Tile: (${x}, ${y}) | Result: PLACED ${blueprint.name} (${costLabel})`);
 
     // Save to GameState with costPaid
     const placedItem: PlacedBuildable = {
@@ -1138,13 +1190,19 @@ export class OutpostScene extends Phaser.Scene {
       x,
       y,
       rotation: blueprint.rotatable ? this.currentRotation : 0,
-      costPaid: effectiveCost
+      costPaid: blueprint.woodCost > 0 ? effectiveCost : (blueprint.clayCost ?? 0)
     };
     GameState.getInstance().addPlacedBuildable(placedItem);
 
     // Award +1 Construction EXP
     this.progressionSystem.addProficiencyExp('construction', 1);
     this.createFloatingText(x * this.tileSize + this.tileSize / 2, y * this.tileSize, '+1 Construction Exp', '#f59e0b');
+
+    // Milestone 39: Award +13 Gardening EXP on Planting Plot construction (bootstrapping sequence)
+    if (blueprint.id === 'planting_plot') {
+      this.progressionSystem.addProficiencyExp('gardening', 13);
+      this.createFloatingText(x * this.tileSize + this.tileSize / 2, y * this.tileSize - 14, '+13 Gardening EXP', '#22c55e');
+    }
 
     // Render sprite
     this.createPlacedSprite(placedItem);
@@ -1164,7 +1222,7 @@ export class OutpostScene extends Phaser.Scene {
     this.recalculateEnclosedRooms();
 
     const currentRoom = this.cachedRoomMap.get(`${x},${y}`);
-    const roomSuffix = currentRoom ? ` in ${currentRoom.name}` : '';
+    const roomSuffix = currentRoom ? ` inside ${currentRoom.name}` : '';
 
     this.hud.updateBuildOverlay(
       GameState.getInstance().getWood(),
@@ -1172,7 +1230,7 @@ export class OutpostScene extends Phaser.Scene {
       this.selectedBuildableId,
       this.progressionSystem.getProficiencyLevel('construction')
     );
-    this.hud.showToast(`Placed ${blueprint.name} (-${effectiveCost} Wood)${roomSuffix}. +1 Construction Exp`, 'success');
+    this.hud.showToast(`Placed ${blueprint.name} (${costLabel})${roomSuffix}. +1 Construction Exp`, 'success');
   }
 
   private demolishAt(x: number, y: number): void {
@@ -1183,15 +1241,22 @@ export class OutpostScene extends Phaser.Scene {
       return;
     }
 
+    // Hide any active harvest icon at this tile
+    this.hideHarvestIcon(x, y);
+
     const dataLoader = DataLoader.getInstance();
     const def = dataLoader.getBuildable(placed.id);
     const constLevel = this.progressionSystem.getProficiencyLevel('construction');
     const costPaid = placed.costPaid ?? (def?.woodCost || 0);
     const refund = BuildingSystem.getEffectiveDemolishRefund(costPaid, constLevel);
 
-    // Remove from GameState and refund wood
+    // Remove from GameState and refund
     GameState.getInstance().removePlacedBuildable(x, y);
-    GameState.getInstance().addWood(refund);
+    if (def?.clayCost && def.clayCost > 0) {
+      GameState.getInstance().addItem('clay', 2);
+    } else {
+      GameState.getInstance().addWood(refund);
+    }
 
     // Award +1 Construction EXP
     this.progressionSystem.addProficiencyExp('construction', 1);
@@ -1283,6 +1348,25 @@ export class OutpostScene extends Phaser.Scene {
       sprite = this.add.sprite(posX, posY, 'buildable-bowyer-station')
         .setAngle(item.rotation)
         .setDepth(posY);
+    } else if (item.id === 'planting_plot') {
+      const state = GameState.getInstance().getPlotState(item.x, item.y);
+      const tex = state?.state === 'ready'
+        ? 'buildable-planting-plot-ready'
+        : state?.state === 'growing'
+        ? 'buildable-planting-plot-sprout'
+        : 'buildable-planting-plot';
+      sprite = this.add.sprite(posX, posY, tex).setDepth(2);
+      if (state?.state === 'ready') {
+        this.showHarvestIcon(item.x, item.y, 'plot');
+      }
+    } else if (item.id === 'seed_maker') {
+      sprite = this.add.sprite(posX, posY, 'buildable-seed-maker')
+        .setAngle(item.rotation)
+        .setDepth(posY);
+      const smState = GameState.getInstance().getSeedMakerState(item.x, item.y);
+      if (smState?.state === 'ready') {
+        this.showHarvestIcon(item.x, item.y, 'seed_maker');
+      }
     } else {
       sprite = this.add.sprite(posX, posY, 'buildable-wood-floor').setDepth(1);
     }
@@ -1375,6 +1459,165 @@ export class OutpostScene extends Phaser.Scene {
   private isPlacedBed(x: number, y: number): boolean {
     const placed = this.getPlacedBuildableAt(x, y);
     return placed?.id === 'bed';
+  }
+
+  public isPlacedPlantingPlot(x: number, y: number): boolean {
+    const placed = this.getPlacedBuildableAt(x, y);
+    return placed?.id === 'planting_plot';
+  }
+
+  public isPlacedSeedMaker(x: number, y: number): boolean {
+    const placed = this.getPlacedBuildableAt(x, y);
+    return placed?.id === 'seed_maker';
+  }
+
+  // --- Milestone 39: Gardening & Seed Maker Interactions ---
+
+  public showHarvestIcon(tileX: number, tileY: number, type: 'plot' | 'seed_maker'): void {
+    const key = `${tileX},${tileY}`;
+    if (this.harvestIcons.has(key)) return;
+
+    const posX = tileX * this.tileSize + this.tileSize / 2;
+    const posY = tileY * this.tileSize - 12;
+    const sprite = this.add.sprite(posX, posY, 'harvest-icon')
+      .setDepth(10002)
+      .setInteractive({ useHandCursor: true });
+
+    sprite.on('pointerdown', (_pointer: Phaser.Input.Pointer, _lx: number, _ly: number, event?: Phaser.Types.Input.EventData) => {
+      event?.stopPropagation();
+      if (type === 'plot') {
+        const plot = this.getPlacedBuildableAt(tileX, tileY);
+        if (plot) this.interactPlantingPlot(plot);
+      } else {
+        const sm = this.getPlacedBuildableAt(tileX, tileY);
+        if (sm) this.interactSeedMaker(sm);
+      }
+    });
+
+    let tween: Phaser.Tweens.Tween | undefined;
+    if (this.tweens) {
+      tween = this.tweens.add({
+        targets: sprite,
+        y: posY - 4,
+        scale: 1.1,
+        duration: 700,
+        yoyo: true,
+        repeat: -1,
+        ease: 'Sine.easeInOut'
+      });
+    }
+
+    this.harvestIcons.set(key, { sprite, tween, type });
+  }
+
+  public hideHarvestIcon(tileX: number, tileY: number): void {
+    const key = `${tileX},${tileY}`;
+    const entry = this.harvestIcons.get(key);
+    if (entry) {
+      if (entry.tween) entry.tween.stop();
+      entry.sprite.destroy();
+      this.harvestIcons.delete(key);
+    }
+  }
+
+  public interactPlantingPlot(plot: PlacedBuildable): void {
+    const gs = GameState.getInstance();
+    const plotState = gs.getPlotState(plot.x, plot.y);
+    if (!plotState) return;
+
+    if (plotState.state === 'empty') {
+      if (gs.getItemCount('seeds') < 1) {
+        this.hud?.showToast('⚠️ You need Seeds to plant in this plot! Dig them up or harvest dungeon vegetable nodes.', 'warn', 3000);
+        return;
+      }
+      const planted = gs.plantCrop(plot.x, plot.y, 'seeds');
+      if (planted) {
+        // Award +5 Gardening EXP
+        this.progressionSystem.addProficiencyExp('gardening', 5);
+        this.createFloatingText(plot.x * this.tileSize + this.tileSize / 2, plot.y * this.tileSize - 10, '🌱 Planted Seeds!', '#22c55e');
+        this.createFloatingText(plot.x * this.tileSize + this.tileSize / 2, plot.y * this.tileSize - 24, '+5 Gardening EXP', '#60a5fa');
+        this.hud?.showToast('🌱 Planted Seeds in the plot! (+5 Gardening EXP)', 'success', 2500);
+
+        const sprite = this.placedSprites.get(`${plot.x},${plot.y}`);
+        if (sprite) sprite.setTexture('buildable-planting-plot-sprout');
+      }
+    } else if (plotState.state === 'growing') {
+      this.hud?.showToast('🌱 Seeds are growing in the plot... They mature as game days advance.', 'info', 2500);
+    } else if (plotState.state === 'ready') {
+      const res = gs.harvestCrop(plot.x, plot.y);
+      if (res && res.success) {
+        this.hideHarvestIcon(plot.x, plot.y);
+        // Award +15 Gardening EXP
+        this.progressionSystem.addProficiencyExp('gardening', 15);
+        this.createFloatingText(plot.x * this.tileSize + this.tileSize / 2, plot.y * this.tileSize - 10, `+${res.count} Fresh Vegetables`, '#22c55e');
+        this.createFloatingText(plot.x * this.tileSize + this.tileSize / 2, plot.y * this.tileSize - 24, '+15 Gardening EXP', '#60a5fa');
+        this.hud?.showToast(`🌾 Harvested ${res.count}x Fresh Vegetables! (+15 Gardening EXP)`, 'success', 2500);
+
+        const sprite = this.placedSprites.get(`${plot.x},${plot.y}`);
+        if (sprite) sprite.setTexture('buildable-planting-plot');
+      }
+    }
+  }
+
+  public interactSeedMaker(sm: PlacedBuildable): void {
+    const gs = GameState.getInstance();
+    const smState = gs.getSeedMakerState(sm.x, sm.y);
+    if (!smState) return;
+
+    if (smState.state === 'idle') {
+      if (gs.getItemCount('vegetable') < 1) {
+        this.hud?.showToast('⚠️ You need 1 Fresh Vegetable to process in the Seed Maker!', 'warn', 3000);
+        return;
+      }
+      const inserted = gs.insertSeedMakerProduce(sm.x, sm.y, 'vegetable', 10000);
+      if (inserted) {
+        this.createFloatingText(sm.x * this.tileSize + this.tileSize / 2, sm.y * this.tileSize - 10, '-1 Vegetable', '#f59e0b');
+        this.hud?.showToast('🌰 Inserted 1 Vegetable into Seed Maker! Extracting seeds (10s)...', 'info', 2500);
+      }
+    } else if (smState.state === 'processing') {
+      const remainingSec = Math.max(1, Math.ceil((smState.startedTimeMs! + smState.durationMs! - Date.now()) / 1000));
+      this.hud?.showToast(`⏳ Seed Maker is extracting seeds... (${remainingSec}s remaining)`, 'info', 2000);
+    } else if (smState.state === 'ready') {
+      const res = gs.collectSeedMakerSeeds(sm.x, sm.y);
+      if (res && res.success) {
+        this.hideHarvestIcon(sm.x, sm.y);
+        this.createFloatingText(sm.x * this.tileSize + this.tileSize / 2, sm.y * this.tileSize - 10, `+${res.count} Seeds`, '#22c55e');
+        this.hud?.showToast(`✨ Collected ${res.count}x Seeds from the Seed Maker!`, 'success', 2500);
+      }
+    }
+  }
+
+  public updateAllGardeningVisuals(): void {
+    const gs = GameState.getInstance();
+    const placed = gs.getPlacedBuildables();
+
+    for (const item of placed) {
+      if (item.id === 'planting_plot') {
+        const state = gs.getPlotState(item.x, item.y);
+        const sprite = this.placedSprites.get(`${item.x},${item.y}`);
+        if (state && sprite) {
+          if (state.state === 'ready') {
+            sprite.setTexture('buildable-planting-plot-ready');
+            this.showHarvestIcon(item.x, item.y, 'plot');
+          } else if (state.state === 'growing') {
+            sprite.setTexture('buildable-planting-plot-sprout');
+            this.hideHarvestIcon(item.x, item.y);
+          } else {
+            sprite.setTexture('buildable-planting-plot');
+            this.hideHarvestIcon(item.x, item.y);
+          }
+        }
+      } else if (item.id === 'seed_maker') {
+        const smState = gs.getSeedMakerState(item.x, item.y);
+        if (smState) {
+          if (smState.state === 'ready') {
+            this.showHarvestIcon(item.x, item.y, 'seed_maker');
+          } else {
+            this.hideHarvestIcon(item.x, item.y);
+          }
+        }
+      }
+    }
   }
 
   private isWallOrDoor(x: number, y: number): boolean {
@@ -1602,6 +1845,7 @@ export class OutpostScene extends Phaser.Scene {
     }
 
     GameState.getInstance().updateClock(delta);
+    this.updateAllGardeningVisuals();
     for (const member of this.party) {
       member.update(time, delta);
     }

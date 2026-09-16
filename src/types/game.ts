@@ -138,10 +138,29 @@ export interface FootprintDef {
   height: number;
 }
 
+export interface PlantingPlotData {
+  state: 'empty' | 'growing' | 'ready';
+  plantedCropId?: string;
+  plantedAtDay: number;
+  plantedAtDayProgress: number;
+  growthDays: number;
+}
+
+export interface SeedMakerData {
+  state: 'idle' | 'processing' | 'ready';
+  inputItem?: string;
+  outputItem?: string;
+  outputCount?: number;
+  startedTimeMs?: number;
+  durationMs?: number;
+}
+
 export interface BuildableDef {
   id: string;
   name: string;
   woodCost: number;
+  clayCost?: number;
+  requiredProficiency?: { proficiency: string; level: number };
   footprint: FootprintDef;
   rotatable: boolean;
   indoorRequired: boolean;
@@ -162,6 +181,8 @@ export interface PlacedBuildable {
   y: number;
   rotation: number; // 0, 90, 180, 270
   costPaid?: number;
+  gardeningData?: PlantingPlotData;
+  seedMakerData?: SeedMakerData;
 }
 
 export interface RoomRuleDef {
@@ -329,7 +350,9 @@ export interface CookingRecipesData {
 export interface BlacksmithRecipeDef {
   id: string;
   name: string;
-  resultWeaponId: string;
+  resultWeaponId?: string;
+  resultItemId?: string;
+  resultCount?: number;
   requiredLevel: number;
   ingredients: Record<string, number>;
   expGranted: number;
@@ -703,5 +726,28 @@ export interface GeneratedDungeon {
 export interface DynamicObstaclesConfig {
   soft?: GridPos[]; // eligible for corridor bottleneck fallback (friendly party members)
   hard?: GridPos[]; // hard non-negotiable obstacles (living enemies)
+}
+
+// Milestone 38: Lockpicking & Locked Box
+export interface LockedBoxReward {
+  type: 'research_points' | 'item' | 'resource';
+  id: string;
+  name: string;
+  count: number;
+  isRare?: boolean;
+}
+
+export interface LockpickAttemptResult {
+  success: boolean;
+  expGained: number;
+  rewards: LockedBoxReward[];
+  message: string;
+  memberName: string;
+  newLevel?: number;
+  leveledUp?: boolean;
+  rollsAttempted?: number;
+  lockpicksConsumed?: number;
+  boxBroken?: boolean;
+  boxPreserved?: boolean;
 }
 

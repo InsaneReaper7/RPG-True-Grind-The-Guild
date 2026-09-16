@@ -2004,19 +2004,19 @@ export class MainScene extends Phaser.Scene {
     const config = dataLoader.getGatheringNodesConfig();
     const nodeDef: GatheringNodeDef = config?.nodes?.[nodeTypeId] || dataLoader.getGatheringNode(nodeTypeId) || {
       id: nodeTypeId,
-      name: nodeTypeId.includes('tree') ? 'Tree' : nodeTypeId.includes('rock') ? 'Rock Vein' : nodeTypeId.includes('dig') ? 'Dig Spot' : 'Wild Herbs',
-      skillId: nodeTypeId.includes('tree') ? 'woodcutting' : nodeTypeId.includes('rock') ? 'mining' : nodeTypeId.includes('dig') ? 'digging' : 'foraging',
-      resourceId: nodeTypeId.includes('tree') ? 'wood' : nodeTypeId.includes('rock') ? 'ore' : nodeTypeId.includes('dig') ? 'dirt' : 'wild_herbs',
+      name: nodeTypeId.includes('tree') ? 'Tree' : nodeTypeId.includes('rock') ? 'Rock Vein' : nodeTypeId.includes('dig') ? 'Dig Spot' : nodeTypeId.includes('vegetable') ? 'Wild Vegetable' : 'Wild Herbs',
+      skillId: nodeTypeId.includes('tree') ? 'woodcutting' : nodeTypeId.includes('rock') ? 'mining' : nodeTypeId.includes('dig') ? 'digging' : nodeTypeId.includes('vegetable') ? 'gardening' : 'foraging',
+      resourceId: nodeTypeId.includes('tree') ? 'wood' : nodeTypeId.includes('rock') ? 'ore' : nodeTypeId.includes('dig') ? 'dirt' : nodeTypeId.includes('vegetable') ? 'vegetable' : 'wild_herbs',
       yieldCount: nodeTypeId.includes('tree') ? 2 : 1,
       expGranted: 15,
       channelDurationMs: 2500,
       respawnTimeMs: 15000,
-      textureKey: nodeTypeId.includes('tree') ? 'woodcutting-tree' : nodeTypeId.includes('rock') ? 'mining-rock' : nodeTypeId.includes('dig') ? 'dig-spot' : 'foraging-bush',
-      textureDepletedKey: nodeTypeId.includes('tree') ? 'woodcutting-tree-depleted' : nodeTypeId.includes('rock') ? 'mining-rock-depleted' : nodeTypeId.includes('dig') ? 'dig-spot-depleted' : 'foraging-bush-depleted',
-      label: nodeTypeId.includes('tree') ? 'Tree' : nodeTypeId.includes('rock') ? 'Rock Vein' : nodeTypeId.includes('dig') ? 'Dig Spot' : 'Wild Herbs',
+      textureKey: nodeTypeId.includes('tree') ? 'woodcutting-tree' : nodeTypeId.includes('rock') ? 'mining-rock' : nodeTypeId.includes('dig') ? 'dig-spot' : nodeTypeId.includes('vegetable') ? 'vegetable-node' : 'foraging-bush',
+      textureDepletedKey: nodeTypeId.includes('tree') ? 'woodcutting-tree-depleted' : nodeTypeId.includes('rock') ? 'mining-rock-depleted' : nodeTypeId.includes('dig') ? 'dig-spot-depleted' : nodeTypeId.includes('vegetable') ? 'vegetable-node-depleted' : 'foraging-bush-depleted',
+      label: nodeTypeId.includes('tree') ? 'Tree' : nodeTypeId.includes('rock') ? 'Rock Vein' : nodeTypeId.includes('dig') ? 'Dig Spot' : nodeTypeId.includes('vegetable') ? 'Wild Vegetable' : 'Wild Herbs',
       depletedLabel: nodeTypeId.includes('tree') ? 'Stump' : nodeTypeId.includes('rock') ? 'Depleted' : nodeTypeId.includes('dig') ? 'Excavated' : 'Stripped',
-      color: nodeTypeId.includes('tree') ? '#f59e0b' : nodeTypeId.includes('rock') ? '#94a3b8' : nodeTypeId.includes('dig') ? '#b45309' : '#34d399',
-      actionVerb: nodeTypeId.includes('tree') ? 'Logging' : nodeTypeId.includes('rock') ? 'Mining' : nodeTypeId.includes('dig') ? 'Digging' : 'Foraging'
+      color: nodeTypeId.includes('tree') ? '#f59e0b' : nodeTypeId.includes('rock') ? '#94a3b8' : nodeTypeId.includes('dig') ? '#b45309' : nodeTypeId.includes('vegetable') ? '#22c55e' : '#34d399',
+      actionVerb: nodeTypeId.includes('tree') ? 'Logging' : nodeTypeId.includes('rock') ? 'Mining' : nodeTypeId.includes('dig') ? 'Digging' : nodeTypeId.includes('vegetable') ? 'Gardening' : 'Foraging'
     };
 
     const posX = x * this.tileSize + this.tileSize / 2;
@@ -2336,6 +2336,19 @@ export class MainScene extends Phaser.Scene {
       }
     }
 
+    // Milestone 39: Rare Dungeon Vegetable Node Seed Bonus Gated at Gardening Level 1
+    let bonusSeeds = 0;
+    if (node.nodeDef.id === 'vegetable_node' || node.nodeDef.resourceId === 'vegetable') {
+      const gardeningLevel = character.progression.getProficiencyLevel('gardening');
+      if (gardeningLevel >= 1) {
+        const seedRoll = lootRollFn ? lootRollFn() : Math.random();
+        if (seedRoll < 0.5) {
+          bonusSeeds = 1;
+          GameState.getInstance().addItem('seeds', 1);
+        }
+      }
+    }
+
     // Grant gathering EXP
     character.progression.addProficiencyExp(node.nodeDef.skillId, expGranted);
 
@@ -2345,8 +2358,11 @@ export class MainScene extends Phaser.Scene {
     if (awardedResourceId && awardedResourceId !== '') {
       this.createFloatingText(posX, posY - 10, `+${awardedCount} ${awardedItemName}`, node.nodeDef.color);
     }
+    if (bonusSeeds > 0) {
+      this.createFloatingText(posX, posY - 20, `+${bonusSeeds} Seeds`, '#22c55e');
+    }
     const skillName = DataLoader.getInstance().getTrainableStatDef(node.nodeDef.skillId)?.name || node.nodeDef.skillId;
-    this.createFloatingText(posX, posY - 24, `+${expGranted} ${skillName} EXP`, '#60a5fa');
+    this.createFloatingText(posX, posY - 32, `+${expGranted} ${skillName} EXP`, '#60a5fa');
 
     // Bounce animation
     this.tweens.add({
@@ -2363,11 +2379,14 @@ export class MainScene extends Phaser.Scene {
       ? '🔪 Skinned'
       : node.nodeDef.actionVerb === 'Butchering'
       ? '🥩 Butchered'
+      : node.nodeDef.actionVerb === 'Gardening'
+      ? '🥕 Harvested'
       : '🌿 Harvested';
 
+    const seedBonusText = bonusSeeds > 0 ? ' & Seeds' : '';
     if (awardedResourceId && awardedResourceId !== '') {
-      console.log(`[Gathering] ${actionToast} ${awardedCount}x ${awardedItemName}! (+${expGranted} ${skillName} EXP)`);
-      this.hud?.showToast(`${actionToast} ${awardedItemName} (+${expGranted} ${skillName} EXP)`, 'success', 2500);
+      console.log(`[Gathering] ${actionToast} ${awardedCount}x ${awardedItemName}${seedBonusText}! (+${expGranted} ${skillName} EXP)`);
+      this.hud?.showToast(`${actionToast} ${awardedItemName}${seedBonusText} (+${expGranted} ${skillName} EXP)`, 'success', 2500);
     } else {
       console.log(`[Gathering] ${actionToast} (+${expGranted} ${skillName} EXP)`);
       this.hud?.showToast(`${actionToast} (+${expGranted} ${skillName} EXP)`, 'info', 2500);

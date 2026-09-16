@@ -1252,6 +1252,154 @@ export class TextureGenerator {
       g.generateTexture('revive-icon', size, size);
       g.destroy();
     }
+
+    // 15. Milestone 39: Rare Dungeon Vegetable Node Textures
+    if (!scene.textures.exists('vegetable-node')) {
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      // Earthy mound
+      g.fillStyle(0x451a03, 0.85);
+      g.fillRoundedRect(3, 8, tileSize - 6, tileSize - 12, 6);
+      g.fillStyle(0x78350f, 0.9);
+      g.fillRoundedRect(5, 10, tileSize - 10, tileSize - 16, 4);
+      // Carrot tips peeking out
+      g.fillStyle(0xf97316, 1);
+      g.fillTriangle(tileSize / 2 - 5, tileSize / 2 + 5, tileSize / 2 - 1, tileSize / 2 + 5, tileSize / 2 - 3, tileSize / 2 + 10);
+      g.fillTriangle(tileSize / 2 + 3, tileSize / 2 + 4, tileSize / 2 + 7, tileSize / 2 + 4, tileSize / 2 + 5, tileSize / 2 + 9);
+      // Vibrant leafy greens
+      g.fillStyle(0x22c55e, 1);
+      g.fillCircle(tileSize / 2 - 3, tileSize / 2 - 1, 4.5);
+      g.fillCircle(tileSize / 2 + 4, tileSize / 2 - 2, 4);
+      g.fillCircle(tileSize / 2, tileSize / 2 - 5, 5);
+      g.fillStyle(0x86efac, 1);
+      g.fillCircle(tileSize / 2, tileSize / 2 - 3, 2.5);
+
+      g.generateTexture('vegetable-node', tileSize, tileSize);
+      g.destroy();
+    }
+
+    if (!scene.textures.exists('vegetable-node-depleted')) {
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      g.fillStyle(0x3f2010, 0.6);
+      g.fillRoundedRect(4, 10, tileSize - 8, tileSize - 16, 5);
+      g.fillStyle(0x291508, 0.7);
+      g.fillCircle(tileSize / 2 - 3, tileSize / 2 + 2, 2);
+      g.fillCircle(tileSize / 2 + 4, tileSize / 2 + 3, 2);
+
+      g.generateTexture('vegetable-node-depleted', tileSize, tileSize);
+      g.destroy();
+    }
+
+    // 16. Milestone 39: Planting Plot Textures (empty, sprout, ready)
+    if (!scene.textures.exists('buildable-planting-plot')) {
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      // Dark tilled soil bed
+      g.fillStyle(0x451a03, 1);
+      g.fillRect(1, 1, tileSize - 2, tileSize - 2);
+      // Outer clay/wood border
+      g.lineStyle(1.5, 0x92400e, 1);
+      g.strokeRect(1, 1, tileSize - 2, tileSize - 2);
+      // Soil furrows
+      g.fillStyle(0x291508, 0.9);
+      g.fillRect(4, 6, tileSize - 8, 3);
+      g.fillRect(4, 14, tileSize - 8, 3);
+      g.fillRect(4, 22, tileSize - 8, 3);
+
+      g.generateTexture('buildable-planting-plot', tileSize, tileSize);
+      g.destroy();
+    }
+
+    if (!scene.textures.exists('buildable-planting-plot-sprout')) {
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      // Dark tilled soil bed
+      g.fillStyle(0x451a03, 1);
+      g.fillRect(1, 1, tileSize - 2, tileSize - 2);
+      g.lineStyle(1.5, 0x92400e, 1);
+      g.strokeRect(1, 1, tileSize - 2, tileSize - 2);
+      // Soil furrows
+      g.fillStyle(0x291508, 0.8);
+      g.fillRect(4, 6, tileSize - 8, 3);
+      g.fillRect(4, 14, tileSize - 8, 3);
+      g.fillRect(4, 22, tileSize - 8, 3);
+      // Green sprouts
+      g.fillStyle(0x4ade80, 1);
+      g.fillCircle(tileSize / 2 - 6, tileSize / 2 - 2, 2.5);
+      g.fillCircle(tileSize / 2 + 6, tileSize / 2 - 1, 2.5);
+      g.fillCircle(tileSize / 2, tileSize / 2 + 5, 3);
+      g.fillStyle(0x86efac, 1);
+      g.fillCircle(tileSize / 2, tileSize / 2 + 4, 1.5);
+
+      g.generateTexture('buildable-planting-plot-sprout', tileSize, tileSize);
+      g.destroy();
+    }
+
+    if (!scene.textures.exists('buildable-planting-plot-ready')) {
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      // Dark tilled soil bed
+      g.fillStyle(0x451a03, 1);
+      g.fillRect(1, 1, tileSize - 2, tileSize - 2);
+      g.lineStyle(1.5, 0x92400e, 1);
+      g.strokeRect(1, 1, tileSize - 2, tileSize - 2);
+      // Carrots / ripe vegetables
+      g.fillStyle(0xf97316, 1);
+      g.fillTriangle(tileSize / 2 - 8, tileSize / 2 + 4, tileSize / 2 - 3, tileSize / 2 + 4, tileSize / 2 - 6, tileSize / 2 + 11);
+      g.fillTriangle(tileSize / 2 + 3, tileSize / 2 + 3, tileSize / 2 + 8, tileSize / 2 + 3, tileSize / 2 + 6, tileSize / 2 + 10);
+      // Lush mature green foliage
+      g.fillStyle(0x22c55e, 1);
+      g.fillCircle(tileSize / 2 - 6, tileSize / 2 - 2, 4.5);
+      g.fillCircle(tileSize / 2 + 6, tileSize / 2 - 3, 4.5);
+      g.fillCircle(tileSize / 2, tileSize / 2 - 6, 5);
+      g.fillStyle(0xbbf7d0, 1);
+      g.fillCircle(tileSize / 2, tileSize / 2 - 4, 2.5);
+
+      g.generateTexture('buildable-planting-plot-ready', tileSize, tileSize);
+      g.destroy();
+    }
+
+    // 17. Milestone 39: Seed Maker Texture (Wooden contraption with iron funnel hopper)
+    if (!scene.textures.exists('buildable-seed-maker')) {
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      // Wood sturdy base
+      g.fillStyle(0x78350f, 1);
+      g.fillRect(3, 12, tileSize - 6, tileSize - 15);
+      g.lineStyle(1.5, 0x451a03, 1);
+      g.strokeRect(3, 12, tileSize - 6, tileSize - 15);
+      // Metal hopper / funnel
+      g.fillStyle(0x64748b, 1);
+      g.fillTriangle(tileSize / 2 - 8, 3, tileSize / 2 + 8, 3, tileSize / 2, 13);
+      g.lineStyle(1, 0x334155, 1);
+      g.strokeTriangle(tileSize / 2 - 8, 3, tileSize / 2 + 8, 3, tileSize / 2, 13);
+      // Seed extraction spout & tray
+      g.fillStyle(0xfacc15, 1);
+      g.fillCircle(tileSize / 2 - 3, tileSize - 6, 2);
+      g.fillCircle(tileSize / 2 + 3, tileSize - 6, 2);
+
+      g.generateTexture('buildable-seed-maker', tileSize, tileSize);
+      g.destroy();
+    }
+
+    // 18. Milestone 39: Clickable Harvest Icon (Directly reusing Milestone 31 revive-icon visual language)
+    if (!scene.textures.exists('harvest-icon')) {
+      const size = 24;
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      // Outer emerald/golden glow halo
+      g.fillStyle(0x22c55e, 0.4);
+      g.fillCircle(size / 2, size / 2, size / 2);
+      // Dark slate circular badge
+      g.fillStyle(0x0f172a, 0.9);
+      g.fillCircle(size / 2, size / 2, size / 2 - 2);
+      // Emerald / golden border ring
+      g.lineStyle(1.5, 0x4ade80, 1);
+      g.strokeCircle(size / 2, size / 2, size / 2 - 2);
+      // Harvest sprout / sickle glyph
+      g.fillStyle(0x4ade80, 1);
+      g.fillCircle(size / 2 - 2, size / 2, 3.5);
+      g.fillCircle(size / 2 + 2, size / 2 - 3, 3);
+      g.fillStyle(0xfacc15, 1);
+      g.fillCircle(size / 2, size / 2 + 3, 2);
+
+      g.generateTexture('harvest-icon', size, size);
+      g.destroy();
+    }
   }
 }
 

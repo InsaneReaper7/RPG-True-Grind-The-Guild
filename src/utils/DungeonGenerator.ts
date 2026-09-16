@@ -487,9 +487,11 @@ export class DungeonGenerator {
         if (isDiggingUnlocked) {
           nodeTypes.push('dig_spot');
         }
+        const vegetableNodeChance = (config as any).vegetableNodeChance ?? 0.10;
         const bushCount = Math.min(Math.max(0, interiorTiles.length - tileIdx), randInt(minB, maxB));
         for (let i = 0; i < bushCount; i++) {
-          const nodeTypeId = nodeTypes[(rIdx + i) % nodeTypes.length];
+          const isRareVegetable = rng() < vegetableNodeChance;
+          const nodeTypeId = isRareVegetable ? 'vegetable_node' : nodeTypes[(rIdx + i) % nodeTypes.length];
           bushSpawns.push({
             x: interiorTiles[tileIdx].x,
             y: interiorTiles[tileIdx].y,

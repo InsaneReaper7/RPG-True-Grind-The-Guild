@@ -186,15 +186,40 @@ export class BuildingSystem {
     isDoorFn: (x: number, y: number) => boolean,
     isOccupiedStationFn: (x: number, y: number) => boolean,
     currentWood: number,
-    constructionLevel: number = 0
+    constructionLevel: number = 0,
+    currentClay: number = 0,
+    gardeningLevel: number = 0
   ): { valid: boolean; reason?: string } {
-    // 1. Wood resource check using Construction tier discounted cost
-    const effectiveCost = BuildingSystem.getEffectiveBuildCost(blueprint.woodCost, constructionLevel);
-    if (currentWood < effectiveCost) {
-      return {
-        valid: false,
-        reason: `Not enough Wood! Requires ${effectiveCost} Wood (You have ${currentWood}).`
-      };
+    // 1. Required proficiency check (e.g. Seed Maker requires Gardening Level 25)
+    if (blueprint.requiredProficiency) {
+      const req = blueprint.requiredProficiency;
+      const playerLevel = req.proficiency === 'gardening' ? gardeningLevel : 0;
+      if (playerLevel < req.level) {
+        return {
+          valid: false,
+          reason: `Requires ${req.proficiency.replace(/_/g, ' ')} Level ${req.level}!`
+        };
+      }
+    }
+
+    // 2. Resource checks (Wood & Clay)
+    if (blueprint.woodCost > 0) {
+      const effectiveCost = BuildingSystem.getEffectiveBuildCost(blueprint.woodCost, constructionLevel);
+      if (currentWood < effectiveCost) {
+        return {
+          valid: false,
+          reason: `Not enough Wood! Requires ${effectiveCost} Wood (You have ${currentWood}).`
+        };
+      }
+    }
+
+    if (blueprint.clayCost && blueprint.clayCost > 0) {
+      if (currentClay < blueprint.clayCost) {
+        return {
+          valid: false,
+          reason: `Not enough Clay! Requires ${blueprint.clayCost} Clay (You have ${currentClay}).`
+        };
+      }
     }
 
     // 2. Map bounds check

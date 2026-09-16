@@ -1571,8 +1571,8 @@ export class CombatSystem {
         y: Math.floor(ally.y / ally.tileSize)
       };
       const dist = Math.max(Math.abs(casterTile.x - aTile.x), Math.abs(casterTile.y - aTile.y));
-      if (dist <= radiusTiles) {
-        const hpRatio = ally.hp / ally.maxHp;
+      if (dist <= radiusTiles && (ally.hp < ally.maxHp || ally.criticalHp < ally.maxCriticalHp)) {
+        const hpRatio = (ally.hp + ally.criticalHp) / (ally.maxHp + ally.maxCriticalHp);
         if (hpRatio < lowestHpRatio) {
           lowestHpRatio = hpRatio;
           bestCandidate = ally;
@@ -1870,7 +1870,7 @@ export class CombatSystem {
 
     // Scan for living damaged party members (prioritize other allies, then self)
     const damagedMembers = this.party.filter(
-      (m) => m.state !== 'dead' && m.state !== 'downed' && m.hp < m.maxHp
+      (m) => m.state !== 'dead' && m.state !== 'downed' && (m.hp < m.maxHp || m.criticalHp < m.maxCriticalHp)
     );
 
     // Branch 2: Nobody needs healing -> proceed to standard combat actions
@@ -1913,7 +1913,9 @@ export class CombatSystem {
       const aSelf = a === member ? 1 : 0;
       const bSelf = b === member ? 1 : 0;
       if (aSelf !== bSelf) return aSelf - bSelf;
-      return (a.hp / a.maxHp) - (b.hp / b.maxHp);
+      const aRatio = (a.hp + a.criticalHp) / (a.maxHp + a.maxCriticalHp);
+      const bRatio = (b.hp + b.criticalHp) / (b.maxHp + b.maxCriticalHp);
+      return aRatio - bRatio;
     });
 
     const targetAlly = damagedMembers[0];
@@ -2008,10 +2010,14 @@ export class CombatSystem {
       // Milestone 24: Regenerate HoT autocast on damaged ally lacking HoT
       if (skillId === 'regenerate') {
         const hotCandidates = this.party.filter(
-          (m) => m.state !== 'dead' && m.state !== 'downed' && m.hp < m.maxHp && !m.hasStatusEffect('regenerate')
+          (m) => m.state !== 'dead' && m.state !== 'downed' && (m.hp < m.maxHp || m.criticalHp < m.maxCriticalHp) && !m.hasStatusEffect('regenerate')
         );
         if (hotCandidates.length > 0) {
-          hotCandidates.sort((a, b) => (a.hp / a.maxHp) - (b.hp / b.maxHp));
+          hotCandidates.sort((a, b) => {
+            const aRatio = (a.hp + a.criticalHp) / (a.maxHp + a.maxCriticalHp);
+            const bRatio = (b.hp + b.criticalHp) / (b.maxHp + b.maxCriticalHp);
+            return aRatio - bRatio;
+          });
           return this.castSkill(member, skillId, hotCandidates[0], time);
         }
         continue;
@@ -2021,7 +2027,7 @@ export class CombatSystem {
 
       // Find living damaged party members (prioritize other allies, then self)
       const damagedMembers = this.party.filter(
-        (m) => m.state !== 'dead' && m.state !== 'downed' && m.hp < m.maxHp
+        (m) => m.state !== 'dead' && m.state !== 'downed' && (m.hp < m.maxHp || m.criticalHp < m.maxCriticalHp)
       );
       if (damagedMembers.length === 0) continue;
 
@@ -2029,7 +2035,9 @@ export class CombatSystem {
         const aSelf = a === member ? 1 : 0;
         const bSelf = b === member ? 1 : 0;
         if (aSelf !== bSelf) return aSelf - bSelf;
-        return (a.hp / a.maxHp) - (b.hp / b.maxHp);
+        const aRatio = (a.hp + a.criticalHp) / (a.maxHp + a.maxCriticalHp);
+        const bRatio = (b.hp + b.criticalHp) / (b.maxHp + b.maxCriticalHp);
+        return aRatio - bRatio;
       });
 
       const targetAlly = damagedMembers[0];
@@ -2323,24 +2331,32 @@ export class CombatSystem {
             const aInCombat = a.inCombat ? 1 : 0;
             const bInCombat = b.inCombat ? 1 : 0;
             if (aInCombat !== bInCombat) return bInCombat - aInCombat;
-            return (a.hp / a.maxHp) - (b.hp / b.maxHp);
+            const aRatio = (a.hp + a.criticalHp) / (a.maxHp + a.maxCriticalHp);
+            const bRatio = (b.hp + b.criticalHp) / (b.maxHp + b.maxCriticalHp);
+            return aRatio - bRatio;
           });
           targetAlly = candidates[0] || caster;
         } else if (skillId === 'regenerate') {
           const candidates = this.party.filter(
-            (m) => m.state !== 'dead' && m.state !== 'downed' && m.hp < m.maxHp && !m.hasStatusEffect('regenerate')
+            (m) => m.state !== 'dead' && m.state !== 'downed' && (m.hp < m.maxHp || m.criticalHp < m.maxCriticalHp) && !m.hasStatusEffect('regenerate')
           );
-          candidates.sort((a, b) => (a.hp / a.maxHp) - (b.hp / b.maxHp));
+          candidates.sort((a, b) => {
+            const aRatio = (a.hp + a.criticalHp) / (a.maxHp + a.maxCriticalHp);
+            const bRatio = (b.hp + b.criticalHp) / (b.maxHp + b.maxCriticalHp);
+            return aRatio - bRatio;
+          });
           targetAlly = candidates[0] || caster;
         } else {
           const candidates = this.party.filter(
-            (m) => m.state !== 'dead' && m.state !== 'downed' && m.hp < m.maxHp
+            (m) => m.state !== 'dead' && m.state !== 'downed' && (m.hp < m.maxHp || m.criticalHp < m.maxCriticalHp)
           );
           candidates.sort((a, b) => {
             const aSelf = a === caster ? 1 : 0;
             const bSelf = b === caster ? 1 : 0;
             if (aSelf !== bSelf) return aSelf - bSelf;
-            return (a.hp / a.maxHp) - (b.hp / b.maxHp);
+            const aRatio = (a.hp + a.criticalHp) / (a.maxHp + a.maxCriticalHp);
+            const bRatio = (b.hp + b.criticalHp) / (b.maxHp + b.maxCriticalHp);
+            return aRatio - bRatio;
           });
           targetAlly = candidates[0] || caster;
         }

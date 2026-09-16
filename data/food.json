@@ -53,6 +53,20 @@
         "perfect": { "hungerMultiplier": 2.0, "buffDurationMs": 35000, "hpRegenPerSec": 5 }
       },
       "description": "A robust, fortifying stew prepared from seasoned wolf meat."
+    },
+    {
+      "id": "vegetable",
+      "name": "Fresh Vegetable",
+      "hungerRestored": 15,
+      "spoilageDays": 7,
+      "buff": {
+        "id": "well_fed",
+        "name": "Well Fed",
+        "durationMs": 10000,
+        "hpRegenPerSec": 1,
+        "description": "+1 HP/sec regen for 10s"
+      },
+      "description": "Fresh, wholesome garden vegetable. Restores 15 Hunger and grants mild health regeneration."
     }
   ]
 }

@@ -104,6 +104,22 @@
       "depletedLabel": "Spent Corpse",
       "color": "#ef4444",
       "actionVerb": "Butchering"
+    },
+    "vegetable_node": {
+      "id": "vegetable_node",
+      "name": "Wild Vegetable",
+      "skillId": "gardening",
+      "resourceId": "vegetable",
+      "yieldCount": 1,
+      "expGranted": 15,
+      "channelDurationMs": 2500,
+      "respawnTimeMs": 15000,
+      "textureKey": "vegetable-node",
+      "textureDepletedKey": "vegetable-node-depleted",
+      "label": "Wild Vegetable",
+      "depletedLabel": "Harvested",
+      "color": "#22c55e",
+      "actionVerb": "Gardening"
     }
   }
 }

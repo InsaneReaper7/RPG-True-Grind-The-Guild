@@ -101,6 +101,7 @@ Proficiency 10, single stat, no class-level requirement.
 | Frost Initiate | Ice Magic 10 | First brush with true cold (distinct from Water Magic's fluid control) |
 | Stoneheart Initiate | Earth Magic 10 | Can crack a rock. On purpose, mostly. |
 | Excavator | Digging 10 | Learning where the ground hides things |
+| Locksmith | Lockpicking 10 | Patient hands and an ear for the tumblers |
 | Brawler | Fist 10 | Weaponless, and getting better at it — see the note below on this line's intended tone |
 
 **Fist and Brawler, captured during downtime planning — deliberately not a normal weapon line, note this before anyone tunes it like one.** Fist is a new weapon type (unarmed combat), with Brawler as its Tier 0 class. This is explicitly intended as a fun easter egg with an escalating "One Punch Man" power fantasy — a fully-invested Brawler build should eventually feel cartoonishly, deliberately overpowered at the far end of its progression, not balanced against every other weapon line the normal way. The exact higher-tier Brawler kit and just how absurd the scaling gets are open for later design, but the *intent* needs to survive into whoever eventually builds it: this is meant to be silly-powerful on purpose, not a bug to fix.

@@ -201,6 +201,18 @@
         "evasion": 0.05,
         "counterattack": 0.05
       }
+    },
+    {
+      "id": "locksmith",
+      "name": "Locksmith",
+      "tier": "novice",
+      "requirements": [
+        { "type": "proficiency", "target": "lockpicking", "value": 10 }
+      ],
+      "fantasy": "Patient hands and an ear for the tumblers",
+      "hiddenSkillBonuses": {
+        "evasion": 0.05
+      }
     }
   ]
 }
