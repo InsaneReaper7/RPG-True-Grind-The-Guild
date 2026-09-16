@@ -17,7 +17,7 @@ export class GameState {
   private inventory: Map<string, number> = new Map();
   private bookLearnedSkills: Set<string> = new Set();
   private discoveredCookingRecipes: Set<string> = new Set();
-  private discoveredAlchemyRecipes: Set<string> = new Set(['bandage', 'energy_potion']);
+  private discoveredAlchemyRecipes: Set<string> = new Set(['bandage', 'energy_potion', 'escape_stone']);
 
   // Milestone 7: Day/Clock, Food & Mood Systems
   private currentGameDay: number = 1;
@@ -27,6 +27,7 @@ export class GameState {
   private isSafeZone: boolean = false;
   public onSpoilageCallback?: (spoiledCount: number) => void;
   private dungeonFloorCount: number = 0;
+  private lifetimeDungeonFloorCount: number = 0;
 
   private constructor() {}
 
@@ -1051,8 +1052,22 @@ export class GameState {
     return this.dungeonFloorCount;
   }
 
+  public getLifetimeDungeonFloorCount(): number {
+    return this.lifetimeDungeonFloorCount;
+  }
+
+  public resetDungeonFloorCount(): void {
+    this.dungeonFloorCount = 0;
+    if (this.snapshot) {
+      this.snapshot.dungeonFloorCount = 0;
+    }
+  }
+
   public setDungeonFloorCount(count: number): void {
     this.dungeonFloorCount = count;
+    if (count > this.lifetimeDungeonFloorCount) {
+      this.lifetimeDungeonFloorCount = count;
+    }
     if (this.snapshot) {
       this.snapshot.dungeonFloorCount = count;
     }
@@ -1060,6 +1075,7 @@ export class GameState {
 
   public incrementDungeonFloorCount(): number {
     this.dungeonFloorCount++;
+    this.lifetimeDungeonFloorCount++;
     if (this.snapshot) {
       this.snapshot.dungeonFloorCount = this.dungeonFloorCount;
     }

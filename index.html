@@ -1746,6 +1746,13 @@
             <span id="player-revive-potion-text">0</span>
           </span>
         </div>
+        <div class="hud-stat" id="hud-escape-stone-row" style="display: none;">
+          <span>Escape Stone:</span>
+          <span class="hud-stat-value" style="color: #38bdf8;">
+            <span id="player-escape-stone-text">0</span>
+            <button id="hud-use-escape-stone-btn" type="button" style="background: #0284c7; color: white; border: none; border-radius: 4px; padding: 1px 6px; font-size: 10px; font-weight: bold; cursor: pointer; margin-left: 6px;">Use [T]</button>
+          </span>
+        </div>
         <div class="hud-stat">
           <span>Status:</span>
           <span id="player-status-text" class="hud-stat-value" style="color: #9ca3af;">Normal</span>
@@ -2104,7 +2111,7 @@
           </div>
           <button id="close-alchemy-btn" class="modal-close-btn" type="button">✕</button>
         </div>
-        <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; background: rgba(31, 41, 55, 0.7); padding: 8px 12px; border-radius: 6px; margin-bottom: 14px; border: 1px solid rgba(255,255,255,0.1); font-size: 11px;">
+        <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; background: rgba(31, 41, 55, 0.7); padding: 8px 12px; border-radius: 6px; margin-bottom: 14px; border: 1px solid rgba(255,255,255,0.1); font-size: 11px;">
           <div>
             <span style="color: #9ca3af;">Alchemy:</span>
             <div id="alchemy-modal-prof" style="color: #10b981; font-weight: bold;">Untrained</div>
@@ -2128,6 +2135,10 @@
           <div>
             <span style="color: #9ca3af;">Revive Pot:</span>
             <div id="alchemy-modal-revive-potions" style="color: #facc15; font-weight: bold;">💛 0</div>
+          </div>
+          <div>
+            <span style="color: #9ca3af;">Escape Stone:</span>
+            <div id="alchemy-modal-escape-stones" style="color: #38bdf8; font-weight: bold;">🌀 0</div>
           </div>
         </div>
         <div id="alchemy-mood-banner" style="background: rgba(16, 185, 129, 0.15); border: 1px solid #10b981; border-radius: 6px; padding: 6px 10px; margin-bottom: 12px; font-size: 11px; color: #6ee7b7; display: flex; justify-content: space-between; align-items: center;">
@@ -2361,6 +2372,42 @@
               <!-- Dynamically populated with draggable equipment cards -->
             </div>
           </div>
+        </div>
+      </div>
+      <!-- Teleporter Crystal Modal (Milestone 40) -->
+      <div id="teleporter-crystal-modal" class="custom-modal" style="width: 480px; max-width: 90vw; background: rgba(15, 23, 42, 0.95); border: 2px solid #0284c7; box-shadow: 0 0 25px rgba(2, 132, 199, 0.4); border-radius: 12px; padding: 20px; display: none; flex-direction: column; gap: 16px;">
+        <div class="modal-header" style="margin-bottom: 0;">
+          <div>
+            <div class="modal-title" style="color: #38bdf8; font-size: 18px; display: flex; align-items: center; gap: 8px;">
+              <span>🔮</span> <span id="crystal-modal-title">Teleporter Crystal</span>
+            </div>
+            <div id="crystal-modal-subtitle" class="modal-subtitle" style="color: #94a3b8; font-size: 12px; margin-top: 4px;">Ancient dimensional crystal resonant with planar energy.</div>
+          </div>
+          <button id="close-crystal-btn" class="modal-close-btn" type="button">✕</button>
+        </div>
+
+        <div style="background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 8px; padding: 12px 14px; font-size: 13px; color: #e2e8f0; line-height: 1.5;">
+          The entrance portal is strictly one-way. This Crystal offers your only natural passage onward or back to safety.
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <button id="crystal-btn-continue" type="button" style="background: linear-gradient(135deg, #0284c7, #0369a1); border: 1px solid #38bdf8; border-radius: 8px; padding: 12px 16px; color: #ffffff; cursor: pointer; text-align: left; transition: all 0.2s; display: flex; flex-direction: column; gap: 4px;">
+            <div style="font-size: 14px; font-weight: bold; color: #f0f9ff; display: flex; align-items: center; gap: 6px;">
+              <span>⬇️</span> <span id="crystal-continue-label">Continue Descent (Floor 2)</span>
+            </div>
+            <div style="font-size: 11px; color: #bae6fd;">Keep party HP, equipment, inventory, and descend deeper into greater danger and higher-tier encounters.</div>
+          </button>
+
+          <button id="crystal-btn-return" type="button" style="background: linear-gradient(135deg, #059669, #047857); border: 1px solid #34d399; border-radius: 8px; padding: 12px 16px; color: #ffffff; cursor: pointer; text-align: left; transition: all 0.2s; display: flex; flex-direction: column; gap: 4px;">
+            <div style="font-size: 14px; font-weight: bold; color: #f0fdf4; display: flex; align-items: center; gap: 6px;">
+              <span>🏠</span> <span>Return to Outpost</span>
+            </div>
+            <div style="font-size: 11px; color: #a7f3d0;">Conclude the expedition safely. Return to the Outpost with all gathered resources, harvest loot, and gear preserved.</div>
+          </button>
+
+          <button id="crystal-btn-stay" type="button" style="background: rgba(51, 65, 85, 0.6); border: 1px solid rgba(148, 163, 184, 0.3); border-radius: 6px; padding: 8px 12px; color: #cbd5e1; cursor: pointer; font-size: 12px; text-align: center;">
+            Stay on This Floor
+          </button>
         </div>
       </div>
     </div>

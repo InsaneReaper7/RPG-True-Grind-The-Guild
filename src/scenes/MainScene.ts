@@ -94,6 +94,8 @@ export class MainScene extends Phaser.Scene {
 
   private portalSprite!: Phaser.GameObjects.Sprite;
   private portalPos: GridPos = { x: 2, y: 2 };
+  private crystalSprite!: Phaser.GameObjects.Sprite;
+  private crystalPos: GridPos = { x: 0, y: 0 };
   private isTransitioning: boolean = false;
 
   private wasdKeys!: {
@@ -219,6 +221,7 @@ export class MainScene extends Phaser.Scene {
     this.mapHeight = this.dungeon.height;
     this.gridMatrix = this.dungeon.gridMatrix;
     this.portalPos = this.dungeon.portalPos;
+    this.crystalPos = this.dungeon.crystalPos;
 
     // Expose generated dungeon for debug and verification inspection
     (window as any).__lastGeneratedDungeon = this.dungeon;
@@ -294,11 +297,11 @@ export class MainScene extends Phaser.Scene {
     this.selectionReticleGraphics = this.add.graphics().setDepth(15);
     this.selectAllMembers();
 
-    // Spawn Portal to Outpost at dynamic portalPos
+    // Spawn Dungeon Entrance Portal (One-Way Arrival Gate from Outpost, Milestone 40)
     this.portalSprite = this.add.sprite(
       this.portalPos.x * this.tileSize + this.tileSize / 2,
       this.portalPos.y * this.tileSize + this.tileSize / 2,
-      'portal-to-outpost'
+      'portal-entrance-one-way'
     ).setDepth(2);
     this.portalSprite.setInteractive({ cursor: 'pointer' });
 
@@ -306,7 +309,7 @@ export class MainScene extends Phaser.Scene {
       targets: this.portalSprite,
       scale: 1.15,
       alpha: 0.85,
-      duration: 1000,
+      duration: 1200,
       yoyo: true,
       repeat: -1,
       ease: 'Sine.easeInOut'
@@ -315,19 +318,61 @@ export class MainScene extends Phaser.Scene {
     this.add.text(
       this.portalPos.x * this.tileSize + this.tileSize / 2,
       this.portalPos.y * this.tileSize - 10,
-      'Portal to Outpost',
+      'Dungeon Entrance (One-Way)',
       {
         fontSize: '11px',
-        color: '#d8b4fe',
+        color: '#94a3b8',
         fontStyle: 'bold',
-        backgroundColor: 'rgba(0,0,0,0.7)',
+        backgroundColor: 'rgba(0,0,0,0.75)',
         padding: { x: 4, y: 2 }
       }
     ).setOrigin(0.5).setDepth(5000);
 
     this.portalSprite.on('pointerdown', () => {
-      this.triggerPortalTransition();
+      this.interactEntrancePortal();
     });
+
+    // Spawn Teleporter Crystal (Milestone 40: Descent & Return Nexus)
+    this.crystalSprite = this.add.sprite(
+      this.crystalPos.x * this.tileSize + this.tileSize / 2,
+      this.crystalPos.y * this.tileSize + this.tileSize / 2,
+      'teleporter-crystal'
+    ).setDepth(2);
+    this.crystalSprite.setInteractive({ cursor: 'pointer' });
+
+    this.tweens.add({
+      targets: this.crystalSprite,
+      scale: 1.2,
+      alpha: 0.9,
+      y: this.crystalPos.y * this.tileSize + this.tileSize / 2 - 3,
+      duration: 1200,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.easeInOut'
+    });
+
+    this.add.text(
+      this.crystalPos.x * this.tileSize + this.tileSize / 2,
+      this.crystalPos.y * this.tileSize - 10,
+      '🔮 Teleporter Crystal',
+      {
+        fontSize: '11px',
+        color: '#38bdf8',
+        fontStyle: 'bold',
+        backgroundColor: 'rgba(0,0,0,0.8)',
+        padding: { x: 4, y: 2 }
+      }
+    ).setOrigin(0.5).setDepth(5000);
+
+    this.crystalSprite.on('pointerdown', () => {
+      this.triggerCrystalInteraction();
+    });
+
+    // Expose debug helpers for verification
+    (window as any).debugUseEscapeStone = () => this.useEscapeStone();
+    (window as any).debugContinueDescent = () => this.executeContinueDescent();
+    (window as any).debugReturnToOutpost = () => this.executeTransitionToOutpost();
+    (window as any).debugOpenCrystalModal = () => this.openCrystalModal();
 
     // 5b. Spawn Procedural Enemies
     this.enemies = [];
@@ -700,9 +745,15 @@ export class MainScene extends Phaser.Scene {
       const clickedTileX = Math.floor(worldPoint.x / this.tileSize);
       const clickedTileY = Math.floor(worldPoint.y / this.tileSize);
 
-      // Check if portal clicked
+      // Check if entrance portal clicked
       if (clickedTileX === this.portalPos.x && clickedTileY === this.portalPos.y) {
-        this.triggerPortalTransition();
+        this.interactEntrancePortal();
+        return;
+      }
+
+      // Milestone 40: Check if Teleporter Crystal clicked
+      if (clickedTileX === this.crystalPos.x && clickedTileY === this.crystalPos.y) {
+        this.triggerCrystalInteraction();
         return;
       }
 
@@ -1253,7 +1304,12 @@ export class MainScene extends Phaser.Scene {
     });
   }
 
-  private triggerPortalTransition(): void {
+  private interactEntrancePortal(): void {
+    console.log('[MainScene] Interacted with Entrance Portal (One-Way)');
+    this.hud.showToast('⚠️ The dungeon entrance portal is strictly one-way! Find a Teleporter Crystal or use an Escape Stone to return.', 'warn', 4500);
+  }
+
+  private triggerCrystalInteraction(): void {
     if (this.isTransitioning) return;
 
     for (const member of this.party) {
@@ -1261,28 +1317,28 @@ export class MainScene extends Phaser.Scene {
     }
     this.targetReticle.setVisible(false);
 
-    const dx = Math.abs(this.player.gridPos.x - this.portalPos.x);
-    const dy = Math.abs(this.player.gridPos.y - this.portalPos.y);
+    const dx = Math.abs(this.player.gridPos.x - this.crystalPos.x);
+    const dy = Math.abs(this.player.gridPos.y - this.crystalPos.y);
 
     if (Math.max(dx, dy) <= 1 && (dx > 0 || dy > 0)) {
       // Already adjacent
-      this.executeTransitionToOutpost();
+      this.openCrystalModal();
       return;
     }
 
-    console.log('[MainScene] Party moving to Outpost Portal...');
+    console.log('[MainScene] Party moving to Teleporter Crystal...');
     const claimed = new Set<string>();
 
-    // Assign leader an open adjacent tile to the portal
-    const leaderDest = this.findOpenAdjacentTile(this.portalPos, this.player.gridPos, claimed, this.player);
+    // Assign leader an open adjacent tile to the crystal
+    const leaderDest = this.findOpenAdjacentTile(this.crystalPos, this.player.gridPos, claimed, this.player);
     claimed.add(`${leaderDest.x},${leaderDest.y}`);
     this.player.claimedDestination = { ...leaderDest };
 
-    // Command all living companions to also move towards the portal
+    // Command all living companions to also move towards the crystal
     for (let i = 1; i < this.party.length; i++) {
       const companion = this.party[i];
       if (companion.state === 'downed' || companion.state === 'dead') continue;
-      const compDest = this.findOpenAdjacentTile(this.portalPos, companion.gridPos, claimed, companion);
+      const compDest = this.findOpenAdjacentTile(this.crystalPos, companion.gridPos, claimed, companion);
       claimed.add(`${compDest.x},${compDest.y}`);
       companion.claimedDestination = { ...compDest };
 
@@ -1296,30 +1352,76 @@ export class MainScene extends Phaser.Scene {
       });
     }
 
-    // Leader movement with transition on arrival (Leader-Arrival Rule)
+    // Leader movement with crystal interaction on arrival
     const leaderUnitObs = this.getPartyUnitObstacles(this.player);
     this.pathfinder.findPath(this.player.gridPos, leaderDest, leaderUnitObs).then((path) => {
       if (path.length > 0) {
         this.player.followPath(path, () => {
-          this.executeTransitionToOutpost();
+          this.openCrystalModal();
         });
       } else {
-        this.executeTransitionToOutpost();
+        this.openCrystalModal();
       }
     });
   }
 
-  private executeTransitionToOutpost(): void {
+  public openCrystalModal(): void {
+    if (this.isTransitioning) return;
+    const currentFloor = GameState.getInstance().getDungeonFloorCount();
+    this.hud.showTeleporterCrystalModal(
+      currentFloor,
+      () => this.executeContinueDescent(),
+      () => this.executeTransitionToOutpost()
+    );
+  }
+
+  public executeContinueDescent(): void {
     if (this.isTransitioning) return;
     this.isTransitioning = true;
 
-    console.log('[MainScene] Entering Outpost Portal -> Transitioning to OutpostScene');
-    // Save live party snapshot and legacy player snapshot
+    console.log('[MainScene] Continuing descent deeper into dungeon...');
+    // Save live party snapshot and player snapshot
     GameState.getInstance().savePartySnapshot(this.party, this.time.now);
     GameState.getInstance().saveSnapshot(this.player, this.progressionSystem, this.time.now);
 
+    // Restart MainScene to generate the next floor
+    this.scene.restart();
+  }
+
+  public executeTransitionToOutpost(): void {
+    if (this.isTransitioning) return;
+    this.isTransitioning = true;
+
+    console.log('[MainScene] Returning from Dungeon -> Transitioning to OutpostScene');
+    // Save live party snapshot and legacy player snapshot
+    GameState.getInstance().savePartySnapshot(this.party, this.time.now);
+    GameState.getInstance().saveSnapshot(this.player, this.progressionSystem, this.time.now);
+    GameState.getInstance().resetDungeonFloorCount();
+
     // Switch active scene to OutpostScene
     this.scene.start('OutpostScene');
+  }
+
+  public useEscapeStone(): boolean {
+    if (this.isTransitioning) return false;
+    const gameState = GameState.getInstance();
+    if (gameState.getItemCount('escape_stone') < 1) {
+      this.hud.showToast('No Escape Stone in inventory/stockpile! Craft one at the Alchemy Station.', 'warn', 3000);
+      return false;
+    }
+
+    // Strict in-combat and lingering combat tail check (Milestone 40)
+    const partyInCombat = this.party.some((m) => m.inCombat);
+    const combatActive = partyInCombat || (this.combatSystem ? this.combatSystem.isInCombat(this.time.now) : false);
+    if (combatActive) {
+      this.hud.showToast('⚠️ Cannot use Escape Stone while any party member is in combat!', 'warn', 3500);
+      return false;
+    }
+
+    gameState.consumeItem('escape_stone', 1);
+    this.hud.showToast('🌀 Using Escape Stone! Teleporting party to Outpost...', 'success', 3000);
+    this.executeTransitionToOutpost();
+    return true;
   }
 
   public engageEnemy(enemy: Enemy, membersToEngage?: Player[]): void {

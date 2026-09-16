@@ -358,11 +358,36 @@ export class CombatSystem {
     return this.findOpenAttackTileForMember(dummyEnemy, currentMember);
   }
 
+  private currentInCombat: boolean = false;
+
+  public isInCombat(currentTime?: number): boolean {
+    const anyAggroed = this.enemies.some((e) => e.isAggroed && e.state !== 'dead' && e.state !== 'downed');
+    if (anyAggroed) return true;
+    const anyEngaged = this.party.some((m) => m.state !== 'dead' && m.state !== 'downed' && m.targetEntity !== null && m.targetEntity.state !== 'dead' && m.targetEntity.state !== 'downed');
+    if (anyEngaged) return true;
+    const anyEnemyTargetingParty = this.enemies.some((e) => e.state !== 'dead' && e.state !== 'downed' && e.targetEntity !== null && e.targetEntity.state !== 'dead' && e.targetEntity.state !== 'downed');
+    if (anyEnemyTargetingParty) return true;
+
+    const now = currentTime ?? (this.scene ? this.scene.time?.now ?? 0 : 0);
+    if (now > 0 && this.lastCombatTimeMs > 0 && (now - this.lastCombatTimeMs < 4000)) {
+      return true;
+    }
+    if (currentTime !== undefined) {
+      return false;
+    }
+    return this.currentInCombat || this.party.some((m) => m.inCombat);
+  }
+
   public update(time: number, delta: number): void {
     const anyEnemyAggroed = this.enemies.some((e) => e.isAggroed && e.state !== 'dead' && e.state !== 'downed');
     const anyPartyEngaged = this.party.some((m) => m.state !== 'dead' && m.state !== 'downed' && m.targetEntity !== null && m.targetEntity.state !== 'dead' && m.targetEntity.state !== 'downed');
     const anyEnemyTargetingParty = this.enemies.some((e) => e.state !== 'dead' && e.state !== 'downed' && e.targetEntity !== null && e.targetEntity.state !== 'dead' && e.targetEntity.state !== 'downed');
-    const inCombat = anyEnemyAggroed || anyPartyEngaged || anyEnemyTargetingParty || (time - this.lastCombatTimeMs < 4000);
+    const activeThreat = anyEnemyAggroed || anyPartyEngaged || anyEnemyTargetingParty;
+    if (activeThreat) {
+      this.lastCombatTimeMs = time;
+    }
+    const inCombat = activeThreat || (time - this.lastCombatTimeMs < 4000);
+    this.currentInCombat = inCombat;
 
     // Clear targets for any downed or dead party members
     for (const member of this.party) {

@@ -314,22 +314,31 @@ export class DungeonGenerator {
     rooms[0].type = 'entrance';
     const portalPos: GridPos = { x: rooms[0].centerX, y: rooms[0].centerY };
 
-    // Milestone 34 / Rarity Correction: Dedicated Boss Encounter Room
+    // Milestone 34 / Rarity Correction & Milestone 40 Depth Scaling:
     // Determines if Boss room should spawn based on:
     // 1. Explicit override in options (e.g. forceBoss: true / false for tests)
-    // 2. Guaranteed milestone interval (every 5th floor generation: floors 5, 10, 15...)
-    // 3. Low-probability independent roll on non-milestone floors (e.g. 2% bossRandomChance)
+    // 2. Guaranteed milestone interval (every 5th floor of the current run: floors 5, 10, 15...)
+    // 3. Low-probability independent roll on non-milestone floors (scales with depth)
+    const floorNumber = options?.floorNumber ?? (
+      typeof GameState !== 'undefined' ? GameState.getInstance().getDungeonFloorCount() : 1
+    );
+    const depth = Math.max(1, floorNumber);
+    const depthOffset = depth - 1;
+
     let shouldSpawnBossRoom = false;
     if (rooms.length >= 2) {
       if (options?.forceBoss !== undefined) {
         shouldSpawnBossRoom = options.forceBoss;
       } else {
-        const floorNumber = options?.floorNumber ?? (
-          typeof GameState !== 'undefined' ? GameState.getInstance().getDungeonFloorCount() : 1
-        );
         const milestoneInterval = config.bossMilestoneInterval ?? 5;
         const isMilestone = floorNumber > 0 && floorNumber % milestoneInterval === 0;
-        const isRandomBoss = rng() < (config.bossRandomChance ?? 0.02);
+
+        const baseBossRandom = config.bossRandomChance ?? 0.02;
+        const bossRandomPerFloor = config.depthScaling?.bossRandomChancePerFloor ?? 0;
+        const maxBossRandom = config.depthScaling?.maxBossRandomChance ?? 0.05;
+        const effectiveBossRandom = Math.min(maxBossRandom, baseBossRandom + depthOffset * bossRandomPerFloor);
+
+        const isRandomBoss = rng() < effectiveBossRandom;
         shouldSpawnBossRoom = (isMilestone || isRandomBoss) && (config.bossRoom ?? true);
       }
     }
@@ -394,6 +403,70 @@ export class DungeonGenerator {
       }
     }
 
+    // 5b. Teleporter Crystal Placement (Milestone 40)
+    // Deliberate design mandate:
+    // - On Boss floors: crystal is placed inside the Boss chamber (Boss gates the exit / continuation).
+    // - On non-Boss floors: crystal is placed in the room furthest from the entrance.
+    let crystalRoomIdx = -1;
+    if (bossRoomIdx !== -1) {
+      crystalRoomIdx = bossRoomIdx;
+    } else {
+      let maxDist = -1;
+      for (let i = 1; i < rooms.length; i++) {
+        const dist = Math.hypot(rooms[i].centerX - rooms[0].centerX, rooms[i].centerY - rooms[0].centerY);
+        if (dist > maxDist) {
+          maxDist = dist;
+          crystalRoomIdx = i;
+        }
+      }
+    }
+    if (crystalRoomIdx === -1 && rooms.length > 1) {
+      crystalRoomIdx = rooms.length - 1;
+    } else if (crystalRoomIdx === -1) {
+      crystalRoomIdx = 0;
+    }
+
+    const cRoom = rooms[crystalRoomIdx];
+    let crystalPos: GridPos = { x: cRoom.centerX, y: cRoom.centerY };
+    if (cRoom.type === 'boss') {
+      // Offset from Boss center so boss doesn't stand directly on top of crystal
+      const candidateOffsets = [
+        { x: 0, y: -2 },
+        { x: 0, y: 2 },
+        { x: 2, y: 0 },
+        { x: -2, y: 0 },
+        { x: 1, y: 1 },
+        { x: -1, y: -1 }
+      ];
+      let placed = false;
+      for (const off of candidateOffsets) {
+        const cx = cRoom.centerX + off.x;
+        const cy = cRoom.centerY + off.y;
+        if (gridMatrix[cy]?.[cx] === 0) {
+          crystalPos = { x: cx, y: cy };
+          placed = true;
+          break;
+        }
+      }
+      if (!placed) {
+        crystalPos = { x: cRoom.centerX, y: cRoom.centerY };
+      }
+    } else {
+      if (gridMatrix[cRoom.centerY]?.[cRoom.centerX] === 0) {
+        crystalPos = { x: cRoom.centerX, y: cRoom.centerY };
+      } else {
+        for (let y = cRoom.y; y < cRoom.y + cRoom.height; y++) {
+          for (let x = cRoom.x; x < cRoom.x + cRoom.width; x++) {
+            if (gridMatrix[y]?.[x] === 0) {
+              crystalPos = { x, y };
+              break;
+            }
+          }
+          if (crystalPos.x !== cRoom.centerX || crystalPos.y !== cRoom.centerY) break;
+        }
+      }
+    }
+
     // 6. Populate Rooms with Enemies and Bushes
     const enemySpawns: EnemySpawnDef[] = [];
     const bushSpawns: BushSpawnDef[] = [];
@@ -414,8 +487,11 @@ export class DungeonGenerator {
       for (let y = yStart; y <= yEnd; y++) {
         for (let x = xStart; x <= xEnd; x++) {
           if (gridMatrix[y]?.[x] === 0) {
-            // Do not spawn on entrance portal
+            // Do not spawn on entrance portal or teleporter crystal
             if (rIdx === 0 && x === portalPos.x && y === portalPos.y) {
+              continue;
+            }
+            if (x === crystalPos.x && y === crystalPos.y) {
               continue;
             }
             interiorTiles.push({ x, y });
@@ -451,14 +527,22 @@ export class DungeonGenerator {
         );
         const enemyCount = Math.min(Math.max(0, interiorTiles.length - tileIdx), randInt(minE, maxE));
 
-        // Rarity Correction: In Heavy Combat rooms, roll for rare Epic or Elite champions
+        // Rarity Correction & Milestone 40 Depth Scaling: In Heavy Combat rooms, roll for rare Epic or Elite champions
         let specialEnemyId: string | null = null;
         if (room.type === 'heavy_combat') {
-          const epicChance = config.epicChance ?? 0.05;
-          const eliteChance = config.eliteChance ?? 0.12;
-          if (rng() < epicChance) {
+          const baseEpicChance = config.epicChance ?? 0.05;
+          const epicPerFloor = config.depthScaling?.epicChancePerFloor ?? 0;
+          const maxEpic = config.depthScaling?.maxEpicChance ?? 0.20;
+          const effectiveEpicChance = Math.min(maxEpic, baseEpicChance + depthOffset * epicPerFloor);
+
+          const baseEliteChance = config.eliteChance ?? 0.12;
+          const elitePerFloor = config.depthScaling?.eliteChancePerFloor ?? 0;
+          const maxElite = config.depthScaling?.maxEliteChance ?? 0.35;
+          const effectiveEliteChance = Math.min(maxElite, baseEliteChance + depthOffset * elitePerFloor);
+
+          if (rng() < effectiveEpicChance) {
             specialEnemyId = config.epicEnemyId || 'void_knight';
-          } else if (rng() < eliteChance) {
+          } else if (rng() < effectiveEliteChance) {
             specialEnemyId = config.eliteEnemyId || 'orc_warrior';
           }
         }
@@ -510,6 +594,7 @@ export class DungeonGenerator {
       gridMatrix,
       rooms,
       portalPos,
+      crystalPos,
       enemySpawns,
       bushSpawns
     };

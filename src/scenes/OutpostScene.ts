@@ -156,6 +156,7 @@ export class OutpostScene extends Phaser.Scene {
     this.hud = new HUD();
     this.hud.setLocation('Guild Outpost (Safe Zone)', true);
     GameState.getInstance().setSafeZone(true);
+    GameState.getInstance().resetDungeonFloorCount();
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       if (this.hud) {
@@ -1817,7 +1818,9 @@ export class OutpostScene extends Phaser.Scene {
     if (this.isTransitioning) return;
     this.isTransitioning = true;
 
-    console.log('[OutpostScene] Entering Dungeon Portal -> Transitioning to MainScene');
+    console.log('[OutpostScene] Entering Dungeon Portal -> Transitioning to MainScene (Fresh Descent)');
+    // Milestone 40: Boss and descent floor counter resets to 0 at the start of every new descent
+    GameState.getInstance().resetDungeonFloorCount();
     GameState.getInstance().savePartySnapshot(this.party, this.time.now);
     GameState.getInstance().saveSnapshot(this.player, this.progressionSystem, this.time.now);
     this.scene.start('MainScene');

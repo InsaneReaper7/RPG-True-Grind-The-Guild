@@ -644,7 +644,18 @@ export interface DungeonConfig {
   eliteChance?: number;
   epicEnemyId?: string;
   epicChance?: number;
+  crystalPlacement?: string;
+  depthScaling?: DepthScalingConfig;
   floorRespawnTimerSec?: number;
+}
+
+export interface DepthScalingConfig {
+  eliteChancePerFloor?: number;
+  maxEliteChance?: number;
+  epicChancePerFloor?: number;
+  maxEpicChance?: number;
+  bossRandomChancePerFloor?: number;
+  maxBossRandomChance?: number;
 }
 
 export interface DungeonRoom {
@@ -719,6 +730,7 @@ export interface GeneratedDungeon {
   gridMatrix: number[][]; // 0 = walkable, 1 = obstacle/wall
   rooms: DungeonRoom[];
   portalPos: GridPos;
+  crystalPos: GridPos;
   enemySpawns: EnemySpawnDef[];
   bushSpawns: BushSpawnDef[];
 }

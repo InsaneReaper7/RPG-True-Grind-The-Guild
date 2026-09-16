@@ -54,5 +54,14 @@
   "eliteChance": 0.12,
   "epicEnemyId": "void_knight",
   "epicChance": 0.05,
+  "crystalPlacement": "furthest_room",
+  "depthScaling": {
+    "eliteChancePerFloor": 0.008,
+    "maxEliteChance": 0.16,
+    "epicChancePerFloor": 0.005,
+    "maxEpicChance": 0.08,
+    "bossRandomChancePerFloor": 0.0005,
+    "maxBossRandomChance": 0.025
+  },
   "floorRespawnTimerSec": 300
 }

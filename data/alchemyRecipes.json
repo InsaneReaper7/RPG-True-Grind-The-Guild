@@ -47,6 +47,16 @@
       },
       "expGranted": 40,
       "description": "A potent revitalizing elixir brewed from ectoplasm and wild herbs. Channel for 3 seconds to revive a fallen ally to 50% HP."
+    },
+    {
+      "id": "escape_stone",
+      "name": "Escape Stone",
+      "ingredients": {
+        "wood": 1
+      },
+      "expGranted": 20,
+      "_comment": "PLACEHOLDER COST - Alpha Balancing Required: During active development, cost is kept at 1 wood for test convenience. Real alpha balancing will require expensive ingredients (e.g. rare dungeon essence/ingot) so as not to undermine one-way portal risk.",
+      "description": "[PLACEHOLDER COST - Alpha Balancing Required] A resonating dimensional stone. Teleports the entire party back to the Outpost when out of combat, ending the dungeon run safely with all loot preserved."
     }
   ]
 }

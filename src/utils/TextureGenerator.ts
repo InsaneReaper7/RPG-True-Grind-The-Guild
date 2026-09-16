@@ -543,6 +543,84 @@ export class TextureGenerator {
       g.destroy();
     }
 
+    // 11b. Teleporter Crystal (Milestone 40: Radiant Diamond Gem in Dungeon)
+    if (!scene.textures.exists('teleporter-crystal')) {
+      const size = 32;
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      // Outer radiant glow aura
+      g.fillStyle(0x06b6d4, 0.35);
+      g.fillCircle(size / 2, size / 2, 14);
+      g.fillStyle(0x3b82f6, 0.45);
+      g.fillCircle(size / 2, size / 2, 11);
+
+      // Faceted diamond shape
+      g.fillStyle(0x0ea5e9, 0.95);
+      g.beginPath();
+      g.moveTo(size / 2, 4);
+      g.lineTo(size - 6, size / 2);
+      g.lineTo(size / 2, size - 4);
+      g.lineTo(6, size / 2);
+      g.closePath();
+      g.fillPath();
+
+      // Top-left facet highlight
+      g.fillStyle(0x7dd3fc, 0.85);
+      g.beginPath();
+      g.moveTo(size / 2, 4);
+      g.lineTo(size / 2, size / 2);
+      g.lineTo(6, size / 2);
+      g.closePath();
+      g.fillPath();
+
+      // Core white facet sparkle
+      g.fillStyle(0xffffff, 0.9);
+      g.beginPath();
+      g.moveTo(size / 2, 8);
+      g.lineTo(size / 2 + 4, size / 2);
+      g.lineTo(size / 2, size / 2 + 4);
+      g.lineTo(size / 2 - 4, size / 2);
+      g.closePath();
+      g.fillPath();
+
+      // Sharp crystalline outline
+      g.lineStyle(1.5, 0xe0f2fe, 1);
+      g.beginPath();
+      g.moveTo(size / 2, 4);
+      g.lineTo(size - 6, size / 2);
+      g.lineTo(size / 2, size - 4);
+      g.lineTo(6, size / 2);
+      g.closePath();
+      g.strokePath();
+
+      g.generateTexture('teleporter-crystal', size, size);
+      g.destroy();
+    }
+
+    // 11c. Dungeon Entrance One-Way Portal (Milestone 40: Inward Void Swirl)
+    if (!scene.textures.exists('portal-entrance-one-way')) {
+      const size = 32;
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      // Deep obsidian and dark violet vortex ring
+      g.fillStyle(0x1e1b4b, 0.9);
+      g.fillCircle(size / 2, size / 2, 13);
+      g.lineStyle(2, 0x6366f1, 0.9);
+      g.strokeCircle(size / 2, size / 2, 12);
+      g.lineStyle(1.5, 0x4338ca, 0.7);
+      g.strokeCircle(size / 2, size / 2, 8);
+
+      // Downward inward descent arrow
+      g.fillStyle(0xa5b4fc, 0.9);
+      g.beginPath();
+      g.moveTo(size / 2, size / 2 + 5);
+      g.lineTo(size / 2 - 5, size / 2 - 3);
+      g.lineTo(size / 2 + 5, size / 2 - 3);
+      g.closePath();
+      g.fillPath();
+
+      g.generateTexture('portal-entrance-one-way', size, size);
+      g.destroy();
+    }
+
     // 12. Buildable Wood Floor (Clean timber planks)
     if (!scene.textures.exists('buildable-wood-floor')) {
       const g = scene.make.graphics({ x: 0, y: 0 });

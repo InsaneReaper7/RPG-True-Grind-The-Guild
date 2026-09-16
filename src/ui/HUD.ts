@@ -38,6 +38,23 @@ export class HUD {
   private hudDrinkManaPotionBtn: HTMLElement | null;
   private hudRevivePotionRowEl: HTMLElement | null;
   private playerRevivePotionTextEl: HTMLElement | null;
+  private hudEscapeStoneRowEl: HTMLElement | null;
+  private playerEscapeStoneTextEl: HTMLElement | null;
+  private hudUseEscapeStoneBtn: HTMLElement | null;
+  private alchemyModalEscapeStonesEl: HTMLElement | null;
+
+  // Milestone 40: Teleporter Crystal Modal Elements
+  private teleporterCrystalModalEl: HTMLElement | null;
+  private crystalModalTitleEl: HTMLElement | null;
+  private crystalModalSubtitleEl: HTMLElement | null;
+  private crystalContinueLabelEl: HTMLElement | null;
+  private crystalBtnContinue: HTMLElement | null;
+  private crystalBtnReturn: HTMLElement | null;
+  private crystalBtnStay: HTMLElement | null;
+  private closeCrystalBtn: HTMLElement | null;
+  private onCrystalContinueCallback?: () => void;
+  private onCrystalReturnCallback?: () => void;
+
   private discoveredSkillsSectionEl: HTMLElement | null;
   private discoveredSkillsListEl: HTMLElement | null;
   private skillDiscoveredModalEl: HTMLElement | null;
@@ -409,6 +426,18 @@ export class HUD {
     this.hudDrinkManaPotionBtn = document.getElementById('hud-drink-mana-potion-btn');
     this.hudRevivePotionRowEl = document.getElementById('hud-revive-potion-row');
     this.playerRevivePotionTextEl = document.getElementById('player-revive-potion-text');
+    this.hudEscapeStoneRowEl = document.getElementById('hud-escape-stone-row');
+    this.playerEscapeStoneTextEl = document.getElementById('player-escape-stone-text');
+    this.hudUseEscapeStoneBtn = document.getElementById('hud-use-escape-stone-btn');
+
+    this.teleporterCrystalModalEl = document.getElementById('teleporter-crystal-modal');
+    this.crystalModalTitleEl = document.getElementById('crystal-modal-title');
+    this.crystalModalSubtitleEl = document.getElementById('crystal-modal-subtitle');
+    this.crystalContinueLabelEl = document.getElementById('crystal-continue-label');
+    this.crystalBtnContinue = document.getElementById('crystal-btn-continue');
+    this.crystalBtnReturn = document.getElementById('crystal-btn-return');
+    this.crystalBtnStay = document.getElementById('crystal-btn-stay');
+    this.closeCrystalBtn = document.getElementById('close-crystal-btn');
 
     this.researchTreeModalEl = document.getElementById('research-tree-modal');
     this.closeResearchBtn = document.getElementById('close-research-btn');
@@ -423,6 +452,7 @@ export class HUD {
     this.alchemyModalEnergyPotionsEl = document.getElementById('alchemy-modal-energy-potions');
     this.alchemyModalManaPotionsEl = document.getElementById('alchemy-modal-mana-potions');
     this.alchemyModalRevivePotionsEl = document.getElementById('alchemy-modal-revive-potions');
+    this.alchemyModalEscapeStonesEl = document.getElementById('alchemy-modal-escape-stones');
     this.alchemyRecipesContainerEl = document.getElementById('alchemy-recipes-container');
     this.alchemyPlayerStatusEl = document.getElementById('alchemy-player-status');
     this.alchemyApplyBandageBtn = document.getElementById('alchemy-apply-bandage-btn');
@@ -956,6 +986,39 @@ export class HUD {
         HUD.activeInstance?.drinkManaPotion();
       };
     }
+    if (this.hudUseEscapeStoneBtn) {
+      this.hudUseEscapeStoneBtn.onclick = () => {
+        HUD.activeInstance?.useEscapeStone();
+      };
+    }
+
+    // Milestone 40: Teleporter Crystal Modal Button Handlers
+    if (this.crystalBtnContinue) {
+      this.crystalBtnContinue.onclick = () => {
+        const active = HUD.activeInstance;
+        const cb = active?.onCrystalContinueCallback;
+        active?.closeTeleporterCrystalModal();
+        cb?.();
+      };
+    }
+    if (this.crystalBtnReturn) {
+      this.crystalBtnReturn.onclick = () => {
+        const active = HUD.activeInstance;
+        const cb = active?.onCrystalReturnCallback;
+        active?.closeTeleporterCrystalModal();
+        cb?.();
+      };
+    }
+    if (this.crystalBtnStay) {
+      this.crystalBtnStay.onclick = () => {
+        HUD.activeInstance?.closeTeleporterCrystalModal();
+      };
+    }
+    if (this.closeCrystalBtn) {
+      this.closeCrystalBtn.onclick = () => {
+        HUD.activeInstance?.closeTeleporterCrystalModal();
+      };
+    }
 
     // Milestone 19 Debug Buttons
     if (this.debugBtnGrantEnergyPotion) {
@@ -1189,11 +1252,17 @@ export class HUD {
             const idx = parseInt(e.key, 10) - 1;
             active.selectMemberByIndex(idx, e.shiftKey);
           }
+        } else if (e.key === 't' || e.key === 'T' || e.code === 'KeyT') {
+          const targetTag = (e.target as HTMLElement)?.tagName?.toLowerCase();
+          if (targetTag !== 'input' && targetTag !== 'textarea' && targetTag !== 'select') {
+            active.useEscapeStone();
+          }
         } else if (e.key === 'Escape') {
           active.triggerGatheringModeToggle(false);
           if (active.isAnnouncementShowing()) {
             active.dismissCurrentAnnouncement();
           }
+          active.closeTeleporterCrystalModal();
           active.closeLoadoutModal();
           active.closeResearchTreeModal();
           active.closeAlchemyModal();
@@ -1931,6 +2000,18 @@ export class HUD {
         this.playerRevivePotionTextEl.innerText = `${revivePotCount}`;
       } else {
         this.hudRevivePotionRowEl.style.display = 'none';
+      }
+    }
+
+    // 4b7. Escape Stone Stockpile (Milestone 40)
+    if (this.hudEscapeStoneRowEl && this.playerEscapeStoneTextEl) {
+      const escapeStoneCount = GameState.getInstance().getItemCount('escape_stone');
+      const isAlchemyUnlocked = GameState.getInstance().isBuildableUnlocked('alchemy_station');
+      if (escapeStoneCount > 0 || isAlchemyUnlocked) {
+        this.hudEscapeStoneRowEl.style.display = 'flex';
+        this.playerEscapeStoneTextEl.innerText = `${escapeStoneCount}`;
+      } else {
+        this.hudEscapeStoneRowEl.style.display = 'none';
       }
     }
 
@@ -4106,6 +4187,9 @@ export class HUD {
     if (this.alchemyModalRevivePotionsEl) {
       this.alchemyModalRevivePotionsEl.innerText = `💛 ${gameState.getItemCount('revive_potion')}`;
     }
+    if (this.alchemyModalEscapeStonesEl) {
+      this.alchemyModalEscapeStonesEl.innerText = `🌀 ${gameState.getItemCount('escape_stone')}`;
+    }
 
     // 2b. Mood Modifier Banner
     const moodTier = dataLoader.getMoodTier(player.mood);
@@ -4323,6 +4407,59 @@ export class HUD {
       this.showToast('No Mana Potions available in stockpile!', 'warn', 2500);
       return false;
     }
+  }
+
+  // --- MILESTONE 40: TELEPORTER CRYSTAL & ESCAPE STONE ---
+
+  public showTeleporterCrystalModal(
+    currentFloor: number,
+    onContinue: () => void,
+    onReturn: () => void
+  ): void {
+    this.onCrystalContinueCallback = onContinue;
+    this.onCrystalReturnCallback = onReturn;
+
+    if (this.crystalModalTitleEl) {
+      this.crystalModalTitleEl.innerText = `Teleporter Crystal (Floor ${currentFloor})`;
+    }
+    if (this.crystalModalSubtitleEl) {
+      this.crystalModalSubtitleEl.innerText = `Current run depth: Floor ${currentFloor}. Reaching floor 5 will awaken the Boss chamber.`;
+    }
+    if (this.crystalContinueLabelEl) {
+      this.crystalContinueLabelEl.innerText = `Continue Descent (Floor ${currentFloor + 1})`;
+    }
+
+    if (this.teleporterCrystalModalEl) {
+      this.teleporterCrystalModalEl.style.display = 'flex';
+    }
+  }
+
+  public closeTeleporterCrystalModal(): void {
+    if (this.teleporterCrystalModalEl) {
+      this.teleporterCrystalModalEl.style.display = 'none';
+    }
+    this.onCrystalContinueCallback = undefined;
+    this.onCrystalReturnCallback = undefined;
+  }
+
+  public isTeleporterCrystalModalOpen(): boolean {
+    return this.teleporterCrystalModalEl?.style.display === 'flex';
+  }
+
+  public useEscapeStone(): boolean {
+    if (this.isOutpost) {
+      this.showToast('Already safe at the Outpost!', 'info', 2500);
+      return false;
+    }
+    const scene = this.currentPlayer?.scene as any;
+    if (scene && typeof scene.useEscapeStone === 'function') {
+      return scene.useEscapeStone();
+    }
+    const mainScene = (window as any).game?.scene?.getScene('MainScene');
+    if (mainScene && typeof mainScene.useEscapeStone === 'function') {
+      return mainScene.useEscapeStone();
+    }
+    return false;
   }
 
   // --- DEBUG TOOLING FOR SKILL BOOKS & RESEARCH (Milestone 6) ---
