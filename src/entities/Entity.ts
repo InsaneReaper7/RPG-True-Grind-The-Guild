@@ -116,6 +116,10 @@ export class Entity extends Phaser.GameObjects.Container {
     return this.state === 'moving' && (this.path.length > 0 || this.targetWorldPos !== null);
   }
 
+  public hasActivePath(): boolean {
+    return this.path.length > 0 || this.targetWorldPos !== null;
+  }
+
   public followPath(path: GridPos[], onComplete?: () => void): void {
     if (this.state === 'downed' || this.state === 'dead') return;
 

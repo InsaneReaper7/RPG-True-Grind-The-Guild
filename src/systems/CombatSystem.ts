@@ -1922,7 +1922,7 @@ export class CombatSystem {
         member.lastSkillUseTimes.set('healing_magic', time);
       }
       // If the member is actively moving, has path steps, or has no combat target, respect movement/player commands and do NOT autonomously acquire an enemy
-      const isMovingAlongPath = member.isMoving() || (member.path && member.path.length > 0) || member.targetWorldPos !== null || member.claimedDestination !== null;
+      const isMovingAlongPath = member.isMoving() || member.hasActivePath() || member.claimedDestination !== null;
       if (isMovingAlongPath || !member.targetEntity) {
         return false;
       }
@@ -1970,7 +1970,7 @@ export class CombatSystem {
     }
 
     // State yielding lifecycle: Ensure healer state cleanly yields back to moving or idle rather than staying stuck in attacking
-    const hasActivePath = member.isMoving() || (member.path && member.path.length > 0) || member.targetWorldPos !== null || member.claimedDestination !== null;
+    const hasActivePath = member.isMoving() || member.hasActivePath() || member.claimedDestination !== null;
     if (hasActivePath) {
       member.state = 'moving';
     } else {
