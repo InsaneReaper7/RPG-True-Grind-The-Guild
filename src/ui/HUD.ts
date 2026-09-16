@@ -317,19 +317,19 @@ export class HUD {
     this.partyPortraitsHudEl = document.getElementById('party-portraits-hud');
     this.partyReselectAllBtn = document.getElementById('party-reselect-all-btn');
     if (this.partyReselectAllBtn) {
-      this.partyReselectAllBtn.addEventListener('click', (e: MouseEvent) => {
+      this.partyReselectAllBtn.onclick = (e: MouseEvent) => {
         e.stopPropagation();
         this.triggerGroupReselect();
-      });
+      };
     }
 
     this.gatheringModeBannerEl = document.getElementById('gathering-mode-banner');
     this.gatheringModeBtnEl = document.getElementById('gathering-mode-toggle-btn');
     if (this.gatheringModeBtnEl) {
-      this.gatheringModeBtnEl.addEventListener('click', (e: MouseEvent) => {
+      this.gatheringModeBtnEl.onclick = (e: MouseEvent) => {
         e.stopPropagation();
         this.triggerGatheringModeToggle();
-      });
+      };
     }
 
     this.portraitCardEls = [];
@@ -353,51 +353,61 @@ export class HUD {
       this.portraitHotkeyEls.push(document.getElementById(`party-portrait-hotkey-${i}`));
 
       if (card) {
-        card.addEventListener('click', (e: MouseEvent) => {
+        card.onclick = (e: MouseEvent) => {
           e.stopPropagation();
           this.selectMemberByIndex(i, e.shiftKey);
-        });
+        };
       }
     }
 
     // Click to dismiss modals early (cancels auto-dismiss timer immediately)
-    this.unlockModalEl?.addEventListener('click', () => {
-      this.dismissCurrentAnnouncement();
-    });
-    this.skillDiscoveredModalEl?.addEventListener('click', () => {
-      this.dismissCurrentAnnouncement();
-    });
+    if (this.unlockModalEl) {
+      this.unlockModalEl.onclick = () => {
+        this.dismissCurrentAnnouncement();
+      };
+    }
+    if (this.skillDiscoveredModalEl) {
+      this.skillDiscoveredModalEl.onclick = () => {
+        this.dismissCurrentAnnouncement();
+      };
+    }
 
     // Party member selector in debug panel
-    this.debugMemberSelectEl?.addEventListener('change', () => {
-      if (this.debugMemberSelectEl) {
-        this.selectedDebugMemberIndex = parseInt(this.debugMemberSelectEl.value, 10) || 0;
-        this.renderedDebugSkillsKey = '';
-        const targetMember = (this.currentParty && this.currentParty[this.selectedDebugMemberIndex]) || this.currentPlayer;
-        if (targetMember) {
-          this.updateDebugSkillsPanel(targetMember.progression, targetMember.entityName);
+    if (this.debugMemberSelectEl) {
+      this.debugMemberSelectEl.onchange = () => {
+        if (this.debugMemberSelectEl) {
+          this.selectedDebugMemberIndex = parseInt(this.debugMemberSelectEl.value, 10) || 0;
+          this.renderedDebugSkillsKey = '';
+          const targetMember = (this.currentParty && this.currentParty[this.selectedDebugMemberIndex]) || this.currentPlayer;
+          if (targetMember) {
+            this.updateDebugSkillsPanel(targetMember.progression, targetMember.entityName);
+          }
         }
-      }
-    });
+      };
+    }
 
     this.loadoutMemberSelectEl = document.getElementById('loadout-member-select') as HTMLSelectElement | null;
-    this.loadoutMemberSelectEl?.addEventListener('change', () => {
-      if (this.loadoutMemberSelectEl) {
-        this.selectedLoadoutMemberIndex = parseInt(this.loadoutMemberSelectEl.value, 10) || 0;
-        const targetMember = (this.currentParty && this.currentParty[this.selectedLoadoutMemberIndex]) || this.currentPlayer;
-        if (targetMember) {
-          this.renderLoadoutModal(targetMember, targetMember.progression);
+    if (this.loadoutMemberSelectEl) {
+      this.loadoutMemberSelectEl.onchange = () => {
+        if (this.loadoutMemberSelectEl) {
+          this.selectedLoadoutMemberIndex = parseInt(this.loadoutMemberSelectEl.value, 10) || 0;
+          const targetMember = (this.currentParty && this.currentParty[this.selectedLoadoutMemberIndex]) || this.currentPlayer;
+          if (targetMember) {
+            this.renderLoadoutModal(targetMember, targetMember.progression);
+          }
         }
-      }
-    });
+      };
+    }
 
     // Clear EXP Log button
-    this.debugClearExpLogBtn?.addEventListener('click', () => {
-      ProgressionSystem.clearExpLog();
-      if (this.debugExpLogListEl) {
-        this.debugExpLogListEl.innerHTML = '';
-      }
-    });
+    if (this.debugClearExpLogBtn) {
+      this.debugClearExpLogBtn.onclick = () => {
+        ProgressionSystem.clearExpLog();
+        if (this.debugExpLogListEl) {
+          this.debugExpLogListEl.innerHTML = '';
+        }
+      };
+    }
 
     // Subscribe to live EXP transactions
     this.unsubscribeExpListener = ProgressionSystem.onExpGranted((tx) => {
@@ -2956,7 +2966,9 @@ export class HUD {
   }
 
   public initPartyInventoryFilterTabs(): void {
-    const filterBtns = document.querySelectorAll<HTMLButtonElement>('.inv-filter-btn');
+    const filterBtns = typeof document.querySelectorAll === 'function'
+      ? document.querySelectorAll<HTMLButtonElement>('.inv-filter-btn')
+      : [];
     filterBtns.forEach(btn => {
       btn.onclick = () => {
         filterBtns.forEach(b => b.classList.remove('active'));
@@ -3607,6 +3619,16 @@ export class HUD {
     if (this.unsubscribeExpListener) {
       this.unsubscribeExpListener();
       this.unsubscribeExpListener = null;
+    }
+    if (this.gatheringModeBtnEl) {
+      this.gatheringModeBtnEl.onclick = null;
+    }
+    if (this.partyReselectAllBtn) {
+      this.partyReselectAllBtn.onclick = null;
+    }
+    if (this.handleResearchTreeResize) {
+      window.removeEventListener('resize', this.handleResearchTreeResize);
+      this.handleResearchTreeResize = null as any;
     }
     if (HUD.activeInstance === this) {
       HUD.activeInstance = null;

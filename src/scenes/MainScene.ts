@@ -114,7 +114,6 @@ export class MainScene extends Phaser.Scene {
   private tKey!: Phaser.Input.Keyboard.Key;
   private hKey!: Phaser.Input.Keyboard.Key;
   private gKey!: Phaser.Input.Keyboard.Key;
-  private fKey!: Phaser.Input.Keyboard.Key;
   private numKeys: Phaser.Input.Keyboard.Key[] = [];
   public selectedMembers: Set<Player> = new Set();
   private selectionReticleGraphics!: Phaser.GameObjects.Graphics;
@@ -445,7 +444,6 @@ export class MainScene extends Phaser.Scene {
         this.hud.applyBandage();
       });
       this.gKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.G);
-      this.fKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.F);
       this.numKeys = [
         this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ONE),
         this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.TWO),
@@ -1479,11 +1477,6 @@ export class MainScene extends Phaser.Scene {
     // Milestone 25: Reselect All Party Members [G]
     if (this.gKey && Phaser.Input.Keyboard.JustDown(this.gKey)) {
       this.selectAllMembers();
-    }
-
-    // Milestone 26: Toggle Gathering Mode [F]
-    if (this.fKey && Phaser.Input.Keyboard.JustDown(this.fKey)) {
-      this.toggleGatheringMode();
     }
 
 

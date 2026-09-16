@@ -449,9 +449,9 @@ export class Player extends Entity {
     this.targetEntity = null;
     if (hadTarget) {
       this.stopMovement();
-      if (this.state === 'attacking') {
-        this.state = 'idle';
-      }
+    }
+    if (this.state === 'attacking') {
+      this.state = 'idle';
     }
   }
 

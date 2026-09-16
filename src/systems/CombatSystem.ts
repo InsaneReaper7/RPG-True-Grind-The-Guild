@@ -380,8 +380,8 @@ export class CombatSystem {
 
   public update(time: number, delta: number): void {
     const anyEnemyAggroed = this.enemies.some((e) => e.isAggroed && e.state !== 'dead' && e.state !== 'downed');
-    const anyPartyEngaged = this.party.some((m) => m.state !== 'dead' && m.state !== 'downed' && m.targetEntity !== null && m.targetEntity.state !== 'dead' && m.targetEntity.state !== 'downed');
-    const anyEnemyTargetingParty = this.enemies.some((e) => e.state !== 'dead' && e.state !== 'downed' && e.targetEntity !== null && e.targetEntity.state !== 'dead' && e.targetEntity.state !== 'downed');
+    const anyPartyEngaged = this.party.some((m) => m.state !== 'dead' && m.state !== 'downed' && m.targetEntity && m.targetEntity.state !== 'dead' && m.targetEntity.state !== 'downed');
+    const anyEnemyTargetingParty = this.enemies.some((e) => e.state !== 'dead' && e.state !== 'downed' && e.targetEntity && e.targetEntity.state !== 'dead' && e.targetEntity.state !== 'downed');
     const activeThreat = anyEnemyAggroed || anyPartyEngaged || anyEnemyTargetingParty;
     if (activeThreat) {
       this.lastCombatTimeMs = time;
@@ -833,7 +833,7 @@ export class CombatSystem {
       if (member.state === 'downed' || member.state === 'dead') continue;
       member.inCombat = inCombat;
 
-      if (typeof member.isDisabled === 'function' ? member.isDisabled() : (member.hasStatusEffect('stun') || member.hasStatusEffect('shock'))) {
+      if (typeof member.isDisabled === 'function' ? member.isDisabled() : (typeof member.hasStatusEffect === 'function' ? (member.hasStatusEffect('stun') || member.hasStatusEffect('shock')) : false)) {
         member.stopMovement();
         continue;
       }
@@ -1122,7 +1122,7 @@ export class CombatSystem {
               this.createFloatingText(target.x, target.y - 10, 'MISS', '#9ca3af');
             } else {
               let damage = effectiveBaseDamage;
-              if (member.hasStatusEffect('blessed_weapons')) {
+              if (typeof member.hasStatusEffect === 'function' && member.hasStatusEffect('blessed_weapons')) {
                 damage += 5;
                 this.createFloatingText(target.x, target.y - 24, '+5 HOLY!', '#facc15');
               }
@@ -1921,16 +1921,12 @@ export class CombatSystem {
         );
         member.lastSkillUseTimes.set('healing_magic', time);
       }
-      // If healer does not have an active combat target, acquire one from the party or nearest living enemy
-      if (!member.targetEntity || member.targetEntity.state === 'dead' || member.targetEntity.state === 'downed') {
-        const potentialTarget = this.party.find(m => m !== member && m.targetEntity && m.targetEntity.state !== 'dead' && m.targetEntity.state !== 'downed')?.targetEntity
-          || this.enemies.find(e => e.state !== 'dead' && e.state !== 'downed') || null;
-        if (potentialTarget) {
-          member.setTarget(potentialTarget);
-          console.log(`[DIAG:Combat] 🎯 ${member.entityName} acquired fallback enemy target: ${potentialTarget.entityName}`);
-        }
+      // If the member is actively moving, has path steps, or has no combat target, respect movement/player commands and do NOT autonomously acquire an enemy
+      const isMovingAlongPath = member.isMoving() || (member.path && member.path.length > 0) || member.targetWorldPos !== null || member.claimedDestination !== null;
+      if (isMovingAlongPath || !member.targetEntity) {
+        return false;
       }
-      return false; // Fall back to melee target attack
+      return false; // Fall back to melee target attack on existing targetEntity
     }
 
     // Branch 1: Damaged ally exists and healer has sufficient energy -> cast Heal
@@ -1971,6 +1967,14 @@ export class CombatSystem {
     if (result.leveledUp) {
       const newLevel = member.progression.getProficiencyLevel('healing_magic');
       this.createFloatingText(member.x, member.y - 20, `Healing Magic Level ${newLevel}!`, '#22c55e');
+    }
+
+    // State yielding lifecycle: Ensure healer state cleanly yields back to moving or idle rather than staying stuck in attacking
+    const hasActivePath = member.isMoving() || (member.path && member.path.length > 0) || member.targetWorldPos !== null || member.claimedDestination !== null;
+    if (hasActivePath) {
+      member.state = 'moving';
+    } else {
+      member.state = 'idle';
     }
 
     return true;
