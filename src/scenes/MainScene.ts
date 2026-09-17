@@ -126,6 +126,7 @@ export class MainScene extends Phaser.Scene {
   public gatheringQueue: GatheringNode[] = [];
   public gatheringQueueWorkers: Set<Player> = new Set();
   public gatheringWorkerNodeAssignments: Map<Player, GatheringNode> = new Map();
+  private gatheringArrivalTimers: Map<Player, Phaser.Time.TimerEvent> = new Map();
 
   private isCameraLocked: boolean = true;
   private targetReticle!: Phaser.GameObjects.Sprite;
@@ -142,6 +143,7 @@ export class MainScene extends Phaser.Scene {
   public create(): void {
     this.isTransitioning = false;
     this.enemies = [];
+    this.isCameraLocked = true;
 
     // Clean up previous overlay, gathering channels, or timers if restarting scene
     if (this.tileClaimOverlay) {
@@ -155,6 +157,10 @@ export class MainScene extends Phaser.Scene {
       channel.barContainer.destroy();
     }
     this.activeReviveChannels.clear();
+    for (const timer of this.gatheringArrivalTimers.values()) {
+      timer.remove();
+    }
+    this.gatheringArrivalTimers.clear();
     for (const node of this.gatheringNodes) {
       if (node.respawnTimer) {
         node.respawnTimer.remove();
@@ -175,6 +181,12 @@ export class MainScene extends Phaser.Scene {
     this.gatheringWorkerNodeAssignments.clear();
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.cameras?.main?.stopFollow();
+      this.isCameraLocked = true;
+      for (const timer of this.gatheringArrivalTimers.values()) {
+        timer.remove();
+      }
+      this.gatheringArrivalTimers.clear();
       if (this.tileClaimOverlay) {
         this.tileClaimOverlay.destroy();
       }
@@ -1582,7 +1594,11 @@ export class MainScene extends Phaser.Scene {
         panned = true;
       }
 
-      if (panned && this.isCameraLocked) {
+      // Note: Reaching into Phaser's private `_follow` property via (this.cameras.main as any)._follow
+      // is an unstable internal API fallback. It is kept as a defensive belt-and-suspenders guard in case
+      // isCameraLocked ever gets desynchronized, but may need maintenance if Phaser changes internal follow properties.
+      const hasFollowTarget = !!(this.cameras.main as any)._follow;
+      if (panned && (this.isCameraLocked || hasFollowTarget)) {
         this.isCameraLocked = false;
         this.cameras.main.stopFollow();
       }
@@ -2225,7 +2241,7 @@ export class MainScene extends Phaser.Scene {
         { x: node.x - 1, y: node.y },
         { x: node.x, y: node.y + 1 },
         { x: node.x, y: node.y - 1 }
-      ].filter(t => t.x > 0 && t.x < this.mapWidth - 1 && t.y > 0 && t.y < this.mapHeight - 1 && this.gridMatrix[t.y]?.[t.x] === 0 && !claimed.has(`${t.x},${t.y}`));
+      ].filter(t => t.x > 0 && t.x < this.mapWidth - 1 && t.y > 0 && t.y < this.mapHeight - 1 && this.gridMatrix[t.y]?.[t.x] === 0 && !claimed.has(`${t.x},${t.y}`) && !this.gatheringNodes.some(other => !other.isHarvested && other !== node && other.x === t.x && other.y === t.y));
 
       adjTiles.sort((a, b) => Math.hypot(a.x - primaryGatherer.gridPos.x, a.y - primaryGatherer.gridPos.y) - Math.hypot(b.x - primaryGatherer.gridPos.x, b.y - primaryGatherer.gridPos.y));
 
@@ -2246,18 +2262,26 @@ export class MainScene extends Phaser.Scene {
                 this.startGatherChannel(primaryGatherer, node);
               }
             });
+            const oldTimer = this.gatheringArrivalTimers.get(primaryGatherer);
+            if (oldTimer) {
+              oldTimer.remove();
+              this.gatheringArrivalTimers.delete(primaryGatherer);
+            }
             const checkArrival = this.time.addEvent({
               delay: 150,
               repeat: 40,
               callback: () => {
                 if (Math.hypot(primaryGatherer.gridPos.x - node.x, primaryGatherer.gridPos.y - node.y) <= 1.5) {
                   checkArrival.remove();
+                  this.gatheringArrivalTimers.delete(primaryGatherer);
                   this.startGatherChannel(primaryGatherer, node);
                 } else if (primaryGatherer.state !== 'moving') {
                   checkArrival.remove();
+                  this.gatheringArrivalTimers.delete(primaryGatherer);
                 }
               }
             });
+            this.gatheringArrivalTimers.set(primaryGatherer, checkArrival);
           } else {
             primaryGatherer.claimedDestination = null;
           }
@@ -2357,6 +2381,11 @@ export class MainScene extends Phaser.Scene {
   }
 
   public completeGatherChannel(character: Player, channel: ActiveGatherChannel): void {
+    const timer = this.gatheringArrivalTimers.get(character);
+    if (timer) {
+      timer.remove();
+      this.gatheringArrivalTimers.delete(character);
+    }
     channel.barContainer.destroy();
     this.activeGatherChannels.delete(character);
 
@@ -2613,6 +2642,13 @@ export class MainScene extends Phaser.Scene {
   public cancelGatherChannel(character: Player): boolean {
     let hadActivity = false;
 
+    const timer = this.gatheringArrivalTimers.get(character);
+    if (timer) {
+      hadActivity = true;
+      timer.remove();
+      this.gatheringArrivalTimers.delete(character);
+    }
+
     const channel = this.activeGatherChannels.get(character);
     if (channel) {
       hadActivity = true;
@@ -2626,8 +2662,12 @@ export class MainScene extends Phaser.Scene {
     // Milestone 26: Release worker assignment and clear claimed destination
     if (this.gatheringWorkerNodeAssignments.has(character)) {
       hadActivity = true;
+      const assignedNode = this.gatheringWorkerNodeAssignments.get(character);
       this.gatheringWorkerNodeAssignments.delete(character);
       character.claimedDestination = null;
+      if (assignedNode && !assignedNode.isHarvested && !this.gatheringQueue.includes(assignedNode)) {
+        this.gatheringQueue.push(assignedNode);
+      }
     }
     return hadActivity;
   }
@@ -2944,7 +2984,8 @@ export class MainScene extends Phaser.Scene {
   }
 
   public startGatheringQueue(nodes: GatheringNode[]): void {
-    const validNodes = Array.from(new Set(nodes)).filter(n => !n.isHarvested);
+    const activeChanneledNodes = new Set(Array.from(this.activeGatherChannels.values()).map(c => c.node));
+    const validNodes = Array.from(new Set(nodes)).filter(n => !n.isHarvested && !activeChanneledNodes.has(n));
     if (validNodes.length === 0) return;
 
     // Respect current Portrait Selection state!
@@ -2956,6 +2997,18 @@ export class MainScene extends Phaser.Scene {
     if (workers.length === 0) {
       console.log('[Gathering Queue] No living workers available to gather');
       return;
+    }
+
+    // Cancel existing pending arrival timers and clear moving worker claimed destinations for workers taking on the new queue
+    for (const worker of workers) {
+      const pendingTimer = this.gatheringArrivalTimers.get(worker);
+      if (pendingTimer) {
+        pendingTimer.remove();
+        this.gatheringArrivalTimers.delete(worker);
+      }
+      if (!this.activeGatherChannels.has(worker) && worker.claimedDestination) {
+        worker.claimedDestination = null;
+      }
     }
 
     this.gatheringQueue = [...validNodes];
@@ -2990,6 +3043,9 @@ export class MainScene extends Phaser.Scene {
       }
 
       const assignedNodes = new Set(this.gatheringWorkerNodeAssignments.values());
+      for (const ch of this.activeGatherChannels.values()) {
+        assignedNodes.add(ch.node);
+      }
       const availableNodes = this.gatheringQueue.filter(n => !n.isHarvested && !assignedNodes.has(n));
 
       if (availableNodes.length === 0) {
@@ -3014,6 +3070,12 @@ export class MainScene extends Phaser.Scene {
   }
 
   public dispatchWorkerToNode(worker: Player, node: GatheringNode, claimed?: Set<string>): void {
+    const oldArrivalTimer = this.gatheringArrivalTimers.get(worker);
+    if (oldArrivalTimer) {
+      oldArrivalTimer.remove();
+      this.gatheringArrivalTimers.delete(worker);
+    }
+
     const existingChannel = this.activeGatherChannels.get(worker);
     if (existingChannel) {
       existingChannel.barContainer.destroy();
@@ -3047,7 +3109,13 @@ export class MainScene extends Phaser.Scene {
       { x: node.x - 1, y: node.y },
       { x: node.x, y: node.y + 1 },
       { x: node.x, y: node.y - 1 }
-    ].filter(t => t.x > 0 && t.x < this.mapWidth - 1 && t.y > 0 && t.y < this.mapHeight - 1 && this.gridMatrix[t.y]?.[t.x] === 0 && !claimedTiles.has(`${t.x},${t.y}`));
+    ].filter(t => 
+      t.x > 0 && t.x < this.mapWidth - 1 && 
+      t.y > 0 && t.y < this.mapHeight - 1 && 
+      this.gridMatrix[t.y]?.[t.x] === 0 && 
+      !claimedTiles.has(`${t.x},${t.y}`) &&
+      !this.gatheringNodes.some(other => !other.isHarvested && other !== node && other.x === t.x && other.y === t.y)
+    );
 
     adjTiles.sort((a, b) => Math.hypot(a.x - worker.gridPos.x, a.y - worker.gridPos.y) - Math.hypot(b.x - worker.gridPos.x, b.y - worker.gridPos.y));
 
@@ -3076,21 +3144,29 @@ export class MainScene extends Phaser.Scene {
             callback: () => {
               if (Math.hypot(worker.gridPos.x - node.x, worker.gridPos.y - node.y) <= 1.5) {
                 checkArrival.remove();
+                this.gatheringArrivalTimers.delete(worker);
                 this.startGatherChannel(worker, node);
               } else if (worker.state !== 'moving') {
                 checkArrival.remove();
+                this.gatheringArrivalTimers.delete(worker);
                 if (Math.hypot(worker.gridPos.x - node.x, worker.gridPos.y - node.y) > 1.5) {
                   this.cancelGatherChannel(worker);
                 }
               }
             }
           });
+          this.gatheringArrivalTimers.set(worker, checkArrival);
         } else {
           worker.claimedDestination = null;
           this.gatheringWorkerNodeAssignments.delete(worker);
           if (!node.isHarvested && !this.gatheringQueue.includes(node)) {
             this.gatheringQueue.push(node);
           }
+          this.time.delayedCall(100, () => {
+            if (this.gatheringQueue.length > 0) {
+              this.processGatheringQueue();
+            }
+          });
         }
       });
     } else {
@@ -3099,6 +3175,11 @@ export class MainScene extends Phaser.Scene {
       if (!node.isHarvested && !this.gatheringQueue.includes(node)) {
         this.gatheringQueue.push(node);
       }
+      this.time.delayedCall(100, () => {
+        if (this.gatheringQueue.length > 0) {
+          this.processGatheringQueue();
+        }
+      });
     }
   }
 

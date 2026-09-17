@@ -158,7 +158,11 @@ export class OutpostScene extends Phaser.Scene {
     GameState.getInstance().setSafeZone(true);
     GameState.getInstance().resetDungeonFloorCount();
 
+    this.isCameraLocked = true;
+
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.cameras?.main?.stopFollow();
+      this.isCameraLocked = true;
       if (this.hud) {
         this.hud.destroy();
       }
@@ -1836,7 +1840,11 @@ export class OutpostScene extends Phaser.Scene {
       if (this.wasdKeys.A.isDown) { this.cameras.main.scrollX -= panSpeed; panned = true; }
       if (this.wasdKeys.D.isDown) { this.cameras.main.scrollX += panSpeed; panned = true; }
 
-      if (panned && this.isCameraLocked) {
+      // Note: Reaching into Phaser's private `_follow` property via (this.cameras.main as any)._follow
+      // is an unstable internal API fallback. It is kept as a defensive belt-and-suspenders guard in case
+      // isCameraLocked ever gets desynchronized, but may need maintenance if Phaser changes internal follow properties.
+      const hasFollowTarget = !!(this.cameras.main as any)._follow;
+      if (panned && (this.isCameraLocked || hasFollowTarget)) {
         this.isCameraLocked = false;
         this.cameras.main.stopFollow();
       }
