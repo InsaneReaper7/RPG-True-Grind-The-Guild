@@ -260,11 +260,11 @@ async function runTests() {
   assert.equal(realTiers.get('research_blacksmithing_station'), 0, 'Blacksmithing must be Tier 0');
   assert.equal(realTiers.get('research_bowyer_station'), 0, 'Bowyer must be Tier 0');
   assert.equal(realTiers.get('research_digging'), 0, 'Digging must be Tier 0');
-  assert.equal(realTiers.get('research_gardening'), 0, 'Gardening must be Tier 0');
 
   // Verify Tier 1 for dependent nodes
   assert.equal(realTiers.get('research_armorsmithing_bench'), 1, 'Armorsmithing Bench must be Tier 1 (depth 1)');
   assert.equal(realTiers.get('research_cooking_station'), 1, 'Cooking Station must be Tier 1 (depth 1)');
+  assert.equal(realTiers.get('research_gardening'), 1, 'Gardening must be Tier 1 (depth 1)');
 
   // Verify Multi-Hop and Uneven Branch Synthetic Test (N >= 3 hops)
   const syntheticNodes: ResearchNodeDef[] = [
@@ -314,6 +314,14 @@ async function runTests() {
   assert.ok(cookingCard.innerHTML.includes('Requires: Harvest Enemy Meat') || cookingCard.innerHTML.includes('research_butchering'),
     'Cooking Station must explicitly name Harvest Enemy Meat prerequisite');
 
+  // Verify Gardening card is locked and shows padlock & prerequisite
+  const gardeningCard = canvas.querySelector('#research-card-research_gardening') as MockDOMElement;
+  assert.ok(gardeningCard, 'Gardening card must exist');
+  assert.ok(gardeningCard.classList.contains('node-locked'), 'Gardening must have node-locked class');
+  assert.ok(gardeningCard.innerHTML.includes('🔒 Locked'), 'Gardening must show 🔒 Locked status badge');
+  assert.ok(gardeningCard.innerHTML.includes('Requires: Digging') || gardeningCard.innerHTML.includes('research_digging'),
+    'Gardening must explicitly name Digging prerequisite');
+
   // Verify Root nodes (e.g. Skinning, Butchering, Blacksmithing) are available, NOT locked
   const skinningCard = canvas.querySelector('#research-card-research_skinning') as MockDOMElement;
   assert.ok(skinningCard.classList.contains('node-available'), 'Skinning must be node-available, NOT node-locked');
@@ -324,9 +332,9 @@ async function runTests() {
   // ---------------------------------------------------------------------------
   // TEST 3: SVG Connector Lines Between Prerequisites and Dependents
   // ---------------------------------------------------------------------------
-  console.log('\n--- TEST 3: SVG Connector Lines (Skinning->Armor, Butchering->Cooking) ---');
+  console.log('\n--- TEST 3: SVG Connector Lines (Skinning->Armor, Butchering->Cooking, Digging->Gardening) ---');
   const connectorLines = svg.querySelectorAll('.research-connector-line');
-  assert.equal(connectorLines.length, 2, 'Exactly 2 prerequisite connector lines must be drawn');
+  assert.equal(connectorLines.length, 3, 'Exactly 3 prerequisite connector lines must be drawn');
 
   const skinningLine = svg.querySelector('[data-source-node="research_skinning"][data-target-node="research_armorsmithing_bench"]') as MockDOMElement;
   assert.ok(skinningLine, 'Connector line from research_skinning to research_armorsmithing_bench must exist');
@@ -336,6 +344,10 @@ async function runTests() {
   const butcheringLine = svg.querySelector('[data-source-node="research_butchering"][data-target-node="research_cooking_station"]') as MockDOMElement;
   assert.ok(butcheringLine, 'Connector line from research_butchering to research_cooking_station must exist');
   assert.equal(butcheringLine.getAttribute('stroke'), '#64748b');
+
+  const diggingLine = svg.querySelector('[data-source-node="research_digging"][data-target-node="research_gardening"]') as MockDOMElement;
+  assert.ok(diggingLine, 'Connector line from research_digging to research_gardening must exist');
+  assert.equal(diggingLine.getAttribute('stroke'), '#64748b');
 
   console.log('✔ Test 3 passed: SVG connector lines correctly connect prerequisite pairs.');
 

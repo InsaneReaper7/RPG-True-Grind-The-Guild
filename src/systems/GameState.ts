@@ -87,6 +87,12 @@ export class GameState {
       ore: (playerData.resources as any)?.ore ?? 0,
       ...(playerData.resources ?? {})
     };
+    if (this.resources.wood > 0) {
+      this.inventory.set('wood', this.resources.wood);
+    }
+    if (this.resources.ore > 0) {
+      this.inventory.set('ore', this.resources.ore);
+    }
 
     const seedProficiencies: Record<string, TrainableStat> = {
       [initialMainWeapon]: { level: 0, currentExp: 0 },
@@ -158,14 +164,21 @@ export class GameState {
   }
 
   public getWood(): number {
-    return this.resources.wood ?? 0;
+    return Math.max(this.resources.wood ?? 0, this.inventory.get('wood') ?? 0);
   }
 
   public consumeWood(amount: number): boolean {
-    if ((this.resources.wood ?? 0) >= amount) {
-      this.resources.wood -= amount;
+    const current = this.getWood();
+    if (current >= amount) {
+      this.resources.wood = current - amount;
+      if (this.resources.wood <= 0) {
+        this.inventory.delete('wood');
+      } else {
+        this.inventory.set('wood', this.resources.wood);
+      }
       if (this.snapshot) {
         this.snapshot.resources.wood = this.resources.wood;
+        this.snapshot.inventory = Object.fromEntries(this.inventory);
       }
       return true;
     }
@@ -173,28 +186,43 @@ export class GameState {
   }
 
   public addWood(amount: number): void {
-    this.resources.wood = (this.resources.wood ?? 0) + amount;
+    this.resources.wood = this.getWood() + amount;
+    this.inventory.set('wood', this.resources.wood);
     if (this.snapshot) {
       this.snapshot.resources.wood = this.resources.wood;
+      this.snapshot.inventory = Object.fromEntries(this.inventory);
     }
   }
 
   public setWood(amount: number): void {
     this.resources.wood = Math.max(0, amount);
+    if (this.resources.wood <= 0) {
+      this.inventory.delete('wood');
+    } else {
+      this.inventory.set('wood', this.resources.wood);
+    }
     if (this.snapshot) {
       this.snapshot.resources.wood = this.resources.wood;
+      this.snapshot.inventory = Object.fromEntries(this.inventory);
     }
   }
 
   public getOre(): number {
-    return this.resources.ore ?? 0;
+    return Math.max(this.resources.ore ?? 0, this.inventory.get('ore') ?? 0);
   }
 
   public consumeOre(amount: number): boolean {
-    if ((this.resources.ore ?? 0) >= amount) {
-      this.resources.ore -= amount;
+    const current = this.getOre();
+    if (current >= amount) {
+      this.resources.ore = current - amount;
+      if (this.resources.ore <= 0) {
+        this.inventory.delete('ore');
+      } else {
+        this.inventory.set('ore', this.resources.ore);
+      }
       if (this.snapshot) {
         this.snapshot.resources.ore = this.resources.ore;
+        this.snapshot.inventory = Object.fromEntries(this.inventory);
       }
       return true;
     }
@@ -202,16 +230,24 @@ export class GameState {
   }
 
   public addOre(amount: number): void {
-    this.resources.ore = (this.resources.ore ?? 0) + amount;
+    this.resources.ore = this.getOre() + amount;
+    this.inventory.set('ore', this.resources.ore);
     if (this.snapshot) {
       this.snapshot.resources.ore = this.resources.ore;
+      this.snapshot.inventory = Object.fromEntries(this.inventory);
     }
   }
 
   public setOre(amount: number): void {
     this.resources.ore = Math.max(0, amount);
+    if (this.resources.ore <= 0) {
+      this.inventory.delete('ore');
+    } else {
+      this.inventory.set('ore', this.resources.ore);
+    }
     if (this.snapshot) {
       this.snapshot.resources.ore = this.resources.ore;
+      this.snapshot.inventory = Object.fromEntries(this.inventory);
     }
   }
 
@@ -601,6 +637,15 @@ export class GameState {
 
   // --- Inventory System (Bandages, Rations, etc.) ---
   public getItemCount(itemId: string): number {
+    if (itemId === 'wood') {
+      return this.getWood();
+    }
+    if (itemId === 'ore') {
+      return this.getOre();
+    }
+    if (itemId === 'research_points') {
+      return this.getResearchPoints();
+    }
     const dataLoader = DataLoader.getInstance();
     if (dataLoader.getFood(itemId)) {
       return this.getFoodItemCount(itemId);
@@ -609,6 +654,18 @@ export class GameState {
   }
 
   public addItem(itemId: string, count: number): void {
+    if (itemId === 'wood') {
+      this.addWood(count);
+      return;
+    }
+    if (itemId === 'ore') {
+      this.addOre(count);
+      return;
+    }
+    if (itemId === 'research_points') {
+      this.addResearchPoints(count);
+      return;
+    }
     const dataLoader = DataLoader.getInstance();
     if (dataLoader.getFood(itemId)) {
       this.addFoodItem(itemId, count);
@@ -622,6 +679,15 @@ export class GameState {
   }
 
   public consumeItem(itemId: string, count: number = 1): boolean {
+    if (itemId === 'wood') {
+      return this.consumeWood(count);
+    }
+    if (itemId === 'ore') {
+      return this.consumeOre(count);
+    }
+    if (itemId === 'research_points') {
+      return this.consumeResearchPoints(count);
+    }
     const dataLoader = DataLoader.getInstance();
     if (dataLoader.getFood(itemId)) {
       for (let i = 0; i < count; i++) {
@@ -645,6 +711,34 @@ export class GameState {
       return true;
     }
     return false;
+  }
+
+  public getAllStockpileCounts(): Record<string, number> {
+    const counts: Record<string, number> = {};
+    counts['wood'] = this.getWood();
+    counts['ore'] = this.getOre();
+    counts['research_points'] = this.getResearchPoints();
+
+    for (const [key, value] of this.inventory.entries()) {
+      counts[key] = value;
+    }
+
+    const dataLoader = DataLoader.getInstance();
+    const foods = dataLoader.getFoods ? dataLoader.getFoods() : [];
+    for (const food of foods) {
+      const c = this.getFoodItemCount(food.id);
+      if (c > 0) {
+        counts[food.id] = c;
+      }
+    }
+    return counts;
+  }
+
+  public getInventoryMap(): Map<string, number> {
+    const map = new Map(this.inventory);
+    map.set('wood', this.getWood());
+    map.set('ore', this.getOre());
+    return map;
   }
 
   // --- Lockpicking System (Milestone 38) ---
@@ -890,6 +984,12 @@ export class GameState {
 
     if (snap.resources) {
       this.resources = { ...snap.resources, wood: snap.resources.wood ?? 0, ore: snap.resources.ore ?? 0 };
+      if (this.resources.wood > 0) {
+        this.inventory.set('wood', this.resources.wood);
+      }
+      if (this.resources.ore > 0) {
+        this.inventory.set('ore', this.resources.ore);
+      }
     }
     if (snap.placedBuildables) {
       this.placedBuildables = [...snap.placedBuildables];

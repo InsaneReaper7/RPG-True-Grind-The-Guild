@@ -123,10 +123,17 @@ export class MainScene extends Phaser.Scene {
   private isGatheringDrag: boolean = false;
   private gatherDragStart: { x: number; y: number } | null = null;
   private gatheringMarqueeGraphics!: Phaser.GameObjects.Graphics;
+  public currentGatherSelectionHighlights: GatheringNode[] = [];
   public gatheringQueue: GatheringNode[] = [];
   public gatheringQueueWorkers: Set<Player> = new Set();
   public gatheringWorkerNodeAssignments: Map<Player, GatheringNode> = new Map();
   private gatheringArrivalTimers: Map<Player, Phaser.Time.TimerEvent> = new Map();
+
+  // Move Destination Highlights
+  public lastMoveDestinationHighlights: GridPos[] = [];
+  private moveHighlightGraphics!: Phaser.GameObjects.Graphics;
+  private moveHighlightTween: Phaser.Tweens.Tween | null = null;
+  private moveHighlightTimer: Phaser.Time.TimerEvent | null = null;
 
   private isCameraLocked: boolean = true;
   private targetReticle!: Phaser.GameObjects.Sprite;
@@ -176,9 +183,17 @@ export class MainScene extends Phaser.Scene {
     this.isGatheringMode = false;
     this.isGatheringDrag = false;
     this.gatherDragStart = null;
+    this.currentGatherSelectionHighlights = [];
     this.gatheringQueue = [];
     this.gatheringQueueWorkers.clear();
     this.gatheringWorkerNodeAssignments.clear();
+
+    // Initialize Move Destination Highlight Graphics
+    if (this.moveHighlightGraphics) {
+      this.moveHighlightGraphics.destroy();
+    }
+    this.moveHighlightGraphics = this.add.graphics().setDepth(10002);
+    this.lastMoveDestinationHighlights = [];
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.cameras?.main?.stopFollow();
@@ -187,6 +202,17 @@ export class MainScene extends Phaser.Scene {
         timer.remove();
       }
       this.gatheringArrivalTimers.clear();
+      if (this.moveHighlightTimer) {
+        this.moveHighlightTimer.remove();
+        this.moveHighlightTimer = null;
+      }
+      if (this.moveHighlightTween) {
+        this.moveHighlightTween.stop();
+        this.moveHighlightTween = null;
+      }
+      if (this.moveHighlightGraphics) {
+        this.moveHighlightGraphics.destroy();
+      }
       if (this.tileClaimOverlay) {
         this.tileClaimOverlay.destroy();
       }
@@ -481,6 +507,8 @@ export class MainScene extends Phaser.Scene {
     (window as any).__selectMember = (index: number, multiSelect?: boolean) => this.selectMemberByIndex(index, multiSelect);
     (window as any).__selectAllMembers = () => this.selectAllMembers();
     (window as any).__getSelectedMembers = () => this.getSelectedMembers();
+    (window as any).__getLastMoveDestinationHighlights = () => this.lastMoveDestinationHighlights;
+    (window as any).__getCurrentGatherSelectionHighlights = () => this.currentGatherSelectionHighlights;
     (window as any).__grantExp = (statId: string = 'short_swords', amount: number = 25, memberIndex: number = 0) => {
       const targetMember = this.party[memberIndex] || this.party[0];
       return targetMember.progression.addProficiencyExp(statId, amount);
@@ -748,7 +776,8 @@ export class MainScene extends Phaser.Scene {
       if (this.isGatheringMode) {
         this.gatherDragStart = { x: worldPoint.x, y: worldPoint.y };
         this.isGatheringDrag = true;
-        this.gatheringMarqueeGraphics.clear();
+        const initialNodes = this.getGatheringNodesInSelection(worldPoint.x, worldPoint.x, worldPoint.y, worldPoint.y);
+        this.renderGatheringMarqueeAndHighlights(worldPoint.x, worldPoint.y, 0, 0, initialNodes);
         return;
       }
 
@@ -886,6 +915,8 @@ export class MainScene extends Phaser.Scene {
           { x: 1, y: 1 }
         ];
 
+        const moveDestinations: GridPos[] = [leaderDest];
+
         for (let i = 1; i < activeSelected.length; i++) {
           const companion = activeSelected[i];
           const offset = formationOffsets[i] || { x: i % 2, y: Math.floor(i / 2) };
@@ -893,6 +924,7 @@ export class MainScene extends Phaser.Scene {
           const compDest = this.findNearestOpenTileForPartyMove(idealPos, companion.gridPos, claimed, companion);
           claimed.add(`${compDest.x},${compDest.y}`);
           companion.claimedDestination = { ...compDest };
+          moveDestinations.push(compDest);
 
           const compUnitObs = this.getPartyUnitObstacles(companion);
           this.pathfinder.findPath(companion.gridPos, compDest, compUnitObs).then((path) => {
@@ -903,10 +935,12 @@ export class MainScene extends Phaser.Scene {
             }
           });
         }
+
+        this.showMoveDestinationHighlights(moveDestinations);
       }
     });
 
-    // Milestone 26: Gathering Mode Drag Marquee PointerMove
+    // Milestone 26: Gathering Mode Drag Marquee PointerMove with Live Node Selection Highlights
     this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
       if (this.isGatheringDrag && this.gatherDragStart) {
         const worldPoint = this.cameras.main.getWorldPoint(pointer.x, pointer.y);
@@ -917,11 +951,8 @@ export class MainScene extends Phaser.Scene {
         const width = maxX - minX;
         const height = maxY - minY;
 
-        this.gatheringMarqueeGraphics.clear();
-        this.gatheringMarqueeGraphics.fillStyle(0x34d399, 0.2);
-        this.gatheringMarqueeGraphics.fillRect(minX, minY, width, height);
-        this.gatheringMarqueeGraphics.lineStyle(2, 0x10b981, 0.95);
-        this.gatheringMarqueeGraphics.strokeRect(minX, minY, width, height);
+        const capturedNodes = this.getGatheringNodesInSelection(minX, maxX, minY, maxY);
+        this.renderGatheringMarqueeAndHighlights(minX, minY, width, height, capturedNodes);
       }
     });
 
@@ -929,35 +960,17 @@ export class MainScene extends Phaser.Scene {
     this.input.on('pointerup', (pointer: Phaser.Input.Pointer) => {
       if (this.isGatheringDrag && this.gatherDragStart) {
         const worldPoint = this.cameras.main.getWorldPoint(pointer.x, pointer.y);
-        let minX = Math.min(this.gatherDragStart.x, worldPoint.x);
-        let maxX = Math.max(this.gatherDragStart.x, worldPoint.x);
-        let minY = Math.min(this.gatherDragStart.y, worldPoint.y);
-        let maxY = Math.max(this.gatherDragStart.y, worldPoint.y);
+        const minX = Math.min(this.gatherDragStart.x, worldPoint.x);
+        const maxX = Math.max(this.gatherDragStart.x, worldPoint.x);
+        const minY = Math.min(this.gatherDragStart.y, worldPoint.y);
+        const maxY = Math.max(this.gatherDragStart.y, worldPoint.y);
+
+        const selectedNodes = this.getGatheringNodesInSelection(minX, maxX, minY, maxY);
 
         this.isGatheringDrag = false;
         this.gatherDragStart = null;
+        this.currentGatherSelectionHighlights = [];
         this.gatheringMarqueeGraphics.clear();
-
-        // If drag was very small (single click or micro-drag), expand by half a tile for forgiving selection
-        if (maxX - minX < 6 && maxY - minY < 6) {
-          minX -= this.tileSize / 2;
-          maxX += this.tileSize / 2;
-          minY -= this.tileSize / 2;
-          maxY += this.tileSize / 2;
-        }
-
-        const selectedNodes = this.gatheringNodes.filter((node) => {
-          if (node.isHarvested) return false;
-          const nodeCenterX = node.x * this.tileSize + this.tileSize / 2;
-          const nodeCenterY = node.y * this.tileSize + this.tileSize / 2;
-          const inCenter = nodeCenterX >= minX && nodeCenterX <= maxX && nodeCenterY >= minY && nodeCenterY <= maxY;
-          const tileMinX = Math.floor(minX / this.tileSize);
-          const tileMaxX = Math.floor(maxX / this.tileSize);
-          const tileMinY = Math.floor(minY / this.tileSize);
-          const tileMaxY = Math.floor(maxY / this.tileSize);
-          const inTile = node.x >= tileMinX && node.x <= tileMaxX && node.y >= tileMinY && node.y <= tileMaxY;
-          return inCenter || inTile;
-        });
 
         if (selectedNodes.length === 0) {
           this.hud?.showToast('No gathering nodes in selected area.', 'info', 2000);
@@ -2962,13 +2975,215 @@ export class MainScene extends Phaser.Scene {
     }
   }
 
+  // --- MOVE DESTINATION HIGHLIGHTS ---
+
+  public showMoveDestinationHighlights(destinations: GridPos[]): void {
+    this.lastMoveDestinationHighlights = destinations.map(d => ({ x: d.x, y: d.y }));
+    if (!this.moveHighlightGraphics) return;
+
+    if (this.moveHighlightTween) {
+      this.moveHighlightTween.stop();
+      this.moveHighlightTween = null;
+    }
+    if (this.moveHighlightTimer) {
+      this.moveHighlightTimer.remove();
+      this.moveHighlightTimer = null;
+    }
+
+    this.moveHighlightGraphics.clear();
+    this.moveHighlightGraphics.setAlpha(1);
+
+    const ts = this.tileSize;
+    for (let i = 0; i < destinations.length; i++) {
+      const dest = destinations[i];
+      const px = dest.x * ts;
+      const py = dest.y * ts;
+      const isLeader = i === 0;
+
+      // Color palette:
+      // Leader: Bright Sky Blue / Cyan (0x38bdf8), fill 0x0284c7
+      // Companions: Emerald / Mint (0x34d399), fill 0x059669
+      const strokeColor = isLeader ? 0x38bdf8 : 0x34d399;
+      const fillColor = isLeader ? 0x0284c7 : 0x059669;
+
+      // 1. Soft glowing fill
+      this.moveHighlightGraphics.fillStyle(fillColor, 0.25);
+      this.moveHighlightGraphics.fillRect(px + 2, py + 2, ts - 4, ts - 4);
+
+      // 2. Full tile border
+      this.moveHighlightGraphics.lineStyle(2, strokeColor, 0.95);
+      this.moveHighlightGraphics.strokeRect(px + 2, py + 2, ts - 4, ts - 4);
+
+      // 3. High-contrast corner brackets (white)
+      this.moveHighlightGraphics.lineStyle(2, 0xffffff, 0.95);
+      const bLen = 5;
+      // Top-left
+      this.moveHighlightGraphics.lineBetween(px + 2, py + 2, px + 2 + bLen, py + 2);
+      this.moveHighlightGraphics.lineBetween(px + 2, py + 2, px + 2, py + 2 + bLen);
+      // Top-right
+      this.moveHighlightGraphics.lineBetween(px + ts - 2, py + 2, px + ts - 2 - bLen, py + 2);
+      this.moveHighlightGraphics.lineBetween(px + ts - 2, py + 2, px + ts - 2, py + 2 + bLen);
+      // Bottom-left
+      this.moveHighlightGraphics.lineBetween(px + 2, py + ts - 2, px + 2 + bLen, py + ts - 2);
+      this.moveHighlightGraphics.lineBetween(px + 2, py + ts - 2, px + 2, py + ts - 2 - bLen);
+      // Bottom-right
+      this.moveHighlightGraphics.lineBetween(px + ts - 2, py + ts - 2, px + ts - 2 - bLen, py + ts - 2);
+      this.moveHighlightGraphics.lineBetween(px + ts - 2, py + ts - 2, px + ts - 2, py + ts - 2 - bLen);
+
+      // 4. Center pip
+      this.moveHighlightGraphics.fillStyle(0xffffff, 0.9);
+      this.moveHighlightGraphics.fillCircle(px + ts / 2, py + ts / 2, 2.5);
+    }
+
+    // Hold visible for 800ms, then smoothly fade over 400ms (1200ms total)
+    this.moveHighlightTimer = this.time.delayedCall(800, () => {
+      this.moveHighlightTween = this.tweens.add({
+        targets: this.moveHighlightGraphics,
+        alpha: 0,
+        duration: 400,
+        ease: 'Linear',
+        onComplete: () => {
+          this.moveHighlightGraphics?.clear();
+          this.moveHighlightGraphics?.setAlpha(1);
+          this.moveHighlightTween = null;
+        }
+      });
+    });
+  }
+
   // --- MILESTONE 26: GATHERING MODE & PARALLEL QUEUE PROCESSING ---
+
+  /**
+   * Fast, zero-drift query for all gathering nodes within selection bounds.
+   * Matches the exact criteria used when enqueuing (ignoring harvested and actively channeled nodes).
+   */
+  public getGatheringNodesInSelection(
+    rawMinX: number,
+    rawMaxX: number,
+    rawMinY: number,
+    rawMaxY: number
+  ): GatheringNode[] {
+    let minX = rawMinX;
+    let maxX = rawMaxX;
+    let minY = rawMinY;
+    let maxY = rawMaxY;
+
+    // If drag was very small (single click or micro-drag), expand by half a tile for forgiving selection
+    if (maxX - minX < 6 && maxY - minY < 6) {
+      minX -= this.tileSize / 2;
+      maxX += this.tileSize / 2;
+      minY -= this.tileSize / 2;
+      maxY += this.tileSize / 2;
+    }
+
+    const tileMinX = Math.floor(minX / this.tileSize);
+    const tileMaxX = Math.floor(maxX / this.tileSize);
+    const tileMinY = Math.floor(minY / this.tileSize);
+    const tileMaxY = Math.floor(maxY / this.tileSize);
+
+    const hasActiveChannels = this.activeGatherChannels.size > 0;
+    let activeChanneledNodes: Set<GatheringNode> | null = null;
+
+    const matched: GatheringNode[] = [];
+    const nodes = this.gatheringNodes;
+    const len = nodes.length;
+
+    for (let i = 0; i < len; i++) {
+      const node = nodes[i];
+      if (node.isHarvested) continue;
+
+      // Fast integer bounding-box check first (rejects out-of-bounds nodes instantly without heap alloc)
+      if (node.x < tileMinX - 1 || node.x > tileMaxX + 1 || node.y < tileMinY - 1 || node.y > tileMaxY + 1) {
+        continue;
+      }
+
+      const inTile = node.x >= tileMinX && node.x <= tileMaxX && node.y >= tileMinY && node.y <= tileMaxY;
+      let inBounds = inTile;
+      if (!inBounds) {
+        const nodeCenterX = node.x * this.tileSize + this.tileSize / 2;
+        const nodeCenterY = node.y * this.tileSize + this.tileSize / 2;
+        inBounds = nodeCenterX >= minX && nodeCenterX <= maxX && nodeCenterY >= minY && nodeCenterY <= maxY;
+      }
+
+      if (!inBounds) continue;
+
+      if (hasActiveChannels) {
+        if (!activeChanneledNodes) {
+          activeChanneledNodes = new Set(Array.from(this.activeGatherChannels.values()).map(c => c.node));
+        }
+        if (activeChanneledNodes.has(node)) continue;
+      }
+
+      matched.push(node);
+    }
+
+    return matched;
+  }
+
+  public renderGatheringMarqueeAndHighlights(
+    minX: number,
+    minY: number,
+    width: number,
+    height: number,
+    capturedNodes: GatheringNode[]
+  ): void {
+    this.currentGatherSelectionHighlights = capturedNodes;
+    if (!this.gatheringMarqueeGraphics) return;
+
+    this.gatheringMarqueeGraphics.clear();
+
+    // 1. Marquee selection rectangle
+    if (width > 0 || height > 0) {
+      this.gatheringMarqueeGraphics.fillStyle(0x34d399, 0.2);
+      this.gatheringMarqueeGraphics.fillRect(minX, minY, width, height);
+      this.gatheringMarqueeGraphics.lineStyle(2, 0x10b981, 0.95);
+      this.gatheringMarqueeGraphics.strokeRect(minX, minY, width, height);
+    }
+
+    // 2. Highlight each captured node with glowing tile outline, brackets, and sprite ring
+    const ts = this.tileSize;
+    for (const node of capturedNodes) {
+      const nx = node.x * ts;
+      const ny = node.y * ts;
+      const cx = nx + ts / 2;
+      const cy = ny + ts / 2;
+
+      // Soft luminous emerald fill
+      this.gatheringMarqueeGraphics.fillStyle(0x10b981, 0.32);
+      this.gatheringMarqueeGraphics.fillRect(nx + 1, ny + 1, ts - 2, ts - 2);
+
+      // Bright mint tile border
+      this.gatheringMarqueeGraphics.lineStyle(2, 0x6ee7b7, 1);
+      this.gatheringMarqueeGraphics.strokeRect(nx + 1, ny + 1, ts - 2, ts - 2);
+
+      // White corner brackets
+      this.gatheringMarqueeGraphics.lineStyle(2.5, 0xffffff, 1);
+      const bLen = 6;
+      // Top-left
+      this.gatheringMarqueeGraphics.lineBetween(nx + 1, ny + 1, nx + 1 + bLen, ny + 1);
+      this.gatheringMarqueeGraphics.lineBetween(nx + 1, ny + 1, nx + 1, ny + 1 + bLen);
+      // Top-right
+      this.gatheringMarqueeGraphics.lineBetween(nx + ts - 1, ny + 1, nx + ts - 1 - bLen, ny + 1);
+      this.gatheringMarqueeGraphics.lineBetween(nx + ts - 1, ny + 1, nx + ts - 1, ny + ts - 1 + bLen);
+      // Bottom-left
+      this.gatheringMarqueeGraphics.lineBetween(nx + 1, ny + ts - 1, nx + 1 + bLen, ny + ts - 1);
+      this.gatheringMarqueeGraphics.lineBetween(nx + 1, ny + ts - 1, nx + 1, ny + ts - 1 - bLen);
+      // Bottom-right
+      this.gatheringMarqueeGraphics.lineBetween(nx + ts - 1, ny + ts - 1, nx + ts - 1 - bLen, ny + ts - 1);
+      this.gatheringMarqueeGraphics.lineBetween(nx + ts - 1, ny + ts - 1, nx + ts - 1, ny + ts - 1 - bLen);
+
+      // Selection ring around node sprite
+      this.gatheringMarqueeGraphics.lineStyle(1.5, 0xa7f3d0, 0.95);
+      this.gatheringMarqueeGraphics.strokeCircle(cx, cy, ts / 2 + 2);
+    }
+  }
 
   public toggleGatheringMode(forceState?: boolean): boolean {
     this.isGatheringMode = forceState !== undefined ? forceState : !this.isGatheringMode;
     if (!this.isGatheringMode) {
       this.isGatheringDrag = false;
       this.gatherDragStart = null;
+      this.currentGatherSelectionHighlights = [];
       this.gatheringMarqueeGraphics?.clear();
       this.clearGatheringQueue(true);
       this.hud?.showToast('🌿 Gathering Mode: OFF', 'info', 1500);

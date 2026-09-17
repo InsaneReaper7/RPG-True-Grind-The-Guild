@@ -99,6 +99,7 @@ async function runMilestone39Tests() {
   assert.equal(gardeningResearch.cost, 10, 'research_gardening cost must be 10 RP');
   assert.equal(gardeningResearch.name, 'Gardening', 'Research node name must be Gardening');
   assert.equal(gardeningResearch.targetBuildableId, 'planting_plot', 'targetBuildableId must be planting_plot');
+  assert.deepEqual(gardeningResearch.prerequisites, ['research_digging'], 'Gardening research must require research_digging as prerequisite');
 
   // 1b. Buildables contain Planting Plot and Seed Maker
   const plantingPlotDef = dataLoader.getBuildable('planting_plot');
@@ -145,14 +146,30 @@ async function runMilestone39Tests() {
   const failResult = researchSystem.unlockNode(gardeningResearch);
   assert.equal(failResult.success, false, 'Unlock must fail without RP');
 
-  // Grant points and unlock
-  gameState.addResearchPoints(10);
+  // Grant points, but verify Digging prerequisite prevents Gardening research
+  gameState.addResearchPoints(20);
+  const prereqCheckBefore = researchSystem.canUnlockNode(gardeningResearch);
+  assert.equal(prereqCheckBefore.canUnlock, false, 'Gardening cannot unlock before Digging is researched');
+  assert.ok(prereqCheckBefore.reason?.includes('research_digging'), 'Reason must mention research_digging');
+
+  const failPrereqUnlock = researchSystem.unlockNode(gardeningResearch);
+  assert.equal(failPrereqUnlock.success, false, 'Gardening unlock must fail when Digging is unresearched');
+
+  // Research Digging first
+  const diggingResearch = researchNodes.find((n: ResearchNodeDef) => n.id === 'research_digging')!;
+  const diggingUnlock = researchSystem.unlockNode(diggingResearch);
+  assert.equal(diggingUnlock.success, true, 'Digging research unlock must succeed');
+  assert.equal(gameState.isDiggingUnlocked(), true, 'Digging must now be unlocked');
+
+  // Now unlock Gardening with prerequisite met
+  const canUnlockNow = researchSystem.canUnlockNode(gardeningResearch);
+  assert.equal(canUnlockNow.canUnlock, true, 'Gardening can now unlock after Digging research is completed');
   const unlockResult = researchSystem.unlockNode(gardeningResearch);
-  assert.equal(unlockResult.success, true, 'Gardening research must succeed with 10 RP');
+  assert.equal(unlockResult.success, true, 'Gardening research must succeed after Digging completed and 10 RP spent');
   assert.equal(gameState.isGardeningUnlocked(), true, 'isGardeningUnlocked() must return true after research complete');
   assert.equal(gameState.isBuildableUnlocked('planting_plot'), true, 'planting_plot must be unlocked in GameState');
 
-  console.log('✓ PASS: Planting Plot strictly gated behind Gardening research node.');
+  console.log('✓ PASS: Planting Plot strictly gated behind Gardening research node and Digging prerequisite.');
 
   // ==========================================================================
   // TEST 3: Exact 4-Plot Bootstrapping Sequence to Level 1

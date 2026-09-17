@@ -809,6 +809,266 @@
     #party-overview-modal.active {
       display: flex;
     }
+    /* Stockpile Overview Modal Styles */
+    #stockpile-modal {
+      width: 860px;
+      max-width: calc(100% - 24px);
+      height: 720px;
+      max-height: calc(100% - 24px);
+      border-color: #14b8a6;
+      box-shadow: 0 0 35px rgba(20, 184, 166, 0.35);
+      padding: 16px 20px;
+      background: rgba(15, 23, 42, 0.98);
+      z-index: 110;
+    }
+    .stockpile-controls-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+      background: rgba(30, 41, 59, 0.6);
+      padding: 8px 12px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .stockpile-search-wrap {
+      position: relative;
+      flex: 1;
+      min-width: 180px;
+      display: flex;
+      align-items: center;
+    }
+    .stockpile-search-icon {
+      position: absolute;
+      left: 8px;
+      font-size: 12px;
+      color: #94a3b8;
+      pointer-events: none;
+    }
+    #stockpile-search-input {
+      width: 100%;
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid rgba(20, 184, 166, 0.4);
+      border-radius: 6px;
+      padding: 5px 26px 5px 28px;
+      color: #f1f5f9;
+      font-size: 12px;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    #stockpile-search-input:focus {
+      border-color: #2dd4bf;
+      box-shadow: 0 0 8px rgba(45, 212, 191, 0.4);
+    }
+    .stockpile-clear-btn {
+      position: absolute;
+      right: 6px;
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      cursor: pointer;
+      font-size: 11px;
+      padding: 2px 4px;
+      border-radius: 3px;
+    }
+    .stockpile-clear-btn:hover {
+      color: #f1f5f9;
+      background: rgba(255, 255, 255, 0.1);
+    }
+    .stockpile-filter-tabs {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+    .stockpile-tab-btn {
+      background: rgba(30, 41, 59, 0.8);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: 4px;
+      color: #94a3b8;
+      padding: 4px 10px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .stockpile-tab-btn:hover {
+      background: rgba(45, 212, 191, 0.15);
+      color: #2dd4bf;
+      border-color: rgba(45, 212, 191, 0.4);
+    }
+    .stockpile-tab-btn.active {
+      background: #0d9488;
+      color: #ffffff;
+      border-color: #2dd4bf;
+      box-shadow: 0 0 10px rgba(45, 212, 191, 0.3);
+    }
+    .stockpile-toggle-btn {
+      background: rgba(30, 41, 59, 0.8);
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      border-radius: 4px;
+      color: #e2e8f0;
+      padding: 4px 10px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+    .stockpile-toggle-btn:hover {
+      background: rgba(45, 212, 191, 0.2);
+      border-color: #2dd4bf;
+    }
+    .stockpile-metrics-bar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(45, 212, 191, 0.25);
+      border-radius: 6px;
+      padding: 6px 14px;
+      margin-bottom: 10px;
+      font-size: 11px;
+      flex-shrink: 0;
+    }
+    .stockpile-metric-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .stockpile-metric-label {
+      color: #94a3b8;
+    }
+    .stockpile-metric-val {
+      font-weight: 700;
+      color: #2dd4bf;
+    }
+    .stockpile-metric-divider {
+      width: 1px;
+      height: 12px;
+      background: rgba(255, 255, 255, 0.15);
+    }
+    .stockpile-items-container {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      padding-right: 4px;
+      scrollbar-width: thin;
+    }
+    .stockpile-category-section {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .stockpile-category-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(45, 212, 191, 0.2);
+      padding-bottom: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #2dd4bf;
+    }
+    .stockpile-category-count-badge {
+      font-size: 10px;
+      color: #94a3b8;
+      font-weight: normal;
+    }
+    .stockpile-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+      gap: 8px;
+    }
+    .stockpile-card {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(30, 41, 59, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 6px;
+      padding: 7px 10px;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .stockpile-card:hover {
+      background: rgba(30, 41, 59, 0.85);
+      border-color: rgba(45, 212, 191, 0.35);
+    }
+    .stockpile-card.card-held {
+      border-color: rgba(45, 212, 191, 0.25);
+    }
+    .stockpile-card.card-empty {
+      opacity: 0.45;
+    }
+    .stockpile-card-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+      flex: 1;
+    }
+    .stockpile-card-icon {
+      font-size: 16px;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+    .stockpile-card-info {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+    .stockpile-card-name {
+      font-size: 12px;
+      font-weight: 600;
+      color: #f1f5f9;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .stockpile-card-cat {
+      font-size: 9px;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+    .stockpile-card-count {
+      font-size: 12px;
+      font-weight: 800;
+      padding: 2px 8px;
+      border-radius: 4px;
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #94a3b8;
+      white-space: nowrap;
+      margin-left: 6px;
+    }
+    .stockpile-card-count.count-positive {
+      color: #2dd4bf;
+      background: rgba(13, 148, 136, 0.2);
+      border-color: rgba(45, 212, 191, 0.35);
+    }
+    .stockpile-card-count.count-zero {
+      color: #64748b;
+      opacity: 0.8;
+    }
+    .stockpile-empty-state {
+      padding: 36px 16px;
+      text-align: center;
+      color: #94a3b8;
+      font-size: 13px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
     .party-overview-layout {
       display: flex;
       gap: 14px;
@@ -1784,6 +2044,11 @@
         <div style="margin-top: 8px;">
           <button id="open-party-btn" class="btn-action" style="width: 100%; background: #6d28d9; border-color: #8b5cf6;" type="button">👥 Party Overview [O]</button>
         </div>
+
+        <!-- Stockpile Overview Button (Always available in HUD) -->
+        <div style="margin-top: 6px;">
+          <button id="open-stockpile-btn" class="btn-action" style="width: 100%; background: #0d9488; border-color: #14b8a6;" type="button">📦 Stockpile Overview [I]</button>
+        </div>
       </div>
 
       <!-- Debug Tooling: All-Skills EXP Overview Panel [ ` ] -->
@@ -2408,6 +2673,73 @@
           <button id="crystal-btn-stay" type="button" style="background: rgba(51, 65, 85, 0.6); border: 1px solid rgba(148, 163, 184, 0.3); border-radius: 6px; padding: 8px 12px; color: #cbd5e1; cursor: pointer; font-size: 12px; text-align: center;">
             Stay on This Floor
           </button>
+        </div>
+      </div>
+      <!-- Resource & Material Stockpile Overview Modal -->
+      <div id="stockpile-modal" class="custom-modal">
+        <div class="modal-header">
+          <div>
+            <div class="modal-title" style="color: #2dd4bf; display: flex; align-items: center; gap: 8px;">
+              <span>📦</span> <span>Guild Stockpile & Resources</span>
+            </div>
+            <div class="modal-subtitle">Live overview of all gathered materials, crafting reagents, consumables, and currencies. [I]</div>
+          </div>
+          <button id="close-stockpile-btn" class="modal-close-btn" type="button">✕</button>
+        </div>
+
+        <!-- Filter, Search, and Toggle Controls Bar -->
+        <div class="stockpile-controls-bar">
+          <div class="stockpile-search-wrap">
+            <span class="stockpile-search-icon">🔍</span>
+            <input id="stockpile-search-input" type="text" placeholder="Filter resources by name..." autocomplete="off" />
+            <button id="stockpile-clear-search-btn" type="button" class="stockpile-clear-btn" title="Clear search">✕</button>
+          </div>
+          <div class="stockpile-filter-tabs">
+            <button class="stockpile-tab-btn active" data-stockpile-category="all" type="button">All</button>
+            <button class="stockpile-tab-btn" data-stockpile-category="gathering" type="button">🪵 Gathering</button>
+            <button class="stockpile-tab-btn" data-stockpile-category="reagents" type="button">🧪 Reagents</button>
+            <button class="stockpile-tab-btn" data-stockpile-category="consumables" type="button">🩹 Consumables</button>
+            <button class="stockpile-tab-btn" data-stockpile-category="currencies" type="button">🔬 Currencies</button>
+            <button class="stockpile-tab-btn" data-stockpile-category="equipment" type="button">⚔️ Gear & Other</button>
+          </div>
+          <div class="stockpile-actions-row">
+            <button id="stockpile-toggle-held-btn" class="stockpile-toggle-btn" type="button" title="Toggle between showing only held resources vs all tracked game materials">
+              <span id="stockpile-toggle-held-indicator">👁️</span> <span id="stockpile-toggle-held-label">Showing: All Items</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Live Metrics Summary Bar -->
+        <div id="stockpile-metrics-bar" class="stockpile-metrics-bar">
+          <div class="stockpile-metric-item">
+            <span class="stockpile-metric-label">Distinct Stored:</span>
+            <span id="stockpile-metric-distinct" class="stockpile-metric-val">0</span>
+          </div>
+          <div class="stockpile-metric-divider"></div>
+          <div class="stockpile-metric-item">
+            <span class="stockpile-metric-label">Total Units:</span>
+            <span id="stockpile-metric-total" class="stockpile-metric-val">0</span>
+          </div>
+          <div class="stockpile-metric-divider"></div>
+          <div class="stockpile-metric-item">
+            <span class="stockpile-metric-label">Knowledge (RP):</span>
+            <span id="stockpile-metric-rp" class="stockpile-metric-val" style="color: #38bdf8;">0</span>
+          </div>
+          <div class="stockpile-metric-divider"></div>
+          <div class="stockpile-metric-item">
+            <span class="stockpile-metric-label">Wood:</span>
+            <span id="stockpile-metric-wood" class="stockpile-metric-val" style="color: #f59e0b;">0</span>
+          </div>
+          <div class="stockpile-metric-divider"></div>
+          <div class="stockpile-metric-item">
+            <span class="stockpile-metric-label">Ore:</span>
+            <span id="stockpile-metric-ore" class="stockpile-metric-val" style="color: #cbd5e1;">0</span>
+          </div>
+        </div>
+
+        <!-- Scrollable Grid Container -->
+        <div id="stockpile-items-container" class="stockpile-items-container">
+          <!-- Dynamically populated category sections and resource cards -->
         </div>
       </div>
     </div>

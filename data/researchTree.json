@@ -66,7 +66,7 @@
       "name": "Gardening",
       "targetBuildableId": "planting_plot",
       "cost": 10,
-      "prerequisites": [],
+      "prerequisites": ["research_digging"],
       "description": "Unlocks planting plots for cultivating crops in the Outpost and begins the study of agriculture."
     }
   ]

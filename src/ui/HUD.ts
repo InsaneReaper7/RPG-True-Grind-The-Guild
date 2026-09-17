@@ -239,6 +239,28 @@ export class HUD {
   private debugBtnTriggerFloorRespawn: HTMLElement | null;
   private debugBtnToggleAutoRespawn: HTMLElement | null;
 
+  // Stockpile Overview Elements
+  private stockpileModalEl: HTMLElement | null = null;
+  private openStockpileBtn: HTMLElement | null = null;
+  private closeStockpileBtn: HTMLElement | null = null;
+  private stockpileSearchInputEl: HTMLInputElement | null = null;
+  private stockpileClearSearchBtn: HTMLElement | null = null;
+  private stockpileFilterTabsEl: HTMLElement | null = null;
+  private stockpileToggleHeldBtn: HTMLElement | null = null;
+  private stockpileToggleHeldLabelEl: HTMLElement | null = null;
+  private stockpileToggleHeldIndicatorEl: HTMLElement | null = null;
+  private stockpileItemsContainerEl: HTMLElement | null = null;
+  private stockpileMetricDistinctEl: HTMLElement | null = null;
+  private stockpileMetricTotalEl: HTMLElement | null = null;
+  private stockpileMetricRpEl: HTMLElement | null = null;
+  private stockpileMetricWoodEl: HTMLElement | null = null;
+  private stockpileMetricOreEl: HTMLElement | null = null;
+  private currentStockpileCategory: string = 'all';
+  private stockpileSearchQuery: string = '';
+  private showHeldOnly: boolean = false;
+  private lastStockpileUpdateTime: number = 0;
+  private renderedStockpileStructureKey: string = '';
+
   private static activeInstance: HUD | null = null;
   private static hasGlobalListeners: boolean = false;
 
@@ -586,6 +608,57 @@ export class HUD {
     this.debugBtnFastForwardFloorTimer = document.getElementById('debug-btn-fast-forward-floor-timer');
     this.debugBtnTriggerFloorRespawn = document.getElementById('debug-btn-trigger-floor-respawn');
     this.debugBtnToggleAutoRespawn = document.getElementById('debug-btn-toggle-auto-respawn');
+
+    // Stockpile Overview Elements
+    this.stockpileModalEl = document.getElementById('stockpile-modal');
+    this.openStockpileBtn = document.getElementById('open-stockpile-btn');
+    this.closeStockpileBtn = document.getElementById('close-stockpile-btn');
+    this.stockpileSearchInputEl = document.getElementById('stockpile-search-input') as HTMLInputElement | null;
+    this.stockpileClearSearchBtn = document.getElementById('stockpile-clear-search-btn');
+    this.stockpileFilterTabsEl = document.querySelector('.stockpile-filter-tabs');
+    this.stockpileToggleHeldBtn = document.getElementById('stockpile-toggle-held-btn');
+    this.stockpileToggleHeldLabelEl = document.getElementById('stockpile-toggle-held-label');
+    this.stockpileToggleHeldIndicatorEl = document.getElementById('stockpile-toggle-held-indicator');
+    this.stockpileItemsContainerEl = document.getElementById('stockpile-items-container');
+    this.stockpileMetricDistinctEl = document.getElementById('stockpile-metric-distinct');
+    this.stockpileMetricTotalEl = document.getElementById('stockpile-metric-total');
+    this.stockpileMetricRpEl = document.getElementById('stockpile-metric-rp');
+    this.stockpileMetricWoodEl = document.getElementById('stockpile-metric-wood');
+    this.stockpileMetricOreEl = document.getElementById('stockpile-metric-ore');
+
+    if (this.openStockpileBtn) {
+      this.openStockpileBtn.onclick = () => {
+        HUD.activeInstance?.toggleStockpileModal();
+      };
+    }
+    if (this.closeStockpileBtn) {
+      this.closeStockpileBtn.onclick = () => {
+        HUD.activeInstance?.closeStockpileModal();
+      };
+    }
+    if (this.stockpileClearSearchBtn && this.stockpileSearchInputEl) {
+      this.stockpileClearSearchBtn.onclick = () => {
+        if (this.stockpileSearchInputEl) {
+          this.stockpileSearchInputEl.value = '';
+          this.stockpileSearchQuery = '';
+          HUD.activeInstance?.renderStockpileModal(true);
+        }
+      };
+    }
+    if (this.stockpileSearchInputEl) {
+      this.stockpileSearchInputEl.oninput = (e) => {
+        this.stockpileSearchQuery = (e.target as HTMLInputElement).value.trim().toLowerCase();
+        HUD.activeInstance?.renderStockpileModal(true);
+      };
+    }
+    if (this.stockpileToggleHeldBtn) {
+      this.stockpileToggleHeldBtn.onclick = () => {
+        this.showHeldOnly = !this.showHeldOnly;
+        this.updateHeldToggleUI();
+        HUD.activeInstance?.renderStockpileModal(true);
+      };
+    }
+    this.initStockpileFilterTabs();
 
     if (this.hudCardEl) {
       this.hudCardEl.style.display = HUD.isHudCardVisible ? 'block' : 'none';
@@ -1240,6 +1313,11 @@ export class HUD {
           }
         } else if (e.key === 'o' || e.key === 'O' || e.code === 'KeyO') {
           active.togglePartyOverviewModal();
+        } else if (e.key === 'i' || e.key === 'I' || e.code === 'KeyI') {
+          const targetTag = (e.target as HTMLElement)?.tagName?.toLowerCase();
+          if (targetTag !== 'input' && targetTag !== 'textarea' && targetTag !== 'select') {
+            active.toggleStockpileModal();
+          }
         } else if (e.key === 'y' || e.key === 'Y') {
           active.debugAdvanceDay(1);
         } else if (e.key === 'u' || e.key === 'U') {
@@ -1272,6 +1350,7 @@ export class HUD {
           if (active.isAnnouncementShowing()) {
             active.dismissCurrentAnnouncement();
           }
+          active.closeStockpileModal();
           active.closeTeleporterCrystalModal();
           active.closeLoadoutModal();
           active.closeResearchTreeModal();
@@ -2257,6 +2336,11 @@ export class HUD {
     // 10. Update Party Overview modal if open
     if (this.isPartyOverviewModalOpen()) {
       this.updatePartyOverview(time);
+    }
+
+    // 10b. Update Stockpile Overview modal live if open
+    if (this.isStockpileModalOpen()) {
+      this.updateStockpile(time);
     }
 
     // 11. Update Cooking Station modal live if open
@@ -5449,6 +5533,409 @@ export class HUD {
 
         this.bowyerRecipesContainerEl.appendChild(card);
       }
+    }
+  }
+
+  // --- STOCKPILE OVERVIEW MODAL SYSTEM ---
+
+  private initStockpileFilterTabs(): void {
+    if (!this.stockpileFilterTabsEl) return;
+    this.stockpileFilterTabsEl.onclick = (e) => {
+      const target = (e.target as HTMLElement).closest<HTMLButtonElement>('.stockpile-tab-btn');
+      if (!target) return;
+      const cat = target.getAttribute('data-stockpile-category') || 'all';
+      this.currentStockpileCategory = cat;
+
+      const tabs = this.stockpileFilterTabsEl?.querySelectorAll('.stockpile-tab-btn') || [];
+      tabs.forEach((t) => t.classList.remove('active'));
+      target.classList.add('active');
+
+      this.renderStockpileModal(true);
+    };
+  }
+
+  private updateHeldToggleUI(): void {
+    if (this.stockpileToggleHeldLabelEl) {
+      this.stockpileToggleHeldLabelEl.innerText = this.showHeldOnly ? 'Showing: Held Only (> 0)' : 'Showing: All Items';
+    }
+    if (this.stockpileToggleHeldIndicatorEl) {
+      this.stockpileToggleHeldIndicatorEl.innerText = this.showHeldOnly ? '✅' : '👁️';
+    }
+    if (this.stockpileToggleHeldBtn) {
+      if (this.showHeldOnly) {
+        this.stockpileToggleHeldBtn.style.borderColor = '#2dd4bf';
+        this.stockpileToggleHeldBtn.style.background = 'rgba(13, 148, 136, 0.3)';
+        this.stockpileToggleHeldBtn.style.color = '#2dd4bf';
+      } else {
+        this.stockpileToggleHeldBtn.style.borderColor = 'rgba(148, 163, 184, 0.3)';
+        this.stockpileToggleHeldBtn.style.background = 'rgba(30, 41, 59, 0.8)';
+        this.stockpileToggleHeldBtn.style.color = '#e2e8f0';
+      }
+    }
+  }
+
+  public openStockpileModal(): void {
+    this.renderStockpileModal(true);
+    if (this.stockpileModalEl) {
+      this.stockpileModalEl.classList.add('active');
+    }
+  }
+
+  public closeStockpileModal(): void {
+    if (this.stockpileModalEl) {
+      this.stockpileModalEl.classList.remove('active');
+    }
+  }
+
+  public toggleStockpileModal(): void {
+    if (this.isStockpileModalOpen()) {
+      this.closeStockpileModal();
+    } else {
+      this.openStockpileModal();
+    }
+  }
+
+  public isStockpileModalOpen(): boolean {
+    return this.stockpileModalEl?.classList.contains('active') ?? false;
+  }
+
+  public getStockpileCatalog(): { id: string; name: string; category: 'currencies' | 'gathering' | 'reagents' | 'consumables' | 'equipment'; icon: string }[] {
+    const dataLoader = DataLoader.getInstance();
+    const gameState = GameState.getInstance();
+    const registry = new Map<string, { id: string; name: string; category: 'currencies' | 'gathering' | 'reagents' | 'consumables' | 'equipment'; icon: string }>();
+
+    const registerItem = (id: string, name: string, category: 'currencies' | 'gathering' | 'reagents' | 'consumables' | 'equipment', icon: string) => {
+      if (!registry.has(id)) {
+        registry.set(id, { id, name, category, icon });
+      }
+    };
+
+    // 1. Currencies & Special Items
+    registerItem('research_points', 'Research Points', 'currencies', '🔬');
+    registerItem('locked_box', 'Locked Box', 'currencies', '📦');
+    registerItem('lockpick', 'Lockpick', 'currencies', '🗝️');
+    registerItem('broken_lockbox', 'Broken Lockbox', 'currencies', '🧰');
+
+    // 2. Gathering & Raw Materials
+    registerItem('wood', 'Wood', 'gathering', '🪵');
+    registerItem('ore', 'Iron Ore', 'gathering', '⛏️');
+    registerItem('dirt', 'Dirt', 'gathering', '🟤');
+    registerItem('clay', 'Clay', 'gathering', '🏺');
+    registerItem('seeds', 'Seeds', 'gathering', '🌱');
+    registerItem('wild_herbs', 'Wild Herbs', 'gathering', '🌿');
+
+    // Dynamically discover gathering node yields
+    const gatheringConfig = dataLoader.getGatheringNodesConfig();
+    if (gatheringConfig?.nodes) {
+      for (const node of Object.values(gatheringConfig.nodes)) {
+        if (node.resourceId && !registry.has(node.resourceId)) {
+          registerItem(node.resourceId, node.name || node.resourceId.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()), 'gathering', '🌿');
+        }
+        if (node.lootTable) {
+          for (const loot of node.lootTable) {
+            if (loot.itemId && !registry.has(loot.itemId)) {
+              registerItem(loot.itemId, loot.name || loot.itemId.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()), 'gathering', '🟤');
+            }
+          }
+        }
+      }
+    }
+
+    // 3. Crafting Reagents & Monster Salvage
+    registerItem('monster_meat', 'Monster Meat', 'reagents', '🥩');
+    registerItem('wolf_meat', 'Wolf Meat', 'reagents', '🥩');
+    registerItem('wolf_pelt', 'Wolf Pelt', 'reagents', '🐺');
+    registerItem('wolf_claw', 'Wolf Claw', 'reagents', '🐾');
+    registerItem('spider_silk', 'Spider Silk', 'reagents', '🕸️');
+    registerItem('spider_venom', 'Spider Venom', 'reagents', '🧪');
+    registerItem('bone', 'Monster Bone', 'reagents', '🦴');
+    registerItem('ectoplasm', 'Ectoplasm', 'reagents', '👻');
+    registerItem('slime_gel', 'Slime Gel', 'reagents', '🧪');
+    registerItem('goblin_ear', 'Goblin Ear', 'reagents', '👂');
+    registerItem('bowstring', 'Bowstring', 'reagents', '🏹');
+    registerItem('feather', 'Feather', 'reagents', '🪶');
+    registerItem('steel_scrap', 'Steel Scrap', 'reagents', '⚙️');
+    registerItem('orc_heavy_hide', 'Orc Heavy Hide', 'reagents', '🛡️');
+    registerItem('orc_emblem', 'Orc Emblem', 'reagents', '🎖️');
+    registerItem('void_plate', 'Void Plate', 'reagents', '⬛');
+    registerItem('void_essence', 'Void Essence', 'reagents', '🌌');
+    registerItem('void_core', 'Void Core', 'reagents', '🔮');
+    registerItem('colossus_core', 'Colossus Core', 'reagents', '🌋');
+    registerItem('abyssal_ingot', 'Abyssal Ingot', 'reagents', '⬛');
+    registerItem('dread_essence', 'Dread Essence', 'reagents', '☠️');
+    registerItem('heart_of_the_colossus', 'Heart of the Colossus', 'reagents', '💖');
+
+    // Dynamically discover enemy harvest & corpse drops
+    const enemiesData = dataLoader.getEnemiesData();
+    if (enemiesData?.enemies) {
+      for (const enemy of enemiesData.enemies) {
+        if (enemy.harvest) {
+          for (const h of enemy.harvest) {
+            if (h.item && !registry.has(h.item)) {
+              registerItem(h.item, h.item.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()), 'reagents', '📦');
+            }
+          }
+        }
+        if (enemy.corpseHarvest) {
+          if (enemy.corpseHarvest.skinning?.item && !registry.has(enemy.corpseHarvest.skinning.item)) {
+            registerItem(enemy.corpseHarvest.skinning.item, enemy.corpseHarvest.skinning.name || enemy.corpseHarvest.skinning.item, 'reagents', '🐺');
+          }
+          if (enemy.corpseHarvest.butchering?.item && !registry.has(enemy.corpseHarvest.butchering.item)) {
+            registerItem(enemy.corpseHarvest.butchering.item, enemy.corpseHarvest.butchering.name || enemy.corpseHarvest.butchering.item, 'reagents', '🥩');
+          }
+        }
+      }
+    }
+
+    // Dynamically discover recipe ingredients
+    const recipesLists = [
+      dataLoader.getAlchemyRecipes(),
+      dataLoader.getCookingRecipes(),
+      dataLoader.getBlacksmithRecipes(),
+      dataLoader.getBowyerRecipes(),
+      dataLoader.getArmorsmithRecipes()
+    ];
+    for (const rList of recipesLists) {
+      if (Array.isArray(rList)) {
+        for (const recipe of rList) {
+          if (recipe.ingredients) {
+            for (const ingId of Object.keys(recipe.ingredients)) {
+              if (!registry.has(ingId)) {
+                registerItem(ingId, ingId.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()), 'reagents', '📦');
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // 4. Consumables & Food
+    registerItem('bandage', 'Bandage', 'consumables', '🩹');
+    registerItem('energy_potion', 'Energy Potion', 'consumables', '⚡');
+    registerItem('mana_potion', 'Mana Potion', 'consumables', '✨');
+    registerItem('revive_potion', 'Revive Potion', 'consumables', '💛');
+    registerItem('escape_stone', 'Escape Stone', 'consumables', '🌀');
+    registerItem('ration', 'Field Ration', 'consumables', '🍖');
+    registerItem('vegetable', 'Fresh Vegetable', 'consumables', '🥕');
+    registerItem('herb_stew', 'Herb Stew', 'consumables', '🍲');
+    registerItem('beast_stew', 'Hearty Beast Stew', 'consumables', '🍲');
+
+    // Dynamically discover foods
+    const foods = dataLoader.getFoods ? dataLoader.getFoods() : [];
+    for (const food of foods) {
+      if (!registry.has(food.id)) {
+        registerItem(food.id, food.name || food.id.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()), 'consumables', '🍲');
+      }
+    }
+
+    // 5. Equipment & Stash from GameState inventory
+    const allCounts = gameState.getAllStockpileCounts();
+    for (const key of Object.keys(allCounts)) {
+      if (!registry.has(key)) {
+        const weaponDef = dataLoader.getWeapon(key);
+        const armorDef = dataLoader.getArmor(key);
+        const skillBookDef = dataLoader.getSkillBook(key);
+        if (weaponDef) {
+          registerItem(key, weaponDef.name, 'equipment', '⚔️');
+        } else if (armorDef) {
+          const icon = armorDef.slot === 'helmet' ? '🪖' : armorDef.slot === 'body' ? '🛡️' : '💍';
+          registerItem(key, armorDef.name, 'equipment', icon);
+        } else if (skillBookDef || key.startsWith('book_')) {
+          registerItem(key, skillBookDef?.name || key.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()), 'equipment', '📖');
+        } else if (key.endsWith('_potion') || key.endsWith('_stew')) {
+          registerItem(key, key.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()), 'consumables', '🧪');
+        } else {
+          registerItem(key, key.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()), 'reagents', '📦');
+        }
+      }
+    }
+
+    return Array.from(registry.values());
+  }
+
+  public renderStockpileModal(forceRebuild: boolean = false): void {
+    if (!this.stockpileItemsContainerEl) return;
+    const gameState = GameState.getInstance();
+    const catalog = this.getStockpileCatalog();
+    const counts = gameState.getAllStockpileCounts();
+
+    // Summary metrics calculation
+    let distinctHeldCount = 0;
+    let totalUnits = 0;
+    for (const [, v] of Object.entries(counts)) {
+      if (v > 0) {
+        distinctHeldCount++;
+        totalUnits += v;
+      }
+    }
+
+    this.setElementTextIfChanged(this.stockpileMetricDistinctEl, `${distinctHeldCount}`);
+    this.setElementTextIfChanged(this.stockpileMetricTotalEl, totalUnits.toLocaleString());
+    this.setElementTextIfChanged(this.stockpileMetricRpEl, `🔬 ${(counts['research_points'] || 0).toLocaleString()}`);
+    this.setElementTextIfChanged(this.stockpileMetricWoodEl, `🪵 ${(counts['wood'] || 0).toLocaleString()}`);
+    this.setElementTextIfChanged(this.stockpileMetricOreEl, `⛏️ ${(counts['ore'] || 0).toLocaleString()}`);
+
+    const categoryDefs: { id: 'gathering' | 'reagents' | 'consumables' | 'currencies' | 'equipment'; title: string; icon: string }[] = [
+      { id: 'gathering', title: 'Gathering & Raw Materials', icon: '🪵' },
+      { id: 'reagents', title: 'Crafting Reagents & Monster Salvage', icon: '🧪' },
+      { id: 'consumables', title: 'Consumables & Prepared Food', icon: '🩹' },
+      { id: 'currencies', title: 'Currencies & Special Items', icon: '🔬' },
+      { id: 'equipment', title: 'Crafted Equipment & Stash', icon: '⚔️' }
+    ];
+
+    const query = this.stockpileSearchQuery;
+    const activeCategory = this.currentStockpileCategory;
+    const heldOnly = this.showHeldOnly;
+
+    const filtered = catalog.filter((item) => {
+      const count = counts[item.id] || 0;
+      if (heldOnly && count <= 0) return false;
+      if (activeCategory !== 'all' && item.category !== activeCategory) return false;
+      if (query && !item.name.toLowerCase().includes(query) && !item.id.toLowerCase().includes(query)) return false;
+      return true;
+    });
+
+    const structureKey = `${activeCategory}|${query}|${heldOnly}|${filtered.map((f) => `${f.id}:${(counts[f.id] || 0) > 0 ? 1 : 0}`).join(',')}`;
+    if (!forceRebuild && this.renderedStockpileStructureKey === structureKey) {
+      this.updateStockpileLiveStats();
+      return;
+    }
+    this.renderedStockpileStructureKey = structureKey;
+
+    if (filtered.length === 0) {
+      this.stockpileItemsContainerEl.innerHTML = `
+        <div class="stockpile-empty-state">
+          <span style="font-size: 32px;">📭</span>
+          <div style="font-size: 14px; font-weight: 600; color: #cbd5e1;">No matching resources found</div>
+          <div style="font-size: 11px; color: #64748b;">Try adjusting your filter category, search term, or toggle 'Showing: All Items'.</div>
+        </div>
+      `;
+      return;
+    }
+
+    const grouped = new Map<string, typeof catalog>();
+    for (const catDef of categoryDefs) {
+      grouped.set(catDef.id, []);
+    }
+    for (const item of filtered) {
+      const list = grouped.get(item.category) || [];
+      list.push(item);
+      grouped.set(item.category, list);
+    }
+
+    let html = '';
+    for (const catDef of categoryDefs) {
+      const items = grouped.get(catDef.id) || [];
+      if (items.length === 0) continue;
+
+      let categoryTotalHeld = 0;
+      for (const it of items) {
+        if ((counts[it.id] || 0) > 0) categoryTotalHeld++;
+      }
+
+      html += `
+        <div class="stockpile-category-section">
+          <div class="stockpile-category-header">
+            <span>${catDef.icon} ${catDef.title}</span>
+            <span class="stockpile-category-count-badge">${categoryTotalHeld} / ${items.length} held</span>
+          </div>
+          <div class="stockpile-grid">
+      `;
+
+      for (const item of items) {
+        const count = counts[item.id] || 0;
+        const isHeld = count > 0;
+        const countStr = count.toLocaleString();
+
+        html += `
+          <div class="stockpile-card ${isHeld ? 'card-held' : 'card-empty'}" data-stockpile-card="${item.id}">
+            <div class="stockpile-card-left">
+              <span class="stockpile-card-icon">${item.icon}</span>
+              <div class="stockpile-card-info">
+                <span class="stockpile-card-name" title="${item.name}">${item.name}</span>
+                <span class="stockpile-card-cat">${item.id}</span>
+              </div>
+            </div>
+            <span class="stockpile-card-count ${isHeld ? 'count-positive' : 'count-zero'}" data-stockpile-count-id="${item.id}">
+              ${countStr}
+            </span>
+          </div>
+        `;
+      }
+
+      html += `
+          </div>
+        </div>
+      `;
+    }
+
+    this.stockpileItemsContainerEl.innerHTML = html;
+  }
+
+  public updateStockpile(time: number): void {
+    if (!this.isStockpileModalOpen()) return;
+    if (time - this.lastStockpileUpdateTime < 100) return;
+    this.lastStockpileUpdateTime = time;
+    this.updateStockpileLiveStats();
+  }
+
+  public updateStockpileLiveStats(): void {
+    if (!this.stockpileItemsContainerEl || !this.isStockpileModalOpen()) return;
+    const gameState = GameState.getInstance();
+    const counts = gameState.getAllStockpileCounts();
+
+    // Summary metrics calculation
+    let distinctHeldCount = 0;
+    let totalUnits = 0;
+    for (const [, v] of Object.entries(counts)) {
+      if (v > 0) {
+        distinctHeldCount++;
+        totalUnits += v;
+      }
+    }
+
+    this.setElementTextIfChanged(this.stockpileMetricDistinctEl, `${distinctHeldCount}`);
+    this.setElementTextIfChanged(this.stockpileMetricTotalEl, totalUnits.toLocaleString());
+    this.setElementTextIfChanged(this.stockpileMetricRpEl, `🔬 ${(counts['research_points'] || 0).toLocaleString()}`);
+    this.setElementTextIfChanged(this.stockpileMetricWoodEl, `🪵 ${(counts['wood'] || 0).toLocaleString()}`);
+    this.setElementTextIfChanged(this.stockpileMetricOreEl, `⛏️ ${(counts['ore'] || 0).toLocaleString()}`);
+
+    // Update in-place counts
+    const countEls = this.stockpileItemsContainerEl.querySelectorAll<HTMLElement>('[data-stockpile-count-id]');
+    let needsStructuralRebuild = false;
+
+    countEls.forEach((el) => {
+      const id = el.getAttribute('data-stockpile-count-id');
+      if (!id) return;
+      const count = counts[id] || 0;
+      const isPositive = count > 0;
+      this.setElementTextIfChanged(el, count.toLocaleString());
+
+      if (isPositive) {
+        el.classList.remove('count-zero');
+        el.classList.add('count-positive');
+      } else {
+        el.classList.remove('count-positive');
+        el.classList.add('count-zero');
+      }
+
+      const card = el.closest<HTMLElement>('.stockpile-card');
+      if (card) {
+        if (isPositive) {
+          card.classList.remove('card-empty');
+          card.classList.add('card-held');
+        } else {
+          card.classList.remove('card-held');
+          card.classList.add('card-empty');
+          if (this.showHeldOnly) {
+            needsStructuralRebuild = true;
+          }
+        }
+      }
+    });
+
+    if (needsStructuralRebuild) {
+      this.renderStockpileModal(true);
     }
   }
 }

@@ -61,6 +61,12 @@ export class OutpostScene extends Phaser.Scene {
   private hoverReasonText!: Phaser.GameObjects.Text;
   private lastLoggedHoverKey: string = '';
 
+  // Move Destination Highlights
+  public lastMoveDestinationHighlights: GridPos[] = [];
+  private moveHighlightGraphics!: Phaser.GameObjects.Graphics;
+  private moveHighlightTween: Phaser.Tweens.Tween | null = null;
+  private moveHighlightTimer: Phaser.Time.TimerEvent | null = null;
+
   constructor() {
     super({ key: 'OutpostScene' });
   }
@@ -274,6 +280,29 @@ export class OutpostScene extends Phaser.Scene {
       .setOrigin(0.5, 1)
       .setVisible(false)
       .setDepth(10010);
+
+    // Initialize Move Destination Highlight Graphics
+    if (this.moveHighlightGraphics) {
+      this.moveHighlightGraphics.destroy();
+    }
+    this.moveHighlightGraphics = this.add.graphics().setDepth(10002);
+    this.lastMoveDestinationHighlights = [];
+
+    (window as any).__getLastOutpostMoveDestinationHighlights = () => this.lastMoveDestinationHighlights;
+
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      if (this.moveHighlightTimer) {
+        this.moveHighlightTimer.remove();
+        this.moveHighlightTimer = null;
+      }
+      if (this.moveHighlightTween) {
+        this.moveHighlightTween.stop();
+        this.moveHighlightTween = null;
+      }
+      if (this.moveHighlightGraphics) {
+        this.moveHighlightGraphics.destroy();
+      }
+    });
 
     // 9. Input Controls: WASD, Space, B (Build Mode), R (Rotate)
     if (this.input.keyboard) {
@@ -661,6 +690,8 @@ export class OutpostScene extends Phaser.Scene {
           { x: 1, y: 1 }
         ];
 
+        const moveDestinations: GridPos[] = [leaderDest];
+
         for (let i = 1; i < this.party.length; i++) {
           const companion = this.party[i];
           if (companion.state === 'downed' || companion.state === 'dead') continue;
@@ -670,6 +701,7 @@ export class OutpostScene extends Phaser.Scene {
           const compDest = this.findNearestOpenTileForPartyMove(idealPos, companion.gridPos, claimed, companion);
           claimed.add(`${compDest.x},${compDest.y}`);
           companion.claimedDestination = { ...compDest };
+          moveDestinations.push(compDest);
 
           const compDynamicObs = this.getDynamicObstacles(companion).filter(
             obs => !this.party.some(m => m.gridPos.x === obs.x && m.gridPos.y === obs.y)
@@ -682,6 +714,8 @@ export class OutpostScene extends Phaser.Scene {
             }
           });
         }
+
+        this.showMoveDestinationHighlights(moveDestinations);
       }
     });
 
@@ -2094,5 +2128,81 @@ export class OutpostScene extends Phaser.Scene {
       return true;
     }
     return false;
+  }
+
+  // --- MOVE DESTINATION HIGHLIGHTS ---
+
+  public showMoveDestinationHighlights(destinations: GridPos[]): void {
+    this.lastMoveDestinationHighlights = destinations.map(d => ({ x: d.x, y: d.y }));
+    if (!this.moveHighlightGraphics) return;
+
+    if (this.moveHighlightTween) {
+      this.moveHighlightTween.stop();
+      this.moveHighlightTween = null;
+    }
+    if (this.moveHighlightTimer) {
+      this.moveHighlightTimer.remove();
+      this.moveHighlightTimer = null;
+    }
+
+    this.moveHighlightGraphics.clear();
+    this.moveHighlightGraphics.setAlpha(1);
+
+    const ts = this.tileSize;
+    for (let i = 0; i < destinations.length; i++) {
+      const dest = destinations[i];
+      const px = dest.x * ts;
+      const py = dest.y * ts;
+      const isLeader = i === 0;
+
+      // Color palette:
+      // Leader: Bright Sky Blue / Cyan (0x38bdf8), fill 0x0284c7
+      // Companions: Emerald / Mint (0x34d399), fill 0x059669
+      const strokeColor = isLeader ? 0x38bdf8 : 0x34d399;
+      const fillColor = isLeader ? 0x0284c7 : 0x059669;
+
+      // 1. Soft glowing fill
+      this.moveHighlightGraphics.fillStyle(fillColor, 0.25);
+      this.moveHighlightGraphics.fillRect(px + 2, py + 2, ts - 4, ts - 4);
+
+      // 2. Full tile border
+      this.moveHighlightGraphics.lineStyle(2, strokeColor, 0.95);
+      this.moveHighlightGraphics.strokeRect(px + 2, py + 2, ts - 4, ts - 4);
+
+      // 3. High-contrast corner brackets (white)
+      this.moveHighlightGraphics.lineStyle(2, 0xffffff, 0.95);
+      const bLen = 5;
+      // Top-left
+      this.moveHighlightGraphics.lineBetween(px + 2, py + 2, px + 2 + bLen, py + 2);
+      this.moveHighlightGraphics.lineBetween(px + 2, py + 2, px + 2, py + 2 + bLen);
+      // Top-right
+      this.moveHighlightGraphics.lineBetween(px + ts - 2, py + 2, px + ts - 2 - bLen, py + 2);
+      this.moveHighlightGraphics.lineBetween(px + ts - 2, py + 2, px + ts - 2, py + 2 + bLen);
+      // Bottom-left
+      this.moveHighlightGraphics.lineBetween(px + 2, py + ts - 2, px + 2 + bLen, py + ts - 2);
+      this.moveHighlightGraphics.lineBetween(px + 2, py + ts - 2, px + 2, py + ts - 2 - bLen);
+      // Bottom-right
+      this.moveHighlightGraphics.lineBetween(px + ts - 2, py + ts - 2, px + ts - 2 - bLen, py + ts - 2);
+      this.moveHighlightGraphics.lineBetween(px + ts - 2, py + ts - 2, px + ts - 2, py + ts - 2 - bLen);
+
+      // 4. Center pip
+      this.moveHighlightGraphics.fillStyle(0xffffff, 0.9);
+      this.moveHighlightGraphics.fillCircle(px + ts / 2, py + ts / 2, 2.5);
+    }
+
+    // Hold visible for 800ms, then smoothly fade over 400ms (1200ms total)
+    this.moveHighlightTimer = this.time.delayedCall(800, () => {
+      this.moveHighlightTween = this.tweens.add({
+        targets: this.moveHighlightGraphics,
+        alpha: 0,
+        duration: 400,
+        ease: 'Linear',
+        onComplete: () => {
+          this.moveHighlightGraphics?.clear();
+          this.moveHighlightGraphics?.setAlpha(1);
+          this.moveHighlightTween = null;
+        }
+      });
+    });
   }
 }
