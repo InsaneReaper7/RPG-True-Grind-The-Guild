@@ -338,21 +338,9 @@ export class HUD {
     // Milestone 25: Party Portrait Dock
     this.partyPortraitsHudEl = document.getElementById('party-portraits-hud');
     this.partyReselectAllBtn = document.getElementById('party-reselect-all-btn');
-    if (this.partyReselectAllBtn) {
-      this.partyReselectAllBtn.onclick = (e: MouseEvent) => {
-        e.stopPropagation();
-        this.triggerGroupReselect();
-      };
-    }
 
     this.gatheringModeBannerEl = document.getElementById('gathering-mode-banner');
     this.gatheringModeBtnEl = document.getElementById('gathering-mode-toggle-btn');
-    if (this.gatheringModeBtnEl) {
-      this.gatheringModeBtnEl.onclick = (e: MouseEvent) => {
-        e.stopPropagation();
-        this.triggerGatheringModeToggle();
-      };
-    }
 
     this.portraitCardEls = [];
     this.portraitNameEls = [];
@@ -680,6 +668,20 @@ export class HUD {
   }
 
   private setupListeners(): void {
+    if (this.partyReselectAllBtn) {
+      this.partyReselectAllBtn.onclick = (e: MouseEvent) => {
+        e.stopPropagation();
+        HUD.activeInstance?.triggerGroupReselect();
+      };
+    }
+
+    if (this.gatheringModeBtnEl) {
+      this.gatheringModeBtnEl.onclick = (e: MouseEvent) => {
+        e.stopPropagation();
+        HUD.activeInstance?.triggerGatheringModeToggle();
+      };
+    }
+
     if (this.openLoadoutBtn) {
       this.openLoadoutBtn.onclick = () => {
         const active = HUD.activeInstance;
@@ -1295,8 +1297,11 @@ export class HUD {
             active.toggleLoadoutModal(active.currentPlayer, active.currentProgression);
           }
         } else if (e.key === 'b' || e.key === 'B') {
-          if (active.isOutpost) {
-            active.onBuildModeToggleCallback?.();
+          const targetTag = (e.target as HTMLElement)?.tagName?.toLowerCase();
+          if (targetTag !== 'input' && targetTag !== 'textarea' && targetTag !== 'select') {
+            if (active.isOutpost) {
+              active.onBuildModeToggleCallback?.();
+            }
           }
         } else if (e.key === 'h' || e.key === 'H') {
           active.applyBandage();
@@ -3704,17 +3709,17 @@ export class HUD {
       this.unsubscribeExpListener();
       this.unsubscribeExpListener = null;
     }
-    if (this.gatheringModeBtnEl) {
-      this.gatheringModeBtnEl.onclick = null;
-    }
-    if (this.partyReselectAllBtn) {
-      this.partyReselectAllBtn.onclick = null;
-    }
     if (this.handleResearchTreeResize) {
       window.removeEventListener('resize', this.handleResearchTreeResize);
       this.handleResearchTreeResize = null as any;
     }
     if (HUD.activeInstance === this) {
+      if (this.gatheringModeBtnEl) {
+        this.gatheringModeBtnEl.onclick = null;
+      }
+      if (this.partyReselectAllBtn) {
+        this.partyReselectAllBtn.onclick = null;
+      }
       HUD.activeInstance = null;
     }
   }

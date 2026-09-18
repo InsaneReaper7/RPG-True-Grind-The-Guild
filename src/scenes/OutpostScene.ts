@@ -314,11 +314,6 @@ export class OutpostScene extends Phaser.Scene {
         SPACE: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE)
       };
 
-      const bKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.B);
-      bKey.on('down', () => {
-        this.toggleBuildMode();
-      });
-
       const rKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.R);
       rKey.on('down', () => {
         if (this.isBuildMode) {

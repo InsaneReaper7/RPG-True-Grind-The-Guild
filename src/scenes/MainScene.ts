@@ -283,6 +283,7 @@ export class MainScene extends Phaser.Scene {
     // 4. Initialize Systems & HUD
     this.progressionSystem = new ProgressionSystem(classesData, playerData.name || 'Hero');
     this.hud = new HUD();
+    this.hud.setGatheringModeActive(false);
     const hasBossRoom = this.dungeon.rooms.some((r) => r.type === 'boss');
     this.hud.setLocation(`Dungeon Floor ${floorNumber}${hasBossRoom ? ' (Boss)' : ''}`, false);
     GameState.getInstance().setSafeZone(false);
@@ -2253,7 +2254,11 @@ export class MainScene extends Phaser.Scene {
         { x: node.x + 1, y: node.y },
         { x: node.x - 1, y: node.y },
         { x: node.x, y: node.y + 1 },
-        { x: node.x, y: node.y - 1 }
+        { x: node.x, y: node.y - 1 },
+        { x: node.x + 1, y: node.y + 1 },
+        { x: node.x - 1, y: node.y + 1 },
+        { x: node.x + 1, y: node.y - 1 },
+        { x: node.x - 1, y: node.y - 1 }
       ].filter(t => t.x > 0 && t.x < this.mapWidth - 1 && t.y > 0 && t.y < this.mapHeight - 1 && this.gridMatrix[t.y]?.[t.x] === 0 && !claimed.has(`${t.x},${t.y}`) && !this.gatheringNodes.some(other => !other.isHarvested && other !== node && other.x === t.x && other.y === t.y));
 
       adjTiles.sort((a, b) => Math.hypot(a.x - primaryGatherer.gridPos.x, a.y - primaryGatherer.gridPos.y) - Math.hypot(b.x - primaryGatherer.gridPos.x, b.y - primaryGatherer.gridPos.y));
@@ -2268,9 +2273,17 @@ export class MainScene extends Phaser.Scene {
         primaryGatherer.claimedDestination = { ...targetTile };
 
         const unitObs = this.getPartyUnitObstacles(primaryGatherer);
-        this.pathfinder.findPath(primaryGatherer.gridPos, targetTile, unitObs).then((path) => {
-          if (path.length > 0) {
-            primaryGatherer.followPath(path, () => {
+        this.pathfinder.findPath(primaryGatherer.gridPos, targetTile, unitObs).then(async (path) => {
+          let resolvedPath = path;
+          if (resolvedPath.length === 0) {
+            // Bottleneck fallback: living enemies in distant rooms/corridors should not prevent gathering movement
+            resolvedPath = await this.pathfinder.findPath(primaryGatherer.gridPos, targetTile, { soft: unitObs.soft, hard: [] });
+            if (resolvedPath.length === 0) {
+              resolvedPath = await this.pathfinder.findPath(primaryGatherer.gridPos, targetTile);
+            }
+          }
+          if (resolvedPath.length > 0) {
+            primaryGatherer.followPath(resolvedPath, () => {
               if (Math.hypot(primaryGatherer.gridPos.x - node.x, primaryGatherer.gridPos.y - node.y) <= 1.5) {
                 this.startGatherChannel(primaryGatherer, node);
               }
@@ -2282,13 +2295,13 @@ export class MainScene extends Phaser.Scene {
             }
             const checkArrival = this.time.addEvent({
               delay: 150,
-              repeat: 40,
+              loop: true,
               callback: () => {
                 if (Math.hypot(primaryGatherer.gridPos.x - node.x, primaryGatherer.gridPos.y - node.y) <= 1.5) {
                   checkArrival.remove();
                   this.gatheringArrivalTimers.delete(primaryGatherer);
                   this.startGatherChannel(primaryGatherer, node);
-                } else if (primaryGatherer.state !== 'moving') {
+                } else if (!primaryGatherer.isMoving() && primaryGatherer.state !== 'moving') {
                   checkArrival.remove();
                   this.gatheringArrivalTimers.delete(primaryGatherer);
                 }
@@ -2297,6 +2310,7 @@ export class MainScene extends Phaser.Scene {
             this.gatheringArrivalTimers.set(primaryGatherer, checkArrival);
           } else {
             primaryGatherer.claimedDestination = null;
+            this.hud?.showToast(`⚠️ Cannot reach ${node.nodeDef.name} - path is blocked.`, 'warn', 2500);
           }
         });
       }
@@ -3224,6 +3238,7 @@ export class MainScene extends Phaser.Scene {
       if (!this.activeGatherChannels.has(worker) && worker.claimedDestination) {
         worker.claimedDestination = null;
       }
+      worker.clearTarget();
     }
 
     this.gatheringQueue = [...validNodes];
@@ -3323,7 +3338,11 @@ export class MainScene extends Phaser.Scene {
       { x: node.x + 1, y: node.y },
       { x: node.x - 1, y: node.y },
       { x: node.x, y: node.y + 1 },
-      { x: node.x, y: node.y - 1 }
+      { x: node.x, y: node.y - 1 },
+      { x: node.x + 1, y: node.y + 1 },
+      { x: node.x - 1, y: node.y + 1 },
+      { x: node.x + 1, y: node.y - 1 },
+      { x: node.x - 1, y: node.y - 1 }
     ].filter(t => 
       t.x > 0 && t.x < this.mapWidth - 1 && 
       t.y > 0 && t.y < this.mapHeight - 1 && 
@@ -3344,9 +3363,18 @@ export class MainScene extends Phaser.Scene {
       worker.claimedDestination = { ...targetTile };
 
       const unitObs = this.getPartyUnitObstacles(worker);
-      this.pathfinder.findPath(worker.gridPos, targetTile, unitObs).then((path) => {
-        if (path.length > 0) {
-          worker.followPath(path, () => {
+      this.pathfinder.findPath(worker.gridPos, targetTile, unitObs).then(async (path) => {
+        let resolvedPath = path;
+        if (resolvedPath.length === 0) {
+          // Corridor / enemy bottleneck fallback: living enemies in distant corridors
+          // should not freeze queue workers from walking toward gather targets
+          resolvedPath = await this.pathfinder.findPath(worker.gridPos, targetTile, { soft: unitObs.soft, hard: [] });
+          if (resolvedPath.length === 0) {
+            resolvedPath = await this.pathfinder.findPath(worker.gridPos, targetTile);
+          }
+        }
+        if (resolvedPath.length > 0) {
+          worker.followPath(resolvedPath, () => {
             if (Math.hypot(worker.gridPos.x - node.x, worker.gridPos.y - node.y) <= 1.5) {
               this.startGatherChannel(worker, node);
             } else {
@@ -3355,13 +3383,13 @@ export class MainScene extends Phaser.Scene {
           });
           const checkArrival = this.time.addEvent({
             delay: 150,
-            repeat: 40,
+            loop: true,
             callback: () => {
               if (Math.hypot(worker.gridPos.x - node.x, worker.gridPos.y - node.y) <= 1.5) {
                 checkArrival.remove();
                 this.gatheringArrivalTimers.delete(worker);
                 this.startGatherChannel(worker, node);
-              } else if (worker.state !== 'moving') {
+              } else if (!worker.isMoving() && worker.state !== 'moving') {
                 checkArrival.remove();
                 this.gatheringArrivalTimers.delete(worker);
                 if (Math.hypot(worker.gridPos.x - node.x, worker.gridPos.y - node.y) > 1.5) {
@@ -3377,7 +3405,7 @@ export class MainScene extends Phaser.Scene {
           if (!node.isHarvested && !this.gatheringQueue.includes(node)) {
             this.gatheringQueue.push(node);
           }
-          this.time.delayedCall(100, () => {
+          this.time.delayedCall(500, () => {
             if (this.gatheringQueue.length > 0) {
               this.processGatheringQueue();
             }
