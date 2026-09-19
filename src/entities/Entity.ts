@@ -33,6 +33,7 @@ export class Entity extends Phaser.GameObjects.Container {
   }
 
   public claimedDestination: GridPos | null = null;
+  public isPartyMember: boolean = false;
 
   public activeStatusEffects: Map<string, ActiveStatusEffect> = new Map();
 
@@ -120,11 +121,11 @@ export class Entity extends Phaser.GameObjects.Container {
     return this.path.length > 0 || this.targetWorldPos !== null;
   }
 
-  public followPath(path: GridPos[], onComplete?: () => void): void {
+  public followPath(path: GridPos[], onComplete?: () => void, targetDestination?: GridPos): void {
     if (this.state === 'downed' || this.state === 'dead') return;
 
     if (!path || path.length === 0) {
-      this.claimedDestination = null;
+      this.claimedDestination = targetDestination ? { ...targetDestination } : null;
       this.blockedWaitMs = 0;
       if (onComplete) onComplete();
       return;
@@ -140,13 +141,15 @@ export class Entity extends Phaser.GameObjects.Container {
     this.blockedWaitMs = 0;
 
     if (this.path.length > 0) {
-      this.claimedDestination = { ...this.path[this.path.length - 1] };
+      this.claimedDestination = targetDestination
+        ? { ...targetDestination }
+        : { ...this.path[this.path.length - 1] };
       this.state = 'moving';
       if (!this.targetWorldPos) {
         this.advanceToNextTileInPath();
       }
     } else {
-      this.claimedDestination = null;
+      this.claimedDestination = targetDestination ? { ...targetDestination } : null;
       if (!this.targetWorldPos) {
         this.state = 'idle';
         if (this.onPathCompleteCallback) {
@@ -553,9 +556,25 @@ export class Entity extends Phaser.GameObjects.Container {
       // If we don't have an active targetWorldPos but still have path steps,
       // it means we yielded because the next tile was occupied. Check if it opened up.
       if (!this.targetWorldPos && this.path.length > 0) {
-        this.blockedWaitMs += delta;
+        const nextTile = this.path[0];
+        const scene = this.scene as any;
+        const blockingUnit = (scene && typeof scene.getUnitAtTile === 'function')
+          ? scene.getUnitAtTile(nextTile.x, nextTile.y, this)
+          : undefined;
+
+        // If yielding behind an actively moving party ally in convoy, do not time out
+        const isBlockedByMovingAlly = blockingUnit &&
+          this.isPartyMember && blockingUnit.isPartyMember &&
+          blockingUnit.isMoving();
+
+        if (isBlockedByMovingAlly) {
+          this.blockedWaitMs = 0;
+        } else {
+          this.blockedWaitMs += delta;
+        }
+
         if (this.blockedWaitMs > 400) {
-          // Blocked too long by stationary unit: stop movement so repath logic can find an open alternative route
+          // Blocked too long by stationary unit or obstacle: stop movement
           this.path = [];
           this.claimedDestination = null;
           this.state = 'idle';

@@ -11,7 +11,7 @@ import { GridPos, PlacedBuildable } from '../types/game';
 import { BuildingSystem } from '../systems/BuildingSystem';
 import { RoomClassifier, ClassifiedRoom } from '../systems/RoomClassifier';
 import { HiddenSkillSystem } from '../systems/HiddenSkillSystem';
-import { ActiveReviveChannel } from './MainScene';
+import { ActiveReviveChannel, ActiveMoveHighlight } from './MainScene';
 
 export class OutpostScene extends Phaser.Scene {
   private mapWidth: number = 20;
@@ -63,6 +63,7 @@ export class OutpostScene extends Phaser.Scene {
 
   // Move Destination Highlights
   public lastMoveDestinationHighlights: GridPos[] = [];
+  public activeMoveHighlights: ActiveMoveHighlight[] = [];
   private moveHighlightGraphics!: Phaser.GameObjects.Graphics;
   private moveHighlightTween: Phaser.Tweens.Tween | null = null;
   private moveHighlightTimer: Phaser.Time.TimerEvent | null = null;
@@ -287,21 +288,12 @@ export class OutpostScene extends Phaser.Scene {
     }
     this.moveHighlightGraphics = this.add.graphics().setDepth(10002);
     this.lastMoveDestinationHighlights = [];
+    this.activeMoveHighlights = [];
 
     (window as any).__getLastOutpostMoveDestinationHighlights = () => this.lastMoveDestinationHighlights;
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
-      if (this.moveHighlightTimer) {
-        this.moveHighlightTimer.remove();
-        this.moveHighlightTimer = null;
-      }
-      if (this.moveHighlightTween) {
-        this.moveHighlightTween.stop();
-        this.moveHighlightTween = null;
-      }
-      if (this.moveHighlightGraphics) {
-        this.moveHighlightGraphics.destroy();
-      }
+      this.clearMoveDestinationHighlights();
     });
 
     // 9. Input Controls: WASD, Space, B (Build Mode), R (Rotate)
@@ -645,72 +637,7 @@ export class OutpostScene extends Phaser.Scene {
         }
 
         const claimed = new Set<string>();
-
-        const isTileBlockedForMove = (tx: number, ty: number, forEntity: Entity): boolean => {
-          if (tx <= 0 || tx >= this.mapWidth - 1 || ty <= 0 || ty >= this.mapHeight - 1) return true;
-          if (this.gridMatrix[ty]?.[tx] !== 0) return true;
-          if (claimed.has(`${tx},${ty}`)) return true;
-          if (this.party.some(m => m !== forEntity && (m.state === 'dead' || m.state === 'downed') && m.gridPos.x === tx && m.gridPos.y === ty)) return true;
-          return false;
-        };
-
-        // Leader movement
-        let leaderDest: GridPos = { x: clickedTileX, y: clickedTileY };
-        if (isTileBlockedForMove(clickedTileX, clickedTileY, this.player)) {
-          leaderDest = this.findNearestOpenTileForPartyMove({ x: clickedTileX, y: clickedTileY }, this.player.gridPos, claimed, this.player);
-        }
-        claimed.add(`${leaderDest.x},${leaderDest.y}`);
-        this.player.claimedDestination = { ...leaderDest };
-
-        const dynamicObs = this.getDynamicObstacles(this.player).filter(
-          obs => !this.party.some(m => m.gridPos.x === obs.x && m.gridPos.y === obs.y)
-        );
-        this.pathfinder.findPath(this.player.gridPos, leaderDest, dynamicObs).then((path) => {
-          if (path.length > 0) {
-            this.player.followPath(path);
-          } else {
-            this.player.claimedDestination = null;
-          }
-        });
-
-        // 2x2 Box Formation for Companions:
-        // Slot 0 (Leader): (0, 0)
-        // Slot 1 (Front-Right): (1, 0)
-        // Slot 2 (Back-Left): (0, 1)
-        // Slot 3 (Back-Right): (1, 1)
-        const formationOffsets = [
-          { x: 0, y: 0 },
-          { x: 1, y: 0 },
-          { x: 0, y: 1 },
-          { x: 1, y: 1 }
-        ];
-
-        const moveDestinations: GridPos[] = [leaderDest];
-
-        for (let i = 1; i < this.party.length; i++) {
-          const companion = this.party[i];
-          if (companion.state === 'downed' || companion.state === 'dead') continue;
-
-          const offset = formationOffsets[i] || { x: i % 2, y: Math.floor(i / 2) };
-          const idealPos: GridPos = { x: leaderDest.x + offset.x, y: leaderDest.y + offset.y };
-          const compDest = this.findNearestOpenTileForPartyMove(idealPos, companion.gridPos, claimed, companion);
-          claimed.add(`${compDest.x},${compDest.y}`);
-          companion.claimedDestination = { ...compDest };
-          moveDestinations.push(compDest);
-
-          const compDynamicObs = this.getDynamicObstacles(companion).filter(
-            obs => !this.party.some(m => m.gridPos.x === obs.x && m.gridPos.y === obs.y)
-          );
-          this.pathfinder.findPath(companion.gridPos, compDest, compDynamicObs).then((path) => {
-            if (path.length > 0) {
-              companion.followPath(path);
-            } else {
-              companion.claimedDestination = null;
-            }
-          });
-        }
-
-        this.showMoveDestinationHighlights(moveDestinations);
+        this.executePartyConvoyMovement(clickedTileX, clickedTileY, claimed);
       }
     });
 
@@ -724,6 +651,160 @@ export class OutpostScene extends Phaser.Scene {
     });
 
     console.log('[OutpostScene] Outpost created. Safe zone active. Build Mode enabled.');
+  }
+
+  public executePartyConvoyMovement(
+    clickedTileX: number,
+    clickedTileY: number,
+    claimed: Set<string>
+  ): void {
+    const leader = this.player;
+    if (!leader || leader.state === 'dead' || leader.state === 'downed') return;
+
+    const isTileBlockedForMove = (tx: number, ty: number, forEntity: Entity): boolean => {
+      if (tx <= 0 || tx >= this.mapWidth - 1 || ty <= 0 || ty >= this.mapHeight - 1) return true;
+      if (this.gridMatrix[ty]?.[tx] !== 0) return true;
+      if (claimed.has(`${tx},${ty}`)) return true;
+      if (this.party.some(m => m !== forEntity && (m.state === 'dead' || m.state === 'downed') && m.gridPos.x === tx && m.gridPos.y === ty)) return true;
+      return false;
+    };
+
+    let leaderDest: GridPos = { x: clickedTileX, y: clickedTileY };
+    if (isTileBlockedForMove(clickedTileX, clickedTileY, leader)) {
+      leaderDest = this.findNearestOpenTileForPartyMove({ x: clickedTileX, y: clickedTileY }, leader.gridPos, claimed, leader);
+    }
+    claimed.add(`${leaderDest.x},${leaderDest.y}`);
+    leader.claimedDestination = { ...leaderDest };
+
+    const formationOffsets = [
+      { x: 0, y: 0 },
+      { x: 1, y: 0 },
+      { x: 0, y: 1 },
+      { x: 1, y: 1 }
+    ];
+
+    const moveDestinations: GridPos[] = [leaderDest];
+    const companionSlots: { companion: Player; idealPos: GridPos; tentativeDest: GridPos }[] = [];
+
+    for (let i = 1; i < this.party.length; i++) {
+      const companion = this.party[i];
+      if (companion.state === 'downed' || companion.state === 'dead') continue;
+
+      const offset = formationOffsets[i] || { x: i % 2, y: Math.floor(i / 2) };
+      const idealPos: GridPos = { x: leaderDest.x + offset.x, y: leaderDest.y + offset.y };
+      const compDest = this.findNearestOpenTileForPartyMove(idealPos, companion.gridPos, claimed, companion);
+      claimed.add(`${compDest.x},${compDest.y}`);
+      companion.claimedDestination = { ...compDest };
+      moveDestinations.push(compDest);
+      companionSlots.push({ companion, idealPos, tentativeDest: compDest });
+    }
+
+    const movingUnits: Player[] = [leader, ...companionSlots.map(s => s.companion)];
+    this.showMoveDestinationHighlights(moveDestinations, movingUnits);
+
+    const dynamicObs = this.getDynamicObstacles(leader).filter(
+      obs => !this.party.some(m => m.gridPos.x === obs.x && m.gridPos.y === obs.y)
+    );
+
+    this.pathfinder.findPath(leader.gridPos, leaderDest, dynamicObs).then((path) => {
+      if (path.length === 0) {
+        leader.claimedDestination = null;
+        for (const slot of companionSlots) {
+          slot.companion.claimedDestination = null;
+        }
+        this.clearMoveDestinationHighlights();
+        return;
+      }
+
+      leader.followPath(path);
+
+      for (const slot of companionSlots) {
+        this.dispatchCompanionInConvoy(slot.companion, path, slot.idealPos, slot.tentativeDest);
+      }
+    });
+  }
+
+  public dispatchCompanionInConvoy(
+    companion: Player,
+    sharedPath: GridPos[],
+    idealPos: GridPos,
+    tentativeDest?: GridPos
+  ): void {
+    if (companion.state === 'dead' || companion.state === 'downed') return;
+
+    const onPathIdx = sharedPath.findIndex(p => p.x === companion.gridPos.x && p.y === companion.gridPos.y);
+
+    let joinSteps: GridPos[] = [];
+    let startPIdx = 0;
+
+    if (onPathIdx >= 0) {
+      startPIdx = onPathIdx + 1;
+    } else {
+      const p0 = sharedPath[0];
+      const p1 = sharedPath.length > 1 ? sharedPath[1] : undefined;
+
+      const isAdjacentToP0 = Math.abs(companion.gridPos.x - p0.x) + Math.abs(companion.gridPos.y - p0.y) === 1;
+      const isAdjacentToP1 = p1 !== undefined && (Math.abs(companion.gridPos.x - p1.x) + Math.abs(companion.gridPos.y - p1.y) === 1);
+
+      if (isAdjacentToP0) {
+        joinSteps = [{ x: p0.x, y: p0.y }];
+        startPIdx = 1;
+      } else if (isAdjacentToP1 && p1) {
+        joinSteps = [{ x: p1.x, y: p1.y }];
+        startPIdx = 2;
+      } else {
+        joinSteps = [{ x: p0.x, y: p0.y }];
+        startPIdx = 1;
+      }
+    }
+
+    const endPIdx = Math.max(startPIdx - 1, sharedPath.length - 2);
+    const sharedSegment = (startPIdx <= endPIdx) ? sharedPath.slice(startPIdx, endPIdx + 1) : [];
+
+    const rawConvoyPath = [...joinSteps, ...sharedSegment];
+    const convoyPath: GridPos[] = [];
+    for (const step of rawConvoyPath) {
+      if (step.x === companion.gridPos.x && step.y === companion.gridPos.y) continue;
+      if (convoyPath.length > 0 && convoyPath[convoyPath.length - 1].x === step.x && convoyPath[convoyPath.length - 1].y === step.y) continue;
+      convoyPath.push(step);
+    }
+
+    const onArrivalAtDestinationArea = () => {
+      if (companion.state === 'dead' || companion.state === 'downed') return;
+
+      const claimed = new Set<string>();
+      for (const m of this.party) {
+        if (m !== companion && m.state !== 'dead' && m.state !== 'downed') {
+          claimed.add(`${m.gridPos.x},${m.gridPos.y}`);
+          if (m.claimedDestination) {
+            claimed.add(`${m.claimedDestination.x},${m.claimedDestination.y}`);
+          }
+        }
+      }
+
+      const finalSlot = this.findNearestOpenTileForPartyMove(idealPos, companion.gridPos, claimed, companion);
+      claimed.add(`${finalSlot.x},${finalSlot.y}`);
+      companion.claimedDestination = { ...finalSlot };
+
+      if (companion.gridPos.x !== finalSlot.x || companion.gridPos.y !== finalSlot.y) {
+        const compDynamicObs = this.getDynamicObstacles(companion).filter(
+          obs => !this.party.some(m => m.gridPos.x === obs.x && m.gridPos.y === obs.y)
+        );
+        this.pathfinder.findPath(companion.gridPos, finalSlot, compDynamicObs).then((spreadPath) => {
+          if (spreadPath.length > 0) {
+            companion.followPath(spreadPath, undefined, finalSlot);
+          } else {
+            companion.claimedDestination = null;
+          }
+        });
+      }
+    };
+
+    if (convoyPath.length > 0) {
+      companion.followPath(convoyPath, onArrivalAtDestinationArea, tentativeDest);
+    } else {
+      onArrivalAtDestinationArea();
+    }
   }
 
   public getLivingUnits(excludeEntity?: Entity): Entity[] {
@@ -743,6 +824,11 @@ export class OutpostScene extends Phaser.Scene {
   public isTileOccupied(x: number, y: number, excludeEntity?: Entity): boolean {
     const living = this.getLivingUnits(excludeEntity);
     return living.some((u) => u.gridPos.x === x && u.gridPos.y === y);
+  }
+
+  public getUnitAtTile(x: number, y: number, excludeEntity?: Entity): Entity | undefined {
+    const living = this.getLivingUnits(excludeEntity);
+    return living.find((u) => u.gridPos.x === x && u.gridPos.y === y);
   }
 
   public isTileClaimed(x: number, y: number, excludeEntity?: Entity): boolean {
@@ -1889,6 +1975,7 @@ export class OutpostScene extends Phaser.Scene {
     for (const member of this.party) {
       member.update(time, delta);
     }
+    this.updateMoveDestinationHighlights();
 
     // Milestone 31: Update Active Revive Channels in OutpostScene
     for (const [character, channel] of Array.from(this.activeReviveChannels.entries())) {
@@ -2127,28 +2214,33 @@ export class OutpostScene extends Phaser.Scene {
 
   // --- MOVE DESTINATION HIGHLIGHTS ---
 
-  public showMoveDestinationHighlights(destinations: GridPos[]): void {
+  public showMoveDestinationHighlights(destinations: GridPos[], units?: Player[]): void {
     this.lastMoveDestinationHighlights = destinations.map(d => ({ x: d.x, y: d.y }));
-    if (!this.moveHighlightGraphics) return;
+    this.clearMoveHighlightTimers();
 
-    if (this.moveHighlightTween) {
-      this.moveHighlightTween.stop();
-      this.moveHighlightTween = null;
-    }
-    if (this.moveHighlightTimer) {
-      this.moveHighlightTimer.remove();
-      this.moveHighlightTimer = null;
-    }
+    this.activeMoveHighlights = destinations.map((d, i) => ({
+      dest: { x: d.x, y: d.y },
+      unit: units ? units[i] : (this.party[i] ?? undefined),
+      isLeader: i === 0
+    }));
+
+    this.drawMoveHighlights();
+  }
+
+  public drawMoveHighlights(): void {
+    if (!this.moveHighlightGraphics) return;
 
     this.moveHighlightGraphics.clear();
     this.moveHighlightGraphics.setAlpha(1);
 
+    if (this.activeMoveHighlights.length === 0) return;
+
     const ts = this.tileSize;
-    for (let i = 0; i < destinations.length; i++) {
-      const dest = destinations[i];
+    for (const h of this.activeMoveHighlights) {
+      const dest = h.dest;
       const px = dest.x * ts;
       const py = dest.y * ts;
-      const isLeader = i === 0;
+      const isLeader = h.isLeader;
 
       // Color palette:
       // Leader: Bright Sky Blue / Cyan (0x38bdf8), fill 0x0284c7
@@ -2184,20 +2276,66 @@ export class OutpostScene extends Phaser.Scene {
       this.moveHighlightGraphics.fillStyle(0xffffff, 0.9);
       this.moveHighlightGraphics.fillCircle(px + ts / 2, py + ts / 2, 2.5);
     }
+  }
 
-    // Hold visible for 800ms, then smoothly fade over 400ms (1200ms total)
-    this.moveHighlightTimer = this.time.delayedCall(800, () => {
-      this.moveHighlightTween = this.tweens.add({
-        targets: this.moveHighlightGraphics,
-        alpha: 0,
-        duration: 400,
-        ease: 'Linear',
-        onComplete: () => {
-          this.moveHighlightGraphics?.clear();
-          this.moveHighlightGraphics?.setAlpha(1);
-          this.moveHighlightTween = null;
+  public updateMoveDestinationHighlights(): void {
+    if (this.activeMoveHighlights.length === 0) return;
+
+    let changed = false;
+    for (let i = this.activeMoveHighlights.length - 1; i >= 0; i--) {
+      const h = this.activeMoveHighlights[i];
+      let arrived = false;
+
+      if (h.unit) {
+        // Keep destination synced if companion adjusted to final formation spread slot
+        if (h.unit.claimedDestination && (h.dest.x !== h.unit.claimedDestination.x || h.dest.y !== h.unit.claimedDestination.y)) {
+          h.dest = { x: h.unit.claimedDestination.x, y: h.unit.claimedDestination.y };
+          changed = true;
         }
-      });
-    });
+
+        if (h.unit.state === 'downed' || h.unit.state === 'dead') {
+          arrived = true;
+        } else if (!h.unit.isMoving() && h.unit.claimedDestination === null) {
+          arrived = true;
+        } else if (h.unit.gridPos.x === h.dest.x && h.unit.gridPos.y === h.dest.y && !h.unit.isMoving()) {
+          arrived = true;
+        }
+      } else {
+        const unitAtTile = this.party.find(p => p.gridPos.x === h.dest.x && p.gridPos.y === h.dest.y && !p.isMoving());
+        const anyPartyMoving = this.party.some(p => p.isMoving() || p.claimedDestination !== null);
+        if (unitAtTile || !anyPartyMoving) {
+          arrived = true;
+        }
+      }
+
+      if (arrived) {
+        this.activeMoveHighlights.splice(i, 1);
+        changed = true;
+      }
+    }
+
+    if (changed) {
+      this.drawMoveHighlights();
+    }
+  }
+
+  public clearMoveDestinationHighlights(): void {
+    this.activeMoveHighlights = [];
+    this.clearMoveHighlightTimers();
+    if (this.moveHighlightGraphics) {
+      this.moveHighlightGraphics.clear();
+      this.moveHighlightGraphics.setAlpha(1);
+    }
+  }
+
+  private clearMoveHighlightTimers(): void {
+    if (this.moveHighlightTween) {
+      this.moveHighlightTween.stop();
+      this.moveHighlightTween = null;
+    }
+    if (this.moveHighlightTimer) {
+      this.moveHighlightTimer.remove();
+      this.moveHighlightTimer = null;
+    }
   }
 }

@@ -85,6 +85,7 @@ export class Player extends Entity {
     );
 
     this.id = playerData.id || 'hero';
+    this.isPartyMember = true;
     this.baseMaxHp = playerData.maxHp;
     this.baseMaxCriticalHp = playerData.criticalHpMax ?? 25;
     this.avatarTextureKey = avatarKey;

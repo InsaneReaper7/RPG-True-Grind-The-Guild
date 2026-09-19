@@ -20,6 +20,7 @@ export class Enemy extends Entity {
 
   public eliteAura?: Phaser.GameObjects.Graphics;
   public eliteLabel?: Phaser.GameObjects.Text;
+  public nameLabel?: Phaser.GameObjects.Text;
   public tierAura?: Phaser.GameObjects.Graphics;
   public tierLabel?: Phaser.GameObjects.Text;
   public isSkinned: boolean = false;
@@ -63,7 +64,7 @@ export class Enemy extends Entity {
         this.tierAura = this.eliteAura;
       }
       if (scene.add && typeof scene.add.text === 'function') {
-        this.eliteLabel = scene.add.text(0, -this.tileSize / 2 - 17, '★ ELITE ★', {
+        this.eliteLabel = scene.add.text(0, -this.tileSize / 2 - 29, '★ ELITE ★', {
           fontSize: '9px',
           color: '#f59e0b',
           fontStyle: 'bold',
@@ -87,7 +88,7 @@ export class Enemy extends Entity {
         this.tierAura = this.eliteAura;
       }
       if (scene.add && typeof scene.add.text === 'function') {
-        this.eliteLabel = scene.add.text(0, -this.tileSize / 2 - 17, '✦ EPIC ✦', {
+        this.eliteLabel = scene.add.text(0, -this.tileSize / 2 - 29, '✦ EPIC ✦', {
           fontSize: '9px',
           color: '#c084fc',
           fontStyle: 'bold',
@@ -120,7 +121,7 @@ export class Enemy extends Entity {
         this.tierAura = this.eliteAura;
       }
       if (scene.add && typeof scene.add.text === 'function') {
-        this.eliteLabel = scene.add.text(0, -this.tileSize / 2 - 18, '👑 BOSS 👑', {
+        this.eliteLabel = scene.add.text(0, -this.tileSize / 2 - 30, '👑 BOSS 👑', {
           fontSize: '10px',
           color: '#ef4444',
           fontStyle: 'bold',
@@ -130,6 +131,18 @@ export class Enemy extends Entity {
         this.add(this.eliteLabel);
         this.tierLabel = this.eliteLabel;
       }
+    }
+
+    // Name label displayed for all enemies across all tiers, positioned cleanly above the HP bar
+    if (scene.add && typeof scene.add.text === 'function') {
+      this.nameLabel = scene.add.text(0, -this.tileSize / 2 - 18, this.entityName, {
+        fontSize: '9px',
+        color: '#ffffff',
+        fontStyle: 'bold',
+        backgroundColor: 'rgba(0,0,0,0.65)',
+        padding: { x: 3, y: 1 }
+      }).setOrigin(0.5);
+      this.add(this.nameLabel);
     }
 
     // Enable direct sprite/container click interactive hit area
@@ -238,6 +251,9 @@ export class Enemy extends Entity {
     if (this.eliteLabel) {
       this.eliteLabel.setVisible(false);
     }
+    if (this.nameLabel) {
+      this.nameLabel.setVisible(false);
+    }
     this.drawHpBar();
   }
 
@@ -297,6 +313,9 @@ export class Enemy extends Entity {
         this.eliteLabel.setText('👑 BOSS 👑');
         this.eliteLabel.setStyle({ color: '#ef4444' });
       }
+    }
+    if (this.nameLabel) {
+      this.nameLabel.setVisible(true);
     }
     this.drawHpBar();
     console.log(`[Respawn] ${this.entityName} completely reset and respawned at (${this.spawnPos.x}, ${this.spawnPos.y}) with full HP!`);

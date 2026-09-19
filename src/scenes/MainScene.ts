@@ -53,6 +53,12 @@ export interface ActiveReviveChannel {
   labelText: Phaser.GameObjects.Text;
 }
 
+export interface ActiveMoveHighlight {
+  dest: GridPos;
+  unit?: Player;
+  isLeader: boolean;
+}
+
 export class MainScene extends Phaser.Scene {
   private mapWidth: number = 48;
   private mapHeight: number = 48;
@@ -131,6 +137,7 @@ export class MainScene extends Phaser.Scene {
 
   // Move Destination Highlights
   public lastMoveDestinationHighlights: GridPos[] = [];
+  public activeMoveHighlights: ActiveMoveHighlight[] = [];
   private moveHighlightGraphics!: Phaser.GameObjects.Graphics;
   private moveHighlightTween: Phaser.Tweens.Tween | null = null;
   private moveHighlightTimer: Phaser.Time.TimerEvent | null = null;
@@ -194,6 +201,7 @@ export class MainScene extends Phaser.Scene {
     }
     this.moveHighlightGraphics = this.add.graphics().setDepth(10002);
     this.lastMoveDestinationHighlights = [];
+    this.activeMoveHighlights = [];
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.cameras?.main?.stopFollow();
@@ -202,17 +210,7 @@ export class MainScene extends Phaser.Scene {
         timer.remove();
       }
       this.gatheringArrivalTimers.clear();
-      if (this.moveHighlightTimer) {
-        this.moveHighlightTimer.remove();
-        this.moveHighlightTimer = null;
-      }
-      if (this.moveHighlightTween) {
-        this.moveHighlightTween.stop();
-        this.moveHighlightTween = null;
-      }
-      if (this.moveHighlightGraphics) {
-        this.moveHighlightGraphics.destroy();
-      }
+      this.clearMoveDestinationHighlights();
       if (this.tileClaimOverlay) {
         this.tileClaimOverlay.destroy();
       }
@@ -877,67 +875,7 @@ export class MainScene extends Phaser.Scene {
           }
         }
 
-        const isTileBlockedForMove = (tx: number, ty: number, forEntity: Entity): boolean => {
-          if (tx <= 0 || tx >= this.mapWidth - 1 || ty <= 0 || ty >= this.mapHeight - 1) return true;
-          if (this.gridMatrix[ty]?.[tx] !== 0) return true;
-          if (claimed.has(`${tx},${ty}`)) return true;
-          if (this.enemies.some(e => e.state !== 'dead' && e.state !== 'downed' && e.gridPos.x === tx && e.gridPos.y === ty)) return true;
-          if (this.party.some(m => m !== forEntity && (m.state === 'dead' || m.state === 'downed') && m.gridPos.x === tx && m.gridPos.y === ty)) return true;
-          return false;
-        };
-
-        // Leader / Anchor movement (first in activeSelected)
-        const leader = activeSelected[0];
-        let leaderDest: GridPos = { x: clickedTileX, y: clickedTileY };
-        if (isTileBlockedForMove(clickedTileX, clickedTileY, leader)) {
-          leaderDest = this.findNearestOpenTileForPartyMove({ x: clickedTileX, y: clickedTileY }, leader.gridPos, claimed, leader);
-        }
-        claimed.add(`${leaderDest.x},${leaderDest.y}`);
-        leader.claimedDestination = { ...leaderDest };
-
-        const unitObs = this.getPartyUnitObstacles(leader);
-        this.pathfinder.findPath(leader.gridPos, leaderDest, unitObs).then((path) => {
-          if (path.length > 0) {
-            leader.followPath(path);
-          } else {
-            leader.claimedDestination = null;
-          }
-        });
-
-        // 2x2 Box Formation for Companions in activeSelected:
-        // Slot 0 (Leader): (0, 0)
-        // Slot 1 (Front-Right): (1, 0)
-        // Slot 2 (Back-Left): (0, 1)
-        // Slot 3 (Back-Right): (1, 1)
-        const formationOffsets = [
-          { x: 0, y: 0 },
-          { x: 1, y: 0 },
-          { x: 0, y: 1 },
-          { x: 1, y: 1 }
-        ];
-
-        const moveDestinations: GridPos[] = [leaderDest];
-
-        for (let i = 1; i < activeSelected.length; i++) {
-          const companion = activeSelected[i];
-          const offset = formationOffsets[i] || { x: i % 2, y: Math.floor(i / 2) };
-          const idealPos: GridPos = { x: leaderDest.x + offset.x, y: leaderDest.y + offset.y };
-          const compDest = this.findNearestOpenTileForPartyMove(idealPos, companion.gridPos, claimed, companion);
-          claimed.add(`${compDest.x},${compDest.y}`);
-          companion.claimedDestination = { ...compDest };
-          moveDestinations.push(compDest);
-
-          const compUnitObs = this.getPartyUnitObstacles(companion);
-          this.pathfinder.findPath(companion.gridPos, compDest, compUnitObs).then((path) => {
-            if (path.length > 0) {
-              companion.followPath(path);
-            } else {
-              companion.claimedDestination = null;
-            }
-          });
-        }
-
-        this.showMoveDestinationHighlights(moveDestinations);
+        this.executePartyConvoyMovement(activeSelected, clickedTileX, clickedTileY, claimed);
       }
     });
 
@@ -980,6 +918,174 @@ export class MainScene extends Phaser.Scene {
         }
       }
     });
+  }
+
+  public executePartyConvoyMovement(
+    activeSelected: Player[],
+    clickedTileX: number,
+    clickedTileY: number,
+    claimed: Set<string>
+  ): void {
+    if (activeSelected.length === 0) return;
+
+    const leader = activeSelected[0];
+    const isTileBlockedForMove = (tx: number, ty: number, forEntity: Entity): boolean => {
+      if (tx <= 0 || tx >= this.mapWidth - 1 || ty <= 0 || ty >= this.mapHeight - 1) return true;
+      if (this.gridMatrix[ty]?.[tx] !== 0) return true;
+      if (claimed.has(`${tx},${ty}`)) return true;
+      if (this.enemies.some(e => e.state !== 'dead' && e.state !== 'downed' && e.gridPos.x === tx && e.gridPos.y === ty)) return true;
+      if (this.party.some(m => m !== forEntity && (m.state === 'dead' || m.state === 'downed') && m.gridPos.x === tx && m.gridPos.y === ty)) return true;
+      return false;
+    };
+
+    let leaderDest: GridPos = { x: clickedTileX, y: clickedTileY };
+    if (isTileBlockedForMove(clickedTileX, clickedTileY, leader)) {
+      leaderDest = this.findNearestOpenTileForPartyMove({ x: clickedTileX, y: clickedTileY }, leader.gridPos, claimed, leader);
+    }
+    claimed.add(`${leaderDest.x},${leaderDest.y}`);
+    leader.claimedDestination = { ...leaderDest };
+
+    const formationOffsets = [
+      { x: 0, y: 0 },
+      { x: 1, y: 0 },
+      { x: 0, y: 1 },
+      { x: 1, y: 1 }
+    ];
+
+    // Compute tentative formation destinations for UI markers and initial overlay tracking
+    const moveDestinations: GridPos[] = [leaderDest];
+    const companionSlots: { companion: Player; idealPos: GridPos; tentativeDest: GridPos }[] = [];
+
+    for (let i = 1; i < activeSelected.length; i++) {
+      const companion = activeSelected[i];
+      const offset = formationOffsets[i] || { x: i % 2, y: Math.floor(i / 2) };
+      const idealPos: GridPos = { x: leaderDest.x + offset.x, y: leaderDest.y + offset.y };
+      const compDest = this.findNearestOpenTileForPartyMove(idealPos, companion.gridPos, claimed, companion);
+      claimed.add(`${compDest.x},${compDest.y}`);
+      companion.claimedDestination = { ...compDest };
+      moveDestinations.push(compDest);
+      companionSlots.push({ companion, idealPos, tentativeDest: compDest });
+    }
+
+    this.showMoveDestinationHighlights(moveDestinations, activeSelected);
+
+    // Obstacles for the leader's long-distance route:
+    // Active convoy members are moving together, so they are not treated as static obstacles to the leader's route
+    const friendlyObstacles = this.party
+      .filter(m => !activeSelected.includes(m) && m.state !== 'dead' && m.state !== 'downed')
+      .map(m => m.gridPos);
+    const unitObs = {
+      soft: friendlyObstacles,
+      hard: this.getEnemyObstacles()
+    };
+
+    this.pathfinder.findPath(leader.gridPos, leaderDest, unitObs).then((path) => {
+      if (path.length === 0) {
+        leader.claimedDestination = null;
+        for (const slot of companionSlots) {
+          slot.companion.claimedDestination = null;
+        }
+        this.clearMoveDestinationHighlights();
+        return;
+      }
+
+      // Leader follows the computed shared path
+      leader.followPath(path);
+
+      // Companions follow in convoy along the exact same path
+      for (const slot of companionSlots) {
+        this.dispatchCompanionInConvoy(slot.companion, path, slot.idealPos, slot.tentativeDest);
+      }
+    });
+  }
+
+  public dispatchCompanionInConvoy(
+    companion: Player,
+    sharedPath: GridPos[],
+    idealPos: GridPos,
+    tentativeDest?: GridPos
+  ): void {
+    if (companion.state === 'dead' || companion.state === 'downed') return;
+
+    // 1. Determine connection/join point onto sharedPath
+    const onPathIdx = sharedPath.findIndex(p => p.x === companion.gridPos.x && p.y === companion.gridPos.y);
+
+    let joinSteps: GridPos[] = [];
+    let startPIdx = 0;
+
+    if (onPathIdx >= 0) {
+      // Companion is already on the shared path
+      startPIdx = onPathIdx + 1;
+    } else {
+      // Connect to start of shared path
+      const p0 = sharedPath[0];
+      const p1 = sharedPath.length > 1 ? sharedPath[1] : undefined;
+
+      const isAdjacentToP0 = Math.abs(companion.gridPos.x - p0.x) + Math.abs(companion.gridPos.y - p0.y) === 1;
+      const isAdjacentToP1 = p1 !== undefined && (Math.abs(companion.gridPos.x - p1.x) + Math.abs(companion.gridPos.y - p1.y) === 1);
+
+      if (isAdjacentToP0) {
+        joinSteps = [{ x: p0.x, y: p0.y }];
+        startPIdx = 1;
+      } else if (isAdjacentToP1 && p1) {
+        joinSteps = [{ x: p1.x, y: p1.y }];
+        startPIdx = 2;
+      } else {
+        // Fallback hop to p0
+        joinSteps = [{ x: p0.x, y: p0.y }];
+        startPIdx = 1;
+      }
+    }
+
+    // Convoy travel segment along sharedPath ends at destination approach (tile right before leader's stop)
+    const endPIdx = Math.max(startPIdx - 1, sharedPath.length - 2);
+    const sharedSegment = (startPIdx <= endPIdx) ? sharedPath.slice(startPIdx, endPIdx + 1) : [];
+
+    // Filter duplicate or current position
+    const rawConvoyPath = [...joinSteps, ...sharedSegment];
+    const convoyPath: GridPos[] = [];
+    for (const step of rawConvoyPath) {
+      if (step.x === companion.gridPos.x && step.y === companion.gridPos.y) continue;
+      if (convoyPath.length > 0 && convoyPath[convoyPath.length - 1].x === step.x && convoyPath[convoyPath.length - 1].y === step.y) continue;
+      convoyPath.push(step);
+    }
+
+    const onArrivalAtDestinationArea = () => {
+      if (companion.state === 'dead' || companion.state === 'downed') return;
+
+      // Arrival Re-validation & Formation Spread Phase:
+      // Live re-validation against current game state
+      const claimed = new Set<string>();
+      for (const m of this.party) {
+        if (m !== companion && m.state !== 'dead' && m.state !== 'downed') {
+          claimed.add(`${m.gridPos.x},${m.gridPos.y}`);
+          if (m.claimedDestination) {
+            claimed.add(`${m.claimedDestination.x},${m.claimedDestination.y}`);
+          }
+        }
+      }
+
+      const finalSlot = this.findNearestOpenTileForPartyMove(idealPos, companion.gridPos, claimed, companion);
+      claimed.add(`${finalSlot.x},${finalSlot.y}`);
+      companion.claimedDestination = { ...finalSlot };
+
+      if (companion.gridPos.x !== finalSlot.x || companion.gridPos.y !== finalSlot.y) {
+        const compUnitObs = this.getPartyUnitObstacles(companion);
+        this.pathfinder.findPath(companion.gridPos, finalSlot, compUnitObs).then((spreadPath) => {
+          if (spreadPath.length > 0) {
+            companion.followPath(spreadPath, undefined, finalSlot);
+          } else {
+            companion.claimedDestination = null;
+          }
+        });
+      }
+    };
+
+    if (convoyPath.length > 0) {
+      companion.followPath(convoyPath, onArrivalAtDestinationArea, tentativeDest);
+    } else {
+      onArrivalAtDestinationArea();
+    }
   }
 
   public getLivingUnits(excludeEntity?: Entity): Entity[] {
@@ -1031,6 +1137,11 @@ export class MainScene extends Phaser.Scene {
   public isTileOccupied(x: number, y: number, excludeEntity?: Entity): boolean {
     const living = this.getLivingUnits(excludeEntity);
     return living.some((u) => u.gridPos.x === x && u.gridPos.y === y);
+  }
+
+  public getUnitAtTile(x: number, y: number, excludeEntity?: Entity): Entity | undefined {
+    const living = this.getLivingUnits(excludeEntity);
+    return living.find((u) => u.gridPos.x === x && u.gridPos.y === y);
   }
 
   public isTileClaimed(x: number, y: number, excludeEntity?: Entity): boolean {
@@ -1634,6 +1745,8 @@ export class MainScene extends Phaser.Scene {
     for (const enemy of this.enemies) {
       enemy.update(time, delta);
     }
+
+    this.updateMoveDestinationHighlights();
 
     // Milestone 17: Update Active Gathering Channels
     for (const [character, channel] of Array.from(this.activeGatherChannels.entries())) {
@@ -2308,37 +2421,32 @@ export class MainScene extends Phaser.Scene {
               }
             });
             this.gatheringArrivalTimers.set(primaryGatherer, checkArrival);
+
+            // Escort companions follow the gatherer's shared path in convoy and spread into formation around the node upon arrival
+            if (resolvedActors.length > 1) {
+              const formationOffsets = [
+                { x: 0, y: 0 },
+                { x: 1, y: 0 },
+                { x: 0, y: 1 },
+                { x: 1, y: 1 }
+              ];
+              const anchorTile = targetTile;
+              for (let i = 1; i < resolvedActors.length; i++) {
+                const companion = resolvedActors[i];
+                const offset = formationOffsets[i] || { x: i % 2, y: Math.floor(i / 2) };
+                const idealPos: GridPos = { x: anchorTile.x + offset.x, y: anchorTile.y + offset.y };
+                const compDest = this.findNearestOpenTileForPartyMove(idealPos, companion.gridPos, claimed, companion);
+                claimed.add(`${compDest.x},${compDest.y}`);
+                companion.claimedDestination = { ...compDest };
+                this.dispatchCompanionInConvoy(companion, resolvedPath, idealPos, compDest);
+              }
+            }
           } else {
             primaryGatherer.claimedDestination = null;
+            for (let i = 1; i < resolvedActors.length; i++) {
+              resolvedActors[i].claimedDestination = null;
+            }
             this.hud?.showToast(`⚠️ Cannot reach ${node.nodeDef.name} - path is blocked.`, 'warn', 2500);
-          }
-        });
-      }
-    }
-
-    // 2x2 Box Formation for Companions in resolvedActors when multi-selected
-    if (resolvedActors.length > 1) {
-      const formationOffsets = [
-        { x: 0, y: 0 },
-        { x: 1, y: 0 },
-        { x: 0, y: 1 },
-        { x: 1, y: 1 }
-      ];
-      const anchorTile = primaryGatherer.claimedDestination || primaryGatherer.gridPos;
-      for (let i = 1; i < resolvedActors.length; i++) {
-        const companion = resolvedActors[i];
-        const offset = formationOffsets[i] || { x: i % 2, y: Math.floor(i / 2) };
-        const idealPos: GridPos = { x: anchorTile.x + offset.x, y: anchorTile.y + offset.y };
-        const compDest = this.findNearestOpenTileForPartyMove(idealPos, companion.gridPos, claimed, companion);
-        claimed.add(`${compDest.x},${compDest.y}`);
-        companion.claimedDestination = { ...compDest };
-
-        const compUnitObs = this.getPartyUnitObstacles(companion);
-        this.pathfinder.findPath(companion.gridPos, compDest, compUnitObs).then((path) => {
-          if (path.length > 0) {
-            companion.followPath(path);
-          } else {
-            companion.claimedDestination = null;
           }
         });
       }
@@ -2991,28 +3099,33 @@ export class MainScene extends Phaser.Scene {
 
   // --- MOVE DESTINATION HIGHLIGHTS ---
 
-  public showMoveDestinationHighlights(destinations: GridPos[]): void {
+  public showMoveDestinationHighlights(destinations: GridPos[], units?: Player[]): void {
     this.lastMoveDestinationHighlights = destinations.map(d => ({ x: d.x, y: d.y }));
-    if (!this.moveHighlightGraphics) return;
+    this.clearMoveHighlightTimers();
 
-    if (this.moveHighlightTween) {
-      this.moveHighlightTween.stop();
-      this.moveHighlightTween = null;
-    }
-    if (this.moveHighlightTimer) {
-      this.moveHighlightTimer.remove();
-      this.moveHighlightTimer = null;
-    }
+    this.activeMoveHighlights = destinations.map((d, i) => ({
+      dest: { x: d.x, y: d.y },
+      unit: units ? units[i] : (this.party[i] ?? undefined),
+      isLeader: i === 0
+    }));
+
+    this.drawMoveHighlights();
+  }
+
+  public drawMoveHighlights(): void {
+    if (!this.moveHighlightGraphics) return;
 
     this.moveHighlightGraphics.clear();
     this.moveHighlightGraphics.setAlpha(1);
 
+    if (this.activeMoveHighlights.length === 0) return;
+
     const ts = this.tileSize;
-    for (let i = 0; i < destinations.length; i++) {
-      const dest = destinations[i];
+    for (const h of this.activeMoveHighlights) {
+      const dest = h.dest;
       const px = dest.x * ts;
       const py = dest.y * ts;
-      const isLeader = i === 0;
+      const isLeader = h.isLeader;
 
       // Color palette:
       // Leader: Bright Sky Blue / Cyan (0x38bdf8), fill 0x0284c7
@@ -3048,21 +3161,67 @@ export class MainScene extends Phaser.Scene {
       this.moveHighlightGraphics.fillStyle(0xffffff, 0.9);
       this.moveHighlightGraphics.fillCircle(px + ts / 2, py + ts / 2, 2.5);
     }
+  }
 
-    // Hold visible for 800ms, then smoothly fade over 400ms (1200ms total)
-    this.moveHighlightTimer = this.time.delayedCall(800, () => {
-      this.moveHighlightTween = this.tweens.add({
-        targets: this.moveHighlightGraphics,
-        alpha: 0,
-        duration: 400,
-        ease: 'Linear',
-        onComplete: () => {
-          this.moveHighlightGraphics?.clear();
-          this.moveHighlightGraphics?.setAlpha(1);
-          this.moveHighlightTween = null;
+  public updateMoveDestinationHighlights(): void {
+    if (this.activeMoveHighlights.length === 0) return;
+
+    let changed = false;
+    for (let i = this.activeMoveHighlights.length - 1; i >= 0; i--) {
+      const h = this.activeMoveHighlights[i];
+      let arrived = false;
+
+      if (h.unit) {
+        // Keep destination synced if companion adjusted to final formation spread slot
+        if (h.unit.claimedDestination && (h.dest.x !== h.unit.claimedDestination.x || h.dest.y !== h.unit.claimedDestination.y)) {
+          h.dest = { x: h.unit.claimedDestination.x, y: h.unit.claimedDestination.y };
+          changed = true;
         }
-      });
-    });
+
+        if (h.unit.state === 'downed' || h.unit.state === 'dead') {
+          arrived = true;
+        } else if (!h.unit.isMoving() && h.unit.claimedDestination === null) {
+          arrived = true;
+        } else if (h.unit.gridPos.x === h.dest.x && h.unit.gridPos.y === h.dest.y && !h.unit.isMoving()) {
+          arrived = true;
+        }
+      } else {
+        const unitAtTile = this.party.find(p => p.gridPos.x === h.dest.x && p.gridPos.y === h.dest.y && !p.isMoving());
+        const anyPartyMoving = this.party.some(p => p.isMoving() || p.claimedDestination !== null);
+        if (unitAtTile || !anyPartyMoving) {
+          arrived = true;
+        }
+      }
+
+      if (arrived) {
+        this.activeMoveHighlights.splice(i, 1);
+        changed = true;
+      }
+    }
+
+    if (changed) {
+      this.drawMoveHighlights();
+    }
+  }
+
+  public clearMoveDestinationHighlights(): void {
+    this.activeMoveHighlights = [];
+    this.clearMoveHighlightTimers();
+    if (this.moveHighlightGraphics) {
+      this.moveHighlightGraphics.clear();
+      this.moveHighlightGraphics.setAlpha(1);
+    }
+  }
+
+  private clearMoveHighlightTimers(): void {
+    if (this.moveHighlightTween) {
+      this.moveHighlightTween.stop();
+      this.moveHighlightTween = null;
+    }
+    if (this.moveHighlightTimer) {
+      this.moveHighlightTimer.remove();
+      this.moveHighlightTimer = null;
+    }
   }
 
   // --- MILESTONE 26: GATHERING MODE & PARALLEL QUEUE PROCESSING ---
