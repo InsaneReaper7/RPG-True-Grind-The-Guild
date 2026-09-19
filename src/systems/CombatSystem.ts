@@ -1893,16 +1893,21 @@ export class CombatSystem {
     const isHealingStaff = member.equippedWeapon?.id === 'healing_staff' || member.equippedWeapon?.id === 'healing_magic';
     if (!isHealingStaff) return false;
 
-    // Scan for living damaged party members (prioritize other allies, then self)
-    const damagedMembers = this.party.filter(
-      (m) => m.state !== 'dead' && m.state !== 'downed' && (m.hp < m.maxHp || m.criticalHp < m.maxCriticalHp)
-    );
-
-    // Branch 2: Nobody needs healing -> proceed to standard combat actions
-    if (damagedMembers.length === 0) return false;
-
     const dataLoader = DataLoader.getInstance();
     const healDef = dataLoader.getWeapon('healing_magic');
+    const maxHealRange = healDef?.attackRangeTiles ?? 4;
+
+    // Scan for living damaged party members within powered range (prioritize other allies, then self)
+    const damagedMembers = this.party.filter((m) => {
+      if (m.state === 'dead' || m.state === 'downed') return false;
+      if (m.hp >= m.maxHp && m.criticalHp >= m.maxCriticalHp) return false;
+      const dist = Math.max(Math.abs(member.gridPos.x - m.gridPos.x), Math.abs(member.gridPos.y - m.gridPos.y));
+      return dist <= maxHealRange;
+    });
+
+    // Branch 2: Nobody needs healing within range -> proceed to standard combat actions
+    if (damagedMembers.length === 0) return false;
+
     const healInterval = healDef?.attackIntervalMs ?? 1500;
 
     const lastHeal = member.lastSkillUseTimes.get('healing_magic');
@@ -1912,7 +1917,7 @@ export class CombatSystem {
     const costReduction = (healDef?.levelBonus?.energyCostReductionPerLevel ?? 0.1) * healLevel;
     const energyCost = Math.max(1, Math.round((healDef?.energyCostPerCast ?? 22) - costReduction));
 
-    // Branch 3: Damaged ally exists, but healer is out of energy (< energyCost)
+    // Branch 3: Damaged ally exists within range, but healer is out of energy (< energyCost)
     if (member.energy < energyCost) {
       // Throttle warning log to once per heal interval to avoid console spamming
       if (lastHeal === undefined || time - lastHeal >= healInterval) {
@@ -1922,14 +1927,14 @@ export class CombatSystem {
         member.lastSkillUseTimes.set('healing_magic', time);
       }
       // If the member is actively moving, has path steps, or has no combat target, respect movement/player commands and do NOT autonomously acquire an enemy
-      const isMovingAlongPath = member.isMoving() || member.hasActivePath() || member.claimedDestination !== null;
+      const isMovingAlongPath = member.isMoving() || (typeof member.hasActivePath === 'function' ? member.hasActivePath() : false) || member.claimedDestination !== null;
       if (isMovingAlongPath || !member.targetEntity) {
         return false;
       }
       return false; // Fall back to melee target attack on existing targetEntity
     }
 
-    // Branch 1: Damaged ally exists and healer has sufficient energy -> cast Heal
+    // Branch 1: Damaged ally exists within range and healer has sufficient energy -> cast Heal
     damagedMembers.sort((a, b) => {
       const aSelf = a === member ? 1 : 0;
       const bSelf = b === member ? 1 : 0;
@@ -1940,6 +1945,7 @@ export class CombatSystem {
     });
 
     const targetAlly = damagedMembers[0];
+    const distToTarget = Math.max(Math.abs(member.gridPos.x - targetAlly.gridPos.x), Math.abs(member.gridPos.y - targetAlly.gridPos.y));
 
     // Deduct energy and record cast times
     const preHealEnergy = member.energy;
@@ -1952,6 +1958,9 @@ export class CombatSystem {
     const healAmount = Math.max(1, Math.round((healDef?.baseHealAmount ?? 8) + healBonus));
 
     const restored = targetAlly.heal(healAmount);
+    console.log(
+      `[DIAG:HealingStaff] Enforced range: ${maxHealRange}, actual distance: ${distToTarget} between ${member.entityName} at (${member.gridPos.x},${member.gridPos.y}) and ${targetAlly.entityName} at (${targetAlly.gridPos.x},${targetAlly.gridPos.y})`
+    );
     console.log(
       `[DIAG:Combat] ✨ ${member.entityName} casts Heal on ${targetAlly.entityName}! inCombat: ${member.inCombat}, Pre-EN: ${preHealEnergy.toFixed(1)}, Post-EN: ${member.energy.toFixed(1)} (cost: ${energyCost})`
     );
@@ -1970,7 +1979,7 @@ export class CombatSystem {
     }
 
     // State yielding lifecycle: Ensure healer state cleanly yields back to moving or idle rather than staying stuck in attacking
-    const hasActivePath = member.isMoving() || member.hasActivePath() || member.claimedDestination !== null;
+    const hasActivePath = member.isMoving() || (typeof member.hasActivePath === 'function' ? member.hasActivePath() : false) || member.claimedDestination !== null;
     if (hasActivePath) {
       member.state = 'moving';
     } else {

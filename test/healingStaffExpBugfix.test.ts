@@ -306,18 +306,54 @@ async function runBugfixVerification() {
     assert.equal(barrisProg.getProficiencyStat('staff').currentExp, 0);
     assert.equal(barrisProg.getProficiencyStat('fire_magic').currentExp, 0);
 
-    // 1A. Damaged ally exists -> Barris casts Heal
+    // 1A. Damaged ally within 4 tiles -> Barris casts Heal
     hero.hp = 20; // damaged
     barris.energy = 100;
+    // Hero at (10, 10), Barris at (11, 11) -> distance is 1 tile (<= 4 tiles)
     const casted = combat.checkAndAutocastHealingMagic(barris, 1000);
-    assert.equal(casted, true, 'Barris must cast Heal on damaged Hero');
+    assert.equal(casted, true, 'Barris must cast Heal on damaged Hero within 4 tiles');
     assert.equal(barrisProg.getProficiencyStat('healing_magic').currentExp, 2, 'Healing Magic gained exactly +2 EXP');
     assert.equal(barrisProg.getProficiencyStat('fire_magic').currentExp, 0, 'Fire Magic MUST gain 0 EXP');
     assert.equal(barrisProg.getProficiencyStat('staff').currentExp, 0, 'Staff gained 0 EXP during spell cast');
-    console.log('  ✔ 1A Passed: Barris heals ally -> +2 healing_magic EXP, 0 fire_magic EXP');
+    console.log('  ✔ 1A Passed: Barris heals ally within 4 tiles -> +2 healing_magic EXP, 0 fire_magic EXP');
+
+    // 1A2. Ally out of range (5+ tiles away) -> Barris CANNOT cast Heal
+    hero.hp = 20; // damaged
+    hero.gridPos = { x: 5, y: 11 }; // 6 tiles away horizontally from Barris (11, 11)
+    hero.x = 5 * 32 + 16;
+    barris.energy = 100;
+    barris.lastSkillUseTimes.clear();
+    const castedOutOfRange = combat.checkAndAutocastHealingMagic(barris, 3000);
+    assert.equal(castedOutOfRange, false, 'Barris must NOT cast Heal on ally outside 4-tile range (distance 6)');
+    assert.equal(barrisProg.getProficiencyStat('healing_magic').currentExp, 2, 'Healing Magic gained 0 EXP when out of range');
+    console.log('  ✔ 1A2 Passed: Damaged ally at distance 6 tiles (> 4 maxRange) is NOT healed');
+
+    // 1A3. Ally moved back to 4 tiles -> Heal cast succeeds
+    hero.gridPos = { x: 7, y: 11 }; // exactly 4 tiles away (11 - 7 = 4)
+    hero.x = 7 * 32 + 16;
+    const castedAtMaxRange = combat.checkAndAutocastHealingMagic(barris, 5000);
+    assert.equal(castedAtMaxRange, true, 'Barris casts Heal on ally at exactly 4 tiles (maximum powered range)');
+    assert.equal(barrisProg.getProficiencyStat('healing_magic').currentExp, 4, 'Healing Magic reached 4 EXP');
+    console.log('  ✔ 1A3 Passed: Damaged ally at distance 4 tiles (<= 4 maxRange) is successfully healed');
+
+    // 1A4. Dry Energy fallback -> Cannot cast Heal, falls back to melee staff
+    hero.hp = 20; // still needs healing
+    barris.energy = 10; // dry (< 22 EN cost)
+    barris.lastSkillUseTimes.clear();
+    const castedDry = combat.checkAndAutocastHealingMagic(barris, 7000);
+    assert.equal(castedDry, false, 'Dry Barris (< 22 EN) must NOT cast Heal');
+    combat.updateStaffDynamicRange(barris);
+    assert.equal(barris.attackRangeTiles, 1, 'Dry Healing Staff maintains strict 1-tile attack range');
+    const dryEffWpn = combat.getEffectiveWeaponForAttack(barris);
+    assert.equal(dryEffWpn.id, 'staff', 'Dry Healing Staff resolves to staff profile for melee fallback');
+    console.log('  ✔ 1A4 Passed: Dry Healing Staff (< 22 EN) refuses heal and drops to 1-tile staff melee fallback');
+
+    // Reset hero pos and hp
+    hero.gridPos = { x: 10, y: 10 };
+    hero.x = 10 * 32 + 16;
+    hero.hp = 50;
 
     // 1B. All allies healthy -> Barris falls back to physical staff melee against enemy
-    hero.hp = 50; // full health
     valerie.hp = 50;
     kaelen.hp = 50;
     barris.hp = 50;
@@ -333,13 +369,13 @@ async function runBugfixVerification() {
     const origRand = Math.random;
     Math.random = () => 0.01; // guarantee hit
     try {
-      combat.update(3000, 16);
+      combat.update(9000, 16);
     } finally {
       Math.random = origRand;
     }
 
     assert.equal(barrisProg.getProficiencyStat('staff').currentExp, 2, 'Staff gained +2 EXP from physical melee strike');
-    assert.equal(barrisProg.getProficiencyStat('healing_magic').currentExp, 2, 'Healing Magic remains at 2 EXP');
+    assert.equal(barrisProg.getProficiencyStat('healing_magic').currentExp, 4, 'Healing Magic remains at 4 EXP');
     assert.equal(barrisProg.getProficiencyStat('fire_magic').currentExp, 0, 'CRITICAL: Fire Magic MUST REMAIN 0 EXP');
     console.log('  ✔ 1B Passed: Barris attacks enemy -> +2 staff EXP, NEVER fire_magic EXP (remains 0)');
   }

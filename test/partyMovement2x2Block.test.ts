@@ -202,10 +202,27 @@ class Simulated2x2PartyScene {
       const off = formationOffsets[i] || { x: i % 2, y: Math.floor(i / 2) };
       const unitPath = anchorPath.map(p => ({ x: p.x + off.x, y: p.y + off.y }));
 
-      if (unit.gridPos.x !== unitPath[0].x || unit.gridPos.y !== unitPath[0].y) {
-        this.followPath(unit, [unit.gridPos, ...unitPath], undefined, destTiles[i]);
-      } else {
+      if (unit.gridPos.x === unitPath[0].x && unit.gridPos.y === unitPath[0].y) {
         this.followPath(unit, unitPath, undefined, destTiles[i]);
+      } else {
+        const outOfFormationObs = {
+          soft: [
+            ...friendlyObs,
+            ...destTiles.filter((_, idx) => idx !== i)
+          ],
+          hard: this.getEnemyObstacles()
+        };
+        const uPath = await this.pathfinder.findPath(unit.gridPos, destTiles[i], outOfFormationObs);
+        if (uPath.length > 0) {
+          this.followPath(unit, uPath, undefined, destTiles[i]);
+        } else {
+          const alignPath = await this.pathfinder.findPath(unit.gridPos, unitPath[0], outOfFormationObs);
+          if (alignPath.length > 0) {
+            this.followPath(unit, [...alignPath, ...unitPath.slice(1)], undefined, destTiles[i]);
+          } else {
+            unit.claimedDestination = null;
+          }
+        }
       }
     }
 
@@ -573,6 +590,71 @@ async function runTests() {
     const path = await sim.pathfinder.find2x2Path({ x: 3, y: 4 }, { x: 20, y: 4 }, unitObs);
     assert.ok(path.length > 0, 'Pathfinder should relax soft obstacle to find valid path through corridor');
     console.log('✔ Test 6 passed: Soft dynamic obstacle relaxed via bottleneck fallback when no enemies are present.\n');
+  }
+
+  // --------------------------------------------------------------------------
+  // TEST 7: Split Party Out-of-Formation Units Never Glide Through Walls
+  // --------------------------------------------------------------------------
+  console.log('--- TEST 7: Split Party Out-of-Formation Units Never Glide Through Walls ---');
+  {
+    // 40x20 map with a solid dividing wall at x=12 from y=0..19, doorway at (12, 10).
+    const width = 40;
+    const height = 20;
+    const grid = Array.from({ length: height }, () => Array(width).fill(0));
+    for (let y = 0; y < height; y++) {
+      if (y !== 10) {
+        grid[y][12] = 1; // Solid wall except doorway at y=10
+      }
+    }
+
+    const sim = new Simulated2x2PartyScene(width, height, grid);
+    // Leader, Valerie, Kaelen are in Room B (right of wall)
+    // Barris is split in Room A (left of wall at 4, 4)
+    sim.party = [
+      { id: 'hero', name: 'Hero', gridPos: { x: 16, y: 8 }, claimedDestination: null, path: [], isPartyMember: true, state: 'idle', blockedWaitMs: 0, visitedTiles: [{ x: 16, y: 8 }] },
+      { id: 'valerie', name: 'Valerie', gridPos: { x: 17, y: 8 }, claimedDestination: null, path: [], isPartyMember: true, state: 'idle', blockedWaitMs: 0, visitedTiles: [{ x: 17, y: 8 }] },
+      { id: 'kaelen', name: 'Kaelen', gridPos: { x: 16, y: 9 }, claimedDestination: null, path: [], isPartyMember: true, state: 'idle', blockedWaitMs: 0, visitedTiles: [{ x: 16, y: 9 }] },
+      { id: 'barris', name: 'Barris', gridPos: { x: 4, y: 4 }, claimedDestination: null, path: [], isPartyMember: true, state: 'idle', blockedWaitMs: 0, visitedTiles: [{ x: 4, y: 4 }] }
+    ];
+
+    // Issue group move to (30, 8) in Room B
+    const moveOk = await sim.executePartyBlockMovement(30, 8);
+    assert.ok(moveOk, 'Group move command must succeed');
+
+    const result = await sim.runUntilIdle(500);
+    console.log(`  Split party move completed in ${result.totalTicks} ticks.`);
+
+    const barris = sim.party.find(p => p.id === 'barris')!;
+    assert.ok(barris.visitedTiles.length > 5, 'Barris must have traversed multiple tiles');
+
+    // Assertion 1: ZERO wall tiles visited
+    for (const tile of barris.visitedTiles) {
+      assert.equal(
+        grid[tile.y]?.[tile.x],
+        0,
+        `Barris visited non-walkable tile (${tile.x}, ${tile.y})! Must NEVER glide through walls.`
+      );
+    }
+
+    // Assertion 2: EVERY step transition is strictly an adjacent cardinal step (distance === 1, no teleporting or gliding)
+    for (let k = 1; k < barris.visitedTiles.length; k++) {
+      const prev = barris.visitedTiles[k - 1];
+      const curr = barris.visitedTiles[k];
+      const stepDist = Math.abs(curr.x - prev.x) + Math.abs(curr.y - prev.y);
+      assert.equal(
+        stepDist,
+        1,
+        `Step transition from (${prev.x},${prev.y}) to (${curr.x},${curr.y}) jumped ${stepDist} tiles! Must be exactly 1 cardinal step.`
+      );
+    }
+
+    // Assertion 3: Barris successfully arrived at assigned destination tile
+    const expectedDest = sim.lastHighlightedDestinations[3];
+    assert.equal(barris.gridPos.x, expectedDest.x, `Barris arrived at destination X (${expectedDest.x})`);
+    assert.equal(barris.gridPos.y, expectedDest.y, `Barris arrived at destination Y (${expectedDest.y})`);
+
+    console.log(`  Barris traversed ${barris.visitedTiles.length} steps through doorway (12,10) with 0 wall collisions and 0 jump/glide transitions.`);
+    console.log('✔ Test 7 passed: Out-of-formation split party member realistically pathfound around walls through doorway with zero wall-gliding.\n');
   }
 
   console.log('=== ALL RIGID 2X2 BLOCK MOVEMENT TESTS PASSED SUCCESSFULLY! ===\n');

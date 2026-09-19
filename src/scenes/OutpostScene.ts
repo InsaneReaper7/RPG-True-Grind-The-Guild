@@ -835,10 +835,28 @@ export class OutpostScene extends Phaser.Scene {
         const off = formationOffsets[i] || { x: i % 2, y: Math.floor(i / 2) };
         const unitPath: GridPos[] = anchorPath.map(p => ({ x: p.x + off.x, y: p.y + off.y }));
 
-        if (unit.gridPos.x !== unitPath[0].x || unit.gridPos.y !== unitPath[0].y) {
-          unit.followPath([unit.gridPos, ...unitPath], undefined, destTiles[i]);
-        } else {
+        if (unit.gridPos.x === unitPath[0].x && unit.gridPos.y === unitPath[0].y) {
           unit.followPath(unitPath, undefined, destTiles[i]);
+        } else {
+          // Out of formation (split party / rejoin): route through authentic tile-by-tile pathfinder
+          const outOfFormationObs = [
+            ...dynamicObs,
+            ...destTiles.filter((_, idx) => idx !== i)
+          ];
+          this.pathfinder.findPath(unit.gridPos, destTiles[i], outOfFormationObs).then((uPath) => {
+            if (uPath.length > 0) {
+              unit.followPath(uPath, undefined, destTiles[i]);
+            } else {
+              // Bottleneck/fallback: try pathfinding to rejoin formation slot at startAnchor
+              this.pathfinder.findPath(unit.gridPos, unitPath[0], outOfFormationObs).then((alignPath) => {
+                if (alignPath.length > 0) {
+                  unit.followPath([...alignPath, ...unitPath.slice(1)], undefined, destTiles[i]);
+                } else {
+                  unit.claimedDestination = null;
+                }
+              });
+            }
+          });
         }
       }
     });
@@ -2363,14 +2381,23 @@ export class OutpostScene extends Phaser.Scene {
       let arrived = false;
 
       if (h.unit) {
-        if (h.unit.state === 'downed' || h.unit.state === 'dead') {
-          arrived = true;
-        } else if (h.unit.gridPos.x === h.dest.x && h.unit.gridPos.y === h.dest.y && !h.unit.isMoving()) {
+        const u = h.unit;
+        const hasActivePath = (typeof u.hasActivePath === 'function' ? u.hasActivePath() : false) || u.isMoving();
+        const isInterruptedByCombat = u.inCombat || u.targetEntity !== null || u.state === 'attacking' || u.state === 'chasing';
+        const isRetargeted = u.claimedDestination !== null && (u.claimedDestination.x !== h.dest.x || u.claimedDestination.y !== h.dest.y);
+        const isStoppedWithoutArriving = !hasActivePath && (u.gridPos.x !== h.dest.x || u.gridPos.y !== h.dest.y);
+        const hasArrived = u.gridPos.x === h.dest.x && u.gridPos.y === h.dest.y && !u.isMoving();
+        const isDeadOrDowned = u.state === 'downed' || u.state === 'dead';
+
+        if (isDeadOrDowned || hasArrived || isInterruptedByCombat || isRetargeted || isStoppedWithoutArriving) {
           arrived = true;
         }
       } else {
         const unitAtTile = this.party.find(p => p.gridPos.x === h.dest.x && p.gridPos.y === h.dest.y && !p.isMoving());
-        const anyPartyMoving = this.party.some(p => p.isMoving() || p.claimedDestination !== null);
+        const anyPartyMoving = this.party.some(p => {
+          const hasPath = (typeof p.hasActivePath === 'function' ? p.hasActivePath() : false) || p.isMoving() || p.claimedDestination !== null;
+          return hasPath && !p.inCombat && !p.targetEntity && p.state !== 'attacking' && p.state !== 'chasing';
+        });
         if (unitAtTile || !anyPartyMoving) {
           arrived = true;
         }

@@ -304,6 +304,89 @@ async function runTests() {
 
   console.log('✓ PASS: Destination highlight persisted throughout movement and cleared exactly upon arrival.');
 
+  // -------------------------------------------------------------------------
+  // TEST 2B: Destination Highlight Clears Immediately on Combat Interruption
+  // -------------------------------------------------------------------------
+  console.log('\n--- TEST 2B: Destination Highlight Clears on Combat Interruption ---');
+  testPlayer.gridPos = { x: 0, y: 0 };
+  testPlayer.x = 16;
+  testPlayer.y = 16;
+  testPlayer.inCombat = false;
+  testPlayer.targetEntity = null;
+
+  sceneInstance.showMoveDestinationHighlights([{ x: 8, y: 0 }], [testPlayer]);
+  assert.equal(sceneInstance.activeMoveHighlights.length, 1, 'Highlight should be active for (8, 0)');
+
+  testPlayer.followPath([
+    { x: 1, y: 0 },
+    { x: 2, y: 0 },
+    { x: 3, y: 0 }
+  ]);
+  assert.equal(testPlayer.isMoving(), true, 'Player starts moving');
+
+  // Player engages in combat mid-movement
+  testPlayer.inCombat = true;
+  testPlayer.targetEntity = { id: 'goblin_target', state: 'chasing' } as any;
+
+  sceneInstance.updateMoveDestinationHighlights();
+  assert.equal(
+    sceneInstance.activeMoveHighlights.length,
+    0,
+    'Destination highlight MUST clear immediately when movement is interrupted by combat engagement!'
+  );
+  console.log('✓ PASS: Destination highlight cleared immediately upon combat engagement.');
+
+  // -------------------------------------------------------------------------
+  // TEST 2C: Destination Highlight Clears on Blocked Path / Stop Movement
+  // -------------------------------------------------------------------------
+  console.log('\n--- TEST 2C: Destination Highlight Clears on Path Abandonment / Stop Movement ---');
+  testPlayer.inCombat = false;
+  testPlayer.targetEntity = null;
+  testPlayer.gridPos = { x: 2, y: 0 };
+  testPlayer.x = 2 * 32 + 16;
+
+  sceneInstance.showMoveDestinationHighlights([{ x: 10, y: 0 }], [testPlayer]);
+  assert.equal(sceneInstance.activeMoveHighlights.length, 1, 'Highlight active for (10, 0)');
+
+  testPlayer.followPath([
+    { x: 3, y: 0 },
+    { x: 4, y: 0 }
+  ]);
+  assert.equal(testPlayer.isMoving(), true, 'Player moving toward (10, 0)');
+
+  // Path blocked: stopMovement() called halfway at tile (2, 0)
+  testPlayer.stopMovement();
+  assert.equal(testPlayer.isMoving(), false, 'Player movement halted');
+  assert.notEqual(testPlayer.gridPos.x, 10, 'Player did NOT reach destination');
+
+  sceneInstance.updateMoveDestinationHighlights();
+  assert.equal(
+    sceneInstance.activeMoveHighlights.length,
+    0,
+    'Destination highlight MUST clear when movement is abandoned/halted before arrival!'
+  );
+  console.log('✓ PASS: Destination highlight cleared immediately upon path abandonment/halt.');
+
+  // -------------------------------------------------------------------------
+  // TEST 2D: Destination Highlight Clears on Retargeting (New Destination Issued)
+  // -------------------------------------------------------------------------
+  console.log('\n--- TEST 2D: Destination Highlight Clears on Retargeting ---');
+  testPlayer.gridPos = { x: 0, y: 0 };
+  sceneInstance.showMoveDestinationHighlights([{ x: 15, y: 0 }], [testPlayer]);
+  assert.equal(sceneInstance.activeMoveHighlights[0].dest.x, 15, 'Initial destination is (15, 0)');
+
+  testPlayer.followPath([{ x: 1, y: 0 }]);
+  // User supersedes with a new move command before reaching (15, 0)
+  testPlayer.claimedDestination = { x: 20, y: 5 };
+
+  sceneInstance.updateMoveDestinationHighlights();
+  assert.equal(
+    sceneInstance.activeMoveHighlights.length,
+    0,
+    'Stale destination highlight MUST clear when claimedDestination is retargeted!'
+  );
+  console.log('✓ PASS: Stale destination highlight cleared immediately when retargeted.');
+
   console.log('\n======================================================');
   console.log('ALL QOL UNIT TESTS PASSED SUCCESSFULLY! ✓');
   console.log('======================================================');
