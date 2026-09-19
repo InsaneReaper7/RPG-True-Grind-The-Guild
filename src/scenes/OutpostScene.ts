@@ -198,7 +198,15 @@ export class OutpostScene extends Phaser.Scene {
       this.party.push(hero);
       GameState.getInstance().restoreTo(hero, this.progressionSystem, this.time.now);
     } else {
+      const spawnOffsets = [
+        { x: 0, y: 0 },
+        { x: 1, y: 0 },
+        { x: 0, y: 1 },
+        { x: 1, y: 1 }
+      ];
+      const spawnAnchor = this.findBest2x2Anchor(this.portalPos, this.portalPos);
       const claimedSpawn = new Set<string>();
+
       for (let i = 0; i < partySnapshots.length; i++) {
         const snap = partySnapshots[i];
         const snapWeapon = dataLoader.getWeapon(snap.equippedWeaponId) || startingWeapon;
@@ -207,7 +215,11 @@ export class OutpostScene extends Phaser.Scene {
           this.bindProgressionEvents(memberProg, snap.name || `Companion ${i}`);
         }
         const snapAvatar = snap.avatarTextureKey || (i === 0 ? 'player-avatar' : 'companion-avatar');
-        const spawnTile = this.findOpenAdjacentTile(this.portalPos, undefined, claimedSpawn);
+        const off = spawnOffsets[i] || { x: i % 2, y: Math.floor(i / 2) };
+        let spawnTile = { x: spawnAnchor.x + off.x, y: spawnAnchor.y + off.y };
+        if (this.gridMatrix[spawnTile.y]?.[spawnTile.x] !== 0 || claimedSpawn.has(`${spawnTile.x},${spawnTile.y}`)) {
+          spawnTile = this.findOpenAdjacentTile(this.portalPos, undefined, claimedSpawn);
+        }
         claimedSpawn.add(`${spawnTile.x},${spawnTile.y}`);
 
         const member = new Player(this, spawnTile.x, spawnTile.y, playerData, snapWeapon, this.tileSize, snapAvatar, memberProg);
@@ -653,7 +665,72 @@ export class OutpostScene extends Phaser.Scene {
     console.log('[OutpostScene] Outpost created. Safe zone active. Build Mode enabled.');
   }
 
-  public executePartyConvoyMovement(
+  public findBest2x2Anchor(
+    targetPos: GridPos,
+    preferredNear?: GridPos,
+    claimedTiles?: Set<string>,
+    excludeUnits?: Player[]
+  ): GridPos {
+    const isAnchorCandidateValid = (ax: number, ay: number): boolean => {
+      if (ax <= 0 || ax + 1 >= this.mapWidth - 1 || ay <= 0 || ay + 1 >= this.mapHeight - 1) return false;
+      for (let dy = 0; dy <= 1; dy++) {
+        for (let dx = 0; dx <= 1; dx++) {
+          const tx = ax + dx;
+          const ty = ay + dy;
+          if (this.gridMatrix[ty]?.[tx] !== 0) return false;
+          if (claimedTiles?.has(`${tx},${ty}`)) return false;
+          if (this.party.some(m => (!excludeUnits || !excludeUnits.includes(m)) && (m.state === 'dead' || m.state === 'downed') && m.gridPos.x === tx && m.gridPos.y === ty)) return false;
+        }
+      }
+      return true;
+    };
+
+    const directCandidates: GridPos[] = [
+      { x: targetPos.x, y: targetPos.y },
+      { x: targetPos.x - 1, y: targetPos.y },
+      { x: targetPos.x, y: targetPos.y - 1 },
+      { x: targetPos.x - 1, y: targetPos.y - 1 }
+    ].filter(a => isAnchorCandidateValid(a.x, a.y));
+
+    const near = preferredNear || targetPos;
+
+    if (directCandidates.length > 0) {
+      directCandidates.sort((a, b) => {
+        const distA = Math.hypot(a.x - near.x, a.y - near.y);
+        const distB = Math.hypot(b.x - near.x, b.y - near.y);
+        return distA - distB;
+      });
+      return directCandidates[0];
+    }
+
+    const radialCandidates: GridPos[] = [];
+    for (let r = 1; r <= 8; r++) {
+      for (let dx = -r; dx <= r; dx++) {
+        for (let dy = -r; dy <= r; dy++) {
+          if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
+          const ax = targetPos.x + dx;
+          const ay = targetPos.y + dy;
+          if (isAnchorCandidateValid(ax, ay)) {
+            radialCandidates.push({ x: ax, y: ay });
+          }
+        }
+      }
+      if (radialCandidates.length > 0) break;
+    }
+
+    if (radialCandidates.length > 0) {
+      radialCandidates.sort((a, b) => {
+        const distA = Math.hypot(a.x - targetPos.x, a.y - targetPos.y) * 2 + Math.hypot(a.x - near.x, a.y - near.y);
+        const distB = Math.hypot(b.x - targetPos.x, b.y - targetPos.y) * 2 + Math.hypot(b.x - near.x, b.y - near.y);
+        return distA - distB;
+      });
+      return radialCandidates[0];
+    }
+
+    return targetPos;
+  }
+
+  public executePartyBlockMovement(
     clickedTileX: number,
     clickedTileY: number,
     claimed: Set<string>
@@ -661,20 +738,8 @@ export class OutpostScene extends Phaser.Scene {
     const leader = this.player;
     if (!leader || leader.state === 'dead' || leader.state === 'downed') return;
 
-    const isTileBlockedForMove = (tx: number, ty: number, forEntity: Entity): boolean => {
-      if (tx <= 0 || tx >= this.mapWidth - 1 || ty <= 0 || ty >= this.mapHeight - 1) return true;
-      if (this.gridMatrix[ty]?.[tx] !== 0) return true;
-      if (claimed.has(`${tx},${ty}`)) return true;
-      if (this.party.some(m => m !== forEntity && (m.state === 'dead' || m.state === 'downed') && m.gridPos.x === tx && m.gridPos.y === ty)) return true;
-      return false;
-    };
-
-    let leaderDest: GridPos = { x: clickedTileX, y: clickedTileY };
-    if (isTileBlockedForMove(clickedTileX, clickedTileY, leader)) {
-      leaderDest = this.findNearestOpenTileForPartyMove({ x: clickedTileX, y: clickedTileY }, leader.gridPos, claimed, leader);
-    }
-    claimed.add(`${leaderDest.x},${leaderDest.y}`);
-    leader.claimedDestination = { ...leaderDest };
+    const movingUnits = this.party.filter(m => m.state !== 'dead' && m.state !== 'downed');
+    if (movingUnits.length === 0) return;
 
     const formationOffsets = [
       { x: 0, y: 0 },
@@ -683,128 +748,108 @@ export class OutpostScene extends Phaser.Scene {
       { x: 1, y: 1 }
     ];
 
-    const moveDestinations: GridPos[] = [leaderDest];
-    const companionSlots: { companion: Player; idealPos: GridPos; tentativeDest: GridPos }[] = [];
+    if (movingUnits.length === 1) {
+      let leaderDest: GridPos = { x: clickedTileX, y: clickedTileY };
+      if (this.gridMatrix[leaderDest.y]?.[leaderDest.x] !== 0 || claimed.has(`${leaderDest.x},${leaderDest.y}`)) {
+        leaderDest = this.findNearestOpenTileForPartyMove({ x: clickedTileX, y: clickedTileY }, leader.gridPos, claimed, leader);
+      }
+      claimed.add(`${leaderDest.x},${leaderDest.y}`);
+      leader.claimedDestination = { ...leaderDest };
+      this.showMoveDestinationHighlights([leaderDest], [leader]);
 
-    for (let i = 1; i < this.party.length; i++) {
-      const companion = this.party[i];
-      if (companion.state === 'downed' || companion.state === 'dead') continue;
-
-      const offset = formationOffsets[i] || { x: i % 2, y: Math.floor(i / 2) };
-      const idealPos: GridPos = { x: leaderDest.x + offset.x, y: leaderDest.y + offset.y };
-      const compDest = this.findNearestOpenTileForPartyMove(idealPos, companion.gridPos, claimed, companion);
-      claimed.add(`${compDest.x},${compDest.y}`);
-      companion.claimedDestination = { ...compDest };
-      moveDestinations.push(compDest);
-      companionSlots.push({ companion, idealPos, tentativeDest: compDest });
+      const dynamicObs = this.getDynamicObstacles(leader);
+      this.pathfinder.findPath(leader.gridPos, leaderDest, dynamicObs).then((path) => {
+        if (path.length === 0) {
+          leader.claimedDestination = null;
+          this.clearMoveDestinationHighlights();
+          return;
+        }
+        leader.followPath(path, undefined, leaderDest);
+      });
+      return;
     }
 
-    const movingUnits: Player[] = [leader, ...companionSlots.map(s => s.companion)];
-    this.showMoveDestinationHighlights(moveDestinations, movingUnits);
+    // 1. Determine destination 2x2 anchor
+    const destAnchor = this.findBest2x2Anchor({ x: clickedTileX, y: clickedTileY }, leader.gridPos, claimed, movingUnits);
 
-    const dynamicObs = this.getDynamicObstacles(leader).filter(
-      obs => !this.party.some(m => m.gridPos.x === obs.x && m.gridPos.y === obs.y)
+    const destTiles: GridPos[] = [];
+    for (let i = 0; i < movingUnits.length; i++) {
+      const off = formationOffsets[i] || { x: i % 2, y: Math.floor(i / 2) };
+      const tile = { x: destAnchor.x + off.x, y: destAnchor.y + off.y };
+      destTiles.push(tile);
+      claimed.add(`${tile.x},${tile.y}`);
+      movingUnits[i].claimedDestination = { ...tile };
+    }
+
+    this.showMoveDestinationHighlights(destTiles, movingUnits);
+
+    const dynamicObs = this.getDynamicObstacles().filter(
+      obs => !movingUnits.some(m => m.gridPos.x === obs.x && m.gridPos.y === obs.y)
     );
 
-    this.pathfinder.findPath(leader.gridPos, leaderDest, dynamicObs).then((path) => {
-      if (path.length === 0) {
-        leader.claimedDestination = null;
-        for (const slot of companionSlots) {
-          slot.companion.claimedDestination = null;
-        }
-        this.clearMoveDestinationHighlights();
+    let startAnchor: GridPos = { x: leader.gridPos.x, y: leader.gridPos.y };
+    if (!this.pathfinder.is2x2Walkable(startAnchor.x, startAnchor.y)) {
+      startAnchor = this.findBest2x2Anchor(leader.gridPos, leader.gridPos, undefined, movingUnits);
+    }
+
+    this.pathfinder.find2x2Path(startAnchor, destAnchor, dynamicObs).then((anchorPath) => {
+      if (anchorPath.length === 0) {
+        // Fallback: single-file compression through 1-tile pinch point (e.g. outpost doors)
+        this.pathfinder.findPath(leader.gridPos, destTiles[0], dynamicObs).then((fallbackPath) => {
+          if (fallbackPath.length === 0) {
+            for (const m of movingUnits) {
+              m.claimedDestination = null;
+            }
+            this.clearMoveDestinationHighlights();
+            return;
+          }
+          for (let i = 0; i < movingUnits.length; i++) {
+            const unit = movingUnits[i];
+            const targetTile = destTiles[i];
+            this.pathfinder.findPath(unit.gridPos, targetTile, dynamicObs).then((uPath) => {
+              if (uPath.length > 0) {
+                unit.followPath(uPath, undefined, targetTile);
+              } else {
+                unit.claimedDestination = null;
+              }
+            });
+          }
+        });
         return;
       }
 
-      leader.followPath(path);
+      // Lockstep 2x2 movement
+      const dirX = anchorPath.length > 1 ? anchorPath[1].x - anchorPath[0].x : 0;
+      const dirY = anchorPath.length > 1 ? anchorPath[1].y - anchorPath[0].y : 0;
+      const launchOrder = movingUnits.map((_, idx) => idx);
+      launchOrder.sort((a, b) => {
+        const offA = formationOffsets[a] || { x: a % 2, y: Math.floor(a / 2) };
+        const offB = formationOffsets[b] || { x: b % 2, y: Math.floor(b / 2) };
+        const scoreA = offA.x * dirX + offA.y * dirY;
+        const scoreB = offB.x * dirX + offB.y * dirY;
+        return scoreB - scoreA;
+      });
 
-      for (const slot of companionSlots) {
-        this.dispatchCompanionInConvoy(slot.companion, path, slot.idealPos, slot.tentativeDest);
+      for (const i of launchOrder) {
+        const unit = movingUnits[i];
+        const off = formationOffsets[i] || { x: i % 2, y: Math.floor(i / 2) };
+        const unitPath: GridPos[] = anchorPath.map(p => ({ x: p.x + off.x, y: p.y + off.y }));
+
+        if (unit.gridPos.x !== unitPath[0].x || unit.gridPos.y !== unitPath[0].y) {
+          unit.followPath([unit.gridPos, ...unitPath], undefined, destTiles[i]);
+        } else {
+          unit.followPath(unitPath, undefined, destTiles[i]);
+        }
       }
     });
   }
 
-  public dispatchCompanionInConvoy(
-    companion: Player,
-    sharedPath: GridPos[],
-    idealPos: GridPos,
-    tentativeDest?: GridPos
+  public executePartyConvoyMovement(
+    clickedTileX: number,
+    clickedTileY: number,
+    claimed: Set<string>
   ): void {
-    if (companion.state === 'dead' || companion.state === 'downed') return;
-
-    const onPathIdx = sharedPath.findIndex(p => p.x === companion.gridPos.x && p.y === companion.gridPos.y);
-
-    let joinSteps: GridPos[] = [];
-    let startPIdx = 0;
-
-    if (onPathIdx >= 0) {
-      startPIdx = onPathIdx + 1;
-    } else {
-      const p0 = sharedPath[0];
-      const p1 = sharedPath.length > 1 ? sharedPath[1] : undefined;
-
-      const isAdjacentToP0 = Math.abs(companion.gridPos.x - p0.x) + Math.abs(companion.gridPos.y - p0.y) === 1;
-      const isAdjacentToP1 = p1 !== undefined && (Math.abs(companion.gridPos.x - p1.x) + Math.abs(companion.gridPos.y - p1.y) === 1);
-
-      if (isAdjacentToP0) {
-        joinSteps = [{ x: p0.x, y: p0.y }];
-        startPIdx = 1;
-      } else if (isAdjacentToP1 && p1) {
-        joinSteps = [{ x: p1.x, y: p1.y }];
-        startPIdx = 2;
-      } else {
-        joinSteps = [{ x: p0.x, y: p0.y }];
-        startPIdx = 1;
-      }
-    }
-
-    const endPIdx = Math.max(startPIdx - 1, sharedPath.length - 2);
-    const sharedSegment = (startPIdx <= endPIdx) ? sharedPath.slice(startPIdx, endPIdx + 1) : [];
-
-    const rawConvoyPath = [...joinSteps, ...sharedSegment];
-    const convoyPath: GridPos[] = [];
-    for (const step of rawConvoyPath) {
-      if (step.x === companion.gridPos.x && step.y === companion.gridPos.y) continue;
-      if (convoyPath.length > 0 && convoyPath[convoyPath.length - 1].x === step.x && convoyPath[convoyPath.length - 1].y === step.y) continue;
-      convoyPath.push(step);
-    }
-
-    const onArrivalAtDestinationArea = () => {
-      if (companion.state === 'dead' || companion.state === 'downed') return;
-
-      const claimed = new Set<string>();
-      for (const m of this.party) {
-        if (m !== companion && m.state !== 'dead' && m.state !== 'downed') {
-          claimed.add(`${m.gridPos.x},${m.gridPos.y}`);
-          if (m.claimedDestination) {
-            claimed.add(`${m.claimedDestination.x},${m.claimedDestination.y}`);
-          }
-        }
-      }
-
-      const finalSlot = this.findNearestOpenTileForPartyMove(idealPos, companion.gridPos, claimed, companion);
-      claimed.add(`${finalSlot.x},${finalSlot.y}`);
-      companion.claimedDestination = { ...finalSlot };
-
-      if (companion.gridPos.x !== finalSlot.x || companion.gridPos.y !== finalSlot.y) {
-        const compDynamicObs = this.getDynamicObstacles(companion).filter(
-          obs => !this.party.some(m => m.gridPos.x === obs.x && m.gridPos.y === obs.y)
-        );
-        this.pathfinder.findPath(companion.gridPos, finalSlot, compDynamicObs).then((spreadPath) => {
-          if (spreadPath.length > 0) {
-            companion.followPath(spreadPath, undefined, finalSlot);
-          } else {
-            companion.claimedDestination = null;
-          }
-        });
-      }
-    };
-
-    if (convoyPath.length > 0) {
-      companion.followPath(convoyPath, onArrivalAtDestinationArea, tentativeDest);
-    } else {
-      onArrivalAtDestinationArea();
-    }
+    this.executePartyBlockMovement(clickedTileX, clickedTileY, claimed);
   }
 
   public getLivingUnits(excludeEntity?: Entity): Entity[] {
@@ -999,8 +1044,22 @@ export class OutpostScene extends Phaser.Scene {
     const companionId = `companion_${companionIndex}`;
     const companionName = companionIndex === 1 ? 'Valerie' : companionIndex === 2 ? 'Kaelen' : 'Barris';
 
-    // Find adjacent walkable unoccupied tile near leader
-    const spawnTile = this.findOpenAdjacentTile(this.player.gridPos);
+    // Find adjacent walkable unoccupied tile near leader in 2x2 formation
+    const offsets = [
+      { x: 0, y: 0 },
+      { x: 1, y: 0 },
+      { x: 0, y: 1 },
+      { x: 1, y: 1 }
+    ];
+    let spawnTile: GridPos;
+    const off = offsets[companionIndex] || { x: companionIndex % 2, y: Math.floor(companionIndex / 2) };
+    const candidateX = this.player.gridPos.x + off.x;
+    const candidateY = this.player.gridPos.y + off.y;
+    if (this.gridMatrix[candidateY]?.[candidateX] === 0 && !this.isTileOccupied(candidateX, candidateY)) {
+      spawnTile = { x: candidateX, y: candidateY };
+    } else {
+      spawnTile = this.findOpenAdjacentTile(this.player.gridPos);
+    }
     const spawnX = spawnTile.x;
     const spawnY = spawnTile.y;
 
@@ -1972,7 +2031,24 @@ export class OutpostScene extends Phaser.Scene {
 
     GameState.getInstance().updateClock(delta);
     this.updateAllGardeningVisuals();
-    for (const member of this.party) {
+    // Update Entities (leading edge units updated first when moving to prevent temporary claim/pos collisions)
+    let partyUpdateList = this.party;
+    const movingLeader = this.party.find(p => p.isMoving());
+    if (movingLeader) {
+      const nextTile = movingLeader.getNextPathTile();
+      if (nextTile) {
+        const dirX = nextTile.x - movingLeader.gridPos.x;
+        const dirY = nextTile.y - movingLeader.gridPos.y;
+        if (dirX !== 0 || dirY !== 0) {
+          partyUpdateList = [...this.party].sort((a, b) => {
+            const scoreA = a.gridPos.x * dirX + a.gridPos.y * dirY;
+            const scoreB = b.gridPos.x * dirX + b.gridPos.y * dirY;
+            return scoreB - scoreA;
+          });
+        }
+      }
+    }
+    for (const member of partyUpdateList) {
       member.update(time, delta);
     }
     this.updateMoveDestinationHighlights();
@@ -2287,15 +2363,7 @@ export class OutpostScene extends Phaser.Scene {
       let arrived = false;
 
       if (h.unit) {
-        // Keep destination synced if companion adjusted to final formation spread slot
-        if (h.unit.claimedDestination && (h.dest.x !== h.unit.claimedDestination.x || h.dest.y !== h.unit.claimedDestination.y)) {
-          h.dest = { x: h.unit.claimedDestination.x, y: h.unit.claimedDestination.y };
-          changed = true;
-        }
-
         if (h.unit.state === 'downed' || h.unit.state === 'dead') {
-          arrived = true;
-        } else if (!h.unit.isMoving() && h.unit.claimedDestination === null) {
           arrived = true;
         } else if (h.unit.gridPos.x === h.dest.x && h.unit.gridPos.y === h.dest.y && !h.unit.isMoving()) {
           arrived = true;

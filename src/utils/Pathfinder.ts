@@ -3,13 +3,16 @@ import type { GridPos, DynamicObstaclesConfig } from '../types/game';
 
 export class Pathfinder {
   private gridMatrix: number[][];
+  private gridMatrix2x2: number[][];
   private easystar: EasyStar.js;
+  private easystar2x2: EasyStar.js;
   private gridWidth: number;
   private gridHeight: number;
 
   constructor(gridMatrix: number[][]) {
     this.gridMatrix = gridMatrix;
     this.easystar = new EasyStar.js();
+    this.easystar2x2 = new EasyStar.js();
     this.gridHeight = gridMatrix.length;
     this.gridWidth = gridMatrix[0].length;
 
@@ -17,6 +20,35 @@ export class Pathfinder {
     this.easystar.setAcceptableTiles([0]); // 0 = walkable, 1 = obstacle
     this.easystar.disableDiagonals();
     this.easystar.enableSync();
+
+    this.gridMatrix2x2 = this.build2x2Grid(gridMatrix);
+    this.easystar2x2.setGrid(this.gridMatrix2x2);
+    this.easystar2x2.setAcceptableTiles([0]);
+    this.easystar2x2.disableDiagonals();
+    this.easystar2x2.enableSync();
+  }
+
+  private build2x2Grid(grid: number[][]): number[][] {
+    const h = grid.length;
+    const w = grid[0].length;
+    const g2: number[][] = [];
+    for (let y = 0; y < h; y++) {
+      const row: number[] = new Array(w).fill(1);
+      for (let x = 0; x < w; x++) {
+        if (x + 1 < w && y + 1 < h) {
+          if (
+            grid[y][x] === 0 &&
+            grid[y][x + 1] === 0 &&
+            grid[y + 1][x] === 0 &&
+            grid[y + 1][x + 1] === 0
+          ) {
+            row[x] = 0;
+          }
+        }
+      }
+      g2.push(row);
+    }
+    return g2;
   }
 
   public updateGrid(newGridMatrix: number[][]): void {
@@ -24,6 +56,19 @@ export class Pathfinder {
     this.gridHeight = newGridMatrix.length;
     this.gridWidth = newGridMatrix[0].length;
     this.easystar.setGrid(newGridMatrix);
+
+    this.gridMatrix2x2 = this.build2x2Grid(newGridMatrix);
+    this.easystar2x2.setGrid(this.gridMatrix2x2);
+  }
+
+  public is2x2Walkable(x: number, y: number): boolean {
+    if (x < 0 || x + 1 >= this.gridWidth || y < 0 || y + 1 >= this.gridHeight) return false;
+    return (
+      this.gridMatrix[y][x] === 0 &&
+      this.gridMatrix[y][x + 1] === 0 &&
+      this.gridMatrix[y + 1][x] === 0 &&
+      this.gridMatrix[y + 1][x + 1] === 0
+    );
   }
 
   public isObstacle(x: number, y: number): boolean {
@@ -176,6 +221,118 @@ export class Pathfinder {
 
         if (hardList.length > 0) {
           this.easystar.stopAvoidingAllAdditionalPoints();
+        }
+      }
+
+      resolve(returnedPath);
+    });
+  }
+
+  public find2x2Path(
+    start: GridPos,
+    end: GridPos,
+    dynamicObstacles?: GridPos[] | DynamicObstaclesConfig,
+    hardObstacles?: GridPos[]
+  ): Promise<GridPos[]> {
+    return new Promise((resolve) => {
+      // Validate boundaries (start and end anchors must be valid 2x2 anchors within bounds)
+      if (
+        start.x < 0 ||
+        start.x + 1 >= this.gridWidth ||
+        start.y < 0 ||
+        start.y + 1 >= this.gridHeight ||
+        end.x < 0 ||
+        end.x + 1 >= this.gridWidth ||
+        end.y < 0 ||
+        end.y + 1 >= this.gridHeight
+      ) {
+        resolve([]);
+        return;
+      }
+
+      let softList: GridPos[] = [];
+      let hardList: GridPos[] = [];
+
+      if (Array.isArray(dynamicObstacles)) {
+        softList = dynamicObstacles;
+        if (hardObstacles) {
+          hardList = hardObstacles;
+        }
+      } else if (dynamicObstacles && typeof dynamicObstacles === 'object') {
+        softList = dynamicObstacles.soft || [];
+        hardList = dynamicObstacles.hard || [];
+      } else if (hardObstacles) {
+        hardList = hardObstacles;
+      }
+
+      // In 2x2 space, an obstacle at (ox, oy) blocks 4 anchor positions:
+      // (ox, oy), (ox - 1, oy), (ox, oy - 1), (ox - 1, oy - 1)
+      const get2x2AvoidAnchors = (obstacles: GridPos[]): GridPos[] => {
+        const anchors: GridPos[] = [];
+        const seen = new Set<string>();
+        for (const obs of obstacles) {
+          const candidateAnchors = [
+            { x: obs.x, y: obs.y },
+            { x: obs.x - 1, y: obs.y },
+            { x: obs.x, y: obs.y - 1 },
+            { x: obs.x - 1, y: obs.y - 1 }
+          ];
+          for (const ca of candidateAnchors) {
+            if (ca.x >= 0 && ca.x + 1 < this.gridWidth && ca.y >= 0 && ca.y + 1 < this.gridHeight) {
+              const key = `${ca.x},${ca.y}`;
+              if (!seen.has(key)) {
+                seen.add(key);
+                anchors.push(ca);
+              }
+            }
+          }
+        }
+        return anchors;
+      };
+
+      const hardAnchors = get2x2AvoidAnchors(hardList);
+      const softAnchors = get2x2AvoidAnchors(softList);
+
+      const apply2x2ObstacleList = (anchors: GridPos[]) => {
+        for (const a of anchors) {
+          // Do not mark start or destination anchor as avoided point
+          if ((a.x !== start.x || a.y !== start.y) && (a.x !== end.x || a.y !== end.y)) {
+            this.easystar2x2.avoidAdditionalPoint(a.x, a.y);
+          }
+        }
+      };
+
+      // 1. Primary Pass: avoid both hard (enemies) and soft (friendly units) obstacles
+      if (hardAnchors.length > 0) apply2x2ObstacleList(hardAnchors);
+      if (softAnchors.length > 0) apply2x2ObstacleList(softAnchors);
+
+      let returnedPath: GridPos[] = [];
+      this.easystar2x2.findPath(start.x, start.y, end.x, end.y, (path) => {
+        if (path !== null) {
+          returnedPath = path.map((p) => ({ x: p.x, y: p.y }));
+        }
+      });
+      this.easystar2x2.calculate();
+
+      this.easystar2x2.stopAvoidingAllAdditionalPoints();
+
+      // 2. Corridor Bottleneck Fallback:
+      // If path was blocked and there were soft obstacles, recalculate with soft obstacles relaxed,
+      // BUT with hard obstacles (living enemies) STILL STRICTLY AVOIDED!
+      if (returnedPath.length === 0 && softAnchors.length > 0) {
+        if (hardAnchors.length > 0) {
+          apply2x2ObstacleList(hardAnchors);
+        }
+
+        this.easystar2x2.findPath(start.x, start.y, end.x, end.y, (path) => {
+          if (path !== null) {
+            returnedPath = path.map((p) => ({ x: p.x, y: p.y }));
+          }
+        });
+        this.easystar2x2.calculate();
+
+        if (hardAnchors.length > 0) {
+          this.easystar2x2.stopAvoidingAllAdditionalPoints();
         }
       }
 

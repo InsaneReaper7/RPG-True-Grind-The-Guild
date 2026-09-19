@@ -121,6 +121,16 @@ export class Entity extends Phaser.GameObjects.Container {
     return this.path.length > 0 || this.targetWorldPos !== null;
   }
 
+  public getNextPathTile(): GridPos | null {
+    if (this.targetWorldPos) {
+      return {
+        x: Math.floor(this.targetWorldPos.x / this.tileSize),
+        y: Math.floor(this.targetWorldPos.y / this.tileSize)
+      };
+    }
+    return this.path.length > 0 ? this.path[0] : null;
+  }
+
   public followPath(path: GridPos[], onComplete?: () => void, targetDestination?: GridPos): void {
     if (this.state === 'downed' || this.state === 'dead') return;
 
@@ -175,10 +185,24 @@ export class Entity extends Phaser.GameObjects.Container {
 
     const nextTile = this.path[0];
     const scene = this.scene as any;
-    // Dynamic anti-stack check: Never enter a tile currently occupied by another living unit!
+    // Dynamic anti-stack check: Never enter a tile occupied by enemies, stationary units, or units claiming the same tile
     if (scene && typeof scene.isTileOccupied === 'function' && scene.isTileOccupied(nextTile.x, nextTile.y, this)) {
-      // Tile occupied by another entity: yield this tick and hold position until tile is free
-      return;
+      const blockingUnit = (typeof scene.getUnitAtTile === 'function')
+        ? scene.getUnitAtTile(nextTile.x, nextTile.y, this)
+        : undefined;
+
+      const isMovingAlly = blockingUnit &&
+        this.isPartyMember &&
+        blockingUnit.isPartyMember &&
+        blockingUnit.isMoving() &&
+        (blockingUnit.claimedDestination === null ||
+          blockingUnit.claimedDestination.x !== this.claimedDestination?.x ||
+          blockingUnit.claimedDestination.y !== this.claimedDestination?.y);
+
+      if (!isMovingAlly) {
+        // Tile occupied by obstacle or stationary entity: yield this tick
+        return;
+      }
     }
 
     this.blockedWaitMs = 0;
