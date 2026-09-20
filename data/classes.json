@@ -240,6 +240,18 @@
       }
     },
     {
+      "id": "cultist",
+      "name": "Cultist",
+      "tier": "novice",
+      "requirements": [
+        { "type": "proficiency", "target": "dark_magic", "value": 10 }
+      ],
+      "fantasy": "Recently indoctrinated",
+      "hiddenSkillBonuses": {
+        "mana_regen": 0.05
+      }
+    },
+    {
       "id": "dark_knight",
       "name": "Dark Knight",
       "tier": "expert",
@@ -248,7 +260,53 @@
         { "type": "proficiency", "target": "dark_magic", "value": 30 },
         { "type": "classLevel", "target": "vanguard", "value": 15 }
       ],
-      "fantasy": "Warrior empowered by darkness"
+      "fantasy": "Warrior empowered by darkness",
+      "hiddenSkillBonuses": {
+        "parry": 0.05,
+        "resilience": 0.05
+      },
+      "passiveImbuement": {
+        "bonusDamagePercent": 0.10,
+        "proc": {
+          "statusEffectId": "curse",
+          "baseChance": 0.05,
+          "maxChance": 0.50,
+          "scalingStat": "classLevel",
+          "minLevel": 1,
+          "maxLevel": 100
+        },
+        "secondaryExp": {
+          "proficiency": "dark_magic",
+          "exp": 1,
+          "share": 0.5
+        }
+      }
+    },
+    {
+      "id": "lancer",
+      "name": "Lancer",
+      "tier": "novice",
+      "requirements": [
+        { "type": "proficiency", "target": "spears", "value": 10 }
+      ],
+      "fantasy": "Spear specialist mastering reach and precision thrusts",
+      "hiddenSkillBonuses": {
+        "counterattack": 0.05
+      }
+    },
+    {
+      "id": "hoplite",
+      "name": "Hoplite",
+      "tier": "adept",
+      "requirements": [
+        { "type": "proficiency", "target": "spears", "value": 30 },
+        { "type": "proficiency", "target": "shields", "value": 10 }
+      ],
+      "fantasy": "Spear and shield defensive phalanx warrior",
+      "hiddenSkillBonuses": {
+        "block": 0.05,
+        "parry": 0.05
+      }
     }
   ]
 }

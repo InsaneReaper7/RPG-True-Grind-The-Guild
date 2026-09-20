@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import type { GridPos, EntityState, StatusEffectDef, ActiveStatusEffect } from '../types/game.ts';
+import { GameState } from '../systems/GameState.ts';
 
 export class Entity extends Phaser.GameObjects.Container {
   public gridPos: GridPos;
@@ -224,6 +225,11 @@ export class Entity extends Phaser.GameObjects.Container {
     if (this.state === 'downed' || this.state === 'dead') return false;
 
     let damageRemaining = amount;
+    const exposeEffect = this.activeStatusEffects.get('expose');
+    if (exposeEffect) {
+      const amp = exposeEffect.def?.damageAmplificationPercent ?? 0.25;
+      damageRemaining *= (1 + amp);
+    }
     if (damageRemaining > 0) {
       for (const [effectId, activeEffect] of this.activeStatusEffects.entries()) {
         if (activeEffect.shieldHp !== undefined && activeEffect.shieldHp > 0) {
@@ -314,6 +320,8 @@ export class Entity extends Phaser.GameObjects.Container {
 
   public applyStatusEffect(effectDef: StatusEffectDef): void {
     if (this.state === 'downed' || this.state === 'dead') return;
+
+    GameState.getInstance().discoverStatusEffect(effectDef.id);
 
     this.activeStatusEffects.set(effectDef.id, {
       def: effectDef,
@@ -473,6 +481,28 @@ export class Entity extends Phaser.GameObjects.Container {
       if (this.statusIconSprite) {
         if (this.scene?.textures?.exists('slow-icon')) {
           this.statusIconSprite.setTexture('slow-icon');
+        }
+        this.statusIconSprite.setVisible(true);
+      }
+    } else if (this.activeStatusEffects.has('expose')) {
+      this.avatarSprite.setTint(0xe11d48);
+      if (this.statusIconSprite) this.statusIconSprite.setVisible(false);
+    } else if (this.activeStatusEffects.has('evasive_roll')) {
+      this.avatarSprite.setTint(0x38bdf8);
+      if (this.statusIconSprite) this.statusIconSprite.setVisible(false);
+    } else if (this.activeStatusEffects.has('curse')) {
+      this.avatarSprite.setTint(0xa855f7);
+      if (this.statusIconSprite) {
+        if (this.scene?.textures?.exists('curse-icon')) {
+          this.statusIconSprite.setTexture('curse-icon');
+        }
+        this.statusIconSprite.setVisible(true);
+      }
+    } else if (this.activeStatusEffects.has('blind')) {
+      this.avatarSprite.setTint(0x4c1d95);
+      if (this.statusIconSprite) {
+        if (this.scene?.textures?.exists('blind-icon')) {
+          this.statusIconSprite.setTexture('blind-icon');
         }
         this.statusIconSprite.setVisible(true);
       }

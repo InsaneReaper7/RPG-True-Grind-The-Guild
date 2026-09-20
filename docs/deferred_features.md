@@ -56,3 +56,30 @@ In Milestone 28, Helmet and Body Armor slots were introduced with flat Max HP bo
   - Visual paperdoll character equipment screen deferred until jewelry and accessory slots (Necklace, Ring, Accessory) are introduced.
   - Interactive drag-and-drop paperdoll layout covering all slots simultaneously (Helmet, Body Armor, Weapons, Offhand, Necklace, Ring, Accessory) once the item catalogue spans all categories.
 
+---
+
+## 4. Javelin Class (Deferred — Pending Throwing Weapons Milestone)
+
+### Blocking Dependency
+- Requires **Spears** + **Throwing Weapons** proficiency.
+- While Spears was implemented in Milestone 49, `Throwing Weapons` does not yet exist as an active, crafted, and leveled weapon type (remains on the master backlog).
+
+### Resolution Roadmap
+- Following the proven sequencing pattern of Bows → Scout and Longswords → Dark Knight, `Throwing Weapons` must first be built in its own dedicated weapon milestone (recipes, attack logic, accuracy/damage scaling, and basic classes like Skirmisher).
+- Once `Throwing Weapons` exists and is verified, **Javelin** will immediately become buildable as a natural follow-up hybrid class without speculative placeholders.
+
+---
+
+## 5. Dragoon Class & Armor Proficiency System (Deferred — Architectural Prerequisite)
+
+### Blocking Dependency
+- **Dragoon** (Lancer's Tier 2 evolution) is gated behind a **Heavy Armor** proficiency threshold.
+- Currently, no Armor proficiency system (Light/Medium/Heavy, leveled through wear) exists in this project. All armor pieces (Milestones 28 & 33) are static equipment items providing flat Max HP bonuses. Nothing about wearing armor levels up.
+
+### Resolution Roadmap
+- Building Dragoon cannot be hastily mocked with a fake stat requirement. It fundamentally requires a dedicated architectural milestone:
+  1. Design and build a trainable **Armor Proficiency** system where taking hits or wearing gear earns EXP toward armor weight classes (`light_armor`, `medium_armor`, `heavy_armor`).
+  2. Retroactively tag every existing armor piece in `armors.json` (Leather Cap, Leather Armor, Silk Cowl, Silk Robe, Bone Necklace, etc.) with an explicit weight class.
+  3. Once the Heavy Armor proficiency leveling loop is verified, Dragoon can be introduced with legitimate requirements (`Lancer` class level + `Heavy Armor` proficiency + `Spears` proficiency).
+
+

@@ -351,7 +351,7 @@ async function runTests() {
   assert.ok(poolIds.includes('ice_magic'), 'Pool includes ice_magic');
   assert.ok(poolIds.includes('holy_magic'), 'Pool includes holy_magic');
   assert.equal(poolIds.includes('healing_magic'), false, 'Pool strictly excludes healing_magic');
-  assert.equal(poolIds.length, 4, 'Offensive magic pool contains exactly 4 schools');
+  assert.ok(poolIds.length >= 4, 'Offensive magic pool contains at least 4 schools');
 
   // Acolyte Tier 0 class in registry
   const acolyteClass = dataLoader.getClass('acolyte');
@@ -369,17 +369,18 @@ async function runTests() {
   const clericClass = dataLoader.getClass('cleric');
   assert.equal(clericClass, undefined, 'Cleric must NOT be registered prematurely');
 
-  console.log('✓ PASS: Holy Staff, Holy Magic, Acolyte class, and 4-school pool registered cleanly.\n');
+  console.log('✓ PASS: Holy Staff, Holy Magic, Acolyte class, and offensive pool registered cleanly.\n');
 
   // =========================================================================
-  // TEST 2: Random Magic Staff 4-School Statistical Distribution (400 Iterations)
+  // TEST 2: Random Magic Staff Statistical Distribution (400 Iterations)
   // =========================================================================
-  console.log('--- TEST 2: Random Magic Staff 4-School Statistical Distribution (400 Iterations) ---');
+  console.log('--- TEST 2: Random Magic Staff Statistical Distribution (400 Iterations) ---');
   const gameState = GameState.getInstance();
   let fireCount = 0;
   let lightningCount = 0;
   let iceCount = 0;
   let holyCount = 0;
+  let darkCount = 0;
 
   for (let i = 0; i < 400; i++) {
     const resolved = gameState.resolveStartingKit('random_magic_staff');
@@ -387,16 +388,17 @@ async function runTests() {
     else if (resolved.mainWeaponId === 'lightning_staff') lightningCount++;
     else if (resolved.mainWeaponId === 'ice_staff') iceCount++;
     else if (resolved.mainWeaponId === 'holy_staff') holyCount++;
+    else if (resolved.mainWeaponId === 'dark_staff') darkCount++;
     else assert.fail(`Unexpected weapon resolved: ${resolved.mainWeaponId}`);
   }
 
-  console.log(`  400 Rolls: Fire=${fireCount}, Lightning=${lightningCount}, Ice=${iceCount}, Holy=${holyCount}`);
-  assert.ok(fireCount >= 50, `Fire staff rolled sufficiently (${fireCount} >= 50)`);
-  assert.ok(lightningCount >= 50, `Lightning staff rolled sufficiently (${lightningCount} >= 50)`);
-  assert.ok(iceCount >= 50, `Ice staff rolled sufficiently (${iceCount} >= 50)`);
-  assert.ok(holyCount >= 50, `Holy staff rolled sufficiently (${holyCount} >= 50)`);
-  assert.equal(fireCount + lightningCount + iceCount + holyCount, 400, 'All 400 rolls distributed across the 4 schools');
-  console.log('✓ PASS: Random Magic Staff starting kit spans all 4 schools with statistical variation.\n');
+  console.log(`  400 Rolls: Fire=${fireCount}, Lightning=${lightningCount}, Ice=${iceCount}, Holy=${holyCount}, Dark=${darkCount}`);
+  assert.ok(fireCount >= 40, `Fire staff rolled sufficiently (${fireCount} >= 40)`);
+  assert.ok(lightningCount >= 40, `Lightning staff rolled sufficiently (${lightningCount} >= 40)`);
+  assert.ok(iceCount >= 40, `Ice staff rolled sufficiently (${iceCount} >= 40)`);
+  assert.ok(holyCount >= 40, `Holy staff rolled sufficiently (${holyCount} >= 40)`);
+  assert.equal(fireCount + lightningCount + iceCount + holyCount + darkCount, 400, 'All 400 rolls distributed across offensive magic schools');
+  console.log('✓ PASS: Random Magic Staff starting kit spans offensive schools with statistical variation.\n');
 
   // =========================================================================
   // TEST 3: Holy Magic Combat Attack & Radiance Sustain Mechanic

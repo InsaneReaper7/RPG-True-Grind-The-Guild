@@ -1,6 +1,6 @@
 import type { Player } from '../entities/Player.ts';
 import { ProgressionSystem } from '../systems/ProgressionSystem.ts';
-import type { ClassDef, HiddenSkillDef, TrainableStat, FoodQuality, ExpTransaction, ArmorSlot, ResearchNodeDef } from '../types/game.ts';
+import type { ClassDef, HiddenSkillDef, TrainableStat, FoodQuality, ExpTransaction, ArmorSlot, ResearchNodeDef, KnowledgeBaseTab } from '../types/game.ts';
 import { getArmorHpSplit } from '../types/game.ts';
 import { DataLoader } from '../utils/DataLoader.ts';
 import { GameState } from '../systems/GameState.ts';
@@ -269,6 +269,20 @@ export class HUD {
   private lastStockpileUpdateTime: number = 0;
   private renderedStockpileStructureKey: string = '';
   private static lastRenderedStockpileStructureKey: string = '';
+
+  // Knowledge Base (Guild Codex) Elements & State (Milestone 50)
+  private knowledgeBaseModalEl: HTMLElement | null = null;
+  private openKnowledgeBtn: HTMLElement | null = null;
+  private closeKnowledgeBtn: HTMLElement | null = null;
+  private knowledgeSearchInputEl: HTMLInputElement | null = null;
+  private knowledgeClearSearchBtn: HTMLElement | null = null;
+  private knowledgeEntriesContainerEl: HTMLElement | null = null;
+  private debugBtnDealDamage: HTMLElement | null = null;
+  private knowledgeActiveTab: KnowledgeBaseTab = 'weapons';
+  private knowledgeSearchQuery: string = '';
+  private lastKnowledgeUpdateTime: number = 0;
+  private lastKnowledgeStructureKey: string = '';
+
   public static readonly MAX_EXP_LOG_DOM_ENTRIES: number = 50;
 
   private static activeInstance: HUD | null = null;
@@ -295,6 +309,7 @@ export class HUD {
   private onSelectAllMembersCallback?: () => void;
   private onBuildModeToggleCallback?: () => void;
   private onSelectBuildableCallback?: (id: string) => void;
+  private onSetLeaderCallback?: (index: number) => void;
   private lastBandageApplyTime: number = 0;
   private hasSeenBandages: boolean = false;
 
@@ -677,6 +692,55 @@ export class HUD {
       };
     }
     this.initStockpileFilterTabs();
+
+    // Knowledge Base Elements (Milestone 50)
+    this.knowledgeBaseModalEl = document.getElementById('knowledge-base-modal');
+    this.openKnowledgeBtn = document.getElementById('open-knowledge-btn');
+    this.closeKnowledgeBtn = document.getElementById('close-knowledge-btn');
+    this.knowledgeSearchInputEl = document.getElementById('knowledge-search-input') as HTMLInputElement | null;
+    this.knowledgeClearSearchBtn = document.getElementById('knowledge-clear-search-btn');
+    this.knowledgeEntriesContainerEl = document.getElementById('knowledge-entries-container');
+    this.debugBtnDealDamage = document.getElementById('debug-btn-deal-damage');
+
+    try {
+      if (this.knowledgeEntriesContainerEl && !this.knowledgeEntriesContainerEl.children.length) {
+        this.renderKnowledgeBaseModal(false);
+      }
+    } catch {
+      // DataLoader may not be initialized yet in test harnesses
+    }
+
+    if (this.openKnowledgeBtn) {
+      this.openKnowledgeBtn.onclick = () => {
+        HUD.activeInstance?.toggleKnowledgeBaseModal();
+      };
+    }
+    if (this.closeKnowledgeBtn) {
+      this.closeKnowledgeBtn.onclick = () => {
+        HUD.activeInstance?.closeKnowledgeBaseModal();
+      };
+    }
+    if (this.knowledgeClearSearchBtn && this.knowledgeSearchInputEl) {
+      this.knowledgeClearSearchBtn.onclick = () => {
+        if (this.knowledgeSearchInputEl) {
+          this.knowledgeSearchInputEl.value = '';
+          this.knowledgeSearchQuery = '';
+          HUD.activeInstance?.renderKnowledgeBaseModal(true);
+        }
+      };
+    }
+    if (this.knowledgeSearchInputEl) {
+      this.knowledgeSearchInputEl.oninput = (e) => {
+        this.knowledgeSearchQuery = (e.target as HTMLInputElement).value.trim().toLowerCase();
+        HUD.activeInstance?.renderKnowledgeBaseModal(true);
+      };
+    }
+    if (this.debugBtnDealDamage) {
+      this.debugBtnDealDamage.onclick = () => {
+        (window as any).__dealDebugDamage?.(5);
+      };
+    }
+    this.initKnowledgeTabButtons();
 
     if (this.hudCardEl) {
       this.hudCardEl.style.display = HUD.isHudCardVisible ? 'block' : 'none';
@@ -1396,6 +1460,11 @@ export class HUD {
           if (targetTag !== 'input' && targetTag !== 'textarea' && targetTag !== 'select') {
             active.toggleStockpileModal();
           }
+        } else if (e.key === 'k' || e.key === 'K' || e.code === 'KeyK') {
+          const targetTag = (e.target as HTMLElement)?.tagName?.toLowerCase();
+          if (targetTag !== 'input' && targetTag !== 'textarea' && targetTag !== 'select') {
+            active.toggleKnowledgeBaseModal();
+          }
         } else if (e.key === 'y' || e.key === 'Y') {
           active.debugAdvanceDay(1);
         } else if (e.key === 'u' || e.key === 'U') {
@@ -1429,6 +1498,7 @@ export class HUD {
             active.dismissCurrentAnnouncement();
           }
           active.closeStockpileModal();
+          active.closeKnowledgeBaseModal();
           active.closeTeleporterCrystalModal();
           active.closeLoadoutModal();
           active.closeResearchTreeModal();
@@ -1685,13 +1755,13 @@ export class HUD {
     this.debugExpLogListEl.scrollTop = this.debugExpLogListEl.scrollHeight;
   }
 
-  public setLocation(name: string, isOutpost: boolean): void {
+  public setLocation(name: string, isOutpost: boolean, customColor?: string): void {
     this.isOutpost = isOutpost;
     HUD.activeInstance = this;
 
     if (this.locationBadgeEl) {
       this.locationBadgeEl.innerText = name.toUpperCase();
-      this.locationBadgeEl.style.color = isOutpost ? '#34d399' : '#a78bfa';
+      this.locationBadgeEl.style.color = customColor ? customColor : (isOutpost ? '#34d399' : '#a78bfa');
     }
 
     if (!isOutpost) {
@@ -1792,7 +1862,7 @@ export class HUD {
       let optionsHtml = '';
       for (let i = 0; i < party.length; i++) {
         const m = party[i];
-        const label = i === 0 ? `${m.entityName || 'Hero'} (Leader)` : `${m.entityName || `Companion ${i}`}`;
+        const label = i === 0 ? `${m.entityName || 'Leader'} (Leader)` : `${m.entityName || `Companion ${i}`}`;
         optionsHtml += `<option value="${i}">${label}</option>`;
       }
       this.loadoutMemberSelectEl.innerHTML = optionsHtml;
@@ -2406,7 +2476,7 @@ export class HUD {
         let optionsHtml = '';
         for (let i = 0; i < party.length; i++) {
           const m = party[i];
-          const label = i === 0 ? `${m.entityName || 'Hero'} (Leader)` : `${m.entityName || `Companion ${i}`}`;
+          const label = i === 0 ? `${m.entityName || 'Leader'} (Leader)` : `${m.entityName || `Companion ${i}`}`;
           optionsHtml += `<option value="${i}">${label}</option>`;
         }
         const prevVal = this.selectedDebugMemberIndex;
@@ -2432,6 +2502,11 @@ export class HUD {
     // 10b. Update Stockpile Overview modal live if open
     if (this.isStockpileModalOpen()) {
       this.updateStockpile(time);
+    }
+
+    // 10c. Update Knowledge Base modal live if open
+    if (this.isKnowledgeBaseModalOpen()) {
+      this.updateKnowledgeBase(time);
     }
 
     // 11. Update Cooking Station modal live if open
@@ -2495,6 +2570,10 @@ export class HUD {
   ): void {
     this.onSelectMemberCallback = onSelect;
     this.onSelectAllMembersCallback = onSelectAll;
+  }
+
+  public setPartyLeaderChangeHandler(onSetLeader: (index: number) => void): void {
+    this.onSetLeaderCallback = onSetLeader;
   }
 
   public setSelectedMemberIndices(indices: Set<number> | number[]): void {
@@ -2611,10 +2690,10 @@ export class HUD {
         const member = currentList[i];
         card.classList.remove('empty');
 
-        if (nameEl) nameEl.innerText = member.entityName || (i === 0 ? 'Hero' : `Comp ${i}`);
+        if (nameEl) nameEl.innerText = member.entityName || (i === 0 ? 'Leader' : `Comp ${i}`);
 
         if (avatarEl) {
-          const roleIcon = i === 0 ? '🛡️' : i === 1 ? '🗡️' : i === 2 ? '⚔️' : '🔨';
+          const roleIcon = i === 0 ? '👑' : i === 1 ? '🗡️' : i === 2 ? '⚔️' : '🔨';
           avatarEl.innerText = roleIcon;
         }
 
@@ -2813,6 +2892,8 @@ export class HUD {
       const member = this.currentParty[i];
       const color = avatarColors[i % avatarColors.length];
       const isDowned = member.state === 'downed';
+      const isLeader = i === 0;
+      const canSetLeader = this.isOutpost && !isLeader && !isDowned && member.state !== 'dead';
 
       const dwStat = member.progression.getProficiencyStat('dual_wielding');
       const isDwUnlocked = member.progression.isDualWieldUnlocked();
@@ -3084,16 +3165,22 @@ export class HUD {
         <div class="party-card ${isDowned ? 'downed' : ''}" data-party-card-idx="${i}">
           <div class="party-card-header">
             <div class="party-avatar-badge" style="background: ${color};">${member.entityName.charAt(0)}</div>
-            <div>
-              <div class="party-member-name">${member.entityName}</div>
+            <div style="flex: 1; min-width: 0;">
+              <div class="party-member-name" style="display: flex; align-items: center; gap: 6px;">
+                <span>${member.entityName}</span>
+                ${isLeader ? `<span class="party-leader-badge" style="background: #fbbf24; color: #78350f; font-size: 9px; font-weight: bold; padding: 1px 5px; border-radius: 4px; display: inline-flex; align-items: center; gap: 2px;">👑 LEADER</span>` : ''}
+              </div>
               <div style="font-size: 10px; color: #9ca3af;">ID: ${member.id}</div>
             </div>
-            ${isDowned ? `
-              <span class="party-member-status party-status-downed">DOWNED</span>
-              <button class="party-revive-btn" data-revive-idx="${i}" type="button">Revive [R]</button>
-            ` : `
-              <span class="party-member-status party-status-active">ACTIVE</span>
-            `}
+            <div style="display: flex; align-items: center; gap: 6px;">
+              ${canSetLeader ? `<button class="btn-action party-set-leader-btn" data-leader-idx="${i}" type="button" style="padding: 2px 8px; font-size: 10px; white-space: nowrap; background: #0284c7; border: 1px solid #38bdf8; border-radius: 4px; color: white; cursor: pointer;">👑 Make Leader</button>` : ''}
+              ${isDowned ? `
+                <span class="party-member-status party-status-downed">DOWNED</span>
+                <button class="party-revive-btn" data-revive-idx="${i}" type="button">Revive [R]</button>
+              ` : `
+                <span class="party-member-status party-status-active">ACTIVE</span>
+              `}
+            </div>
           </div>
 
           <div style="display: flex; flex-direction: column; gap: 3px;">
@@ -3628,6 +3715,23 @@ export class HUD {
           member.revive(this.currentParty[0]);
           this.renderPartyOverviewModal(true);
           this.showToast(`✨ Revived ${member.entityName}!`, 'success');
+        }
+      }
+
+      // Leader Promote button
+      if (target.classList.contains('party-set-leader-btn')) {
+        const idx = parseInt(target.dataset.leaderIdx || '0', 10);
+        if (!this.isOutpost) {
+          this.showToast('⚠️ Leadership can only be changed at the Outpost!', 'warn');
+          return;
+        }
+        const member = this.currentParty[idx];
+        if (member && (member.state === 'downed' || member.state === 'dead')) {
+          this.showToast('⚠️ Cannot designate a downed party member as Leader!', 'warn');
+          return;
+        }
+        if (this.onSetLeaderCallback) {
+          this.onSetLeaderCallback(idx);
         }
       }
 
@@ -4749,19 +4853,24 @@ export class HUD {
   public showTeleporterCrystalModal(
     currentFloor: number,
     onContinue: () => void,
-    onReturn: () => void
+    onReturn: () => void,
+    currentRegionName?: string,
+    nextRegionName?: string
   ): void {
     this.onCrystalContinueCallback = onContinue;
     this.onCrystalReturnCallback = onReturn;
 
+    const currentRegionLabel = currentRegionName ? `${currentRegionName} — ` : '';
+    const nextRegionLabel = nextRegionName ? ` (${nextRegionName})` : '';
+
     if (this.crystalModalTitleEl) {
-      this.crystalModalTitleEl.innerText = `Teleporter Crystal (Floor ${currentFloor})`;
+      this.crystalModalTitleEl.innerText = `Teleporter Crystal (${currentRegionLabel}Floor ${currentFloor})`;
     }
     if (this.crystalModalSubtitleEl) {
       this.crystalModalSubtitleEl.innerText = `Current run depth: Floor ${currentFloor}. Reaching floor 5 will awaken the Boss chamber.`;
     }
     if (this.crystalContinueLabelEl) {
-      this.crystalContinueLabelEl.innerText = `Continue Descent (Floor ${currentFloor + 1})`;
+      this.crystalContinueLabelEl.innerText = `Continue Descent (Floor ${currentFloor + 1}${nextRegionLabel})`;
     }
 
     if (this.teleporterCrystalModalEl) {
@@ -5032,12 +5141,14 @@ export class HUD {
       case 'lightning_magic': return '#38bdf8';
       case 'ice_magic': return '#67e8f9';
       case 'holy_magic': return '#facc15';
+      case 'dark_magic': return '#a855f7';
       case 'energy_regen': return '#38bdf8';
       case 'mana_regen': return '#818cf8';
       case 'lockpicking': return '#f59e0b';
       case 'gardening': return '#22c55e';
       case 'fist': return '#f97316';
       case 'longswords': return '#818cf8';
+      case 'spears': return '#06b6d4';
       default: return '#34d399';
     }
   }
@@ -6169,5 +6280,626 @@ export class HUD {
     if (needsStructuralRebuild) {
       this.renderStockpileModal(true);
     }
+  }
+
+  // ==========================================
+  // Milestone 50: Knowledge Base / Guild Codex
+  // ==========================================
+
+  public openKnowledgeBaseModal(): void {
+    this.renderKnowledgeBaseModal(false);
+    if (this.knowledgeBaseModalEl) {
+      this.knowledgeBaseModalEl.classList.add('active');
+    }
+  }
+
+  public closeKnowledgeBaseModal(): void {
+    if (this.knowledgeBaseModalEl) {
+      this.knowledgeBaseModalEl.classList.remove('active');
+    }
+  }
+
+  public toggleKnowledgeBaseModal(): void {
+    if (this.isKnowledgeBaseModalOpen()) {
+      this.closeKnowledgeBaseModal();
+    } else {
+      this.openKnowledgeBaseModal();
+    }
+  }
+
+  public isKnowledgeBaseModalOpen(): boolean {
+    return this.knowledgeBaseModalEl?.classList.contains('active') ?? false;
+  }
+
+  public setKnowledgeBaseTab(tab: KnowledgeBaseTab): void {
+    this.knowledgeActiveTab = tab;
+    if (typeof document !== 'undefined') {
+      const tabBtns = document.querySelectorAll<HTMLElement>('.knowledge-tab-btn');
+      tabBtns.forEach((btn) => {
+        if (btn.getAttribute('data-tab') === tab) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+    }
+    this.renderKnowledgeBaseModal(true);
+  }
+
+  private initKnowledgeTabButtons(): void {
+    if (typeof document === 'undefined') return;
+    const tabBtns = document.querySelectorAll<HTMLElement>('.knowledge-tab-btn');
+    tabBtns.forEach((btn) => {
+      btn.onclick = () => {
+        const tab = btn.getAttribute('data-tab') as KnowledgeBaseTab;
+        if (tab) {
+          HUD.activeInstance?.setKnowledgeBaseTab(tab);
+        }
+      };
+    });
+  }
+
+  public updateKnowledgeBase(time: number): void {
+    if (!this.isKnowledgeBaseModalOpen()) return;
+    if (time - this.lastKnowledgeUpdateTime < 250) return;
+    this.lastKnowledgeUpdateTime = time;
+    this.renderKnowledgeBaseModal(false);
+  }
+
+  private escapeKnowledgeHtml(str: string): string {
+    return str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  public renderKnowledgeBaseModal(forceRebuild: boolean = false): void {
+    if (!this.knowledgeEntriesContainerEl) return;
+    const dataLoader = DataLoader.getInstance();
+    const gameState = GameState.getInstance();
+    const party = this.currentParty || [];
+
+    // Helper to test if any party member has training in a stat/proficiency
+    const hasPartyProficiency = (statId: string): boolean => {
+      if (gameState.isProficiencyDiscovered(statId)) return true;
+      for (const member of party) {
+        const stat = member.progression?.getProficiencyStat(statId);
+        if (stat && (stat.level >= 1 || stat.currentExp > 0)) return true;
+        if (member.equippedWeapon?.id === statId || member.equippedWeapon?.proficiencyId === statId) return true;
+        if (member.offhandWeapon?.id === statId || member.offhandWeapon?.proficiencyId === statId) return true;
+      }
+      return false;
+    };
+
+    // Helper to get highest level in party for a stat
+    const getPartyMaxLevel = (statId: string): number => {
+      let maxLvl = 0;
+      for (const member of party) {
+        const stat = member.progression?.getProficiencyStat(statId);
+        if (stat && stat.level > maxLvl) maxLvl = stat.level;
+      }
+      return maxLvl;
+    };
+
+    // 1. WEAPONS
+    const weaponDefs = dataLoader.getAllWeapons() || [];
+    const discoveredWeapons: {
+      id: string;
+      name: string;
+      badge: string;
+      description: string;
+      stats: { label: string; value: string }[];
+    }[] = [];
+
+    for (const w of weaponDefs) {
+      const isDiscovered =
+        gameState.isProficiencyDiscovered(w.id) ||
+        (w.proficiencyId && gameState.isProficiencyDiscovered(w.proficiencyId)) ||
+        hasPartyProficiency(w.id) ||
+        (w.proficiencyId ? hasPartyProficiency(w.proficiencyId) : false);
+
+      if (isDiscovered) {
+        const statDef = dataLoader.getTrainableStatDef(w.proficiencyId || w.id);
+        const stats: { label: string; value: string }[] = [
+          { label: 'Category', value: (w.category || 'weapon').replace('_', ' ').toUpperCase() },
+          { label: 'Base Damage', value: `${w.baseDamage ?? 0}` },
+          { label: 'Attack Speed', value: w.attackIntervalMs ? `${(w.attackIntervalMs / 1000).toFixed(1)}s` : '1.0s' },
+          { label: 'Range', value: `${w.attackRangeTiles ?? 1} Tile(s)` },
+        ];
+        if (w.baseAccuracy !== undefined) {
+          stats.push({ label: 'Base Accuracy', value: `${(w.baseAccuracy * 100).toFixed(0)}%` });
+        }
+        if (w.bleedChance) {
+          stats.push({ label: 'Bleed Chance', value: `${(w.bleedChance * 100).toFixed(0)}%` });
+        }
+        if (w.stunChance) {
+          stats.push({ label: 'Stun Chance', value: `${(w.stunChance * 100).toFixed(0)}%` });
+        }
+        if (w.burnChance) {
+          stats.push({ label: 'Burn Chance', value: `${(w.burnChance * 100).toFixed(0)}%` });
+        }
+        if (w.slowChance) {
+          stats.push({ label: 'Slow Chance', value: `${(w.slowChance * 100).toFixed(0)}%` });
+        }
+        if (w.shockChance) {
+          stats.push({ label: 'Shock Chance', value: `${(w.shockChance * 100).toFixed(0)}%` });
+        }
+        if (w.baseBlock) {
+          stats.push({ label: 'Base Block', value: `${(w.baseBlock * 100).toFixed(0)}%` });
+        }
+        if (w.baseHealAmount) {
+          stats.push({ label: 'Heal Amount', value: `${w.baseHealAmount} HP` });
+        }
+
+        discoveredWeapons.push({
+          id: w.id,
+          name: w.name,
+          badge: (w.category || 'WEAPON').replace('_', ' ').toUpperCase(),
+          description: statDef?.description || `Proficiency with ${w.name.toLowerCase()} in combat.`,
+          stats
+        });
+      }
+    }
+
+    // 2. CLASSES
+    const classDefs = dataLoader.getClasses() || [];
+    const discoveredClasses: {
+      id: string;
+      name: string;
+      badge: string;
+      description: string;
+      stats: { label: string; value: string }[];
+    }[] = [];
+
+    for (const c of classDefs) {
+      let isUnlocked = false;
+      for (const m of party) {
+        if (m.progression?.isClassUnlocked(c.id) || m.activeClass === c.id) {
+          isUnlocked = true;
+          break;
+        }
+      }
+      if (isUnlocked) {
+        const stats: { label: string; value: string }[] = [
+          { label: 'Tier', value: (c.tier || 'Novice').toUpperCase() }
+        ];
+        if (c.requirements && c.requirements.length > 0) {
+          const reqStr = c.requirements
+            .map((r: any) => `${r.target.replace('_', ' ')} Lv${r.value}`)
+            .join(', ');
+          stats.push({ label: 'Prerequisites', value: reqStr });
+        }
+        if (c.hiddenSkillBonuses) {
+          const bonuses = Object.entries(c.hiddenSkillBonuses)
+            .map(([k, v]) => `+${((v as number) * 100).toFixed(0)}% ${k.replace('_', ' ')}`)
+            .join(', ');
+          stats.push({ label: 'Class Passives', value: bonuses });
+        }
+
+        discoveredClasses.push({
+          id: c.id,
+          name: c.name,
+          badge: `${(c.tier || 'NOVICE').toUpperCase()} CLASS`,
+          description: c.fantasy || 'Guild combat specialization with unique synergies and stat bonuses.',
+          stats
+        });
+      }
+    }
+
+    // 3. HIDDEN SKILLS
+    const hiddenDefs = dataLoader.getHiddenSkills() || [];
+    const discoveredHiddenSkills: {
+      id: string;
+      name: string;
+      badge: string;
+      description: string;
+      stats: { label: string; value: string }[];
+    }[] = [];
+
+    for (const h of hiddenDefs) {
+      const isDiscovered = gameState.isProficiencyDiscovered(h.id) || hasPartyProficiency(h.id);
+      if (isDiscovered) {
+        const maxLvl = getPartyMaxLevel(h.id);
+        const stats: { label: string; value: string }[] = [
+          { label: 'Guild Mastery', value: maxLvl > 0 ? `Level ${maxLvl}` : 'Discovered' },
+          { label: 'Trigger Type', value: h.triggerType?.replace(/([A-Z])/g, ' $1').trim() || 'Passive Art' }
+        ];
+        if (h.tierEffects && h.tierEffects.length > 0) {
+          for (const t of h.tierEffects) {
+            stats.push({ label: `Milestone Lv${t.level}`, value: t.description });
+          }
+        }
+
+        discoveredHiddenSkills.push({
+          id: h.id,
+          name: h.name,
+          badge: 'SECRET ART',
+          description: h.description || 'Rare discipline unlocked through specific combat techniques.',
+          stats
+        });
+      }
+    }
+
+    // 4. GATHERING
+    const gatheringNodesConfig = dataLoader.getGatheringNodesConfig()?.nodes || {};
+    const discoveredGathering: {
+      id: string;
+      name: string;
+      badge: string;
+      description: string;
+      stats: { label: string; value: string }[];
+    }[] = [];
+
+    // Check nodes
+    for (const [nodeId, node] of Object.entries<any>(gatheringNodesConfig)) {
+      if (gameState.isGatheringNodeDiscovered(nodeId)) {
+        discoveredGathering.push({
+          id: nodeId,
+          name: node.name || nodeId,
+          badge: (node.actionVerb || node.skillId || 'HARVEST').toUpperCase(),
+          description: `Natural gathering resource discovered in dungeons and wilderness. Yields ${node.yieldCount ?? 1}x ${node.resourceId?.replace('_', ' ')}.`,
+          stats: [
+            { label: 'Discipline', value: (node.skillId || 'foraging').toUpperCase() },
+            { label: 'Harvest Yield', value: `${node.yieldCount ?? 1}x ${node.resourceId?.replace('_', ' ')}` },
+            { label: 'Channel Duration', value: `${((node.channelDurationMs || 2500) / 1000).toFixed(1)}s` },
+            { label: 'Respawn Period', value: `${((node.respawnTimeMs || 15000) / 1000).toFixed(0)}s` },
+            { label: 'Discipline EXP', value: `+${node.expGranted ?? 15} EXP` }
+          ]
+        });
+      }
+    }
+
+    // Check gathering proficiencies
+    const gatherStats = ['foraging', 'woodcutting', 'mining', 'digging', 'skinning', 'butchering', 'gardening'];
+    for (const gs of gatherStats) {
+      if (hasPartyProficiency(gs)) {
+        const def = dataLoader.getTrainableStatDef(gs);
+        const lvl = getPartyMaxLevel(gs);
+        discoveredGathering.push({
+          id: `prof_${gs}`,
+          name: def?.name || gs,
+          badge: 'GATHERING DISCIPLINE',
+          description: def?.description || 'Gathering proficiency.',
+          stats: [
+            { label: 'Guild Mastery', value: lvl > 0 ? `Level ${lvl}` : 'Practicing' },
+            { label: 'Discipline Type', value: 'Wilderness & Dungeon Harvesting' }
+          ]
+        });
+      }
+    }
+
+    // 5. CRAFTING & RECIPES
+    const discoveredCrafting: {
+      id: string;
+      name: string;
+      badge: string;
+      description: string;
+      stats: { label: string; value: string }[];
+    }[] = [];
+
+    // Alchemy
+    const alchemyRecipes = dataLoader.getAlchemyRecipes() || [];
+    const alchemyLvl = getPartyMaxLevel('alchemy');
+    for (const r of alchemyRecipes) {
+      const isDiscovered = alchemyLvl >= 1 || gameState.getItemCount(r.id) > 0;
+      if (isDiscovered) {
+        const ingStr = Object.entries(r.ingredients || {})
+          .map(([k, v]) => `${v}x ${k.replace('_', ' ')}`)
+          .join(', ');
+        const stats: { label: string; value: string }[] = [
+          { label: 'Station', value: 'Alchemy Station' },
+          { label: 'Ingredients', value: ingStr || 'None' }
+        ];
+        if (r.cures && r.cures.length > 0) {
+          stats.push({ label: 'Cures', value: r.cures.join(', ') });
+        }
+        if (r.energyRestored) {
+          stats.push({ label: 'Restores', value: `${r.energyRestored} Energy` });
+        }
+        stats.push({ label: 'Crafting EXP', value: `+${r.expGranted ?? 25} Alchemy EXP` });
+
+        discoveredCrafting.push({
+          id: `alchemy_${r.id}`,
+          name: r.name,
+          badge: 'ALCHEMY',
+          description: r.description || 'Remedy brewed at an outpost alchemy station.',
+          stats
+        });
+      }
+    }
+
+    // Cooking
+    const cookingRecipes = dataLoader.getCookingRecipes() || [];
+    const cookingLvl = getPartyMaxLevel('cooking');
+    for (const r of cookingRecipes) {
+      const isDiscovered = gameState.isCookingRecipeDiscovered(r.id) || cookingLvl >= 1;
+      if (isDiscovered) {
+        const ingStr = Object.entries(r.ingredients || {})
+          .map(([k, v]) => `${v}x ${k.replace('_', ' ')}`)
+          .join(', ');
+        const stats: { label: string; value: string }[] = [
+          { label: 'Station', value: 'Cooking Station' },
+          { label: 'Max Quality', value: (r.maxQuality || 'Masterpiece').toUpperCase() },
+          { label: 'Ingredients', value: ingStr || 'None' },
+          { label: 'Crafting EXP', value: `+${r.expGranted ?? 20} Cooking EXP` }
+        ];
+
+        discoveredCrafting.push({
+          id: `cooking_${r.id}`,
+          name: r.name,
+          badge: 'COOKING',
+          description: r.description || 'Nutritious meal prepared at an outpost cooking station.',
+          stats
+        });
+      }
+    }
+
+    // Blacksmithing
+    const blacksmithRecipes = dataLoader.getBlacksmithRecipes() || [];
+    const blacksmithLvl = getPartyMaxLevel('blacksmithing');
+    for (const r of blacksmithRecipes) {
+      if (blacksmithLvl >= (r.requiredLevel || 1) || gameState.getItemCount(r.id) > 0) {
+        const ingStr = Object.entries(r.ingredients || {})
+          .map(([k, v]) => `${v}x ${k.replace('_', ' ')}`)
+          .join(', ');
+        discoveredCrafting.push({
+          id: `smith_${r.id}`,
+          name: r.name,
+          badge: 'BLACKSMITHING',
+          description: r.description || 'Forged metallic armaments crafted at a forge.',
+          stats: [
+            { label: 'Station', value: 'Blacksmith Forge' },
+            { label: 'Required Smithing', value: `Lv ${r.requiredLevel || 1}` },
+            { label: 'Ingredients', value: ingStr || 'None' }
+          ]
+        });
+      }
+    }
+
+    // Armorsmithing
+    const armorsmithRecipes = dataLoader.getArmorsmithRecipes() || [];
+    const armorLvl = getPartyMaxLevel('armorsmithing');
+    for (const r of armorsmithRecipes) {
+      if (armorLvl >= (r.requiredLevel || 1) || gameState.getItemCount(r.id) > 0) {
+        const ingStr = Object.entries(r.ingredients || {})
+          .map(([k, v]) => `${v}x ${k.replace('_', ' ')}`)
+          .join(', ');
+        discoveredCrafting.push({
+          id: `armor_${r.id}`,
+          name: r.name,
+          badge: 'ARMORSMITHING',
+          description: r.description || 'Protective gear tailored at an armorsmith workbench.',
+          stats: [
+            { label: 'Station', value: 'Armorsmith Workbench' },
+            { label: 'Required Armorsmithing', value: `Lv ${r.requiredLevel || 1}` },
+            { label: 'Ingredients', value: ingStr || 'None' }
+          ]
+        });
+      }
+    }
+
+    // Bowyer
+    const bowyerRecipes = dataLoader.getBowyerRecipes() || [];
+    const bowyerLvl = getPartyMaxLevel('bowyer');
+    for (const r of bowyerRecipes) {
+      if (bowyerLvl >= (r.requiredLevel || 1) || gameState.getItemCount(r.id) > 0) {
+        const ingStr = Object.entries(r.ingredients || {})
+          .map(([k, v]) => `${v}x ${k.replace('_', ' ')}`)
+          .join(', ');
+        discoveredCrafting.push({
+          id: `bowyer_${r.id}`,
+          name: r.name,
+          badge: 'BOWYER',
+          description: r.description || 'Ranged bows shaped from seasoned wood.',
+          stats: [
+            { label: 'Station', value: 'Bowyer Bench' },
+            { label: 'Required Bowyer', value: `Lv ${r.requiredLevel || 1}` },
+            { label: 'Ingredients', value: ingStr || 'None' }
+          ]
+        });
+      }
+    }
+
+    // 6. STATUS EFFECTS
+    const effectDefs = dataLoader.getStatusEffectsData()?.statusEffects || [];
+    const discoveredStatusEffects: {
+      id: string;
+      name: string;
+      badge: string;
+      description: string;
+      stats: { label: string; value: string }[];
+    }[] = [];
+
+    for (const e of effectDefs) {
+      if (gameState.isStatusEffectDiscovered(e.id)) {
+        const stats: { label: string; value: string }[] = [
+          { label: 'Nature', value: e.isHarmful ? 'Harmful Affliction' : 'Beneficial Boon' },
+          { label: 'Duration', value: `${((e.durationMs || 0) / 1000).toFixed(1)}s` },
+          { label: 'Tick Rate', value: `${((e.tickIntervalMs || 1000) / 1000).toFixed(1)}s` },
+        ];
+        if (e.damagePerTick) {
+          stats.push({ label: 'Tick Damage', value: `${e.damagePerTick} damage/s` });
+        }
+        if (e.disablesActions) {
+          stats.push({ label: 'Impairment', value: 'Disables Combat Actions' });
+        }
+        if (e.disablesMovement) {
+          stats.push({ label: 'Mobility', value: 'Immobilizes Target' });
+        }
+        if (e.interruptsAttack) {
+          stats.push({ label: 'Interruption', value: 'Interrupts Attacks & Casts' });
+        }
+        if (e.moveSpeedMultiplier !== undefined) {
+          stats.push({ label: 'Move Speed', value: `${(e.moveSpeedMultiplier * 100).toFixed(0)}%` });
+        }
+        if (e.id === 'bleed') {
+          stats.push({ label: 'Known Remedy', value: 'Apply Bandage [E]' });
+        } else if (e.id === 'poison') {
+          stats.push({ label: 'Known Remedy', value: 'Drink Antidote' });
+        }
+
+        discoveredStatusEffects.push({
+          id: e.id,
+          name: e.name,
+          badge: e.isHarmful ? 'AFFLICTION' : 'BLESSING',
+          description: e.isHarmful
+            ? `Harmful combat status affliction. Deals ongoing damage or impedes combat capability.`
+            : `Beneficial combat blessing. Enhances survivability or combat potency.`,
+          stats
+        });
+      }
+    }
+
+    // 7. BESTIARY
+    const enemyDefs = dataLoader.getEnemiesData()?.enemies || [];
+    const discoveredBestiary: {
+      id: string;
+      name: string;
+      badge: string;
+      description: string;
+      stats: { label: string; value: string }[];
+    }[] = [];
+
+    for (const e of enemyDefs) {
+      if (gameState.isEnemyEncountered(e.id)) {
+        const stats: { label: string; value: string }[] = [
+          { label: 'Threat Tier', value: (e.tier || 'Common').toUpperCase() },
+          { label: 'Maximum Health', value: `${e.hp} HP` },
+          { label: 'Critical Threshold', value: `${e.criticalHpMax ?? Math.floor(e.hp / 2)} HP` },
+          { label: 'Melee Strike', value: `${e.meleeDamage ?? 0} DMG` },
+          { label: 'Attack Cadence', value: e.attackIntervalMs ? `${(e.attackIntervalMs / 1000).toFixed(1)}s` : '1.2s' },
+          { label: 'Movement Speed', value: `${e.moveSpeed ?? 80}` },
+          { label: 'Perception Range', value: `${e.aggroRadius ?? 5} Tiles` }
+        ];
+
+        if (e.harvest && e.harvest.length > 0) {
+          const drops = e.harvest.map((h: any) => h.item.replace('_', ' ')).join(', ');
+          stats.push({ label: 'Drop Loot', value: drops });
+        }
+        if (e.corpseHarvest) {
+          const corpseYields: string[] = [];
+          if (e.corpseHarvest.skinning) {
+            corpseYields.push(`Skinning: ${e.corpseHarvest.skinning.name}`);
+          }
+          if (e.corpseHarvest.butchering) {
+            corpseYields.push(`Butchering: ${e.corpseHarvest.butchering.name}`);
+          }
+          if (corpseYields.length > 0) {
+            stats.push({ label: 'Corpse Carving', value: corpseYields.join(' | ') });
+          }
+        }
+
+        discoveredBestiary.push({
+          id: e.id,
+          name: e.name,
+          badge: `${(e.tier || 'COMMON').toUpperCase()} ENEMY`,
+          description: `Hostile entity encountered in dungeon depths. Behavior: aggressive patrol within ${e.aggroRadius ?? 5} tiles.`,
+          stats
+        });
+      }
+    }
+
+    // Update live count badges on each tab header
+    const updateCountBadge = (id: string, count: number) => {
+      const el = document.getElementById(id);
+      if (el && el.innerText !== count.toString()) {
+        el.innerText = count.toString();
+      }
+    };
+    updateCountBadge('knowledge-count-weapons', discoveredWeapons.length);
+    updateCountBadge('knowledge-count-classes', discoveredClasses.length);
+    updateCountBadge('knowledge-count-hidden_skills', discoveredHiddenSkills.length);
+    updateCountBadge('knowledge-count-gathering', discoveredGathering.length);
+    updateCountBadge('knowledge-count-crafting', discoveredCrafting.length);
+    updateCountBadge('knowledge-count-status_effects', discoveredStatusEffects.length);
+    updateCountBadge('knowledge-count-bestiary', discoveredBestiary.length);
+
+    // Pick active tab entries
+    let activeEntries: {
+      id: string;
+      name: string;
+      badge: string;
+      description: string;
+      stats: { label: string; value: string }[];
+    }[] = [];
+
+    switch (this.knowledgeActiveTab) {
+      case 'weapons': activeEntries = discoveredWeapons; break;
+      case 'classes': activeEntries = discoveredClasses; break;
+      case 'hidden_skills': activeEntries = discoveredHiddenSkills; break;
+      case 'gathering': activeEntries = discoveredGathering; break;
+      case 'crafting': activeEntries = discoveredCrafting; break;
+      case 'status_effects': activeEntries = discoveredStatusEffects; break;
+      case 'bestiary': activeEntries = discoveredBestiary; break;
+    }
+
+    // Apply search query filter if set
+    const query = this.knowledgeSearchQuery.toLowerCase().trim();
+    if (query) {
+      activeEntries = activeEntries.filter((item) =>
+        item.name.toLowerCase().includes(query) ||
+        item.badge.toLowerCase().includes(query) ||
+        item.description.toLowerCase().includes(query) ||
+        item.stats.some((s) => s.label.toLowerCase().includes(query) || s.value.toLowerCase().includes(query))
+      );
+    }
+
+    // Cache structure key to avoid unnecessary re-renders
+    const structureKey = `${this.knowledgeActiveTab}:${query}:${activeEntries.map((e) => e.id).join(',')}:${activeEntries.length}`;
+    if (!forceRebuild && this.lastKnowledgeStructureKey === structureKey) {
+      return;
+    }
+    this.lastKnowledgeStructureKey = structureKey;
+
+    // Render entries
+    if (activeEntries.length === 0) {
+      if (query) {
+        this.knowledgeEntriesContainerEl.innerHTML = `
+          <div class="knowledge-empty-state">
+            <div style="font-size: 32px; opacity: 0.7;">🔍</div>
+            <div style="font-size: 15px; font-weight: 600; color: #f1f5f9;">No matching records found</div>
+            <div>No discovered entries match &quot;${this.escapeKnowledgeHtml(query)}&quot;.</div>
+          </div>
+        `;
+      } else {
+        this.knowledgeEntriesContainerEl.innerHTML = `
+          <div class="knowledge-empty-state">
+            <div style="font-size: 32px; opacity: 0.7;">📜</div>
+            <div style="font-size: 15px; font-weight: 600; color: #f1f5f9;">No entries recorded yet</div>
+            <div style="max-width: 440px; line-height: 1.5;">Venture into dungeons, encounter foes, train arts, and unlock disciplines to discover and record entries in the Guild Codex.</div>
+          </div>
+        `;
+      }
+      return;
+    }
+
+    let html = '';
+    for (const entry of activeEntries) {
+      html += `
+        <div class="knowledge-card" data-entry-id="${this.escapeKnowledgeHtml(entry.id)}">
+          <div class="knowledge-card-header">
+            <span class="knowledge-card-title">${this.escapeKnowledgeHtml(entry.name)}</span>
+            <span class="knowledge-badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35);">${this.escapeKnowledgeHtml(entry.badge)}</span>
+          </div>
+          <div style="font-size: 12px; color: #cbd5e1; line-height: 1.4;">${this.escapeKnowledgeHtml(entry.description)}</div>
+          <div class="knowledge-stats-grid">
+            ${entry.stats
+              .map(
+                (s) => `
+              <div class="knowledge-stat-item">
+                <span style="color: #94a3b8;">${this.escapeKnowledgeHtml(s.label)}:</span>
+                <span style="color: #f1f5f9; font-weight: 600; text-align: right; margin-left: 6px;">${this.escapeKnowledgeHtml(s.value)}</span>
+              </div>
+            `
+              )
+              .join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    this.knowledgeEntriesContainerEl.innerHTML = html;
   }
 }

@@ -13,6 +13,7 @@ export interface CombatContext {
   isMeleeAttack?: boolean;
   hasEnergyPotionBuff?: boolean;
   hasManaPotionBuff?: boolean;
+  evasionBonus?: number;
 }
 
 export interface AvoidanceResult {
@@ -168,6 +169,9 @@ export class HiddenSkillSystem {
     let classBonus = progression.getClassHiddenBonus(skillDef.id);
     if (skillDef.id === 'block' && context.shieldBlockBonus) {
       classBonus += context.shieldBlockBonus;
+    }
+    if (skillDef.id === 'evasion' && context.evasionBonus) {
+      classBonus += context.evasionBonus;
     }
     const procChance = this.calculateProcChance(skillDef, currentLevel, classBonus);
 

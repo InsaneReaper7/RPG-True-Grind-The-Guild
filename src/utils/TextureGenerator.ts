@@ -25,6 +25,61 @@ export class TextureGenerator {
       g.destroy();
     }
 
+    // 2b. Milestone 44: Abyssal Depths Biome — Walkable Basalt Floor
+    if (!scene.textures.exists('tile-abyssal-walkable')) {
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      // Deep obsidian / midnight purple basalt base
+      g.fillStyle(0x180b29, 1);
+      g.fillRect(0, 0, tileSize, tileSize);
+      // Dark abyssal void border
+      g.lineStyle(1, 0x4c1d95, 0.7);
+      g.strokeRect(0, 0, tileSize, tileSize);
+      // Glowing void rune etchings & magma-vein fissures
+      g.lineStyle(1.5, 0x9333ea, 0.6);
+      g.lineBetween(4, tileSize / 2, tileSize / 2, 6);
+      g.lineBetween(tileSize / 2, 6, tileSize - 6, tileSize / 2 + 4);
+      g.lineBetween(tileSize / 2, tileSize - 6, tileSize - 4, tileSize / 2 + 4);
+      // Luminous arcane rune glyph in center
+      g.fillStyle(0xa855f7, 0.8);
+      g.fillCircle(tileSize / 2, tileSize / 2, 2);
+      g.fillStyle(0xec4899, 0.7);
+      g.fillCircle(tileSize / 2 - 6, tileSize / 2 + 6, 1.5);
+      g.fillCircle(tileSize / 2 + 7, tileSize / 2 - 5, 1.5);
+      // Crystalline dust glints
+      g.fillStyle(0x38bdf8, 0.8);
+      g.fillCircle(8, 8, 1);
+      g.fillCircle(tileSize - 8, tileSize - 8, 1);
+      g.generateTexture('tile-abyssal-walkable', tileSize, tileSize);
+      g.destroy();
+    }
+
+    // 2c. Milestone 44: Abyssal Depths Biome — Obsidian & Amethyst Obstacle Wall
+    if (!scene.textures.exists('tile-abyssal-obstacle')) {
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      // Pitch obsidian rock foundation
+      g.fillStyle(0x0b0417, 1);
+      g.fillRect(0, 0, tileSize, tileSize);
+      // Heavy Amethyst crystalline frame
+      g.lineStyle(2, 0x7c3aed, 0.85);
+      g.strokeRect(2, 2, tileSize - 4, tileSize - 4);
+      // Jagged Void crystal spires & facets
+      g.fillStyle(0x6b21a8, 0.9);
+      g.fillTriangle(3, 3, 12, 3, 3, 12);
+      g.fillTriangle(tileSize - 3, tileSize - 3, tileSize - 12, tileSize - 3, tileSize - 3, tileSize - 12);
+      // Glowing Amethyst Crystal Cluster in center
+      g.fillStyle(0xa855f7, 1);
+      g.fillTriangle(tileSize / 2, 5, tileSize / 2 - 6, tileSize / 2 + 4, tileSize / 2 + 6, tileSize / 2 + 4);
+      g.fillStyle(0xd8b4fe, 0.9);
+      g.fillTriangle(tileSize / 2, 8, tileSize / 2 - 3, tileSize / 2 + 2, tileSize / 2 + 3, tileSize / 2 + 2);
+      // Glowing deep crimson/magenta void fissures
+      g.lineStyle(1.5, 0xf43f5e, 0.8);
+      g.lineBetween(tileSize / 2 - 6, tileSize / 2 + 4, 6, tileSize - 6);
+      g.lineBetween(tileSize / 2 + 6, tileSize / 2 + 4, tileSize - 6, tileSize - 6);
+      g.lineBetween(4, tileSize / 2, tileSize - 4, tileSize / 2);
+      g.generateTexture('tile-abyssal-obstacle', tileSize, tileSize);
+      g.destroy();
+    }
+
     // 3. Player Avatar Texture (Blue Circle with Sword indicator)
     if (!scene.textures.exists('player-avatar')) {
       const size = 28;
@@ -492,6 +547,52 @@ export class TextureGenerator {
       g.closePath();
       g.fillPath();
       g.generateTexture('poison-icon', size, size);
+      g.destroy();
+    }
+
+    // 6e. Curse Status Indicator Texture (Deep Violet Cursed Sigil)
+    if (!scene.textures.exists('curse-icon')) {
+      const size = 12;
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      // Outer purple diamond sigil
+      g.fillStyle(0x7c3aed, 1);
+      g.beginPath();
+      g.moveTo(size / 2, 0);
+      g.lineTo(size - 1, size / 2);
+      g.lineTo(size / 2, size - 1);
+      g.lineTo(1, size / 2);
+      g.closePath();
+      g.fillPath();
+      // Inner dark cursed core
+      g.fillStyle(0x3b0764, 1);
+      g.fillCircle(size / 2, size / 2, 2.5);
+      // Bright lilac center spark
+      g.fillStyle(0xd8b4fe, 1);
+      g.fillCircle(size / 2, size / 2, 1);
+      g.generateTexture('curse-icon', size, size);
+      g.destroy();
+    }
+
+    // 6f. Blind Status Indicator Texture (Obscured Eye Sigil)
+    if (!scene.textures.exists('blind-icon')) {
+      const size = 12;
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      // Dark purple background circle
+      g.fillStyle(0x581c87, 1);
+      g.fillCircle(size / 2, size / 2, 5.5);
+      // Violet outer eye ellipse
+      g.fillStyle(0xa855f7, 1);
+      g.fillEllipse(size / 2, size / 2, 8, 5);
+      // Black pupil/void
+      g.fillStyle(0x000000, 1);
+      g.fillCircle(size / 2, size / 2, 2);
+      // Crossed slash across eye (blinded)
+      g.lineStyle(1.5, 0xef4444, 1);
+      g.beginPath();
+      g.moveTo(2, 2);
+      g.lineTo(size - 2, size - 2);
+      g.strokePath();
+      g.generateTexture('blind-icon', size, size);
       g.destroy();
     }
 

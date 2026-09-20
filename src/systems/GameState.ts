@@ -18,6 +18,10 @@ export class GameState {
   private bookLearnedSkills: Set<string> = new Set();
   private discoveredCookingRecipes: Set<string> = new Set();
   private discoveredAlchemyRecipes: Set<string> = new Set(['bandage', 'antidote', 'energy_potion', 'escape_stone']);
+  private encounteredEnemies: Set<string> = new Set();
+  private discoveredProficiencies: Set<string> = new Set();
+  private discoveredStatusEffects: Set<string> = new Set();
+  private discoveredGatheringNodes: Set<string> = new Set();
 
   // Milestone 7: Day/Clock, Food & Mood Systems
   private currentGameDay: number = 1;
@@ -115,6 +119,13 @@ export class GameState {
       }
     }
 
+    if (initialMainWeapon) {
+      this.discoveredProficiencies.add(initialMainWeapon);
+    }
+    if (initialOffhandWeapon) {
+      this.discoveredProficiencies.add(initialOffhandWeapon);
+    }
+
     this.snapshot = {
       hp: playerData.maxHp,
       criticalHp: playerData.criticalHpMax,
@@ -134,7 +145,11 @@ export class GameState {
       foodItems: [],
       equippedWeaponId: initialMainWeapon,
       offhandWeaponId: initialOffhandWeapon,
-      dungeonFloorCount: 0
+      dungeonFloorCount: 0,
+      encounteredEnemies: Array.from(this.encounteredEnemies),
+      discoveredProficiencies: Array.from(this.discoveredProficiencies),
+      discoveredStatusEffects: Array.from(this.discoveredStatusEffects),
+      discoveredGatheringNodes: Array.from(this.discoveredGatheringNodes)
     };
 
     const heroSnapshot: CharacterSnapshot = {
@@ -598,6 +613,102 @@ export class GameState {
     return Array.from(this.discoveredAlchemyRecipes);
   }
 
+  // --- Knowledge Base Discoveries (Milestone 50) ---
+  public recordEnemyEncountered(enemyId: string): boolean {
+    if (!this.encounteredEnemies.has(enemyId)) {
+      this.encounteredEnemies.add(enemyId);
+      if (this.snapshot) {
+        this.snapshot.encounteredEnemies = Array.from(this.encounteredEnemies);
+      }
+      console.log(`[KnowledgeBase] 🐺 First encountered enemy: '${enemyId}'!`);
+      return true;
+    }
+    return false;
+  }
+
+  public isEnemyEncountered(enemyId: string): boolean {
+    return this.encounteredEnemies.has(enemyId);
+  }
+
+  public getEncounteredEnemies(): string[] {
+    return Array.from(this.encounteredEnemies);
+  }
+
+  public discoverProficiency(id: string): boolean {
+    if (!this.discoveredProficiencies.has(id)) {
+      this.discoveredProficiencies.add(id);
+      if (this.snapshot) {
+        this.snapshot.discoveredProficiencies = Array.from(this.discoveredProficiencies);
+      }
+      console.log(`[KnowledgeBase] ⚔️ Proficiency discovered: '${id}'!`);
+      return true;
+    }
+    return false;
+  }
+
+  public isProficiencyDiscovered(id: string): boolean {
+    return this.discoveredProficiencies.has(id);
+  }
+
+  public getDiscoveredProficiencies(): string[] {
+    return Array.from(this.discoveredProficiencies);
+  }
+
+  public discoverStatusEffect(id: string): boolean {
+    if (!this.discoveredStatusEffects.has(id)) {
+      this.discoveredStatusEffects.add(id);
+      if (this.snapshot) {
+        this.snapshot.discoveredStatusEffects = Array.from(this.discoveredStatusEffects);
+      }
+      console.log(`[KnowledgeBase] 🧪 Status effect discovered: '${id}'!`);
+      return true;
+    }
+    return false;
+  }
+
+  public isStatusEffectDiscovered(id: string): boolean {
+    return this.discoveredStatusEffects.has(id);
+  }
+
+  public getDiscoveredStatusEffects(): string[] {
+    return Array.from(this.discoveredStatusEffects);
+  }
+
+  public discoverGatheringNode(id: string): boolean {
+    if (!this.discoveredGatheringNodes.has(id)) {
+      this.discoveredGatheringNodes.add(id);
+      if (this.snapshot) {
+        this.snapshot.discoveredGatheringNodes = Array.from(this.discoveredGatheringNodes);
+      }
+      console.log(`[KnowledgeBase] 🪵 Gathering node discovered: '${id}'!`);
+      return true;
+    }
+    return false;
+  }
+
+  public isGatheringNodeDiscovered(id: string): boolean {
+    return this.discoveredGatheringNodes.has(id);
+  }
+
+  public getDiscoveredGatheringNodes(): string[] {
+    return Array.from(this.discoveredGatheringNodes);
+  }
+
+  public resetDiscoveries(clearSnapshot: boolean = false): void {
+    this.encounteredEnemies.clear();
+    this.discoveredProficiencies = new Set(['short_swords']);
+    this.discoveredStatusEffects.clear();
+    this.discoveredGatheringNodes.clear();
+    this.discoveredCookingRecipes.clear();
+    if (clearSnapshot && this.snapshot) {
+      this.snapshot.encounteredEnemies = [];
+      this.snapshot.discoveredProficiencies = ['short_swords'];
+      this.snapshot.discoveredStatusEffects = [];
+      this.snapshot.discoveredGatheringNodes = [];
+      this.snapshot.discoveredCookingRecipes = [];
+    }
+  }
+
   public consumeOldestFood(foodId: string): FoodItemInstance | null {
     const idx = this.foodItems.findIndex((f) => f.id === foodId);
     if (idx !== -1) {
@@ -948,7 +1059,11 @@ export class GameState {
       party: [...this.partySnapshots],
       discoveredCookingRecipes: Array.from(this.discoveredCookingRecipes),
       discoveredAlchemyRecipes: Array.from(this.discoveredAlchemyRecipes),
-      dungeonFloorCount: this.dungeonFloorCount
+      dungeonFloorCount: this.dungeonFloorCount,
+      encounteredEnemies: Array.from(this.encounteredEnemies),
+      discoveredProficiencies: Array.from(this.discoveredProficiencies),
+      discoveredStatusEffects: Array.from(this.discoveredStatusEffects),
+      discoveredGatheringNodes: Array.from(this.discoveredGatheringNodes)
     };
 
     console.log(
@@ -1032,6 +1147,18 @@ export class GameState {
     }
     if (snap.discoveredAlchemyRecipes) {
       this.discoveredAlchemyRecipes = new Set(snap.discoveredAlchemyRecipes);
+    }
+    if (snap.encounteredEnemies) {
+      this.encounteredEnemies = new Set(snap.encounteredEnemies);
+    }
+    if (snap.discoveredProficiencies) {
+      this.discoveredProficiencies = new Set(snap.discoveredProficiencies);
+    }
+    if (snap.discoveredStatusEffects) {
+      this.discoveredStatusEffects = new Set(snap.discoveredStatusEffects);
+    }
+    if (snap.discoveredGatheringNodes) {
+      this.discoveredGatheringNodes = new Set(snap.discoveredGatheringNodes);
     }
     if (snap.dungeonFloorCount !== undefined) {
       this.dungeonFloorCount = snap.dungeonFloorCount;

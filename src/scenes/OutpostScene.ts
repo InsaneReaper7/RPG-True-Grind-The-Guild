@@ -158,7 +158,10 @@ export class OutpostScene extends Phaser.Scene {
     this.pathfinder = new Pathfinder(this.gridMatrix);
 
     // 4. Initialize ProgressionSystem & HUD
-    this.progressionSystem = new ProgressionSystem(classesData, playerData.name || 'Hero');
+    const partySnapshots = GameState.getInstance().getPartySnapshots();
+    const leaderSnap = partySnapshots[0];
+    const leaderName = leaderSnap?.name || playerData.name || 'Hero';
+    this.progressionSystem = new ProgressionSystem(classesData, leaderName);
     this.roomClassifier = new RoomClassifier(dataLoader.getRoomRules());
     this.hud = new HUD();
     this.hud.setLocation('Guild Outpost (Safe Zone)', true);
@@ -181,14 +184,18 @@ export class OutpostScene extends Phaser.Scene {
       (id: string) => this.selectBuildable(id)
     );
 
+    // Milestone 45: Wire up HUD Party Leader change callback
+    this.hud.setPartyLeaderChangeHandler((newLeaderIdx: number) => {
+      this.changePartyLeader(newLeaderIdx);
+    });
+
     // Progression & Skill Discovery Notifications
-    this.bindProgressionEvents(this.progressionSystem, playerData.name || 'Hero');
+    this.bindProgressionEvents(this.progressionSystem, leaderName);
 
     // Restore any previously placed structures from GameState
     this.restorePlacedBuildables();
 
     // 5. Spawn Party & Restore State Snapshot
-    const partySnapshots = GameState.getInstance().getPartySnapshots();
     this.party = [];
 
     if (partySnapshots.length === 0) {
@@ -267,6 +274,8 @@ export class OutpostScene extends Phaser.Scene {
         this.triggerPortalTransition();
       }
     });
+
+    (window as any).debugEnterDungeon = () => this.executeTransitionToDungeon();
 
     // 7. Setup Camera
     this.cameras.main.setBounds(0, 0, this.mapWidth * this.tileSize, this.mapHeight * this.tileSize);
@@ -438,6 +447,22 @@ export class OutpostScene extends Phaser.Scene {
     };
     (window as any).__spawnTestCompanion = () => {
       return this.spawnTestCompanion();
+    };
+    (window as any).__setPartyLeader = (idxOrName: number | string) => {
+      let idx = -1;
+      if (typeof idxOrName === 'number') {
+        idx = idxOrName;
+      } else {
+        idx = this.party.findIndex((m) => m.entityName === idxOrName || m.id === idxOrName);
+      }
+      if (idx === -1) {
+        console.warn(`[Debug] No party member found for '${idxOrName}'`);
+        return false;
+      }
+      return this.changePartyLeader(idx);
+    };
+    (window as any).__getPartyLeader = () => {
+      return this.player;
     };
     (window as any).__recordActivity = (target: string, count: number = 1, memberIdx: number = 0) => {
       const member = this.party[memberIdx];
@@ -1098,18 +1123,64 @@ export class OutpostScene extends Phaser.Scene {
     return true;
   }
 
+  /**
+   * Milestone 45: Reassign party leadership to another living party member from the Outpost.
+   * Restructures party array so the newly promoted leader is moved to index 0.
+   */
+  public changePartyLeader(newLeaderIdx: number): boolean {
+    if (this.isTransitioning) return false;
+    if (newLeaderIdx <= 0 || newLeaderIdx >= this.party.length) return false;
+
+    const newLeader = this.party[newLeaderIdx];
+    if (!newLeader || newLeader.state === 'downed' || newLeader.state === 'dead') {
+      this.hud?.showToast('⚠️ Cannot designate a downed party member as Leader!', 'warn', 3000);
+      return false;
+    }
+
+    const prevLeader = this.party[0];
+    console.log(`[OutpostScene] Reassigning leadership from ${prevLeader.entityName} to ${newLeader.entityName}`);
+
+    // Reorder party array: move newLeader to index 0
+    this.party.splice(newLeaderIdx, 1);
+    this.party.unshift(newLeader);
+
+    // Update progression system reference to the new active leader
+    this.progressionSystem = this.player.progression;
+
+    // Persist new party order to GameState immediately
+    GameState.getInstance().savePartySnapshot(this.party, this.time.now);
+    GameState.getInstance().saveSnapshot(this.player, this.progressionSystem, this.time.now);
+
+    // Re-anchor camera follow to the new leader
+    if (this.isCameraLocked) {
+      this.cameras.main.startFollow(this.player, true, 0.1, 0.1);
+    }
+
+    // Refresh room classification lookup for new leader
+    this.updatePlayerRoomLookup(true);
+
+    // Refresh HUD selection and view
+    this.hud?.setSelectedMemberIndices(this.party.map((_, i) => i));
+    this.hud?.update(this.player, this.progressionSystem, this.time.now, this.party);
+    this.hud?.renderPartyOverviewModal(true);
+
+    this.hud?.showToast(`👑 ${newLeader.entityName} is now the Party Leader!`, 'success', 3500);
+    return true;
+  }
+
   private bindProgressionEvents(prog: ProgressionSystem, memberName?: string): void {
-    const resolvedName = memberName || prog.ownerName || this.player?.entityName || 'Guild Hero';
+    const resolvedName = prog.ownerName || memberName || this.player?.entityName || 'Guild Hero';
     prog.ownerName = resolvedName;
 
     prog.onClassUnlocked((event) => {
-      const name = event.memberName || memberName || prog.ownerName || 'Guild Hero';
+      const name = prog.ownerName || event.memberName || memberName || 'Guild Hero';
       console.log(`%c[UNLOCK] ${name} unlocked ${event.classDef.name}!`, 'color: #f59e0b; font-weight: bold; font-size: 14px;');
       this.hud.showClassUnlockModal(event.classDef, name);
     });
 
     prog.onSkillDiscovered((event) => {
-      const name = event.memberName || memberName || prog.ownerName || 'Guild Hero';
+      const name = prog.ownerName || event.memberName || memberName || 'Guild Hero';
+      GameState.getInstance().discoverProficiency(event.skillId);
       const skillDef = DataLoader.getInstance().getTrainableStatDef(event.skillId);
       if (skillDef) {
         console.log(`%c[DISCOVERY] ${name} discovered ${skillDef.name}!`, 'color: #34d399; font-weight: bold; font-size: 14px;');
@@ -2306,11 +2377,14 @@ export class OutpostScene extends Phaser.Scene {
     this.lastMoveDestinationHighlights = destinations.map(d => ({ x: d.x, y: d.y }));
     this.clearMoveHighlightTimers();
 
-    this.activeMoveHighlights = destinations.map((d, i) => ({
-      dest: { x: d.x, y: d.y },
-      unit: units ? units[i] : (this.party[i] ?? undefined),
-      isLeader: i === 0
-    }));
+    this.activeMoveHighlights = destinations.map((d, i) => {
+      const unit = units ? units[i] : (this.party[i] ?? undefined);
+      return {
+        dest: { x: d.x, y: d.y },
+        unit,
+        isLeader: unit ? unit === this.player : i === 0
+      };
+    });
 
     this.drawMoveHighlights();
   }

@@ -1069,6 +1069,193 @@
       align-items: center;
       gap: 8px;
     }
+    /* Knowledge Base Modal Styles (Milestone 50) */
+    #knowledge-base-modal {
+      width: 920px;
+      max-width: calc(100% - 24px);
+      height: 740px;
+      max-height: calc(100% - 24px);
+      border-color: #38bdf8;
+      box-shadow: 0 0 35px rgba(56, 189, 248, 0.35);
+      padding: 16px 20px;
+      background: rgba(15, 23, 42, 0.98);
+      z-index: 112;
+      display: none;
+      flex-direction: column;
+    }
+    #knowledge-base-modal.active {
+      display: flex;
+    }
+    .knowledge-controls-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+      background: rgba(30, 41, 59, 0.6);
+      padding: 8px 12px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .knowledge-search-wrap {
+      position: relative;
+      flex: 1;
+      min-width: 180px;
+      display: flex;
+      align-items: center;
+    }
+    .knowledge-search-icon {
+      position: absolute;
+      left: 8px;
+      font-size: 12px;
+      color: #94a3b8;
+      pointer-events: none;
+    }
+    #knowledge-search-input {
+      width: 100%;
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      border-radius: 6px;
+      padding: 5px 26px 5px 28px;
+      color: #f1f5f9;
+      font-size: 12px;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    #knowledge-search-input:focus {
+      border-color: #38bdf8;
+      box-shadow: 0 0 8px rgba(56, 189, 248, 0.4);
+    }
+    .knowledge-clear-btn {
+      position: absolute;
+      right: 6px;
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      cursor: pointer;
+      font-size: 11px;
+      padding: 2px 4px;
+      border-radius: 3px;
+    }
+    .knowledge-clear-btn:hover {
+      color: #f1f5f9;
+      background: rgba(255, 255, 255, 0.1);
+    }
+    .knowledge-category-tabs {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+    .knowledge-tab-btn {
+      background: rgba(30, 41, 59, 0.8);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: 4px;
+      color: #94a3b8;
+      padding: 5px 11px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .knowledge-tab-btn:hover {
+      background: rgba(56, 189, 248, 0.15);
+      color: #38bdf8;
+      border-color: rgba(56, 189, 248, 0.4);
+    }
+    .knowledge-tab-btn.active {
+      background: #0284c7;
+      color: #f0f9ff;
+      border-color: #38bdf8;
+      box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
+    }
+    .knowledge-tab-count {
+      background: rgba(0, 0, 0, 0.35);
+      border-radius: 10px;
+      padding: 1px 5px;
+      font-size: 10px;
+    }
+    .knowledge-entries-container {
+      flex: 1;
+      overflow-y: auto;
+      padding-right: 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .knowledge-entries-container::-webkit-scrollbar {
+      width: 6px;
+    }
+    .knowledge-entries-container::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.5);
+      border-radius: 3px;
+    }
+    .knowledge-entries-container::-webkit-scrollbar-thumb {
+      background: rgba(56, 189, 248, 0.3);
+      border-radius: 3px;
+    }
+    .knowledge-card {
+      background: rgba(30, 41, 59, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      transition: border-color 0.2s;
+    }
+    .knowledge-card:hover {
+      border-color: rgba(56, 189, 248, 0.4);
+    }
+    .knowledge-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      padding-bottom: 6px;
+    }
+    .knowledge-card-title {
+      font-size: 14px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .knowledge-badge {
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .knowledge-stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 6px;
+      font-size: 11px;
+    }
+    .knowledge-stat-item {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 4px;
+      padding: 4px 8px;
+      display: flex;
+      justify-content: space-between;
+    }
+    .knowledge-empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 240px;
+      color: #94a3b8;
+      text-align: center;
+      gap: 8px;
+      font-size: 13px;
+    }
     .party-overview-layout {
       display: flex;
       gap: 14px;
@@ -2049,6 +2236,11 @@
         <div style="margin-top: 6px;">
           <button id="open-stockpile-btn" class="btn-action" style="width: 100%; background: #0d9488; border-color: #14b8a6;" type="button">📦 Stockpile Overview [I]</button>
         </div>
+
+        <!-- Knowledge Base Button (Always available in HUD) -->
+        <div style="margin-top: 6px;">
+          <button id="open-knowledge-btn" class="btn-action" style="width: 100%; background: #0284c7; border-color: #38bdf8;" type="button">📖 Knowledge Base [K]</button>
+        </div>
       </div>
 
       <!-- Debug Tooling: All-Skills EXP Overview Panel [ ` ] -->
@@ -2139,6 +2331,9 @@
             <div class="debug-grid-category">MILESTONE 42: POISON & ANTIDOTE</div>
             <button id="debug-btn-poison-self" class="debug-btn" type="button" style="background: #14532d; color: #86efac; border: 1px solid #16a34a;">🧪 Apply Poison (Self-Inflict Persistent DoT)</button>
             <button id="debug-btn-grant-antidote" class="debug-btn" type="button" style="background: #065f46; color: #6ee7b7; border: 1px solid #10b981;">🧪 Grant +1 Antidote</button>
+
+            <div class="debug-grid-category">MILESTONE 50: COMBAT & BESTIARY DEBUG</div>
+            <button id="debug-btn-deal-damage" class="debug-btn" type="button" style="background: #991b1b; color: #fee2e2; border: 1px solid #ef4444; grid-column: 1 / -1;">⚔️ Deal 5 Debug Damage to Target Enemy (formerly [K])</button>
           </div>
         </div>
       </div>
@@ -2753,6 +2948,56 @@
         <!-- Scrollable Grid Container -->
         <div id="stockpile-items-container" class="stockpile-items-container">
           <!-- Dynamically populated category sections and resource cards -->
+        </div>
+      </div>
+
+      <!-- Guild Knowledge Base & Codex Modal (Milestone 50) -->
+      <div id="knowledge-base-modal" class="custom-modal">
+        <div class="modal-header">
+          <div>
+            <div class="modal-title" style="color: #38bdf8; display: flex; align-items: center; gap: 8px;">
+              <span>📖</span> <span>Guild Knowledge Base & Codex</span>
+            </div>
+            <div class="modal-subtitle">Discovered weapons, classes, hidden arts, harvesting lore, craft recipes, afflictions, and bestiary records. [K]</div>
+          </div>
+          <button id="close-knowledge-btn" class="modal-close-btn" type="button">✕</button>
+        </div>
+
+        <!-- Filter, Search, and Category Tab Bar -->
+        <div class="knowledge-controls-bar">
+          <div class="knowledge-search-wrap">
+            <span class="knowledge-search-icon">🔍</span>
+            <input id="knowledge-search-input" type="text" placeholder="Search discovered lore and entries..." autocomplete="off" />
+            <button id="knowledge-clear-search-btn" class="knowledge-clear-btn" type="button" title="Clear search">✕</button>
+          </div>
+          <div class="knowledge-category-tabs">
+            <button class="knowledge-tab-btn active" data-tab="weapons" type="button">
+              <span>⚔️ Weapons</span> <span class="knowledge-tab-count" id="knowledge-count-weapons">0</span>
+            </button>
+            <button class="knowledge-tab-btn" data-tab="classes" type="button">
+              <span>🛡️ Classes</span> <span class="knowledge-tab-count" id="knowledge-count-classes">0</span>
+            </button>
+            <button class="knowledge-tab-btn" data-tab="hidden_skills" type="button">
+              <span>✨ Hidden Skills</span> <span class="knowledge-tab-count" id="knowledge-count-hidden_skills">0</span>
+            </button>
+            <button class="knowledge-tab-btn" data-tab="gathering" type="button">
+              <span>🌿 Gathering</span> <span class="knowledge-tab-count" id="knowledge-count-gathering">0</span>
+            </button>
+            <button class="knowledge-tab-btn" data-tab="crafting" type="button">
+              <span>🔨 Crafting</span> <span class="knowledge-tab-count" id="knowledge-count-crafting">0</span>
+            </button>
+            <button class="knowledge-tab-btn" data-tab="status_effects" type="button">
+              <span>🧪 Status Effects</span> <span class="knowledge-tab-count" id="knowledge-count-status_effects">0</span>
+            </button>
+            <button class="knowledge-tab-btn" data-tab="bestiary" type="button">
+              <span>💀 Bestiary</span> <span class="knowledge-tab-count" id="knowledge-count-bestiary">0</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Scrollable Entries Container -->
+        <div id="knowledge-entries-container" class="knowledge-entries-container">
+          <!-- Dynamically populated entry cards -->
         </div>
       </div>
     </div>

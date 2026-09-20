@@ -39,7 +39,8 @@ import type {
   DungeonConfig,
   GatheringNodesConfig,
   GatheringNodeDef,
-  StartingKitDef
+  StartingKitDef,
+  DungeonRegionDef
 } from '../types/game.ts';
 import { HiddenSkillSystem } from '../systems/HiddenSkillSystem.ts';
 
@@ -210,6 +211,39 @@ export class DataLoader {
     }
   }
 
+  public static readonly DEFAULT_REGIONS: DungeonRegionDef[] = [
+    {
+      id: 'ancient_crypts',
+      name: 'Ancient Crypts',
+      minFloor: 1,
+      maxFloor: 2,
+      walkableTexture: 'tile-walkable',
+      obstacleTexture: 'tile-obstacle',
+      accentColor: '#a78bfa',
+      tagline: 'The Upper Stone Chambers'
+    },
+    {
+      id: 'abyssal_depths',
+      name: 'Abyssal Depths',
+      minFloor: 3,
+      walkableTexture: 'tile-abyssal-walkable',
+      obstacleTexture: 'tile-abyssal-obstacle',
+      accentColor: '#c084fc',
+      tagline: 'The Deep Void Stratum'
+    }
+  ];
+
+  public getRegionForFloor(floorNumber: number): DungeonRegionDef {
+    const config = this.getDungeonConfig();
+    const regions = config.regions && config.regions.length > 0 ? config.regions : DataLoader.DEFAULT_REGIONS;
+    const match = regions.find((r) => {
+      const min = r.minFloor ?? 1;
+      const max = r.maxFloor ?? Infinity;
+      return floorNumber >= min && floorNumber <= max;
+    });
+    return match || regions[0] || DataLoader.DEFAULT_REGIONS[0];
+  }
+
   public getDungeonConfig(): DungeonConfig {
     return (
       this.dungeonConfig || {
@@ -267,6 +301,12 @@ export class DataLoader {
     // Backward-compatibility fallback for legacy references to 'longswords'
     if (id === 'longswords') {
       return this.weaponsData?.weapons?.find((w) => w.id === 'longsword_2h');
+    }
+    if (id === 'spear' || id === 'spear_1h') {
+      return this.weaponsData?.weapons?.find((w) => w.id === 'spears');
+    }
+    if (id === 'spear_2h') {
+      return this.weaponsData?.weapons?.find((w) => w.id === 'spears_2h');
     }
     return undefined;
   }
@@ -377,10 +417,19 @@ export class DataLoader {
         description = 'Proficiency with ice magic to chill enemies and slow their movement.';
       } else if (weapon.id === 'holy_magic') {
         description = 'Proficiency with holy magic to punish the wicked and mend allies with radiant light.';
+      } else if (weapon.id === 'dark_magic') {
+        description = 'Proficiency with dark magic to enfeeble foes with weakening curses and destructive shadow.';
       } else if (weapon.id === 'staff' || weapon.id.endsWith('_staff')) {
         description = 'Proficiency with two-handed staves in melee combat.';
       } else if (weapon.id === 'fist') {
         description = 'Unarmed combat technique. Deceptively humble beginnings that scale toward absurd punch power.';
+      } else if (weapon.id === 'spears' || weapon.id === 'spears_2h' || id === 'spears') {
+        description = 'Proficiency with spears and lances in melee combat.';
+        return {
+          id: 'spears',
+          name: 'Spears',
+          description
+        };
       }
       return {
         id: weapon.id,

@@ -63,6 +63,30 @@
       "description": "A heavy two-handed longsword demanding both hands on the hilt. Deals heavy impact damage at the expense of offhand flexibility."
     },
     {
+      "id": "spear",
+      "name": "Iron Spear",
+      "resultWeaponId": "spears",
+      "requiredLevel": 0,
+      "ingredients": {
+        "ore": 4,
+        "wood": 3
+      },
+      "expGranted": 25,
+      "description": "A versatile one-handed spear with a forged iron tip, ideal for pairing with a shield."
+    },
+    {
+      "id": "spears_2h",
+      "name": "Two-Handed Spear",
+      "resultWeaponId": "spears_2h",
+      "requiredLevel": 0,
+      "ingredients": {
+        "ore": 7,
+        "wood": 5
+      },
+      "expGranted": 35,
+      "description": "A heavy two-handed spear with a long ash shaft and reinforced blade. Delivers heavy piercing damage at the cost of offhand defense."
+    },
+    {
       "id": "lockpick",
       "name": "Lockpick",
       "resultItemId": "lockpick",

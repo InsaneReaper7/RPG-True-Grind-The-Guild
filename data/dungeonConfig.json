@@ -63,5 +63,26 @@
     "bossRandomChancePerFloor": 0.0005,
     "maxBossRandomChance": 0.025
   },
-  "floorRespawnTimerSec": 300
+  "floorRespawnTimerSec": 300,
+  "regions": [
+    {
+      "id": "ancient_crypts",
+      "name": "Ancient Crypts",
+      "minFloor": 1,
+      "maxFloor": 2,
+      "walkableTexture": "tile-walkable",
+      "obstacleTexture": "tile-obstacle",
+      "accentColor": "#a78bfa",
+      "tagline": "The Upper Stone Chambers"
+    },
+    {
+      "id": "abyssal_depths",
+      "name": "Abyssal Depths",
+      "minFloor": 3,
+      "walkableTexture": "tile-abyssal-walkable",
+      "obstacleTexture": "tile-abyssal-obstacle",
+      "accentColor": "#c084fc",
+      "tagline": "The Deep Void Stratum"
+    }
+  ]
 }

@@ -21,6 +21,7 @@ export interface WeaponLevelBonus {
   shockChancePerLevel?: number;
   slowChancePerLevel?: number;
   radianceHealPerLevel?: number;
+  curseChancePerLevel?: number;
 }
 
 export interface WeaponDef {
@@ -35,6 +36,7 @@ export interface WeaponDef {
   burnChance?: number;
   shockChance?: number;
   slowChance?: number;
+  curseChance?: number;
   radianceHealAmount?: number;
   chainTargets?: number;
   chainHopRangeTiles?: number;
@@ -80,6 +82,29 @@ export interface Requirement {
   value: number;
 }
 
+export interface PassiveImbuementProcDef {
+  statusEffectId: string;
+  baseChance: number;
+  maxChance: number;
+  scalingStat?: 'classLevel';
+  minLevel?: number;
+  maxLevel?: number;
+  chancePerLevel?: number;
+}
+
+export interface PassiveImbuementExpDef {
+  proficiency: string;
+  exp?: number;
+  share?: number;
+}
+
+export interface PassiveImbuementDef {
+  bonusDamagePercent?: number;
+  bonusDamageMultiplier?: number;
+  proc?: PassiveImbuementProcDef;
+  secondaryExp?: PassiveImbuementExpDef;
+}
+
 export interface ClassDef {
   id: string;
   name: string;
@@ -87,6 +112,7 @@ export interface ClassDef {
   requirements: Requirement[];
   fantasy: string;
   hiddenSkillBonuses?: Record<string, number>;
+  passiveImbuement?: PassiveImbuementDef;
 }
 
 export interface ClassesData {
@@ -290,7 +316,20 @@ export interface PlayerSnapshot {
   discoveredCookingRecipes?: string[];
   discoveredAlchemyRecipes?: string[];
   dungeonFloorCount?: number;
+  encounteredEnemies?: string[];
+  discoveredProficiencies?: string[];
+  discoveredStatusEffects?: string[];
+  discoveredGatheringNodes?: string[];
 }
+
+export type KnowledgeBaseTab =
+  | 'weapons'
+  | 'classes'
+  | 'hidden_skills'
+  | 'gathering'
+  | 'crafting'
+  | 'status_effects'
+  | 'bestiary';
 
 export interface SkillBookDef {
   id: string;
@@ -452,6 +491,13 @@ export interface SkillDef {
   shieldAmount?: number;
   tickIntervalMs?: number;
   healPerTick?: number;
+  executeThreshold?: number;
+  executeMultiplier?: number;
+  bleedChance?: number;
+  hpCost?: number;
+  drainPercent?: number;
+  maxBonusEnergy?: number;
+  bonusDamagePerEnergy?: number;
 }
 
 export interface SkillsData {
@@ -473,6 +519,10 @@ export interface StatusEffectDef {
   shieldAmount?: number;
   healPerTick?: number;
   holyBonusDamage?: number;
+  damageAmplificationPercent?: number;
+  damageReductionPercent?: number;
+  evasionBonus?: number;
+  accuracyReduction?: number;
   persistent?: boolean;
 }
 
@@ -649,6 +699,18 @@ export interface DungeonConfig {
   crystalPlacement?: string;
   depthScaling?: DepthScalingConfig;
   floorRespawnTimerSec?: number;
+  regions?: DungeonRegionDef[];
+}
+
+export interface DungeonRegionDef {
+  id: string;
+  name: string;
+  minFloor: number;
+  maxFloor?: number;
+  walkableTexture: string;
+  obstacleTexture: string;
+  accentColor: string;
+  tagline?: string;
 }
 
 export interface DepthScalingConfig {

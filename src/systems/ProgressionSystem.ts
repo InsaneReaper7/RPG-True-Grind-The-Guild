@@ -1,4 +1,4 @@
-import type { ClassDef, Requirement, ClassesData, SkillDef, TrainableStat, ExpTransaction } from '../types/game.ts';
+import type { ClassDef, Requirement, ClassesData, SkillDef, TrainableStat, ExpTransaction, PassiveImbuementDef } from '../types/game.ts';
 import { BuildingSystem } from './BuildingSystem.ts';
 import type { ConstructionTierDef } from './BuildingSystem.ts';
 import { LevelingSystem } from './LevelingSystem.ts';
@@ -96,6 +96,7 @@ export class ProgressionSystem {
     this.proficiencies.set('lightning_magic', { level: 0, currentExp: 0 });
     this.proficiencies.set('ice_magic', { level: 0, currentExp: 0 });
     this.proficiencies.set('holy_magic', { level: 0, currentExp: 0 });
+    this.proficiencies.set('dark_magic', { level: 0, currentExp: 0 });
     this.proficiencies.set('dual_wielding', { level: 0, currentExp: 0 });
     this.proficiencies.set('construction', { level: 0, currentExp: 0 });
     this.proficiencies.set('alchemy', { level: 0, currentExp: 0 });
@@ -114,6 +115,7 @@ export class ProgressionSystem {
     this.proficiencies.set('gardening', { level: 0, currentExp: 0 });
     this.proficiencies.set('fist', { level: 0, currentExp: 0 });
     this.proficiencies.set('longswords', { level: 0, currentExp: 0 });
+    this.proficiencies.set('spears', { level: 0, currentExp: 0 });
     for (const hiddenId of ProgressionSystem.HIDDEN_SKILL_IDS) {
       this.proficiencies.set(hiddenId, { level: 0, currentExp: 0 });
     }
@@ -162,6 +164,15 @@ export class ProgressionSystem {
 
   public getConstructionTier(): ConstructionTierDef {
     return BuildingSystem.getConstructionTier(this.getProficiencyLevel('construction'));
+  }
+
+  public getClassDef(classId: string): ClassDef | undefined {
+    return this.classesData?.classes?.find((c) => c.id === classId) ?? DataLoader.getInstance().getClass(classId);
+  }
+
+  public getActivePassiveImbuement(activeClassId?: string | null): PassiveImbuementDef | undefined {
+    if (!activeClassId) return undefined;
+    return this.getClassDef(activeClassId)?.passiveImbuement;
   }
 
   public getClassLevel(classId: string): number {

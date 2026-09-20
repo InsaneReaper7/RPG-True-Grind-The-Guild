@@ -176,8 +176,13 @@ export class Player extends Entity {
     this.equippedWeapon = resolvedWeapon;
     this.attackRangeTiles = resolvedWeapon.attackRangeTiles ?? ((resolvedWeapon.category === 'magic' && resolvedWeapon.baseDamage > 0) || resolvedWeapon.category === 'ranged' ? 4 : 1);
     if (resolvedWeapon.twoHanded && this.offhandWeapon) {
-      console.log(`[Player:${this.entityName}] Unequipped offhand because ${resolvedWeapon.name} is two-handed`);
-      this.offhandWeapon = null;
+      const isScout = this.activeClass === 'scout' || (this.progression && this.progression.getClassLevel('scout') > 0);
+      const isBow = resolvedWeapon.category === 'ranged' || resolvedWeapon.proficiencyId === 'bows' || resolvedWeapon.id === 'bows';
+      const isDagger = this.offhandWeapon.id === 'daggers' || this.offhandWeapon.proficiencyId === 'daggers';
+      if (!(isScout && isBow && isDagger)) {
+        console.log(`[Player:${this.entityName}] Unequipped offhand because ${resolvedWeapon.name} is two-handed`);
+        this.offhandWeapon = null;
+      }
     }
     console.log(`[Player:${this.entityName}] Equipped main weapon: ${resolvedWeapon.name} (Range: ${this.attackRangeTiles} tiles)`);
     return true;
@@ -193,14 +198,21 @@ export class Player extends Entity {
       console.log(`[Player:${this.entityName}] Unequipped offhand weapon`);
       return true;
     }
+    const isScout = this.activeClass === 'scout' || (this.progression && this.progression.getClassLevel('scout') > 0);
+    const isBow = this.equippedWeapon?.category === 'ranged' || this.equippedWeapon?.proficiencyId === 'bows' || this.equippedWeapon?.id === 'bows';
+    const isDagger = weapon.id === 'daggers' || weapon.proficiencyId === 'daggers';
+    const isBowSidearmDagger = isScout && isBow && isDagger;
+
     if (this.equippedWeapon?.twoHanded) {
-      console.warn(`[Player:${this.entityName}] Cannot equip offhand while wielding a two-handed weapon!`);
-      return false;
+      if (!isBowSidearmDagger) {
+        console.warn(`[Player:${this.entityName}] Cannot equip offhand while wielding a two-handed weapon!`);
+        return false;
+      }
     }
-    // Shield can be equipped directly in offhand without requiring Dual Wielding
-    if (weapon.category === 'offhand' || weapon.id === 'shields') {
+    // Shield or Bow-sidearm Dagger can be equipped directly in offhand without requiring Dual Wielding
+    if (weapon.category === 'offhand' || weapon.id === 'shields' || isBowSidearmDagger) {
       this.offhandWeapon = weapon;
-      console.log(`[Player:${this.entityName}] Equipped shield in offhand: ${weapon.name}`);
+      console.log(`[Player:${this.entityName}] Equipped ${isBowSidearmDagger ? 'sidearm dagger' : 'shield'} in offhand: ${weapon.name}`);
       return true;
     }
     // Second one-handed weapon requires Dual Wielding unlocked

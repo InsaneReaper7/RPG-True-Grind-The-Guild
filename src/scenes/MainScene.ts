@@ -112,7 +112,6 @@ export class MainScene extends Phaser.Scene {
     SPACE: Phaser.Input.Keyboard.Key;
   };
   private rKey!: Phaser.Input.Keyboard.Key;
-  private kKey!: Phaser.Input.Keyboard.Key;
   private xKey!: Phaser.Input.Keyboard.Key;
   private zKey!: Phaser.Input.Keyboard.Key;
   private cKey!: Phaser.Input.Keyboard.Key;
@@ -259,15 +258,19 @@ export class MainScene extends Phaser.Scene {
     // Expose generated dungeon for debug and verification inspection
     (window as any).__lastGeneratedDungeon = this.dungeon;
 
-    // 2. Tilemap Creation using Phaser Tilemap API
+    // Milestone 44: Dynamically resolve active region for this floor
+    const activeRegion = dataLoader.getRegionForFloor(floorNumber);
+    (window as any).__lastActiveRegion = activeRegion;
+
+    // 2. Tilemap Creation using Phaser Tilemap API with region textures
     this.tilemap = this.make.tilemap({
       data: this.gridMatrix,
       tileWidth: this.tileSize,
       tileHeight: this.tileSize
     });
 
-    const tilesetWalkable = this.tilemap.addTilesetImage('tile-walkable', 'tile-walkable');
-    const tilesetObstacle = this.tilemap.addTilesetImage('tile-obstacle', 'tile-obstacle');
+    const tilesetWalkable = this.tilemap.addTilesetImage('tile-walkable', activeRegion.walkableTexture);
+    const tilesetObstacle = this.tilemap.addTilesetImage('tile-obstacle', activeRegion.obstacleTexture);
 
     if (tilesetWalkable && tilesetObstacle) {
       this.tilemap.createLayer(0, [tilesetWalkable, tilesetObstacle], 0, 0);
@@ -277,12 +280,22 @@ export class MainScene extends Phaser.Scene {
     this.pathfinder = new Pathfinder(this.gridMatrix);
 
     // 4. Initialize Systems & HUD
-    this.progressionSystem = new ProgressionSystem(classesData, playerData.name || 'Hero');
+    const partySnapshots = GameState.getInstance().getPartySnapshots();
+    const leaderSnap = partySnapshots[0];
+    const leaderName = leaderSnap?.name || playerData.name || 'Hero';
+    this.progressionSystem = new ProgressionSystem(classesData, leaderName);
     this.hud = new HUD();
     this.hud.setGatheringModeActive(false);
     const hasBossRoom = this.dungeon.rooms.some((r) => r.type === 'boss');
-    this.hud.setLocation(`Dungeon Floor ${floorNumber}${hasBossRoom ? ' (Boss)' : ''}`, false);
+    this.hud.setLocation(`${activeRegion.name} — Floor ${floorNumber}${hasBossRoom ? ' (Boss Chamber)' : ''}`, false, activeRegion.accentColor);
     GameState.getInstance().setSafeZone(false);
+
+    // Announce region entry toast when crossing into a region
+    const prevFloor = floorNumber - 1;
+    const prevRegion = prevFloor >= 1 ? dataLoader.getRegionForFloor(prevFloor) : null;
+    if (!prevRegion || prevRegion.id !== activeRegion.id) {
+      this.hud.showToast(`🌌 Entering ${activeRegion.name} (Floor ${floorNumber}) — ${activeRegion.tagline || 'New Biome'}`, 'info', 4000);
+    }
 
     // Milestone 25: Wire HUD party portrait selection handler
     this.hud.setPartySelectionHandler(
@@ -295,10 +308,9 @@ export class MainScene extends Phaser.Scene {
     );
 
     // Progression & Skill Discovery Notifications
-    this.bindProgressionEvents(this.progressionSystem, playerData.name || 'Hero');
+    this.bindProgressionEvents(this.progressionSystem, leaderName);
 
     // 5. Spawn Party (Hero & Companions) around dynamic entrance portal
-    const partySnapshots = GameState.getInstance().getPartySnapshots();
     this.party = [];
 
     if (partySnapshots.length === 0) {
@@ -480,7 +492,6 @@ export class MainScene extends Phaser.Scene {
         SPACE: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE)
       };
       this.rKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.R);
-      this.kKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.K);
       this.xKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.X);
       this.zKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.Z);
       this.cKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.C);
@@ -499,6 +510,7 @@ export class MainScene extends Phaser.Scene {
 
     // Expose debug helpers on window for browser console testing
     (window as any).GameState = GameState;
+    (window as any).__dealDebugDamage = (amount: number = 5) => this.dealDebugDamageToEnemy(amount);
     (window as any).__toggleGatheringMode = (force?: boolean) => this.toggleGatheringMode(force);
     (window as any).__startGatheringQueue = (nodes: GatheringNode[]) => this.startGatheringQueue(nodes);
     (window as any).__getGatheringQueue = () => ({
@@ -514,6 +526,11 @@ export class MainScene extends Phaser.Scene {
     (window as any).__selectMember = (index: number, multiSelect?: boolean) => this.selectMemberByIndex(index, multiSelect);
     (window as any).__selectAllMembers = () => this.selectAllMembers();
     (window as any).__getSelectedMembers = () => this.getSelectedMembers();
+    (window as any).__getPartyLeader = () => this.player;
+    (window as any).__setPartyLeader = () => {
+      this.hud?.showToast('⚠️ Leadership can only be changed at the Outpost!', 'warn', 3000);
+      return false;
+    };
     (window as any).__getLastMoveDestinationHighlights = () => this.lastMoveDestinationHighlights;
     (window as any).__getCurrentGatherSelectionHighlights = () => this.currentGatherSelectionHighlights;
     (window as any).__grantExp = (statId: string = 'short_swords', amount: number = 25, memberIndex: number = 0) => {
@@ -1498,17 +1515,18 @@ export class MainScene extends Phaser.Scene {
   }
 
   private bindProgressionEvents(prog: ProgressionSystem, memberName?: string): void {
-    const resolvedName = memberName || prog.ownerName || this.player?.entityName || 'Guild Hero';
+    const resolvedName = prog.ownerName || memberName || this.player?.entityName || 'Guild Hero';
     prog.ownerName = resolvedName;
 
     prog.onClassUnlocked((event) => {
-      const name = event.memberName || memberName || prog.ownerName || 'Guild Hero';
+      const name = prog.ownerName || event.memberName || memberName || 'Guild Hero';
       console.log(`%c[UNLOCK] ${name} unlocked ${event.classDef.name}!`, 'color: #f59e0b; font-weight: bold; font-size: 14px;');
       this.hud.showClassUnlockModal(event.classDef, name);
     });
 
     prog.onSkillDiscovered((event) => {
-      const name = event.memberName || memberName || prog.ownerName || 'Guild Hero';
+      const name = prog.ownerName || event.memberName || memberName || 'Guild Hero';
+      GameState.getInstance().discoverProficiency(event.skillId);
       const skillDef = DataLoader.getInstance().getTrainableStatDef(event.skillId);
       if (skillDef) {
         console.log(`%c[DISCOVERY] ${name} discovered ${skillDef.name}!`, 'color: #34d399; font-weight: bold; font-size: 14px;');
@@ -1581,10 +1599,14 @@ export class MainScene extends Phaser.Scene {
   public openCrystalModal(): void {
     if (this.isTransitioning) return;
     const currentFloor = GameState.getInstance().getDungeonFloorCount();
+    const currentRegion = DataLoader.getInstance().getRegionForFloor(currentFloor);
+    const nextRegion = DataLoader.getInstance().getRegionForFloor(currentFloor + 1);
     this.hud.showTeleporterCrystalModal(
       currentFloor,
       () => this.executeContinueDescent(),
-      () => this.executeTransitionToOutpost()
+      () => this.executeTransitionToOutpost(),
+      currentRegion.name,
+      nextRegion.name !== currentRegion.name ? nextRegion.name : undefined
     );
   }
 
@@ -1720,28 +1742,6 @@ export class MainScene extends Phaser.Scene {
       }
     }
 
-    // Debug Damage key listener [K]
-    if (this.kKey && Phaser.Input.Keyboard.JustDown(this.kKey)) {
-      let targetEnemy: Enemy | null = null;
-      for (const member of this.party) {
-        if (member.targetEntity instanceof Enemy && member.targetEntity.state !== 'dead' && member.targetEntity.state !== 'downed') {
-          targetEnemy = member.targetEntity;
-          break;
-        }
-      }
-      if (!targetEnemy) {
-        targetEnemy = this.enemies.find((e) => e.state !== 'dead' && e.state !== 'downed') || null;
-      }
-
-      if (targetEnemy) {
-        console.log(`[Debug K Key] Dealing 5 damage to ${targetEnemy.entityName} from distance!`);
-        const wasDowned = targetEnemy.takeDamage(5);
-        if (wasDowned) {
-          console.log(`[Debug K Key] ${targetEnemy.entityName} was downed by debug hit!`);
-          this.onEnemyDefeated(targetEnemy);
-        }
-      }
-    }
 
     // Debug Grant +25 Weapon EXP [X]
     if (this.xKey && Phaser.Input.Keyboard.JustDown(this.xKey)) {
@@ -2069,6 +2069,30 @@ export class MainScene extends Phaser.Scene {
       this.hud.updateDebugAutoRespawnBtn(this.debugAutoRespawnEnabled);
     }
     return this.debugAutoRespawnEnabled;
+  }
+
+  public dealDebugDamageToEnemy(amount: number = 5): boolean {
+    let targetEnemy: Enemy | null = null;
+    for (const member of this.party) {
+      if (member.targetEntity instanceof Enemy && member.targetEntity.state !== 'dead' && member.targetEntity.state !== 'downed') {
+        targetEnemy = member.targetEntity;
+        break;
+      }
+    }
+    if (!targetEnemy) {
+      targetEnemy = this.enemies.find((e) => e.state !== 'dead' && e.state !== 'downed') || null;
+    }
+
+    if (targetEnemy) {
+      console.log(`[Debug Damage] Dealing ${amount} debug damage to ${targetEnemy.entityName}!`);
+      const wasDowned = targetEnemy.takeDamage(amount);
+      if (wasDowned) {
+        console.log(`[Debug Damage] ${targetEnemy.entityName} was downed by debug hit!`);
+        this.onEnemyDefeated(targetEnemy);
+      }
+      return true;
+    }
+    return false;
   }
 
   public onEnemyDefeated(deadEnemy: Enemy): void {
@@ -2711,6 +2735,9 @@ export class MainScene extends Phaser.Scene {
     const skillName = DataLoader.getInstance().getTrainableStatDef(node.nodeDef.skillId)?.name || node.nodeDef.skillId;
     this.createFloatingText(posX, posY - 32, `+${expGranted} ${skillName} EXP`, '#60a5fa');
 
+    GameState.getInstance().discoverGatheringNode(node.nodeDef.id);
+    GameState.getInstance().discoverProficiency(node.nodeDef.skillId);
+
     // Bounce animation
     this.tweens.add({
       targets: node.sprite,
@@ -3191,11 +3218,14 @@ export class MainScene extends Phaser.Scene {
     this.lastMoveDestinationHighlights = destinations.map(d => ({ x: d.x, y: d.y }));
     this.clearMoveHighlightTimers();
 
-    this.activeMoveHighlights = destinations.map((d, i) => ({
-      dest: { x: d.x, y: d.y },
-      unit: units ? units[i] : (this.party[i] ?? undefined),
-      isLeader: i === 0
-    }));
+    this.activeMoveHighlights = destinations.map((d, i) => {
+      const unit = units ? units[i] : (this.party[i] ?? undefined);
+      return {
+        dest: { x: d.x, y: d.y },
+        unit,
+        isLeader: unit ? unit === this.player : i === 0
+      };
+    });
 
     this.drawMoveHighlights();
   }

@@ -135,6 +135,45 @@
       "persistent": true,
       "isHarmful": true,
       "color": "#16a34a"
+    },
+    {
+      "id": "expose",
+      "name": "Expose",
+      "durationMs": 6000,
+      "tickIntervalMs": 6000,
+      "damagePerTick": 0,
+      "damageAmplificationPercent": 0.25,
+      "isHarmful": true,
+      "color": "#e11d48"
+    },
+    {
+      "id": "evasive_roll",
+      "name": "Evasive Roll",
+      "durationMs": 2000,
+      "tickIntervalMs": 2000,
+      "damagePerTick": 0,
+      "evasionBonus": 0.5,
+      "color": "#38bdf8"
+    },
+    {
+      "id": "curse",
+      "name": "Curse",
+      "durationMs": 5000,
+      "tickIntervalMs": 5000,
+      "damagePerTick": 0,
+      "damageReductionPercent": 0.25,
+      "isHarmful": true,
+      "color": "#a855f7"
+    },
+    {
+      "id": "blind",
+      "name": "Blind",
+      "durationMs": 4000,
+      "tickIntervalMs": 4000,
+      "damagePerTick": 0,
+      "accuracyReduction": 0.35,
+      "isHarmful": true,
+      "color": "#6b21a8"
     }
   ]
 }

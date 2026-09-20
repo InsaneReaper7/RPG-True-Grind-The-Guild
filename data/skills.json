@@ -370,6 +370,180 @@
         }
       ],
       "description": "An unassuming, basic punch thrown with terrifyingly disproportionate momentum, dealing 250% weapon damage."
+    },
+    {
+      "id": "quickshot",
+      "name": "Quickshot",
+      "energyCost": 15,
+      "cooldownMs": 2500,
+      "damageMultiplier": 1.4,
+      "rangeTiles": 5,
+      "targetType": "enemy",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "scout",
+          "value": 1
+        }
+      ],
+      "description": "Scout baseline: a fast, low-cost ranged attack (or swift throwing blade) dealing 140% weapon damage."
+    },
+    {
+      "id": "mark_target",
+      "name": "Mark Target",
+      "energyCost": 18,
+      "cooldownMs": 8000,
+      "durationMs": 6000,
+      "rangeTiles": 5,
+      "targetType": "enemy",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "scout",
+          "value": 10
+        }
+      ],
+      "description": "Marks the target with Expose for 6s, causing it to take 25% increased damage from all incoming attacks."
+    },
+    {
+      "id": "evasive_roll",
+      "name": "Evasive Roll",
+      "energyCost": 20,
+      "cooldownMs": 6000,
+      "durationMs": 2000,
+      "targetType": "self",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "scout",
+          "value": 20
+        }
+      ],
+      "description": "Rolls backward to create distance and grants a 2s dodge window with +50% Evasion, synergizing with Counterattack."
+    },
+    {
+      "id": "trap_snare",
+      "name": "Trap Snare",
+      "energyCost": 22,
+      "cooldownMs": 10000,
+      "durationMs": 4000,
+      "damageMultiplier": 1.2,
+      "rangeTiles": 4,
+      "targetType": "enemy",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "scout",
+          "value": 30
+        }
+      ],
+      "description": "Deploys a ground snare on the target, dealing 120% weapon damage and Slowing their movement by 50% for 4s."
+    },
+    {
+      "id": "kill_shot",
+      "name": "Kill Shot",
+      "energyCost": 30,
+      "cooldownMs": 12000,
+      "damageMultiplier": 2.0,
+      "executeThreshold": 0.4,
+      "executeMultiplier": 2.0,
+      "rangeTiles": 5,
+      "targetType": "enemy",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "scout",
+          "value": 40
+        }
+      ],
+      "description": "Scout capstone: executes a lethal strike dealing 200% weapon damage, doubled to 400% against targets below 40% health."
+    },
+    {
+      "id": "rending_cut",
+      "name": "Rending Cut",
+      "energyCost": 20,
+      "cooldownMs": 4000,
+      "damageMultiplier": 1.5,
+      "bleedChance": 1.0,
+      "targetType": "enemy",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "dark_knight",
+          "value": 1
+        }
+      ],
+      "description": "Dark Knight baseline: a vicious strike infusing dark power into the blade, dealing 150% weapon damage and causing the target to Bleed."
+    },
+    {
+      "id": "dark_pact",
+      "name": "Dark Pact",
+      "energyCost": 15,
+      "hpCost": 10,
+      "cooldownMs": 6000,
+      "damageMultiplier": 2.4,
+      "targetType": "enemy",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "dark_knight",
+          "value": 10
+        }
+      ],
+      "description": "Sacrifices 10 HP to unleash a destructive dark surge, dealing 240% weapon damage to the target."
+    },
+    {
+      "id": "umbral_step",
+      "name": "Umbral Step",
+      "energyCost": 25,
+      "cooldownMs": 8000,
+      "durationMs": 4000,
+      "damageMultiplier": 1.4,
+      "rangeTiles": 5,
+      "targetType": "enemy",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "dark_knight",
+          "value": 20
+        }
+      ],
+      "description": "Dashes through shadow to instantly close distance to a target up to 5 tiles away, dealing 140% weapon damage and Blinding the target for 4s."
+    },
+    {
+      "id": "soul_drain",
+      "name": "Soul Drain",
+      "energyCost": 25,
+      "cooldownMs": 9000,
+      "damageMultiplier": 1.8,
+      "drainPercent": 0.5,
+      "targetType": "enemy",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "dark_knight",
+          "value": 30
+        }
+      ],
+      "description": "Strikes the target for 180% weapon damage and siphons their life essence, healing the caster for 50% of the damage dealt."
+    },
+    {
+      "id": "oblivion_strike",
+      "name": "Oblivion Strike",
+      "energyCost": 35,
+      "maxBonusEnergy": 25,
+      "bonusDamagePerEnergy": 0.04,
+      "cooldownMs": 15000,
+      "damageMultiplier": 3.0,
+      "targetType": "enemy",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "dark_knight",
+          "value": 40
+        }
+      ],
+      "description": "Dark Knight capstone: a cataclysmic blow dealing 300% weapon damage, consuming up to 25 bonus energy for +4% extra damage per point consumed."
     }
   ]
 }
