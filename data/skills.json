@@ -354,6 +354,22 @@
         }
       ],
       "description": "Restoration Mage capstone: calls upon divine grace to resurrect all downed allies within a 6-tile radius at once."
+    },
+    {
+      "id": "normal_punch",
+      "name": "Normal Punch",
+      "energyCost": 20,
+      "cooldownMs": 4000,
+      "damageMultiplier": 2.5,
+      "targetType": "enemy",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "brawler",
+          "value": 1
+        }
+      ],
+      "description": "An unassuming, basic punch thrown with terrifyingly disproportionate momentum, dealing 250% weapon damage."
     }
   ]
 }

@@ -132,7 +132,7 @@ async function runTests() {
 
   // Equipping a two-handed weapon in main hand must unequip offhand Shield!
   player1.equipWeapon(longswords);
-  assert.equal(player1.equippedWeapon.id, 'longswords', 'Main weapon is now longswords');
+  assert.equal(player1.equippedWeapon.id, longswords.id, 'Main weapon is now 2H longsword');
   assert.equal(player1.offhandWeapon, null, 'Two-handed main weapon must automatically unequip offhand');
   assert.equal(player1.hasShield(), false, 'hasShield() must be false with 2H weapon');
 

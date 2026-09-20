@@ -17,7 +17,7 @@ export class GameState {
   private inventory: Map<string, number> = new Map();
   private bookLearnedSkills: Set<string> = new Set();
   private discoveredCookingRecipes: Set<string> = new Set();
-  private discoveredAlchemyRecipes: Set<string> = new Set(['bandage', 'energy_potion', 'escape_stone']);
+  private discoveredAlchemyRecipes: Set<string> = new Set(['bandage', 'antidote', 'energy_potion', 'escape_stone']);
 
   // Milestone 7: Day/Clock, Food & Mood Systems
   private currentGameDay: number = 1;
@@ -57,9 +57,11 @@ export class GameState {
     } else if (kitId === 'sword_and_shield') {
       return { mainWeaponId: 'short_swords', offhandWeaponId: 'shields' };
     } else if (kitId === '2h_longsword') {
-      return { mainWeaponId: 'longswords', offhandWeaponId: null };
+      return { mainWeaponId: 'longsword_2h', offhandWeaponId: null };
     } else if (kitId === 'bow_and_dagger') {
       return { mainWeaponId: 'bows', offhandWeaponId: 'daggers' };
+    } else if (kitId === 'unarmed' || kitId === 'bare_hands' || kitId === 'fist') {
+      return { mainWeaponId: 'fist', offhandWeaponId: null };
     }
     return { mainWeaponId: kitId, offhandWeaponId: null };
   }
@@ -96,7 +98,8 @@ export class GameState {
 
     const seedProficiencies: Record<string, TrainableStat> = {
       [initialMainWeapon]: { level: 0, currentExp: 0 },
-      construction: { level: 0, currentExp: 0 }
+      construction: { level: 0, currentExp: 0 },
+      fist: { level: 0, currentExp: 0 }
     };
     if (initialOffhandWeapon) {
       seedProficiencies[initialOffhandWeapon] = { level: 0, currentExp: 0 };

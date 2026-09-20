@@ -127,6 +127,7 @@ export interface EnemyDef {
   attackRangeTiles?: number;
   harvest: HarvestItem[];
   corpseHarvest?: CorpseHarvestDef;
+  poisonChance?: number;
 }
 
 export interface EnemiesData {
@@ -460,7 +461,7 @@ export interface SkillsData {
 export interface StatusEffectDef {
   id: string;
   name: string;
-  durationMs: number;
+  durationMs?: number;
   tickIntervalMs: number;
   damagePerTick: number;
   color?: string;
@@ -472,6 +473,7 @@ export interface StatusEffectDef {
   shieldAmount?: number;
   healPerTick?: number;
   holyBonusDamage?: number;
+  persistent?: boolean;
 }
 
 export interface StatusEffectsData {

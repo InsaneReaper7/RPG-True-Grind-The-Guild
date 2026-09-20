@@ -99,11 +99,13 @@ class MockDOMElement {
   }
 
   public click(): void {
+    if ((this as any).onclick) (this as any).onclick({ target: this });
     const handlers = this.listeners['click'] || [];
     for (const h of handlers) h({ target: this });
   }
 
   public trigger(event: string, data?: any): void {
+    if ((this as any)[`on${event}`]) (this as any)[`on${event}`]({ target: this, ...data });
     const handlers = this.listeners[event] || [];
     for (const h of handlers) h({ target: this, ...data });
   }

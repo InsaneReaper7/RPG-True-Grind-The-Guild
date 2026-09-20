@@ -213,6 +213,42 @@
       "hiddenSkillBonuses": {
         "evasion": 0.05
       }
+    },
+    {
+      "id": "brawler",
+      "name": "Brawler",
+      "tier": "novice",
+      "requirements": [
+        { "type": "proficiency", "target": "fist", "value": 10 }
+      ],
+      "fantasy": "Weaponless, and getting better at it — the humble start of an absurd punch journey",
+      "hiddenSkillBonuses": {
+        "counterattack": 0.08,
+        "resilience": 0.08
+      }
+    },
+    {
+      "id": "squire",
+      "name": "Squire",
+      "tier": "novice",
+      "requirements": [
+        { "type": "proficiency", "target": "longswords", "value": 10 }
+      ],
+      "fantasy": "Trainee in traditional swordplay",
+      "hiddenSkillBonuses": {
+        "parry": 0.05
+      }
+    },
+    {
+      "id": "dark_knight",
+      "name": "Dark Knight",
+      "tier": "expert",
+      "requirements": [
+        { "type": "proficiency", "target": "longswords", "value": 30 },
+        { "type": "proficiency", "target": "dark_magic", "value": 30 },
+        { "type": "classLevel", "target": "vanguard", "value": 15 }
+      ],
+      "fantasy": "Warrior empowered by darkness"
     }
   ]
 }

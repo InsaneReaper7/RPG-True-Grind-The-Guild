@@ -307,6 +307,9 @@ export class Entity extends Phaser.GameObjects.Container {
     this.avatarSprite.setAngle(90);
     this.avatarSprite.setAlpha(0.6);
     this.drawHpBar();
+
+    // Milestone 42: Clear persistent status effects on Downed transition generically
+    this.clearPersistentStatusEffects();
   }
 
   public applyStatusEffect(effectDef: StatusEffectDef): void {
@@ -314,7 +317,7 @@ export class Entity extends Phaser.GameObjects.Container {
 
     this.activeStatusEffects.set(effectDef.id, {
       def: effectDef,
-      remainingMs: effectDef.durationMs,
+      remainingMs: effectDef.persistent ? Infinity : (effectDef.durationMs ?? 0),
       nextTickMs: effectDef.tickIntervalMs,
       shieldHp: effectDef.shieldAmount !== undefined ? effectDef.shieldAmount : undefined
     });
@@ -349,6 +352,24 @@ export class Entity extends Phaser.GameObjects.Container {
     const toRemove: string[] = [];
     for (const [effectId, activeEffect] of this.activeStatusEffects.entries()) {
       if (activeEffect.def?.isHarmful === true) {
+        toRemove.push(effectId);
+      }
+    }
+    for (const effectId of toRemove) {
+      this.removeStatusEffect(effectId);
+    }
+    return toRemove;
+  }
+
+  /**
+   * Fully generic persistent status effect cleanser:
+   * Removes every active status effect where persistent === true.
+   * Cleared automatically upon Downed transition to keep Downed state safe.
+   */
+  public clearPersistentStatusEffects(): string[] {
+    const toRemove: string[] = [];
+    for (const [effectId, activeEffect] of this.activeStatusEffects.entries()) {
+      if (activeEffect.def?.persistent === true) {
         toRemove.push(effectId);
       }
     }
@@ -439,6 +460,14 @@ export class Entity extends Phaser.GameObjects.Container {
     } else if (this.activeStatusEffects.has('blessed_weapons')) {
       this.avatarSprite.setTint(0xfacc15);
       if (this.statusIconSprite) this.statusIconSprite.setVisible(false);
+    } else if (this.activeStatusEffects.has('poison')) {
+      this.avatarSprite.setTint(0x4ade80);
+      if (this.statusIconSprite) {
+        if (this.scene?.textures?.exists('poison-icon')) {
+          this.statusIconSprite.setTexture('poison-icon');
+        }
+        this.statusIconSprite.setVisible(true);
+      }
     } else if (this.activeStatusEffects.has('slow')) {
       this.avatarSprite.setTint(0x67e8f9);
       if (this.statusIconSprite) {
@@ -459,10 +488,13 @@ export class Entity extends Phaser.GameObjects.Container {
     const toRemove: string[] = [];
 
     this.activeStatusEffects.forEach((activeEffect, effectId) => {
-      activeEffect.remainingMs -= deltaMs;
+      const isPersistent = activeEffect.def?.persistent === true;
+      if (!isPersistent) {
+        activeEffect.remainingMs -= deltaMs;
+      }
       activeEffect.nextTickMs -= deltaMs;
 
-      if (activeEffect.nextTickMs <= 0 && activeEffect.remainingMs >= 0) {
+      if (activeEffect.nextTickMs <= 0 && (isPersistent || activeEffect.remainingMs >= 0)) {
         if (activeEffect.def?.healPerTick && activeEffect.def.healPerTick > 0) {
           const restored = this.heal(activeEffect.def.healPerTick);
           console.log(`[HoT] ${this.entityName} heals ${restored} HP from ${activeEffect.def.name}!`);
@@ -480,7 +512,7 @@ export class Entity extends Phaser.GameObjects.Container {
         activeEffect.nextTickMs += activeEffect.def.tickIntervalMs;
       }
 
-      if (activeEffect.remainingMs <= 0) {
+      if (!isPersistent && activeEffect.remainingMs <= 0) {
         toRemove.push(effectId);
       }
     });

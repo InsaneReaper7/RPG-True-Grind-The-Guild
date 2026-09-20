@@ -704,7 +704,7 @@ async function runTests() {
   assert.equal(swKit.offhandWeaponId, 'shields');
 
   const lsKit = gameState.resolveStartingKit('2h_longsword');
-  assert.equal(lsKit.mainWeaponId, 'longswords');
+  assert.equal(lsKit.mainWeaponId, 'longsword_2h');
   assert.equal(lsKit.offhandWeaponId, null);
 
   const bdKit = gameState.resolveStartingKit('bow_and_dagger');

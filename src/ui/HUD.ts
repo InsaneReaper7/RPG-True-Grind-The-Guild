@@ -128,6 +128,11 @@ export class HUD {
   private alchemyRecipesContainerEl: HTMLElement | null;
   private alchemyPlayerStatusEl: HTMLElement | null;
   private alchemyApplyBandageBtn: HTMLElement | null;
+  private alchemyApplyAntidoteBtn: HTMLElement | null;
+  private alchemyModalAntidotesEl: HTMLElement | null;
+  private debugBtnPoisonSelf: HTMLElement | null;
+  private debugBtnGrantAntidote: HTMLElement | null;
+  private lastAntidoteApplyTime: number = 0;
 
   // Milestone 19 & 31 Debug Buttons
   private debugBtnGrantEnergyPotion: HTMLElement | null;
@@ -165,6 +170,7 @@ export class HUD {
   private openPartyBtn: HTMLElement | null;
   private currentParty: Player[] = [];
   private renderedPartyRosterKey: string = '';
+  private static lastRenderedPartyRosterKey: string = '';
   private lastPartyStatsUpdateTime: number = 0;
 
   // Milestone 35 Elements (Paperdoll & Equipment Stash)
@@ -178,6 +184,7 @@ export class HUD {
   private debugBtnLv30SwordsDaggers: HTMLElement | null;
   private debugBtnGrantDaggersExp: HTMLElement | null;
   private debugBtnGrantDualWieldExp: HTMLElement | null;
+  private debugBtnGrantWeapon680Exp: HTMLElement | null;
 
   // Milestone 14 Elements (Active Class & Debug Buttons)
   private activeClassContainerEl: HTMLElement | null;
@@ -237,6 +244,7 @@ export class HUD {
   private floorTimerBadgeEl: HTMLElement | null;
   private debugBtnFastForwardFloorTimer: HTMLElement | null;
   private debugBtnTriggerFloorRespawn: HTMLElement | null;
+  private debugBtnRespawnAllEnemies: HTMLElement | null;
   private debugBtnToggleAutoRespawn: HTMLElement | null;
 
   // Stockpile Overview Elements
@@ -260,6 +268,8 @@ export class HUD {
   private showHeldOnly: boolean = false;
   private lastStockpileUpdateTime: number = 0;
   private renderedStockpileStructureKey: string = '';
+  private static lastRenderedStockpileStructureKey: string = '';
+  public static readonly MAX_EXP_LOG_DOM_ENTRIES: number = 50;
 
   private static activeInstance: HUD | null = null;
   private static hasGlobalListeners: boolean = false;
@@ -289,6 +299,9 @@ export class HUD {
   private hasSeenBandages: boolean = false;
 
   constructor() {
+    this.renderedPartyRosterKey = HUD.lastRenderedPartyRosterKey;
+    this.renderedStockpileStructureKey = HUD.lastRenderedStockpileStructureKey;
+
     this.hudCardEl = document.getElementById('hud-card');
     this.playerHpEl = document.getElementById('player-hp-text');
     this.playerCritHpEl = document.getElementById('player-crit-hp-text');
@@ -429,7 +442,8 @@ export class HUD {
       this.debugExpLogListEl.innerHTML = '';
     }
     const existingLogs = ProgressionSystem.getExpLog();
-    for (const tx of existingLogs) {
+    const recentLogs = existingLogs.slice(-HUD.MAX_EXP_LOG_DOM_ENTRIES);
+    for (const tx of recentLogs) {
       this.appendExpLogEntry(tx);
     }
 
@@ -476,6 +490,10 @@ export class HUD {
     this.alchemyRecipesContainerEl = document.getElementById('alchemy-recipes-container');
     this.alchemyPlayerStatusEl = document.getElementById('alchemy-player-status');
     this.alchemyApplyBandageBtn = document.getElementById('alchemy-apply-bandage-btn');
+    this.alchemyApplyAntidoteBtn = document.getElementById('alchemy-apply-antidote-btn');
+    this.alchemyModalAntidotesEl = document.getElementById('alchemy-modal-antidotes');
+    this.debugBtnPoisonSelf = document.getElementById('debug-btn-poison-self');
+    this.debugBtnGrantAntidote = document.getElementById('debug-btn-grant-antidote');
 
     // Milestone 19 & 31 Debug Buttons
     this.debugBtnGrantEnergyPotion = document.getElementById('debug-btn-grant-energy-potion');
@@ -518,6 +536,7 @@ export class HUD {
     this.debugBtnLv30SwordsDaggers = document.getElementById('debug-btn-lv30-swords-daggers');
     this.debugBtnGrantDaggersExp = document.getElementById('debug-btn-grant-daggers-exp');
     this.debugBtnGrantDualWieldExp = document.getElementById('debug-btn-grant-dual-wield-exp');
+    this.debugBtnGrantWeapon680Exp = document.getElementById('debug-btn-grant-weapon-680-exp');
 
     // Milestone 14 Elements
     this.activeClassContainerEl = document.getElementById('active-class-container');
@@ -595,6 +614,7 @@ export class HUD {
     this.floorTimerBadgeEl = document.getElementById('floor-timer-badge');
     this.debugBtnFastForwardFloorTimer = document.getElementById('debug-btn-fast-forward-floor-timer');
     this.debugBtnTriggerFloorRespawn = document.getElementById('debug-btn-trigger-floor-respawn');
+    this.debugBtnRespawnAllEnemies = document.getElementById('debug-btn-respawn-all-enemies');
     this.debugBtnToggleAutoRespawn = document.getElementById('debug-btn-toggle-auto-respawn');
 
     // Stockpile Overview Elements
@@ -603,7 +623,9 @@ export class HUD {
     this.closeStockpileBtn = document.getElementById('close-stockpile-btn');
     this.stockpileSearchInputEl = document.getElementById('stockpile-search-input') as HTMLInputElement | null;
     this.stockpileClearSearchBtn = document.getElementById('stockpile-clear-search-btn');
-    this.stockpileFilterTabsEl = document.querySelector('.stockpile-filter-tabs');
+    this.stockpileFilterTabsEl = typeof document?.querySelector === 'function'
+      ? document.querySelector('.stockpile-filter-tabs')
+      : null;
     this.stockpileToggleHeldBtn = document.getElementById('stockpile-toggle-held-btn');
     this.stockpileToggleHeldLabelEl = document.getElementById('stockpile-toggle-held-label');
     this.stockpileToggleHeldIndicatorEl = document.getElementById('stockpile-toggle-held-indicator');
@@ -613,6 +635,14 @@ export class HUD {
     this.stockpileMetricRpEl = document.getElementById('stockpile-metric-rp');
     this.stockpileMetricWoodEl = document.getElementById('stockpile-metric-wood');
     this.stockpileMetricOreEl = document.getElementById('stockpile-metric-ore');
+
+    try {
+      if (this.stockpileItemsContainerEl && !this.stockpileItemsContainerEl.children.length) {
+        this.renderStockpileModal(false);
+      }
+    } catch {
+      // DataLoader may not be initialized yet in test harnesses
+    }
 
     if (this.openStockpileBtn) {
       this.openStockpileBtn.onclick = () => {
@@ -791,6 +821,12 @@ export class HUD {
       };
     }
 
+    if (this.alchemyApplyAntidoteBtn) {
+      this.alchemyApplyAntidoteBtn.onclick = () => {
+        HUD.activeInstance?.applyAntidote();
+      };
+    }
+
     if (this.hudApplyBandageBtn) {
       this.hudApplyBandageBtn.onclick = () => {
         HUD.activeInstance?.applyBandage();
@@ -798,6 +834,16 @@ export class HUD {
     }
 
     // Debug Actions in Debug Panel
+    if (this.debugBtnPoisonSelf) {
+      this.debugBtnPoisonSelf.onclick = () => {
+        HUD.activeInstance?.debugApplyPoison();
+      };
+    }
+    if (this.debugBtnGrantAntidote) {
+      this.debugBtnGrantAntidote.onclick = () => {
+        HUD.activeInstance?.debugGrantAntidote(1);
+      };
+    }
     if (this.debugBtnPowerStrike) {
       this.debugBtnPowerStrike.onclick = () => {
         HUD.activeInstance?.debugGrantSkillBook('book_power_strike');
@@ -909,6 +955,20 @@ export class HUD {
         if (hero) {
           hero.progression.addProficiencyExp('dual_wielding', 25);
           HUD.activeInstance?.showToast('+25 Dual Wield EXP (Hero)', 'success');
+          if (HUD.activeInstance) {
+            HUD.activeInstance.update(hero, hero.progression, 0, HUD.activeInstance.currentParty);
+          }
+        }
+      };
+    }
+    if (this.debugBtnGrantWeapon680Exp) {
+      this.debugBtnGrantWeapon680Exp.onclick = () => {
+        const hero = HUD.activeInstance?.currentParty[0] || HUD.activeInstance?.currentPlayer;
+        if (hero) {
+          const weaponId = hero.equippedWeapon?.id || 'short_swords';
+          const weaponName = hero.equippedWeapon?.name || 'Weapon';
+          hero.progression.addProficiencyExp(weaponId, 680);
+          HUD.activeInstance?.showToast(`+680 ${weaponName} EXP (Level 10 Fencer Gate)`, 'success', 3000);
           if (HUD.activeInstance) {
             HUD.activeInstance.update(hero, hero.progression, 0, HUD.activeInstance.currentParty);
           }
@@ -1049,6 +1109,14 @@ export class HUD {
       this.debugBtnTriggerFloorRespawn.onclick = () => {
         if (typeof (window as any).__triggerFloorRespawn === 'function') {
           (window as any).__triggerFloorRespawn();
+        }
+      };
+    }
+    if (this.debugBtnRespawnAllEnemies) {
+      this.debugBtnRespawnAllEnemies.onclick = () => {
+        if (typeof (window as any).__respawnEnemies === 'function') {
+          (window as any).__respawnEnemies();
+          HUD.activeInstance?.showToast('💀 All enemies respawned and reset.', 'warn', 2500);
         }
       };
     }
@@ -1241,6 +1309,9 @@ export class HUD {
     (window as any).debugGrantResearchPoints = (amount: number = 10) => HUD.activeInstance?.debugGrantResearchPoints(amount);
     (window as any).debugApplyBleed = () => HUD.activeInstance?.debugApplyBleed();
     (window as any).debugApplyBandage = () => HUD.activeInstance?.applyBandage();
+    (window as any).debugApplyPoison = () => HUD.activeInstance?.debugApplyPoison();
+    (window as any).debugApplyAntidote = () => HUD.activeInstance?.applyAntidote();
+    (window as any).debugGrantAntidote = (count: number = 1) => HUD.activeInstance?.debugGrantAntidote(count);
     (window as any).debugDrinkEnergyPotion = () => HUD.activeInstance?.drinkEnergyPotion();
     (window as any).debugDrinkManaPotion = () => HUD.activeInstance?.drinkManaPotion();
     (window as any).debugAdvanceDay = (days: number = 1) => HUD.activeInstance?.debugAdvanceDay(days);
@@ -1305,13 +1376,15 @@ export class HUD {
           }
         } else if (e.key === 'h' || e.key === 'H') {
           active.applyBandage();
+        } else if (e.key === 'j' || e.key === 'J') {
+          active.applyAntidote();
         } else if (e.key === 'e' || e.key === 'E') {
           // If not typing in input or select element
           const targetTag = (e.target as HTMLElement)?.tagName?.toLowerCase();
           if (targetTag !== 'input' && targetTag !== 'textarea' && targetTag !== 'select') {
             active.drinkEnergyPotion();
           }
-        } else if (e.key === 'p' || e.key === 'P') {
+        } else if (e.key === 'p' || e.key === 'P' || e.code === 'KeyP') {
           const targetTag = (e.target as HTMLElement)?.tagName?.toLowerCase();
           if (targetTag !== 'input' && targetTag !== 'textarea' && targetTag !== 'select') {
             active.drinkManaPotion();
@@ -1606,7 +1679,7 @@ export class HUD {
     entry.className = 'debug-exp-entry';
     entry.innerHTML = `<span class="exp-amount">+${tx.amount} EXP</span> <span class="exp-id">${tx.id}</span> <span class="exp-member">(${tx.memberName})</span>`;
     this.debugExpLogListEl.appendChild(entry);
-    while (this.debugExpLogListEl.children.length > 300) {
+    while (this.debugExpLogListEl.children.length > HUD.MAX_EXP_LOG_DOM_ENTRIES) {
       this.debugExpLogListEl.removeChild(this.debugExpLogListEl.firstChild!);
     }
     this.debugExpLogListEl.scrollTop = this.debugExpLogListEl.scrollHeight;
@@ -1969,6 +2042,16 @@ export class HUD {
       this.currentParty = [player];
     }
 
+    // Keep party overview structural DOM in sync with roster changes
+    try {
+      const rosterKey = this.getPartyRosterKey();
+      if (this.partyOverviewRosterEl && this.renderedPartyRosterKey !== rosterKey && this.currentParty.length > 0) {
+        this.renderPartyOverviewModal(false);
+      }
+    } catch {
+      // DataLoader may not be initialized yet in test harnesses
+    }
+
     // Milestone 25: Update party portrait dock
     this.updatePartyPortraits(this.currentParty);
 
@@ -2234,6 +2317,9 @@ export class HUD {
       } else if (player.activeStatusEffects.has('burn')) {
         this.playerStatusEl.innerText = 'Burning (DoT)';
         this.playerStatusEl.style.color = '#f97316';
+      } else if (player.activeStatusEffects.has('poison')) {
+        this.playerStatusEl.innerText = 'Poisoned (Persistent DoT)';
+        this.playerStatusEl.style.color = '#16a34a';
       } else {
         this.playerStatusEl.innerText = 'Normal';
         this.playerStatusEl.style.color = '#9ca3af';
@@ -2389,7 +2475,7 @@ export class HUD {
   }
 
   public openPartyOverviewModal(): void {
-    this.renderPartyOverviewModal(true);
+    this.renderPartyOverviewModal(false);
     if (this.partyOverviewModalEl) {
       this.partyOverviewModalEl.classList.add('active');
     }
@@ -2709,6 +2795,7 @@ export class HUD {
       return;
     }
     this.renderedPartyRosterKey = currentKey;
+    HUD.lastRenderedPartyRosterKey = currentKey;
 
     if (this.partySpawnCompanionBtn) {
       const isFull = this.currentParty.length >= 4;
@@ -2779,18 +2866,23 @@ export class HUD {
 
       // 2. Main-hand
       const mainWpn = member.equippedWeapon;
+      const isBarehanded = !mainWpn || mainWpn.id === 'fist';
+      const mainIcon = isBarehanded ? '👊' : '⚔️';
+      const mainName = isBarehanded ? 'Fist (Unarmed)' : (mainWpn?.name || 'Empty');
       const mainHtml = `
         <div class="equip-slot-box equipped" data-slot="main" data-member-idx="${i}" style="grid-column: 1; grid-row: 2;">
           <div class="slot-label">
-            <span>⚔️ Main Hand</span>
+            <span>${mainIcon} Main Hand</span>
+            ${!isOutpost ? '<span style="font-size: 8px; color: #f59e0b;">🔒 Outpost</span>' : ''}
           </div>
           <div class="slot-item-info">
-            <span class="slot-item-icon">⚔️</span>
+            <span class="slot-item-icon">${mainIcon}</span>
             <div>
-              <div class="slot-item-text" title="${mainWpn?.name || 'Empty'}">${mainWpn?.name || 'Empty'}</div>
-              <div class="slot-item-stat">${mainWpn?.twoHanded ? '2H' : '1H'} - Dmg: ${mainWpn?.baseDamage ?? 0}</div>
+              <div class="slot-item-text" title="${mainName}">${mainName}</div>
+              <div class="slot-item-stat">${mainWpn?.twoHanded ? '2H' : '1H'} - Dmg: ${mainWpn?.baseDamage ?? 4}</div>
             </div>
           </div>
+          ${!isBarehanded ? `<button class="slot-unequip-btn" data-slot="main" data-member-idx="${i}" type="button" title="Unequip Weapon (Fight Barehanded)">&times;</button>` : ''}
         </div>
       `;
 
@@ -3360,13 +3452,20 @@ export class HUD {
         return false;
       }
 
-      member.equipWeapon(weapon);
-      this.showToast(`⚔️ Equipped ${weapon.name} in Main Hand!`, 'success');
-      this.renderPartyOverviewModal(true);
-      if (this.currentPlayer && this.currentProgression) {
-        this.update(this.currentPlayer, this.currentProgression, 0);
+      if (!this.isOutpost) {
+        this.showToast('⚠️ Weapons can only be equipped at the Outpost!', 'warn');
+        return false;
       }
-      return true;
+
+      const success = member.equipWeapon(weapon, this.isOutpost);
+      if (success) {
+        this.showToast(`⚔️ Equipped ${weapon.name} in Main Hand!`, 'success');
+        this.renderPartyOverviewModal(true);
+        if (this.currentPlayer && this.currentProgression) {
+          this.update(this.currentPlayer, this.currentProgression, 0);
+        }
+      }
+      return success;
     }
 
     if (targetSlot === 'offhand') {
@@ -3376,6 +3475,11 @@ export class HUD {
       }
       const weapon = dataLoader.getWeapon(payload.itemId);
       if (!weapon) return false;
+
+      if (!this.isOutpost) {
+        this.showToast('⚠️ Off-hand gear can only be equipped at the Outpost!', 'warn');
+        return false;
+      }
 
       if (member.equippedWeapon?.twoHanded) {
         this.showToast('⚠️ Cannot equip offhand while wielding a two-handed weapon!', 'warn');
@@ -3388,7 +3492,7 @@ export class HUD {
         return false;
       }
 
-      const success = member.equipOffhandWeapon(weapon);
+      const success = member.equipOffhandWeapon(weapon, this.isOutpost);
       if (success) {
         this.showToast(`${isShield ? '🛡️' : '⚔️'} Equipped ${weapon.name} in Off-Hand!`, 'success');
         this.renderPartyOverviewModal(true);
@@ -3464,12 +3568,34 @@ export class HUD {
         const member = this.currentParty[memberIdx];
         if (!member) return;
 
+        if (slot === 'main') {
+          if (!this.isOutpost) {
+            this.showToast('⚠️ Weapons can only be unequipped at the Outpost!', 'warn');
+            return;
+          }
+          const success = member.equipWeapon(null, this.isOutpost);
+          if (success) {
+            this.showToast('Unequipped weapon — fighting barehanded with Fist!', 'info');
+            this.renderPartyOverviewModal(true);
+            if (this.currentPlayer && this.currentProgression) {
+              this.update(this.currentPlayer, this.currentProgression, 0);
+            }
+          }
+          return;
+        }
+
         if (slot === 'offhand') {
-          member.equipOffhandWeapon(null);
-          this.showToast('Unequipped offhand gear', 'info');
-          this.renderPartyOverviewModal(true);
-          if (this.currentPlayer && this.currentProgression) {
-            this.update(this.currentPlayer, this.currentProgression, 0);
+          if (!this.isOutpost) {
+            this.showToast('⚠️ Off-hand gear can only be unequipped at the Outpost!', 'warn');
+            return;
+          }
+          const success = member.equipOffhandWeapon(null, this.isOutpost);
+          if (success) {
+            this.showToast('Unequipped offhand gear', 'info');
+            this.renderPartyOverviewModal(true);
+            if (this.currentPlayer && this.currentProgression) {
+              this.update(this.currentPlayer, this.currentProgression, 0);
+            }
           }
           return;
         }
@@ -4301,6 +4427,9 @@ export class HUD {
     if (this.alchemyModalEscapeStonesEl) {
       this.alchemyModalEscapeStonesEl.innerText = `🌀 ${gameState.getItemCount('escape_stone')}`;
     }
+    if (this.alchemyModalAntidotesEl) {
+      this.alchemyModalAntidotesEl.innerText = `🧪 ${gameState.getItemCount('antidote')}`;
+    }
 
     // 2b. Mood Modifier Banner
     const moodTier = dataLoader.getMoodTier(player.mood);
@@ -4404,12 +4533,20 @@ export class HUD {
 
     // 4. Patient treatment section
     const isBleeding = player.activeStatusEffects.has('bleed');
+    const isPoisoned = player.activeStatusEffects.has('poison');
     const bandageCount = gameState.getItemCount('bandage');
+    const antidoteCount = gameState.getItemCount('antidote');
 
     if (this.alchemyPlayerStatusEl) {
-      if (isBleeding) {
+      if (isBleeding && isPoisoned) {
+        this.alchemyPlayerStatusEl.innerText = 'Bleeding & Poisoned (Active Afflictions)';
+        this.alchemyPlayerStatusEl.style.color = '#ef4444';
+      } else if (isBleeding) {
         this.alchemyPlayerStatusEl.innerText = 'Bleeding (DoT Active)';
         this.alchemyPlayerStatusEl.style.color = '#ef4444';
+      } else if (isPoisoned) {
+        this.alchemyPlayerStatusEl.innerText = 'Poisoned (Persistent DoT Active)';
+        this.alchemyPlayerStatusEl.style.color = '#16a34a';
       } else {
         this.alchemyPlayerStatusEl.innerText = 'Normal (No active wounds)';
         this.alchemyPlayerStatusEl.style.color = '#34d399';
@@ -4432,6 +4569,25 @@ export class HUD {
         this.alchemyApplyBandageBtn.style.opacity = '0.75';
         this.alchemyApplyBandageBtn.style.cursor = 'pointer';
         this.alchemyApplyBandageBtn.innerText = `🩹 Apply Bandage (${bandageCount} avail) [H]`;
+      }
+    }
+
+    if (this.alchemyApplyAntidoteBtn) {
+      if (antidoteCount > 0 && isPoisoned) {
+        (this.alchemyApplyAntidoteBtn as HTMLButtonElement).disabled = false;
+        this.alchemyApplyAntidoteBtn.style.opacity = '1';
+        this.alchemyApplyAntidoteBtn.style.cursor = 'pointer';
+        this.alchemyApplyAntidoteBtn.innerText = `🧪 Apply Antidote (${antidoteCount} available) [J]`;
+      } else if (antidoteCount === 0) {
+        (this.alchemyApplyAntidoteBtn as HTMLButtonElement).disabled = true;
+        this.alchemyApplyAntidoteBtn.style.opacity = '0.5';
+        this.alchemyApplyAntidoteBtn.style.cursor = 'not-allowed';
+        this.alchemyApplyAntidoteBtn.innerText = `🧪 No Antidotes Crafted`;
+      } else {
+        (this.alchemyApplyAntidoteBtn as HTMLButtonElement).disabled = false;
+        this.alchemyApplyAntidoteBtn.style.opacity = '0.75';
+        this.alchemyApplyAntidoteBtn.style.cursor = 'pointer';
+        this.alchemyApplyAntidoteBtn.innerText = `🧪 Apply Antidote (${antidoteCount} avail) [J]`;
       }
     }
   }
@@ -4475,6 +4631,74 @@ export class HUD {
     } else {
       this.showToast('No Bandages available in stockpile! Craft one at the Alchemy Station.', 'warn', 3000);
       return false;
+    }
+  }
+
+  // --- SECOND CURE RECIPE: APPLY ANTIDOTE (Milestone 42) ---
+
+  public applyAntidote(): boolean {
+    const now = Date.now();
+    if (now - this.lastAntidoteApplyTime < 200) {
+      return false; // Debounce rapid keydown / scene key triggers
+    }
+    this.lastAntidoteApplyTime = now;
+
+    const gameState = GameState.getInstance();
+    const antidotes = gameState.getItemCount('antidote');
+
+    if (antidotes <= 0) {
+      this.showToast('No Antidotes available in stockpile! Craft one at the Alchemy Station.', 'warn', 3000);
+      return false;
+    }
+
+    if (!this.currentPlayer) {
+      return false;
+    }
+
+    if (!this.currentPlayer.activeStatusEffects.has('poison')) {
+      this.showToast('Not poisoned — no need to apply Antidote.', 'info', 2500);
+      return false;
+    }
+
+    const cured = this.currentPlayer.applyAntidote();
+    if (cured) {
+      this.showToast('🧪 Antidote applied! Persistent Poison cured.', 'success', 3000);
+      if (this.currentProgression) {
+        this.update(this.currentPlayer, this.currentProgression, 0);
+        if (this.isAlchemyModalOpen()) {
+          this.renderAlchemyModal(this.currentPlayer, this.currentProgression);
+        }
+      }
+      return true;
+    } else {
+      this.showToast('No Antidotes available in stockpile! Craft one at the Alchemy Station.', 'warn', 3000);
+      return false;
+    }
+  }
+
+  public debugApplyPoison(): void {
+    if (!this.currentPlayer) return;
+    const poisonDef = DataLoader.getInstance().getStatusEffect('poison');
+    if (poisonDef) {
+      this.currentPlayer.applyStatusEffect(poisonDef);
+      this.showToast(`🧪 Applied Poison status effect (Persistent DoT)!`, 'warn', 3000);
+      if (this.currentProgression) {
+        this.update(this.currentPlayer, this.currentProgression, 0);
+        if (this.isAlchemyModalOpen()) {
+          this.renderAlchemyModal(this.currentPlayer, this.currentProgression);
+        }
+      }
+    }
+  }
+
+  public debugGrantAntidote(amount: number = 1): void {
+    GameState.getInstance().addItem('antidote', amount);
+    this.showToast(`🧪 Granted +${amount} Antidote!`, 'success', 2500);
+    if (this.currentPlayer && this.currentProgression) {
+      this.update(this.currentPlayer, this.currentProgression, 0);
+      if (this.isAlchemyModalOpen()) {
+        this.renderAlchemyModal(this.currentPlayer, this.currentProgression);
+      }
     }
   }
 
@@ -4812,6 +5036,8 @@ export class HUD {
       case 'mana_regen': return '#818cf8';
       case 'lockpicking': return '#f59e0b';
       case 'gardening': return '#22c55e';
+      case 'fist': return '#f97316';
+      case 'longswords': return '#818cf8';
       default: return '#34d399';
     }
   }
@@ -5580,7 +5806,7 @@ export class HUD {
   }
 
   public openStockpileModal(): void {
-    this.renderStockpileModal(true);
+    this.renderStockpileModal(false);
     if (this.stockpileModalEl) {
       this.stockpileModalEl.classList.add('active');
     }
@@ -5806,6 +6032,7 @@ export class HUD {
       return;
     }
     this.renderedStockpileStructureKey = structureKey;
+    HUD.lastRenderedStockpileStructureKey = structureKey;
 
     if (filtered.length === 0) {
       this.stockpileItemsContainerEl.innerHTML = `

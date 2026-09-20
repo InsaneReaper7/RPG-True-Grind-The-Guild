@@ -762,6 +762,24 @@ export class CombatSystem {
                     }
                   }
 
+                  // Milestone 42: Enemy Status Effect Proc (Spider Poison proc chance on attack)
+                  if (enemy.enemyData.poisonChance && actualDamage > 0 && !targetDowned) {
+                    if (Math.random() < enemy.enemyData.poisonChance) {
+                      const poisonDef = DataLoader.getInstance().getStatusEffect('poison') || {
+                        id: 'poison',
+                        name: 'Poison',
+                        tickIntervalMs: 2000,
+                        damagePerTick: 2,
+                        persistent: true,
+                        isHarmful: true,
+                        color: '#16a34a'
+                      };
+                      target.applyStatusEffect(poisonDef);
+                      this.createFloatingText(target.x, target.y - 28, 'POISONED!', poisonDef.color || '#16a34a');
+                      console.log(`[Combat] 🕷️ ${enemy.entityName} inflicts Poison on ${target.entityName}!`);
+                    }
+                  }
+
                   if (targetDowned) {
                     console.log(`[Combat] ${target.entityName} has been downed by enemy attack!`);
                     target.clearTarget();
@@ -1022,7 +1040,11 @@ export class CombatSystem {
               console.log(
                 `[Skill] ${member.entityName} casts ${skillDef.name}! Dealt ${skillDamage.toFixed(1)} damage (${mult * 100}% of ${effectiveBaseDamage.toFixed(2)})${isDW ? ` [DW Penalty -${(dwPenalty * 100).toFixed(0)}%]` : ''}`
               );
-              this.createFloatingText(target.x, target.y - 10, `${skillDef.name.toUpperCase()}! -${skillDamage.toFixed(1)}`, '#f59e0b');
+              if (skillDef.id === 'normal_punch') {
+                this.createFloatingText(target.x, target.y - 10, `NORMAL PUNCH! -${skillDamage.toFixed(1)}`, '#ea580c');
+              } else {
+                this.createFloatingText(target.x, target.y - 10, `${skillDef.name.toUpperCase()}! -${skillDamage.toFixed(1)}`, '#f59e0b');
+              }
 
               if (skillDef.id === 'smite') {
                 this.createHolySmiteEffect(member.x, member.y, target.x, target.y);
@@ -1091,12 +1113,13 @@ export class CombatSystem {
               `[DIAG:Combat] ⚔️ ${member.entityName} attacks ${target.entityName} with ${effectiveWeapon.name}! inCombat: ${member.inCombat}, Pre-EN: ${((member.energy ?? 0) + energyCost).toFixed(1)}, Post-EN: ${(member.energy ?? 0).toFixed(1)}, Range: ${member.attackRangeTiles}, Dist: ${distanceTiles}`
             );
 
+            const isFist = effectiveWeapon.id === 'fist' || effectiveWeapon.category === 'unarmed';
             const isFire = effectiveWeapon.id === 'fire_magic';
             const isLightning = effectiveWeapon.id === 'lightning_magic';
             const isIce = effectiveWeapon.id === 'ice_magic';
             const isHoly = effectiveWeapon.id === 'holy_magic';
             const isRangedBow = effectiveWeapon.category === 'ranged' || effectiveWeapon.proficiencyId === 'bows' || effectiveWeapon.id === 'bows';
-            const attackColor = isFire ? 0xf97316 : isLightning ? 0x38bdf8 : isIce ? 0x67e8f9 : isHoly ? 0xfacc15 : isRangedBow ? 0xf59e0b : 0x3b82f6;
+            const attackColor = isFire ? 0xf97316 : isLightning ? 0x38bdf8 : isIce ? 0x67e8f9 : isHoly ? 0xfacc15 : isRangedBow ? 0xf59e0b : isFist ? 0xf97316 : 0x3b82f6;
             if (isLightning) {
               this.createLightningBoltEffect(member.x, member.y, target.x, target.y);
             } else if (isHoly) {
@@ -1129,8 +1152,9 @@ export class CombatSystem {
               console.log(
                 `[Combat] ${member.entityName} attacks ${target.entityName} with ${effectiveWeapon.name} for ${damage.toFixed(1)} damage! (Base: ${effectiveWeapon.baseDamage}, Lv ${weaponLevel} Bonus: +${(weaponLevel * damageBonusPerLevel).toFixed(1)}, Accuracy: ${(effectiveAccuracy * 100).toFixed(1)}%${isDW ? ` [DW Penalty -${(dwPenalty * 100).toFixed(0)}%]` : ''})`
               );
-              const dmgColor = isFire ? '#f97316' : isLightning ? '#38bdf8' : isIce ? '#67e8f9' : isHoly ? '#facc15' : isRangedBow ? '#f59e0b' : '#38bdf8';
-              this.createFloatingText(target.x, target.y - 10, `-${damage.toFixed(1)}`, dmgColor);
+              const dmgColor = isFire ? '#f97316' : isLightning ? '#38bdf8' : isIce ? '#67e8f9' : isHoly ? '#facc15' : isRangedBow ? '#f59e0b' : isFist ? '#f97316' : '#38bdf8';
+              const hitText = isFist ? `PUNCH! -${damage.toFixed(1)}` : `-${damage.toFixed(1)}`;
+              this.createFloatingText(target.x, target.y - 10, hitText, dmgColor);
 
               this.checkAndApplyBleed(member, target, effectiveWeapon);
               this.checkAndApplyBurn(member, target, effectiveWeapon);
@@ -2691,7 +2715,7 @@ export class CombatSystem {
     if (livingMembers.length === 0) return;
 
     const now = (this.scene as any)?.time?.now ?? Date.now();
-    this.lastCombatTimeMs = now;
+    this.lastCombatTimeMs = Math.max(this.lastCombatTimeMs, now);
     enemy.isAggroed = true;
     if (!enemy.targetEntity || enemy.targetEntity.state === 'downed' || enemy.targetEntity.state === 'dead') {
       enemy.targetEntity = livingMembers[0];

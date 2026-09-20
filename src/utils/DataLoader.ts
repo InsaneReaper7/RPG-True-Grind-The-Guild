@@ -262,7 +262,13 @@ export class DataLoader {
   }
 
   public getWeapon(id: string): WeaponDef | undefined {
-    return this.weaponsData?.weapons?.find((w) => w.id === id);
+    const found = this.weaponsData?.weapons?.find((w) => w.id === id);
+    if (found) return found;
+    // Backward-compatibility fallback for legacy references to 'longswords'
+    if (id === 'longswords') {
+      return this.weaponsData?.weapons?.find((w) => w.id === 'longsword_2h');
+    }
+    return undefined;
   }
 
   public getAllWeapons(): WeaponDef[] {
@@ -373,6 +379,8 @@ export class DataLoader {
         description = 'Proficiency with holy magic to punish the wicked and mend allies with radiant light.';
       } else if (weapon.id === 'staff' || weapon.id.endsWith('_staff')) {
         description = 'Proficiency with two-handed staves in melee combat.';
+      } else if (weapon.id === 'fist') {
+        description = 'Unarmed combat technique. Deceptively humble beginnings that scale toward absurd punch power.';
       }
       return {
         id: weapon.id,
@@ -715,7 +723,7 @@ export class DataLoader {
         id: '2h_longsword',
         name: '2H Longsword',
         description: 'Longswords — feeds toward the Dark Knight/Sword Saint line.',
-        mainWeaponId: 'longswords',
+        mainWeaponId: 'longsword_2h',
         offhandWeaponId: null
       },
       {

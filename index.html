@@ -2103,6 +2103,7 @@
             <button id="debug-btn-lv30-swords-daggers" class="debug-btn" type="button" style="background: #7c2d12; color: #fed7aa; border: 1px solid #ea580c;">⚔️ Set Lv30 Swords & Daggers (Hero)</button>
             <button id="debug-btn-grant-daggers-exp" class="debug-btn" type="button" style="background: #0f766e; color: #99f6e4; border: 1px solid #14b8a6;">🗡️ +25 Daggers EXP (Hero)</button>
             <button id="debug-btn-grant-dual-wield-exp" class="debug-btn" type="button" style="background: #1e3a8a; color: #bfdbfe; border: 1px solid #3b82f6;">⚔️ +25 Dual Wield EXP (Hero)</button>
+            <button id="debug-btn-grant-weapon-680-exp" class="debug-btn" type="button" style="background: #1e3a8a; color: #bfdbfe; border: 1px solid #3b82f6; grid-column: 1 / -1;">⚔️ +680 Weapon EXP (Hero - Lv10 Fencer Gate)</button>
 
             <div class="debug-grid-category">MILESTONE 14: VANGUARD & ACTIVE CLASS</div>
             <button id="debug-btn-active-fencer" class="debug-btn" type="button" style="background: #1e3a8a; color: #93c5fd; border: 1px solid #3b82f6;">🎯 Active: Fencer</button>
@@ -2116,6 +2117,7 @@
             <div class="debug-grid-category">MILESTONE 16: FLOOR TIMER & ENEMY RESPAWN</div>
             <button id="debug-btn-fast-forward-floor-timer" class="debug-btn" type="button" style="background: #9a3412; color: #ffedd5; border: 1px solid #ea580c;">⏳ Fast-Forward Floor Timer (+60s)</button>
             <button id="debug-btn-trigger-floor-respawn" class="debug-btn" type="button" style="background: #991b1b; color: #fee2e2; border: 1px solid #ef4444;">⚡ Trigger Floor Respawn Now</button>
+            <button id="debug-btn-respawn-all-enemies" class="debug-btn" type="button" style="background: #991b1b; color: #fee2e2; border: 1px solid #ef4444; grid-column: 1 / -1;">💀 Respawn All Enemies</button>
             <button id="debug-btn-toggle-auto-respawn" class="debug-btn" type="button" style="background: #374151; color: #d1d5db; border: 1px solid #4b5563; grid-column: 1 / -1;">🔄 Toggle Debug 3s Respawn: OFF</button>
 
             <div class="debug-grid-category">MILESTONE 19: ENERGY & POTIONS</div>
@@ -2133,6 +2135,10 @@
             <button id="debug-btn-grant-5-locked-boxes" class="debug-btn" type="button" style="background: #78350f; color: #fef3c7; border: 1px solid #b45309;">📦 Grant +5 Locked Boxes</button>
             <button id="debug-btn-grant-lockpicking-exp" class="debug-btn" type="button" style="background: #854d0e; color: #fef08a; border: 1px solid #ca8a04;">🗝️ +25 Lockpicking EXP (Hero)</button>
             <button id="debug-btn-set-lockpicking-lv10" class="debug-btn" type="button" style="background: #065f46; color: #6ee7b7; border: 1px solid #10b981;">🗝️ Set Lockpicking Lv10 (Hero)</button>
+
+            <div class="debug-grid-category">MILESTONE 42: POISON & ANTIDOTE</div>
+            <button id="debug-btn-poison-self" class="debug-btn" type="button" style="background: #14532d; color: #86efac; border: 1px solid #16a34a;">🧪 Apply Poison (Self-Inflict Persistent DoT)</button>
+            <button id="debug-btn-grant-antidote" class="debug-btn" type="button" style="background: #065f46; color: #6ee7b7; border: 1px solid #10b981;">🧪 Grant +1 Antidote</button>
           </div>
         </div>
       </div>
@@ -2376,7 +2382,7 @@
           </div>
           <button id="close-alchemy-btn" class="modal-close-btn" type="button">✕</button>
         </div>
-        <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; background: rgba(31, 41, 55, 0.7); padding: 8px 12px; border-radius: 6px; margin-bottom: 14px; border: 1px solid rgba(255,255,255,0.1); font-size: 11px;">
+        <div style="display: grid; grid-template-columns: repeat(8, 1fr); gap: 8px; background: rgba(31, 41, 55, 0.7); padding: 8px 12px; border-radius: 6px; margin-bottom: 14px; border: 1px solid rgba(255,255,255,0.1); font-size: 11px;">
           <div>
             <span style="color: #9ca3af;">Alchemy:</span>
             <div id="alchemy-modal-prof" style="color: #10b981; font-weight: bold;">Untrained</div>
@@ -2388,6 +2394,10 @@
           <div>
             <span style="color: #9ca3af;">Bandages:</span>
             <div id="alchemy-modal-bandages" style="color: #34d399; font-weight: bold;">🩹 0</div>
+          </div>
+          <div>
+            <span style="color: #9ca3af;">Antidotes:</span>
+            <div id="alchemy-modal-antidotes" style="color: #10b981; font-weight: bold;">🧪 0</div>
           </div>
           <div>
             <span style="color: #9ca3af;">Energy Pot:</span>
@@ -2420,7 +2430,10 @@
             <span style="font-size: 12px; color: #9ca3af;">Patient Status: </span>
             <span id="alchemy-player-status" style="font-size: 12px; font-weight: bold; color: #9ca3af;">Normal</span>
           </div>
-          <button id="alchemy-apply-bandage-btn" class="btn-action" style="background: #059669; border-color: #34d399;" type="button">🩹 Apply Bandage [H]</button>
+          <div style="display: flex; gap: 8px;">
+            <button id="alchemy-apply-bandage-btn" class="btn-action" style="background: #059669; border-color: #34d399;" type="button">🩹 Apply Bandage [H]</button>
+            <button id="alchemy-apply-antidote-btn" class="btn-action" style="background: #15803d; border-color: #16a34a;" type="button">🧪 Apply Antidote [J]</button>
+          </div>
         </div>
       </div>
 

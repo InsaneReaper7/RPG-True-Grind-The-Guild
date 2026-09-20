@@ -90,8 +90,8 @@ export class Player extends Entity {
     this.baseMaxCriticalHp = playerData.criticalHpMax ?? 25;
     this.avatarTextureKey = avatarKey;
     this.moveSpeed = playerData.moveSpeed;
-    this.equippedWeapon = startingWeapon;
-    this.attackRangeTiles = startingWeapon?.attackRangeTiles ?? playerData.attackRangeTiles ?? 1;
+    this.equippedWeapon = startingWeapon ?? DataLoader.getInstance().getWeapon('fist') ?? DataLoader.getInstance().getWeapon('short_swords')!;
+    this.attackRangeTiles = this.equippedWeapon?.attackRangeTiles ?? playerData.attackRangeTiles ?? 1;
 
     this.energy = playerData.maxEnergy;
     this.maxEnergy = playerData.maxEnergy;
@@ -158,17 +158,36 @@ export class Player extends Entity {
     return newlyLearned;
   }
 
-  public equipWeapon(weapon: WeaponDef): void {
-    this.equippedWeapon = weapon;
-    this.attackRangeTiles = weapon.attackRangeTiles ?? ((weapon.category === 'magic' && weapon.baseDamage > 0) || weapon.category === 'ranged' ? 4 : 1);
-    if (weapon.twoHanded && this.offhandWeapon) {
-      console.log(`[Player:${this.entityName}] Unequipped offhand because ${weapon.name} is two-handed`);
+  public equipWeapon(weapon: WeaponDef | null, isOutpost: boolean = true): boolean {
+    if (!isOutpost || this.inCombat) {
+      console.warn(`[Player:${this.entityName}] Cannot equip or unequip weapon outside the Outpost / during combat!`);
+      return false;
+    }
+    const resolvedWeapon = weapon ?? DataLoader.getInstance().getWeapon('fist') ?? {
+      id: 'fist',
+      name: 'Fist',
+      category: 'unarmed',
+      twoHanded: false,
+      attackIntervalMs: 750,
+      baseDamage: 4,
+      baseAccuracy: 0.65,
+      levelBonus: { accuracyPerLevel: 0.004, damagePerLevel: 1.5 }
+    };
+    this.equippedWeapon = resolvedWeapon;
+    this.attackRangeTiles = resolvedWeapon.attackRangeTiles ?? ((resolvedWeapon.category === 'magic' && resolvedWeapon.baseDamage > 0) || resolvedWeapon.category === 'ranged' ? 4 : 1);
+    if (resolvedWeapon.twoHanded && this.offhandWeapon) {
+      console.log(`[Player:${this.entityName}] Unequipped offhand because ${resolvedWeapon.name} is two-handed`);
       this.offhandWeapon = null;
     }
-    console.log(`[Player:${this.entityName}] Equipped main weapon: ${weapon.name} (Range: ${this.attackRangeTiles} tiles)`);
+    console.log(`[Player:${this.entityName}] Equipped main weapon: ${resolvedWeapon.name} (Range: ${this.attackRangeTiles} tiles)`);
+    return true;
   }
 
-  public equipOffhandWeapon(weapon: WeaponDef | null): boolean {
+  public equipOffhandWeapon(weapon: WeaponDef | null, isOutpost: boolean = true): boolean {
+    if (!isOutpost || this.inCombat) {
+      console.warn(`[Player:${this.entityName}] Cannot equip or unequip offhand outside the Outpost / during combat!`);
+      return false;
+    }
     if (weapon === null) {
       this.offhandWeapon = null;
       console.log(`[Player:${this.entityName}] Unequipped offhand weapon`);
@@ -398,6 +417,22 @@ export class Player extends Entity {
       return false;
     }
     this.removeStatusEffect('bleed');
+    return true;
+  }
+
+  public applyAntidote(): boolean {
+    if (!this.activeStatusEffects.has('poison')) {
+      return false;
+    }
+    const gameState = GameState.getInstance();
+    if (gameState.getItemCount('antidote') <= 0) {
+      return false;
+    }
+    const consumed = gameState.consumeItem('antidote', 1);
+    if (!consumed) {
+      return false;
+    }
+    this.removeStatusEffect('poison');
     return true;
   }
 

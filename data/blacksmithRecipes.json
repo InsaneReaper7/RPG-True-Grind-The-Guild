@@ -39,6 +39,30 @@
       "description": "A brutal spiked morningstar forged from the finest orcish steel. Devastating stun potential."
     },
     {
+      "id": "longsword_1h",
+      "name": "Iron Longsword",
+      "resultWeaponId": "longsword_1h",
+      "requiredLevel": 0,
+      "ingredients": {
+        "ore": 4,
+        "wood": 2
+      },
+      "expGranted": 25,
+      "description": "A versatile one-handed iron longsword, balanced for both standalone striking and pairing with a shield or offhand blade."
+    },
+    {
+      "id": "longsword_2h",
+      "name": "Two-Handed Longsword",
+      "resultWeaponId": "longsword_2h",
+      "requiredLevel": 0,
+      "ingredients": {
+        "ore": 7,
+        "wood": 3
+      },
+      "expGranted": 35,
+      "description": "A heavy two-handed longsword demanding both hands on the hilt. Deals heavy impact damage at the expense of offhand flexibility."
+    },
+    {
       "id": "lockpick",
       "name": "Lockpick",
       "resultItemId": "lockpick",

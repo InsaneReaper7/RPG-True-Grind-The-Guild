@@ -471,6 +471,30 @@ export class TextureGenerator {
       g.destroy();
     }
 
+    // 6d. Poison Status Indicator Texture (Green Venom Droplet)
+    if (!scene.textures.exists('poison-icon')) {
+      const size = 12;
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      // Outer toxic emerald droplet
+      g.fillStyle(0x16a34a, 1);
+      g.beginPath();
+      g.moveTo(size / 2, 0);
+      g.lineTo(size - 1, size - 2);
+      g.lineTo(1, size - 2);
+      g.closePath();
+      g.fillPath();
+      // Inner bright venom core
+      g.fillStyle(0x86efac, 1);
+      g.beginPath();
+      g.moveTo(size / 2, 2);
+      g.lineTo(size / 2 + 2, size - 4);
+      g.lineTo(size / 2 - 2, size - 4);
+      g.closePath();
+      g.fillPath();
+      g.generateTexture('poison-icon', size, size);
+      g.destroy();
+    }
+
     // 7. Outpost Grass Tile
     if (!scene.textures.exists('tile-outpost-grass')) {
       const g = scene.make.graphics({ x: 0, y: 0 });

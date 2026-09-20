@@ -126,6 +126,15 @@
       "damagePerTick": 0,
       "holyBonusDamage": 5,
       "color": "#facc15"
+    },
+    {
+      "id": "poison",
+      "name": "Poison",
+      "tickIntervalMs": 2000,
+      "damagePerTick": 2,
+      "persistent": true,
+      "isHarmful": true,
+      "color": "#16a34a"
     }
   ]
 }

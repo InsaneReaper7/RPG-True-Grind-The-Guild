@@ -11,6 +11,16 @@
       "description": "A sterile splint and wooden fiber wrapping. Cleanses and cures the Bleed status effect."
     },
     {
+      "id": "antidote",
+      "name": "Antidote",
+      "cures": ["poison"],
+      "ingredients": {
+        "wild_herbs": 1
+      },
+      "expGranted": 25,
+      "description": "A concentrated herbal extract that neutralizes venom. Cleanses and cures the persistent Poison status effect."
+    },
+    {
       "id": "energy_potion",
       "name": "Energy Potion",
       "ingredients": {

@@ -355,12 +355,6 @@ export class OutpostScene extends Phaser.Scene {
         this.hud.showToast(`+100 ${this.player.equippedWeapon.name} EXP`, 'success', 2000);
       });
 
-      const pKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.P);
-      pKey.on('down', () => {
-        this.progressionSystem.addProficiencyExp(this.player.equippedWeapon.id, 680);
-        this.hud.showToast(`+680 ${this.player.equippedWeapon.name} EXP (Level 10 Fencer Gate)`, 'success', 3000);
-      });
-
       const hKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.H);
       hKey.on('down', () => {
         this.hud.applyBandage();

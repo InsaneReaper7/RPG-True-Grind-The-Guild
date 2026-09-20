@@ -116,8 +116,6 @@ export class MainScene extends Phaser.Scene {
   private xKey!: Phaser.Input.Keyboard.Key;
   private zKey!: Phaser.Input.Keyboard.Key;
   private cKey!: Phaser.Input.Keyboard.Key;
-  private pKey!: Phaser.Input.Keyboard.Key;
-  private tKey!: Phaser.Input.Keyboard.Key;
   private hKey!: Phaser.Input.Keyboard.Key;
   private gKey!: Phaser.Input.Keyboard.Key;
   private numKeys: Phaser.Input.Keyboard.Key[] = [];
@@ -486,8 +484,6 @@ export class MainScene extends Phaser.Scene {
       this.xKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.X);
       this.zKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.Z);
       this.cKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.C);
-      this.pKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.P);
-      this.tKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.T);
       this.hKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.H);
       this.hKey.on('down', () => {
         this.hud.applyBandage();
@@ -763,7 +759,7 @@ export class MainScene extends Phaser.Scene {
       console.log(`[Debug] Spawned ${spawned.length} swarm enemies surrounding ${member.entityName} at (${mx}, ${my})`);
       return spawned;
     };
-    console.log('[Debug Tools] Hotkeys: [X] +25 Wpn Exp, [Z] +100 Wpn Exp, [C] +25 Const Exp, [P] +680 Wpn Exp (Lv10 Fencer), [T] Respawn Enemies. Console: __grantExp(id, amt, [idx]), __grantHiddenExp(id, amt, [idx]), __setLevel(id, lv, [idx]), __spawnTestCompanion(), __reviveParty([idx]), __spawnEnemy(id, x, y), __spawnSwarmAround(idx).');
+    console.log('[Debug Tools] Hotkeys: [X] +25 Wpn Exp, [Z] +100 Wpn Exp, [C] +25 Const Exp. Debug Panel (`): +680 Wpn Exp (Lv10 Fencer Gate), Respawn Enemies. Console: __grantExp(id, amt, [idx]), __grantHiddenExp(id, amt, [idx]), __setLevel(id, lv, [idx]), __spawnTestCompanion(), __reviveParty([idx]), __spawnEnemy(id, x, y), __spawnSwarmAround(idx), __respawnEnemies().');
 
     // Scroll Wheel Zoom
     this.input.on('wheel', (_pointer: Phaser.Input.Pointer, _gameObjects: unknown[], _deltaX: number, deltaY: number) => {
@@ -1760,18 +1756,6 @@ export class MainScene extends Phaser.Scene {
     // Debug Grant +25 Construction EXP [C]
     if (this.cKey && Phaser.Input.Keyboard.JustDown(this.cKey)) {
       this.progressionSystem.addProficiencyExp('construction', 25);
-    }
-
-    // Debug Grant +680 Weapon EXP [P] (Exact boundary test for Level 10 / Fencer unlock)
-    if (this.pKey && Phaser.Input.Keyboard.JustDown(this.pKey)) {
-      this.progressionSystem.addProficiencyExp(this.player.equippedWeapon.id, 680);
-    }
-
-    // Debug Respawn / Reset all test enemies [T]
-    if (this.tKey && Phaser.Input.Keyboard.JustDown(this.tKey)) {
-      for (const enemy of this.enemies) {
-        enemy.respawn();
-      }
     }
 
     // WASD Camera Panning

@@ -126,6 +126,7 @@
       "aggroRadius": 6,
       "attackIntervalMs": 950,
       "moveSpeed": 110,
+      "poisonChance": 0.35,
       "harvest": [
         { "method": "rare_drop", "item": "spider_venom", "tags": ["alchemy"] }
       ],
