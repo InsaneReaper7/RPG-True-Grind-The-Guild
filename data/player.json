@@ -6,6 +6,7 @@
   "maxEnergy": 100,
   "energyRegenPerSecond": 5,
   "moveSpeed": 120,
+  "baseCarryCapacity": 45.0,
   "attackRangeTiles": 1,
   "startingWeaponId": "short_swords",
   "knownSkillIds": [],

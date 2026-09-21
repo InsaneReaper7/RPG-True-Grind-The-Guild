@@ -24,7 +24,8 @@ export class ProgressionSystem {
     'resilience',
     'health_regen',
     'mana_regen',
-    'energy_regen'
+    'energy_regen',
+    'iron_back'
   ];
 
   public ownerName: string = 'Guild Hero';
@@ -116,6 +117,8 @@ export class ProgressionSystem {
     this.proficiencies.set('fist', { level: 0, currentExp: 0 });
     this.proficiencies.set('longswords', { level: 0, currentExp: 0 });
     this.proficiencies.set('spears', { level: 0, currentExp: 0 });
+    this.proficiencies.set('katana', { level: 0, currentExp: 0 });
+    this.proficiencies.set('throwing_weapons', { level: 0, currentExp: 0 });
     for (const hiddenId of ProgressionSystem.HIDDEN_SKILL_IDS) {
       this.proficiencies.set(hiddenId, { level: 0, currentExp: 0 });
     }

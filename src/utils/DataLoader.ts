@@ -40,7 +40,9 @@ import type {
   GatheringNodesConfig,
   GatheringNodeDef,
   StartingKitDef,
-  DungeonRegionDef
+  DungeonRegionDef,
+  ItemDef,
+  ItemsData
 } from '../types/game.ts';
 import { HiddenSkillSystem } from '../systems/HiddenSkillSystem.ts';
 
@@ -67,6 +69,7 @@ export class DataLoader {
   private moodEffectsData!: MoodEffectsData;
   private dungeonConfig!: DungeonConfig;
   private gatheringNodesConfig!: GatheringNodesConfig;
+  private itemsData!: ItemsData;
 
   private constructor() {}
 
@@ -78,7 +81,7 @@ export class DataLoader {
   }
 
   public async loadAll(): Promise<void> {
-    const [player, weapons, classes, enemies, skills, statusEffects, buildables, rooms, hiddenSkills, skillBooks, researchTree, alchemyRecipes, cookingRecipes, blacksmithRecipes, bowyerRecipes, armors, armorsmithRecipes, foods, moodEffects, dungeon, gathering] = await Promise.all([
+    const [player, weapons, classes, enemies, skills, statusEffects, buildables, rooms, hiddenSkills, skillBooks, researchTree, alchemyRecipes, cookingRecipes, blacksmithRecipes, bowyerRecipes, armors, armorsmithRecipes, foods, moodEffects, dungeon, gathering, items] = await Promise.all([
       fetch('/data/player.json').then((res) => res.json()),
       fetch('/data/weapons.json').then((res) => res.json()),
       fetch('/data/classes.json').then((res) => res.json()),
@@ -99,7 +102,8 @@ export class DataLoader {
       fetch('/data/food.json').then((res) => res.json()),
       fetch('/data/moodEffects.json').then((res) => res.json()),
       fetch('/data/dungeonConfig.json').then((res) => res.json()).catch(() => null),
-      fetch('/data/gatheringNodes.json').then((res) => res.json()).catch(() => null)
+      fetch('/data/gatheringNodes.json').then((res) => res.json()).catch(() => null),
+      fetch('/data/items.json').then((res) => res.json()).catch(() => null)
     ]);
 
     this.playerData = player as PlayerData;
@@ -121,6 +125,7 @@ export class DataLoader {
     this.armorsmithRecipesData = armorsmithRecipes as ArmorsmithRecipesData;
     this.foodsData = foods as FoodsData;
     this.moodEffectsData = moodEffects as MoodEffectsData;
+    this.itemsData = (items as ItemsData) || { items: [] };
     if (dungeon) {
       this.dungeonConfig = dungeon as DungeonConfig;
     }
@@ -226,10 +231,20 @@ export class DataLoader {
       id: 'abyssal_depths',
       name: 'Abyssal Depths',
       minFloor: 3,
+      maxFloor: 5,
       walkableTexture: 'tile-abyssal-walkable',
       obstacleTexture: 'tile-abyssal-obstacle',
       accentColor: '#c084fc',
       tagline: 'The Deep Void Stratum'
+    },
+    {
+      id: 'infernal_caldera',
+      name: 'Infernal Caldera',
+      minFloor: 6,
+      walkableTexture: 'tile-caldera-walkable',
+      obstacleTexture: 'tile-caldera-obstacle',
+      accentColor: '#f97316',
+      tagline: 'The Scorched Subterranean Core'
     }
   ];
 
@@ -430,6 +445,20 @@ export class DataLoader {
           name: 'Spears',
           description
         };
+      } else if (weapon.id === 'throwing_weapons' || id === 'throwing_weapons') {
+        description = 'Proficiency with throwing weapons in ranged skirmish combat.';
+        return {
+          id: 'throwing_weapons',
+          name: 'Throwing Weapons',
+          description
+        };
+      } else if (weapon.id === 'crossbows' || id === 'crossbows') {
+        description = 'Proficiency with mechanical crossbows and heavy arbalests in ranged combat.';
+        return {
+          id: 'crossbows',
+          name: 'Crossbows',
+          description
+        };
       }
       return {
         id: weapon.id,
@@ -563,6 +592,22 @@ export class DataLoader {
         id: 'gardening',
         name: 'Gardening',
         description: 'Cultivating crops, tending planting plots, and extracting seeds at the outpost.'
+      };
+    }
+
+    if (id === 'throwing_weapons') {
+      return {
+        id: 'throwing_weapons',
+        name: 'Throwing Weapons',
+        description: 'Proficiency with throwing weapons in ranged skirmish combat.'
+      };
+    }
+
+    if (id === 'crossbows') {
+      return {
+        id: 'crossbows',
+        name: 'Crossbows',
+        description: 'Proficiency with mechanical crossbows and heavy arbalests in ranged combat.'
       };
     }
 
@@ -795,6 +840,27 @@ export class DataLoader {
 
   public getStartingKit(id: string): StartingKitDef | undefined {
     return this.getStartingKits().find((k) => k.id === id);
+  }
+
+  public getItemsData(): ItemsData {
+    return this.itemsData || { items: [] };
+  }
+
+  public getItem(id: string): ItemDef | undefined {
+    return this.getItemsData().items.find((i) => i.id === id);
+  }
+
+  public getItemWeight(id: string): number {
+    if (id === 'research_points') return 0;
+    const item = this.getItem(id);
+    if (item && item.weight !== undefined) return item.weight;
+    const weapon = this.getWeapon(id);
+    if (weapon && weapon.weight !== undefined) return weapon.weight;
+    const armor = this.getArmor(id);
+    if (armor && armor.weight !== undefined) return armor.weight;
+    const food = this.getFood(id);
+    if (food && food.weight !== undefined) return food.weight;
+    return 0.5; // sensible fallback default for unlisted items
   }
 }
 

@@ -25,6 +25,9 @@ export class Player extends Entity {
   public lastAttackTime: number = 0;
   public attackRangeTiles: number = 1;
   public avatarTextureKey: string;
+  public inventory: Map<string, number> = new Map();
+  public baseCarryCapacity: number = 45.0;
+  private encumberedMoveTimeMs: number = 0;
 
   public energy: number;
   public maxEnergy: number;
@@ -108,6 +111,8 @@ export class Player extends Entity {
       this.autocastMap.set(skillId, true);
     }
 
+    this.baseCarryCapacity = playerData.baseCarryCapacity ?? 45.0;
+
     this.progression.onClassUnlocked((event) => {
       // First-unlock auto-equip: if currently unranked/null, equip first unlocked class
       if (!this.activeClass) {
@@ -117,6 +122,7 @@ export class Player extends Entity {
     });
 
     this.checkSkillUnlocks();
+    this.updateEncumbrance();
   }
 
   public setActiveClass(classId: string | null): boolean {
@@ -184,6 +190,7 @@ export class Player extends Entity {
         this.offhandWeapon = null;
       }
     }
+    this.updateEncumbrance();
     console.log(`[Player:${this.entityName}] Equipped main weapon: ${resolvedWeapon.name} (Range: ${this.attackRangeTiles} tiles)`);
     return true;
   }
@@ -195,6 +202,7 @@ export class Player extends Entity {
     }
     if (weapon === null) {
       this.offhandWeapon = null;
+      this.updateEncumbrance();
       console.log(`[Player:${this.entityName}] Unequipped offhand weapon`);
       return true;
     }
@@ -203,16 +211,25 @@ export class Player extends Entity {
     const isDagger = weapon.id === 'daggers' || weapon.proficiencyId === 'daggers';
     const isBowSidearmDagger = isScout && isBow && isDagger;
 
+    const isJavelin = this.activeClass === 'javelin' || (this.progression && this.progression.getClassLevel('javelin') > 0);
+    const isMainSpear = this.equippedWeapon?.proficiencyId === 'spears' || this.equippedWeapon?.id === 'spears' || this.equippedWeapon?.id === 'spears_2h';
+    const isOffhandThrowing = weapon.id === 'throwing_weapons' || weapon.proficiencyId === 'throwing_weapons';
+    const isMainThrowing = this.equippedWeapon?.id === 'throwing_weapons' || this.equippedWeapon?.proficiencyId === 'throwing_weapons';
+    const isOffhand1HSpear = (weapon.id === 'spears' || weapon.proficiencyId === 'spears') && !weapon.twoHanded;
+    const isJavelinSidearm = isJavelin && ((isMainSpear && isOffhandThrowing) || (isMainThrowing && isOffhand1HSpear));
+    const isAllowedSidearm = isBowSidearmDagger || isJavelinSidearm;
+
     if (this.equippedWeapon?.twoHanded) {
-      if (!isBowSidearmDagger) {
+      if (!isAllowedSidearm) {
         console.warn(`[Player:${this.entityName}] Cannot equip offhand while wielding a two-handed weapon!`);
         return false;
       }
     }
-    // Shield or Bow-sidearm Dagger can be equipped directly in offhand without requiring Dual Wielding
-    if (weapon.category === 'offhand' || weapon.id === 'shields' || isBowSidearmDagger) {
+    // Shield, Bow-sidearm Dagger, or Javelin sidearm can be equipped directly in offhand without requiring Dual Wielding
+    if (weapon.category === 'offhand' || weapon.id === 'shields' || isAllowedSidearm) {
       this.offhandWeapon = weapon;
-      console.log(`[Player:${this.entityName}] Equipped ${isBowSidearmDagger ? 'sidearm dagger' : 'shield'} in offhand: ${weapon.name}`);
+      this.updateEncumbrance();
+      console.log(`[Player:${this.entityName}] Equipped ${isAllowedSidearm ? 'sidearm weapon' : 'shield'} in offhand: ${weapon.name}`);
       return true;
     }
     // Second one-handed weapon requires Dual Wielding unlocked
@@ -225,8 +242,116 @@ export class Player extends Entity {
       return false;
     }
     this.offhandWeapon = weapon;
+    this.updateEncumbrance();
     console.log(`[Player:${this.entityName}] Equipped offhand weapon: ${weapon.name}`);
     return true;
+  }
+
+  // --- Milestone 51: Personal Inventory & Weight System ---
+
+  public addItem(itemId: string, count: number = 1): void {
+    if (count <= 0) return;
+    const current = this.inventory.get(itemId) || 0;
+    this.inventory.set(itemId, current + count);
+    this.updateEncumbrance();
+  }
+
+  public removeItem(itemId: string, count: number = 1): boolean {
+    if (count <= 0) return false;
+    const current = this.inventory.get(itemId) || 0;
+    if (current >= count) {
+      const remaining = current - count;
+      if (remaining <= 0) {
+        this.inventory.delete(itemId);
+      } else {
+        this.inventory.set(itemId, remaining);
+      }
+      this.updateEncumbrance();
+      return true;
+    }
+    return false;
+  }
+
+  public getItemCount(itemId: string): number {
+    return this.inventory.get(itemId) || 0;
+  }
+
+  public getInventoryMap(): Map<string, number> {
+    return new Map(this.inventory);
+  }
+
+  public clearInventory(): void {
+    this.inventory.clear();
+    this.updateEncumbrance();
+  }
+
+  public getEquippedWeight(): number {
+    let weight = 0;
+    if (this.equippedWeapon?.weight !== undefined) weight += this.equippedWeapon.weight;
+    if (this.offhandWeapon?.weight !== undefined) weight += this.offhandWeapon.weight;
+    if (this.equippedHelmet?.weight !== undefined) weight += this.equippedHelmet.weight;
+    if (this.equippedBodyArmor?.weight !== undefined) weight += this.equippedBodyArmor.weight;
+    if (this.equippedNecklace?.weight !== undefined) weight += this.equippedNecklace.weight;
+    if (this.equippedRing?.weight !== undefined) weight += this.equippedRing.weight;
+    if (this.equippedAccessory?.weight !== undefined) weight += this.equippedAccessory.weight;
+    return Math.round(weight * 100) / 100;
+  }
+
+  public getInventoryWeight(): number {
+    const dataLoader = DataLoader.getInstance();
+    let weight = 0;
+    for (const [id, count] of this.inventory.entries()) {
+      weight += dataLoader.getItemWeight(id) * count;
+    }
+    return Math.round(weight * 100) / 100;
+  }
+
+  public getTotalWeight(): number {
+    return Math.round((this.getEquippedWeight() + this.getInventoryWeight()) * 100) / 100;
+  }
+
+  public getEffectiveCarryCapacity(): number {
+    let bonus = 0;
+    if (this.equippedAccessory?.carryCapacityBonus !== undefined) {
+      bonus += this.equippedAccessory.carryCapacityBonus;
+    }
+    // Iron Back hidden skill tier scaling
+    if (this.progression) {
+      const ironBackLevel = this.progression.getProficiencyLevel('iron_back');
+      if (ironBackLevel >= 90) {
+        bonus += 50;
+      } else if (ironBackLevel >= 60) {
+        bonus += 35;
+      } else if (ironBackLevel >= 30) {
+        bonus += 20;
+      } else if (ironBackLevel >= 1) {
+        bonus += 10;
+      }
+    }
+    return Math.round((this.baseCarryCapacity + bonus) * 100) / 100;
+  }
+
+  public updateEncumbrance(): boolean {
+    const totalWeight = this.getTotalWeight();
+    const capacity = this.getEffectiveCarryCapacity();
+    this.isEncumbered = totalWeight > capacity;
+
+    if (this.progression) {
+      const ironBackLevel = this.progression.getProficiencyLevel('iron_back');
+      if (ironBackLevel >= 90) {
+        this.encumbranceMultiplier = 0.80; // softens penalty to -20%
+      } else if (ironBackLevel >= 60) {
+        this.encumbranceMultiplier = 0.60; // softens penalty to -40%
+      } else if (ironBackLevel >= 30) {
+        this.encumbranceMultiplier = 0.40; // softens penalty to -60%
+      } else {
+        this.encumbranceMultiplier = 0.20; // default flat -80% penalty
+      }
+    } else {
+      this.encumbranceMultiplier = 0.20;
+    }
+
+    return this.isEncumbered;
   }
 
   public recalculateMaxHp(): void {
@@ -307,6 +432,7 @@ export class Player extends Entity {
     }
 
     this.drawHpBar();
+    this.updateEncumbrance();
     console.log(`[Player:${this.entityName}] ${armor ? `Equipped ${slot}: ${armor.name} (+${armor.hpBonus} HP)` : `Unequipped ${slot}`}. Current HP: ${this.hp}/${this.maxHp}, Crit HP: ${this.criticalHp}/${this.maxCriticalHp}`);
     return true;
   }
@@ -693,6 +819,8 @@ export class Player extends Entity {
       equippedNecklaceId: this.equippedNecklace?.id ?? null,
       equippedRingId: this.equippedRing?.id ?? null,
       equippedAccessoryId: this.equippedAccessory?.id ?? null,
+      baseCarryCapacity: this.baseCarryCapacity,
+      inventory: Object.fromEntries(this.inventory),
       knownSkillIds: [...this.knownSkillIds],
       equippedSkillIds: [...this.equippedSkillIds],
       autocastMap: autocastObj,
@@ -841,6 +969,17 @@ export class Player extends Entity {
       this.avatarSprite.setAlpha(1);
       this.hideReviveIcon();
     }
+
+    if (snapshot.baseCarryCapacity !== undefined) {
+      this.baseCarryCapacity = snapshot.baseCarryCapacity;
+    }
+    this.inventory.clear();
+    if (snapshot.inventory) {
+      for (const [k, v] of Object.entries(snapshot.inventory)) {
+        if (v > 0) this.inventory.set(k, v);
+      }
+    }
+    this.updateEncumbrance();
 
     this.drawHpBar();
   }
@@ -1006,6 +1145,24 @@ export class Player extends Entity {
       }
 
       this.mood = Math.max(0, Math.min(this.maxMood, this.mood + (moodDeltaPerSec * delta) / 1000));
+
+      // 6. Milestone 51: Iron Back Hidden Skill proc check during encumbered movement
+      if (this.isMoving() && this.isEncumbered) {
+        this.encumberedMoveTimeMs += delta;
+        if (this.encumberedMoveTimeMs >= 1000) {
+          this.encumberedMoveTimeMs = 0;
+          const ironBackDef = DataLoader.getInstance().getHiddenSkill('iron_back');
+          if (ironBackDef && this.progression) {
+            const currentLevel = this.progression.getProficiencyLevel('iron_back');
+            const procChance = ironBackDef.baseProcChance + (ironBackDef.procChancePerLevel ?? 0) * currentLevel;
+            if (Math.random() < procChance) {
+              this.progression.addProficiencyExp('iron_back', ironBackDef.expPerProc);
+              GameState.getInstance().discoverProficiency('iron_back');
+              this.updateEncumbrance();
+            }
+          }
+        }
+      }
     }
   }
 

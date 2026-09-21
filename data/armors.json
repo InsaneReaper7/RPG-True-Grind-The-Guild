@@ -1,10 +1,11 @@
 {
-  "_comment": "Modular armor registry. Defines armor pieces, equipment slots ('helmet' | 'body' | 'necklace' | 'ring' | 'accessory'), flat HP bonuses, and per-item HP split ratio (default 50/50 across Main HP and Critical HP).",
+  "_comment": "Modular armor registry. Defines armor pieces, equipment slots ('helmet' | 'body' | 'necklace' | 'ring' | 'accessory'), weights, flat HP bonuses, and per-item HP split ratio (default 50/50 across Main HP and Critical HP).",
   "armors": [
     {
       "id": "leather_cap",
       "name": "Leather Cap",
       "slot": "helmet",
+      "weight": 1.0,
       "hpBonus": 15,
       "splitRatio": "50/50",
       "description": "A supple cap sewn from wolf pelts. Increases Max HP by 8 and Critical HP by 7."
@@ -13,6 +14,7 @@
       "id": "leather_armor",
       "name": "Leather Armor",
       "slot": "body",
+      "weight": 5.0,
       "hpBonus": 25,
       "splitRatio": "50/50",
       "description": "A stitched leather tunic reinforced with wolf hide. Increases Max HP by 13 and Critical HP by 12."
@@ -21,6 +23,7 @@
       "id": "silk_cowl",
       "name": "Silk Cowl",
       "slot": "helmet",
+      "weight": 1.0,
       "hpBonus": 30,
       "splitRatio": "50/50",
       "description": "A tightly woven cowl spun from subterranean spider silk. Increases Max HP by 15 and Critical HP by 15."
@@ -29,6 +32,7 @@
       "id": "silk_robe",
       "name": "Silk Robe",
       "slot": "body",
+      "weight": 3.0,
       "hpBonus": 50,
       "splitRatio": "50/50",
       "description": "An enchanted, resilient robe woven from pure spider silk. Increases Max HP by 25 and Critical HP by 25."
@@ -37,6 +41,7 @@
       "id": "bone_necklace",
       "name": "Bone Necklace",
       "slot": "necklace",
+      "weight": 0.5,
       "hpBonus": 20,
       "splitRatio": "50/50",
       "description": "A protective talisman strung with carved monster bones and silk. Increases Max HP by 10 and Critical HP by 10."
@@ -45,6 +50,7 @@
       "id": "wolf_claw_ring",
       "name": "Wolf Claw Ring",
       "slot": "ring",
+      "weight": 0.2,
       "hpBonus": 14,
       "splitRatio": "50/50",
       "description": "A polished band crafted from sharp wolf claws and bone. Increases Max HP by 7 and Critical HP by 7."
@@ -53,9 +59,11 @@
       "id": "venom_charm",
       "name": "Venom Charm",
       "slot": "accessory",
+      "weight": 0.5,
+      "carryCapacityBonus": 5.0,
       "hpBonus": 26,
       "splitRatio": "50/50",
-      "description": "A resilient ward vial containing stabilized spider venom and silk. Increases Max HP by 13 and Critical HP by 13."
+      "description": "A resilient ward vial containing stabilized spider venom and silk. Increases Max HP by 13, Critical HP by 13, and Carry Capacity by 5kg."
     }
   ]
 }

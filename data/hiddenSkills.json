@@ -143,6 +143,24 @@
         { "level": 60, "description": "Increased energy regen rate (+8 Energy per tick)", "energyAmount": 8, "inCombat": true },
         { "level": 90, "description": "Burst energy chance at low stamina (+20 Energy burst)", "energyAmount": 12, "inCombat": true, "burstEnergy": true }
       ]
+    },
+    {
+      "id": "iron_back",
+      "name": "Iron Back",
+      "triggerType": "onEncumberedMove",
+      "eligibility": {
+        "gear": "none"
+      },
+      "baseProcChance": 0.10,
+      "procChancePerLevel": 0.005,
+      "expPerProc": 2,
+      "description": "Conditioning from carrying heavy loads. Increases carry capacity and mitigates overweight movement penalties.",
+      "tierEffects": [
+        { "level": 1, "description": "+10 kg carry capacity", "capacityBonus": 10, "encumbranceSpeedPenalty": 0.80 },
+        { "level": 30, "description": "+20 kg capacity, softens overweight penalty to -60%", "capacityBonus": 20, "encumbranceSpeedPenalty": 0.60 },
+        { "level": 60, "description": "+35 kg capacity, softens overweight penalty to -40%", "capacityBonus": 35, "encumbranceSpeedPenalty": 0.40 },
+        { "level": 90, "description": "+50 kg capacity, softens overweight penalty to -20%", "capacityBonus": 50, "encumbranceSpeedPenalty": 0.20 }
+      ]
     }
   ]
 }

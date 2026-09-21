@@ -49,6 +49,7 @@ export interface WeaponDef {
   baseHealAmount?: number;
   energyCostPerCast?: number;
   stunChance?: number;
+  weight?: number;
   proficiencyId?: string;
   conduitWeaponId?: string;
   spellWeaponId?: string;
@@ -232,6 +233,7 @@ export interface PlayerData {
   maxEnergy: number;
   energyRegenPerSecond: number;
   moveSpeed: number;
+  baseCarryCapacity?: number;
   attackRangeTiles: number;
   startingWeaponId: string;
   knownSkillIds?: string[];
@@ -253,6 +255,7 @@ export interface CharacterSnapshot {
   hp: number;
   criticalHp: number;
   energy: number;
+  baseCarryCapacity?: number;
   equippedWeaponId: string;
   offhandWeaponId?: string | null;
   equippedHelmetId?: string | null;
@@ -260,6 +263,7 @@ export interface CharacterSnapshot {
   equippedNecklaceId?: string | null;
   equippedRingId?: string | null;
   equippedAccessoryId?: string | null;
+  inventory?: Record<string, number>;
   knownSkillIds: string[];
   equippedSkillIds: string[];
   autocastMap: Record<string, boolean>;
@@ -424,6 +428,8 @@ export interface ArmorDef {
   name: string;
   slot: ArmorSlot;
   hpBonus: number;
+  weight?: number;
+  carryCapacityBonus?: number;
   splitRatio?: string | [number, number];
   hpSplitRatio?: string | [number, number];
   description: string;
@@ -498,6 +504,9 @@ export interface SkillDef {
   drainPercent?: number;
   maxBonusEnergy?: number;
   bonusDamagePerEnergy?: number;
+  stunChance?: number;
+  reflectPercent?: number;
+  distanceBonusMultiplier?: number;
 }
 
 export interface SkillsData {
@@ -523,6 +532,7 @@ export interface StatusEffectDef {
   damageReductionPercent?: number;
   evasionBonus?: number;
   accuracyReduction?: number;
+  reflectPercent?: number;
   persistent?: boolean;
 }
 
@@ -613,6 +623,7 @@ export interface FoodDef {
   id: string;
   name: string;
   hungerRestored: number;
+  weight?: number;
   spoilageDays: number;
   buff: FoodBuffDef;
   qualities?: Record<FoodQuality, FoodQualityModifier>;
@@ -621,6 +632,19 @@ export interface FoodDef {
 
 export interface FoodsData {
   foods: FoodDef[];
+}
+
+export interface ItemDef {
+  id: string;
+  name: string;
+  weight: number;
+  category?: string;
+  icon?: string;
+  description?: string;
+}
+
+export interface ItemsData {
+  items: ItemDef[];
 }
 
 export interface FoodItemInstance {

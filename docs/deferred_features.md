@@ -58,15 +58,21 @@ In Milestone 28, Helmet and Body Armor slots were introduced with flat Max HP bo
 
 ---
 
-## 4. Javelin Class (Deferred — Pending Throwing Weapons Milestone)
+## 4. Javelin Class (Deferred to Milestone 54 — Prerequisite Resolved)
 
-### Blocking Dependency
-- Requires **Spears** + **Throwing Weapons** proficiency.
-- While Spears was implemented in Milestone 49, `Throwing Weapons` does not yet exist as an active, crafted, and leveled weapon type (remains on the master backlog).
-
-### Resolution Roadmap
-- Following the proven sequencing pattern of Bows → Scout and Longswords → Dark Knight, `Throwing Weapons` must first be built in its own dedicated weapon milestone (recipes, attack logic, accuracy/damage scaling, and basic classes like Skirmisher).
-- Once `Throwing Weapons` exists and is verified, **Javelin** will immediately become buildable as a natural follow-up hybrid class without speculative placeholders.
+### Status Update (Milestone 54 — Implemented & Complete)
+- **Resolved and Shipped**: `Javelin` class implemented in `data/classes.json` with Tier 1 Adept requirements (`spears: 30` + `throwing_weapons: 10`) and dual hidden skill bonuses (`counterattack: 0.05`, `evasion: 0.05`).
+- **Full 5-Skill Kit**: Implemented in `data/skills.json` and `src/systems/CombatSystem.ts`:
+  1. `piercing_throw` (Class Lv 1): 4-tile piercing projectile attack.
+  2. `impaling_thrust` (Class Lv 10): 2-tile reach thrust applying `bleed`.
+  3. `vaulting_leap` (Class Lv 20): Self reposition maneuver using spear leverage with +40% Evasion window.
+  4. `pinning_spear` (Class Lv 30): 4-tile barbed throw applying `slow` (50%).
+  5. `heartseeker_hurl` (Class Lv 40): 5-tile capstone with distance-scaled projectile damage (+10%/tile).
+- **Genuine Hybrid Mechanics**:
+  - Full cross-proficiency scaling on all offensive skills (`+0.15 * partnerLevel`).
+  - Sidearm Pairing in `Player.ts`: Spears (1H/2H) with Throwing Weapons offhand, or Throwing Weapons with 1H Spear offhand without requiring Dual Wielding.
+  - Skills usable with either weapon family.
+- **Design Origin & Audit**: Direct audit of `class_system (1).md` confirmed Javelin was not in original tables; requirements and kit are newly designed following Tier 1 Adept precedents (matching Scout and Dark Knight).
 
 ---
 
@@ -82,4 +88,60 @@ In Milestone 28, Helmet and Body Armor slots were introduced with flat Max HP bo
   2. Retroactively tag every existing armor piece in `armors.json` (Leather Cap, Leather Armor, Silk Cowl, Silk Robe, Bone Necklace, etc.) with an explicit weight class.
   3. Once the Heavy Armor proficiency leveling loop is verified, Dragoon can be introduced with legitimate requirements (`Lancer` class level + `Heavy Armor` proficiency + `Spears` proficiency).
 
+---
 
+## 6. Spear Class Lineage: Naming Mismatch & Evolution Path Divergence (Design Flag)
+
+### Audit Discovery (Surfaced via M54 Citation Audit)
+1. **Naming Inversion in `class_system (1).md` vs Shipped M49**:
+   - **Documented in `class_system (1).md`**:
+     - *Tier 0 (Novice)*: **Spearman** (`Spears 10`) — "Basic reach fighter"
+     - *Tier 1 (Apprentice)*: **Lancer** (`Spears 30 + Shields 10`) — "Defensive spear fighter"
+     - *Tier 2 (Expert)*: **Storm Lancer** (`Spears 30 + Lightning Magic 30 + Lancer Lv 15`) — "Lightning-infused spear warrior"
+   - **Shipped in M49**:
+     - *Tier 0 (Novice)*: **Lancer** (`id: "lancer"`, `Spears 10`)
+     - *Tier 1 (Adept)*: **Hoplite** (`id: "hoplite"`, `Spears 30 + Shields 10`)
+   - What is live as `"lancer"` corresponds mechanically to documented `Spearman`, and `"hoplite"` corresponds mechanically to documented `Lancer`.
+
+2. **Evolution Path Divergence (Dragoon vs. Storm Lancer)**:
+   - Early project concept and Section 5 above define Lancer's Tier 2 evolution as **Dragoon**, gated behind a new Heavy Armor proficiency system.
+   - The canonical `class_system (1).md` documents Lancer's Tier 2 evolution as **Storm Lancer**, gated behind `Spears 30 + Lightning Magic 30 + Lancer Lv 15` (elemental magic synergy rather than armor proficiency).
+
+### Eventual Decision Points (Deferred — Non-blocking)
+- **Class Naming / IDs**:
+  - *Option A (Deliberate Divergence)*: Keep current shipped IDs and names (`lancer` at Spears 10, `hoplite` at Spears 30 + Shields 10) as an accepted divergence (preserves save compatibility and existing tests/references; "Hoplite" is an evocative and accurate name for Spear + Shield).
+  - *Option B (Canonical Alignment)*: Perform a formal migration renaming `lancer` -> `spearman` and `hoplite` -> `lancer` across `classes.json`, tests, and save deserializers.
+- **Tier 2 Progression Architecture**:
+  - *Direction 1 (Dual Branches)*: Support both evolutions branching from the spear tree:
+    - **Storm Lancer** (Magical / Lightning hybrid: `Spears 30 + Lightning Magic 30 + Lancer Lv 15`).
+    - **Dragoon** (Martial / Heavy armor juggernaut: `Spears 60 + Heavy Armor 30 + Lancer/Hoplite Lv 15`).
+  - *Direction 2 (Single Intended Direction)*: Select either Storm Lancer or Dragoon as the canonical evolution.
+
+---
+
+## 7. Crossbow Class Lineage: Loader Implemented, Deeper Tiers Deferred (Milestone 55)
+
+### Status Summary
+- **Shipped in Milestone 55**:
+  - **Crossbows**: Implemented as a genuine two-handed ranged weapon (`twoHanded: true`, `attackRangeTiles: 4`, `baseAccuracy: 0.60`, `weight: 5.0`, `attackIntervalMs: 1500`, `baseDamage: 9`) with full additive accuracy scaling (`accuracyPerLevel: 0.004`), attack speed bonus (`attackSpeedPerLevel: 0.005`), and crafting recipe in `data/blacksmithRecipes.json`.
+  - **Loader (Tier 0 Novice)**: Implemented and shipped alongside Crossbows at `Crossbows 10` with a full 5-skill kit (`primed_shot` Lv 1, `rapid_crank` Lv 10, `arbalest_brace` Lv 20, `pinning_bolt` Lv 30, `kinetic_overdraw` Lv 40). This prevents Crossbows from suffering the "reachable but hollow" progression gap, matching the pattern set by Fist→Brawler, Katana→Swordsman, Longswords→Squire, and Throwing Weapons→Skirmisher.
+
+### Deeper Tiers Deferred (Documented Lineage in `class_system (1).md`)
+The deeper tiers and hybrid branch are explicitly cited and preserved, but deferred to future dedicated milestones due to genuine cross-system prerequisites:
+
+1. **Sharpshooter (Tier 1 Adept)**:
+   - *Requirement*: `Crossbows 30 + Bows 10` (Line 125).
+   - *Fantasy*: "Precision trainee".
+   - *Deferral Reason*: Hybrid dual-ranged progression requiring Bows cross-proficiency synergy and hybrid skill design.
+2. **Witch Hunter (Tier 2 Expert)**:
+   - *Requirement*: `Crossbows 30 + Holy Magic 30 + Sharpshooter Lv 15` (Line 152).
+   - *Fantasy*: "Monster and magic hunter".
+   - *Deferral Reason*: Multi-tier dependency requiring Holy Magic integration and Sharpshooter class leveling.
+3. **Demon Hunter (Tier 3 Master / Exotic)**:
+   - *Requirement*: `Short Swords 60 + Crossbows 60 + Holy Magic 30 + Witch Hunter Lv 20` (Line 180).
+   - *Fantasy*: "Specialist in hunting supernatural creatures".
+   - *Deferral Reason*: Master-tier hybrid requiring Short Swords + Crossbows + Holy Magic + Witch Hunter progression.
+4. **Bounty Hunter (Hybrid / Utility)**:
+   - *Requirement*: `Crossbows 30 + Perception 30` (Line 328).
+   - *Fantasy*: "Tracks marks others can't find".
+   - *Deferral Reason*: Gated behind `Perception`, an entirely new character stat system not yet built in the project.

@@ -79,10 +79,20 @@
       "id": "abyssal_depths",
       "name": "Abyssal Depths",
       "minFloor": 3,
+      "maxFloor": 5,
       "walkableTexture": "tile-abyssal-walkable",
       "obstacleTexture": "tile-abyssal-obstacle",
       "accentColor": "#c084fc",
       "tagline": "The Deep Void Stratum"
+    },
+    {
+      "id": "infernal_caldera",
+      "name": "Infernal Caldera",
+      "minFloor": 6,
+      "walkableTexture": "tile-caldera-walkable",
+      "obstacleTexture": "tile-caldera-obstacle",
+      "accentColor": "#f97316",
+      "tagline": "The Scorched Subterranean Core"
     }
   ]
 }

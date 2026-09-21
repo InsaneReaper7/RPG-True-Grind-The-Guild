@@ -544,6 +544,430 @@
         }
       ],
       "description": "Dark Knight capstone: a cataclysmic blow dealing 300% weapon damage, consuming up to 25 bonus energy for +4% extra damage per point consumed."
+    },
+    {
+      "id": "blade_strike",
+      "name": "Blade Strike",
+      "energyCost": 15,
+      "cooldownMs": 3000,
+      "damageMultiplier": 1.4,
+      "targetType": "enemy",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "swordsman",
+          "value": 1
+        }
+      ],
+      "description": "Swordsman baseline: a fundamental katana cut dealing 140% weapon damage."
+    },
+    {
+      "id": "quick_cut",
+      "name": "Quick Cut",
+      "energyCost": 15,
+      "cooldownMs": 3000,
+      "damageMultiplier": 1.5,
+      "accuracyBonus": 0.20,
+      "targetType": "enemy",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "swordsman",
+          "value": 10
+        }
+      ],
+      "description": "A swift, precise slash with +20% accuracy dealing 150% weapon damage."
+    },
+    {
+      "id": "defensive_posture",
+      "name": "Defensive Posture",
+      "energyCost": 20,
+      "cooldownMs": 8000,
+      "durationMs": 4000,
+      "targetType": "self",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "swordsman",
+          "value": 20
+        }
+      ],
+      "description": "Braces the blade for incoming blows, reducing damage taken by 20% for 4s."
+    },
+    {
+      "id": "severing_slice",
+      "name": "Severing Slice",
+      "energyCost": 25,
+      "cooldownMs": 5000,
+      "damageMultiplier": 1.7,
+      "bleedChance": 1.0,
+      "targetType": "enemy",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "swordsman",
+          "value": 30
+        }
+      ],
+      "description": "A deep incision dealing 170% weapon damage and causing the enemy to Bleed."
+    },
+    {
+      "id": "cross_cut",
+      "name": "Cross Cut",
+      "energyCost": 30,
+      "cooldownMs": 12000,
+      "damageMultiplier": 2.6,
+      "targetType": "enemy",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "swordsman",
+          "value": 40
+        }
+      ],
+      "description": "Swordsman capstone: delivers a devastating dual-diagonal katana cross cut dealing 260% weapon damage."
+    },
+    {
+      "id": "iaido_quickdraw",
+      "name": "Iaido Quickdraw",
+      "energyCost": 15,
+      "cooldownMs": 3000,
+      "damageMultiplier": 1.5,
+      "accuracyBonus": 0.20,
+      "targetType": "enemy",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "ronin",
+          "value": 1
+        }
+      ],
+      "description": "Ronin baseline: a lightning-fast draw from the scabbard dealing 150% weapon damage with +20% accuracy."
+    },
+    {
+      "id": "crimson_slash",
+      "name": "Crimson Slash",
+      "energyCost": 20,
+      "cooldownMs": 4000,
+      "damageMultiplier": 1.7,
+      "bleedChance": 1.0,
+      "targetType": "enemy",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "ronin",
+          "value": 10
+        }
+      ],
+      "description": "A wide arterial slash dealing 170% weapon damage and causing the target to Bleed for 6s."
+    },
+    {
+      "id": "flowing_step",
+      "name": "Flowing Step",
+      "energyCost": 25,
+      "cooldownMs": 7000,
+      "durationMs": 4000,
+      "damageMultiplier": 1.4,
+      "rangeTiles": 4,
+      "targetType": "enemy",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "ronin",
+          "value": 20
+        }
+      ],
+      "description": "An agile dash-strike closing up to 4 tiles, dealing 140% weapon damage and granting +25% Evasion for 4s."
+    },
+    {
+      "id": "bloodseeker_riposte",
+      "name": "Bloodseeker Riposte",
+      "energyCost": 25,
+      "cooldownMs": 8000,
+      "damageMultiplier": 2.0,
+      "targetType": "enemy",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "ronin",
+          "value": 30
+        }
+      ],
+      "description": "A lethal counter-strike dealing 200% weapon damage, empowered to deal +50% bonus damage if the target is Bleeding."
+    },
+    {
+      "id": "dragons_flurry",
+      "name": "Dragon's Flurry",
+      "energyCost": 35,
+      "cooldownMs": 15000,
+      "damageMultiplier": 3.2,
+      "strikeCount": 4,
+      "damagePerHitMultiplier": 0.8,
+      "targetType": "enemy",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "ronin",
+          "value": 40
+        }
+      ],
+      "description": "Ronin capstone: unleashes 4 blindingly fast katana cuts dealing 320% total weapon damage and refreshing Bleed."
+    },
+    {
+      "id": "overhead_cleave",
+      "name": "Overhead Cleave",
+      "energyCost": 20,
+      "cooldownMs": 3500,
+      "damageMultiplier": 1.7,
+      "targetType": "enemy",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "samurai",
+          "value": 1
+        }
+      ],
+      "description": "Samurai baseline: a heavy downward cut using disciplined posture, dealing 170% weapon damage."
+    },
+    {
+      "id": "iron_posture",
+      "name": "Iron Posture",
+      "energyCost": 25,
+      "cooldownMs": 12000,
+      "durationMs": 5000,
+      "targetType": "self",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "samurai",
+          "value": 10
+        }
+      ],
+      "description": "The armored samurai braces their stance, granting 35% damage reduction for 5s."
+    },
+    {
+      "id": "sweeping_hilt",
+      "name": "Sweeping Hilt",
+      "energyCost": 20,
+      "cooldownMs": 6000,
+      "damageMultiplier": 1.8,
+      "stunChance": 0.30,
+      "targetType": "enemy",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "samurai",
+          "value": 20
+        }
+      ],
+      "description": "Strikes the target with pommel and blade for 180% weapon damage with a 30% chance to Stun for 2s."
+    },
+    {
+      "id": "kenjutsu_deflection",
+      "name": "Kenjutsu Deflection",
+      "energyCost": 30,
+      "cooldownMs": 10000,
+      "durationMs": 6000,
+      "shieldAmount": 40,
+      "targetType": "self",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "samurai",
+          "value": 30
+        }
+      ],
+      "description": "An impenetrable blade guard absorbing 40 damage and deflecting incoming blows for 6s."
+    },
+    {
+      "id": "heavenly_decapitation",
+      "name": "Heavenly Decapitation",
+      "energyCost": 35,
+      "maxBonusEnergy": 25,
+      "bonusDamagePerEnergy": 0.04,
+      "cooldownMs": 15000,
+      "damageMultiplier": 3.2,
+      "targetType": "enemy",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "samurai",
+          "value": 40
+        }
+      ],
+      "description": "Samurai capstone: channels crushing martial force into an execution strike dealing 320% weapon damage, consuming up to 25 bonus energy for +4% extra damage per point."
+    },
+    {
+      "id": "piercing_throw",
+      "name": "Piercing Throw",
+      "energyCost": 18,
+      "cooldownMs": 4000,
+      "damageMultiplier": 1.5,
+      "rangeTiles": 4,
+      "targetType": "enemy",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "javelin",
+          "value": 1
+        }
+      ],
+      "description": "Javelin baseline: hurls a weighted spear or throwing blade up to 4 tiles away with piercing force, dealing 150% weapon damage."
+    },
+    {
+      "id": "impaling_thrust",
+      "name": "Impaling Thrust",
+      "energyCost": 20,
+      "cooldownMs": 5000,
+      "damageMultiplier": 1.7,
+      "rangeTiles": 2,
+      "targetType": "enemy",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "javelin",
+          "value": 10
+        }
+      ],
+      "description": "A brutal thrust or close-range projectile strike penetrating defenses up to 2 tiles away, dealing 170% weapon damage and causing Bleed."
+    },
+    {
+      "id": "vaulting_leap",
+      "name": "Vaulting Leap",
+      "energyCost": 22,
+      "cooldownMs": 8000,
+      "durationMs": 3000,
+      "targetType": "self",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "javelin",
+          "value": 20
+        }
+      ],
+      "description": "Vaults tactically up to 3 tiles away from incoming threats, creating distance and gaining +40% Evasion for 3s."
+    },
+    {
+      "id": "pinning_spear",
+      "name": "Pinning Spear",
+      "energyCost": 25,
+      "cooldownMs": 10000,
+      "durationMs": 4000,
+      "damageMultiplier": 1.8,
+      "rangeTiles": 4,
+      "targetType": "enemy",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "javelin",
+          "value": 30
+        }
+      ],
+      "description": "Hurls a barbed spear or heavy throwing projectile up to 4 tiles away, dealing 180% weapon damage and Pinning the target with 50% Slow for 4s."
+    },
+    {
+      "id": "heartseeker_hurl",
+      "name": "Heartseeker Hurl",
+      "energyCost": 35,
+      "cooldownMs": 14000,
+      "damageMultiplier": 2.8,
+      "distanceBonusMultiplier": 0.10,
+      "rangeTiles": 5,
+      "targetType": "enemy",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "javelin",
+          "value": 40
+        }
+      ],
+      "description": "Javelin capstone: launches a devastating maximum-momentum projectile strike up to 5 tiles away, dealing 280% weapon damage plus +10% bonus damage per tile of distance."
+    },
+    {
+      "id": "primed_shot",
+      "name": "Primed Shot",
+      "energyCost": 15,
+      "cooldownMs": 3000,
+      "damageMultiplier": 1.4,
+      "rangeTiles": 4,
+      "targetType": "enemy",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "loader",
+          "value": 1
+        }
+      ],
+      "description": "Loader baseline: carefully draws and locks the ratchet mechanism to loose a heavy primed bolt dealing 140% weapon damage up to 4 tiles away."
+    },
+    {
+      "id": "rapid_crank",
+      "name": "Rapid Crank",
+      "energyCost": 16,
+      "cooldownMs": 4000,
+      "damageMultiplier": 1.5,
+      "accuracyBonus": 0.20,
+      "rangeTiles": 4,
+      "targetType": "enemy",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "loader",
+          "value": 10
+        }
+      ],
+      "description": "Rapidly cranks the windlass mechanism for a swift follow-up shot with +20% accuracy dealing 150% weapon damage up to 4 tiles away."
+    },
+    {
+      "id": "arbalest_brace",
+      "name": "Arbalest Brace",
+      "energyCost": 20,
+      "cooldownMs": 8000,
+      "durationMs": 4000,
+      "targetType": "self",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "loader",
+          "value": 20
+        }
+      ],
+      "description": "Braces the heavy stock firmly against the ground, reinforcing firing posture and reducing damage taken by 20% for 4s."
+    },
+    {
+      "id": "pinning_bolt",
+      "name": "Pinning Bolt",
+      "energyCost": 24,
+      "cooldownMs": 6000,
+      "durationMs": 3000,
+      "damageMultiplier": 1.8,
+      "rangeTiles": 4,
+      "targetType": "enemy",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "loader",
+          "value": 30
+        }
+      ],
+      "description": "Fires a heavy steel-headed bolt with brutal kinetic impact, dealing 180% weapon damage and slowing the target's movement by 50% for 3s."
+    },
+    {
+      "id": "kinetic_overdraw",
+      "name": "Kinetic Overdraw",
+      "energyCost": 30,
+      "cooldownMs": 12000,
+      "damageMultiplier": 2.6,
+      "rangeTiles": 4,
+      "targetType": "enemy",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "loader",
+          "value": 40
+        }
+      ],
+      "description": "Loader capstone: winds the heavy tension spring to maximum mechanical tolerance, releasing a devastating armor-piercing projectile dealing 260% weapon damage up to 4 tiles away."
     }
   ]
 }

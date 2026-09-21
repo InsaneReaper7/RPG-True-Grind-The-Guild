@@ -12,6 +12,8 @@ export class Entity extends Phaser.GameObjects.Container {
   public entityName: string;
   public state: EntityState = 'idle';
   public baseMoveSpeed: number = 100; // pixels per second
+  public isEncumbered: boolean = false;
+  public encumbranceMultiplier: number = 0.20; // flat -80% movement speed penalty while overweight
 
   public get moveSpeed(): number {
     let speed = this.baseMoveSpeed;
@@ -21,6 +23,9 @@ export class Entity extends Phaser.GameObjects.Container {
       } else if (id === 'slow') {
         speed *= 0.5;
       }
+    }
+    if (this.isEncumbered) {
+      speed *= this.encumbranceMultiplier;
     }
     return speed;
   }

@@ -3,6 +3,7 @@
     {
       "id": "ration",
       "name": "Ration",
+      "weight": 0.5,
       "hungerRestored": 40,
       "spoilageDays": 7,
       "buff": {
@@ -17,6 +18,7 @@
     {
       "id": "herb_stew",
       "name": "Herb Stew",
+      "weight": 0.5,
       "hungerRestored": 35,
       "spoilageDays": 5,
       "buff": {
@@ -37,6 +39,7 @@
     {
       "id": "beast_stew",
       "name": "Hearty Beast Stew",
+      "weight": 0.6,
       "hungerRestored": 55,
       "spoilageDays": 6,
       "buff": {
@@ -57,6 +60,7 @@
     {
       "id": "vegetable",
       "name": "Fresh Vegetable",
+      "weight": 0.2,
       "hungerRestored": 15,
       "spoilageDays": 7,
       "buff": {

@@ -107,7 +107,7 @@ export class HiddenSkillSystem {
       // Melee categories: katana, short_swords, daggers, mace, spears, longswords, greatswords
       const category = (context.equippedWeapon.category || '').toLowerCase();
       const id = (context.equippedWeapon.id || '').toLowerCase();
-      const rangedCategories = ['bows', 'bow', 'crossbows', 'crossbow', 'throwing', 'staff', 'magic'];
+      const rangedCategories = ['ranged', 'bows', 'bow', 'crossbows', 'crossbow', 'throwing', 'throwing_weapons', 'staff', 'magic'];
       if (rangedCategories.includes(category) || rangedCategories.includes(id)) {
         return false;
       }

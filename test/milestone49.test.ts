@@ -392,9 +392,7 @@ async function runMilestone49Tests() {
   // ============================================================================
   console.log('--- TEST 8: Explicit Absence of Deferred Classes ---');
   {
-    const javelinDef = classesData.classes.find((c: any) => c.id === 'javelin');
-    assert.equal(javelinDef, undefined, 'Javelin class MUST be absent from classes.json');
-
+    // Dragoon remains deferred awaiting Armor Proficiency; Javelin was deferred in M49 and implemented in M54
     const dragoonDef = classesData.classes.find((c: any) => c.id === 'dragoon');
     assert.equal(dragoonDef, undefined, 'Dragoon class MUST be absent from classes.json');
 
@@ -405,7 +403,7 @@ async function runMilestone49Tests() {
     assert.ok(deferredDoc.includes('Dragoon Class'), 'deferred_features.md must document Dragoon deferral');
     assert.ok(deferredDoc.includes('Heavy Armor'), 'deferred_features.md must cite Heavy Armor proficiency dependency');
 
-    console.log('✓ PASS: Javelin and Dragoon are confirmed absent with explicit blocking dependencies documented.\n');
+    console.log('✓ PASS: Javelin deferral documented and Dragoon confirmed absent with dependencies.\n');
   }
 
   console.log('================================================================');

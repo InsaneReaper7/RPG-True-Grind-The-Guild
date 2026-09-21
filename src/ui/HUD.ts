@@ -2545,7 +2545,9 @@ export class HUD {
       const accessory = m.equippedAccessory?.id || 'none';
       const equippedSkills = m.equippedSkillIds.join(',');
       const knownSkills = m.knownSkillIds.join(',');
-      return `${m.id}:${m.entityName}:${m.state}:${mainWpn}:${offWpn}:${helmet}:${bodyArmor}:${necklace}:${ring}:${accessory}:${isDw}:${equippedSkills}:${knownSkills}`;
+      const invKey = Array.from(m.inventory?.entries() || []).map(([k, v]) => `${k}:${v}`).sort().join(';');
+      const encKey = `${m.isEncumbered}:${m.getTotalWeight()}`;
+      return `${m.id}:${m.entityName}:${m.state}:${mainWpn}:${offWpn}:${helmet}:${bodyArmor}:${necklace}:${ring}:${accessory}:${isDw}:${equippedSkills}:${knownSkills}:${invKey}:${encKey}`;
     }).join('|');
   }
 
@@ -2641,12 +2643,12 @@ export class HUD {
       if (this.selectedMemberIndices.has(i)) {
         card.classList.add('selected');
         if (statusEl) {
-          statusEl.innerText = isDowned ? 'DOWNED' : '✓ ACTIVE';
+          statusEl.innerText = isDowned ? 'DOWNED' : (member.isEncumbered ? '⚠️ ENC' : '✓ ACTIVE');
         }
       } else {
         card.classList.remove('selected');
         if (statusEl) {
-          statusEl.innerText = isDowned ? 'DOWNED' : `[${i + 1}]`;
+          statusEl.innerText = isDowned ? 'DOWNED' : (member.isEncumbered ? '⚠️ ENC' : `[${i + 1}]`);
         }
       }
     }
@@ -2720,10 +2722,10 @@ export class HUD {
 
         if (this.selectedMemberIndices.has(i)) {
           card.classList.add('selected');
-          if (statusEl) statusEl.innerText = isDowned ? 'DOWNED' : '✓ ACTIVE';
+          if (statusEl) statusEl.innerText = isDowned ? 'DOWNED' : (member.isEncumbered ? '⚠️ ENC' : '✓ ACTIVE');
         } else {
           card.classList.remove('selected');
-          if (statusEl) statusEl.innerText = isDowned ? 'DOWNED' : `[${i + 1}]`;
+          if (statusEl) statusEl.innerText = isDowned ? 'DOWNED' : (member.isEncumbered ? '⚠️ ENC' : `[${i + 1}]`);
         }
       } else {
         // Unoccupied slot
@@ -2815,6 +2817,34 @@ export class HUD {
       const moodEl = this.partyOverviewRosterEl.querySelector<HTMLElement>(`[data-party-mood="${i}"]`);
       if (moodEl) {
         this.setElementTextIfChanged(moodEl, `${Math.floor(member.mood)} / ${member.maxMood}`);
+      }
+
+      // 5b. Carry Weight & Encumbrance (Milestone 51)
+      const totalWeight = member.getTotalWeight();
+      const carryCap = member.getEffectiveCarryCapacity();
+      const isEncumbered = member.isEncumbered;
+      const weightPct = carryCap > 0 ? (totalWeight / carryCap) * 100 : 0;
+      const weightColor = isEncumbered ? '#ef4444' : (weightPct >= 80 ? '#f59e0b' : '#38bdf8');
+
+      const weightTextEl = this.partyOverviewRosterEl.querySelector<HTMLElement>(`[data-party-weight="${i}"]`);
+      if (weightTextEl) {
+        this.setElementTextIfChanged(weightTextEl, `${totalWeight.toFixed(1)} / ${carryCap.toFixed(1)} kg`);
+        if (weightTextEl.style.color !== weightColor) weightTextEl.style.color = weightColor;
+      }
+
+      const weightBarEl = this.partyOverviewRosterEl.querySelector<HTMLElement>(`[data-party-weight-bar="${i}"]`);
+      if (weightBarEl) {
+        const widthStr = `${Math.min(100, weightPct)}%`;
+        if (weightBarEl.style.width !== widthStr) weightBarEl.style.width = widthStr;
+        if (weightBarEl.style.backgroundColor !== weightColor) weightBarEl.style.backgroundColor = weightColor;
+      }
+
+      const weightBadgeEl = this.partyOverviewRosterEl.querySelector<HTMLElement>(`[data-party-weight-badge="${i}"]`);
+      if (weightBadgeEl) {
+        const badgeText = isEncumbered ? '⚠️ ENCUMBERED (-80% Spd)' : (weightPct >= 80 ? 'Heavy (Near Limit)' : 'Unencumbered');
+        this.setElementTextIfChanged(weightBadgeEl, badgeText);
+        if (weightBadgeEl.style.color !== weightColor) weightBadgeEl.style.color = weightColor;
+        weightBadgeEl.style.fontWeight = isEncumbered ? 'bold' : 'normal';
       }
 
       // 6. Proficiencies
@@ -2938,7 +2968,7 @@ export class HUD {
             <span class="slot-item-icon">🪖</span>
             <div>
               <div class="slot-item-text" title="${helmet?.name || 'Empty'}">${helmet ? helmet.name : '<span class="slot-empty-text">Empty Helmet</span>'}</div>
-              ${helmet ? `<div class="slot-item-stat">+${helmet.hpBonus} HP</div>` : ''}
+              ${helmet ? `<div class="slot-item-stat">+${helmet.hpBonus} HP · ${helmet.weight ?? 1.0}kg</div>` : ''}
             </div>
           </div>
           ${helmet ? `<button class="slot-unequip-btn" data-slot="helmet" data-member-idx="${i}" type="button" title="Unequip Helmet">&times;</button>` : ''}
@@ -2960,7 +2990,7 @@ export class HUD {
             <span class="slot-item-icon">${mainIcon}</span>
             <div>
               <div class="slot-item-text" title="${mainName}">${mainName}</div>
-              <div class="slot-item-stat">${mainWpn?.twoHanded ? '2H' : '1H'} - Dmg: ${mainWpn?.baseDamage ?? 4}</div>
+              <div class="slot-item-stat">${mainWpn?.twoHanded ? '2H' : '1H'} - Dmg: ${mainWpn?.baseDamage ?? 4} · ${mainWpn?.weight ?? 0}kg</div>
             </div>
           </div>
           ${!isBarehanded ? `<button class="slot-unequip-btn" data-slot="main" data-member-idx="${i}" type="button" title="Unequip Weapon (Fight Barehanded)">&times;</button>` : ''}
@@ -2979,7 +3009,7 @@ export class HUD {
             <span class="slot-item-icon">📿</span>
             <div>
               <div class="slot-item-text" title="${necklace?.name || 'Empty'}">${necklace ? necklace.name : '<span class="slot-empty-text">Empty Necklace</span>'}</div>
-              ${necklace ? `<div class="slot-item-stat">+${necklace.hpBonus} HP</div>` : ''}
+              ${necklace ? `<div class="slot-item-stat">+${necklace.hpBonus} HP · ${necklace.weight ?? 0.3}kg</div>` : ''}
             </div>
           </div>
           ${necklace ? `<button class="slot-unequip-btn" data-slot="necklace" data-member-idx="${i}" type="button" title="Unequip Necklace">&times;</button>` : ''}
@@ -3014,7 +3044,7 @@ export class HUD {
               <span class="slot-item-icon">${isShieldEquipped ? '🛡️' : (offWpn ? '⚔️' : '🛡️')}</span>
               <div>
                 <div class="slot-item-text" title="${offWpn?.name || 'Empty'}">${offWpn ? offWpn.name : '<span class="slot-empty-text">Empty Off-Hand</span>'}</div>
-                ${offWpn ? `<div class="slot-item-stat">${isShieldEquipped ? 'Shield Block' : `Dmg: ${offWpn.baseDamage}`}</div>` : ''}
+                ${offWpn ? `<div class="slot-item-stat">${isShieldEquipped ? 'Shield Block' : `Dmg: ${offWpn.baseDamage}`} · ${offWpn.weight ?? 0}kg</div>` : ''}
               </div>
             </div>
             ${offWpn ? `<button class="slot-unequip-btn" data-slot="offhand" data-member-idx="${i}" type="button" title="Unequip Off-Hand">&times;</button>` : ''}
@@ -3034,7 +3064,7 @@ export class HUD {
             <span class="slot-item-icon">💍</span>
             <div>
               <div class="slot-item-text" title="${ring?.name || 'Empty'}">${ring ? ring.name : '<span class="slot-empty-text">Empty Ring</span>'}</div>
-              ${ring ? `<div class="slot-item-stat">+${ring.hpBonus} HP</div>` : ''}
+              ${ring ? `<div class="slot-item-stat">+${ring.hpBonus} HP · ${ring.weight ?? 0.2}kg</div>` : ''}
             </div>
           </div>
           ${ring ? `<button class="slot-unequip-btn" data-slot="ring" data-member-idx="${i}" type="button" title="Unequip Ring">&times;</button>` : ''}
@@ -3053,7 +3083,7 @@ export class HUD {
             <span class="slot-item-icon">🛡️</span>
             <div>
               <div class="slot-item-text" title="${bodyArmor?.name || 'Empty'}">${bodyArmor ? bodyArmor.name : '<span class="slot-empty-text">Empty Body</span>'}</div>
-              ${bodyArmor ? `<div class="slot-item-stat">+${bodyArmor.hpBonus} HP</div>` : ''}
+              ${bodyArmor ? `<div class="slot-item-stat">+${bodyArmor.hpBonus} HP · ${bodyArmor.weight ?? 4.0}kg</div>` : ''}
             </div>
           </div>
           ${bodyArmor ? `<button class="slot-unequip-btn" data-slot="body" data-member-idx="${i}" type="button" title="Unequip Body Armor">&times;</button>` : ''}
@@ -3072,7 +3102,7 @@ export class HUD {
             <span class="slot-item-icon">🔮</span>
             <div>
               <div class="slot-item-text" title="${accessory?.name || 'Empty'}">${accessory ? accessory.name : '<span class="slot-empty-text">Empty Accessory</span>'}</div>
-              ${accessory ? `<div class="slot-item-stat">+${accessory.hpBonus} HP</div>` : ''}
+              ${accessory ? `<div class="slot-item-stat">+${accessory.hpBonus} HP · ${accessory.weight ?? 0.5}kg</div>` : ''}
             </div>
           </div>
           ${accessory ? `<button class="slot-unequip-btn" data-slot="accessory" data-member-idx="${i}" type="button" title="Unequip Accessory">&times;</button>` : ''}
@@ -3161,6 +3191,54 @@ export class HUD {
         `;
       }
 
+      // Milestone 51: Personal Inventory & Weight System
+      const totalWeight = member.getTotalWeight();
+      const carryCap = member.getEffectiveCarryCapacity();
+      const isEncumbered = member.isEncumbered;
+      const weightPct = carryCap > 0 ? (totalWeight / carryCap) * 100 : 0;
+      const invWeight = member.getInventoryWeight();
+
+      const invMap = member.getInventoryMap();
+      let personalItemsHtml = '';
+      let personalItemCount = 0;
+      for (const [itemId, count] of invMap.entries()) {
+        if (count <= 0) continue;
+        personalItemCount += count;
+        const itemWeight = dataLoader.getItemWeight(itemId);
+        const itemDef = dataLoader.getItem(itemId) || dataLoader.getWeapon(itemId) || dataLoader.getArmor(itemId) || dataLoader.getFood(itemId);
+        const itemName = itemDef?.name || itemId;
+        const itemIcon = (itemDef as any)?.icon || '📦';
+
+        let transferOptionsHtml = '';
+        if (this.currentParty.length > 1) {
+          const otherOptions = this.currentParty
+            .map((p, idx) => idx !== i ? `<option value="${idx}">To ${p.entityName}</option>` : '')
+            .filter(Boolean)
+            .join('');
+          transferOptionsHtml = `
+            <select class="party-item-transfer-select" data-from-idx="${i}" data-item-id="${itemId}" style="background: rgba(30, 41, 59, 0.8); color: #e2e8f0; border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 3px; font-size: 9px; padding: 1px 2px; max-width: 85px;">
+              <option value="" disabled selected>Transfer ➡️</option>
+              ${otherOptions}
+            </select>
+          `;
+        }
+
+        personalItemsHtml += `
+          <div class="personal-inv-row" style="display: flex; justify-content: space-between; align-items: center; background: rgba(17, 24, 39, 0.6); padding: 3px 6px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.05); font-size: 10px;">
+            <div style="display: flex; align-items: center; gap: 5px; min-width: 0; flex: 1;">
+              <span>${itemIcon}</span>
+              <span style="color: #f3f4f6; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 80px;" title="${itemName}">${itemName}</span>
+              <span style="color: #a78bfa; font-weight: bold;">x${count}</span>
+              <span style="color: #9ca3af; font-size: 9px;">(${(itemWeight * count).toFixed(1)} kg)</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 3px;">
+              ${transferOptionsHtml}
+              <button class="party-item-discard-btn btn-action" data-member-idx="${i}" data-item-id="${itemId}" type="button" title="Discard 1 item to shed weight" style="padding: 1px 5px; font-size: 9px; background: rgba(239, 68, 68, 0.2); border: 1px solid rgba(239, 68, 68, 0.4); color: #f87171; border-radius: 3px; cursor: pointer;">Drop</button>
+            </div>
+          </div>
+        `;
+      }
+
       html += `
         <div class="party-card ${isDowned ? 'downed' : ''}" data-party-card-idx="${i}">
           <div class="party-card-header">
@@ -3204,9 +3282,33 @@ export class HUD {
               <span>Mood:</span>
               <span class="party-stat-val" data-party-mood="${i}" style="color: #34d399;">${Math.floor(member.mood)} / ${member.maxMood}</span>
             </div>
+            <div class="party-stat-row party-weight-box" style="margin-top: 4px; padding-top: 4px; border-top: 1px solid rgba(255,255,255,0.08); display: flex; flex-direction: column; gap: 3px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <span style="font-weight: 600; color: #cbd5e1;">⚖️ Weight:</span>
+                <span class="party-stat-val" data-party-weight="${i}" style="color: ${isEncumbered ? '#ef4444' : (weightPct >= 80 ? '#f59e0b' : '#38bdf8')}; font-weight: bold;">
+                  ${totalWeight.toFixed(1)} / ${carryCap.toFixed(1)} kg
+                </span>
+              </div>
+              <div style="width: 100%; height: 5px; background: rgba(31, 41, 55, 0.8); border-radius: 3px; overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.05);">
+                <div data-party-weight-bar="${i}" style="height: 100%; width: ${Math.min(100, weightPct)}%; background: ${isEncumbered ? '#ef4444' : (weightPct >= 80 ? '#f59e0b' : '#38bdf8')}; transition: width 0.2s ease, background-color 0.2s ease;"></div>
+              </div>
+              <div data-party-weight-badge="${i}" style="font-size: 9px; text-align: right; color: ${isEncumbered ? '#ef4444' : (weightPct >= 80 ? '#f59e0b' : '#9ca3af')}; font-weight: ${isEncumbered ? 'bold' : 'normal'};">
+                ${isEncumbered ? '⚠️ ENCUMBERED (-80% Spd)' : (weightPct >= 80 ? 'Heavy (Near Limit)' : 'Unencumbered')}
+              </div>
+            </div>
           </div>
 
           ${paperdollHtml}
+
+          <div class="party-equip-box party-personal-inv-box">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-weight: bold; color: #38bdf8; font-size: 10px; text-transform: uppercase;">🎒 Personal Bag</span>
+              <span data-party-inv-count="${i}" style="font-size: 10px; color: #9ca3af;">${personalItemCount} items (${invWeight.toFixed(1)} kg)</span>
+            </div>
+            <div class="party-personal-inv-list" data-party-inv-list="${i}" style="display: flex; flex-direction: column; gap: 4px; max-height: 110px; overflow-y: auto; margin-top: 4px;">
+              ${personalItemsHtml || '<div style="color: #6b7280; font-size: 10px; font-style: italic; padding: 4px 0;">Bag is empty</div>'}
+            </div>
+          </div>
 
           <div class="party-equip-box">
             <div style="font-weight: bold; color: #fbbf24; font-size: 10px; text-transform: uppercase;">Proficiencies</div>
@@ -3293,7 +3395,7 @@ export class HUD {
             slot,
             displaySlot,
             icon,
-            statText: `Dmg: ${w.baseDamage}` + (w.baseBlock ? ` | Block: ${Math.round(w.baseBlock * 100)}%` : ''),
+            statText: `Dmg: ${w.baseDamage}` + (w.baseBlock ? ` | Block: ${Math.round(w.baseBlock * 100)}%` : '') + ` · ${w.weight || 0} kg`,
             count
           });
         }
@@ -3312,7 +3414,7 @@ export class HUD {
             slot: a.slot,
             displaySlot: a.slot === 'helmet' ? 'Helmet' : 'Body Armor',
             icon,
-            statText: `+${a.hpBonus} HP`,
+            statText: `+${a.hpBonus} HP · ${a.weight || 0} kg`,
             count
           });
         }
@@ -3331,7 +3433,7 @@ export class HUD {
             slot: a.slot,
             displaySlot: a.slot.charAt(0).toUpperCase() + a.slot.slice(1),
             icon,
-            statText: `+${a.hpBonus} HP`,
+            statText: `+${a.hpBonus} HP · ${a.weight || 0} kg`,
             count
           });
         }
@@ -3348,7 +3450,7 @@ export class HUD {
           slot: 'none',
           displaySlot: 'Tool',
           icon: '🗝️',
-          statText: 'Required to Pick Locks',
+          statText: `Required to Pick Locks · ${dataLoader.getItemWeight('lockpick')} kg`,
           count: lockpickCount
         } as any);
       }
@@ -3362,7 +3464,7 @@ export class HUD {
           slot: 'none',
           displaySlot: 'Damaged Container',
           icon: '🗃️',
-          statText: 'Smelt for 2 Steel Scrap',
+          statText: `Smelt for 2 Steel Scrap · ${dataLoader.getItemWeight('broken_lockbox')} kg`,
           count: brokenCount
         } as any);
       }
@@ -3376,7 +3478,7 @@ export class HUD {
           slot: 'none',
           displaySlot: 'Locked Container',
           icon: '📦',
-          statText: `Requires Lockpick (${lockpickCount} on hand)`,
+          statText: `Requires Lockpick (${lockpickCount} on hand) · ${dataLoader.getItemWeight('locked_box')} kg`,
           count: boxCount,
           isBox: true
         } as any);
@@ -3769,6 +3871,45 @@ export class HUD {
         if (member && select && select.value) {
           member.equipSkill(select.value);
           this.renderPartyOverviewModal(true);
+        }
+      }
+
+      // Milestone 51: Discard personal item button
+      if (target.classList.contains('party-item-discard-btn') || target.closest('.party-item-discard-btn')) {
+        const btn = (target.classList.contains('party-item-discard-btn') ? target : target.closest('.party-item-discard-btn')) as HTMLButtonElement;
+        const memberIdx = parseInt(btn.dataset.memberIdx || '-1', 10);
+        const itemId = btn.dataset.itemId || '';
+        if (memberIdx >= 0 && memberIdx < this.currentParty.length && itemId) {
+          const member = this.currentParty[memberIdx];
+          const success = GameState.getInstance().discardItem(member, itemId, 1);
+          if (success) {
+            const dataLoader = DataLoader.getInstance();
+            const itemDef = dataLoader.getItem(itemId) || dataLoader.getWeapon(itemId) || dataLoader.getArmor(itemId) || dataLoader.getFood(itemId);
+            this.showToast(`Dropped 1 ${itemDef?.name || itemId} from ${member.entityName}`, 'info');
+            this.renderPartyOverviewModal(true);
+          }
+        }
+      }
+    };
+
+    // Milestone 51: Transfer personal item select
+    this.partyOverviewRosterEl.onchange = (e) => {
+      const target = e.target as HTMLElement;
+      if (target.classList.contains('party-item-transfer-select')) {
+        const sel = target as HTMLSelectElement;
+        const fromIdx = parseInt(sel.dataset.fromIdx || '-1', 10);
+        const toIdx = parseInt(sel.value, 10);
+        const itemId = sel.dataset.itemId || '';
+        if (fromIdx >= 0 && fromIdx < this.currentParty.length && toIdx >= 0 && toIdx < this.currentParty.length && itemId) {
+          const fromMember = this.currentParty[fromIdx];
+          const toMember = this.currentParty[toIdx];
+          const success = GameState.getInstance().transferItem(fromMember, toMember, itemId, 1);
+          if (success) {
+            const dataLoader = DataLoader.getInstance();
+            const itemDef = dataLoader.getItem(itemId) || dataLoader.getWeapon(itemId) || dataLoader.getArmor(itemId) || dataLoader.getFood(itemId);
+            this.showToast(`Transferred 1 ${itemDef?.name || itemId} to ${toMember.entityName}`, 'success');
+            this.renderPartyOverviewModal(true);
+          }
         }
       }
     };
@@ -5149,6 +5290,8 @@ export class HUD {
       case 'fist': return '#f97316';
       case 'longswords': return '#818cf8';
       case 'spears': return '#06b6d4';
+      case 'katana': return '#e11d48';
+      case 'throwing_weapons': return '#10b981';
       default: return '#34d399';
     }
   }

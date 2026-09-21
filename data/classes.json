@@ -307,6 +307,84 @@
         "block": 0.05,
         "parry": 0.05
       }
+    },
+    {
+      "id": "swordsman",
+      "name": "Swordsman",
+      "tier": "novice",
+      "requirements": [
+        { "type": "proficiency", "target": "katana", "value": 10 }
+      ],
+      "fantasy": "First swing of the blade",
+      "hiddenSkillBonuses": {
+        "parry": 0.05
+      }
+    },
+    {
+      "id": "ronin",
+      "name": "Ronin",
+      "tier": "adept",
+      "requirements": [
+        { "type": "proficiency", "target": "katana", "value": 30 },
+        { "type": "classLevel", "target": "swordsman", "value": 5 }
+      ],
+      "fantasy": "Wandering blade for hire",
+      "hiddenSkillBonuses": {
+        "parry": 0.05
+      }
+    },
+    {
+      "id": "samurai",
+      "name": "Samurai",
+      "tier": "adept",
+      "requirements": [
+        { "type": "proficiency", "target": "katana", "value": 30 },
+        { "type": "classLevel", "target": "swordsman", "value": 5 },
+        { "type": "proficiency", "target": "shields", "value": 10 }
+      ],
+      "fantasy": "Armored katana warrior in training",
+      "hiddenSkillBonuses": {
+        "block": 0.05,
+        "parry": 0.05
+      }
+    },
+    {
+      "id": "skirmisher",
+      "name": "Skirmisher",
+      "tier": "novice",
+      "requirements": [
+        { "type": "proficiency", "target": "throwing_weapons", "value": 10 }
+      ],
+      "fantasy": "Hit-and-run thrower",
+      "hiddenSkillBonuses": {
+        "evasion": 0.05
+      }
+    },
+    {
+      "id": "javelin",
+      "name": "Javelin",
+      "tier": "adept",
+      "requirements": [
+        { "type": "proficiency", "target": "spears", "value": 30 },
+        { "type": "proficiency", "target": "throwing_weapons", "value": 10 }
+      ],
+      "fantasy": "Spear and projectile hybrid mastering deadly thrown weapons and piercing thrusts",
+      "hiddenSkillBonuses": {
+        "counterattack": 0.05,
+        "evasion": 0.05
+      }
+    },
+    {
+      "id": "loader",
+      "name": "Loader",
+      "tier": "novice",
+      "requirements": [
+        { "type": "proficiency", "target": "crossbows", "value": 10 }
+      ],
+      "fantasy": "Mechanically minded shooter",
+      "hiddenSkillBonuses": {
+        "energy_regen": 0.05
+      }
     }
   ]
 }

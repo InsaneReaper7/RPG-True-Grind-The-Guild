@@ -80,6 +80,76 @@ export class TextureGenerator {
       g.destroy();
     }
 
+    // 2d. Milestone 56: Infernal Caldera Biome — Scorched Basalt Floor with Molten Magma Veins
+    if (!scene.textures.exists('tile-caldera-walkable')) {
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      // Dark charred volcanic basalt base
+      g.fillStyle(0x1c1917, 1);
+      g.fillRect(0, 0, tileSize, tileSize);
+      // Smoldering magma border
+      g.lineStyle(1, 0x9a3412, 0.7);
+      g.strokeRect(0, 0, tileSize, tileSize);
+      // Molten lava fissures and glowing thermal cracks
+      g.lineStyle(1.5, 0xea580c, 0.85);
+      g.lineBetween(3, tileSize / 2 + 2, tileSize / 2 - 2, 5);
+      g.lineBetween(tileSize / 2 - 2, 5, tileSize - 5, tileSize / 2 - 3);
+      g.lineBetween(tileSize / 2 - 1, tileSize - 5, tileSize - 4, tileSize / 2 + 3);
+      // Hot lava vein cores
+      g.lineStyle(1, 0xfbbf24, 0.95);
+      g.lineBetween(5, tileSize / 2 + 2, tileSize / 2 - 2, 7);
+      g.lineBetween(tileSize / 2 - 2, 7, tileSize - 7, tileSize / 2 - 3);
+      // Glowing incandescent magma pockets
+      g.fillStyle(0xf97316, 0.9);
+      g.fillCircle(tileSize / 2, tileSize / 2, 2.5);
+      g.fillStyle(0xfacc15, 0.95);
+      g.fillCircle(tileSize / 2, tileSize / 2, 1.2);
+      g.fillStyle(0xef4444, 0.8);
+      g.fillCircle(tileSize / 2 - 7, tileSize / 2 + 5, 1.8);
+      g.fillCircle(tileSize / 2 + 6, tileSize / 2 - 6, 1.8);
+      // White-hot ember spark glints
+      g.fillStyle(0xffedd5, 0.9);
+      g.fillCircle(7, 7, 1);
+      g.fillCircle(tileSize - 7, tileSize - 7, 1);
+      g.generateTexture('tile-caldera-walkable', tileSize, tileSize);
+      g.destroy();
+    }
+
+    // 2e. Milestone 56: Infernal Caldera Biome — Obsidian & Molten Magma Obstacle Crag
+    if (!scene.textures.exists('tile-caldera-obstacle')) {
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      // Deep soot-black obsidian bedrock foundation
+      g.fillStyle(0x0f0d0e, 1);
+      g.fillRect(0, 0, tileSize, tileSize);
+      // Heavy glowing volcanic rock frame
+      g.lineStyle(2, 0xc2410c, 0.9);
+      g.strokeRect(2, 2, tileSize - 4, tileSize - 4);
+      // Jagged volcanic crag facets
+      g.fillStyle(0x451a03, 0.95);
+      g.fillTriangle(3, 3, 13, 3, 3, 13);
+      g.fillTriangle(tileSize - 3, tileSize - 3, tileSize - 13, tileSize - 3, tileSize - 3, tileSize - 13);
+      // Towering central basalt horn & sulfur crystalline spires
+      g.fillStyle(0x78350f, 0.9);
+      g.fillTriangle(tileSize / 2, 4, tileSize / 2 - 7, tileSize / 2 + 5, tileSize / 2 + 7, tileSize / 2 + 5);
+      g.fillStyle(0xb45309, 0.9);
+      g.fillTriangle(tileSize / 2, 7, tileSize / 2 - 4, tileSize / 2 + 3, tileSize / 2 + 4, tileSize / 2 + 3);
+      // Bright incandescent molten lava rivers slicing through rock
+      g.lineStyle(2, 0xdc2626, 0.9);
+      g.lineBetween(tileSize / 2 - 5, tileSize / 2 + 5, 5, tileSize - 5);
+      g.lineBetween(tileSize / 2 + 5, tileSize / 2 + 5, tileSize - 5, tileSize - 5);
+      g.lineBetween(4, tileSize / 2, tileSize - 4, tileSize / 2);
+      g.lineStyle(1.2, 0xf97316, 0.95);
+      g.lineBetween(tileSize / 2 - 5, tileSize / 2 + 5, 5, tileSize - 5);
+      g.lineBetween(tileSize / 2 + 5, tileSize / 2 + 5, tileSize - 5, tileSize - 5);
+      g.lineBetween(5, tileSize / 2, tileSize - 5, tileSize / 2);
+      // Incandescent brimstone core flare
+      g.fillStyle(0xfacc15, 1);
+      g.fillCircle(tileSize / 2, tileSize / 2 + 2, 2.5);
+      g.fillStyle(0xffedd5, 1);
+      g.fillCircle(tileSize / 2, tileSize / 2 + 2, 1.2);
+      g.generateTexture('tile-caldera-obstacle', tileSize, tileSize);
+      g.destroy();
+    }
+
     // 3. Player Avatar Texture (Blue Circle with Sword indicator)
     if (!scene.textures.exists('player-avatar')) {
       const size = 28;

@@ -2694,8 +2694,13 @@ export class MainScene extends Phaser.Scene {
       awardedCount = selected.count ?? (selected.yieldCount ?? yieldCount);
     }
 
-    // Grant resources to GameState economy and inventory
+    // Grant resources to character personal inventory (Milestone 51) and GameState economy
     if (awardedResourceId && awardedResourceId !== '') {
+      const wasEncumbered = character.isEncumbered;
+      character.addItem(awardedResourceId, awardedCount);
+      if (!wasEncumbered && character.isEncumbered) {
+        this.hud?.showToast(`⚠️ ${character.entityName} is ENCUMBERED (-80% Movement Speed)!`, 'warn', 3000);
+      }
       if (awardedResourceId === 'wood') {
         GameState.getInstance().addWood(awardedCount);
         GameState.getInstance().addItem('wood', awardedCount);
@@ -2715,6 +2720,7 @@ export class MainScene extends Phaser.Scene {
         const seedRoll = lootRollFn ? lootRollFn() : Math.random();
         if (seedRoll < 0.5) {
           bonusSeeds = 1;
+          character.addItem('seeds', 1);
           GameState.getInstance().addItem('seeds', 1);
         }
       }

@@ -87,6 +87,42 @@
       "description": "A heavy two-handed spear with a long ash shaft and reinforced blade. Delivers heavy piercing damage at the cost of offhand defense."
     },
     {
+      "id": "katana",
+      "name": "Forged Katana",
+      "resultWeaponId": "katana",
+      "requiredLevel": 0,
+      "ingredients": {
+        "ore": 5,
+        "wood": 2
+      },
+      "expGranted": 25,
+      "description": "A curved single-edged blade folded from refined iron. Balanced for swift cuts and rapid recovery."
+    },
+    {
+      "id": "throwing_weapons",
+      "name": "Iron Throwing Knives",
+      "resultWeaponId": "throwing_weapons",
+      "requiredLevel": 0,
+      "ingredients": {
+        "ore": 3,
+        "wood": 1
+      },
+      "expGranted": 20,
+      "description": "A balanced set of iron throwing knives forged from raw ore and timber grips. Fast ranged skirmishing weapon."
+    },
+    {
+      "id": "crossbow",
+      "name": "Arbalest Crossbow",
+      "resultWeaponId": "crossbows",
+      "requiredLevel": 0,
+      "ingredients": {
+        "ore": 5,
+        "wood": 3
+      },
+      "expGranted": 25,
+      "description": "A heavy mechanical arbalest with a forged iron prod, steel trigger mechanism, and seasoned timber stock."
+    },
+    {
       "id": "lockpick",
       "name": "Lockpick",
       "resultItemId": "lockpick",

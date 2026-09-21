@@ -855,6 +855,23 @@ export class GameState {
     return map;
   }
 
+  // --- Milestone 51: Item Transfer & Discarding between Party Members ---
+  public transferItem(fromPlayer: Player, toPlayer: Player, itemId: string, count: number = 1): boolean {
+    if (fromPlayer === toPlayer || count <= 0) return false;
+    if (fromPlayer.getItemCount(itemId) < count) return false;
+    const removed = fromPlayer.removeItem(itemId, count);
+    if (removed) {
+      toPlayer.addItem(itemId, count);
+      return true;
+    }
+    return false;
+  }
+
+  public discardItem(player: Player, itemId: string, count: number = 1): boolean {
+    if (count <= 0) return false;
+    return player.removeItem(itemId, count);
+  }
+
   // --- Lockpicking System (Milestone 38) ---
   public attemptLockpick(
     memberProgression: ProgressionSystem,
@@ -1259,6 +1276,23 @@ export class GameState {
       player.state = 'idle';
       (player as any).avatarSprite?.setAngle(0);
       (player as any).avatarSprite?.setAlpha(1);
+    }
+
+    if (leaderSnap?.inventory) {
+      if (!player.inventory) player.inventory = new Map();
+      player.inventory.clear();
+      for (const [k, v] of Object.entries(leaderSnap.inventory)) {
+        if (v > 0) player.inventory.set(k, v);
+      }
+    } else if (snap.inventory) {
+      if (!player.inventory) player.inventory = new Map();
+      player.inventory.clear();
+      for (const [k, v] of Object.entries(snap.inventory)) {
+        if (v > 0) player.inventory.set(k, v);
+      }
+    }
+    if (typeof player.updateEncumbrance === 'function') {
+      player.updateEncumbrance();
     }
 
     player.drawHpBar();

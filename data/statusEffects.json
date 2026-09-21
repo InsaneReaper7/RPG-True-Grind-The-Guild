@@ -174,6 +174,52 @@
       "accuracyReduction": 0.35,
       "isHarmful": true,
       "color": "#6b21a8"
+    },
+    {
+      "id": "defensive_posture",
+      "name": "Defensive Posture",
+      "durationMs": 4000,
+      "tickIntervalMs": 4000,
+      "damagePerTick": 0,
+      "damageReductionPercent": 0.20,
+      "color": "#94a3b8"
+    },
+    {
+      "id": "iron_posture",
+      "name": "Iron Posture",
+      "durationMs": 5000,
+      "tickIntervalMs": 5000,
+      "damagePerTick": 0,
+      "damageReductionPercent": 0.35,
+      "color": "#f59e0b"
+    },
+    {
+      "id": "kenjutsu_deflection",
+      "name": "Kenjutsu Deflection",
+      "durationMs": 6000,
+      "tickIntervalMs": 6000,
+      "damagePerTick": 0,
+      "shieldAmount": 40,
+      "reflectPercent": 0.50,
+      "color": "#e11d48"
+    },
+    {
+      "id": "flowing_step",
+      "name": "Flowing Step",
+      "durationMs": 4000,
+      "tickIntervalMs": 4000,
+      "damagePerTick": 0,
+      "evasionBonus": 0.25,
+      "color": "#e11d48"
+    },
+    {
+      "id": "arbalest_brace",
+      "name": "Arbalest Brace",
+      "durationMs": 4000,
+      "tickIntervalMs": 4000,
+      "damagePerTick": 0,
+      "damageReductionPercent": 0.20,
+      "color": "#94a3b8"
     }
   ]
 }

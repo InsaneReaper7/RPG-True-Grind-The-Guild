@@ -644,7 +644,13 @@ export class CombatSystem {
                   : 0;
 
                 const evasiveRollEffect = target.activeStatusEffects.get('evasive_roll');
-                const evasionBonus = evasiveRollEffect ? (evasiveRollEffect.def?.evasionBonus ?? 0.5) : undefined;
+                const flowingStepEffect = target.activeStatusEffects.get('flowing_step');
+                const vaultingLeapEffect = target.activeStatusEffects.get('vaulting_leap');
+                const evasionBonus = evasiveRollEffect
+                  ? (evasiveRollEffect.def?.evasionBonus ?? 0.5)
+                  : (vaultingLeapEffect
+                    ? (vaultingLeapEffect.def?.evasionBonus ?? 0.4)
+                    : (flowingStepEffect ? (flowingStepEffect.def?.evasionBonus ?? 0.25) : undefined));
 
                 const context: CombatContext = {
                   equippedWeapon: target.equippedWeapon,
@@ -728,6 +734,18 @@ export class CombatSystem {
                       actualDamage = Math.max(1, Math.round(actualDamage * 0.5));
                       this.createFloatingText(target.x, target.y - 20, `-${actualDamage} (GUARD UP!)`, '#38bdf8');
                       console.log(`[Combat] Guard Up mitigated 50% damage! ${actualDamage} taken.`);
+                    } else if (target.hasStatusEffect('iron_posture')) {
+                      actualDamage = Math.max(1, Math.round(actualDamage * 0.65));
+                      this.createFloatingText(target.x, target.y - 20, `-${actualDamage} (IRON POSTURE!)`, '#f59e0b');
+                      console.log(`[Combat] Iron Posture mitigated 35% damage! ${actualDamage} taken.`);
+                    } else if (target.hasStatusEffect('defensive_posture')) {
+                      actualDamage = Math.max(1, Math.round(actualDamage * 0.80));
+                      this.createFloatingText(target.x, target.y - 20, `-${actualDamage} (DEFENSIVE POSTURE!)`, '#94a3b8');
+                      console.log(`[Combat] Defensive Posture mitigated 20% damage! ${actualDamage} taken.`);
+                    } else if (target.hasStatusEffect('arbalest_brace')) {
+                      actualDamage = Math.max(1, Math.round(actualDamage * 0.80));
+                      this.createFloatingText(target.x, target.y - 20, `-${actualDamage} (ARBALEST BRACE!)`, '#94a3b8');
+                      console.log(`[Combat] Arbalest Brace mitigated 20% damage! ${actualDamage} taken.`);
                     } else if (mitigation.mitigatedAmount > 0) {
                       console.log(`[Combat] ${enemy.entityName} hits ${target.entityName} for ${actualDamage} damage! (Resilience mitigated ${mitigation.mitigatedAmount} dmg)`);
                       this.createFloatingText(target.x, target.y - 20, `-${actualDamage} (${mitigation.mitigatedAmount} RESIST)`, '#a78bfa');
@@ -736,6 +754,21 @@ export class CombatSystem {
                       this.createFloatingText(target.x, target.y - 20, `RESILIENCE! -${actualDamage}`, '#a78bfa');
                     } else {
                       console.log(`[Combat] ${enemy.entityName} hits ${target.entityName} for ${actualDamage} damage!`);
+                    }
+
+                    if (target.hasStatusEffect('kenjutsu_deflection') && actualDamage > 0) {
+                      const eff = target.activeStatusEffects.get('kenjutsu_deflection') as any;
+                      const shieldRemain = eff?.currentShield ?? eff?.def?.shieldAmount ?? 40;
+                      const absorbed = Math.min(shieldRemain, actualDamage);
+                      actualDamage -= absorbed;
+                      if (eff) eff.currentShield = shieldRemain - absorbed;
+                      if ((eff?.currentShield ?? 0) <= 0) {
+                        target.removeStatusEffect('kenjutsu_deflection');
+                      }
+                      const reflected = Math.max(1, Math.round(absorbed * 0.5));
+                      enemy.takeDamage(reflected);
+                      this.createFloatingText(target.x, target.y - 32, `ABSORBED ${absorbed}!`, '#e11d48');
+                      this.createFloatingText(enemy.x, enemy.y - 12, `REFLECT! -${reflected}`, '#e11d48');
                     }
                   }
 
@@ -976,6 +1009,52 @@ export class CombatSystem {
           continue;
         }
 
+        // Milestone 54: Javelin ranged skills autocast during approach
+        let javelinApproachCast = false;
+        for (const javSkillId of ['heartseeker_hurl', 'pinning_spear', 'piercing_throw']) {
+          if (member.equippedSkillIds.includes(javSkillId) && member.isAutocastEnabled(javSkillId)) {
+            const javDef = dataLoader.getSkill(javSkillId);
+            if (javDef && member.progression.isSkillUnlocked(javDef, member)) {
+              const isOffCd = !member.lastSkillUseTimes.has(javSkillId) || (time - member.lastSkillUseTimes.get(javSkillId)! >= javDef.cooldownMs);
+              const isAffordable = member.energy >= javDef.energyCost;
+              const maxRange = javDef.rangeTiles ?? 4;
+              if (isOffCd && isAffordable && distanceTiles <= maxRange) {
+                const castSuccess = this.castSkill(member, javSkillId, target, time);
+                if (castSuccess) {
+                  javelinApproachCast = true;
+                  break;
+                }
+              }
+            }
+          }
+        }
+        if (javelinApproachCast) {
+          continue;
+        }
+
+        // Milestone 55: Loader ranged skills autocast during approach
+        let loaderApproachCast = false;
+        for (const loaderSkillId of ['kinetic_overdraw', 'pinning_bolt', 'rapid_crank', 'primed_shot']) {
+          if (member.equippedSkillIds.includes(loaderSkillId) && member.isAutocastEnabled(loaderSkillId)) {
+            const lDef = dataLoader.getSkill(loaderSkillId);
+            if (lDef && member.progression.isSkillUnlocked(lDef, member)) {
+              const isOffCd = !member.lastSkillUseTimes.has(loaderSkillId) || (time - member.lastSkillUseTimes.get(loaderSkillId)! >= lDef.cooldownMs);
+              const isAffordable = member.energy >= lDef.energyCost;
+              const maxRange = lDef.rangeTiles ?? 4;
+              if (isOffCd && isAffordable && distanceTiles <= maxRange) {
+                const castSuccess = this.castSkill(member, loaderSkillId, target, time);
+                if (castSuccess) {
+                  loaderApproachCast = true;
+                  break;
+                }
+              }
+            }
+          }
+        }
+        if (loaderApproachCast) {
+          continue;
+        }
+
         // Milestone 48: Umbral Step gap-closer autocast during approach
         if (member.equippedSkillIds.includes('umbral_step') && member.isAutocastEnabled('umbral_step')) {
           const umbralDef = dataLoader.getSkill('umbral_step');
@@ -1062,6 +1141,58 @@ export class CombatSystem {
             const isHpAffordable = skillId !== 'dark_pact' || ((member.hp + (member.criticalHp ?? 0)) > (skillDef.hpCost ?? 10));
             const isWeaponReady = time - member.lastAttackTime >= effectiveAttackInterval;
             if (isOffCooldown && isAffordable && isHpAffordable && isWeaponReady) {
+              const success = this.castSkill(member, skillId, target as Enemy, time);
+              if (success) {
+                usedSkill = true;
+                this.lastCombatTimeMs = time;
+                break;
+              }
+            }
+            continue;
+          }
+
+          // Milestone 52: Swordsman, Ronin, and Samurai skills in normal combat rotation
+          if ([
+            'blade_strike', 'quick_cut', 'severing_slice', 'cross_cut',
+            'iaido_quickdraw', 'crimson_slash', 'flowing_step', 'bloodseeker_riposte', 'dragons_flurry',
+            'overhead_cleave', 'sweeping_hilt', 'heavenly_decapitation'
+          ].includes(skillId)) {
+            const isOffCooldown = !member.lastSkillUseTimes.has(skillId) || (time - member.lastSkillUseTimes.get(skillId)! >= skillDef.cooldownMs);
+            const isAffordable = member.energy >= skillDef.energyCost;
+            const isWeaponReady = time - member.lastAttackTime >= effectiveAttackInterval;
+            if (isOffCooldown && isAffordable && isWeaponReady) {
+              const success = this.castSkill(member, skillId, target as Enemy, time);
+              if (success) {
+                usedSkill = true;
+                this.lastCombatTimeMs = time;
+                break;
+              }
+            }
+            continue;
+          }
+
+          // Milestone 54: Javelin skills in normal combat rotation
+          if (['piercing_throw', 'impaling_thrust', 'pinning_spear', 'heartseeker_hurl'].includes(skillId)) {
+            const isOffCooldown = !member.lastSkillUseTimes.has(skillId) || (time - member.lastSkillUseTimes.get(skillId)! >= skillDef.cooldownMs);
+            const isAffordable = member.energy >= skillDef.energyCost;
+            const isWeaponReady = time - member.lastAttackTime >= effectiveAttackInterval;
+            if (isOffCooldown && isAffordable && isWeaponReady) {
+              const success = this.castSkill(member, skillId, target as Enemy, time);
+              if (success) {
+                usedSkill = true;
+                this.lastCombatTimeMs = time;
+                break;
+              }
+            }
+            continue;
+          }
+
+          // Milestone 55: Loader skills in normal combat rotation
+          if (['primed_shot', 'rapid_crank', 'arbalest_brace', 'pinning_bolt', 'kinetic_overdraw'].includes(skillId)) {
+            const isOffCooldown = !member.lastSkillUseTimes.has(skillId) || (time - member.lastSkillUseTimes.get(skillId)! >= skillDef.cooldownMs);
+            const isAffordable = member.energy >= skillDef.energyCost;
+            const isWeaponReady = time - member.lastAttackTime >= effectiveAttackInterval;
+            if (isOffCooldown && isAffordable && isWeaponReady) {
               const success = this.castSkill(member, skillId, target as Enemy, time);
               if (success) {
                 usedSkill = true;
@@ -2596,6 +2727,63 @@ export class CombatSystem {
         this.createFloatingText(caster.x, caster.y - 12, 'UNBREAKABLE!', '#f59e0b');
         console.log(`[Skill] ${caster.entityName} casts Unbreakable! Full damage immunity for 4s.`);
         return true;
+      } else if (skillId === 'defensive_posture') {
+        const effDef = dataLoader.getStatusEffect('defensive_posture') || {
+          id: 'defensive_posture',
+          name: 'Defensive Posture',
+          durationMs: skillDef.durationMs ?? 4000,
+          tickIntervalMs: 4000,
+          damagePerTick: 0,
+          damageReductionPercent: 0.20,
+          color: '#94a3b8'
+        };
+        caster.applyStatusEffect(effDef);
+        this.createFloatingText(caster.x, caster.y - 12, 'DEFENSIVE POSTURE!', '#94a3b8');
+        console.log(`[Skill] ${caster.entityName} enters Defensive Posture! (20% damage reduction for 4s)`);
+        return true;
+      } else if (skillId === 'arbalest_brace') {
+        const effDef = dataLoader.getStatusEffect('arbalest_brace') || {
+          id: 'arbalest_brace',
+          name: 'Arbalest Brace',
+          durationMs: skillDef.durationMs ?? 4000,
+          tickIntervalMs: 4000,
+          damagePerTick: 0,
+          damageReductionPercent: 0.20,
+          color: '#94a3b8'
+        };
+        caster.applyStatusEffect(effDef);
+        this.createFloatingText(caster.x, caster.y - 12, 'ARBALEST BRACE!', '#94a3b8');
+        console.log(`[Skill] ${caster.entityName} activates Arbalest Brace! (20% damage reduction for 4s)`);
+        return true;
+      } else if (skillId === 'iron_posture') {
+        const effDef = dataLoader.getStatusEffect('iron_posture') || {
+          id: 'iron_posture',
+          name: 'Iron Posture',
+          durationMs: skillDef.durationMs ?? 5000,
+          tickIntervalMs: 5000,
+          damagePerTick: 0,
+          damageReductionPercent: 0.35,
+          color: '#f59e0b'
+        };
+        caster.applyStatusEffect(effDef);
+        this.createFloatingText(caster.x, caster.y - 12, 'IRON POSTURE!', '#f59e0b');
+        console.log(`[Skill] ${caster.entityName} enters Iron Posture! (35% damage reduction for 5s)`);
+        return true;
+      } else if (skillId === 'kenjutsu_deflection') {
+        const effDef = dataLoader.getStatusEffect('kenjutsu_deflection') || {
+          id: 'kenjutsu_deflection',
+          name: 'Kenjutsu Deflection',
+          durationMs: skillDef.durationMs ?? 6000,
+          tickIntervalMs: 6000,
+          damagePerTick: 0,
+          shieldAmount: skillDef.shieldAmount ?? 40,
+          reflectPercent: 0.50,
+          color: '#e11d48'
+        };
+        caster.applyStatusEffect(effDef);
+        this.createFloatingText(caster.x, caster.y - 12, 'KENJUTSU DEFLECTION!', '#e11d48');
+        console.log(`[Skill] ${caster.entityName} activates Kenjutsu Deflection! (40 shield + 50% reflect for 6s)`);
+        return true;
       } else if (skillId === 'evasive_roll') {
         const effDef = dataLoader.getStatusEffect('evasive_roll') || {
           id: 'evasive_roll',
@@ -2650,6 +2838,62 @@ export class CombatSystem {
 
         this.createFloatingText(caster.x, caster.y - 12, 'EVASIVE ROLL!', '#38bdf8');
         console.log(`[Skill] ${caster.entityName} casts Evasive Roll! (+50% Evasion for 2s)`);
+        return true;
+      } else if (skillId === 'vaulting_leap') {
+        const effDef = dataLoader.getStatusEffect('vaulting_leap') || {
+          id: 'vaulting_leap',
+          name: 'Vaulting Leap',
+          durationMs: skillDef.durationMs ?? 3000,
+          tickIntervalMs: 3000,
+          damagePerTick: 0,
+          evasionBonus: 0.40,
+          color: '#38bdf8'
+        };
+        caster.applyStatusEffect(effDef);
+
+        // Reposition 2-3 tiles away from closest enemy using spear leverage
+        const casterTile = {
+          x: Math.floor(caster.x / caster.tileSize),
+          y: Math.floor(caster.y / caster.tileSize)
+        };
+        const activeEnemies = this.enemies.filter((e) => e.state !== 'dead' && e.state !== 'downed');
+        let nearestEnemy: Enemy | null = null;
+        let minDist = Infinity;
+        for (const e of activeEnemies) {
+          const eTile = { x: Math.floor(e.x / e.tileSize), y: Math.floor(e.y / e.tileSize) };
+          const dist = Math.max(Math.abs(casterTile.x - eTile.x), Math.abs(casterTile.y - eTile.y));
+          if (dist < minDist) {
+            minDist = dist;
+            nearestEnemy = e;
+          }
+        }
+
+        if (nearestEnemy) {
+          const eTile = { x: Math.floor(nearestEnemy.x / nearestEnemy.tileSize), y: Math.floor(nearestEnemy.y / nearestEnemy.tileSize) };
+          const dirX = Math.sign(casterTile.x - eTile.x) || (Math.random() < 0.5 ? 1 : -1);
+          const dirY = Math.sign(casterTile.y - eTile.y) || (Math.random() < 0.5 ? 1 : -1);
+          const candidates = [
+            { x: casterTile.x + dirX * 3, y: casterTile.y + dirY * 3 },
+            { x: casterTile.x + dirX * 2, y: casterTile.y + dirY * 2 },
+            { x: casterTile.x + dirX * 3, y: casterTile.y },
+            { x: casterTile.x + dirX * 2, y: casterTile.y },
+            { x: casterTile.x, y: casterTile.y + dirY * 3 },
+            { x: casterTile.x, y: casterTile.y + dirY * 2 },
+            { x: casterTile.x + dirX, y: casterTile.y + dirY }
+          ];
+          for (const cand of candidates) {
+            if (!this.isTileClaimedOrOccupiedByOther(cand.x, cand.y, caster)) {
+              const oldX = caster.x;
+              const oldY = caster.y;
+              caster.setGridPosition(cand.x, cand.y);
+              this.createAttackEffect(oldX, oldY, caster.x, caster.y, 0x38bdf8);
+              break;
+            }
+          }
+        }
+
+        this.createFloatingText(caster.x, caster.y - 12, 'VAULTING LEAP!', '#38bdf8');
+        console.log(`[Skill] ${caster.entityName} casts Vaulting Leap! (+40% Evasion for 3s)`);
         return true;
       } else if (skillId === 'blessed_weapons') {
         const effDef = dataLoader.getStatusEffect('blessed_weapons') || {
@@ -3440,6 +3684,334 @@ export class CombatSystem {
         const downed = enemyTarget.takeDamage(skillDamage);
         if (downed) {
           this.handleTargetDefeated(caster, enemyTarget, dkWpnId);
+        }
+        return true;
+      }
+
+      // ========================================================================
+      // Milestone 52: Swordsman, Ronin & Samurai Full 12-Offensive-Skill Kits
+      // ========================================================================
+      const katanaSkillIds = [
+        'blade_strike', 'quick_cut', 'severing_slice', 'cross_cut',
+        'iaido_quickdraw', 'crimson_slash', 'flowing_step', 'bloodseeker_riposte', 'dragons_flurry',
+        'overhead_cleave', 'sweeping_hilt', 'heavenly_decapitation'
+      ];
+      if (katanaSkillIds.includes(skillId)) {
+        const curDist = Math.max(
+          Math.abs(Math.floor(caster.x / caster.tileSize) - Math.floor(enemyTarget.x / enemyTarget.tileSize)),
+          Math.abs(Math.floor(caster.y / caster.tileSize) - Math.floor(enemyTarget.y / enemyTarget.tileSize))
+        );
+        const wpn = this.getEffectiveWeaponForAttack(caster);
+        const maxRange = skillDef.rangeTiles ?? (wpn.attackRangeTiles ?? 1);
+        if (curDist > maxRange) {
+          console.warn(`[Skill] Cannot cast ${skillDef.name}: target is outside range (${curDist} > ${maxRange})`);
+          return false;
+        }
+
+        const wpnProfId = wpn.proficiencyId ?? wpn.id;
+        const wpnLevel = caster.progression.getProficiencyLevel(wpnProfId);
+        const dmgBonus = wpn.levelBonus?.damagePerLevel ?? 0;
+        const rawBase = wpn.baseDamage + wpnLevel * dmgBonus;
+        const moodTier = dataLoader.getMoodTier(caster.mood);
+        const effBase = rawBase * moodTier.combatDamageMultiplier;
+
+        // Gap-closer handling for Flowing Step
+        if (skillId === 'flowing_step') {
+          if (curDist > 1) {
+            const openTile = this.findOpenAttackTileForMember(enemyTarget, caster);
+            if (openTile) {
+              const oldX = caster.x;
+              const oldY = caster.y;
+              caster.setGridPosition(openTile.x, openTile.y);
+              this.createAttackEffect(oldX, oldY, caster.x, caster.y, 0xe11d48);
+            }
+          }
+        }
+
+        // Energy handling
+        let energyCostToDeduct = skillDef.energyCost;
+        let bonusEnergyConsumed = 0;
+        if (skillId === 'heavenly_decapitation') {
+          const maxBonusEnergy = skillDef.maxBonusEnergy ?? 25;
+          const surplus = Math.max(0, caster.energy - energyCostToDeduct);
+          bonusEnergyConsumed = Math.min(maxBonusEnergy, surplus);
+          energyCostToDeduct += bonusEnergyConsumed;
+        }
+
+        caster.energy -= energyCostToDeduct;
+        caster.lastSkillUseTimes.set(skillId, time);
+        caster.lastAttackTime = time;
+        caster.state = 'attacking';
+
+        this.createSkillAttackEffect(caster.x, caster.y, enemyTarget.x, enemyTarget.y);
+
+        let skillDamage = effBase * (skillDef.damageMultiplier ?? 1.0);
+
+        if (skillId === 'blade_strike') {
+          this.createFloatingText(enemyTarget.x, enemyTarget.y - 10, `BLADE STRIKE! -${skillDamage.toFixed(1)}`, '#94a3b8');
+        } else if (skillId === 'quick_cut') {
+          this.createFloatingText(enemyTarget.x, enemyTarget.y - 10, `QUICK CUT! -${skillDamage.toFixed(1)}`, '#38bdf8');
+        } else if (skillId === 'severing_slice') {
+          const bleedDef = dataLoader.getStatusEffect('bleed') || {
+            id: 'bleed',
+            name: 'Bleed',
+            durationMs: 6000,
+            tickIntervalMs: 1000,
+            damagePerTick: 3,
+            isHarmful: true,
+            color: '#ef4444'
+          };
+          enemyTarget.applyStatusEffect(bleedDef);
+          this.createFloatingText(enemyTarget.x, enemyTarget.y - 10, `SEVERING SLICE! -${skillDamage.toFixed(1)}`, '#ef4444');
+          this.createFloatingText(enemyTarget.x, enemyTarget.y - 25, 'BLEEDING!', '#ef4444');
+        } else if (skillId === 'cross_cut') {
+          this.createFloatingText(enemyTarget.x, enemyTarget.y - 10, `CROSS CUT! -${skillDamage.toFixed(1)}`, '#f59e0b');
+        } else if (skillId === 'iaido_quickdraw') {
+          this.createFloatingText(enemyTarget.x, enemyTarget.y - 10, `IAIDO QUICKDRAW! -${skillDamage.toFixed(1)}`, '#f43f5e');
+        } else if (skillId === 'crimson_slash') {
+          const bleedDef = dataLoader.getStatusEffect('bleed') || {
+            id: 'bleed',
+            name: 'Bleed',
+            durationMs: 6000,
+            tickIntervalMs: 1000,
+            damagePerTick: 3,
+            isHarmful: true,
+            color: '#ef4444'
+          };
+          enemyTarget.applyStatusEffect(bleedDef);
+          this.createFloatingText(enemyTarget.x, enemyTarget.y - 10, `CRIMSON SLASH! -${skillDamage.toFixed(1)}`, '#e11d48');
+          this.createFloatingText(enemyTarget.x, enemyTarget.y - 25, 'BLEEDING!', '#ef4444');
+        } else if (skillId === 'flowing_step') {
+          const flowingStepDef = dataLoader.getStatusEffect('flowing_step') || {
+            id: 'flowing_step',
+            name: 'Flowing Step',
+            durationMs: skillDef.durationMs ?? 4000,
+            tickIntervalMs: 4000,
+            damagePerTick: 0,
+            evasionBonus: 0.25,
+            color: '#e11d48'
+          };
+          caster.applyStatusEffect(flowingStepDef);
+          this.createFloatingText(caster.x, caster.y - 12, 'FLOWING STEP! (+25% EVASION)', '#e11d48');
+          this.createFloatingText(enemyTarget.x, enemyTarget.y - 10, `FLOWING STEP! -${skillDamage.toFixed(1)}`, '#e11d48');
+        } else if (skillId === 'bloodseeker_riposte') {
+          if (enemyTarget.hasStatusEffect('bleed')) {
+            skillDamage *= 1.5;
+            this.createFloatingText(enemyTarget.x, enemyTarget.y - 10, `BLOODSEEKER CRITICAL! -${skillDamage.toFixed(1)}`, '#be123c');
+          } else {
+            this.createFloatingText(enemyTarget.x, enemyTarget.y - 10, `BLOODSEEKER! -${skillDamage.toFixed(1)}`, '#be123c');
+          }
+        } else if (skillId === 'dragons_flurry') {
+          const strikeCount = skillDef.strikeCount ?? 4;
+          const dmgPerHit = effBase * (skillDef.damagePerHitMultiplier ?? 0.8);
+          let totalDealt = 0;
+          let downed = false;
+          for (let s = 0; s < strikeCount; s++) {
+            totalDealt += dmgPerHit;
+            downed = enemyTarget.takeDamage(dmgPerHit);
+            if (downed) break;
+          }
+          const bleedDef = dataLoader.getStatusEffect('bleed') || {
+            id: 'bleed',
+            name: 'Bleed',
+            durationMs: 6000,
+            tickIntervalMs: 1000,
+            damagePerTick: 3,
+            isHarmful: true,
+            color: '#ef4444'
+          };
+          enemyTarget.applyStatusEffect(bleedDef);
+          this.createFloatingText(enemyTarget.x, enemyTarget.y - 10, `DRAGON'S FLURRY! -${totalDealt.toFixed(1)} (${strikeCount} HITS)`, '#e11d48');
+          this.createFloatingText(enemyTarget.x, enemyTarget.y - 25, 'BLEEDING!', '#ef4444');
+          if (downed) {
+            this.handleTargetDefeated(caster, enemyTarget, wpnProfId);
+          }
+          return true;
+        } else if (skillId === 'overhead_cleave') {
+          this.createFloatingText(enemyTarget.x, enemyTarget.y - 10, `OVERHEAD CLEAVE! -${skillDamage.toFixed(1)}`, '#d97706');
+        } else if (skillId === 'sweeping_hilt') {
+          const stunChance = skillDef.stunChance ?? 0.30;
+          if (Math.random() < stunChance) {
+            const stunDef = dataLoader.getStatusEffect('stun') || {
+              id: 'stun',
+              name: 'Stun',
+              durationMs: 2000,
+              tickIntervalMs: 2000,
+              damagePerTick: 0,
+              color: '#facc15'
+            };
+            enemyTarget.applyStatusEffect(stunDef);
+            enemyTarget.stopMovement();
+            this.createFloatingText(enemyTarget.x, enemyTarget.y - 25, 'STUNNED!', '#facc15');
+          }
+          this.createFloatingText(enemyTarget.x, enemyTarget.y - 10, `SWEEPING HILT! -${skillDamage.toFixed(1)}`, '#d97706');
+        } else if (skillId === 'heavenly_decapitation') {
+          const bonusPerPoint = skillDef.bonusDamagePerEnergy ?? 0.04;
+          const bonusMult = bonusEnergyConsumed * bonusPerPoint;
+          const totalMult = (skillDef.damageMultiplier ?? 3.2) + bonusMult;
+          skillDamage = effBase * totalMult;
+          if (bonusEnergyConsumed > 0) {
+            this.createFloatingText(enemyTarget.x, enemyTarget.y - 10, `HEAVENLY DECAPITATION! -${skillDamage.toFixed(1)} (+${bonusEnergyConsumed} EN)`, '#b45309');
+          } else {
+            this.createFloatingText(enemyTarget.x, enemyTarget.y - 10, `HEAVENLY DECAPITATION! -${skillDamage.toFixed(1)}`, '#b45309');
+          }
+        }
+
+        const downed = enemyTarget.takeDamage(skillDamage);
+        if (downed) {
+          this.handleTargetDefeated(caster, enemyTarget, wpnProfId);
+        }
+        return true;
+      }
+
+      // ========================================================================
+      // Milestone 54: Javelin Full 5-Skill Kit
+      // Hybrid archetype bridging Spears and Throwing Weapons
+      // ========================================================================
+      const javelinSkillIds = ['piercing_throw', 'impaling_thrust', 'pinning_spear', 'heartseeker_hurl'];
+      if (javelinSkillIds.includes(skillId)) {
+        const curDist = Math.max(
+          Math.abs(Math.floor(caster.x / caster.tileSize) - Math.floor(enemyTarget.x / enemyTarget.tileSize)),
+          Math.abs(Math.floor(caster.y / caster.tileSize) - Math.floor(enemyTarget.y / enemyTarget.tileSize))
+        );
+        const maxRange = skillDef.rangeTiles ?? 4;
+        if (curDist > maxRange) {
+          console.warn(`[Skill] Cannot cast ${skillDef.name}: target is outside range (${curDist} > ${maxRange})`);
+          return false;
+        }
+
+        caster.energy -= skillDef.energyCost;
+        caster.lastSkillUseTimes.set(skillId, time);
+        caster.lastAttackTime = time;
+        caster.state = 'attacking';
+
+        this.createSkillAttackEffect(caster.x, caster.y, enemyTarget.x, enemyTarget.y);
+
+        const weapon = this.getEffectiveWeaponForAttack(caster);
+        const weaponId = weapon.proficiencyId ?? weapon.id;
+        const weaponLevel = caster.progression.getProficiencyLevel(weaponId);
+        const dmgBonus = weapon.levelBonus?.damagePerLevel ?? 0;
+        const rawBase = weapon.baseDamage + weaponLevel * dmgBonus;
+        const moodTier = dataLoader.getMoodTier(caster.mood);
+        const effBase = rawBase * moodTier.combatDamageMultiplier;
+
+        // Partner proficiency calculation:
+        // If wielding spears (1H or 2H), partner is throwing_weapons; if wielding throwing_weapons, partner is spears
+        const isSpear = weaponId === 'spears' || weapon.id === 'spears' || weapon.id === 'spears_2h';
+        const partnerProfId = isSpear ? 'throwing_weapons' : 'spears';
+        const partnerLevel = caster.progression.getProficiencyLevel(partnerProfId);
+        const hybridBonus = partnerLevel * 0.15;
+
+        let skillDamage = (effBase * (skillDef.damageMultiplier ?? 1.0)) + hybridBonus;
+
+        if (skillId === 'piercing_throw') {
+          this.createFloatingText(enemyTarget.x, enemyTarget.y - 10, `PIERCING THROW! -${skillDamage.toFixed(1)}`, '#38bdf8');
+          this.checkAndApplyBleed(caster, enemyTarget);
+        } else if (skillId === 'impaling_thrust') {
+          const bleedDef = dataLoader.getStatusEffect('bleed') || {
+            id: 'bleed',
+            name: 'Bleed',
+            durationMs: 6000,
+            tickIntervalMs: 1000,
+            damagePerTick: 3,
+            isHarmful: true,
+            color: '#ef4444'
+          };
+          enemyTarget.applyStatusEffect(bleedDef);
+          this.createFloatingText(enemyTarget.x, enemyTarget.y - 10, `IMPALING THRUST! -${skillDamage.toFixed(1)}`, '#f97316');
+          this.createFloatingText(enemyTarget.x, enemyTarget.y - 25, 'BLEEDING!', '#ef4444');
+        } else if (skillId === 'pinning_spear') {
+          const slowDef = dataLoader.getStatusEffect('slow') || {
+            id: 'slow',
+            name: 'Slow',
+            durationMs: skillDef.durationMs ?? 4000,
+            tickIntervalMs: 1000,
+            damagePerTick: 0,
+            moveSpeedMultiplier: 0.5,
+            color: '#67e8f9'
+          };
+          enemyTarget.applyStatusEffect(slowDef);
+          this.createFloatingText(enemyTarget.x, enemyTarget.y - 10, `PINNING SPEAR! -${skillDamage.toFixed(1)}`, '#0284c7');
+          this.createFloatingText(enemyTarget.x, enemyTarget.y - 25, 'PINNED! (SLOW)', '#67e8f9');
+        } else if (skillId === 'heartseeker_hurl') {
+          const distBonusMult = skillDef.distanceBonusMultiplier ?? 0.10;
+          const distanceMultiplier = 1.0 + (curDist * distBonusMult);
+          skillDamage = (effBase * (skillDef.damageMultiplier ?? 2.8) * distanceMultiplier) + hybridBonus;
+          this.createFloatingText(
+            enemyTarget.x,
+            enemyTarget.y - 10,
+            `HEARTSEEKER HURL! -${skillDamage.toFixed(1)} (${curDist} TILES)`,
+            '#dc2626'
+          );
+          this.checkAndApplyBleed(caster, enemyTarget);
+        }
+
+        const downed = enemyTarget.takeDamage(skillDamage);
+        if (downed) {
+          this.handleTargetDefeated(caster, enemyTarget, weaponId);
+        }
+        return true;
+      }
+
+      // ========================================================================
+      // Milestone 55: Loader Full 5-Skill Kit
+      // Mechanically minded shooter archetype using heavy crossbows & arbalests
+      // ========================================================================
+      const loaderSkillIds = ['primed_shot', 'rapid_crank', 'pinning_bolt', 'kinetic_overdraw'];
+      if (loaderSkillIds.includes(skillId)) {
+        const curDist = Math.max(
+          Math.abs(Math.floor(caster.x / caster.tileSize) - Math.floor(enemyTarget.x / enemyTarget.tileSize)),
+          Math.abs(Math.floor(caster.y / caster.tileSize) - Math.floor(enemyTarget.y / enemyTarget.tileSize))
+        );
+        const maxRange = skillDef.rangeTiles ?? 4;
+        if (curDist > maxRange) {
+          console.warn(`[Skill] Cannot cast ${skillDef.name}: target is outside range (${curDist} > ${maxRange})`);
+          return false;
+        }
+
+        caster.energy -= skillDef.energyCost;
+        caster.lastSkillUseTimes.set(skillId, time);
+        caster.lastAttackTime = time;
+        caster.state = 'attacking';
+
+        this.createSkillAttackEffect(caster.x, caster.y, enemyTarget.x, enemyTarget.y);
+
+        const weapon = this.getEffectiveWeaponForAttack(caster);
+        const weaponId = weapon.proficiencyId ?? weapon.id;
+        const weaponLevel = caster.progression.getProficiencyLevel(weaponId);
+        const dmgBonus = weapon.levelBonus?.damagePerLevel ?? 0;
+        const rawBase = weapon.baseDamage + weaponLevel * dmgBonus;
+        const moodTier = dataLoader.getMoodTier(caster.mood);
+        const effBase = rawBase * moodTier.combatDamageMultiplier;
+
+        let skillDamage = effBase * (skillDef.damageMultiplier ?? 1.0);
+
+        if (skillId === 'primed_shot') {
+          this.createFloatingText(enemyTarget.x, enemyTarget.y - 10, `PRIMED SHOT! -${skillDamage.toFixed(1)}`, '#94a3b8');
+        } else if (skillId === 'rapid_crank') {
+          this.createFloatingText(enemyTarget.x, enemyTarget.y - 10, `RAPID CRANK! -${skillDamage.toFixed(1)}`, '#38bdf8');
+        } else if (skillId === 'pinning_bolt') {
+          const slowDef = dataLoader.getStatusEffect('slow') || {
+            id: 'slow',
+            name: 'Slow',
+            durationMs: skillDef.durationMs ?? 3000,
+            tickIntervalMs: 1000,
+            damagePerTick: 0,
+            moveSpeedMultiplier: 0.5,
+            isHarmful: true,
+            color: '#67e8f9'
+          };
+          enemyTarget.applyStatusEffect(slowDef);
+          this.createFloatingText(enemyTarget.x, enemyTarget.y - 10, `PINNING BOLT! -${skillDamage.toFixed(1)}`, '#f59e0b');
+          this.createFloatingText(enemyTarget.x, enemyTarget.y - 25, 'SLOWED (50%)!', '#67e8f9');
+          console.log(`[Skill] Pinning Bolt slowed ${enemyTarget.entityName} by 50% for 3s!`);
+        } else if (skillId === 'kinetic_overdraw') {
+          this.createFloatingText(enemyTarget.x, enemyTarget.y - 10, `KINETIC OVERDRAW! -${skillDamage.toFixed(1)}`, '#ef4444');
+        }
+
+        const downed = enemyTarget.takeDamage(skillDamage);
+        if (downed) {
+          this.handleTargetDefeated(caster, enemyTarget, weaponId);
         }
         return true;
       }
