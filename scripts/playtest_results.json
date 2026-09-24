@@ -1,0 +1,523 @@
+{
+  "meta": {
+    "timestamp": "2026-09-24T01:23:39.122Z",
+    "browser": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
+  },
+  "phase1_clean_boot_audit": {
+    "sceneKey": "OutpostScene",
+    "partyCount": 2,
+    "partyMembers": [
+      {
+        "index": 0,
+        "id": "player",
+        "name": "Guild Hero",
+        "activeClass": null,
+        "weaponId": "short_swords",
+        "weaponName": "Short Swords",
+        "offhandWeaponId": null,
+        "offhandWeaponName": null,
+        "attackRangeTiles": 1,
+        "baseDamage": 5,
+        "attackIntervalMs": 1000,
+        "baseAccuracy": 0.6,
+        "hp": 50,
+        "maxHp": 50,
+        "criticalHp": 25,
+        "criticalHpMax": 25,
+        "energy": 100,
+        "maxEnergy": 100,
+        "skillsCount": 0,
+        "equippedSkillIds": [],
+        "knownSkillIds": [],
+        "daggersProficiency": 0,
+        "bowsProficiency": 0,
+        "scoutClassLevel": 0,
+        "isScoutUnlocked": false,
+        "autocastQuickshot": false,
+        "autocastMarkTarget": false
+      },
+      {
+        "index": 1,
+        "id": "companion_1",
+        "name": "Valerie",
+        "activeClass": "scout",
+        "weaponId": "bows",
+        "weaponName": "Hunting Bow",
+        "offhandWeaponId": "daggers",
+        "offhandWeaponName": "Daggers",
+        "attackRangeTiles": 4,
+        "baseDamage": 6,
+        "attackIntervalMs": 1200,
+        "baseAccuracy": 0.6,
+        "hp": 50,
+        "maxHp": 50,
+        "criticalHp": 25,
+        "criticalHpMax": 25,
+        "energy": 100,
+        "maxEnergy": 100,
+        "skillsCount": 2,
+        "equippedSkillIds": [
+          "quickshot",
+          "mark_target"
+        ],
+        "knownSkillIds": [
+          "quickshot",
+          "mark_target"
+        ],
+        "daggersProficiency": 10,
+        "bowsProficiency": 15,
+        "scoutClassLevel": 10,
+        "isScoutUnlocked": true,
+        "autocastQuickshot": true,
+        "autocastMarkTarget": true
+      }
+    ],
+    "resources": {
+      "wood": 1000,
+      "ore": 0
+    },
+    "researchPoints": 0
+  },
+  "phase2_mentor_and_recruitment_audit": {
+    "modalOpenedByPortal": false,
+    "partySizeAfterSummon": 3,
+    "recruit": {
+      "id": "companion_2",
+      "name": "Kaelen",
+      "activeClass": null,
+      "classLevels": {},
+      "unlockedClasses": [],
+      "knownSkillIds": [],
+      "equippedSkillIds": [],
+      "equippedWeaponId": "short_swords",
+      "equippedWeaponName": "Short Swords",
+      "offhandWeaponId": "shields",
+      "offhandWeaponName": "Shields",
+      "nonZeroProficienciesCount": 0,
+      "allProficienciesLevel0": true,
+      "shortSwordsLevel": 0,
+      "shieldsLevel": 0
+    }
+  },
+  "phase3_trio_expeditions": [
+    {
+      "runNumber": 1,
+      "durationSec": 18.862,
+      "nodesSpawned": {
+        "woodcutting_tree": 4,
+        "mining_rock": 4,
+        "foraging_bush": 4
+      },
+      "oreGatheredThisRun": 2,
+      "woodGatheredThisRun": 0,
+      "combatEvents": [
+        {
+          "target": "Slime",
+          "tier": "common",
+          "enemyHp": 30,
+          "durationSec": 5.062699999988079,
+          "heroDamageTaken": 0,
+          "valerieDamageTaken": 0,
+          "kaelenDamageTaken": 0,
+          "heroSurvived": true,
+          "valerieSurvived": true,
+          "kaelenSurvived": true,
+          "enemyDefeated": true,
+          "valerieRangeTiles": 4,
+          "valerieActiveClass": "scout",
+          "heroShortSwordsExp": 0,
+          "valerieBowsExp": 6,
+          "kaelenShortSwordsExp": 0
+        },
+        {
+          "target": "Skeleton",
+          "tier": "common",
+          "enemyHp": 39,
+          "durationSec": 3.4465,
+          "heroDamageTaken": 0,
+          "valerieDamageTaken": 0,
+          "kaelenDamageTaken": 18,
+          "heroSurvived": true,
+          "valerieSurvived": true,
+          "kaelenSurvived": true,
+          "enemyDefeated": true,
+          "valerieRangeTiles": 4,
+          "valerieActiveClass": "scout",
+          "heroShortSwordsExp": 0,
+          "valerieBowsExp": 12,
+          "kaelenShortSwordsExp": 4
+        }
+      ],
+      "gatheringAttempts": [
+        {
+          "nodeType": "mining_rock",
+          "nodePos": {
+            "x": 6,
+            "y": 41
+          },
+          "partyLeadPos": {
+            "x": 7,
+            "y": 40
+          },
+          "reachedNode": true,
+          "channelStarted": true,
+          "interruptedByCombat": false,
+          "isHarvested": true,
+          "oreGained": 2,
+          "durationSec": 4.472199999988079
+        }
+      ],
+      "totalOreNow": 2,
+      "rpNow": 6,
+      "isWiped": false
+    },
+    {
+      "runNumber": 2,
+      "durationSec": 16.917,
+      "nodesSpawned": {
+        "woodcutting_tree": 3,
+        "mining_rock": 4,
+        "vegetable_node": 2,
+        "foraging_bush": 3
+      },
+      "oreGatheredThisRun": 2,
+      "woodGatheredThisRun": 0,
+      "combatEvents": [
+        {
+          "target": "Slime",
+          "tier": "common",
+          "enemyHp": 30,
+          "durationSec": 5.458400000035763,
+          "heroDamageTaken": 0,
+          "valerieDamageTaken": 0,
+          "kaelenDamageTaken": 0,
+          "heroSurvived": true,
+          "valerieSurvived": true,
+          "kaelenSurvived": true,
+          "enemyDefeated": true,
+          "valerieRangeTiles": 4,
+          "valerieActiveClass": "scout",
+          "heroShortSwordsExp": 0,
+          "valerieBowsExp": 18,
+          "kaelenShortSwordsExp": 4
+        },
+        {
+          "target": "Skeleton Archer",
+          "tier": "common",
+          "enemyHp": 33,
+          "durationSec": 2.2226000000238417,
+          "heroDamageTaken": 0,
+          "valerieDamageTaken": 6,
+          "kaelenDamageTaken": 0,
+          "heroSurvived": true,
+          "valerieSurvived": true,
+          "kaelenSurvived": true,
+          "enemyDefeated": true,
+          "valerieRangeTiles": 4,
+          "valerieActiveClass": "scout",
+          "heroShortSwordsExp": 4,
+          "valerieBowsExp": 22,
+          "kaelenShortSwordsExp": 4
+        }
+      ],
+      "gatheringAttempts": [
+        {
+          "nodeType": "mining_rock",
+          "nodePos": {
+            "x": 29,
+            "y": 10
+          },
+          "partyLeadPos": {
+            "x": 30,
+            "y": 11
+          },
+          "reachedNode": true,
+          "channelStarted": true,
+          "interruptedByCombat": false,
+          "isHarvested": true,
+          "oreGained": 2,
+          "durationSec": 3.4112000000476836
+        }
+      ],
+      "totalOreNow": 4,
+      "rpNow": 7,
+      "isWiped": false
+    },
+    {
+      "runNumber": 3,
+      "durationSec": 23.69,
+      "nodesSpawned": {
+        "woodcutting_tree": 4,
+        "mining_rock": 3,
+        "foraging_bush": 3,
+        "vegetable_node": 1
+      },
+      "oreGatheredThisRun": 2,
+      "woodGatheredThisRun": 0,
+      "combatEvents": [
+        {
+          "target": "Goblin Archer",
+          "tier": "common",
+          "enemyHp": 27,
+          "durationSec": 12.438,
+          "heroDamageTaken": 6,
+          "valerieDamageTaken": 0,
+          "kaelenDamageTaken": 0,
+          "heroSurvived": true,
+          "valerieSurvived": true,
+          "kaelenSurvived": true,
+          "enemyDefeated": true,
+          "valerieRangeTiles": 4,
+          "valerieActiveClass": "scout",
+          "heroShortSwordsExp": 10,
+          "valerieBowsExp": 22,
+          "kaelenShortSwordsExp": 4
+        },
+        {
+          "target": "Skeleton Archer",
+          "tier": "common",
+          "enemyHp": 33,
+          "durationSec": 2.6083999999761582,
+          "heroDamageTaken": 12,
+          "valerieDamageTaken": 0,
+          "kaelenDamageTaken": 0,
+          "heroSurvived": true,
+          "valerieSurvived": true,
+          "kaelenSurvived": true,
+          "enemyDefeated": true,
+          "valerieRangeTiles": 4,
+          "valerieActiveClass": "scout",
+          "heroShortSwordsExp": 10,
+          "valerieBowsExp": 30,
+          "kaelenShortSwordsExp": 4
+        }
+      ],
+      "gatheringAttempts": [
+        {
+          "nodeType": "mining_rock",
+          "nodePos": {
+            "x": 38,
+            "y": 41
+          },
+          "partyLeadPos": {
+            "x": 37,
+            "y": 40
+          },
+          "reachedNode": true,
+          "channelStarted": true,
+          "interruptedByCombat": false,
+          "isHarvested": true,
+          "oreGained": 2,
+          "durationSec": 2.808
+        }
+      ],
+      "totalOreNow": 6,
+      "rpNow": 8,
+      "isWiped": false
+    },
+    {
+      "runNumber": 4,
+      "durationSec": 17.665,
+      "nodesSpawned": {
+        "woodcutting_tree": 6,
+        "mining_rock": 4,
+        "foraging_bush": 5
+      },
+      "oreGatheredThisRun": 0,
+      "woodGatheredThisRun": 0,
+      "combatEvents": [
+        {
+          "target": "Undead",
+          "tier": "common",
+          "enemyHp": 60,
+          "durationSec": 6.620599999964237,
+          "heroDamageTaken": 11,
+          "valerieDamageTaken": 0,
+          "kaelenDamageTaken": 0,
+          "heroSurvived": true,
+          "valerieSurvived": true,
+          "kaelenSurvived": true,
+          "enemyDefeated": true,
+          "valerieRangeTiles": 4,
+          "valerieActiveClass": "scout",
+          "heroShortSwordsExp": 14,
+          "valerieBowsExp": 32,
+          "kaelenShortSwordsExp": 4
+        },
+        {
+          "target": "Goblin",
+          "tier": "common",
+          "enemyHp": 33,
+          "durationSec": 1.203,
+          "heroDamageTaken": 0,
+          "valerieDamageTaken": 5,
+          "kaelenDamageTaken": 0,
+          "heroSurvived": true,
+          "valerieSurvived": true,
+          "kaelenSurvived": true,
+          "enemyDefeated": true,
+          "valerieRangeTiles": 4,
+          "valerieActiveClass": "scout",
+          "heroShortSwordsExp": 16,
+          "valerieBowsExp": 36,
+          "kaelenShortSwordsExp": 8
+        }
+      ],
+      "gatheringAttempts": [
+        {
+          "nodeType": "mining_rock",
+          "nodePos": {
+            "x": 19,
+            "y": 19
+          },
+          "partyLeadPos": {
+            "x": 11,
+            "y": 18
+          },
+          "reachedNode": false,
+          "channelStarted": false,
+          "interruptedByCombat": true,
+          "isHarvested": false,
+          "oreGained": 0,
+          "durationSec": 4.014200000047683
+        }
+      ],
+      "totalOreNow": 6,
+      "rpNow": 10,
+      "isWiped": false
+    }
+  ],
+  "phase4_rp_pacing_summary": {
+    "totalRunsTaken": 4,
+    "finalRP": 10,
+    "finalOre": 6
+  },
+  "phase5_blacksmith_unlock_and_building": {
+    "research": {
+      "canUnlock": true,
+      "success": true,
+      "rpRemaining": 0,
+      "isCompleted": true,
+      "isBuildableUnlocked": true
+    },
+    "building": {
+      "enclosedBefore": false,
+      "enclosedAfterDoor": false,
+      "woodRemaining": 967,
+      "hasStationSprite": true
+    }
+  },
+  "phase6_weapon_crafting_viability": {
+    "currentOre": 6,
+    "currentWood": 967,
+    "tier0": [
+      {
+        "id": "mace",
+        "name": "Iron Mace",
+        "resultWeaponId": "mace",
+        "ingredients": {
+          "ore": 4,
+          "wood": 2
+        },
+        "canCraft": true
+      },
+      {
+        "id": "longsword_1h",
+        "name": "Iron Longsword",
+        "resultWeaponId": "longsword_1h",
+        "ingredients": {
+          "ore": 4,
+          "wood": 2
+        },
+        "canCraft": true
+      },
+      {
+        "id": "longsword_2h",
+        "name": "Two-Handed Longsword",
+        "resultWeaponId": "longsword_2h",
+        "ingredients": {
+          "ore": 7,
+          "wood": 3
+        },
+        "canCraft": false
+      },
+      {
+        "id": "spear",
+        "name": "Iron Spear",
+        "resultWeaponId": "spears",
+        "ingredients": {
+          "ore": 4,
+          "wood": 3
+        },
+        "canCraft": true
+      },
+      {
+        "id": "spears_2h",
+        "name": "Two-Handed Spear",
+        "resultWeaponId": "spears_2h",
+        "ingredients": {
+          "ore": 7,
+          "wood": 5
+        },
+        "canCraft": false
+      },
+      {
+        "id": "katana",
+        "name": "Forged Katana",
+        "resultWeaponId": "katana",
+        "ingredients": {
+          "ore": 5,
+          "wood": 2
+        },
+        "canCraft": true
+      },
+      {
+        "id": "throwing_weapons",
+        "name": "Iron Throwing Knives",
+        "resultWeaponId": "throwing_weapons",
+        "ingredients": {
+          "ore": 3,
+          "wood": 1
+        },
+        "canCraft": true
+      },
+      {
+        "id": "crossbow",
+        "name": "Arbalest Crossbow",
+        "resultWeaponId": "crossbows",
+        "ingredients": {
+          "ore": 5,
+          "wood": 3
+        },
+        "canCraft": true
+      },
+      {
+        "id": "lockpick",
+        "name": "Lockpick",
+        "ingredients": {
+          "steel_scrap": 1
+        },
+        "canCraft": true
+      },
+      {
+        "id": "smelt_broken_lockbox",
+        "name": "Smelt Broken Lockbox",
+        "ingredients": {
+          "broken_lockbox": 1
+        },
+        "canCraft": true
+      }
+    ]
+  },
+  "phase7_weapon_upgrade_comparison": {
+    "success": true,
+    "craftedWeaponName": "Mace",
+    "baseDamage": 7,
+    "attackIntervalMs": 1300,
+    "baseAccuracy": 0.65,
+    "oreRemaining": 2,
+    "woodRemaining": 965,
+    "blacksmithingExp": 25
+  },
+  "key_findings": []
+}

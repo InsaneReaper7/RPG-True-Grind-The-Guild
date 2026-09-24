@@ -5,7 +5,7 @@ import { Enemy } from '../entities/Enemy.ts';
 import { Pathfinder } from '../utils/Pathfinder.ts';
 import { ProgressionSystem } from './ProgressionSystem.ts';
 import { DataLoader } from '../utils/DataLoader.ts';
-import type { GridPos, WeaponDef, PassiveImbuementDef, PassiveImbuementProcDef } from '../types/game.ts';
+import type { GridPos, WeaponDef, PassiveImbuementDef, PassiveImbuementProcDef, EnemyDef } from '../types/game.ts';
 import { HiddenSkillSystem, type CombatContext, type CounterattackResult } from './HiddenSkillSystem.ts';
 import { GameState } from './GameState.ts';
 
@@ -97,14 +97,43 @@ export class CombatSystem {
     return validCandidates[0].member;
   }
 
+  /**
+   * Calculates Research Points awarded upon defeating an enemy based on its definition or tier.
+   * - Boss: Guaranteed flat amount (20 RP).
+   * - Epic: Rolls between 7 and 10 RP.
+   * - Elite: Rolls between 3 and 6 RP.
+   * - Common / other: 0 RP.
+   */
+  public static calculateResearchPointsForEnemy(enemyDef: EnemyDef, rng: () => number = Math.random): number {
+    if (enemyDef.researchPoints !== undefined) {
+      if (typeof enemyDef.researchPoints === 'number') {
+        return enemyDef.researchPoints;
+      }
+      if (typeof enemyDef.researchPoints === 'object') {
+        const min = enemyDef.researchPoints.min ?? 0;
+        const max = enemyDef.researchPoints.max ?? min;
+        return Math.floor(rng() * (max - min + 1)) + min;
+      }
+    }
+    const tier = enemyDef.tier?.toLowerCase();
+    if (tier === 'boss') {
+      return 20;
+    } else if (tier === 'epic') {
+      return 7 + Math.floor(rng() * 4); // 7 to 10
+    } else if (tier === 'elite') {
+      return 3 + Math.floor(rng() * 4); // 3 to 6
+    }
+    return 0;
+  }
+
   public static recordBestiaryEncounter(enemy: Enemy, scene?: Phaser.Scene): void {
     if (!enemy || !enemy.enemyData) return;
     const isFirst = GameState.getInstance().recordEnemyEncountered(enemy.enemyData.id);
     if (isFirst) {
-      console.log(`%c[Bestiary] 🐺 First encounter with ${enemy.enemyData.name}!`, 'color: #f59e0b; font-weight: bold;');
+      console.log(`%c[Bestiary] 🐺 First encounter with ${enemy.enemyData.name}! (+${GameState.DISCOVERY_RP_BONUS} RP)`, 'color: #f59e0b; font-weight: bold;');
       const hud = (scene as any)?.hud;
       if (hud && typeof hud.showToast === 'function') {
-        hud.showToast(`📖 Bestiary Updated: ${enemy.enemyData.name} encountered!`, 'success', 3500);
+        hud.showToast(`📖 Bestiary Updated: ${enemy.enemyData.name} encountered! (+${GameState.DISCOVERY_RP_BONUS} Research Point)`, 'success', 3500);
       }
     }
   }
@@ -1070,6 +1099,22 @@ export class CombatSystem {
             }
           }
         }
+
+        // Milestone 58: Arcane Bolt ranged skill autocast during approach
+        if (member.equippedSkillIds.includes('arcane_bolt') && member.isAutocastEnabled('arcane_bolt')) {
+          const boltDef = dataLoader.getSkill('arcane_bolt');
+          if (boltDef && member.progression.isSkillUnlocked(boltDef, member)) {
+            const isOffCd = !member.lastSkillUseTimes.has('arcane_bolt') || (time - member.lastSkillUseTimes.get('arcane_bolt')! >= boltDef.cooldownMs);
+            const isAffordable = member.energy >= boltDef.energyCost;
+            const maxRange = boltDef.rangeTiles ?? 5;
+            if (isOffCd && isAffordable && distanceTiles <= maxRange) {
+              const castSuccess = this.castSkill(member, 'arcane_bolt', target, time);
+              if (castSuccess) {
+                continue;
+              }
+            }
+          }
+        }
       }
 
       if (distanceTiles <= member.attackRangeTiles) {
@@ -1189,6 +1234,22 @@ export class CombatSystem {
 
           // Milestone 55: Loader skills in normal combat rotation
           if (['primed_shot', 'rapid_crank', 'arbalest_brace', 'pinning_bolt', 'kinetic_overdraw'].includes(skillId)) {
+            const isOffCooldown = !member.lastSkillUseTimes.has(skillId) || (time - member.lastSkillUseTimes.get(skillId)! >= skillDef.cooldownMs);
+            const isAffordable = member.energy >= skillDef.energyCost;
+            const isWeaponReady = time - member.lastAttackTime >= effectiveAttackInterval;
+            if (isOffCooldown && isAffordable && isWeaponReady) {
+              const success = this.castSkill(member, skillId, target as Enemy, time);
+              if (success) {
+                usedSkill = true;
+                this.lastCombatTimeMs = time;
+                break;
+              }
+            }
+            continue;
+          }
+
+          // Milestone 58: Arcane Initiate skills in normal combat rotation
+          if (['arcane_bolt'].includes(skillId)) {
             const isOffCooldown = !member.lastSkillUseTimes.has(skillId) || (time - member.lastSkillUseTimes.get(skillId)! >= skillDef.cooldownMs);
             const isAffordable = member.energy >= skillDef.energyCost;
             const isWeaponReady = time - member.lastAttackTime >= effectiveAttackInterval;
@@ -1857,14 +1918,17 @@ export class CombatSystem {
     const isIce = effectiveWeapon.id === 'ice_magic';
     const isHoly = effectiveWeapon.id === 'holy_magic';
     const isDark = effectiveWeapon.id === 'dark_magic';
+    const isArcane = effectiveWeapon.id === 'arcane_magic';
     const isRangedBow = effectiveWeapon.category === 'ranged' || effectiveWeapon.proficiencyId === 'bows' || effectiveWeapon.id === 'bows';
-    const attackColor = isFire ? 0xf97316 : isLightning ? 0x38bdf8 : isIce ? 0x67e8f9 : isHoly ? 0xfacc15 : isDark ? 0xa855f7 : isRangedBow ? 0xf59e0b : isFist ? 0xf97316 : 0x3b82f6;
+    const attackColor = isFire ? 0xf97316 : isLightning ? 0x38bdf8 : isIce ? 0x67e8f9 : isHoly ? 0xfacc15 : isDark ? 0xa855f7 : isArcane ? 0xc084fc : isRangedBow ? 0xf59e0b : isFist ? 0xf97316 : 0x3b82f6;
     if (isLightning) {
       this.createLightningBoltEffect(member.x, member.y, target.x, target.y);
     } else if (isHoly) {
       this.createHolySmiteEffect(member.x, member.y, target.x, target.y);
     } else if (isDark) {
       this.createDarkBoltEffect(member.x, member.y, target.x, target.y);
+    } else if (isArcane) {
+      this.createArcaneBoltEffect(member.x, member.y, target.x, target.y);
     } else {
       this.createAttackEffect(member.x, member.y, target.x, target.y, attackColor);
     }
@@ -1876,6 +1940,8 @@ export class CombatSystem {
       this.createHolyImpactEffect(target.x, target.y);
     } else if (isDark) {
       this.createDarkImpactEffect(target.x, target.y);
+    } else if (isArcane) {
+      this.createArcaneImpactEffect(target.x, target.y);
     }
 
     const hitRoll = Math.random();
@@ -1901,7 +1967,7 @@ export class CombatSystem {
     console.log(
       `[Combat] ${member.entityName} attacks ${target.entityName} with ${effectiveWeapon.name} for ${damage.toFixed(1)} damage! (Base: ${effectiveWeapon.baseDamage}, Lv ${weaponLevel} Bonus: +${(weaponLevel * damageBonusPerLevel).toFixed(1)}, Accuracy: ${(effectiveAccuracy * 100).toFixed(1)}%${isDW ? ` [DW Penalty -${(dwPenalty * 100).toFixed(0)}%]` : ''}${passiveImbuement?.bonusDamagePercent ? ` [Passive Imbuement: +${(passiveImbuement.bonusDamagePercent * 100).toFixed(0)}%]` : ''})`
     );
-    const dmgColor = isFire ? '#f97316' : isLightning ? '#38bdf8' : isIce ? '#67e8f9' : isHoly ? '#facc15' : isDark ? '#a855f7' : isRangedBow ? '#f59e0b' : isFist ? '#f97316' : '#38bdf8';
+    const dmgColor = isFire ? '#f97316' : isLightning ? '#38bdf8' : isIce ? '#67e8f9' : isHoly ? '#facc15' : isDark ? '#a855f7' : isArcane ? '#c084fc' : isRangedBow ? '#f59e0b' : isFist ? '#f97316' : '#38bdf8';
     const hitText = isFist ? `PUNCH! -${damage.toFixed(1)}` : `-${damage.toFixed(1)}`;
     this.createFloatingText(target.x, target.y - 10, hitText, dmgColor);
 
@@ -1913,6 +1979,9 @@ export class CombatSystem {
     this.checkAndApplyCurse(member, target, effectiveWeapon, weaponLevel);
     if (isHoly) {
       this.applyHolyRadiance(member, target, effectiveWeapon, weaponLevel);
+    }
+    if (isArcane) {
+      this.applyArcaneManaSiphon(member, target, effectiveWeapon, weaponLevel);
     }
     if (passiveImbuement?.proc) {
       this.checkAndApplyPassiveImbuementProc(member, target, passiveImbuement.proc);
@@ -2065,6 +2134,28 @@ export class CombatSystem {
     }
   }
 
+  public applyArcaneManaSiphon(
+    caster: Player,
+    target: Entity,
+    weaponDef: WeaponDef,
+    weaponLevel: number
+  ): void {
+    const baseSiphon = weaponDef.manaSiphonAmount ?? 4;
+    const siphonBonusPerLevel = weaponDef.levelBonus?.manaSiphonPerLevel ?? 0.1;
+    const siphonAmount = Math.max(1, Math.round(baseSiphon + weaponLevel * siphonBonusPerLevel));
+
+    const oldEnergy = caster.energy ?? 0;
+    const maxEnergy = caster.maxEnergy ?? 100;
+    const actualRestored = Math.min(maxEnergy - oldEnergy, siphonAmount);
+    caster.energy = Math.min(maxEnergy, oldEnergy + siphonAmount);
+
+    this.createArcaneSiphonEffect(target.x, target.y, caster.x, caster.y);
+    this.createFloatingText(caster.x, caster.y - 14, `+${siphonAmount} EN (Siphon)`, '#c084fc');
+    console.log(
+      `[Combat:Arcane] ✨ Mana Siphon siphoned ${siphonAmount} Energy from ${target.entityName} to ${caster.entityName}! (Restored: +${actualRestored.toFixed(1)}, EN: ${caster.energy.toFixed(1)}/${maxEnergy})`
+    );
+  }
+
   private handleTargetDefeated(killer: Player, target: Entity, weaponId: string): void {
     console.log(`[Combat] ${target.entityName} defeated/downed by ${killer.entityName}!`);
     const result = killer.progression.addProficiencyExp(weaponId, 4);
@@ -2105,10 +2196,26 @@ export class CombatSystem {
 
     if (target instanceof Enemy) {
       this.enemyTargets.delete(target);
+      const gameState = GameState.getInstance();
+      const isBoss = target.enemyData.tier === 'boss';
+
+      // Milestone: Research Points Kill Rewards (Elite, Epic, Boss)
+      const rpReward = CombatSystem.calculateResearchPointsForEnemy(target.enemyData);
+      if (rpReward > 0) {
+        gameState.addResearchPoints(rpReward);
+        const rpColor = isBoss ? '#ef4444' : target.enemyData.tier === 'epic' ? '#c084fc' : '#38bdf8';
+        this.createFloatingText(target.x, target.y - 48, `+${rpReward} RP`, rpColor);
+        const hud = (this.scene as any)?.hud;
+        if (hud && typeof hud.showToast === 'function') {
+          hud.showToast(`🔬 Defeated ${target.enemyData.name}! (+${rpReward} Research Points)`, 'success', 3000);
+        }
+        console.log(
+          `[Combat] 🔬 Defeated ${target.enemyData.tier.toUpperCase()} ${target.enemyData.name}! Awarded +${rpReward} Research Points. (Total: ${gameState.getResearchPoints()})`
+        );
+      }
+
       // Roll and award harvest drops (excluding Skinning and Butchering items moved to manual corpse interaction)
       if (target.enemyData.harvest && target.enemyData.harvest.length > 0) {
-        const gameState = GameState.getInstance();
-        const isBoss = target.enemyData.tier === 'boss';
         for (const h of target.enemyData.harvest) {
           if (h.method === 'skinning' || h.method === 'butchering') continue;
           if (['wolf_pelt', 'spider_silk', 'wolf_meat', 'monster_meat'].includes(h.item)) continue;
@@ -2345,6 +2452,63 @@ export class CombatSystem {
     });
   }
 
+  public createArcaneBoltEffect(x1: number, y1: number, x2: number, y2: number): void {
+    if (!this.scene?.add) return;
+    const g = this.scene.add.graphics().setDepth(2000);
+    g.lineStyle(3, 0xc084fc, 0.9);
+    g.beginPath();
+    g.moveTo(x1, y1);
+    g.lineTo(x2, y2);
+    g.strokePath();
+
+    const burst = this.scene.add.circle(x2, y2, 16, 0xa855f7, 0.8).setDepth(2001);
+    this.scene.tweens?.add({
+      targets: [g, burst],
+      alpha: 0,
+      scaleX: 1.5,
+      scaleY: 1.5,
+      duration: 250,
+      onComplete: () => {
+        g.destroy();
+        burst.destroy();
+      }
+    });
+  }
+
+  public createArcaneImpactEffect(x: number, y: number): void {
+    if (!this.scene?.add) return;
+    const impact = this.scene.add.circle(x, y, 14, 0xc084fc, 0.7).setDepth(2001);
+    this.scene.tweens?.add({
+      targets: impact,
+      scaleX: 1.7,
+      scaleY: 1.7,
+      alpha: 0,
+      duration: 300,
+      ease: 'Cubic.easeOut',
+      onComplete: () => impact.destroy()
+    });
+  }
+
+  public createArcaneSiphonEffect(x1: number, y1: number, x2: number, y2: number): void {
+    if (!this.scene?.add) return;
+    const g = this.scene.add.graphics().setDepth(2000);
+    g.lineStyle(2, 0xe879f9, 0.85);
+    const midX = (x1 + x2) / 2 + (Math.random() - 0.5) * 12;
+    const midY = (y1 + y2) / 2 + (Math.random() - 0.5) * 12;
+    g.beginPath();
+    g.moveTo(x1, y1);
+    g.lineTo(midX, midY);
+    g.lineTo(x2, y2);
+    g.strokePath();
+
+    this.scene.tweens?.add({
+      targets: g,
+      alpha: 0,
+      duration: 220,
+      onComplete: () => g.destroy()
+    });
+  }
+
   public createHolyNovaEffect(x: number, y: number, radiusPx: number): void {
     if (!this.scene?.add) return;
     const ring = this.scene.add.circle(x, y, 10, 0xfef08a, 0.8).setDepth(2000);
@@ -2356,6 +2520,62 @@ export class CombatSystem {
       ease: 'Quad.easeOut',
       onComplete: () => ring.destroy()
     });
+  }
+
+  public createArcaneNovaEffect(x: number, y: number, radiusPx: number): void {
+    if (!this.scene?.add) return;
+    const ring = this.scene.add.circle(x, y, 10, 0xc084fc, 0.85).setDepth(2000);
+    const core = this.scene.add.circle(x, y, 14, 0xe879f9, 0.7).setDepth(2001);
+    this.scene.tweens?.add({
+      targets: ring,
+      radius: Math.max(30, radiusPx),
+      alpha: 0,
+      duration: 450,
+      ease: 'Quad.easeOut',
+      onComplete: () => ring.destroy()
+    });
+    this.scene.tweens?.add({
+      targets: core,
+      scaleX: 2.2,
+      scaleY: 2.2,
+      alpha: 0,
+      duration: 350,
+      ease: 'Cubic.easeOut',
+      onComplete: () => core.destroy()
+    });
+  }
+
+  /**
+   * Milestone 58: Shared, generic mechanism for consuming Overcharge buff on offensive spellcasting.
+   * If Overcharge is active on the caster, deducts an additional 50% base energy cost
+   * (or whatever energy is available), consumes the buff, and returns a 1.75x damage multiplier.
+   * If Overcharge is not active, returns { multiplier: 1.0, extraEnergyCost: 0, isOvercharged: false }.
+   */
+  public consumeOverchargeIfActive(
+    caster: Player,
+    baseEnergyCost: number
+  ): { multiplier: number; extraEnergyCost: number; isOvercharged: boolean } {
+    if (!caster.hasStatusEffect('overcharge')) {
+      return { multiplier: 1.0, extraEnergyCost: 0, isOvercharged: false };
+    }
+    const effDef = caster.activeStatusEffects.get('overcharge')?.def;
+    const dmgMult = effDef?.spellDamageMultiplier ?? 1.75;
+    const costMult = effDef?.spellEnergyCostMultiplier ?? 1.50;
+    const extraCost = Math.round(baseEnergyCost * (costMult - 1.0));
+
+    const actualExtraDeducted = Math.min(extraCost, caster.energy);
+    caster.energy -= actualExtraDeducted;
+    caster.removeStatusEffect('overcharge');
+
+    console.log(
+      `[Skill:Overcharge] ⚡ ${caster.entityName} consumed Overcharge! (${dmgMult}x damage, +${actualExtraDeducted} EN consumed)`
+    );
+
+    return {
+      multiplier: dmgMult,
+      extraEnergyCost: actualExtraDeducted,
+      isOvercharged: true
+    };
   }
 
   public createCleanseEffect(x: number, y: number): void {
@@ -2601,6 +2821,26 @@ export class CombatSystem {
           return Math.max(Math.abs(cTile.x - aTile.x), Math.abs(cTile.y - aTile.y)) <= radius;
         });
         if (enemiesNearby || damagedAlliesNearby) {
+          return this.castSkill(member, skillId, member, time);
+        }
+        continue;
+      }
+
+      // Milestone 58: Arcane Nova autocast when threat enemies nearby
+      if (skillId === 'arcane_nova') {
+        const lastUsed = member.lastSkillUseTimes.get(skillId) || 0;
+        const isOffCooldown = time - lastUsed >= skillDef.cooldownMs;
+        const isAffordable = member.energy >= skillDef.energyCost;
+        if (!isOffCooldown || !isAffordable) continue;
+
+        const radius = skillDef.radiusTiles ?? 4;
+        const cTile = { x: Math.floor(member.x / member.tileSize), y: Math.floor(member.y / member.tileSize) };
+        const enemiesNearby = this.enemies.some((e) => {
+          if (e.state === 'dead' || e.state === 'downed') return false;
+          const eTile = { x: Math.floor(e.x / e.tileSize), y: Math.floor(e.y / e.tileSize) };
+          return Math.max(Math.abs(cTile.x - eTile.x), Math.abs(cTile.y - eTile.y)) <= radius;
+        });
+        if (enemiesNearby) {
           return this.castSkill(member, skillId, member, time);
         }
         continue;
@@ -3003,6 +3243,136 @@ export class CombatSystem {
         this.createFloatingText(caster.x, caster.y - 15, `MASS REVIVE! (${downedAllies.length})`, '#facc15');
         caster.progression.addProficiencyExp('healing_magic', 4);
         console.log(`[Skill] ${caster.entityName} casts Mass Revive! Revived ${downedAllies.length} downed allies at once.`);
+        return true;
+      } else if (skillId === 'mana_shield') {
+        const effDef = dataLoader.getStatusEffect('mana_shield') || {
+          id: 'mana_shield',
+          name: 'Mana Shield',
+          durationMs: skillDef.durationMs ?? 6000,
+          tickIntervalMs: 6000,
+          damagePerTick: 0,
+          damageToEnergyPercent: skillDef.damageToEnergyPercent ?? 0.50,
+          color: '#38bdf8'
+        };
+        caster.applyStatusEffect(effDef);
+        this.createFloatingText(caster.x, caster.y - 12, 'MANA SHIELD!', '#38bdf8');
+        console.log(`[Skill] ${caster.entityName} casts Mana Shield! Converts 50% damage to energy for 6s.`);
+        return true;
+      } else if (skillId === 'overcharge') {
+        const effDef = dataLoader.getStatusEffect('overcharge') || {
+          id: 'overcharge',
+          name: 'Overcharge',
+          durationMs: skillDef.durationMs ?? 10000,
+          tickIntervalMs: 10000,
+          damagePerTick: 0,
+          spellDamageMultiplier: skillDef.spellDamageMultiplier ?? 1.75,
+          spellEnergyCostMultiplier: skillDef.spellEnergyCostMultiplier ?? 1.50,
+          color: '#c084fc'
+        };
+        caster.applyStatusEffect(effDef);
+        this.createFloatingText(caster.x, caster.y - 12, 'OVERCHARGE READY!', '#c084fc');
+        console.log(`[Skill] ${caster.entityName} activates Overcharge! Next spell deals +75% damage.`);
+        return true;
+      } else if (skillId === 'blink') {
+        const casterTile = {
+          x: Math.floor(caster.x / caster.tileSize),
+          y: Math.floor(caster.y / caster.tileSize)
+        };
+        const activeEnemies = this.enemies.filter((e) => e.state !== 'dead' && e.state !== 'downed');
+        let nearestEnemy: Enemy | null = null;
+        let minDist = Infinity;
+        for (const e of activeEnemies) {
+          const eTile = { x: Math.floor(e.x / e.tileSize), y: Math.floor(e.y / e.tileSize) };
+          const dist = Math.max(Math.abs(casterTile.x - eTile.x), Math.abs(casterTile.y - eTile.y));
+          if (dist < minDist) {
+            minDist = dist;
+            nearestEnemy = e;
+          }
+        }
+
+        const oldX = caster.x;
+        const oldY = caster.y;
+
+        if (nearestEnemy) {
+          const eTile = { x: Math.floor(nearestEnemy.x / nearestEnemy.tileSize), y: Math.floor(nearestEnemy.y / nearestEnemy.tileSize) };
+          const dirX = Math.sign(casterTile.x - eTile.x) || (Math.random() < 0.5 ? 1 : -1);
+          const dirY = Math.sign(casterTile.y - eTile.y) || (Math.random() < 0.5 ? 1 : -1);
+          const blinkDistance = skillDef.rangeTiles ?? 3;
+          const candidates = [
+            { x: casterTile.x + dirX * blinkDistance, y: casterTile.y + dirY * blinkDistance },
+            { x: casterTile.x + dirX * blinkDistance, y: casterTile.y },
+            { x: casterTile.x, y: casterTile.y + dirY * blinkDistance },
+            { x: casterTile.x + dirX * 2, y: casterTile.y + dirY * 2 },
+            { x: casterTile.x + dirX * 2, y: casterTile.y },
+            { x: casterTile.x, y: casterTile.y + dirY * 2 },
+            { x: casterTile.x + dirX, y: casterTile.y + dirY }
+          ];
+          for (const cand of candidates) {
+            if (!this.isTileClaimedOrOccupiedByOther(cand.x, cand.y, caster)) {
+              caster.setGridPosition(cand.x, cand.y);
+              this.createArcaneBoltEffect(oldX, oldY, caster.x, caster.y);
+              break;
+            }
+          }
+        } else {
+          const cand = { x: casterTile.x + 3, y: casterTile.y };
+          if (!this.isTileClaimedOrOccupiedByOther(cand.x, cand.y, caster)) {
+            caster.setGridPosition(cand.x, cand.y);
+            this.createArcaneBoltEffect(oldX, oldY, caster.x, caster.y);
+          }
+        }
+
+        this.createFloatingText(caster.x, caster.y - 12, 'BLINK!', '#c084fc');
+        caster.progression.addProficiencyExp('arcane_magic', 2);
+        console.log(`[Skill] ${caster.entityName} blinks to (${Math.floor(caster.x / caster.tileSize)}, ${Math.floor(caster.y / caster.tileSize)})!`);
+        return true;
+      } else if (skillId === 'arcane_nova') {
+        const radius = skillDef.radiusTiles ?? 4;
+        const casterTile = {
+          x: Math.floor(caster.x / caster.tileSize),
+          y: Math.floor(caster.y / caster.tileSize)
+        };
+
+        const overcharge = this.consumeOverchargeIfActive(caster, skillDef.energyCost);
+
+        const effectiveWeapon = this.getEffectiveWeaponForAttack(caster);
+        const weaponId = effectiveWeapon.proficiencyId ?? effectiveWeapon.id;
+        const weaponLevel = caster.progression.getProficiencyLevel(weaponId);
+        const dmgBonus = effectiveWeapon.levelBonus?.damagePerLevel ?? 0;
+        const rawBase = effectiveWeapon.baseDamage + weaponLevel * dmgBonus;
+        const moodTier = dataLoader.getMoodTier(caster.mood);
+        const effBase = rawBase * moodTier.combatDamageMultiplier;
+        const baseMult = skillDef.damageMultiplier ?? 2.6;
+        const totalMult = baseMult * overcharge.multiplier;
+        const novaDamage = Math.max(12, effBase * totalMult);
+
+        let enemiesDamaged = 0;
+        for (const enemy of this.enemies) {
+          if (enemy.state === 'dead' || enemy.state === 'downed') continue;
+          const eTile = {
+            x: Math.floor(enemy.x / enemy.tileSize),
+            y: Math.floor(enemy.y / enemy.tileSize)
+          };
+          if (Math.max(Math.abs(casterTile.x - eTile.x), Math.abs(casterTile.y - eTile.y)) <= radius &&
+              this.pathfinder.hasLineOfSight(casterTile, eTile)) {
+            this.createSkillAttackEffect(caster.x, caster.y, enemy.x, enemy.y);
+            const text = overcharge.isOvercharged
+              ? `OVERCHARGED NOVA! -${novaDamage.toFixed(1)}`
+              : `ARCANE NOVA! -${novaDamage.toFixed(1)}`;
+            this.createFloatingText(enemy.x, enemy.y - 10, text, '#c084fc');
+            const downed = enemy.takeDamage(novaDamage);
+            if (downed) {
+              this.handleTargetDefeated(caster, enemy, weaponId);
+            }
+            enemiesDamaged++;
+          }
+        }
+
+        this.createArcaneNovaEffect(caster.x, caster.y, radius * caster.tileSize);
+        const headerText = overcharge.isOvercharged ? 'OVERCHARGED ARCANE NOVA!' : 'ARCANE NOVA!';
+        this.createFloatingText(caster.x, caster.y - 15, headerText, '#c084fc');
+        caster.progression.addProficiencyExp('arcane_magic', 4);
+        console.log(`[Skill] ${caster.entityName} casts Arcane Nova! Damaged ${enemiesDamaged} enemies.`);
         return true;
       }
       return true;
@@ -4013,6 +4383,52 @@ export class CombatSystem {
         if (downed) {
           this.handleTargetDefeated(caster, enemyTarget, weaponId);
         }
+        return true;
+      }
+
+      // ========================================================================
+      // Milestone 58: Arcane Initiate Full 5-Skill Kit
+      // Generic caster template & first spark of raw magic
+      // ========================================================================
+      if (skillId === 'arcane_bolt') {
+        const curDist = Math.max(
+          Math.abs(Math.floor(caster.x / caster.tileSize) - Math.floor(enemyTarget.x / enemyTarget.tileSize)),
+          Math.abs(Math.floor(caster.y / caster.tileSize) - Math.floor(enemyTarget.y / enemyTarget.tileSize))
+        );
+        const maxRange = skillDef.rangeTiles ?? 5;
+        if (curDist > maxRange) {
+          console.warn(`[Skill] Cannot cast Arcane Bolt: target is outside range (${curDist} > ${maxRange})`);
+          return false;
+        }
+
+        caster.energy -= skillDef.energyCost;
+        caster.lastSkillUseTimes.set(skillId, time);
+        caster.lastAttackTime = time;
+        caster.state = 'attacking';
+
+        const overcharge = this.consumeOverchargeIfActive(caster, skillDef.energyCost);
+
+        this.createArcaneBoltEffect(caster.x, caster.y, enemyTarget.x, enemyTarget.y);
+        const effectiveWeapon = this.getEffectiveWeaponForAttack(caster);
+        const weaponId = effectiveWeapon.proficiencyId ?? effectiveWeapon.id;
+        const weaponLevel = caster.progression.getProficiencyLevel(weaponId);
+        const dmgBonus = effectiveWeapon.levelBonus?.damagePerLevel ?? 0;
+        const rawBase = effectiveWeapon.baseDamage + weaponLevel * dmgBonus;
+        const moodTier = dataLoader.getMoodTier(caster.mood);
+        const effBase = rawBase * moodTier.combatDamageMultiplier;
+        const mult = (skillDef.damageMultiplier ?? 1.4) * overcharge.multiplier;
+        const skillDamage = Math.max(8, effBase * mult);
+
+        const floatText = overcharge.isOvercharged
+          ? `OVERCHARGED BOLT! -${skillDamage.toFixed(1)}`
+          : `ARCANE BOLT! -${skillDamage.toFixed(1)}`;
+        this.createFloatingText(enemyTarget.x, enemyTarget.y - 10, floatText, '#c084fc');
+
+        const downed = enemyTarget.takeDamage(skillDamage);
+        if (downed) {
+          this.handleTargetDefeated(caster, enemyTarget, weaponId);
+        }
+        caster.progression.addProficiencyExp('arcane_magic', 2);
         return true;
       }
 

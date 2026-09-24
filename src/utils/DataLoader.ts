@@ -342,7 +342,7 @@ export class DataLoader {
   public getMagicSchoolIds(): string[] {
     if (!this.weaponsData?.weapons) {
       return [
-        'arcane',
+        'arcane_magic',
         'fire_magic',
         'water_magic',
         'ice_magic',
@@ -434,6 +434,8 @@ export class DataLoader {
         description = 'Proficiency with holy magic to punish the wicked and mend allies with radiant light.';
       } else if (weapon.id === 'dark_magic') {
         description = 'Proficiency with dark magic to enfeeble foes with weakening curses and destructive shadow.';
+      } else if (weapon.id === 'arcane_magic') {
+        description = 'Proficiency with arcane magic to siphon raw mana and unleash pure magical energy.';
       } else if (weapon.id === 'staff' || weapon.id.endsWith('_staff')) {
         description = 'Proficiency with two-handed staves in melee combat.';
       } else if (weapon.id === 'fist') {

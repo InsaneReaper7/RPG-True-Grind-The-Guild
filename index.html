@@ -809,6 +809,28 @@
     #party-overview-modal.active {
       display: flex;
     }
+    /* Summon Recruit Modal Styles */
+    #summon-recruit-modal {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 520px;
+      max-width: calc(100% - 24px);
+      background: rgba(17, 24, 39, 0.98);
+      backdrop-filter: blur(10px);
+      border: 2px solid #8b5cf6;
+      border-radius: 12px;
+      padding: 18px 24px;
+      box-shadow: 0 0 35px rgba(139, 92, 246, 0.4);
+      display: none;
+      flex-direction: column;
+      pointer-events: auto;
+      z-index: 120;
+    }
+    #summon-recruit-modal.active {
+      display: flex;
+    }
     /* Stockpile Overview Modal Styles */
     #stockpile-modal {
       width: 860px;
@@ -2112,6 +2134,132 @@
     .debug-btn:active {
       transform: translateY(1px);
     }
+
+    /* Guild Onboarding & Tutorial Guide Widget */
+    #guild-guide-widget {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      width: 330px;
+      max-width: calc(100vw - 360px);
+      background: rgba(15, 23, 42, 0.94);
+      backdrop-filter: blur(8px);
+      border: 1px solid #8b5cf6;
+      border-radius: 8px;
+      padding: 12px 14px;
+      box-shadow: 0 4px 20px rgba(139, 92, 246, 0.3), 0 0 10px rgba(0, 0, 0, 0.6);
+      pointer-events: auto;
+      transition: all 0.25s ease-in-out;
+      z-index: 900;
+    }
+    #guild-guide-widget.minimized .guild-guide-body {
+      display: none;
+    }
+    #guild-guide-widget.minimized {
+      padding: 8px 12px;
+      width: 220px;
+    }
+    #guild-guide-widget.hidden {
+      display: none !important;
+    }
+    .guild-guide-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    #guild-guide-widget.minimized .guild-guide-header {
+      margin-bottom: 0;
+    }
+    .guild-guide-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 800;
+      color: #c084fc;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .guild-guide-controls {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .guide-btn-icon {
+      background: transparent;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #94a3b8;
+      border-radius: 4px;
+      width: 22px;
+      height: 22px;
+      font-size: 12px;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      padding: 0;
+      transition: all 0.15s;
+    }
+    .guide-btn-icon:hover {
+      background: rgba(255, 255, 255, 0.15);
+      color: #f1f5f9;
+      border-color: #a855f7;
+    }
+    .guild-guide-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #f8fafc;
+      margin-bottom: 4px;
+    }
+    .guild-guide-objective {
+      font-size: 12px;
+      font-weight: 600;
+      color: #38bdf8;
+      display: flex;
+      align-items: flex-start;
+      gap: 6px;
+      margin-bottom: 6px;
+      line-height: 1.35;
+    }
+    .guild-guide-instruction {
+      font-size: 11px;
+      color: #94a3b8;
+      line-height: 1.4;
+      margin-bottom: 8px;
+    }
+    .guild-guide-mentor-box {
+      background: rgba(30, 41, 59, 0.7);
+      border-left: 2px solid #a855f7;
+      border-radius: 4px;
+      padding: 6px 8px;
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
+    }
+    .mentor-avatar {
+      font-size: 16px;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+    .mentor-content {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .mentor-name {
+      font-size: 10px;
+      font-weight: 700;
+      color: #c084fc;
+      text-transform: uppercase;
+    }
+    .mentor-quote {
+      font-size: 11px;
+      color: #e2e8f0;
+      font-style: italic;
+      line-height: 1.35;
+    }
   </style>
 </head>
 <body>
@@ -2225,6 +2373,7 @@
         <div id="outpost-controls">
           <button id="open-loadout-btn" class="btn-action" type="button">⚔️ Skill Loadout [L]</button>
           <button id="toggle-build-btn" class="btn-action" style="margin-top: 6px; background: #059669; border-color: #34d399;" type="button">🔨 Build Mode [B]</button>
+          <button id="open-research-btn" class="btn-action" style="margin-top: 6px; background: #0284c7; border-color: #38bdf8;" type="button">🔬 Research Tree [N]</button>
         </div>
 
         <!-- Party Overview Button (Always available in HUD) -->
@@ -2240,6 +2389,49 @@
         <!-- Knowledge Base Button (Always available in HUD) -->
         <div style="margin-top: 6px;">
           <button id="open-knowledge-btn" class="btn-action" style="width: 100%; background: #0284c7; border-color: #38bdf8;" type="button">📖 Knowledge Base [K]</button>
+        </div>
+
+        <!-- Re-open Onboarding Guide Button -->
+        <div style="margin-top: 6px;">
+          <button id="guide-reopen-btn" class="btn-action" style="width: 100%; background: #581c87; border-color: #a855f7; display: none;" type="button">🧭 Onboarding Guide</button>
+        </div>
+
+        <!-- Reset Save Button (Tester convenience) -->
+        <div id="hud-reset-save-wrap" style="margin-top: 6px;">
+          <button id="hud-reset-save-btn" class="btn-action" style="width: 100%; background: #450a0a; border-color: #ef4444; color: #fca5a5; font-size: 11px; padding: 4px 8px;" type="button">🗑️ Reset Save Data</button>
+        </div>
+      </div>
+
+      <!-- Guild Onboarding / Tutorial Guide Widget (Milestone: Tutorial & Onboarding) -->
+      <div id="guild-guide-widget" class="guild-guide-container">
+        <div class="guild-guide-header">
+          <div class="guild-guide-badge">
+            <span class="guide-icon">🧭</span>
+            <span id="guide-step-badge">STEP 1/10</span>
+          </div>
+          <div class="guild-guide-controls">
+            <button id="guide-toggle-minimize-btn" class="guide-btn-icon" title="Minimize / Expand" type="button">−</button>
+            <button id="guide-dismiss-btn" class="guide-btn-icon" title="Dismiss Guide" type="button">✕</button>
+          </div>
+        </div>
+        <div id="guide-body-content" class="guild-guide-body">
+          <div id="guide-title" class="guild-guide-title">Guild Roster</div>
+          <div id="guide-objective" class="guild-guide-objective">
+            <span class="guide-check-icon">🎯</span>
+            <span id="guide-objective-text">Summon recruit Kaelen from Guild HQ</span>
+          </div>
+          <div id="guide-instruction" class="guild-guide-instruction">
+            Select a starting weapon kit for Kaelen and confirm to expand your starting party to 3.
+          </div>
+          <div class="guild-guide-mentor-box">
+            <div class="mentor-avatar">🏹</div>
+            <div class="mentor-content">
+              <div class="mentor-name">Valerie (Scout Mentor)</div>
+              <div id="guide-mentor-quote" class="mentor-quote">
+                "Welcome to the Outpost! Exploring the dungeon as a pair is reckless. Summon our third recruit from HQ before we step through!"
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -2319,7 +2511,8 @@
             <button id="debug-btn-restore-energy" class="debug-btn" type="button" style="background: #15803d; color: #dcfce7; border: 1px solid #22c55e;">⚡ Restore Full Energy</button>
 
             <div class="debug-grid-category">MILESTONE 31: REVIVE POTION</div>
-            <button id="debug-btn-grant-revive-potion" class="debug-btn" type="button" style="background: #a16207; color: #fef08a; border: 1px solid #facc15; grid-column: 1 / -1;">💛 Grant +1 Revive Potion</button>
+            <button id="debug-btn-grant-revive-potion" class="debug-btn" type="button" style="background: #a16207; color: #fef08a; border: 1px solid #facc15;">💛 Grant +1 Revive Potion</button>
+            <button id="debug-btn-instant-revive" class="debug-btn" type="button" style="background: #a16207; color: #fef08a; border: 1px solid #facc15;">💛 Revive All Downed Allies (formerly [R])</button>
 
             <div class="debug-grid-category">MILESTONE 38: LOCKPICKING & LOCKED BOX</div>
             <button id="debug-btn-grant-lockpick" class="debug-btn" type="button" style="background: #854d0e; color: #fef08a; border: 1px solid #ca8a04;">🗝️ Grant +3 Lockpicks</button>
@@ -2334,6 +2527,9 @@
 
             <div class="debug-grid-category">MILESTONE 50: COMBAT & BESTIARY DEBUG</div>
             <button id="debug-btn-deal-damage" class="debug-btn" type="button" style="background: #991b1b; color: #fee2e2; border: 1px solid #ef4444; grid-column: 1 / -1;">⚔️ Deal 5 Debug Damage to Target Enemy (formerly [K])</button>
+
+            <div class="debug-grid-category">PERSISTENT SAVES (STORAGE)</div>
+            <button id="debug-btn-reset-save" class="debug-btn" type="button" style="background: #7f1d1d; color: #fecaca; border: 1px solid #ef4444; grid-column: 1 / -1;">🗑️ Reset Saved Game Data (Wipe Storage)</button>
           </div>
         </div>
       </div>
@@ -2394,6 +2590,10 @@
         <div style="font-size: 11px; color: #6b7280; margin-top: 12px; font-style: italic;">Click or press Esc to dismiss</div>
       </div>
 
+      <div id="save-failure-badge" style="display: none; position: absolute; top: 16px; left: 50%; transform: translateX(-50%); background: rgba(185, 28, 28, 0.95); border: 2px solid #ef4444; border-radius: 8px; padding: 8px 18px; color: #ffffff; font-size: 12px; font-weight: bold; text-align: center; box-shadow: 0 0 16px rgba(239, 68, 68, 0.7); z-index: 10000; pointer-events: auto;">
+        ⚠️ SAVE FAILED: Browser storage is disabled or full! Progress cannot be saved to disk.
+      </div>
+
       <div id="downed-banner">
         ⚠️ DOWNED! Press <span style="color: #fef08a;">[R]</span> to Revive (50% Main HP)
       </div>
@@ -2427,7 +2627,7 @@
             </div>
             <div id="party-portrait-status-0" class="portrait-status-tag">✓ ACTIVE</div>
           </div>
-          <div id="party-portrait-1" class="hud-portrait-card empty" data-member-index="1" title="Click: Select Companion 1 [2] | Shift+Click: Multi-select">
+          <div id="party-portrait-1" class="hud-portrait-card" data-member-index="1" title="Click: Select Companion 1 [2] | Shift+Click: Multi-select">
             <div class="portrait-top-row">
               <div id="party-portrait-avatar-1" class="portrait-avatar-box">🗡️</div>
               <div class="portrait-info">
@@ -2440,7 +2640,7 @@
               <div class="portrait-bar-wrap" title="Critical HP"><div id="party-portrait-crit-bar-1" class="portrait-bar-fill fill-crit" style="width: 100%;"></div></div>
               <div class="portrait-bar-wrap" title="Energy"><div id="party-portrait-energy-bar-1" class="portrait-bar-fill fill-energy" style="width: 100%;"></div></div>
             </div>
-            <div id="party-portrait-status-1" class="portrait-status-tag">EMPTY</div>
+            <div id="party-portrait-status-1" class="portrait-status-tag">✓ ACTIVE</div>
           </div>
           <div id="party-portrait-2" class="hud-portrait-card empty" data-member-index="2" title="Click: Select Companion 2 [3] | Shift+Click: Multi-select">
             <div class="portrait-top-row">
@@ -2821,7 +3021,7 @@
             <div class="modal-subtitle">Manage party members, visual paperdoll equipment, drag-and-drop gear, dual wielding, and skill loadouts. [O]</div>
           </div>
           <div style="display: flex; gap: 8px; align-items: center;">
-            <button id="party-spawn-companion-btn" class="btn-action" style="background: #6d28d9; border-color: #8b5cf6; padding: 4px 10px; font-size: 11px;" type="button">+ Spawn Companion</button>
+            <button id="party-spawn-companion-btn" class="btn-action" style="background: #6d28d9; border-color: #8b5cf6; padding: 4px 10px; font-size: 11px;" type="button">+ Summon Recruit</button>
             <button id="close-party-btn" class="modal-close-btn" type="button">✕</button>
           </div>
         </div>
@@ -2845,6 +3045,56 @@
               <!-- Dynamically populated with draggable equipment cards -->
             </div>
           </div>
+        </div>
+      </div>
+      <!-- Summon Guild Recruit Modal (Milestone: The Real Game Start) -->
+      <div id="summon-recruit-modal" class="custom-modal">
+        <div class="modal-header">
+          <div>
+            <div class="modal-title" style="color: #c084fc; display: flex; align-items: center; gap: 8px;">
+              <span>👥</span> <span>Summon Guild Recruit — Kaelen</span>
+            </div>
+            <div class="modal-subtitle">Contact Guild HQ to summon your third party member before venturing into the dungeon.</div>
+          </div>
+          <button id="close-summon-recruit-btn" class="modal-close-btn" type="button">✕</button>
+        </div>
+        <p style="font-size: 13px; color: #94a3b8; margin: 10px 0 16px; line-height: 1.45;">
+          Select a starting weapon kit for recruit <strong>Kaelen</strong>. As a newly arrived guild member, Kaelen begins as a genuine blank slate: <strong style="color: #e2e8f0;">Level 0 in every proficiency, no class, and no skills</strong>.
+        </p>
+        <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px;">
+          <label style="display: flex; align-items: center; gap: 12px; background: rgba(30, 41, 59, 0.85); padding: 10px 14px; border-radius: 8px; cursor: pointer; border: 1px solid #475569;">
+            <input type="radio" name="recruit-weapon-kit" value="sword_and_shield" checked style="accent-color: #a855f7;" />
+            <div>
+              <div style="font-weight: bold; color: #f1f5f9; font-size: 13px;">⚔️ Sword and Shield</div>
+              <div style="font-size: 11px; color: #94a3b8;">Short Swords + Shield (balanced melee defense & offense)</div>
+            </div>
+          </label>
+          <label style="display: flex; align-items: center; gap: 12px; background: rgba(30, 41, 59, 0.85); padding: 10px 14px; border-radius: 8px; cursor: pointer; border: 1px solid #475569;">
+            <input type="radio" name="recruit-weapon-kit" value="2h_longsword" style="accent-color: #a855f7;" />
+            <div>
+              <div style="font-weight: bold; color: #f1f5f9; font-size: 13px;">🗡️ Two-Handed Longsword</div>
+              <div style="font-size: 11px; color: #94a3b8;">Two-Handed Longsword (heavy damage two-handed melee)</div>
+            </div>
+          </label>
+          <label style="display: flex; align-items: center; gap: 12px; background: rgba(30, 41, 59, 0.85); padding: 10px 14px; border-radius: 8px; cursor: pointer; border: 1px solid #475569;">
+            <input type="radio" name="recruit-weapon-kit" value="bow_and_dagger" style="accent-color: #a855f7;" />
+            <div>
+              <div style="font-weight: bold; color: #f1f5f9; font-size: 13px;">🏹 Bow and Dagger</div>
+              <div style="font-size: 11px; color: #94a3b8;">Hunting Bow + Daggers sidearm (ranged skirmisher)</div>
+            </div>
+          </label>
+          <label style="display: flex; align-items: center; gap: 12px; background: rgba(30, 41, 59, 0.85); padding: 10px 14px; border-radius: 8px; cursor: pointer; border: 1px solid #475569;">
+            <input type="radio" name="recruit-weapon-kit" value="random_magic_staff" style="accent-color: #a855f7;" />
+            <div>
+              <div style="font-weight: bold; color: #f1f5f9; font-size: 13px;">🔮 Magic Staff</div>
+              <div style="font-size: 11px; color: #94a3b8;">Staff conduit channeling random elemental offensive magic</div>
+            </div>
+          </label>
+        </div>
+        <div style="display: flex; justify-content: flex-end; gap: 10px;">
+          <button id="confirm-summon-recruit-btn" class="btn-action" style="background: #7c3aed; border-color: #a855f7; padding: 8px 18px; font-size: 13px; font-weight: bold; color: #fff; border-radius: 6px; cursor: pointer;" type="button">
+            Summon Kaelen to Party
+          </button>
         </div>
       </div>
       <!-- Teleporter Crystal Modal (Milestone 40) -->
@@ -2998,6 +3248,39 @@
         <!-- Scrollable Entries Container -->
         <div id="knowledge-entries-container" class="knowledge-entries-container">
           <!-- Dynamically populated entry cards -->
+        </div>
+      </div>
+
+      <!-- Title Screen / Boot Modal (Persistent Saves Milestone) -->
+      <div id="title-screen-modal" class="custom-modal" style="width: 520px; max-width: 92vw; text-align: center; border-color: #f59e0b; box-shadow: 0 0 35px rgba(245, 158, 11, 0.4); z-index: 10000; padding: 26px 30px;">
+        <div style="font-size: 38px; line-height: 1; margin-bottom: 8px;">⚔️🏰</div>
+        <div style="font-size: 26px; font-weight: 800; color: #f59e0b; letter-spacing: 1.5px; text-transform: uppercase;">RPG True Grind</div>
+        <div style="font-size: 14px; font-weight: 700; color: #38bdf8; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 16px;">The Guild</div>
+
+        <!-- Storage Warning Card (hidden by default, shown if localStorage fails) -->
+        <div id="title-storage-warning" style="display: none; background: rgba(185, 28, 28, 0.25); border: 1.5px solid #ef4444; border-radius: 8px; padding: 10px 14px; margin-bottom: 14px; text-align: left; font-size: 12px; color: #fca5a5;">
+          ⚠️ <strong>Storage Warning:</strong> Browser local storage is blocked or full. Progress will not be saved across browser restarts.
+        </div>
+
+        <!-- Save Summary Card -->
+        <div id="title-save-summary" style="background: rgba(31, 41, 55, 0.75); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 8px; padding: 14px 16px; margin-bottom: 18px; text-align: left;">
+          <!-- Dynamically populated: Checkpoint info or "No save file found" -->
+        </div>
+
+        <!-- Action Buttons -->
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <button id="title-continue-btn" class="btn-action" style="padding: 10px 16px; font-size: 14px; background: #059669; border-color: #34d399;" type="button">▶ Continue</button>
+          <button id="title-new-game-btn" class="btn-action" style="padding: 10px 16px; font-size: 14px; background: #2563eb; border-color: #60a5fa;" type="button">✨ New Game</button>
+          <button id="title-reset-save-btn" class="btn-action" style="padding: 6px 12px; font-size: 12px; background: #7f1d1d; border-color: #ef4444; color: #fecaca; margin-top: 4px;" type="button">🗑️ Reset Save</button>
+        </div>
+
+        <!-- Overwrite Confirmation Box -->
+        <div id="title-overwrite-confirm" style="display: none; margin-top: 14px; background: rgba(15, 23, 42, 0.95); border: 1px solid #ef4444; border-radius: 8px; padding: 12px;">
+          <div style="font-size: 12px; color: #fca5a5; margin-bottom: 10px; font-weight: 600;">⚠️ Starting a new game will overwrite your existing save. Are you sure?</div>
+          <div style="display: flex; gap: 8px; justify-content: center;">
+            <button id="title-confirm-new-game-btn" class="btn-action" style="background: #dc2626; border-color: #ef4444; font-size: 12px; padding: 6px 14px;" type="button">Yes, Overwrite</button>
+            <button id="title-cancel-new-game-btn" class="btn-action" style="background: #4b5563; border-color: #9ca3af; font-size: 12px; padding: 6px 14px;" type="button">Cancel</button>
+          </div>
         </div>
       </div>
     </div>

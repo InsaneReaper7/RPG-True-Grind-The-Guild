@@ -1,10 +1,26 @@
 import type { Player } from '../entities/Player.ts';
 import { ProgressionSystem } from './ProgressionSystem.ts';
-import type { PlayerData, PlayerSnapshot, CharacterSnapshot, PlacedBuildable, TrainableStat, FoodItemInstance, FoodQuality, LockpickAttemptResult, PlantingPlotData, SeedMakerData } from '../types/game.ts';
+import type {
+  PlayerData,
+  PlayerSnapshot,
+  CharacterSnapshot,
+  PlacedBuildable,
+  TrainableStat,
+  FoodItemInstance,
+  FoodQuality,
+  LockpickAttemptResult,
+  PlantingPlotData,
+  SeedMakerData,
+  SaveMetadata,
+  GameSaveFile
+} from '../types/game.ts';
 import { DataLoader } from '../utils/DataLoader.ts';
 import { LockpickingSystem } from './LockpickingSystem.ts';
 
 export class GameState {
+  public static readonly SAVE_STORAGE_KEY = 'RPG_TRUE_GRIND_SAVE_V1';
+  public static readonly SAVE_VERSION = 1;
+
   private static instance: GameState;
   private snapshot: PlayerSnapshot | null = null;
   private partySnapshots: CharacterSnapshot[] = [];
@@ -29,9 +45,18 @@ export class GameState {
   private dayDurationMs: number = 60000; // 60s real-time per game day
   private foodItems: FoodItemInstance[] = [];
   private isSafeZone: boolean = false;
+  public static readonly DISCOVERY_RP_BONUS: number = 1;
   public onSpoilageCallback?: (spoiledCount: number) => void;
+  public onResearchPointsChanged?: (newPoints: number, delta: number) => void;
+  public onSaveFailedCallback?: (errorMessage: string) => void;
+  private lastSaveError: string | null = null;
   private dungeonFloorCount: number = 0;
   private lifetimeDungeonFloorCount: number = 0;
+
+  // Milestone: Tutorial & Onboarding
+  private tutorialStep: number = 0;
+  private tutorialCompleted: boolean = false;
+  private tutorialDismissed: boolean = false;
 
   private constructor() {}
 
@@ -167,18 +192,108 @@ export class GameState {
       skillCooldownsRemainingMs: {},
       proficiencies: seedProficiencies,
       classLevels: {},
+      classStats: {},
       unlockedClasses: [],
+      activeClass: null,
       bookLearnedSkills: [],
       hunger: 100,
       mood: 80,
       state: 'idle'
     };
 
-    this.partySnapshots = [heroSnapshot];
-    this.snapshot.party = [heroSnapshot];
+    const valerieProficiencies: Record<string, TrainableStat> = {
+      daggers: { level: 10, currentExp: 0 },
+      bows: { level: 15, currentExp: 0 },
+      construction: { level: 0, currentExp: 0 },
+      fist: { level: 0, currentExp: 0 }
+    };
+    this.discoveredProficiencies.add('daggers');
+    this.discoveredProficiencies.add('bows');
+
+    const valerieSnapshot: CharacterSnapshot = {
+      id: 'companion_1',
+      name: 'Valerie',
+      avatarKey: 'companion-avatar',
+      avatarTextureKey: 'companion-avatar',
+      hp: 50,
+      criticalHp: 25,
+      energy: 100,
+      equippedWeaponId: 'bows',
+      offhandWeaponId: 'daggers',
+      knownSkillIds: ['quickshot', 'mark_target'],
+      equippedSkillIds: ['quickshot', 'mark_target'],
+      autocastMap: { quickshot: true, mark_target: true },
+      skillCooldownsRemainingMs: {},
+      proficiencies: valerieProficiencies,
+      classLevels: { scout: 10 },
+      classStats: { scout: { level: 10, currentExp: 0 } },
+      unlockedClasses: ['scout'],
+      activeClass: 'scout',
+      bookLearnedSkills: [],
+      hunger: 100,
+      mood: 80,
+      state: 'idle'
+    };
+
+    this.partySnapshots = [heroSnapshot, valerieSnapshot];
+    this.snapshot.party = [heroSnapshot, valerieSnapshot];
 
     this.isInitialized = true;
-    console.log('[GameState] Initialized from player.json boot seed:', this.snapshot);
+    console.log('[GameState] Initialized from player.json boot seed with Hero & Valerie:', this.snapshot);
+  }
+
+  /**
+   * Milestone: The Real Game Start
+   * Creates a genuine blank-slate recruit (Level 0 in all proficiencies, unclassed, no skills)
+   * with only a chosen starting weapon kit.
+   */
+  public createBlankRecruitSnapshot(
+    name: string = 'Kaelen',
+    id: string = 'companion_2',
+    startingKitId: string = 'sword_and_shield',
+    rng: () => number = Math.random
+  ): CharacterSnapshot {
+    const resolvedKit = this.resolveStartingKit(startingKitId, rng);
+    const seedProficiencies: Record<string, TrainableStat> = {
+      [resolvedKit.mainWeaponId]: { level: 0, currentExp: 0 },
+      construction: { level: 0, currentExp: 0 },
+      fist: { level: 0, currentExp: 0 }
+    };
+    if (resolvedKit.offhandWeaponId) {
+      seedProficiencies[resolvedKit.offhandWeaponId] = { level: 0, currentExp: 0 };
+    }
+    if (resolvedKit.mainWeaponId) {
+      this.discoveredProficiencies.add(resolvedKit.mainWeaponId);
+    }
+    if (resolvedKit.offhandWeaponId) {
+      this.discoveredProficiencies.add(resolvedKit.offhandWeaponId);
+    }
+
+    const recruitSnapshot: CharacterSnapshot = {
+      id,
+      name,
+      avatarKey: 'companion-avatar',
+      avatarTextureKey: 'companion-avatar',
+      hp: 50,
+      criticalHp: 25,
+      energy: 100,
+      equippedWeaponId: resolvedKit.mainWeaponId,
+      offhandWeaponId: resolvedKit.offhandWeaponId,
+      knownSkillIds: [],
+      equippedSkillIds: [],
+      autocastMap: {},
+      skillCooldownsRemainingMs: {},
+      proficiencies: seedProficiencies,
+      classLevels: {},
+      classStats: {},
+      unlockedClasses: [],
+      activeClass: null,
+      bookLearnedSkills: [],
+      hunger: 100,
+      mood: 80,
+      state: 'idle'
+    };
+    return recruitSnapshot;
   }
 
   public getWood(): number {
@@ -279,6 +394,7 @@ export class GameState {
     if (this.snapshot) {
       this.snapshot.researchPoints = this.researchPoints;
     }
+    this.onResearchPointsChanged?.(this.researchPoints, amount);
   }
 
   public consumeResearchPoints(amount: number): boolean {
@@ -287,6 +403,7 @@ export class GameState {
       if (this.snapshot) {
         this.snapshot.researchPoints = this.researchPoints;
       }
+      this.onResearchPointsChanged?.(this.researchPoints, -amount);
       return true;
     }
     return false;
@@ -300,6 +417,9 @@ export class GameState {
     this.unlockedBuildables.add(buildableId);
     if (this.snapshot) {
       this.snapshot.unlockedBuildables = Array.from(this.unlockedBuildables);
+    }
+    if (this.isSafeZone && this.snapshot) {
+      this.saveToDisk();
     }
   }
 
@@ -315,6 +435,9 @@ export class GameState {
     this.completedResearchIds.add(researchId);
     if (this.snapshot) {
       this.snapshot.completedResearchIds = Array.from(this.completedResearchIds);
+    }
+    if (this.isSafeZone && this.snapshot) {
+      this.saveToDisk();
     }
   }
 
@@ -345,6 +468,17 @@ export class GameState {
 
   public getDayProgress(): number {
     return Math.min(1.0, this.dayProgressMs / this.dayDurationMs);
+  }
+
+  public getDayProgressMs(): number {
+    return this.dayProgressMs;
+  }
+
+  public setDayProgressMs(ms: number): void {
+    this.dayProgressMs = Math.max(0, ms);
+    if (this.snapshot) {
+      this.snapshot.dayProgressMs = this.dayProgressMs;
+    }
   }
 
   public getDayDurationMs(): number {
@@ -578,7 +712,8 @@ export class GameState {
       if (this.snapshot) {
         this.snapshot.discoveredCookingRecipes = Array.from(this.discoveredCookingRecipes);
       }
-      console.log(`[Cooking] ✨ Recipe permanently discovered: '${recipeId}'!`);
+      this.addResearchPoints(GameState.DISCOVERY_RP_BONUS);
+      console.log(`[Cooking] ✨ Recipe permanently discovered: '${recipeId}'! (+${GameState.DISCOVERY_RP_BONUS} RP)`);
       return true;
     }
     return false;
@@ -599,7 +734,8 @@ export class GameState {
       if (this.snapshot) {
         this.snapshot.discoveredAlchemyRecipes = Array.from(this.discoveredAlchemyRecipes);
       }
-      console.log(`[Alchemy] ✨ Recipe discovered: '${recipeId}'!`);
+      this.addResearchPoints(GameState.DISCOVERY_RP_BONUS);
+      console.log(`[Alchemy] ✨ Recipe discovered: '${recipeId}'! (+${GameState.DISCOVERY_RP_BONUS} RP)`);
       return true;
     }
     return false;
@@ -620,7 +756,8 @@ export class GameState {
       if (this.snapshot) {
         this.snapshot.encounteredEnemies = Array.from(this.encounteredEnemies);
       }
-      console.log(`[KnowledgeBase] 🐺 First encountered enemy: '${enemyId}'!`);
+      this.addResearchPoints(GameState.DISCOVERY_RP_BONUS);
+      console.log(`[KnowledgeBase] 🐺 First encountered enemy: '${enemyId}'! (+${GameState.DISCOVERY_RP_BONUS} RP)`);
       return true;
     }
     return false;
@@ -640,7 +777,8 @@ export class GameState {
       if (this.snapshot) {
         this.snapshot.discoveredProficiencies = Array.from(this.discoveredProficiencies);
       }
-      console.log(`[KnowledgeBase] ⚔️ Proficiency discovered: '${id}'!`);
+      this.addResearchPoints(GameState.DISCOVERY_RP_BONUS);
+      console.log(`[KnowledgeBase] ⚔️ Proficiency discovered: '${id}'! (+${GameState.DISCOVERY_RP_BONUS} RP)`);
       return true;
     }
     return false;
@@ -660,7 +798,8 @@ export class GameState {
       if (this.snapshot) {
         this.snapshot.discoveredStatusEffects = Array.from(this.discoveredStatusEffects);
       }
-      console.log(`[KnowledgeBase] 🧪 Status effect discovered: '${id}'!`);
+      this.addResearchPoints(GameState.DISCOVERY_RP_BONUS);
+      console.log(`[KnowledgeBase] 🧪 Status effect discovered: '${id}'! (+${GameState.DISCOVERY_RP_BONUS} RP)`);
       return true;
     }
     return false;
@@ -680,7 +819,8 @@ export class GameState {
       if (this.snapshot) {
         this.snapshot.discoveredGatheringNodes = Array.from(this.discoveredGatheringNodes);
       }
-      console.log(`[KnowledgeBase] 🪵 Gathering node discovered: '${id}'!`);
+      this.addResearchPoints(GameState.DISCOVERY_RP_BONUS);
+      console.log(`[KnowledgeBase] 🪵 Gathering node discovered: '${id}'! (+${GameState.DISCOVERY_RP_BONUS} RP)`);
       return true;
     }
     return false;
@@ -915,6 +1055,9 @@ export class GameState {
     if (this.snapshot) {
       this.snapshot.placedBuildables = [...this.placedBuildables];
     }
+    if (this.isSafeZone && this.snapshot) {
+      this.saveToDisk();
+    }
   }
 
   public removePlacedBuildable(x: number, y: number): PlacedBuildable | undefined {
@@ -923,6 +1066,9 @@ export class GameState {
       const removed = this.placedBuildables.splice(idx, 1)[0];
       if (this.snapshot) {
         this.snapshot.placedBuildables = [...this.placedBuildables];
+      }
+      if (this.isSafeZone && this.snapshot) {
+        this.saveToDisk();
       }
       return removed;
     }
@@ -981,11 +1127,13 @@ export class GameState {
         placedBuildables: [...this.placedBuildables],
         researchPoints: this.researchPoints,
         unlockedBuildables: Array.from(this.unlockedBuildables),
+        completedResearchIds: Array.from(this.completedResearchIds),
         inventory: Object.fromEntries(this.inventory),
         bookLearnedSkills: leader.bookLearnedSkills ? [...leader.bookLearnedSkills] : [],
         hunger: leader.hunger,
         mood: leader.mood,
         currentGameDay: this.currentGameDay,
+        dayProgressMs: this.dayProgressMs,
         foodItems: [...this.foodItems],
         equippedWeaponId: leader.equippedWeaponId,
         offhandWeaponId: leader.offhandWeaponId,
@@ -995,7 +1143,14 @@ export class GameState {
         equippedRingId: leader.equippedRingId,
         equippedAccessoryId: leader.equippedAccessoryId,
         party: [...this.partySnapshots],
-        dungeonFloorCount: this.dungeonFloorCount
+        discoveredCookingRecipes: Array.from(this.discoveredCookingRecipes),
+        discoveredAlchemyRecipes: Array.from(this.discoveredAlchemyRecipes),
+        dungeonFloorCount: this.dungeonFloorCount,
+        lifetimeDungeonFloorCount: this.lifetimeDungeonFloorCount,
+        encounteredEnemies: Array.from(this.encounteredEnemies),
+        discoveredProficiencies: Array.from(this.discoveredProficiencies),
+        discoveredStatusEffects: Array.from(this.discoveredStatusEffects),
+        discoveredGatheringNodes: Array.from(this.discoveredGatheringNodes)
       };
     }
     console.log(
@@ -1060,11 +1215,13 @@ export class GameState {
       placedBuildables: [...this.placedBuildables],
       researchPoints: this.researchPoints,
       unlockedBuildables: Array.from(this.unlockedBuildables),
+      completedResearchIds: Array.from(this.completedResearchIds),
       inventory: Object.fromEntries(this.inventory),
       bookLearnedSkills: Array.from(player.bookLearnedSkills),
       hunger: player.hunger,
       mood: player.mood,
       currentGameDay: this.currentGameDay,
+      dayProgressMs: this.dayProgressMs,
       foodItems: [...this.foodItems],
       equippedWeaponId: player.equippedWeapon.id,
       offhandWeaponId: player.offhandWeapon?.id ?? null,
@@ -1077,6 +1234,7 @@ export class GameState {
       discoveredCookingRecipes: Array.from(this.discoveredCookingRecipes),
       discoveredAlchemyRecipes: Array.from(this.discoveredAlchemyRecipes),
       dungeonFloorCount: this.dungeonFloorCount,
+      lifetimeDungeonFloorCount: this.lifetimeDungeonFloorCount,
       encounteredEnemies: Array.from(this.encounteredEnemies),
       discoveredProficiencies: Array.from(this.discoveredProficiencies),
       discoveredStatusEffects: Array.from(this.discoveredStatusEffects),
@@ -1136,6 +1294,9 @@ export class GameState {
     if (snap.unlockedBuildables) {
       this.unlockedBuildables = new Set(snap.unlockedBuildables);
     }
+    if (snap.completedResearchIds) {
+      this.completedResearchIds = new Set(snap.completedResearchIds);
+    }
     if (snap.inventory) {
       this.inventory.clear();
       for (const [k, v] of Object.entries(snap.inventory)) {
@@ -1154,6 +1315,9 @@ export class GameState {
     }
     if (snap.currentGameDay !== undefined) {
       this.currentGameDay = snap.currentGameDay;
+    }
+    if (snap.dayProgressMs !== undefined) {
+      this.dayProgressMs = snap.dayProgressMs;
     }
     if (snap.foodItems) {
       this.foodItems = [...snap.foodItems];
@@ -1179,6 +1343,9 @@ export class GameState {
     }
     if (snap.dungeonFloorCount !== undefined) {
       this.dungeonFloorCount = snap.dungeonFloorCount;
+    }
+    if (snap.lifetimeDungeonFloorCount !== undefined) {
+      this.lifetimeDungeonFloorCount = snap.lifetimeDungeonFloorCount;
     }
 
     player.autocastMap.clear();
@@ -1337,12 +1504,282 @@ export class GameState {
     }
   }
 
+  public setLifetimeDungeonFloorCount(count: number): void {
+    this.lifetimeDungeonFloorCount = Math.max(0, count);
+    if (this.snapshot) {
+      this.snapshot.lifetimeDungeonFloorCount = this.lifetimeDungeonFloorCount;
+    }
+  }
+
   public incrementDungeonFloorCount(): number {
     this.dungeonFloorCount++;
     this.lifetimeDungeonFloorCount++;
     if (this.snapshot) {
       this.snapshot.dungeonFloorCount = this.dungeonFloorCount;
+      this.snapshot.lifetimeDungeonFloorCount = this.lifetimeDungeonFloorCount;
     }
     return this.dungeonFloorCount;
+  }
+
+  // --- Client-Side Persistence System (Milestone: Persistent Saves) ---
+  public getStorage(): Storage | null {
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        return window.localStorage;
+      }
+      if (typeof localStorage !== 'undefined') {
+        return localStorage;
+      }
+    } catch {
+      return null;
+    }
+    return null;
+  }
+
+  public isStorageAvailable(): boolean {
+    try {
+      const storage = this.getStorage();
+      if (!storage) return false;
+      const testKey = '__rpg_storage_probe__';
+      storage.setItem(testKey, testKey);
+      storage.removeItem(testKey);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  public getLastSaveError(): string | null {
+    return this.lastSaveError;
+  }
+
+  public hasSave(): boolean {
+    return this.getSaveMetadata() !== null;
+  }
+
+  public getSaveMetadata(): SaveMetadata | null {
+    try {
+      const storage = this.getStorage();
+      if (!storage) return null;
+      const raw = storage.getItem(GameState.SAVE_STORAGE_KEY);
+      if (!raw) return null;
+      const saveFile = JSON.parse(raw) as GameSaveFile;
+      return saveFile?.metadata ?? null;
+    } catch {
+      return null;
+    }
+  }
+
+  public getTutorialState(): { step: number; completed: boolean; dismissed: boolean } {
+    return {
+      step: this.tutorialStep,
+      completed: this.tutorialCompleted,
+      dismissed: this.tutorialDismissed
+    };
+  }
+
+  public setTutorialState(state: { step?: number; completed?: boolean; dismissed?: boolean }): void {
+    if (typeof state.step === 'number') this.tutorialStep = state.step;
+    if (typeof state.completed === 'boolean') this.tutorialCompleted = state.completed;
+    if (typeof state.dismissed === 'boolean') this.tutorialDismissed = state.dismissed;
+  }
+
+  public saveToDisk(): boolean {
+    this.lastSaveError = null;
+    try {
+      const storage = this.getStorage();
+      if (!storage) {
+        throw new Error('Browser localStorage is not available or blocked.');
+      }
+
+      if (!this.snapshot) {
+        throw new Error('No GameState snapshot available to persist.');
+      }
+
+      // Synchronize latest Outpost-state into snapshot before saving
+      this.snapshot.resources = { ...this.resources };
+      this.snapshot.placedBuildables = [...this.placedBuildables];
+      this.snapshot.researchPoints = this.researchPoints;
+      this.snapshot.unlockedBuildables = Array.from(this.unlockedBuildables);
+      this.snapshot.completedResearchIds = Array.from(this.completedResearchIds);
+      this.snapshot.inventory = Object.fromEntries(this.inventory);
+      this.snapshot.bookLearnedSkills = Array.from(this.bookLearnedSkills);
+      this.snapshot.currentGameDay = this.currentGameDay;
+      this.snapshot.dayProgressMs = this.dayProgressMs;
+      this.snapshot.foodItems = [...this.foodItems];
+      this.snapshot.party = [...this.partySnapshots];
+      this.snapshot.discoveredCookingRecipes = Array.from(this.discoveredCookingRecipes);
+      this.snapshot.discoveredAlchemyRecipes = Array.from(this.discoveredAlchemyRecipes);
+      this.snapshot.dungeonFloorCount = this.dungeonFloorCount;
+      this.snapshot.lifetimeDungeonFloorCount = this.lifetimeDungeonFloorCount;
+      this.snapshot.encounteredEnemies = Array.from(this.encounteredEnemies);
+      this.snapshot.discoveredProficiencies = Array.from(this.discoveredProficiencies);
+      this.snapshot.discoveredStatusEffects = Array.from(this.discoveredStatusEffects);
+      this.snapshot.discoveredGatheringNodes = Array.from(this.discoveredGatheringNodes);
+      this.snapshot.tutorialStep = this.tutorialStep;
+      this.snapshot.tutorialCompleted = this.tutorialCompleted;
+      this.snapshot.tutorialDismissed = this.tutorialDismissed;
+
+      const leader = this.partySnapshots[0];
+      const metadata: SaveMetadata = {
+        leaderName: leader?.name || 'Hero',
+        gameDay: this.currentGameDay,
+        partySize: this.partySnapshots.length,
+        researchPoints: this.researchPoints,
+        wood: this.getWood(),
+        ore: this.getOre(),
+        saveTime: Date.now(),
+        saveVersion: GameState.SAVE_VERSION
+      };
+
+      const saveFile: GameSaveFile = {
+        version: GameState.SAVE_VERSION,
+        savedAt: Date.now(),
+        metadata,
+        snapshot: this.snapshot
+      };
+
+      const serialized = JSON.stringify(saveFile);
+      storage.setItem(GameState.SAVE_STORAGE_KEY, serialized);
+      console.log(
+        `%c[GameState] 💾 Checkpoint persisted to storage (Day ${metadata.gameDay}, ${metadata.partySize} members, ${serialized.length} bytes)`,
+        'color: #10b981; font-weight: bold;'
+      );
+      return true;
+    } catch (err: any) {
+      const errMsg = err?.message || 'Storage quota exceeded or storage disabled';
+      this.lastSaveError = errMsg;
+      console.error('[GameState] ❌ Failed to persist save to disk:', err);
+      this.onSaveFailedCallback?.(errMsg);
+      return false;
+    }
+  }
+
+  public loadFromDisk(): boolean {
+    this.lastSaveError = null;
+    try {
+      const storage = this.getStorage();
+      if (!storage) {
+        throw new Error('Browser localStorage is not available or blocked.');
+      }
+      const raw = storage.getItem(GameState.SAVE_STORAGE_KEY);
+      if (!raw) {
+        console.warn('[GameState] No save data found in storage to load.');
+        return false;
+      }
+      const saveFile = JSON.parse(raw) as GameSaveFile;
+      if (!saveFile || !saveFile.snapshot) {
+        throw new Error('Save file is malformed or missing snapshot.');
+      }
+      this.restoreFromLoadedSnapshot(saveFile.snapshot);
+      console.log(
+        `%c[GameState] 📂 Successfully loaded save from storage (Day ${saveFile.metadata?.gameDay ?? this.currentGameDay}, Leader: ${saveFile.metadata?.leaderName ?? 'Hero'})`,
+        'color: #38bdf8; font-weight: bold;'
+      );
+      return true;
+    } catch (err: any) {
+      const errMsg = err?.message || 'Failed to load save from storage';
+      this.lastSaveError = errMsg;
+      console.error('[GameState] ❌ Failed to load save from disk:', err);
+      return false;
+    }
+  }
+
+  public restoreFromLoadedSnapshot(snap: PlayerSnapshot): void {
+    this.snapshot = snap;
+    this.partySnapshots = snap.party ? [...snap.party] : [];
+
+    this.resources = {
+      ...(snap.resources ?? {}),
+      wood: snap.resources?.wood ?? 0,
+      ore: (snap.resources as any)?.ore ?? 0
+    };
+
+    this.placedBuildables = snap.placedBuildables ? JSON.parse(JSON.stringify(snap.placedBuildables)) : [];
+    this.researchPoints = snap.researchPoints ?? 0;
+    this.unlockedBuildables = new Set(snap.unlockedBuildables ?? ['floor', 'wall', 'door', 'bed', 'research_station']);
+    this.completedResearchIds = new Set(snap.completedResearchIds ?? []);
+
+    this.inventory.clear();
+    if (snap.inventory) {
+      for (const [k, v] of Object.entries(snap.inventory)) {
+        this.inventory.set(k, v);
+      }
+    }
+    if (this.resources.wood > 0) {
+      this.inventory.set('wood', this.resources.wood);
+    }
+    if (this.resources.ore > 0) {
+      this.inventory.set('ore', this.resources.ore);
+    }
+
+    this.bookLearnedSkills = new Set(snap.bookLearnedSkills ?? []);
+    this.discoveredCookingRecipes = new Set(snap.discoveredCookingRecipes ?? []);
+    this.discoveredAlchemyRecipes = new Set(snap.discoveredAlchemyRecipes ?? ['bandage', 'antidote', 'energy_potion', 'escape_stone']);
+    this.encounteredEnemies = new Set(snap.encounteredEnemies ?? []);
+    this.discoveredProficiencies = new Set(snap.discoveredProficiencies ?? []);
+    this.discoveredStatusEffects = new Set(snap.discoveredStatusEffects ?? []);
+    this.discoveredGatheringNodes = new Set(snap.discoveredGatheringNodes ?? []);
+
+    this.tutorialStep = snap.tutorialStep ?? 0;
+    this.tutorialCompleted = snap.tutorialCompleted ?? false;
+    this.tutorialDismissed = snap.tutorialDismissed ?? false;
+
+    this.currentGameDay = snap.currentGameDay ?? 1;
+    this.dayProgressMs = snap.dayProgressMs ?? 0;
+    this.foodItems = snap.foodItems ? [...snap.foodItems] : [];
+    this.dungeonFloorCount = snap.dungeonFloorCount ?? 0;
+    this.lifetimeDungeonFloorCount = snap.lifetimeDungeonFloorCount ?? 0;
+
+    this.syncFoodInventory();
+    this.isInitialized = true;
+  }
+
+  public clearSave(): boolean {
+    try {
+      const storage = this.getStorage();
+      if (storage) {
+        storage.removeItem(GameState.SAVE_STORAGE_KEY);
+      }
+      this.lastSaveError = null;
+      console.log('%c[GameState] 🗑️ Saved game deleted from storage.', 'color: #f59e0b; font-weight: bold;');
+      return true;
+    } catch (err: any) {
+      console.error('[GameState] ❌ Failed to clear save from disk:', err);
+      return false;
+    }
+  }
+
+  public resetToDefault(playerData?: PlayerData, startingKitId?: string): void {
+    this.snapshot = null;
+    this.partySnapshots = [];
+    this.isInitialized = false;
+    this.resources = { wood: 100, ore: 0 };
+    this.placedBuildables = [];
+    this.researchPoints = 0;
+    this.unlockedBuildables = new Set(['floor', 'wall', 'door', 'bed', 'research_station']);
+    this.completedResearchIds = new Set();
+    this.inventory.clear();
+    this.bookLearnedSkills = new Set();
+    this.discoveredCookingRecipes = new Set();
+    this.discoveredAlchemyRecipes = new Set(['bandage', 'antidote', 'energy_potion', 'escape_stone']);
+    this.encounteredEnemies = new Set();
+    this.discoveredProficiencies = new Set();
+    this.discoveredStatusEffects = new Set();
+    this.discoveredGatheringNodes = new Set();
+    this.tutorialStep = 0;
+    this.tutorialCompleted = false;
+    this.tutorialDismissed = false;
+    this.currentGameDay = 1;
+    this.dayProgressMs = 0;
+    this.foodItems = [];
+    this.dungeonFloorCount = 0;
+    this.lifetimeDungeonFloorCount = 0;
+    this.lastSaveError = null;
+
+    const data = playerData || DataLoader.getInstance().getPlayer();
+    if (data) {
+      this.initFromPlayerData(data, startingKitId);
+    }
   }
 }

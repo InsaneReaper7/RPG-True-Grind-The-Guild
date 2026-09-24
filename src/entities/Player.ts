@@ -861,6 +861,7 @@ export class Player extends Entity {
     const mainWeapon = dataLoader.getWeapon(normalizedWeaponId);
     if (mainWeapon) {
       this.equippedWeapon = mainWeapon;
+      this.attackRangeTiles = mainWeapon.attackRangeTiles ?? ((mainWeapon.category === 'magic' && mainWeapon.baseDamage > 0) || mainWeapon.category === 'ranged' ? 4 : 1);
     }
 
     if (snapshot.offhandWeaponId) {

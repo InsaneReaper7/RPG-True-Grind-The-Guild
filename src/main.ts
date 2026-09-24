@@ -2,8 +2,10 @@ import Phaser from 'phaser';
 import { DataLoader } from './utils/DataLoader';
 import { GameState } from './systems/GameState';
 import { ResearchSystem } from './systems/ResearchSystem';
+import { TutorialSystem } from './systems/TutorialSystem';
 import { MainScene } from './scenes/MainScene';
 import { OutpostScene } from './scenes/OutpostScene';
+import { HUD } from './ui/HUD';
 
 async function bootstrap() {
   // Load JSON schemas first
@@ -32,6 +34,31 @@ async function bootstrap() {
   (window as any).GameState = GameState;
   (window as any).DataLoader = DataLoader;
   (window as any).ResearchSystem = ResearchSystem;
+  (window as any).TutorialSystem = TutorialSystem;
+
+  // Window helpers for persistent saves
+  (window as any).hasSavedGame = () => GameState.getInstance().hasSave();
+  (window as any).continueGame = () => {
+    if ((HUD as any).activeInstance) {
+      (HUD as any).activeInstance.handleTitleContinue();
+    } else {
+      GameState.getInstance().loadFromDisk();
+    }
+  };
+  (window as any).startNewGame = (confirmed: boolean = true) => {
+    if ((HUD as any).activeInstance) {
+      (HUD as any).activeInstance.handleTitleNewGame(confirmed);
+    } else {
+      GameState.getInstance().resetToDefault(dataLoader.getPlayer());
+    }
+  };
+  (window as any).resetSave = () => {
+    if ((HUD as any).activeInstance) {
+      (HUD as any).activeInstance.handleResetSave();
+    } else {
+      GameState.getInstance().clearSave();
+    }
+  };
 
   window.addEventListener('resize', () => {
     game.scale.refresh();

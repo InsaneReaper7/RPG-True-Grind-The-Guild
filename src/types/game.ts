@@ -22,6 +22,7 @@ export interface WeaponLevelBonus {
   slowChancePerLevel?: number;
   radianceHealPerLevel?: number;
   curseChancePerLevel?: number;
+  manaSiphonPerLevel?: number;
 }
 
 export interface WeaponDef {
@@ -37,6 +38,7 @@ export interface WeaponDef {
   shockChance?: number;
   slowChance?: number;
   curseChance?: number;
+  manaSiphonAmount?: number;
   radianceHealAmount?: number;
   chainTargets?: number;
   chainHopRangeTiles?: number;
@@ -155,6 +157,7 @@ export interface EnemyDef {
   harvest: HarvestItem[];
   corpseHarvest?: CorpseHarvestDef;
   poisonChance?: number;
+  researchPoints?: number | { min: number; max: number };
 }
 
 export interface EnemiesData {
@@ -320,10 +323,33 @@ export interface PlayerSnapshot {
   discoveredCookingRecipes?: string[];
   discoveredAlchemyRecipes?: string[];
   dungeonFloorCount?: number;
+  lifetimeDungeonFloorCount?: number;
+  dayProgressMs?: number;
   encounteredEnemies?: string[];
   discoveredProficiencies?: string[];
   discoveredStatusEffects?: string[];
   discoveredGatheringNodes?: string[];
+  tutorialStep?: number;
+  tutorialCompleted?: boolean;
+  tutorialDismissed?: boolean;
+}
+
+export interface SaveMetadata {
+  leaderName: string;
+  gameDay: number;
+  partySize: number;
+  researchPoints: number;
+  wood: number;
+  ore: number;
+  saveTime: number;
+  saveVersion: number;
+}
+
+export interface GameSaveFile {
+  version: number;
+  savedAt: number;
+  metadata: SaveMetadata;
+  snapshot: PlayerSnapshot;
 }
 
 export type KnowledgeBaseTab =
@@ -507,6 +533,9 @@ export interface SkillDef {
   stunChance?: number;
   reflectPercent?: number;
   distanceBonusMultiplier?: number;
+  damageToEnergyPercent?: number;
+  spellDamageMultiplier?: number;
+  spellEnergyCostMultiplier?: number;
 }
 
 export interface SkillsData {
@@ -533,6 +562,9 @@ export interface StatusEffectDef {
   evasionBonus?: number;
   accuracyReduction?: number;
   reflectPercent?: number;
+  damageToEnergyPercent?: number;
+  spellDamageMultiplier?: number;
+  spellEnergyCostMultiplier?: number;
   persistent?: boolean;
 }
 

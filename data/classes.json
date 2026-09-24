@@ -385,6 +385,18 @@
       "hiddenSkillBonuses": {
         "energy_regen": 0.05
       }
+    },
+    {
+      "id": "arcane_initiate",
+      "name": "Arcane Initiate",
+      "tier": "novice",
+      "requirements": [
+        { "type": "proficiency", "target": "arcane_magic", "value": 10 }
+      ],
+      "fantasy": "First spark of raw magic",
+      "hiddenSkillBonuses": {
+        "mana_regen": 0.05
+      }
     }
   ]
 }

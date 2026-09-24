@@ -98,6 +98,7 @@ export class ProgressionSystem {
     this.proficiencies.set('ice_magic', { level: 0, currentExp: 0 });
     this.proficiencies.set('holy_magic', { level: 0, currentExp: 0 });
     this.proficiencies.set('dark_magic', { level: 0, currentExp: 0 });
+    this.proficiencies.set('arcane_magic', { level: 0, currentExp: 0 });
     this.proficiencies.set('dual_wielding', { level: 0, currentExp: 0 });
     this.proficiencies.set('construction', { level: 0, currentExp: 0 });
     this.proficiencies.set('alchemy', { level: 0, currentExp: 0 });

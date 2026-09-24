@@ -11,9 +11,10 @@ import { ProgressionSystem } from '../systems/ProgressionSystem';
 import { HUD } from '../ui/HUD';
 import { GameState } from '../systems/GameState';
 import { ResearchSystem } from '../systems/ResearchSystem';
-import { GridPos, EnemyDef, GeneratedDungeon, DungeonRoom, GatheringNodeDef } from '../types/game';
+import { GridPos, EnemyDef, GeneratedDungeon, DungeonRoom, GatheringNodeDef, CharacterSnapshot, TrainableStat } from '../types/game';
 import { HiddenSkillSystem } from '../systems/HiddenSkillSystem';
 import { TileClaimDebugOverlay } from '../ui/TileClaimDebugOverlay';
+import { TutorialSystem } from '../systems/TutorialSystem';
 
 export interface GatheringNode {
   x: number;
@@ -103,6 +104,7 @@ export class MainScene extends Phaser.Scene {
   private crystalSprite!: Phaser.GameObjects.Sprite;
   private crystalPos: GridPos = { x: 0, y: 0 };
   private isTransitioning: boolean = false;
+  private isWiping: boolean = false;
 
   private wasdKeys!: {
     W: Phaser.Input.Keyboard.Key;
@@ -111,7 +113,6 @@ export class MainScene extends Phaser.Scene {
     D: Phaser.Input.Keyboard.Key;
     SPACE: Phaser.Input.Keyboard.Key;
   };
-  private rKey!: Phaser.Input.Keyboard.Key;
   private xKey!: Phaser.Input.Keyboard.Key;
   private zKey!: Phaser.Input.Keyboard.Key;
   private cKey!: Phaser.Input.Keyboard.Key;
@@ -295,6 +296,21 @@ export class MainScene extends Phaser.Scene {
     const prevRegion = prevFloor >= 1 ? dataLoader.getRegionForFloor(prevFloor) : null;
     if (!prevRegion || prevRegion.id !== activeRegion.id) {
       this.hud.showToast(`🌌 Entering ${activeRegion.name} (Floor ${floorNumber}) — ${activeRegion.tagline || 'New Biome'}`, 'info', 4000);
+    }
+
+    // Milestone: Tutorial & Onboarding
+    const tut = TutorialSystem.getInstance();
+    const tutState = GameState.getInstance().getTutorialState();
+    tut.loadFromState(tutState.step, tutState.completed, tutState.dismissed);
+    this.hud?.renderGuildGuide(tut.getCurrentStep());
+
+    if (tut.getCurrentStep()?.id === 'first_expedition') {
+      tut.completeStepId('first_expedition');
+    }
+    if (tut.getCurrentStep()?.id === 'basic_combat') {
+      this.time.delayedCall(1200, () => {
+        this.hud?.showToast('🏹 Valerie: "We are in Dungeon Floor 1. Stay in formation! Left-click an enemy to attack. Skills autocast on cooldown. Downed allies carry zero wipe penalty."', 'info', 7500);
+      });
     }
 
     // Milestone 25: Wire HUD party portrait selection handler
@@ -482,7 +498,7 @@ export class MainScene extends Phaser.Scene {
     (window as any).__toggleTileClaimOverlay = () => this.tileClaimOverlay.toggle();
     (window as any).__scene = this;
 
-    // Input Controls: WASD, Space, R, K, X, Z, C, P, T
+    // Input Controls: WASD, Space, X, Z, C, H, G, 1-4
     if (this.input.keyboard) {
       this.wasdKeys = {
         W: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W),
@@ -491,7 +507,6 @@ export class MainScene extends Phaser.Scene {
         D: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D),
         SPACE: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE)
       };
-      this.rKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.R);
       this.xKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.X);
       this.zKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.Z);
       this.cKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.C);
@@ -511,6 +526,8 @@ export class MainScene extends Phaser.Scene {
     // Expose debug helpers on window for browser console testing
     (window as any).GameState = GameState;
     (window as any).__dealDebugDamage = (amount: number = 5) => this.dealDebugDamageToEnemy(amount);
+    (window as any).__instantReviveParty = () => this.debugInstantReviveParty();
+    (window as any).__triggerPartyWipe = () => this.handlePartyWipe();
     (window as any).__toggleGatheringMode = (force?: boolean) => this.toggleGatheringMode(force);
     (window as any).__startGatheringQueue = (nodes: GatheringNode[]) => this.startGatheringQueue(nodes);
     (window as any).__getGatheringQueue = () => ({
@@ -1408,14 +1425,14 @@ export class MainScene extends Phaser.Scene {
     return targetPos;
   }
 
-  public spawnTestCompanion(): boolean {
+  public spawnTestCompanion(startingKitId?: string): boolean {
     if (this.party.length >= 4) {
       this.hud.showToast('Party is full (maximum 4 members)', 'warn', 3000);
       return false;
     }
     const dataLoader = DataLoader.getInstance();
     const playerData = dataLoader.getPlayer();
-    const daggerWeapon = dataLoader.getWeapon('daggers') || dataLoader.getWeapon(playerData.startingWeaponId)!;
+    const classesData = dataLoader.getClassesData();
     const companionIndex = this.party.length;
     const companionId = `companion_${companionIndex}`;
     const companionName = companionIndex === 1 ? 'Valerie' : companionIndex === 2 ? 'Kaelen' : 'Barris';
@@ -1439,18 +1456,57 @@ export class MainScene extends Phaser.Scene {
     const spawnX = spawnTile.x;
     const spawnY = spawnTile.y;
 
-    const companionProgression = new ProgressionSystem(dataLoader.getClassesData(), companionName);
+    let snap: CharacterSnapshot;
+    if (companionIndex === 1) {
+      const valerieProficiencies: Record<string, TrainableStat> = {
+        daggers: { level: 10, currentExp: 0 },
+        bows: { level: 15, currentExp: 0 },
+        construction: { level: 0, currentExp: 0 },
+        fist: { level: 0, currentExp: 0 }
+      };
+      snap = {
+        id: companionId,
+        name: 'Valerie',
+        avatarKey: 'companion-avatar',
+        avatarTextureKey: 'companion-avatar',
+        hp: 50,
+        criticalHp: 25,
+        energy: 100,
+        equippedWeaponId: 'bows',
+        offhandWeaponId: 'daggers',
+        knownSkillIds: ['quickshot', 'mark_target'],
+        equippedSkillIds: ['quickshot', 'mark_target'],
+        autocastMap: { quickshot: true, mark_target: true },
+        skillCooldownsRemainingMs: {},
+        proficiencies: valerieProficiencies,
+        classLevels: { scout: 10 },
+        classStats: { scout: { level: 10, currentExp: 0 } },
+        unlockedClasses: ['scout'],
+        activeClass: 'scout',
+        bookLearnedSkills: [],
+        hunger: 100,
+        mood: 80,
+        state: 'idle'
+      };
+    } else {
+      const kit = startingKitId || (companionIndex === 2 ? 'sword_and_shield' : 'mace');
+      snap = GameState.getInstance().createBlankRecruitSnapshot(companionName, companionId, kit);
+    }
+
+    const companionProgression = new ProgressionSystem(classesData, companionName);
     this.bindProgressionEvents(companionProgression, companionName);
+    const mainWeapon = dataLoader.getWeapon(snap.equippedWeaponId) || dataLoader.getWeapon('daggers')!;
     const companion = new Player(
       this,
       spawnX,
       spawnY,
       playerData,
-      daggerWeapon,
+      mainWeapon,
       this.tileSize,
       'companion-avatar',
       companionProgression
     );
+    companion.restoreFromSnapshot(snap, this.time.now);
     companion.id = companionId;
     companion.entityName = companionName;
     companionProgression.ownerName = companionName;
@@ -1463,7 +1519,7 @@ export class MainScene extends Phaser.Scene {
     }
     this.syncSelectionWithHud();
     this.hud.showToast(`👥 ${companionName} joined the party!`, 'success', 3000);
-    console.log(`[MainScene] Spawned companion ${companionName} at (${spawnX}, ${spawnY}) with ${daggerWeapon.name}`);
+    console.log(`[MainScene] Spawned companion ${companionName} at (${spawnX}, ${spawnY}) with ${mainWeapon.name}`);
     return true;
   }
 
@@ -1628,13 +1684,82 @@ export class MainScene extends Phaser.Scene {
     this.isTransitioning = true;
 
     console.log('[MainScene] Returning from Dungeon -> Transitioning to OutpostScene');
-    // Save live party snapshot and legacy player snapshot
     GameState.getInstance().savePartySnapshot(this.party, this.time.now);
     GameState.getInstance().saveSnapshot(this.player, this.progressionSystem, this.time.now);
     GameState.getInstance().resetDungeonFloorCount();
+    GameState.getInstance().saveToDisk();
+    TutorialSystem.getInstance().completeStepId('return_outpost');
 
     // Switch active scene to OutpostScene
     this.scene.start('OutpostScene');
+  }
+
+  public handlePartyWipe(): void {
+    if (this.isWiping || this.isTransitioning) return;
+    this.isWiping = true;
+    this.isTransitioning = true;
+
+    console.log('%c[Party Wipe] ☠️ FULL PARTY WIPED! Teleporting back to Guild Outpost...', 'color: #ef4444; font-weight: bold; font-size: 14px;');
+    if (this.hud) {
+      this.hud.showToast('☠️ Party wiped! Returning to Outpost...', 'error', 3500);
+    }
+
+    // Disengage enemies and clear highlights
+    if (this.enemies) {
+      for (const enemy of this.enemies) {
+        enemy.targetEntity = null;
+        enemy.isAggroed = false;
+      }
+    }
+    this.clearMoveDestinationHighlights();
+
+    const finishWipe = () => {
+      // Clean, no-punishment recovery: restore all party members to conscious, working state
+      for (const member of this.party) {
+        if (member.state === 'downed') {
+          member.hp = Math.max(1, Math.floor(member.maxHp * 0.5));
+          member.criticalHp = member.maxCriticalHp;
+          member.state = 'idle';
+          member.claimedDestination = null;
+          member.clearTarget();
+          if (member.avatarSprite) {
+            member.avatarSprite.setAngle(0);
+            member.avatarSprite.setAlpha(1);
+          }
+          member.hideReviveIcon();
+        }
+      }
+
+      const sceneTime = this.time ? this.time.now : 0;
+      // Checkpoint and save state to disk
+      GameState.getInstance().savePartySnapshot(this.party, sceneTime);
+      GameState.getInstance().saveSnapshot(this.player, this.progressionSystem, sceneTime);
+      GameState.getInstance().resetDungeonFloorCount();
+      GameState.getInstance().saveToDisk();
+      TutorialSystem.getInstance().completeStepId('return_outpost');
+
+      // Transition back to Guild Outpost safe zone
+      if (this.scene && typeof this.scene.start === 'function') {
+        this.scene.start('OutpostScene');
+      }
+    };
+
+    if (this.time && typeof this.time.delayedCall === 'function') {
+      this.time.delayedCall(1200, finishWipe);
+    } else {
+      finishWipe();
+    }
+  }
+
+  public debugInstantReviveParty(): boolean {
+    let anyRevived = false;
+    for (const member of this.party) {
+      if (member.state === 'downed') {
+        member.revive(this.player);
+        anyRevived = true;
+      }
+    }
+    return anyRevived;
   }
 
   public useEscapeStone(): boolean {
@@ -1684,6 +1809,15 @@ export class MainScene extends Phaser.Scene {
   }
 
   public update(time: number, delta: number): void {
+    // Party Wipe Check: Full party downed -> teleport back to Outpost with no punishment
+    if (!this.isWiping && !this.isTransitioning && this.party.length > 0) {
+      const isPartyWiped = this.party.every((m) => m.state === 'downed');
+      if (isPartyWiped) {
+        this.handlePartyWipe();
+        return;
+      }
+    }
+
     // Milestone 34: Boss Encounter Room Trigger
     if (!this.bossEncounterAnnounced && this.dungeon && this.dungeon.rooms) {
       const bossRoom = this.dungeon.rooms.find((r) => r.type === 'boss');
@@ -1730,14 +1864,6 @@ export class MainScene extends Phaser.Scene {
           this.selectionReticleGraphics.strokeCircle(member.x, member.y + 10, 14);
           this.selectionReticleGraphics.lineStyle(1, 0x60a5fa, 0.4);
           this.selectionReticleGraphics.strokeCircle(member.x, member.y + 10, 17);
-        }
-      }
-    }
-    // Debug Revive key listener [R]
-    if (this.rKey && Phaser.Input.Keyboard.JustDown(this.rKey)) {
-      for (const member of this.party) {
-        if (member.state === 'downed') {
-          member.revive(this.player);
         }
       }
     }
@@ -2099,6 +2225,13 @@ export class MainScene extends Phaser.Scene {
     this.targetReticle.setVisible(false);
     deadEnemy.markDead();
     this.checkAndCreateCorpseGatheringNode(deadEnemy);
+
+    if (TutorialSystem.getInstance().getCurrentStep()?.id === 'basic_combat') {
+      TutorialSystem.getInstance().completeStepId('basic_combat');
+      this.time.delayedCall(1000, () => {
+        this.hud?.showToast('🏹 Valerie: "Enemy defeated! Genuinely cleared rooms are completely safe. Approach an Ore node or Tree and left-click to harvest."', 'info', 7000);
+      });
+    }
 
     if (this.debugAutoRespawnEnabled) {
       console.log(`[Combat] ${deadEnemy.entityName} defeated. [DEBUG AUTO-RESPAWN ACTIVE] Respawn scheduled in 3 seconds.`);
@@ -2709,6 +2842,13 @@ export class MainScene extends Phaser.Scene {
         GameState.getInstance().addItem('ore', awardedCount);
       } else {
         GameState.getInstance().addItem(awardedResourceId, awardedCount);
+      }
+
+      if (TutorialSystem.getInstance().getCurrentStep()?.id === 'safe_gathering') {
+        TutorialSystem.getInstance().completeStepId('safe_gathering');
+        this.time.delayedCall(1000, () => {
+          this.hud?.showToast('🏹 Valerie: "Great harvest! Monster kills and discoveries earn Research Points (RP), while nodes yield crafting materials. When you are ready, use the portal or Escape Stone [T] to return to base."', 'info', 7500);
+        });
       }
     }
 

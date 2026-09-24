@@ -7,11 +7,12 @@ import { Entity } from '../entities/Entity';
 import { ProgressionSystem } from '../systems/ProgressionSystem';
 import { HUD } from '../ui/HUD';
 import { GameState } from '../systems/GameState';
-import { GridPos, PlacedBuildable } from '../types/game';
+import { GridPos, PlacedBuildable, CharacterSnapshot, TrainableStat } from '../types/game';
 import { BuildingSystem } from '../systems/BuildingSystem';
 import { RoomClassifier, ClassifiedRoom } from '../systems/RoomClassifier';
 import { HiddenSkillSystem } from '../systems/HiddenSkillSystem';
 import { ActiveReviveChannel, ActiveMoveHighlight } from './MainScene';
+import { TutorialSystem } from '../systems/TutorialSystem';
 
 export class OutpostScene extends Phaser.Scene {
   private mapWidth: number = 20;
@@ -67,6 +68,7 @@ export class OutpostScene extends Phaser.Scene {
   private moveHighlightGraphics!: Phaser.GameObjects.Graphics;
   private moveHighlightTween: Phaser.Tweens.Tween | null = null;
   private moveHighlightTimer: Phaser.Time.TimerEvent | null = null;
+  private warnedAboutRecruit: boolean = false;
 
   constructor() {
     super({ key: 'OutpostScene' });
@@ -331,12 +333,6 @@ export class OutpostScene extends Phaser.Scene {
       rKey.on('down', () => {
         if (this.isBuildMode) {
           this.rotateBlueprint();
-        } else {
-          for (const member of this.party) {
-            if (member.state === 'downed') {
-              member.revive(this.player);
-            }
-          }
         }
       });
 
@@ -445,8 +441,11 @@ export class OutpostScene extends Phaser.Scene {
         console.log(`[Debug] Set Vanguard to Level ${level} and active on ${targetMember.entityName}`);
       }
     };
-    (window as any).__spawnTestCompanion = () => {
-      return this.spawnTestCompanion();
+    (window as any).__spawnTestCompanion = (startingKitId?: string) => {
+      return this.spawnTestCompanion(startingKitId);
+    };
+    (window as any).__summonThirdPartyMember = (startingKitId?: string) => {
+      return this.summonThirdPartyMember(startingKitId);
     };
     (window as any).__setPartyLeader = (idxOrName: number | string) => {
       let idx = -1;
@@ -484,6 +483,16 @@ export class OutpostScene extends Phaser.Scene {
         }
       }
     };
+    (window as any).__instantReviveParty = () => {
+      let anyRevived = false;
+      for (const member of this.party) {
+        if (member.state === 'downed') {
+          member.revive(this.player);
+          anyRevived = true;
+        }
+      }
+      return anyRevived;
+    };
     (window as any).__testHiddenProc = (skillId: string) => {
       const hiddenDef = DataLoader.getInstance().getHiddenSkill(skillId);
       if (!hiddenDef) {
@@ -501,6 +510,28 @@ export class OutpostScene extends Phaser.Scene {
       console.log(`[Debug] Tested proc for '${skillId}':`, result);
       return result;
     };
+
+    // Milestone: Persistent Saves — Checkpoint Outpost arrival state to storage (only when not at title screen)
+    if (!HUD.isTitleScreenOpen) {
+      GameState.getInstance().savePartySnapshot(this.party, this.time.now);
+      GameState.getInstance().saveSnapshot(this.player, this.progressionSystem, this.time.now);
+      GameState.getInstance().saveToDisk();
+    }
+
+    // Milestone: Tutorial & Onboarding — Sync tutorial state & mentor/return triggers
+    const tut = TutorialSystem.getInstance();
+    const tutState = GameState.getInstance().getTutorialState();
+    tut.loadFromState(tutState.step, tutState.completed, tutState.dismissed);
+    this.hud?.renderGuildGuide(tut.getCurrentStep());
+
+    if (tut.getCurrentStep()?.id === 'return_outpost') {
+      tut.completeStepId('return_outpost');
+      this.hud?.showToast('🏹 Valerie: "Welcome back to base. Now for the Outpost loop: open the Research Tree to unlock the Blacksmithing Station!"', 'info', 6500);
+    } else if (this.party.length === 2 && GameState.getInstance().getLifetimeDungeonFloorCount() === 0 && !HUD.isTitleScreenOpen) {
+      this.time.delayedCall(800, () => {
+        this.triggerMentorIntro();
+      });
+    }
 
     // Scroll Wheel Zoom
     this.input.on('wheel', (_pointer: Phaser.Input.Pointer, _gameObjects: unknown[], _deltaX: number, deltaY: number) => {
@@ -663,6 +694,11 @@ export class OutpostScene extends Phaser.Scene {
 
       // Normal Click-to-Move
       if (this.gridMatrix[clickedTileY]?.[clickedTileX] === 0) {
+        if (TutorialSystem.getInstance().getCurrentStep()?.id === 'movement') {
+          TutorialSystem.getInstance().completeStepId('movement');
+          this.hud?.showToast('🏹 Valerie: "Great movement! Now walk into the glowing portal in the center of the Outpost to enter Dungeon Floor 1."', 'info', 6500);
+        }
+
         for (const member of this.party) {
           member.clearTarget();
         }
@@ -886,6 +922,10 @@ export class OutpostScene extends Phaser.Scene {
     clickedTileY: number,
     claimed: Set<string>
   ): void {
+    if (TutorialSystem.getInstance().getCurrentStep()?.id === 'movement') {
+      TutorialSystem.getInstance().completeStepId('movement');
+      this.hud?.showToast('🏹 Valerie: "Great movement! Now walk into the glowing portal in the center of the Outpost to enter Dungeon Floor 1."', 'info', 6500);
+    }
     this.executePartyBlockMovement(clickedTileX, clickedTileY, claimed);
   }
 
@@ -1069,14 +1109,28 @@ export class OutpostScene extends Phaser.Scene {
     return targetPos;
   }
 
-  public spawnTestCompanion(): boolean {
+  public triggerMentorIntro(): void {
+    if (this.party.length >= 3) return;
+    this.hud?.showToast('🏹 Valerie: "Welcome to the Outpost. Everything we need is in the dungeon, but going in as a pair is reckless. Summon our third recruit from HQ before we step through!"', 'info', 7000);
+    this.hud?.openRecruitModal();
+  }
+
+  public summonThirdPartyMember(startingKitId: string = 'sword_and_shield'): boolean {
+    if (this.party.length >= 3) {
+      this.hud?.showToast('Third party member is already in the guild party.', 'info', 2500);
+      return false;
+    }
+    return this.spawnTestCompanion(startingKitId);
+  }
+
+  public spawnTestCompanion(startingKitId?: string): boolean {
     if (this.party.length >= 4) {
       this.hud.showToast('Party is full (maximum 4 members)', 'warn', 3000);
       return false;
     }
     const dataLoader = DataLoader.getInstance();
     const playerData = dataLoader.getPlayer();
-    const daggerWeapon = dataLoader.getWeapon('daggers') || dataLoader.getWeapon(playerData.startingWeaponId)!;
+    const classesData = dataLoader.getClassesData();
     const companionIndex = this.party.length;
     const companionId = `companion_${companionIndex}`;
     const companionName = companionIndex === 1 ? 'Valerie' : companionIndex === 2 ? 'Kaelen' : 'Barris';
@@ -1100,26 +1154,75 @@ export class OutpostScene extends Phaser.Scene {
     const spawnX = spawnTile.x;
     const spawnY = spawnTile.y;
 
-    const companionProgression = new ProgressionSystem(dataLoader.getClassesData(), companionName);
+    let snap: CharacterSnapshot;
+    if (companionIndex === 1) {
+      const valerieProficiencies: Record<string, TrainableStat> = {
+        daggers: { level: 10, currentExp: 0 },
+        bows: { level: 15, currentExp: 0 },
+        construction: { level: 0, currentExp: 0 },
+        fist: { level: 0, currentExp: 0 }
+      };
+      snap = {
+        id: companionId,
+        name: 'Valerie',
+        avatarKey: 'companion-avatar',
+        avatarTextureKey: 'companion-avatar',
+        hp: 50,
+        criticalHp: 25,
+        energy: 100,
+        equippedWeaponId: 'bows',
+        offhandWeaponId: 'daggers',
+        knownSkillIds: ['quickshot', 'mark_target'],
+        equippedSkillIds: ['quickshot', 'mark_target'],
+        autocastMap: { quickshot: true, mark_target: true },
+        skillCooldownsRemainingMs: {},
+        proficiencies: valerieProficiencies,
+        classLevels: { scout: 10 },
+        classStats: { scout: { level: 10, currentExp: 0 } },
+        unlockedClasses: ['scout'],
+        activeClass: 'scout',
+        bookLearnedSkills: [],
+        hunger: 100,
+        mood: 80,
+        state: 'idle'
+      };
+    } else {
+      const kit = startingKitId || (companionIndex === 2 ? 'sword_and_shield' : 'mace');
+      snap = GameState.getInstance().createBlankRecruitSnapshot(companionName, companionId, kit);
+    }
+
+    const companionProgression = new ProgressionSystem(classesData, companionName);
     this.bindProgressionEvents(companionProgression, companionName);
+    const mainWeapon = dataLoader.getWeapon(snap.equippedWeaponId) || dataLoader.getWeapon('daggers')!;
     const companion = new Player(
       this,
       spawnX,
       spawnY,
       playerData,
-      daggerWeapon,
+      mainWeapon,
       this.tileSize,
       'companion-avatar',
       companionProgression
     );
+    companion.restoreFromSnapshot(snap, this.time.now);
     companion.id = companionId;
     companion.entityName = companionName;
     companionProgression.ownerName = companionName;
+
     this.party.push(companion);
     GameState.getInstance().addCompanionToParty(companion, this.time.now);
     this.updatePlayerRoomLookup(true);
+    this.hud.update(this.player, this.progressionSystem, this.time.now, this.party);
     this.hud.showToast(`👥 ${companionName} joined the party!`, 'success', 3000);
-    console.log(`[OutpostScene] Spawned companion ${companionName} at (${spawnX}, ${spawnY}) with ${daggerWeapon.name}`);
+    if (companionName === 'Kaelen' || this.party.length >= 3) {
+      if (TutorialSystem.getInstance().getCurrentStep()?.id === 'guild_roster') {
+        TutorialSystem.getInstance().completeStepId('guild_roster');
+        this.time.delayedCall(1200, () => {
+          this.hud?.showToast('🏹 Valerie: "Kaelen has joined us. Notice our tight 2×2 block formation! Move by clicking anywhere on the ground. Pan camera with WASD and zoom with the scroll wheel."', 'info', 7000);
+        });
+      }
+    }
+    console.log(`[OutpostScene] Spawned companion ${companionName} at (${spawnX}, ${spawnY}) with ${mainWeapon.name}`);
     return true;
   }
 
@@ -1150,6 +1253,7 @@ export class OutpostScene extends Phaser.Scene {
     // Persist new party order to GameState immediately
     GameState.getInstance().savePartySnapshot(this.party, this.time.now);
     GameState.getInstance().saveSnapshot(this.player, this.progressionSystem, this.time.now);
+    GameState.getInstance().saveToDisk();
 
     // Re-anchor camera follow to the new leader
     if (this.isCameraLocked) {
@@ -1493,6 +1597,12 @@ export class OutpostScene extends Phaser.Scene {
       this.progressionSystem.getProficiencyLevel('construction')
     );
     this.hud.showToast(`Placed ${blueprint.name} (${costLabel})${roomSuffix}. +1 Construction Exp`, 'success');
+    if (blueprint.id === 'blacksmithing_station') {
+      TutorialSystem.getInstance().completeStepId('construct_station');
+      this.time.delayedCall(1200, () => {
+        this.hud?.showToast('🏹 Valerie: "Station placed! Exit Build Mode [B], walk over and click the Blacksmithing Station to forge an equipment upgrade."', 'success', 6500);
+      });
+    }
   }
 
   private demolishAt(x: number, y: number): void {
@@ -2024,6 +2134,14 @@ export class OutpostScene extends Phaser.Scene {
   private triggerPortalTransition(): void {
     if (this.isTransitioning) return;
 
+    // Milestone: The Real Game Start — Warn player once if entering dungeon without 3rd member
+    if (this.party.length < 3 && GameState.getInstance().getLifetimeDungeonFloorCount() === 0 && !this.warnedAboutRecruit) {
+      this.warnedAboutRecruit = true;
+      this.hud?.showToast('🏹 Valerie: "Wait! We should summon our third companion before diving into the dungeon!"', 'warn', 4500);
+      this.hud?.openRecruitModal();
+      return;
+    }
+
     for (const member of this.party) {
       member.clearTarget();
     }
@@ -2078,16 +2196,27 @@ export class OutpostScene extends Phaser.Scene {
   private executeTransitionToDungeon(): void {
     if (this.isTransitioning) return;
     this.isTransitioning = true;
+    HUD.isTitleScreenOpen = false;
+    const titleModal = document.getElementById('title-screen-modal');
+    if (titleModal) {
+      titleModal.classList.remove('active');
+    }
 
     console.log('[OutpostScene] Entering Dungeon Portal -> Transitioning to MainScene (Fresh Descent)');
     // Milestone 40: Boss and descent floor counter resets to 0 at the start of every new descent
     GameState.getInstance().resetDungeonFloorCount();
     GameState.getInstance().savePartySnapshot(this.party, this.time.now);
     GameState.getInstance().saveSnapshot(this.player, this.progressionSystem, this.time.now);
+    GameState.getInstance().saveToDisk();
+    TutorialSystem.getInstance().completeStepId('first_expedition');
     this.scene.start('MainScene');
   }
 
   public update(time: number, delta: number): void {
+    if (HUD.isTitleScreenOpen) {
+      return;
+    }
+
     // Camera Controls (WASD & Space lock-on)
     if (this.wasdKeys) {
       const panSpeed = 8;

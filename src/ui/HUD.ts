@@ -7,6 +7,7 @@ import { GameState } from '../systems/GameState.ts';
 import { BuildingSystem } from '../systems/BuildingSystem.ts';
 import { LevelingSystem } from '../systems/LevelingSystem.ts';
 import { ResearchSystem } from '../systems/ResearchSystem.ts';
+import { TutorialSystem, type TutorialStepDef } from '../systems/TutorialSystem.ts';
 
 export interface AnnouncementItem {
   type: 'class' | 'skill';
@@ -138,6 +139,7 @@ export class HUD {
   private debugBtnGrantEnergyPotion: HTMLElement | null;
   private debugBtnGrantManaPotion: HTMLElement | null;
   private debugBtnGrantRevivePotion: HTMLElement | null;
+  private debugBtnInstantRevive: HTMLElement | null;
   private debugBtnDrainEnergy: HTMLElement | null;
   private debugBtnRestoreEnergy: HTMLElement | null;
 
@@ -282,6 +284,37 @@ export class HUD {
   private knowledgeSearchQuery: string = '';
   private lastKnowledgeUpdateTime: number = 0;
   private lastKnowledgeStructureKey: string = '';
+
+  // Title Screen & Persistent Saves Elements (Milestone: Persistent Saves)
+  private titleScreenModalEl: HTMLElement | null = null;
+  private titleSaveSummaryEl: HTMLElement | null = null;
+  private titleStorageWarningEl: HTMLElement | null = null;
+  private titleContinueBtn: HTMLButtonElement | null = null;
+  private titleNewGameBtn: HTMLButtonElement | null = null;
+  private titleResetSaveBtn: HTMLButtonElement | null = null;
+  private titleOverwriteConfirmEl: HTMLElement | null = null;
+  private titleConfirmNewGameBtn: HTMLButtonElement | null = null;
+  private titleCancelNewGameBtn: HTMLButtonElement | null = null;
+  private saveFailureBadgeEl: HTMLElement | null = null;
+  private debugBtnResetSave: HTMLElement | null = null;
+  private hudResetSaveBtn: HTMLElement | null = null;
+  public static isTitleScreenOpen: boolean = true;
+  // Milestone: The Real Game Start (Recruit Modal)
+  private summonRecruitModalEl: HTMLElement | null = null;
+  private closeSummonRecruitBtn: HTMLElement | null = null;
+  private confirmSummonRecruitBtn: HTMLElement | null = null;
+
+  // Milestone: Tutorial & Onboarding Guide Elements
+  private guildGuideWidgetEl: HTMLElement | null = null;
+  private guideStepBadgeEl: HTMLElement | null = null;
+  private guideTitleEl: HTMLElement | null = null;
+  private guideObjectiveTextEl: HTMLElement | null = null;
+  private guideInstructionEl: HTMLElement | null = null;
+  private guideMentorQuoteEl: HTMLElement | null = null;
+  private guideToggleMinimizeBtn: HTMLElement | null = null;
+  private guideDismissBtn: HTMLElement | null = null;
+  private guideReopenBtn: HTMLElement | null = null;
+  private openResearchBtn: HTMLElement | null = null;
 
   public static readonly MAX_EXP_LOG_DOM_ENTRIES: number = 50;
 
@@ -514,6 +547,7 @@ export class HUD {
     this.debugBtnGrantEnergyPotion = document.getElementById('debug-btn-grant-energy-potion');
     this.debugBtnGrantManaPotion = document.getElementById('debug-btn-grant-mana-potion');
     this.debugBtnGrantRevivePotion = document.getElementById('debug-btn-grant-revive-potion');
+    this.debugBtnInstantRevive = document.getElementById('debug-btn-instant-revive');
     this.debugBtnDrainEnergy = document.getElementById('debug-btn-drain-energy');
     this.debugBtnRestoreEnergy = document.getElementById('debug-btn-restore-energy');
 
@@ -541,6 +575,9 @@ export class HUD {
     this.partyOverviewModalEl = document.getElementById('party-overview-modal');
     this.closePartyBtn = document.getElementById('close-party-btn');
     this.partySpawnCompanionBtn = document.getElementById('party-spawn-companion-btn');
+    this.summonRecruitModalEl = document.getElementById('summon-recruit-modal');
+    this.closeSummonRecruitBtn = document.getElementById('close-summon-recruit-btn');
+    this.confirmSummonRecruitBtn = document.getElementById('confirm-summon-recruit-btn');
     this.partyOverviewRosterEl = document.getElementById('party-overview-roster');
     this.partyOverviewInventoryEl = document.getElementById('party-overview-inventory');
     this.partyInventoryItemListEl = document.getElementById('party-inventory-item-list');
@@ -742,6 +779,108 @@ export class HUD {
     }
     this.initKnowledgeTabButtons();
 
+    // Persistent Saves & Title Screen DOM Elements (Milestone: Persistent Saves)
+    this.titleScreenModalEl = document.getElementById('title-screen-modal');
+    this.titleSaveSummaryEl = document.getElementById('title-save-summary');
+    this.titleStorageWarningEl = document.getElementById('title-storage-warning');
+    this.titleContinueBtn = document.getElementById('title-continue-btn') as HTMLButtonElement | null;
+    this.titleNewGameBtn = document.getElementById('title-new-game-btn') as HTMLButtonElement | null;
+    this.titleResetSaveBtn = document.getElementById('title-reset-save-btn') as HTMLButtonElement | null;
+    this.titleOverwriteConfirmEl = document.getElementById('title-overwrite-confirm');
+    this.titleConfirmNewGameBtn = document.getElementById('title-confirm-new-game-btn') as HTMLButtonElement | null;
+    this.titleCancelNewGameBtn = document.getElementById('title-cancel-new-game-btn') as HTMLButtonElement | null;
+    this.saveFailureBadgeEl = document.getElementById('save-failure-badge');
+    this.debugBtnResetSave = document.getElementById('debug-btn-reset-save');
+    this.hudResetSaveBtn = document.getElementById('hud-reset-save-btn');
+
+    GameState.getInstance().onSaveFailedCallback = (errMsg: string) => {
+      this.showToast(`⚠️ SAVE FAILED: Browser storage is disabled or full! (${errMsg})`, 'error', 6000);
+      if (this.saveFailureBadgeEl) {
+        this.saveFailureBadgeEl.style.display = 'block';
+      }
+    };
+
+    if (this.titleContinueBtn) {
+      this.titleContinueBtn.onclick = () => {
+        this.handleTitleContinue();
+      };
+    }
+    if (this.titleNewGameBtn) {
+      this.titleNewGameBtn.onclick = () => {
+        this.handleTitleNewGame(false);
+      };
+    }
+    if (this.titleConfirmNewGameBtn) {
+      this.titleConfirmNewGameBtn.onclick = () => {
+        this.handleTitleNewGame(true);
+      };
+    }
+    if (this.titleCancelNewGameBtn) {
+      this.titleCancelNewGameBtn.onclick = () => {
+        if (this.titleOverwriteConfirmEl) {
+          this.titleOverwriteConfirmEl.style.display = 'none';
+        }
+      };
+    }
+    if (this.titleResetSaveBtn) {
+      this.titleResetSaveBtn.onclick = () => {
+        this.handleResetSave();
+      };
+    }
+    if (this.debugBtnResetSave) {
+      this.debugBtnResetSave.onclick = () => {
+        this.handleResetSave();
+      };
+    }
+    if (this.hudResetSaveBtn) {
+      this.hudResetSaveBtn.onclick = () => {
+        this.handleResetSave();
+      };
+    }
+
+    // Milestone: Tutorial & Onboarding Guide Elements
+    this.guildGuideWidgetEl = document.getElementById('guild-guide-widget');
+    this.guideStepBadgeEl = document.getElementById('guide-step-badge');
+    this.guideTitleEl = document.getElementById('guide-title');
+    this.guideObjectiveTextEl = document.getElementById('guide-objective-text');
+    this.guideInstructionEl = document.getElementById('guide-instruction');
+    this.guideMentorQuoteEl = document.getElementById('guide-mentor-quote');
+    this.guideToggleMinimizeBtn = document.getElementById('guide-toggle-minimize-btn');
+    this.guideDismissBtn = document.getElementById('guide-dismiss-btn');
+    this.guideReopenBtn = document.getElementById('guide-reopen-btn');
+    this.openResearchBtn = document.getElementById('open-research-btn');
+
+    if (this.openResearchBtn) {
+      this.openResearchBtn.onclick = () => {
+        HUD.activeInstance?.openResearchTreeModal();
+      };
+    }
+
+    if (this.guideToggleMinimizeBtn) {
+      this.guideToggleMinimizeBtn.onclick = () => {
+        TutorialSystem.getInstance().toggleMinimize();
+      };
+    }
+
+    if (this.guideDismissBtn) {
+      this.guideDismissBtn.onclick = () => {
+        TutorialSystem.getInstance().dismiss();
+      };
+    }
+
+    if (this.guideReopenBtn) {
+      this.guideReopenBtn.onclick = () => {
+        TutorialSystem.getInstance().undismiss();
+      };
+    }
+
+    TutorialSystem.getInstance().onStepChange((step) => {
+      this.renderGuildGuide(step);
+    });
+    this.renderGuildGuide(TutorialSystem.getInstance().getCurrentStep());
+
+    this.initTitleScreen();
+
     if (this.hudCardEl) {
       this.hudCardEl.style.display = HUD.isHudCardVisible ? 'block' : 'none';
     }
@@ -861,6 +1000,15 @@ export class HUD {
       };
     }
 
+    GameState.getInstance().onResearchPointsChanged = (newPoints) => {
+      if (this.researchPointsCountEl) {
+        this.researchPointsCountEl.innerText = `🔬 ${newPoints}`;
+      }
+      if (this.isResearchTreeModalOpen()) {
+        this.renderResearchTreeModal();
+      }
+    };
+
     if (this.closeAlchemyBtn) {
       this.closeAlchemyBtn.onclick = () => {
         HUD.activeInstance?.closeAlchemyModal();
@@ -974,8 +1122,36 @@ export class HUD {
     }
     if (this.partySpawnCompanionBtn) {
       this.partySpawnCompanionBtn.onclick = () => {
-        (window as any).__spawnTestCompanion?.();
-        HUD.activeInstance?.renderPartyOverviewModal();
+        if (this.currentParty.length === 2) {
+          HUD.activeInstance?.openRecruitModal();
+        } else {
+          (window as any).__spawnTestCompanion?.();
+          HUD.activeInstance?.renderPartyOverviewModal();
+        }
+      };
+    }
+    if (this.closeSummonRecruitBtn) {
+      this.closeSummonRecruitBtn.onclick = () => {
+        this.closeRecruitModal();
+      };
+    }
+    if (this.confirmSummonRecruitBtn) {
+      this.confirmSummonRecruitBtn.onclick = () => {
+        const checked = document.querySelector('input[name="recruit-weapon-kit"]:checked') as HTMLInputElement;
+        const kitId = checked?.value || 'sword_and_shield';
+        const game = (window as any).game;
+        const outpost = game?.scene?.getScene('OutpostScene');
+        if (outpost && typeof outpost.summonThirdPartyMember === 'function') {
+          outpost.summonThirdPartyMember(kitId);
+        } else if (typeof (window as any).__summonThirdPartyMember === 'function') {
+          (window as any).__summonThirdPartyMember(kitId);
+        } else if (typeof (window as any).__spawnTestCompanion === 'function') {
+          (window as any).__spawnTestCompanion(kitId);
+        }
+        this.closeRecruitModal();
+        if (this.isPartyOverviewModalOpen()) {
+          this.renderPartyOverviewModal();
+        }
       };
     }
 
@@ -1273,6 +1449,33 @@ export class HUD {
           HUD.activeInstance.update(hero, HUD.activeInstance.currentProgression, 0, HUD.activeInstance.currentParty);
           if (HUD.activeInstance.isAlchemyModalOpen()) {
             HUD.activeInstance.renderAlchemyModal(hero, HUD.activeInstance.currentProgression);
+          }
+        }
+      };
+    }
+    if (this.debugBtnInstantRevive) {
+      this.debugBtnInstantRevive.onclick = () => {
+        let anyRevived = false;
+        if (typeof (window as any).__instantReviveParty === 'function') {
+          anyRevived = (window as any).__instantReviveParty();
+        } else {
+          for (const member of this.currentParty) {
+            if (member.state === 'downed') {
+              member.revive(this.currentParty[0]);
+              anyRevived = true;
+            }
+          }
+        }
+        if (anyRevived) {
+          HUD.activeInstance?.showToast('💛 Debug: Revived all downed party members!', 'success');
+        } else {
+          HUD.activeInstance?.showToast('💛 Debug: No party members are currently downed.', 'info');
+        }
+        const hero = HUD.activeInstance?.currentParty[0] || HUD.activeInstance?.currentPlayer;
+        if (hero && HUD.activeInstance?.currentProgression) {
+          HUD.activeInstance.update(hero, HUD.activeInstance.currentProgression, 0, HUD.activeInstance.currentParty);
+          if (HUD.activeInstance.isPartyOverviewModalOpen()) {
+            HUD.activeInstance.renderPartyOverviewModal(true);
           }
         }
       };
@@ -1656,6 +1859,54 @@ export class HUD {
         this.buildFeedbackToastEl.className = '';
       }
     }, durationMs);
+  }
+
+  public renderGuildGuide(step: TutorialStepDef | null = TutorialSystem.getInstance().getCurrentStep()): void {
+    if (!this.guildGuideWidgetEl) return;
+
+    const tut = TutorialSystem.getInstance();
+    const isCompleted = tut.getIsCompleted();
+    const isDismissed = tut.getIsDismissed();
+    const isMinimized = tut.getIsMinimized();
+
+    if (isCompleted || isDismissed) {
+      this.guildGuideWidgetEl.classList.add('hidden');
+      if (this.guideReopenBtn) {
+        this.guideReopenBtn.style.display = isDismissed && !isCompleted ? 'block' : 'none';
+      }
+      return;
+    }
+
+    this.guildGuideWidgetEl.classList.remove('hidden');
+    if (this.guideReopenBtn) {
+      this.guideReopenBtn.style.display = 'none';
+    }
+
+    if (isMinimized) {
+      this.guildGuideWidgetEl.classList.add('minimized');
+      if (this.guideToggleMinimizeBtn) this.guideToggleMinimizeBtn.innerText = '+';
+    } else {
+      this.guildGuideWidgetEl.classList.remove('minimized');
+      if (this.guideToggleMinimizeBtn) this.guideToggleMinimizeBtn.innerText = '−';
+    }
+
+    if (step) {
+      if (this.guideStepBadgeEl) {
+        this.guideStepBadgeEl.innerText = `STEP ${step.stepNumber}/${step.totalSteps}`;
+      }
+      if (this.guideTitleEl) {
+        this.guideTitleEl.innerText = step.title;
+      }
+      if (this.guideObjectiveTextEl) {
+        this.guideObjectiveTextEl.innerText = step.objective;
+      }
+      if (this.guideInstructionEl) {
+        this.guideInstructionEl.innerText = step.instruction;
+      }
+      if (this.guideMentorQuoteEl) {
+        this.guideMentorQuoteEl.innerText = `"${step.valerieQuote}"`;
+      }
+    }
   }
 
   public toggleHudCard(): void {
@@ -2564,6 +2815,22 @@ export class HUD {
     }
   }
 
+  public openRecruitModal(): void {
+    if (this.summonRecruitModalEl) {
+      this.summonRecruitModalEl.classList.add('active');
+    }
+  }
+
+  public closeRecruitModal(): void {
+    if (this.summonRecruitModalEl) {
+      this.summonRecruitModalEl.classList.remove('active');
+    }
+  }
+
+  public isRecruitModalOpen(): boolean {
+    return this.summonRecruitModalEl?.classList.contains('active') ?? false;
+  }
+
   // --- PARTY PORTRAIT SELECTION (Milestone 25) ---
 
   public setPartySelectionHandler(
@@ -3254,7 +3521,6 @@ export class HUD {
               ${canSetLeader ? `<button class="btn-action party-set-leader-btn" data-leader-idx="${i}" type="button" style="padding: 2px 8px; font-size: 10px; white-space: nowrap; background: #0284c7; border: 1px solid #38bdf8; border-radius: 4px; color: white; cursor: pointer;">👑 Make Leader</button>` : ''}
               ${isDowned ? `
                 <span class="party-member-status party-status-downed">DOWNED</span>
-                <button class="party-revive-btn" data-revive-idx="${i}" type="button">Revive [R]</button>
               ` : `
                 <span class="party-member-status party-status-active">ACTIVE</span>
               `}
@@ -3808,17 +4074,6 @@ export class HUD {
 
     this.partyOverviewRosterEl.onclick = (e) => {
       const target = e.target as HTMLElement;
-
-      // Revive button
-      if (target.classList.contains('party-revive-btn')) {
-        const idx = parseInt(target.dataset.reviveIdx || '0', 10);
-        const member = this.currentParty[idx];
-        if (member && member.state === 'downed') {
-          member.revive(this.currentParty[0]);
-          this.renderPartyOverviewModal(true);
-          this.showToast(`✨ Revived ${member.entityName}!`, 'success');
-        }
-      }
 
       // Leader Promote button
       if (target.classList.contains('party-set-leader-btn')) {
@@ -4398,6 +4653,9 @@ export class HUD {
                 this.showToast(`✨ Research Complete: Harvest Enemy Meat unlocked! Eligible monster corpses can now be butchered in dungeons.`, 'success', 3500);
               } else {
                 this.showToast(`✨ Research Complete: ${node.name} unlocked in Build Mode!`, 'success', 3500);
+              }
+              if (node.id === 'research_blacksmithing_station' || node.targetBuildableId === 'blacksmithing_station') {
+                TutorialSystem.getInstance().completeStepId('research_station');
               }
               this.renderResearchTreeModal();
               if (this.currentProgression) {
@@ -5283,6 +5541,7 @@ export class HUD {
       case 'ice_magic': return '#67e8f9';
       case 'holy_magic': return '#facc15';
       case 'dark_magic': return '#a855f7';
+      case 'arcane_magic': return '#c084fc';
       case 'energy_regen': return '#38bdf8';
       case 'mana_regen': return '#818cf8';
       case 'lockpicking': return '#f59e0b';
@@ -5453,7 +5712,7 @@ export class HUD {
           this.currentProgression.addProficiencyExp('cooking', exp);
 
           const qualityBadge = quality.toUpperCase();
-          this.showToast(`✨ RECIPE DISCOVERED: ${matchedRecipe.name}! Cooked 1x [${qualityBadge}] (+${exp} Cooking EXP)`, 'success', 4000);
+          this.showToast(`✨ RECIPE DISCOVERED: ${matchedRecipe.name}! Cooked 1x [${qualityBadge}] (+${exp} Cooking EXP, +${GameState.DISCOVERY_RP_BONUS} RP)`, 'success', 4000);
           if (this.cookingExpStatusEl) {
             this.cookingExpStatusEl.innerText = `✨ DISCOVERY! Learned ${matchedRecipe.name} [${qualityBadge}]! Permanently added to Known Recipes below.`;
             this.cookingExpStatusEl.style.color = '#34d399';
@@ -5763,6 +6022,7 @@ export class HUD {
 
             const actionVerb = recipe.id === 'smelt_broken_lockbox' ? 'Smelted' : (weaponDef ? 'Forged' : 'Crafted');
             this.showToast(`🔨 ${actionVerb} ${resultQty}x ${recipe.name}! (+${recipe.expGranted} Blacksmithing EXP)`, 'success', 2500);
+            TutorialSystem.getInstance().completeStepId('forge_upgrade');
             this.renderBlacksmithingModal(player, progression);
             this.update(player, progression, 0);
           };
@@ -6434,6 +6694,7 @@ export class HUD {
     if (this.knowledgeBaseModalEl) {
       this.knowledgeBaseModalEl.classList.add('active');
     }
+    TutorialSystem.getInstance().completeStepId('knowledge_base');
   }
 
   public closeKnowledgeBaseModal(): void {
@@ -7044,5 +7305,194 @@ export class HUD {
     }
 
     this.knowledgeEntriesContainerEl.innerHTML = html;
+  }
+
+  // --- Persistent Saves / Title Screen Helpers (Milestone: Persistent Saves) ---
+  public initTitleScreen(): void {
+    if (!this.titleScreenModalEl) return;
+
+    if (HUD.isTitleScreenOpen) {
+      this.titleScreenModalEl.classList.add('active');
+    } else {
+      this.titleScreenModalEl.classList.remove('active');
+      return;
+    }
+
+    const gameState = GameState.getInstance();
+    const isStorageOk = gameState.isStorageAvailable();
+    if (this.titleStorageWarningEl) {
+      this.titleStorageWarningEl.style.display = isStorageOk ? 'none' : 'block';
+    }
+
+    const hasSave = gameState.hasSave();
+    const meta = gameState.getSaveMetadata();
+
+    if (this.titleSaveSummaryEl) {
+      if (hasSave && meta) {
+        const savedDateStr = meta.saveTime ? new Date(meta.saveTime).toLocaleString() : 'Recently';
+        this.titleSaveSummaryEl.innerHTML = `
+          <div style="font-size: 13px; font-weight: bold; color: #34d399; margin-bottom: 6px;">
+            🏰 Guild Outpost Checkpoint Found
+          </div>
+          <div style="font-size: 12px; color: #f3f4f6; display: flex; flex-direction: column; gap: 4px;">
+            <div>📅 <strong>Day ${meta.gameDay}</strong> &bull; 👤 Leader: <strong>${meta.leaderName}</strong></div>
+            <div>👥 Party: <strong>${meta.partySize} members</strong></div>
+            <div>🪵 Wood: <span style="color: #f59e0b; font-weight: bold;">${meta.wood}</span> &bull; ⛏️ Ore: <span style="color: #cbd5e1; font-weight: bold;">${meta.ore}</span> &bull; 🔬 Knowledge: <span style="color: #38bdf8; font-weight: bold;">${meta.researchPoints} RP</span></div>
+            <div style="font-size: 10px; color: #9ca3af; margin-top: 4px;">🕒 Last Saved: ${savedDateStr}</div>
+          </div>
+        `;
+      } else {
+        this.titleSaveSummaryEl.innerHTML = `
+          <div style="font-size: 13px; font-weight: bold; color: #94a3b8; margin-bottom: 6px;">
+            No Saved Game Found
+          </div>
+          <div style="font-size: 12px; color: #9ca3af; line-height: 1.4;">
+            Start a fresh guild expedition. Progress is automatically checkpointed whenever you arrive at or return to the Outpost.
+          </div>
+        `;
+      }
+    }
+
+    if (this.titleContinueBtn) {
+      if (hasSave) {
+        this.titleContinueBtn.disabled = false;
+        this.titleContinueBtn.style.opacity = '1';
+        this.titleContinueBtn.style.cursor = 'pointer';
+        this.titleContinueBtn.style.background = '#059669';
+        this.titleContinueBtn.style.borderColor = '#34d399';
+        this.titleContinueBtn.title = 'Continue from last Outpost checkpoint';
+      } else {
+        this.titleContinueBtn.disabled = true;
+        this.titleContinueBtn.style.opacity = '0.4';
+        this.titleContinueBtn.style.cursor = 'not-allowed';
+        this.titleContinueBtn.style.background = '#374151';
+        this.titleContinueBtn.style.borderColor = '#4b5563';
+        this.titleContinueBtn.title = 'No save file found';
+      }
+    }
+
+    if (this.titleNewGameBtn) {
+      if (!hasSave) {
+        this.titleNewGameBtn.style.background = '#2563eb';
+        this.titleNewGameBtn.style.borderColor = '#60a5fa';
+      } else {
+        this.titleNewGameBtn.style.background = '#1e3a8a';
+        this.titleNewGameBtn.style.borderColor = '#3b82f6';
+      }
+    }
+
+    if (this.titleResetSaveBtn) {
+      this.titleResetSaveBtn.style.display = hasSave ? 'block' : 'none';
+    }
+
+    if (this.titleOverwriteConfirmEl) {
+      this.titleOverwriteConfirmEl.style.display = 'none';
+    }
+  }
+
+  public handleTitleContinue(): void {
+    const gameState = GameState.getInstance();
+    if (!gameState.hasSave()) return;
+    const success = gameState.loadFromDisk();
+    if (success) {
+      const tut = TutorialSystem.getInstance();
+      const tutState = gameState.getTutorialState();
+      tut.loadFromState(tutState.step, tutState.completed, tutState.dismissed);
+      this.renderGuildGuide(tut.getCurrentStep());
+
+      this.closeTitleScreen();
+      if (typeof window !== 'undefined' && (window as any).game) {
+        const game = (window as any).game;
+        const outpostScene = game.scene?.getScene('OutpostScene');
+        if (outpostScene) {
+          outpostScene.scene.resume();
+          outpostScene.scene.restart();
+        }
+      }
+      this.showToast('✅ Welcome back to the Guild Outpost! Checkpoint loaded.', 'success', 3500);
+    } else {
+      this.showToast('❌ Failed to load save data!', 'error', 4000);
+    }
+  }
+
+  public handleTitleNewGame(confirmed: boolean = false): void {
+    const gameState = GameState.getInstance();
+    if (gameState.hasSave() && !confirmed) {
+      if (this.titleOverwriteConfirmEl) {
+        this.titleOverwriteConfirmEl.style.display = 'block';
+      }
+      return;
+    }
+
+    // Starting new game
+    gameState.clearSave();
+    const dataLoader = DataLoader.getInstance();
+    const playerData = dataLoader.getPlayer();
+    if (playerData) {
+      gameState.resetToDefault(playerData);
+    }
+    TutorialSystem.getInstance().reset();
+    this.renderGuildGuide(TutorialSystem.getInstance().getCurrentStep());
+
+    this.closeTitleScreen();
+
+    if (typeof window !== 'undefined' && (window as any).game) {
+      const game = (window as any).game;
+      const outpostScene = game.scene?.getScene('OutpostScene');
+      if (outpostScene) {
+        outpostScene.scene.resume();
+        outpostScene.scene.restart();
+      }
+    }
+    this.showToast('⚔️ Started a New Game! Guild Outpost ready.', 'success', 3500);
+  }
+
+  public handleResetSave(): void {
+    const confirmed = typeof window !== 'undefined' && window.confirm
+      ? window.confirm('Are you sure you want to permanently delete your saved game data?')
+      : true;
+    if (!confirmed) return;
+
+    GameState.getInstance().clearSave();
+    TutorialSystem.getInstance().reset();
+    this.renderGuildGuide(TutorialSystem.getInstance().getCurrentStep());
+    if (this.saveFailureBadgeEl) {
+      this.saveFailureBadgeEl.style.display = 'none';
+    }
+    this.initTitleScreen();
+    this.showToast('🗑️ Saved game deleted. Storage cleared.', 'warn', 3500);
+  }
+
+  public closeTitleScreen(): void {
+    if (this.titleScreenModalEl) {
+      this.titleScreenModalEl.classList.remove('active');
+    }
+    HUD.isTitleScreenOpen = false;
+    if (typeof window !== 'undefined' && (window as any).game) {
+      const game = (window as any).game;
+      const outpostScene = game.scene?.getScene('OutpostScene');
+      if (outpostScene && outpostScene.scene?.isPaused()) {
+        outpostScene.scene.resume();
+      }
+    }
+  }
+
+  public openTitleScreen(): void {
+    HUD.isTitleScreenOpen = true;
+    if (this.titleScreenModalEl) {
+      this.titleScreenModalEl.classList.add('active');
+    }
+    this.initTitleScreen();
+    if (typeof window !== 'undefined' && (window as any).game) {
+      const game = (window as any).game;
+      const outpostScene = game.scene?.getScene('OutpostScene');
+      if (outpostScene && outpostScene.scene?.isActive()) {
+        outpostScene.scene.pause();
+      }
+    }
+  }
+
+  public isTitleScreenActive(): boolean {
+    return HUD.isTitleScreenOpen;
   }
 }

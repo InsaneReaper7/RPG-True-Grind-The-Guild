@@ -968,6 +968,91 @@
         }
       ],
       "description": "Loader capstone: winds the heavy tension spring to maximum mechanical tolerance, releasing a devastating armor-piercing projectile dealing 260% weapon damage up to 4 tiles away."
+    },
+    {
+      "id": "arcane_bolt",
+      "name": "Arcane Bolt",
+      "energyCost": 12,
+      "cooldownMs": 2500,
+      "damageMultiplier": 1.4,
+      "rangeTiles": 5,
+      "targetType": "enemy",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "arcane_initiate",
+          "value": 1
+        }
+      ],
+      "description": "Basic ranged spell, low cost, primary filler. Hurls a focused bolt of raw arcane energy up to 5 tiles away, dealing 140% magic damage."
+    },
+    {
+      "id": "mana_shield",
+      "name": "Mana Shield",
+      "energyCost": 20,
+      "cooldownMs": 12000,
+      "durationMs": 6000,
+      "damageToEnergyPercent": 0.50,
+      "targetType": "self",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "arcane_initiate",
+          "value": 10
+        }
+      ],
+      "description": "Surrounds the caster in an oscillating barrier of force for 6s, converting 50% of incoming damage into energy cost instead of HP."
+    },
+    {
+      "id": "overcharge",
+      "name": "Overcharge",
+      "energyCost": 15,
+      "cooldownMs": 10000,
+      "durationMs": 10000,
+      "spellDamageMultiplier": 1.75,
+      "spellEnergyCostMultiplier": 1.50,
+      "targetType": "self",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "arcane_initiate",
+          "value": 20
+        }
+      ],
+      "description": "Overcharges the caster's arcane conduits for 10s. The next spell cast consumes 50% more energy but deals 75% increased damage."
+    },
+    {
+      "id": "blink",
+      "name": "Blink",
+      "energyCost": 25,
+      "cooldownMs": 10000,
+      "rangeTiles": 3,
+      "targetType": "self",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "arcane_initiate",
+          "value": 30
+        }
+      ],
+      "description": "Short teleport, escape or reposition tool. Instantly blinks the caster 3 tiles away from the nearest enemy threat."
+    },
+    {
+      "id": "arcane_nova",
+      "name": "Arcane Nova",
+      "energyCost": 35,
+      "cooldownMs": 14000,
+      "radiusTiles": 4,
+      "damageMultiplier": 2.6,
+      "targetType": "self",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "arcane_initiate",
+          "value": 40
+        }
+      ],
+      "description": "Arcane Initiate capstone: releases an explosive burst of raw arcane energy in a 4-tile radius around the caster, dealing 260% magic damage to all enemies within range."
     }
   ]
 }

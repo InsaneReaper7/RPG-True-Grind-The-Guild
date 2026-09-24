@@ -144,6 +144,7 @@
       "aggroRadius": 6,
       "attackIntervalMs": 1300,
       "moveSpeed": 90,
+      "researchPoints": { "min": 3, "max": 6 },
       "harvest": [
         { "method": "salvage", "item": "orc_heavy_hide", "tags": ["armorsmithing"] },
         { "method": "salvage", "item": "steel_scrap", "tags": ["blacksmithing"] },
@@ -160,6 +161,7 @@
       "aggroRadius": 7,
       "attackIntervalMs": 1100,
       "moveSpeed": 95,
+      "researchPoints": { "min": 7, "max": 10 },
       "harvest": [
         { "method": "salvage", "item": "void_plate", "tags": ["armorsmithing", "blacksmithing"] },
         { "method": "salvage", "item": "void_essence", "tags": ["enchanting", "alchemy"] },
@@ -177,6 +179,7 @@
       "attackIntervalMs": 1400,
       "moveSpeed": 80,
       "attackRangeTiles": 1,
+      "researchPoints": 20,
       "harvest": [
         { "method": "salvage", "item": "colossus_core", "tags": ["blacksmithing", "armorsmithing", "enchanting"], "note": "Ancient pulsating heart forged of solidified cataclysmic magma and raw planar energy" },
         { "method": "salvage", "item": "abyssal_ingot", "tags": ["blacksmithing", "armorsmithing"], "note": "Titanic indestructible dark metal slab harvested from the dread colossus" },

@@ -240,13 +240,21 @@ async function runKeyBindingAuditTests() {
     const outpostSceneCode = fs.readFileSync(path.join(srcDir, 'scenes', 'OutpostScene.ts'), 'utf8');
     const hudCode = fs.readFileSync(path.join(srcDir, 'ui', 'HUD.ts'), 'utf8');
 
-    // 3a. Ensure pKey and tKey are completely removed from MainScene and OutpostScene
+    // 3a. Ensure pKey, tKey, and rKey (revive) are completely removed from MainScene
     assert.ok(!mainSceneCode.includes('private pKey'), 'MainScene must not have pKey field');
     assert.ok(!mainSceneCode.includes('private tKey'), 'MainScene must not have tKey field');
+    assert.ok(!mainSceneCode.includes('private rKey'), 'MainScene must not have rKey field');
     assert.ok(!mainSceneCode.includes('this.pKey ='), 'MainScene must not assign this.pKey');
     assert.ok(!mainSceneCode.includes('this.tKey ='), 'MainScene must not assign this.tKey');
+    assert.ok(!mainSceneCode.includes('this.rKey ='), 'MainScene must not assign this.rKey');
     assert.ok(!mainSceneCode.includes('Phaser.Input.Keyboard.KeyCodes.P'), 'MainScene must not bind KeyCodes.P');
+    assert.ok(!mainSceneCode.includes('Phaser.Input.Keyboard.KeyCodes.R'), 'MainScene must not bind KeyCodes.R');
     assert.ok(!outpostSceneCode.includes('Phaser.Input.Keyboard.KeyCodes.P'), 'OutpostScene must not bind KeyCodes.P');
+
+    // OutpostScene rKey listener is strictly for build mode rotation, not revive
+    const rKeyBlock = outpostSceneCode.match(/const rKey = [^;]+;[\s\S]*?rKey\.on\('down',[\s\S]*?\}\);/);
+    assert.ok(rKeyBlock, 'OutpostScene must have rKey binding');
+    assert.ok(!rKeyBlock[0].includes('member.revive'), 'OutpostScene rKey listener must not perform member.revive');
 
     // 3b. Ensure no file in src binds KeyCodes.P or KeyCodes.T (using regex to avoid KeyCodes.TWO/THREE etc.)
     const keyCodesPRegex = /KeyCodes(\.P\b|\[['"]P['"]\])/;
@@ -260,11 +268,13 @@ async function runKeyBindingAuditTests() {
       assert.ok(!keyCodesTRegex.test(content), `File ${rel} must NOT bind KeyCodes.T`);
     }
 
-    // 3c. Verify HUD.ts correctly maps P and T strictly to their player actions
+    // 3c. Verify HUD.ts correctly maps P and T strictly to their player actions and party-revive-btn is removed
     assert.ok(hudCode.includes("active.drinkManaPotion()"), 'HUD.ts must bind P to drinkManaPotion');
     assert.ok(hudCode.includes("active.useEscapeStone()"), 'HUD.ts must bind T to useEscapeStone');
+    assert.ok(!hudCode.includes("party-revive-btn"), 'HUD.ts must not have party-revive-btn');
+    assert.ok(!hudCode.includes("Revive [R]"), 'HUD.ts must not have Revive [R]');
 
-    console.log('✔ Test 3 passed: Full AST/source audit confirms 0 KeyCodes.P/T registrations and 0 key collisions.');
+    console.log('✔ Test 3 passed: Full AST/source audit confirms 0 KeyCodes.P/T registrations, R key revive decoupling, and 0 key collisions.');
   }
 
   // ---------------------------------------------------------------------------

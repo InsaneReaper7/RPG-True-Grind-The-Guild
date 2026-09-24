@@ -1,5 +1,6 @@
 import type { Player } from '../entities/Player.ts';
 import { GameState } from './GameState.ts';
+import { TutorialSystem } from './TutorialSystem.ts';
 import type { ResearchNodeDef, SkillBookDef } from '../types/game.ts';
 
 export interface SkillBookConsumptionResult {
@@ -108,6 +109,9 @@ export class ResearchSystem {
     gameState.completeResearch(node.id);
     if (node.targetBuildableId) {
       gameState.unlockBuildable(node.targetBuildableId);
+    }
+    if (node.id === 'research_blacksmithing_station' || node.targetBuildableId === 'blacksmithing_station') {
+      TutorialSystem.getInstance().completeStepId('research_station');
     }
     console.log(`[ResearchSystem] ✨ Unlocked ${node.name} (${node.id}) for ${node.cost} Research Points!`);
 

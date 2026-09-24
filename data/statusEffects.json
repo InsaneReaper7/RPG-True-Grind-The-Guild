@@ -220,6 +220,25 @@
       "damagePerTick": 0,
       "damageReductionPercent": 0.20,
       "color": "#94a3b8"
+    },
+    {
+      "id": "mana_shield",
+      "name": "Mana Shield",
+      "durationMs": 6000,
+      "tickIntervalMs": 6000,
+      "damagePerTick": 0,
+      "damageToEnergyPercent": 0.50,
+      "color": "#38bdf8"
+    },
+    {
+      "id": "overcharge",
+      "name": "Overcharge",
+      "durationMs": 10000,
+      "tickIntervalMs": 10000,
+      "damagePerTick": 0,
+      "spellDamageMultiplier": 1.75,
+      "spellEnergyCostMultiplier": 1.50,
+      "color": "#c084fc"
     }
   ]
 }
