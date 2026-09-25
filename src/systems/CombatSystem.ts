@@ -732,6 +732,7 @@ export class CombatSystem {
                   this.createAttackEffect(enemy.x, enemy.y, target.x, target.y, 0x38bdf8);
                   this.createFloatingText(target.x, target.y - 12, 'BLOCKED!', '#38bdf8');
                   target.progression.addProficiencyExp('shields', 2);
+                  target?.awardArmorWearExp?.('hit');
                   if (target.hasStatusEffect('retaliate')) {
                     target.removeStatusEffect('retaliate');
                     this.executePlayerCounterattack(target, enemy, { procced: true, damageMultiplier: 1.0, canCrit: true, chainAttack: false });
@@ -748,6 +749,7 @@ export class CombatSystem {
                   if (context.hasShield) {
                     target.progression.addProficiencyExp('shields', 1);
                   }
+                  target?.awardArmorWearExp?.('hit');
 
                   let actualDamage = rawDamage;
 
@@ -826,6 +828,7 @@ export class CombatSystem {
                         const dist = Math.hypot(member.gridPos.x - enemy.gridPos.x, member.gridPos.y - enemy.gridPos.y);
                         if (dist <= 1.5) {
                           const memDowned = member.takeDamage(splashDamage);
+                          member?.awardArmorWearExp?.('hit');
                           this.createAttackEffect(enemy.x, enemy.y, member.x, member.y, 0xdc2626);
                           this.createFloatingText(member.x, member.y - 18, `-${splashDamage} (CLEAVE!)`, '#f87171');
                           console.log(`[Combat:Boss Cleave] 💥 ${enemy.entityName} cleave hits ${member.entityName} for ${splashDamage} damage!`);
@@ -1115,6 +1118,36 @@ export class CombatSystem {
             }
           }
         }
+
+        // Milestone — Spellsword ranged / gap-closer skills autocast during approach
+        if (member.equippedSkillIds.includes('dimensional_lunge') && member.isAutocastEnabled('dimensional_lunge')) {
+          const lungeDef = dataLoader.getSkill('dimensional_lunge');
+          if (lungeDef && member.progression.isSkillUnlocked(lungeDef, member)) {
+            const isOffCd = !member.lastSkillUseTimes.has('dimensional_lunge') || (time - member.lastSkillUseTimes.get('dimensional_lunge')! >= lungeDef.cooldownMs);
+            const isAffordable = member.energy >= lungeDef.energyCost;
+            const maxRange = lungeDef.rangeTiles ?? 4;
+            if (isOffCd && isAffordable && distanceTiles <= maxRange) {
+              const castSuccess = this.castSkill(member, 'dimensional_lunge', target, time);
+              if (castSuccess) {
+                continue;
+              }
+            }
+          }
+        }
+        if (member.equippedSkillIds.includes('blade_beam') && member.isAutocastEnabled('blade_beam')) {
+          const beamDef = dataLoader.getSkill('blade_beam');
+          if (beamDef && member.progression.isSkillUnlocked(beamDef, member)) {
+            const isOffCd = !member.lastSkillUseTimes.has('blade_beam') || (time - member.lastSkillUseTimes.get('blade_beam')! >= beamDef.cooldownMs);
+            const isAffordable = member.energy >= beamDef.energyCost;
+            const maxRange = beamDef.rangeTiles ?? 4;
+            if (isOffCd && isAffordable && distanceTiles <= maxRange) {
+              const castSuccess = this.castSkill(member, 'blade_beam', target, time);
+              if (castSuccess) {
+                continue;
+              }
+            }
+          }
+        }
       }
 
       if (distanceTiles <= member.attackRangeTiles) {
@@ -1264,6 +1297,22 @@ export class CombatSystem {
             continue;
           }
 
+          // Milestone — Spellsword skills in normal combat rotation
+          if (['arcane_strike', 'dimensional_lunge', 'blade_beam'].includes(skillId)) {
+            const isOffCooldown = !member.lastSkillUseTimes.has(skillId) || (time - member.lastSkillUseTimes.get(skillId)! >= skillDef.cooldownMs);
+            const isAffordable = member.energy >= skillDef.energyCost;
+            const isWeaponReady = time - member.lastAttackTime >= effectiveAttackInterval;
+            if (isOffCooldown && isAffordable && isWeaponReady) {
+              const success = this.castSkill(member, skillId, target as Enemy, time);
+              if (success) {
+                usedSkill = true;
+                this.lastCombatTimeMs = time;
+                break;
+              }
+            }
+            continue;
+          }
+
           // Milestone 22: Riposte requires active riposte_window
           if (skillId === 'riposte' && !member.hasStatusEffect('riposte_window')) continue;
 
@@ -1320,6 +1369,7 @@ export class CombatSystem {
                 }
               }
               const result = member.progression.addProficiencyExp(weaponId, 2);
+              member?.awardArmorWearExp?.('attack');
               if (result.leveledUp) {
                 const newLevel = member.progression.getProficiencyLevel(weaponId);
                 this.createFloatingText(member.x, member.y - 20, `${effectiveWeapon.name} Level ${newLevel}!`, '#22c55e');
@@ -1390,6 +1440,8 @@ export class CombatSystem {
               if (isDW) {
                 member.progression.addProficiencyExp('dual_wielding', 2);
               }
+
+              member?.awardArmorWearExp?.('attack');
 
               this.lastCombatTimeMs = time;
               if (target.state !== 'dead' && target.state !== 'downed') (target as any).isAggroed = true;
@@ -1964,6 +2016,15 @@ export class CombatSystem {
     if (passiveImbuement?.bonusDamagePercent) {
       damage *= (1 + passiveImbuement.bonusDamagePercent);
     }
+    if (typeof member.hasStatusEffect === 'function' && member.hasStatusEffect('runic_infusion')) {
+      const runicEffect = member.activeStatusEffects?.get?.('runic_infusion')?.def;
+      const runicBonus = runicEffect?.bonusDamagePercent ?? 0.25;
+      damage *= (1 + runicBonus);
+      const siphon = runicEffect?.energySiphonOnHit ?? 4;
+      const maxEnergy = member.maxEnergy ?? 100;
+      member.energy = Math.min(maxEnergy, (member.energy ?? 0) + siphon);
+      this.createFloatingText(member.x, member.y - 20, `RUNIC SIPHON! +${siphon} EN`, '#818cf8');
+    }
     console.log(
       `[Combat] ${member.entityName} attacks ${target.entityName} with ${effectiveWeapon.name} for ${damage.toFixed(1)} damage! (Base: ${effectiveWeapon.baseDamage}, Lv ${weaponLevel} Bonus: +${(weaponLevel * damageBonusPerLevel).toFixed(1)}, Accuracy: ${(effectiveAccuracy * 100).toFixed(1)}%${isDW ? ` [DW Penalty -${(dwPenalty * 100).toFixed(0)}%]` : ''}${passiveImbuement?.bonusDamagePercent ? ` [Passive Imbuement: +${(passiveImbuement.bonusDamagePercent * 100).toFixed(0)}%]` : ''})`
     );
@@ -2074,6 +2135,7 @@ export class CombatSystem {
           }
         }
       }
+      member?.awardArmorWearExp?.('attack');
     }
 
     this.lastCombatTimeMs = time;
@@ -2168,6 +2230,8 @@ export class CombatSystem {
       killer.progression.addProficiencyExp(killer.offhandWeapon.proficiencyId ?? killer.offhandWeapon.id, 2);
       killer.progression.addProficiencyExp('dual_wielding', 2);
     }
+
+    killer?.awardArmorWearExp?.('kill');
 
     // Milestone 14 & 34: Class EXP kill hook (scaled by enemy tier: Common +25, Elite +50, Epic +100, Boss +250)
     if (killer.activeClass) {
@@ -2849,8 +2913,7 @@ export class CombatSystem {
       // Don't recast if buff is already active
       if (member.hasStatusEffect(skillId)) continue;
 
-      const lastUsed = member.lastSkillUseTimes.get(skillId) || 0;
-      const isOffCooldown = time - lastUsed >= skillDef.cooldownMs;
+      const isOffCooldown = !member.lastSkillUseTimes.has(skillId) || (time - member.lastSkillUseTimes.get(skillId)! >= skillDef.cooldownMs);
       const isAffordable = member.energy >= skillDef.energyCost;
       if (isOffCooldown && isAffordable) {
         return this.castSkill(member, skillId, member, time);
@@ -3373,6 +3436,40 @@ export class CombatSystem {
         this.createFloatingText(caster.x, caster.y - 15, headerText, '#c084fc');
         caster.progression.addProficiencyExp('arcane_magic', 4);
         console.log(`[Skill] ${caster.entityName} casts Arcane Nova! Damaged ${enemiesDamaged} enemies.`);
+        return true;
+      } else if (skillId === 'runic_infusion') {
+        const effDef = dataLoader.getStatusEffect('runic_infusion') || {
+          id: 'runic_infusion',
+          name: 'Runic Infusion',
+          durationMs: skillDef.durationMs ?? 8000,
+          tickIntervalMs: 8000,
+          damagePerTick: 0,
+          bonusDamagePercent: skillDef.bonusDamagePercent ?? 0.25,
+          energySiphonOnHit: skillDef.energySiphonOnHit ?? 4,
+          color: '#818cf8'
+        };
+        caster.applyStatusEffect(effDef);
+        this.createFloatingText(caster.x, caster.y - 12, 'RUNIC INFUSION!', '#818cf8');
+        console.log(`[Skill] ${caster.entityName} activates Runic Infusion! Weapon imbued with +25% magic damage & energy siphon for 8s.`);
+        caster.progression.addProficiencyExp('longswords', 2);
+        caster.progression.addProficiencyExp('arcane_magic', 1);
+        return true;
+      } else if (skillId === 'spell_ward') {
+        const effDef = dataLoader.getStatusEffect('spell_ward') || {
+          id: 'spell_ward',
+          name: 'Spell Ward',
+          durationMs: skillDef.durationMs ?? 6000,
+          tickIntervalMs: 6000,
+          damagePerTick: 0,
+          shieldAmount: skillDef.shieldAmount ?? 40,
+          parryBonus: skillDef.parryBonus ?? 0.20,
+          color: '#6366f1'
+        };
+        caster.applyStatusEffect(effDef);
+        this.createFloatingText(caster.x, caster.y - 12, 'SPELL WARD!', '#6366f1');
+        console.log(`[Skill] ${caster.entityName} activates Spell Ward! Absorbs 40 damage with +20% Parry for 6s.`);
+        caster.progression.addProficiencyExp('longswords', 2);
+        caster.progression.addProficiencyExp('arcane_magic', 1);
         return true;
       }
       return true;
@@ -4428,6 +4525,194 @@ export class CombatSystem {
         if (downed) {
           this.handleTargetDefeated(caster, enemyTarget, weaponId);
         }
+        caster.progression.addProficiencyExp('arcane_magic', 2);
+        return true;
+      }
+
+      // ========================================================================
+      // Milestone — Spellsword Full 5-Skill Kit
+      // Longswords-only pure melee specialist with unconditional Arcane Magic scaling
+      // ========================================================================
+
+      // 1. Arcane Strike (Lv 1) - hybrid infused strike
+      if (skillId === 'arcane_strike') {
+        const curDist = Math.max(
+          Math.abs(Math.floor(caster.x / caster.tileSize) - Math.floor(enemyTarget.x / enemyTarget.tileSize)),
+          Math.abs(Math.floor(caster.y / caster.tileSize) - Math.floor(enemyTarget.y / enemyTarget.tileSize))
+        );
+        const maxRange = skillDef.rangeTiles ?? 1;
+        if (curDist > maxRange) {
+          console.warn(`[Skill] Cannot cast Arcane Strike: target is outside range (${curDist} > ${maxRange})`);
+          return false;
+        }
+
+        caster.energy -= skillDef.energyCost;
+        caster.lastSkillUseTimes.set(skillId, time);
+        caster.lastAttackTime = time;
+        caster.state = 'attacking';
+
+        this.createSkillAttackEffect(caster.x, caster.y, enemyTarget.x, enemyTarget.y);
+        const effectiveWeapon = this.getEffectiveWeaponForAttack(caster);
+        const weaponId = effectiveWeapon.proficiencyId ?? effectiveWeapon.id;
+        const weaponLevel = caster.progression.getProficiencyLevel(weaponId);
+        const dmgBonus = effectiveWeapon.levelBonus?.damagePerLevel ?? 0;
+        const rawBase = effectiveWeapon.baseDamage + weaponLevel * dmgBonus;
+        const moodTier = dataLoader.getMoodTier(caster.mood);
+        const effBase = rawBase * moodTier.combatDamageMultiplier;
+
+        // Unconditional Arcane Magic scaling (+0.15 per Arcane Magic level)
+        const arcaneLevel = caster.progression.getProficiencyLevel('arcane_magic');
+        const arcaneBonus = arcaneLevel * 0.15;
+
+        let skillDamage = (effBase * (skillDef.damageMultiplier ?? 1.5)) + arcaneBonus;
+
+        if (caster.hasStatusEffect('runic_infusion')) {
+          const runicEffect = caster.activeStatusEffects.get('runic_infusion')?.def;
+          const runicBonus = runicEffect?.bonusDamagePercent ?? 0.25;
+          skillDamage *= (1 + runicBonus);
+          const siphon = runicEffect?.energySiphonOnHit ?? 4;
+          const maxEnergy = caster.maxEnergy ?? 100;
+          caster.energy = Math.min(maxEnergy, (caster.energy ?? 0) + siphon);
+          this.createFloatingText(caster.x, caster.y - 20, `RUNIC SIPHON! +${siphon} EN`, '#818cf8');
+        }
+
+        this.createFloatingText(enemyTarget.x, enemyTarget.y - 10, `ARCANE STRIKE! -${skillDamage.toFixed(1)}`, '#818cf8');
+        const downed = enemyTarget.takeDamage(skillDamage);
+        if (downed) {
+          this.handleTargetDefeated(caster, enemyTarget, weaponId);
+        }
+        caster.progression.addProficiencyExp('longswords', 2);
+        caster.progression.addProficiencyExp('arcane_magic', 1);
+        return true;
+      }
+
+      // 4. Dimensional Lunge (Lv 30) - gap-closer teleport & thrust
+      if (skillId === 'dimensional_lunge') {
+        const curDist = Math.max(
+          Math.abs(Math.floor(caster.x / caster.tileSize) - Math.floor(enemyTarget.x / enemyTarget.tileSize)),
+          Math.abs(Math.floor(caster.y / caster.tileSize) - Math.floor(enemyTarget.y / enemyTarget.tileSize))
+        );
+        const maxRange = skillDef.rangeTiles ?? 4;
+        if (curDist > maxRange) {
+          console.warn(`[Skill] Cannot cast Dimensional Lunge: target is outside range (${curDist} > ${maxRange})`);
+          return false;
+        }
+
+        if (curDist > 1) {
+          const openTile = this.findOpenAttackTileForMember(enemyTarget, caster);
+          if (openTile) {
+            const oldX = caster.x;
+            const oldY = caster.y;
+            caster.setGridPosition(openTile.x, openTile.y);
+            this.createAttackEffect(oldX, oldY, caster.x, caster.y, 0x818cf8);
+          }
+        }
+
+        caster.energy -= skillDef.energyCost;
+        caster.lastSkillUseTimes.set(skillId, time);
+        caster.lastAttackTime = time;
+        caster.state = 'attacking';
+
+        this.createSkillAttackEffect(caster.x, caster.y, enemyTarget.x, enemyTarget.y);
+        const effectiveWeapon = this.getEffectiveWeaponForAttack(caster);
+        const weaponId = effectiveWeapon.proficiencyId ?? effectiveWeapon.id;
+        const weaponLevel = caster.progression.getProficiencyLevel(weaponId);
+        const dmgBonus = effectiveWeapon.levelBonus?.damagePerLevel ?? 0;
+        const rawBase = effectiveWeapon.baseDamage + weaponLevel * dmgBonus;
+        const moodTier = dataLoader.getMoodTier(caster.mood);
+        const effBase = rawBase * moodTier.combatDamageMultiplier;
+
+        // Unconditional Arcane Magic scaling
+        const arcaneLevel = caster.progression.getProficiencyLevel('arcane_magic');
+        const arcaneBonus = arcaneLevel * 0.15;
+
+        let skillDamage = (effBase * (skillDef.damageMultiplier ?? 1.9)) + arcaneBonus;
+
+        if (caster.hasStatusEffect('runic_infusion')) {
+          const runicEffect = caster.activeStatusEffects.get('runic_infusion')?.def;
+          const runicBonus = runicEffect?.bonusDamagePercent ?? 0.25;
+          skillDamage *= (1 + runicBonus);
+          const siphon = runicEffect?.energySiphonOnHit ?? 4;
+          const maxEnergy = caster.maxEnergy ?? 100;
+          caster.energy = Math.min(maxEnergy, (caster.energy ?? 0) + siphon);
+          this.createFloatingText(caster.x, caster.y - 20, `RUNIC SIPHON! +${siphon} EN`, '#818cf8');
+        }
+
+        this.createFloatingText(enemyTarget.x, enemyTarget.y - 10, `DIMENSIONAL LUNGE! -${skillDamage.toFixed(1)}`, '#818cf8');
+        const downed = enemyTarget.takeDamage(skillDamage);
+        if (downed) {
+          this.handleTargetDefeated(caster, enemyTarget, weaponId);
+        }
+        caster.progression.addProficiencyExp('longswords', 2);
+        caster.progression.addProficiencyExp('arcane_magic', 1);
+        return true;
+      }
+
+      // 5. Blade Beam (Lv 40 capstone) - ranged wave / cleave
+      if (skillId === 'blade_beam') {
+        const curDist = Math.max(
+          Math.abs(Math.floor(caster.x / caster.tileSize) - Math.floor(enemyTarget.x / enemyTarget.tileSize)),
+          Math.abs(Math.floor(caster.y / caster.tileSize) - Math.floor(enemyTarget.y / enemyTarget.tileSize))
+        );
+        const maxRange = skillDef.rangeTiles ?? 4;
+        if (curDist > maxRange) {
+          console.warn(`[Skill] Cannot cast Blade Beam: target is outside range (${curDist} > ${maxRange})`);
+          return false;
+        }
+
+        caster.energy -= skillDef.energyCost;
+        caster.lastSkillUseTimes.set(skillId, time);
+        caster.lastAttackTime = time;
+        caster.state = 'attacking';
+
+        this.createSkillAttackEffect(caster.x, caster.y, enemyTarget.x, enemyTarget.y);
+        const effectiveWeapon = this.getEffectiveWeaponForAttack(caster);
+        const weaponId = effectiveWeapon.proficiencyId ?? effectiveWeapon.id;
+        const weaponLevel = caster.progression.getProficiencyLevel(weaponId);
+        const dmgBonus = effectiveWeapon.levelBonus?.damagePerLevel ?? 0;
+        const rawBase = effectiveWeapon.baseDamage + weaponLevel * dmgBonus;
+        const moodTier = dataLoader.getMoodTier(caster.mood);
+        const effBase = rawBase * moodTier.combatDamageMultiplier;
+
+        // Unconditional Arcane Magic scaling
+        const arcaneLevel = caster.progression.getProficiencyLevel('arcane_magic');
+        const arcaneBonus = arcaneLevel * 0.15;
+
+        let skillDamage = (effBase * (skillDef.damageMultiplier ?? 2.6)) + arcaneBonus;
+
+        const isInfused = caster.hasStatusEffect('runic_infusion');
+        if (isInfused) {
+          // Capstone synergy: refund 10 energy & +20% damage
+          const maxEnergy = caster.maxEnergy ?? 100;
+          caster.energy = Math.min(maxEnergy, (caster.energy ?? 0) + 10);
+          skillDamage *= 1.20;
+          this.createFloatingText(caster.x, caster.y - 20, 'RUNIC RESONANCE! +10 EN', '#818cf8');
+        }
+
+        this.createFloatingText(enemyTarget.x, enemyTarget.y - 10, `BLADE BEAM! -${skillDamage.toFixed(1)}`, '#818cf8');
+        const downed = enemyTarget.takeDamage(skillDamage);
+        if (downed) {
+          this.handleTargetDefeated(caster, enemyTarget, weaponId);
+        }
+
+        // Cleave adjacent enemies if Runic Infusion is active
+        if (isInfused && this.enemies) {
+          const cleaveDamage = skillDamage * 0.60;
+          const eTile = { x: Math.floor(enemyTarget.x / enemyTarget.tileSize), y: Math.floor(enemyTarget.y / enemyTarget.tileSize) };
+          for (const otherEnemy of this.enemies) {
+            if (otherEnemy === enemyTarget || otherEnemy.state === 'dead' || otherEnemy.state === 'downed') continue;
+            const oTile = { x: Math.floor(otherEnemy.x / otherEnemy.tileSize), y: Math.floor(otherEnemy.y / otherEnemy.tileSize) };
+            if (Math.max(Math.abs(eTile.x - oTile.x), Math.abs(eTile.y - oTile.y)) <= 1) {
+              this.createFloatingText(otherEnemy.x, otherEnemy.y - 10, `CLEAVE! -${cleaveDamage.toFixed(1)}`, '#818cf8');
+              const oDowned = otherEnemy.takeDamage(cleaveDamage);
+              if (oDowned) {
+                this.handleTargetDefeated(caster, otherEnemy, weaponId);
+              }
+            }
+          }
+        }
+
+        caster.progression.addProficiencyExp('longswords', 2);
         caster.progression.addProficiencyExp('arcane_magic', 2);
         return true;
       }

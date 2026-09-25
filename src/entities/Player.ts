@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { Entity } from './Entity.ts';
-import type { PlayerData, WeaponDef, CharacterSnapshot, ArmorDef, ArmorSlot } from '../types/game.ts';
-import { getArmorHpSplit } from '../types/game.ts';
+import type { PlayerData, WeaponDef, CharacterSnapshot, ArmorDef, ArmorSlot, ArmorWeightClass } from '../types/game.ts';
+import { getArmorHpSplit, getArmorProficiencyId } from '../types/game.ts';
 import { GameState } from '../systems/GameState.ts';
 import { DataLoader } from '../utils/DataLoader.ts';
 import { ProgressionSystem } from '../systems/ProgressionSystem.ts';
@@ -455,6 +455,102 @@ export class Player extends Entity {
 
   public equipAccessory(armor: ArmorDef | null, isOutpost: boolean = false): boolean {
     return this.equipArmorSlot('accessory', armor, isOutpost);
+  }
+
+  /**
+   * Returns true armor pieces (Helmet and Body) that contribute to weight-class proficiency training.
+   * Accessories (Necklace, Ring, Accessory) are pure stat/jewelry items and are explicitly excluded.
+   */
+  public getEquippedWeightArmors(): ArmorDef[] {
+    const list: ArmorDef[] = [];
+    if (this.equippedHelmet && this.equippedHelmet.weightClass) {
+      list.push(this.equippedHelmet);
+    }
+    if (this.equippedBodyArmor && this.equippedBodyArmor.weightClass) {
+      list.push(this.equippedBodyArmor);
+    }
+    return list;
+  }
+
+  public getEquippedArmors(): ArmorDef[] {
+    const list: ArmorDef[] = [];
+    if (this.equippedHelmet) list.push(this.equippedHelmet);
+    if (this.equippedBodyArmor) list.push(this.equippedBodyArmor);
+    if (this.equippedNecklace) list.push(this.equippedNecklace);
+    if (this.equippedRing) list.push(this.equippedRing);
+    if (this.equippedAccessory) list.push(this.equippedAccessory);
+    return list;
+  }
+
+  /**
+   * Computes the unique armor weight classes actively worn on true armor slots (Helmet, Body).
+   * Necklace, Ring, and Accessory slots are explicitly excluded — they are pure stat items.
+   */
+  public getEquippedArmorWeightClasses(): ArmorWeightClass[] {
+    const classes = new Set<ArmorWeightClass>();
+    // Explicitly iterate only true armor pieces (Helmet and Body)
+    for (const armor of this.getEquippedWeightArmors()) {
+      if ((armor.slot === 'helmet' || armor.slot === 'body') && armor.weightClass) {
+        classes.add(armor.weightClass);
+      }
+    }
+    return Array.from(classes);
+  }
+
+  /**
+   * Awards armor proficiency EXP through wear.
+   * Only true armor slots (Helmet, Body) contribute to armor proficiency.
+   * Jewelry & accessories (Necklace, Ring, Accessory) are pure stat items and explicitly contribute ZERO EXP.
+   * - 'hit': Struck / absorbing incoming attack in combat. Each equipped true armor piece (Helmet/Body) absorbs the blow and awards +1 EXP to its weight class.
+   * - 'attack': Performing attacks / maneuvers in combat. Awards +1 EXP toward each unique weight class worn on true armor slots.
+   * - 'kill': Defeating an enemy while wearing armor. Awards +2 EXP toward each unique weight class worn on true armor slots.
+   */
+  public awardArmorWearExp(type: 'hit' | 'attack' | 'kill'): void {
+    if (!this.progression) return;
+    // Explicitly restrict to true armor pieces (Helmet, Body).
+    // Accessories (Necklace, Ring, Accessory) provide pure stats and are completely excluded from armor proficiency.
+    const armors = this.getEquippedWeightArmors();
+    if (armors.length === 0) return;
+
+    if (type === 'hit') {
+      for (const armor of armors) {
+        // Explicit safeguard: only true armor slots (helmet, body) ever award armor proficiency EXP
+        if ((armor.slot === 'helmet' || armor.slot === 'body') && armor.weightClass) {
+          const profId = getArmorProficiencyId(armor.weightClass);
+          const res = this.progression.addProficiencyExp(profId, 1);
+          GameState.getInstance().discoverProficiency(profId);
+          if (res.leveledUp) {
+            const newLevel = this.progression.getProficiencyLevel(profId);
+            const name = armor.weightClass.charAt(0).toUpperCase() + armor.weightClass.slice(1) + ' Armor';
+            this.createFloatingText(`${name} Level ${newLevel}!`, '#22c55e');
+          }
+        }
+      }
+    } else if (type === 'attack') {
+      const uniqueClasses = this.getEquippedArmorWeightClasses();
+      for (const wc of uniqueClasses) {
+        const profId = getArmorProficiencyId(wc);
+        const res = this.progression.addProficiencyExp(profId, 1);
+        GameState.getInstance().discoverProficiency(profId);
+        if (res.leveledUp) {
+          const newLevel = this.progression.getProficiencyLevel(profId);
+          const name = wc.charAt(0).toUpperCase() + wc.slice(1) + ' Armor';
+          this.createFloatingText(`${name} Level ${newLevel}!`, '#22c55e');
+        }
+      }
+    } else if (type === 'kill') {
+      const uniqueClasses = this.getEquippedArmorWeightClasses();
+      for (const wc of uniqueClasses) {
+        const profId = getArmorProficiencyId(wc);
+        const res = this.progression.addProficiencyExp(profId, 2);
+        GameState.getInstance().discoverProficiency(profId);
+        if (res.leveledUp) {
+          const newLevel = this.progression.getProficiencyLevel(profId);
+          const name = wc.charAt(0).toUpperCase() + wc.slice(1) + ' Armor';
+          this.createFloatingText(`${name} Level ${newLevel}!`, '#22c55e');
+        }
+      }
+    }
   }
 
   public isDualWielding(): boolean {

@@ -449,10 +449,18 @@ export interface BowyerRecipesData {
 
 export type ArmorSlot = 'helmet' | 'body' | 'necklace' | 'ring' | 'accessory';
 
+export type ArmorWeightClass = 'light' | 'medium' | 'heavy';
+
+export function getArmorProficiencyId(weightClass: ArmorWeightClass | string): string {
+  if (weightClass.endsWith('_armor')) return weightClass;
+  return `${weightClass}_armor`;
+}
+
 export interface ArmorDef {
   id: string;
   name: string;
   slot: ArmorSlot;
+  weightClass?: ArmorWeightClass;
   hpBonus: number;
   weight?: number;
   carryCapacityBonus?: number;
@@ -536,6 +544,9 @@ export interface SkillDef {
   damageToEnergyPercent?: number;
   spellDamageMultiplier?: number;
   spellEnergyCostMultiplier?: number;
+  bonusDamagePercent?: number;
+  energySiphonOnHit?: number;
+  parryBonus?: number;
 }
 
 export interface SkillsData {
@@ -565,6 +576,9 @@ export interface StatusEffectDef {
   damageToEnergyPercent?: number;
   spellDamageMultiplier?: number;
   spellEnergyCostMultiplier?: number;
+  bonusDamagePercent?: number;
+  energySiphonOnHit?: number;
+  parryBonus?: number;
   persistent?: boolean;
 }
 

@@ -128,3 +128,79 @@ Never ask Antigravity to jump ahead in this list — each milestone assumes the 
 - Tutorial progress persists cleanly through storage checkpoints (`GameState` save/load) and survives reloads.
 - No gating or hard progression blocks: dismissing early (`✕`) leaves the entire game unconstrained.
 - Fully verified via headless browser (Puppeteer) executing the real cold-start loop with live console evidence. Recommended follow-up: run a real human naive test pass before wide alpha distribution.
+
+**Resolved and shipped: Milestone — Armor Proficiency (Light/Medium/Heavy).**
+- **Design Resolution**: Confirmed specific weight class leveling (`light_armor`, `medium_armor`, `heavy_armor`) over generic proficiency, matching the school-specific magic and distinct weapon architecture.
+- **True Armor Tagging vs. Pure Stat Jewelry**:
+  - The 4 true armor pieces in `data/armors.json` (Helmet and Body) are explicitly tagged with their weight class:
+    - `leather_cap`: `light` (1.0kg wolf pelt headwear)
+    - `leather_armor`: `medium` (5.0kg reinforced wolf hide tunic)
+    - `silk_cowl`: `light` (1.0kg spider silk cowl)
+    - `silk_robe`: `light` (3.0kg spider silk robe)
+  - The 3 jewelry/accessory pieces have **no `weightClass` tag** (pure stat items, zero involvement in armor proficiency):
+    - `bone_necklace`: slot `necklace` (+20 HP)
+    - `wolf_claw_ring`: slot `ring` (+14 HP)
+    - `venom_charm`: slot `accessory` (+26 HP, +5kg carry capacity)
+- **Explicit Slot Exclusion & EXP Consistency**:
+  - All combat wear hooks (`hit`, `attack`, `kill`) and weight class introspection (`getEquippedArmorWeightClasses()`) **explicitly evaluate only true armor slots (`helmet` and `body`)**, ignoring jewelry slots entirely.
+  - Implemented real EXP-on-use pattern: +1 EXP per piece per hit taken (`awardArmorWearExp('hit')`), +1 EXP per unique weight class worn per combat attack (`awardArmorWearExp('attack')`), and +2 EXP per unique weight class on defeating enemies (`awardArmorWearExp('kill')`).
+  - **Hit vs. Attack/Kill Distinction (Deliberate Design)**:
+    - `hit` is **per-piece**: each true armor piece covering the body absorbs incoming impact (+1 EXP each). Wearing two light pieces (cowl + robe) awards +2 `light_armor` EXP per hit because more armor surface area protects the character.
+    - `attack` and `kill` are **per-unique-class**: offensive combat maneuvers are performed within the armor encumbrance class as a whole, not per piece. Deduplication avoids artificial EXP inflation from equipping multiple lightweight items while still cleanly awarding +1/+2 EXP across all active weight classes for mixed loadouts.
+  - Follows universal `LevelingSystem` curve with floating combat level-up notifications.
+  - Discoveries feed `GameState.discoveredProficiencies`, Knowledge Base Codex, and Party Overview.
+- **Known Deliberate Gap — `heavy_armor` Currently Untrainable**:
+  - All 4 existing true armor items in `data/armors.json` (and recipes in `data/armorsmithRecipes.json`) are tagged `light` or `medium` — zero pieces are tagged `heavy`.
+  - While the `heavy_armor` proficiency is fully implemented, verified, and functional in code (trainable stat definition, leveling curve, UI, and serialization), there is currently no equipment in the game that allows a player to earn EXP in it.
+  - **Prerequisite Tracking (Matching Throwing Weapons → Javelin)**: Exactly matching how Throwing Weapons was tracked as Javelin's missing piece (Milestone 49 → Milestone 54), Heavy Armor equipment (e.g., Iron Plate / Forged Heavy Mail) is a known, deliberate prerequisite that must be introduced in a future blacksmithing/armor milestone before players can earn `heavy_armor` levels to unlock Dragoon (`Spears 60 + Heavy Armor 30 + Lancer/Hoplite Lv 15`).
+- **Zero Regressions**: Preserved 50/50 two-bar HP split, Outpost-only equip rules, Critical HP floor-of-1 safety, and save/snapshot persistence.
+
+**Resolved and shipped: Milestone — Spellsword.**
+- **Citation & Line References**:
+  - Exact citation in `docs/class_system (1).md` line 127: `| Spellsword | Longswords 30 + Arcane 10 | Warrior-mage hybrid trainee |`.
+  - Also cited at line 157 as a prerequisite for Battlemage (`Spellsword Lv 30 + Fire Magic 20`).
+  - GDD Section 12.2 audit confirmed Spellsword is absent from Section 12.2; the 5-skill kit is transparently framed as an original, authentic hybrid design.
+- **Weapon Discipline (Pure Longsword Specialist)**:
+  - Spellsword has **exactly one valid weapon: Longswords (1H or 2H)**.
+  - Zero staff, wand, or Arcane conduit equip path. Regression tests explicitly assert the absence of any conduit/spell weapon pairing in `data/classes.json`.
+- **One-Directional Secondary EXP Flow**:
+  - Implements the Dark Knight passive-imbuement pattern: every Longsword attack or skill awards full primary EXP (+2 `longswords` EXP) and a secondary share (+1 `arcane_magic` EXP) via `passiveImbuement.secondaryExp`.
+- **Unconditional Arcane Magic Scaling**:
+  - Spellsword skills scale directly and unconditionally with the character's `arcane_magic` level (`+0.15 * arcane_magic level`), without being gated behind weapon checks.
+  - Formally verified with an exact numeric check in tests: Arcane Magic 30 provides precisely `+4.5` bonus damage (`30 × 0.15`).
+- **Full 5-Skill Kit (1, 10, 20, 30, 40 Unlock Cadence)**:
+  - `arcane_strike` (Lv 1, 12 EN, 2.5s CD): 150% damage melee thrust + Arcane scaling.
+  - `runic_infusion` (Lv 10, 18 EN, 12s CD): 8s self-buff imbuing the blade with +25% magic damage and +4 energy siphon on hit.
+  - `spell_ward` (Lv 20, 20 EN, 14s CD): 6s protective ward granting 40 shield HP absorption and +20% Parry bonus.
+  - `dimensional_lunge` (Lv 30, 25 EN, 8s CD): 4-tile gap-closer teleport and strike dealing 190% damage + Arcane scaling.
+  - `blade_beam` (Lv 40 capstone, 35 EN, 15s CD): 4-tile piercing wave dealing 260% damage + Arcane scaling; resonates with Runic Infusion to refund 10 EN and cleave adjacent targets for 60% damage.
+- **Status Effects & Passives**:
+  - Registered `arcane_vulnerability` (+15% damage amplification), `runic_infusion` (+25% magic damage, +4 energy siphon), and `spell_ward` (40 shield HP, +20% parry).
+  - Passive imbuement proc applies `arcane_vulnerability` on melee hits with scaling chance (5% at Lv 1 to 50% at Lv 50+).
+- **Verification & Integrity**:
+  - Unit test suite `test/milestone_spellsword.test.ts` (all 7 tests passing).
+  - Regression test suites `test/milestone_armor_proficiency.test.ts` and `test/milestone58.test.ts` pass cleanly.
+  - TypeScript type check (`tsc --noEmit`) and production bundle build (`npm run build`) pass with zero errors.
+
+**Resolved and shipped: Urgent Bugfix — Downed Leader Soft-Lock Elimination (Crystal/Portal Access & Emergency Leader Swap).**
+- **The Issue**: Real human playtesting identified that when the Leader is Downed in the dungeon and no revive items are available, the session completely soft-locked. The crystal previously required the Leader specifically to arrive to trigger it, Downed units cannot move or act, and Milestone 45 restricted leader swapping to Outpost-only.
+- **Defense-in-Depth Solution (Both Components Shipped)**:
+  1. **Generalized Crystal & Portal Interaction (`MainScene.ts`, `OutpostScene.ts`)**:
+     - Removed the "Leader only" requirement for Teleporter Crystal and Portal interactions.
+     - Any conscious, living party member adjacent to the Teleporter Crystal (or Outpost Portal) immediately opens the crystal modal (or triggers portal transition).
+     - When commanded to move toward the crystal/portal, all conscious party members pathfind towards adjacent tiles, and whichever conscious member arrives first triggers the interaction.
+     - Downed characters are not commanded to move.
+  2. **Emergency Mid-Dungeon Leader Swap Exception (`HUD.ts`, `MainScene.ts`)**:
+     - Added an explicit, narrow exception to the Outpost-only leader swap rule: leadership can be reassigned mid-dungeon specifically when the current Leader is Downed or dead.
+     - In `HUD.ts`, the "👑 Make Leader" button is rendered in the dungeon only on conscious allies when the current leader is Downed.
+     - In `MainScene.ts`, `changePartyLeader(newLeaderIdx)` verifies that the current leader is Downed before allowing the swap, reorders `this.party` to place the new leader at index 0, updates camera follow, updates `progressionSystem`, and saves snapshots.
+     - The moment a conscious companion becomes Leader, normal Outpost-only leader-swap restrictions immediately re-lock.
+  3. **Transition Integrity (Downed Members Carried Over)**:
+     - Verified with adversarial test scenario: party transitions operate on the entire `this.party` roster via `GameState.savePartySnapshot(this.party, ...)`. All party members — including Downed ones located far away from the interaction point — travel together, correctly retaining their Downed status, 0 HP, and clickable revive icon upon arrival in the new scene.
+- **Verification**:
+  - `test/downedPartyTransitionVerification.test.ts` (100% pass)
+  - `test/downedLeaderSoftlockFix.test.ts` (100% pass across all 5 test cases)
+  - Production build (`npm run build`) clean with 0 errors.
+
+
+

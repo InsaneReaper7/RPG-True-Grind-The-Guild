@@ -28,6 +28,12 @@ export class ProgressionSystem {
     'iron_back'
   ];
 
+  public static readonly ARMOR_PROFICIENCY_IDS: readonly string[] = [
+    'light_armor',
+    'medium_armor',
+    'heavy_armor'
+  ];
+
   public ownerName: string = 'Guild Hero';
 
   private static expLog: ExpTransaction[] = [];
@@ -120,6 +126,9 @@ export class ProgressionSystem {
     this.proficiencies.set('spears', { level: 0, currentExp: 0 });
     this.proficiencies.set('katana', { level: 0, currentExp: 0 });
     this.proficiencies.set('throwing_weapons', { level: 0, currentExp: 0 });
+    this.proficiencies.set('light_armor', { level: 0, currentExp: 0 });
+    this.proficiencies.set('medium_armor', { level: 0, currentExp: 0 });
+    this.proficiencies.set('heavy_armor', { level: 0, currentExp: 0 });
     for (const hiddenId of ProgressionSystem.HIDDEN_SKILL_IDS) {
       this.proficiencies.set(hiddenId, { level: 0, currentExp: 0 });
     }

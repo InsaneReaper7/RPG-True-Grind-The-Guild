@@ -235,6 +235,11 @@ export class Entity extends Phaser.GameObjects.Container {
       const amp = exposeEffect.def?.damageAmplificationPercent ?? 0.25;
       damageRemaining *= (1 + amp);
     }
+    const arcaneVulnEffect = this.activeStatusEffects.get('arcane_vulnerability');
+    if (arcaneVulnEffect) {
+      const amp = arcaneVulnEffect.def?.damageAmplificationPercent ?? 0.15;
+      damageRemaining *= (1 + amp);
+    }
     if (damageRemaining > 0) {
       for (const [effectId, activeEffect] of this.activeStatusEffects.entries()) {
         if (activeEffect.shieldHp !== undefined && activeEffect.shieldHp > 0) {

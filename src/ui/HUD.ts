@@ -3190,7 +3190,9 @@ export class HUD {
       const color = avatarColors[i % avatarColors.length];
       const isDowned = member.state === 'downed';
       const isLeader = i === 0;
-      const canSetLeader = this.isOutpost && !isLeader && !isDowned && member.state !== 'dead';
+      const currentLeader = this.currentParty[0];
+      const isLeaderDowned = !!(currentLeader && (currentLeader.state === 'downed' || currentLeader.state === 'dead'));
+      const canSetLeader = !isLeader && !isDowned && member.state !== 'dead' && (this.isOutpost || isLeaderDowned);
 
       const dwStat = member.progression.getProficiencyStat('dual_wielding');
       const isDwUnlocked = member.progression.isDualWieldUnlocked();
@@ -4078,7 +4080,9 @@ export class HUD {
       // Leader Promote button
       if (target.classList.contains('party-set-leader-btn')) {
         const idx = parseInt(target.dataset.leaderIdx || '0', 10);
-        if (!this.isOutpost) {
+        const currentLeader = this.currentParty[0];
+        const isCurrentLeaderDowned = !!(currentLeader && (currentLeader.state === 'downed' || currentLeader.state === 'dead'));
+        if (!this.isOutpost && !isCurrentLeaderDowned) {
           this.showToast('⚠️ Leadership can only be changed at the Outpost!', 'warn');
           return;
         }
@@ -5551,6 +5555,9 @@ export class HUD {
       case 'spears': return '#06b6d4';
       case 'katana': return '#e11d48';
       case 'throwing_weapons': return '#10b981';
+      case 'light_armor': return '#34d399';
+      case 'medium_armor': return '#fb923c';
+      case 'heavy_armor': return '#60a5fa';
       default: return '#34d399';
     }
   }
@@ -6843,6 +6850,25 @@ export class HUD {
           badge: (w.category || 'WEAPON').replace('_', ' ').toUpperCase(),
           description: statDef?.description || `Proficiency with ${w.name.toLowerCase()} in combat.`,
           stats
+        });
+      }
+    }
+
+    // Armor Proficiencies in Combat/Weapons tab
+    const armorProfIds = ['light_armor', 'medium_armor', 'heavy_armor'];
+    for (const ap of armorProfIds) {
+      if (gameState.isProficiencyDiscovered(ap) || hasPartyProficiency(ap)) {
+        const def = dataLoader.getTrainableStatDef(ap);
+        const lvl = getPartyMaxLevel(ap);
+        discoveredWeapons.push({
+          id: ap,
+          name: def?.name || ap,
+          badge: 'ARMOR PROFICIENCY',
+          description: def?.description || 'Proficiency with wearing armor of this weight class.',
+          stats: [
+            { label: 'Guild Mastery', value: lvl > 0 ? `Level ${lvl}` : 'Practicing' },
+            { label: 'Weight Class', value: ap.replace('_armor', '').toUpperCase() }
+          ]
         });
       }
     }

@@ -1053,6 +1053,93 @@
         }
       ],
       "description": "Arcane Initiate capstone: releases an explosive burst of raw arcane energy in a 4-tile radius around the caster, dealing 260% magic damage to all enemies within range."
+    },
+    {
+      "id": "arcane_strike",
+      "name": "Arcane Strike",
+      "energyCost": 12,
+      "cooldownMs": 2500,
+      "damageMultiplier": 1.5,
+      "rangeTiles": 1,
+      "targetType": "enemy",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "spellsword",
+          "value": 1
+        }
+      ],
+      "description": "Spellsword hybrid strike: infuses the longsword with raw arcane energy, dealing 150% weapon damage plus unconditional bonus damage scaling from Arcane Magic level."
+    },
+    {
+      "id": "runic_infusion",
+      "name": "Runic Infusion",
+      "energyCost": 18,
+      "cooldownMs": 12000,
+      "durationMs": 8000,
+      "bonusDamagePercent": 0.25,
+      "energySiphonOnHit": 4,
+      "targetType": "self",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "spellsword",
+          "value": 10
+        }
+      ],
+      "description": "Enchants the caster's longsword with pulsing arcane runes for 8s. While infused, attacks deal +25% bonus magical damage and siphon 4 energy on hit."
+    },
+    {
+      "id": "spell_ward",
+      "name": "Spell Ward",
+      "energyCost": 20,
+      "cooldownMs": 14000,
+      "durationMs": 6000,
+      "shieldAmount": 40,
+      "parryBonus": 0.20,
+      "targetType": "self",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "spellsword",
+          "value": 20
+        }
+      ],
+      "description": "Weaves sword guard and protective sorcery into a kinetic ward for 6s, absorbing up to 40 incoming damage and granting +20% Parry chance."
+    },
+    {
+      "id": "dimensional_lunge",
+      "name": "Dimensional Lunge",
+      "energyCost": 25,
+      "cooldownMs": 8000,
+      "rangeTiles": 4,
+      "damageMultiplier": 1.9,
+      "targetType": "enemy",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "spellsword",
+          "value": 30
+        }
+      ],
+      "description": "Warps through dimensional space directly adjacent to a target up to 4 tiles away and executes a piercing longsword thrust dealing 190% weapon damage plus unconditional bonus scaling from Arcane Magic level."
+    },
+    {
+      "id": "blade_beam",
+      "name": "Blade Beam",
+      "energyCost": 35,
+      "cooldownMs": 15000,
+      "rangeTiles": 4,
+      "damageMultiplier": 2.6,
+      "targetType": "enemy",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "spellsword",
+          "value": 40
+        }
+      ],
+      "description": "Spellsword capstone: slashes the longsword with overwhelming force, unleashing a crescent wave of compressed arcane energy that strikes targets up to 4 tiles away for 260% weapon damage plus unconditional bonus scaling from Arcane Magic level. If Runic Infusion is active, refunds 10 energy and cleaves adjacent enemies."
     }
   ]
 }

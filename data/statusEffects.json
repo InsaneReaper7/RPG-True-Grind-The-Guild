@@ -239,6 +239,36 @@
       "spellDamageMultiplier": 1.75,
       "spellEnergyCostMultiplier": 1.50,
       "color": "#c084fc"
+    },
+    {
+      "id": "arcane_vulnerability",
+      "name": "Arcane Vulnerability",
+      "durationMs": 6000,
+      "tickIntervalMs": 6000,
+      "damagePerTick": 0,
+      "damageAmplificationPercent": 0.15,
+      "isHarmful": true,
+      "color": "#c084fc"
+    },
+    {
+      "id": "runic_infusion",
+      "name": "Runic Infusion",
+      "durationMs": 8000,
+      "tickIntervalMs": 8000,
+      "damagePerTick": 0,
+      "bonusDamagePercent": 0.25,
+      "energySiphonOnHit": 4,
+      "color": "#818cf8"
+    },
+    {
+      "id": "spell_ward",
+      "name": "Spell Ward",
+      "durationMs": 6000,
+      "tickIntervalMs": 6000,
+      "damagePerTick": 0,
+      "shieldAmount": 40,
+      "parryBonus": 0.20,
+      "color": "#6366f1"
     }
   ]
 }

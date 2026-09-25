@@ -613,6 +613,30 @@ export class DataLoader {
       };
     }
 
+    if (id === 'light_armor') {
+      return {
+        id: 'light_armor',
+        name: 'Light Armor',
+        description: 'Proficiency with light garments, silk robes, and supple leather in combat.'
+      };
+    }
+
+    if (id === 'medium_armor') {
+      return {
+        id: 'medium_armor',
+        name: 'Medium Armor',
+        description: 'Proficiency with reinforced hide, sturdy leather, and medium armor in combat.'
+      };
+    }
+
+    if (id === 'heavy_armor') {
+      return {
+        id: 'heavy_armor',
+        name: 'Heavy Armor',
+        description: 'Proficiency with heavy plate, mail, and bulky armor in combat.'
+      };
+    }
+
     return {
       id,
       name: id.split('_').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),

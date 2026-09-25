@@ -397,6 +397,36 @@
       "hiddenSkillBonuses": {
         "mana_regen": 0.05
       }
+    },
+    {
+      "id": "spellsword",
+      "name": "Spellsword",
+      "tier": "adept",
+      "requirements": [
+        { "type": "proficiency", "target": "longswords", "value": 30 },
+        { "type": "proficiency", "target": "arcane_magic", "value": 10 }
+      ],
+      "fantasy": "Warrior-mage hybrid trainee",
+      "hiddenSkillBonuses": {
+        "parry": 0.05,
+        "mana_regen": 0.05
+      },
+      "passiveImbuement": {
+        "bonusDamagePercent": 0.10,
+        "proc": {
+          "statusEffectId": "arcane_vulnerability",
+          "baseChance": 0.05,
+          "maxChance": 0.50,
+          "scalingStat": "classLevel",
+          "minLevel": 1,
+          "maxLevel": 100
+        },
+        "secondaryExp": {
+          "proficiency": "arcane_magic",
+          "exp": 1,
+          "share": 0.5
+        }
+      }
     }
   ]
 }

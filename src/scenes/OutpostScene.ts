@@ -2146,51 +2146,47 @@ export class OutpostScene extends Phaser.Scene {
       member.clearTarget();
     }
 
-    const dx = Math.abs(this.player.gridPos.x - this.portalPos.x);
-    const dy = Math.abs(this.player.gridPos.y - this.portalPos.y);
+    const isAdjacent = (pos: GridPos, target: GridPos) =>
+      Math.max(Math.abs(pos.x - target.x), Math.abs(pos.y - target.y)) <= 1 &&
+      (pos.x !== target.x || pos.y !== target.y);
 
-    if (Math.max(dx, dy) <= 1 && (dx > 0 || dy > 0)) {
+    const consciousMembers = this.party.filter(
+      (m) => m.state !== 'downed' && m.state !== 'dead'
+    );
+
+    if (consciousMembers.some((m) => isAdjacent(m.gridPos, this.portalPos))) {
       this.executeTransitionToDungeon();
       return;
     }
 
-    console.log('[OutpostScene] Party moving to portal...');
+    if (consciousMembers.length === 0) {
+      console.warn('[OutpostScene] No conscious party members to interact with portal.');
+      return;
+    }
+
+    console.log('[OutpostScene] Conscious party members moving to portal...');
     const claimed = new Set<string>();
 
-    // Assign leader an open adjacent tile to the portal
-    const leaderDest = this.findOpenAdjacentTile(this.portalPos, this.player.gridPos, claimed, this.player);
-    claimed.add(`${leaderDest.x},${leaderDest.y}`);
-    this.player.claimedDestination = { ...leaderDest };
+    for (const member of consciousMembers) {
+      const dest = this.findOpenAdjacentTile(this.portalPos, member.gridPos, claimed, member);
+      claimed.add(`${dest.x},${dest.y}`);
+      member.claimedDestination = { ...dest };
 
-    // Command all living companions to also move towards the portal
-    for (let i = 1; i < this.party.length; i++) {
-      const companion = this.party[i];
-      if (companion.state === 'downed' || companion.state === 'dead') continue;
-      const compDest = this.findOpenAdjacentTile(this.portalPos, companion.gridPos, claimed, companion);
-      claimed.add(`${compDest.x},${compDest.y}`);
-      companion.claimedDestination = { ...compDest };
-
-      const compDynamicObs = this.getDynamicObstacles(companion);
-      this.pathfinder.findPath(companion.gridPos, compDest, compDynamicObs).then((path) => {
+      const dynamicObs = this.getDynamicObstacles(member);
+      this.pathfinder.findPath(member.gridPos, dest, dynamicObs).then((path) => {
         if (path.length > 0) {
-          companion.followPath(path);
+          member.followPath(path, () => {
+            this.executeTransitionToDungeon();
+          });
         } else {
-          companion.claimedDestination = null;
+          if (isAdjacent(member.gridPos, this.portalPos)) {
+            this.executeTransitionToDungeon();
+          } else {
+            member.claimedDestination = null;
+          }
         }
       });
     }
-
-    // Leader movement with transition on arrival (Leader-Arrival Rule)
-    const dynamicObs = this.getDynamicObstacles(this.player);
-    this.pathfinder.findPath(this.player.gridPos, leaderDest, dynamicObs).then((path) => {
-      if (path.length > 0) {
-        this.player.followPath(path, () => {
-          this.executeTransitionToDungeon();
-        });
-      } else {
-        this.executeTransitionToDungeon();
-      }
-    });
   }
 
   private executeTransitionToDungeon(): void {

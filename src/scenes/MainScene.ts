@@ -323,6 +323,11 @@ export class MainScene extends Phaser.Scene {
       }
     );
 
+    // Emergency Leader Swap Exception Handler: Allow mid-dungeon leadership reassignment when current leader is downed
+    this.hud.setPartyLeaderChangeHandler((newLeaderIdx: number) => {
+      this.changePartyLeader(newLeaderIdx);
+    });
+
     // Progression & Skill Discovery Notifications
     this.bindProgressionEvents(this.progressionSystem, leaderName);
 
@@ -544,9 +549,18 @@ export class MainScene extends Phaser.Scene {
     (window as any).__selectAllMembers = () => this.selectAllMembers();
     (window as any).__getSelectedMembers = () => this.getSelectedMembers();
     (window as any).__getPartyLeader = () => this.player;
-    (window as any).__setPartyLeader = () => {
-      this.hud?.showToast('⚠️ Leadership can only be changed at the Outpost!', 'warn', 3000);
-      return false;
+    (window as any).__setPartyLeader = (idxOrName: number | string) => {
+      let idx = -1;
+      if (typeof idxOrName === 'number') {
+        idx = idxOrName;
+      } else {
+        idx = this.party.findIndex((m) => m.entityName === idxOrName || m.id === idxOrName);
+      }
+      if (idx === -1) {
+        console.warn(`[Debug] No party member found for '${idxOrName}'`);
+        return false;
+      }
+      return this.changePartyLeader(idx);
     };
     (window as any).__getLastMoveDestinationHighlights = () => this.lastMoveDestinationHighlights;
     (window as any).__getCurrentGatherSelectionHighlights = () => this.currentGatherSelectionHighlights;
@@ -1604,56 +1618,53 @@ export class MainScene extends Phaser.Scene {
     }
     this.targetReticle.setVisible(false);
 
-    const dx = Math.abs(this.player.gridPos.x - this.crystalPos.x);
-    const dy = Math.abs(this.player.gridPos.y - this.crystalPos.y);
+    const isAdjacent = (pos: GridPos, target: GridPos) =>
+      Math.max(Math.abs(pos.x - target.x), Math.abs(pos.y - target.y)) <= 1 &&
+      (pos.x !== target.x || pos.y !== target.y);
 
-    if (Math.max(dx, dy) <= 1 && (dx > 0 || dy > 0)) {
-      // Already adjacent
+    const consciousMembers = this.party.filter(
+      (m) => m.state !== 'downed' && m.state !== 'dead'
+    );
+
+    // If any conscious member is already adjacent to the crystal, open modal immediately
+    if (consciousMembers.some((m) => isAdjacent(m.gridPos, this.crystalPos))) {
       this.openCrystalModal();
       return;
     }
 
-    console.log('[MainScene] Party moving to Teleporter Crystal...');
+    if (consciousMembers.length === 0) {
+      console.warn('[MainScene] No conscious party members to interact with Teleporter Crystal.');
+      return;
+    }
+
+    console.log('[MainScene] Conscious party members moving to Teleporter Crystal...');
     const claimed = new Set<string>();
 
-    // Assign leader an open adjacent tile to the crystal
-    const leaderDest = this.findOpenAdjacentTile(this.crystalPos, this.player.gridPos, claimed, this.player);
-    claimed.add(`${leaderDest.x},${leaderDest.y}`);
-    this.player.claimedDestination = { ...leaderDest };
+    for (const member of consciousMembers) {
+      const dest = this.findOpenAdjacentTile(this.crystalPos, member.gridPos, claimed, member);
+      claimed.add(`${dest.x},${dest.y}`);
+      member.claimedDestination = { ...dest };
 
-    // Command all living companions to also move towards the crystal
-    for (let i = 1; i < this.party.length; i++) {
-      const companion = this.party[i];
-      if (companion.state === 'downed' || companion.state === 'dead') continue;
-      const compDest = this.findOpenAdjacentTile(this.crystalPos, companion.gridPos, claimed, companion);
-      claimed.add(`${compDest.x},${compDest.y}`);
-      companion.claimedDestination = { ...compDest };
-
-      const compUnitObs = this.getPartyUnitObstacles(companion);
-      this.pathfinder.findPath(companion.gridPos, compDest, compUnitObs).then((path) => {
+      const unitObs = this.getPartyUnitObstacles(member);
+      this.pathfinder.findPath(member.gridPos, dest, unitObs).then((path) => {
         if (path.length > 0) {
-          companion.followPath(path);
+          member.followPath(path, () => {
+            this.openCrystalModal();
+          });
         } else {
-          companion.claimedDestination = null;
+          if (isAdjacent(member.gridPos, this.crystalPos)) {
+            this.openCrystalModal();
+          } else {
+            member.claimedDestination = null;
+          }
         }
       });
     }
-
-    // Leader movement with crystal interaction on arrival
-    const leaderUnitObs = this.getPartyUnitObstacles(this.player);
-    this.pathfinder.findPath(this.player.gridPos, leaderDest, leaderUnitObs).then((path) => {
-      if (path.length > 0) {
-        this.player.followPath(path, () => {
-          this.openCrystalModal();
-        });
-      } else {
-        this.openCrystalModal();
-      }
-    });
   }
 
   public openCrystalModal(): void {
     if (this.isTransitioning) return;
+    if (this.hud?.isTeleporterCrystalModalOpen()) return;
     const currentFloor = GameState.getInstance().getDungeonFloorCount();
     const currentRegion = DataLoader.getInstance().getRegionForFloor(currentFloor);
     const nextRegion = DataLoader.getInstance().getRegionForFloor(currentFloor + 1);
@@ -1664,6 +1675,58 @@ export class MainScene extends Phaser.Scene {
       currentRegion.name,
       nextRegion.name !== currentRegion.name ? nextRegion.name : undefined
     );
+  }
+
+  /**
+   * Emergency Leader Swap Exception:
+   * Reassign party leadership to another living party member mid-dungeon specifically when
+   * the current Leader is Downed. In any other situation, swaps remain Outpost-only.
+   * Restructures party array so the newly promoted leader is moved to index 0.
+   */
+  public changePartyLeader(newLeaderIdx: number): boolean {
+    if (this.isTransitioning) return false;
+    if (newLeaderIdx <= 0 || newLeaderIdx >= this.party.length) return false;
+
+    const currentLeader = this.player;
+    const isCurrentLeaderDowned = currentLeader && (currentLeader.state === 'downed' || currentLeader.state === 'dead');
+    if (!isCurrentLeaderDowned) {
+      this.hud?.showToast('⚠️ Leadership can only be changed at the Outpost unless the current Leader is downed!', 'warn', 3000);
+      return false;
+    }
+
+    const newLeader = this.party[newLeaderIdx];
+    if (!newLeader || newLeader.state === 'downed' || newLeader.state === 'dead') {
+      this.hud?.showToast('⚠️ Cannot designate a downed party member as Leader!', 'warn', 3000);
+      return false;
+    }
+
+    const prevLeader = this.party[0];
+    console.log(`[MainScene] Emergency leadership reassignment from ${prevLeader.entityName} to ${newLeader.entityName}`);
+
+    // Reorder party array: move newLeader to index 0
+    this.party.splice(newLeaderIdx, 1);
+    this.party.unshift(newLeader);
+
+    // Update progression system reference to the new active leader
+    this.progressionSystem = this.player.progression;
+
+    // Persist new party order to GameState immediately
+    GameState.getInstance().savePartySnapshot(this.party, this.time.now);
+    GameState.getInstance().saveSnapshot(this.player, this.progressionSystem, this.time.now);
+    GameState.getInstance().saveToDisk();
+
+    // Re-anchor camera follow to the new leader
+    if (this.isCameraLocked) {
+      this.cameras.main.startFollow(this.player, true, 0.1, 0.1);
+    }
+
+    // Refresh HUD selection and view
+    this.hud?.setSelectedMemberIndices(this.party.map((_, i) => i));
+    this.hud?.update(this.player, this.progressionSystem, this.time.now, this.party);
+    this.hud?.renderPartyOverviewModal(true);
+
+    this.hud?.showToast(`👑 ${newLeader.entityName} is now the Party Leader!`, 'success', 3500);
+    return true;
   }
 
   public executeContinueDescent(): void {

@@ -76,17 +76,24 @@ In Milestone 28, Helmet and Body Armor slots were introduced with flat Max HP bo
 
 ---
 
-## 5. Dragoon Class & Armor Proficiency System (Deferred — Architectural Prerequisite)
+## 5. Dragoon Class & Armor Proficiency System (Prerequisite Resolved — Dragoon Ready for Dedicated Scoping)
 
-### Blocking Dependency
-- **Dragoon** (Lancer's Tier 2 evolution) is gated behind a **Heavy Armor** proficiency threshold.
-- Currently, no Armor proficiency system (Light/Medium/Heavy, leveled through wear) exists in this project. All armor pieces (Milestones 28 & 33) are static equipment items providing flat Max HP bonuses. Nothing about wearing armor levels up.
-
-### Resolution Roadmap
-- Building Dragoon cannot be hastily mocked with a fake stat requirement. It fundamentally requires a dedicated architectural milestone:
-  1. Design and build a trainable **Armor Proficiency** system where taking hits or wearing gear earns EXP toward armor weight classes (`light_armor`, `medium_armor`, `heavy_armor`).
-  2. Retroactively tag every existing armor piece in `armors.json` (Leather Cap, Leather Armor, Silk Cowl, Silk Robe, Bone Necklace, etc.) with an explicit weight class.
-  3. Once the Heavy Armor proficiency leveling loop is verified, Dragoon can be introduced with legitimate requirements (`Lancer` class level + `Heavy Armor` proficiency + `Spears` proficiency).
+### Status Update (Armor Proficiency System Shipped)
+- **Resolved and Shipped**: Trainable **Armor Proficiency** system implemented across `light_armor`, `medium_armor`, and `heavy_armor`.
+- **True Armor Tagging vs. Pure Stat Jewelry**:
+  - The 4 true armor pieces in `armors.json` (Leather Cap, Leather Armor, Silk Cowl, Silk Robe) occupying the Helmet and Body slots are explicitly tagged with their weight class (`light` or `medium`).
+  - The 3 jewelry/accessory pieces (Bone Necklace, Wolf Claw Ring, Venom Charm) occupying Necklace, Ring, and Accessory slots have **no `weightClass` tag** — they are pure stat items with zero involvement in armor proficiency.
+- **Explicit Slot Exclusion & EXP Invariants**:
+  - Combat hooks (`hit`, `attack`, `kill`) and active weight class introspection (`getEquippedArmorWeightClasses()`) **explicitly evaluate only true armor slots (`helmet` and `body`)**.
+  - Necklace, Ring, and Accessory slots are explicitly excluded and contribute zero armor proficiency EXP under any condition.
+- **EXP Awarding Mechanics (Intentional Design Distinction)**:
+  - **Hit (`hit`) — Per-Piece Award**: When a character absorbs a hit in combat, every equipped true armor piece (Helmet/Body) absorbs impact and awards +1 EXP to its corresponding weight class. Wearing 2 light pieces (cowl + robe) awards +2 `light_armor` EXP per hit; wearing 1 light helmet and 1 medium body awards +1 `light_armor` EXP and +1 `medium_armor` EXP per hit. This models physical coverage: more surface area/pieces enduring damage yields more defensive conditioning.
+  - **Attack (`attack`) & Kill (`kill`) — Per-Unique-Class Award**: Offensive actions award +1 EXP (`attack`) and +2 EXP (`kill`) per *unique weight class worn on true armor slots* rather than per piece. A character in full light armor moves and maneuvers within the light encumbrance class as a whole; deduplication prevents offensive action spam from multiplying EXP per piece equipped while still rewarding mixed-weight builds equally (+1/+2 to each worn class).
+- **Known Deliberate Gap — `heavy_armor` Currently Untrainable**:
+  - Zero existing true armor pieces in `armors.json` or recipes in `armorsmithRecipes.json` are tagged `heavy` (all existing true armor pieces are `light` or `medium`).
+  - While the `heavy_armor` proficiency is architecturally complete, tested, and ready in engine logic (trainable stat definition, leveling curves, discovery, and serialization), there is currently no equipment in the game that allows a player to earn EXP in it.
+  - **Prerequisite Tracking (Matching Throwing Weapons → Javelin)**: Exactly matching how Throwing Weapons was tracked as Javelin's missing prerequisite piece (Milestone 49 → Milestone 54), Heavy Armor equipment (e.g., Iron Plate, Forged Heavy Mail) is a known, deliberate prerequisite that must be introduced in a future blacksmithing/armor milestone before players can earn `heavy_armor` levels to satisfy Dragoon's requirement (`Spears 60 + Heavy Armor 30 + Lancer/Hoplite Lv 15`).
+- **Next Step for Dragoon**: Introduce heavy armor craftables/equipment in an armor expansion milestone to enable `heavy_armor` training, and resolve the Lancer/Hoplite naming and evolutionary branch decisions.
 
 ---
 

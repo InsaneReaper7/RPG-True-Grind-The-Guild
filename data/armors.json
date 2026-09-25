@@ -1,10 +1,11 @@
 {
-  "_comment": "Modular armor registry. Defines armor pieces, equipment slots ('helmet' | 'body' | 'necklace' | 'ring' | 'accessory'), weights, flat HP bonuses, and per-item HP split ratio (default 50/50 across Main HP and Critical HP).",
+  "_comment": "Modular armor registry. Defines armor pieces, equipment slots ('helmet' | 'body' | 'necklace' | 'ring' | 'accessory'), weight classes ('light' | 'medium' | 'heavy' for true armor slots 'helmet' | 'body'; accessories/jewelry are pure stat items without weightClass), weights, flat HP bonuses, and per-item HP split ratio (default 50/50 across Main HP and Critical HP).",
   "armors": [
     {
       "id": "leather_cap",
       "name": "Leather Cap",
       "slot": "helmet",
+      "weightClass": "light",
       "weight": 1.0,
       "hpBonus": 15,
       "splitRatio": "50/50",
@@ -14,6 +15,7 @@
       "id": "leather_armor",
       "name": "Leather Armor",
       "slot": "body",
+      "weightClass": "medium",
       "weight": 5.0,
       "hpBonus": 25,
       "splitRatio": "50/50",
@@ -23,6 +25,7 @@
       "id": "silk_cowl",
       "name": "Silk Cowl",
       "slot": "helmet",
+      "weightClass": "light",
       "weight": 1.0,
       "hpBonus": 30,
       "splitRatio": "50/50",
@@ -32,6 +35,7 @@
       "id": "silk_robe",
       "name": "Silk Robe",
       "slot": "body",
+      "weightClass": "light",
       "weight": 3.0,
       "hpBonus": 50,
       "splitRatio": "50/50",
