@@ -152,3 +152,60 @@ The deeper tiers and hybrid branch are explicitly cited and preserved, but defer
    - *Requirement*: `Crossbows 30 + Perception 30` (Line 328).
    - *Fantasy*: "Tracks marks others can't find".
    - *Deferral Reason*: Gated behind `Perception`, an entirely new character stat system not yet built in the project.
+
+---
+
+## 8. Thrower Class (Tier 1 Adept — Shipped & Reachable)
+
+### Status Summary
+- **Citation & Line References**:
+  - Exact citation in `docs/class_system (1).md` line 136: `| Thrower | Throwing Weapons 30 + Daggers 10 | Quick-handed skirmisher |`.
+  - Also cited at line 500: `Throwing Weapons is now covered (Skirmisher -> Thrower), but it doesn't yet have an Expert/Master-tier class of its own`.
+  - GDD Section 12.2 audit confirmed Thrower is not among original starter templates; the 5-skill kit is transparently framed as an original, authentic hybrid design following Section 12.2 structure.
+- **Genuine Hybrid Identity**:
+  - Implemented in `data/classes.json` with Tier 1 Adept requirements (`throwing_weapons: 30` + `daggers: 10`) and dual hidden skill bonuses (`evasion: 0.05`, `counterattack: 0.05`).
+  - Sidearm Pairing: Thrower can equip Throwing Weapons in main hand and Daggers in offhand (or Daggers in main hand and Throwing Weapons in offhand) as an allowed sidearm exception in `src/entities/Player.ts`, matching Scout and Javelin precedent without requiring universal Dual Wielding.
+  - Cross-Proficiency Scaling: All offensive Thrower skills dynamically scale damage with the partner proficiency (+0.15 to +0.25 scaling per partner level).
+  - Cross-Proficiency EXP Training: Attacks award EXP to both proficiencies (+2 wielded, +1/+2 partner).
+- **Full 5-Skill Kit (1, 10, 20, 30, 40 Unlock Cadence)**:
+  - `quick_toss` (Lv 1, 12 EN, 3.0s CD, 3 tiles): 140% weapon damage + partner scaling + Bleed check.
+  - `skirmish_step` (Lv 10, 18 EN, 7.0s CD, 4s duration): tactical self-buff granting +35% Evasion.
+  - `fan_of_knives` (Lv 20, 22 EN, 6.0s CD, 3 tiles): 160% weapon damage + 50% splash cleave to adjacent enemies within 1 tile.
+  - `crippling_volley` (Lv 30, 26 EN, 9.0s CD, 4 tiles): 185% weapon damage + 50% Slow and Bleed for 4s.
+  - `blade_barrage` (Lv 40 capstone, 35 EN, 12.0s CD, 4 tiles): 260% weapon damage + elevated hybrid scaling (+0.25/level); synergizes with `skirmish_step` to deal +25% bonus damage and refund 10 energy.
+
+---
+
+## 9. Alchemical Bomber Class & Crafting Mastery Progression (Explicitly Deferred — Missing Prerequisite Chain)
+
+### Audit Discovery & Prerequisite Analysis
+- **Documented Requirement in `docs/class_system (1).md`**:
+  - Line 269: `| Alchemical Bomber | Alchemy 30 + Throwing Weapons 60 + Journeyman Alchemist Lv 15 | Turns volatile potions into weapons |`
+  - Located under `## Crafting × Combat Hybrids`.
+- **The Prerequisite Chain**:
+  - Gated behind `Journeyman Alchemist Lv 15`.
+  - In `docs/class_system (1).md` lines 244-250 (`## Crafting Mastery Classes`):
+    - `Apprentice Alchemist` (`Alchemy 10`)
+    - `Journeyman Alchemist` (`Alchemy 30, req. Apprentice Alchemist Lv 10`)
+    - `Master Alchemist` (`Alchemy 60, req. Journeyman Lv 15`)
+    - `Archalchemist` (`Alchemy 90, req. Master Lv 25`)
+- **Codebase Audit Result**:
+  - Neither `Journeyman Alchemist` nor `Apprentice Alchemist` exists in `data/classes.json` or anywhere in the codebase.
+  - In fact, the entire **Crafting Mastery Class** system (Apprentice/Journeyman/Master ranks for crafting professions) has not yet been implemented.
+  - Because `Journeyman Alchemist` does not exist as an actual class, a character cannot level it to Lv 15.
+- **Explicit Deferral Decision**:
+  - Following the established discipline of the project (matching how `Dragoon` was deferred due to missing Heavy Armor equipment, and how `Javelin` was deferred until Throwing Weapons existed):
+  - **Alchemical Bomber is explicitly deferred to a future dedicated Crafting Mastery & Alchemy Expansion milestone**.
+  - It will **not** be built around an invented shortcut or fake stand-in requirement. When Crafting Mastery classes (Apprentice Alchemist → Journeyman Alchemist) are properly designed and shipped, Alchemical Bomber can be unlocked and built authentically.
+
+---
+
+## 10. Infernal Caldera Dedicated Boss (Third Boss Enemy — Future Milestone)
+
+### Current Architecture & Deliberate Resolution
+- The procedural dungeon generator enforces a milestone boss chamber every 5th floor (Floor 5, 10, 15, 20...).
+- Floor 5 (Abyssal Depths) maps to `abyssal_colossus`.
+- Floor 15+ (Glacial Caverns) maps to `glacial_sovereign`.
+- Prior to this resolution, Floor 10 (Infernal Caldera, Floors 6–10) lacked an explicit `bossEnemyId` mapping, causing it to draw randomly from `bossPool`, which created an accidental thematic mismatch where the ice boss (`glacial_sovereign`) could spawn inside the volcanic core.
+- **Current Deliberate Resolution**: `infernal_caldera.bossEnemyId` is explicitly mapped to `abyssal_colossus`. As a subterranean earth titan of stone with tectonic Earthshaker Tremors, `abyssal_colossus` serves as the intentional, documented placeholder boss for Floor 10 pending a dedicated volcanic boss. Multi-seed unit tests verify 100% `abyssal_colossus` spawns and 0% `glacial_sovereign` bleed.
+- **Future Milestone Scope**: Introduce a dedicated Fire/Magma Boss-tier enemy (e.g., Magma Golem, Pyre Wyrm, or Infernal Juggernaut) with its own visual texture, fire/magma signature mechanics (e.g. lava pools, burn stacks), 4-item harvest drop table, and remap `infernal_caldera.bossEnemyId` to this new boss.

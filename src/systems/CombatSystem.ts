@@ -675,11 +675,14 @@ export class CombatSystem {
                 const evasiveRollEffect = target.activeStatusEffects.get('evasive_roll');
                 const flowingStepEffect = target.activeStatusEffects.get('flowing_step');
                 const vaultingLeapEffect = target.activeStatusEffects.get('vaulting_leap');
+                const skirmishStepEffect = target.activeStatusEffects.get('skirmish_step');
                 const evasionBonus = evasiveRollEffect
                   ? (evasiveRollEffect.def?.evasionBonus ?? 0.5)
                   : (vaultingLeapEffect
                     ? (vaultingLeapEffect.def?.evasionBonus ?? 0.4)
-                    : (flowingStepEffect ? (flowingStepEffect.def?.evasionBonus ?? 0.25) : undefined));
+                    : (skirmishStepEffect
+                      ? (skirmishStepEffect.def?.evasionBonus ?? 0.35)
+                      : (flowingStepEffect ? (flowingStepEffect.def?.evasionBonus ?? 0.25) : undefined)));
 
                 const context: CombatContext = {
                   equippedWeapon: target.equippedWeapon,
@@ -744,7 +747,7 @@ export class CombatSystem {
                     }
                   }
                 } else {
-                  const attackColor = isRanged ? 0xf59e0b : 0xef4444;
+                  const attackColor = enemy.enemyData.id === 'glacial_sovereign' ? 0x06b6d4 : (isRanged ? 0xf59e0b : 0xef4444);
                   this.createAttackEffect(enemy.x, enemy.y, target.x, target.y, attackColor);
                   if (context.hasShield) {
                     target.progression.addProficiencyExp('shields', 1);
@@ -820,8 +823,8 @@ export class CombatSystem {
                     }
                   }
 
-                  // Milestone 34: Boss Unique Mechanic — Titanic Cleave Shockwave
-                  if (enemy.enemyData.tier === 'boss' && actualDamage > 0) {
+                  // Milestone 34: Abyssal Colossus Unique Mechanic — Titanic Cleave Shockwave
+                  if (enemy.enemyData.id === 'abyssal_colossus' && actualDamage > 0) {
                     const splashDamage = Math.max(1, Math.round(actualDamage * 0.5));
                     for (const member of this.party) {
                       if (member !== target && member.state !== 'downed' && member.state !== 'dead') {
@@ -849,8 +852,8 @@ export class CombatSystem {
                     }
                   }
 
-                  // Milestone 34: Boss Unique Mechanic — Earthshaker Tremor (30% stun chance on hit)
-                  if (enemy.enemyData.tier === 'boss' && actualDamage > 0 && !targetDowned) {
+                  // Milestone 34: Abyssal Colossus Unique Mechanic — Earthshaker Tremor (30% stun chance on hit)
+                  if (enemy.enemyData.id === 'abyssal_colossus' && actualDamage > 0 && !targetDowned) {
                     if (Math.random() < 0.30) {
                       const stunEffect = {
                         id: 'stun',
@@ -866,6 +869,55 @@ export class CombatSystem {
                       target.applyStatusEffect(stunEffect);
                       this.createFloatingText(target.x, target.y - 28, 'EARTHSHAKER! STUNNED!', '#facc15');
                       console.log(`[Combat:Boss Tremor] ⚡ ${enemy.entityName} strikes with Earthshaker Tremor! ${target.entityName} is STUNNED (2s)!`);
+                    }
+                  }
+
+                  // Milestone — Second Boss Enemy: Glacial Sovereign Signature Mechanics
+                  if (enemy.enemyData.id === 'glacial_sovereign' && actualDamage > 0) {
+                    // Signature Mechanic 1: Glacial Spike Nova / Permafrost Shards
+                    // Projectile shards shatter outward from the impact, hitting all other party members within 3 tiles of the target
+                    const shardDamage = Math.max(1, Math.round(actualDamage * 0.4));
+                    for (const member of this.party) {
+                      if (member !== target && member.state !== 'downed' && member.state !== 'dead') {
+                        const distToImpact = Math.hypot(member.gridPos.x - target.gridPos.x, member.gridPos.y - target.gridPos.y);
+                        if (distToImpact <= 3.0) {
+                          const memDowned = member.takeDamage(shardDamage);
+                          member?.awardArmorWearExp?.('hit');
+                          this.createAttackEffect(target.x, target.y, member.x, member.y, 0x06b6d4);
+                          this.createFloatingText(member.x, member.y - 18, `-${shardDamage} (GLACIAL SHARD!)`, '#38bdf8');
+                          console.log(`[Combat:Glacial Shard] ❄️ Glacial Sovereign icicles shatter into ${member.entityName} for ${shardDamage} damage!`);
+                          if (this.scene) {
+                            if (typeof (this.scene as any).interruptGatherChannel === 'function') {
+                              (this.scene as any).interruptGatherChannel(member, enemy);
+                            }
+                            if (typeof (this.scene as any).interruptReviveChannel === 'function') {
+                              (this.scene as any).interruptReviveChannel(member, enemy);
+                            }
+                          }
+                          if (memDowned) {
+                            console.log(`[Combat] ${member.entityName} was downed by Glacial Spike Nova!`);
+                            member.clearTarget();
+                          }
+                        }
+                      }
+                    }
+
+                    // Signature Mechanic 2: Rime Frostbite (Chill & Movement Cripple)
+                    // Inflicts deep freezing cold: 50% slow and frostbite DoT (3 damage per tick for 4.5s)
+                    if (!targetDowned) {
+                      const frostbiteEffect = {
+                        id: 'frostbite',
+                        name: 'Frostbite',
+                        durationMs: 4500,
+                        tickIntervalMs: 1500,
+                        damagePerTick: 3,
+                        moveSpeedMultiplier: 0.5,
+                        isHarmful: true,
+                        color: '#06b6d4'
+                      };
+                      target.applyStatusEffect(frostbiteEffect);
+                      this.createFloatingText(target.x, target.y - 28, 'FROSTBITE! SLOWED!', '#06b6d4');
+                      console.log(`[Combat:Frostbite] ❄️ ${enemy.entityName} afflicts ${target.entityName} with Frostbite (-50% Move Speed, 3 frost DoT)!`);
                     }
                   }
 
@@ -1148,6 +1200,29 @@ export class CombatSystem {
             }
           }
         }
+
+        // Milestone — Thrower ranged skills autocast during approach
+        let throwerApproachCast = false;
+        for (const throwerSkillId of ['blade_barrage', 'crippling_volley', 'fan_of_knives', 'quick_toss']) {
+          if (member.equippedSkillIds.includes(throwerSkillId) && member.isAutocastEnabled(throwerSkillId)) {
+            const tDef = dataLoader.getSkill(throwerSkillId);
+            if (tDef && member.progression.isSkillUnlocked(tDef, member)) {
+              const isOffCd = !member.lastSkillUseTimes.has(throwerSkillId) || (time - member.lastSkillUseTimes.get(throwerSkillId)! >= tDef.cooldownMs);
+              const isAffordable = member.energy >= tDef.energyCost;
+              const maxRange = tDef.rangeTiles ?? 3;
+              if (isOffCd && isAffordable && distanceTiles <= maxRange) {
+                const castSuccess = this.castSkill(member, throwerSkillId, target, time);
+                if (castSuccess) {
+                  throwerApproachCast = true;
+                  break;
+                }
+              }
+            }
+          }
+        }
+        if (throwerApproachCast) {
+          continue;
+        }
       }
 
       if (distanceTiles <= member.attackRangeTiles) {
@@ -1299,6 +1374,22 @@ export class CombatSystem {
 
           // Milestone — Spellsword skills in normal combat rotation
           if (['arcane_strike', 'dimensional_lunge', 'blade_beam'].includes(skillId)) {
+            const isOffCooldown = !member.lastSkillUseTimes.has(skillId) || (time - member.lastSkillUseTimes.get(skillId)! >= skillDef.cooldownMs);
+            const isAffordable = member.energy >= skillDef.energyCost;
+            const isWeaponReady = time - member.lastAttackTime >= effectiveAttackInterval;
+            if (isOffCooldown && isAffordable && isWeaponReady) {
+              const success = this.castSkill(member, skillId, target as Enemy, time);
+              if (success) {
+                usedSkill = true;
+                this.lastCombatTimeMs = time;
+                break;
+              }
+            }
+            continue;
+          }
+
+          // Milestone — Thrower skills in normal combat rotation
+          if (['quick_toss', 'fan_of_knives', 'crippling_volley', 'blade_barrage'].includes(skillId)) {
             const isOffCooldown = !member.lastSkillUseTimes.has(skillId) || (time - member.lastSkillUseTimes.get(skillId)! >= skillDef.cooldownMs);
             const isAffordable = member.energy >= skillDef.energyCost;
             const isWeaponReady = time - member.lastAttackTime >= effectiveAttackInterval;
@@ -2141,6 +2232,21 @@ export class CombatSystem {
     this.lastCombatTimeMs = time;
     if (target.state !== 'dead' && target.state !== 'downed') (target as any).isAggroed = true;
     const targetDowned = target.takeDamage(damage);
+
+    // Glacial Sovereign: Frost Thorns reflection against melee attackers while Glaciated
+    if (target instanceof Enemy && (target as any).isGlaciated && (target as any).enemyData?.id === 'glacial_sovereign' && !targetDowned) {
+      const dist = Math.hypot(member.gridPos.x - target.gridPos.x, member.gridPos.y - target.gridPos.y);
+      if (dist <= 1.5) {
+        const reflectDamage = Math.max(1, Math.round(damage * 0.15));
+        const memDowned = member.takeDamage(reflectDamage);
+        this.createFloatingText(member.x, member.y - 14, `-${reflectDamage} (FROST THORNS!)`, '#67e8f9');
+        console.log(`[Combat:FrostThorns] ❄️ ${target.entityName}'s Frost Thorns reflect ${reflectDamage} frost damage to ${member.entityName}!`);
+        if (memDowned) {
+          member.clearTarget();
+        }
+      }
+    }
+
     if (targetDowned) {
       this.handleTargetDefeated(member, target, weaponId);
     }
@@ -3197,6 +3303,22 @@ export class CombatSystem {
 
         this.createFloatingText(caster.x, caster.y - 12, 'VAULTING LEAP!', '#38bdf8');
         console.log(`[Skill] ${caster.entityName} casts Vaulting Leap! (+40% Evasion for 3s)`);
+        return true;
+      } else if (skillId === 'skirmish_step') {
+        const effDef = dataLoader.getStatusEffect('skirmish_step') || {
+          id: 'skirmish_step',
+          name: 'Skirmish Step',
+          durationMs: skillDef.durationMs ?? 4000,
+          tickIntervalMs: 4000,
+          damagePerTick: 0,
+          evasionBonus: 0.35,
+          color: '#38bdf8'
+        };
+        caster.applyStatusEffect(effDef);
+        this.createFloatingText(caster.x, caster.y - 12, 'SKIRMISH STEP!', '#38bdf8');
+        console.log(`[Skill] ${caster.entityName} activates Skirmish Step! (+35% Evasion for 4s)`);
+        caster.progression.addProficiencyExp('throwing_weapons', 1);
+        caster.progression.addProficiencyExp('daggers', 1);
         return true;
       } else if (skillId === 'blessed_weapons') {
         const effDef = dataLoader.getStatusEffect('blessed_weapons') || {
@@ -4714,6 +4836,128 @@ export class CombatSystem {
 
         caster.progression.addProficiencyExp('longswords', 2);
         caster.progression.addProficiencyExp('arcane_magic', 2);
+        return true;
+      }
+
+      // ========================================================================
+      // Milestone — Thrower Full 5-Skill Kit
+      // Hybrid archetype bridging Throwing Weapons and Daggers
+      // ========================================================================
+      const throwerSkillIds = ['quick_toss', 'fan_of_knives', 'crippling_volley', 'blade_barrage'];
+      if (throwerSkillIds.includes(skillId)) {
+        const curDist = Math.max(
+          Math.abs(Math.floor(caster.x / caster.tileSize) - Math.floor(enemyTarget.x / enemyTarget.tileSize)),
+          Math.abs(Math.floor(caster.y / caster.tileSize) - Math.floor(enemyTarget.y / enemyTarget.tileSize))
+        );
+        const maxRange = skillDef.rangeTiles ?? 3;
+        if (curDist > maxRange) {
+          console.warn(`[Skill] Cannot cast ${skillDef.name}: target is outside range (${curDist} > ${maxRange})`);
+          return false;
+        }
+
+        caster.energy -= skillDef.energyCost;
+        caster.lastSkillUseTimes.set(skillId, time);
+        caster.lastAttackTime = time;
+        caster.state = 'attacking';
+
+        this.createSkillAttackEffect(caster.x, caster.y, enemyTarget.x, enemyTarget.y);
+
+        const weapon = this.getEffectiveWeaponForAttack(caster);
+        const weaponId = weapon.proficiencyId ?? weapon.id;
+        const weaponLevel = caster.progression.getProficiencyLevel(weaponId);
+        const dmgBonus = weapon.levelBonus?.damagePerLevel ?? 0;
+        const rawBase = weapon.baseDamage + weaponLevel * dmgBonus;
+        const moodTier = dataLoader.getMoodTier(caster.mood);
+        const effBase = rawBase * moodTier.combatDamageMultiplier;
+
+        // Partner proficiency calculation:
+        // If wielding throwing_weapons, partner is daggers.
+        // If wielding daggers, partner is throwing_weapons.
+        // Otherwise, whichever of throwing_weapons or daggers has the higher level.
+        const isThrowing = weaponId === 'throwing_weapons' || weapon.id === 'throwing_weapons';
+        const isDagger = weaponId === 'daggers' || weapon.id === 'daggers';
+        let partnerProfId = 'throwing_weapons';
+        if (isThrowing) {
+          partnerProfId = 'daggers';
+        } else if (isDagger) {
+          partnerProfId = 'throwing_weapons';
+        } else {
+          const twLvl = caster.progression.getProficiencyLevel('throwing_weapons');
+          const dagLvl = caster.progression.getProficiencyLevel('daggers');
+          partnerProfId = twLvl >= dagLvl ? 'daggers' : 'throwing_weapons';
+        }
+        const partnerLevel = caster.progression.getProficiencyLevel(partnerProfId);
+        const hybridRate = skillId === 'blade_barrage' ? 0.25 : 0.15;
+        const hybridBonus = partnerLevel * hybridRate;
+
+        let skillDamage = (effBase * (skillDef.damageMultiplier ?? 1.0)) + hybridBonus;
+
+        if (skillId === 'quick_toss') {
+          this.createFloatingText(enemyTarget.x, enemyTarget.y - 10, `QUICK TOSS! -${skillDamage.toFixed(1)}`, '#38bdf8');
+          this.checkAndApplyBleed(caster, enemyTarget);
+        } else if (skillId === 'fan_of_knives') {
+          this.createFloatingText(enemyTarget.x, enemyTarget.y - 10, `FAN OF KNIVES! -${skillDamage.toFixed(1)}`, '#0ea5e9');
+          // Cleave adjacent enemies within 1 tile of primary target
+          if (this.enemies) {
+            const cleaveDamage = skillDamage * 0.50;
+            const eTile = { x: Math.floor(enemyTarget.x / enemyTarget.tileSize), y: Math.floor(enemyTarget.y / enemyTarget.tileSize) };
+            for (const otherEnemy of this.enemies) {
+              if (otherEnemy === enemyTarget || otherEnemy.state === 'dead' || otherEnemy.state === 'downed') continue;
+              const oTile = { x: Math.floor(otherEnemy.x / otherEnemy.tileSize), y: Math.floor(otherEnemy.y / otherEnemy.tileSize) };
+              if (Math.max(Math.abs(eTile.x - oTile.x), Math.abs(eTile.y - oTile.y)) <= 1) {
+                this.createFloatingText(otherEnemy.x, otherEnemy.y - 10, `SPLASH! -${cleaveDamage.toFixed(1)}`, '#0ea5e9');
+                const oDowned = otherEnemy.takeDamage(cleaveDamage);
+                if (oDowned) {
+                  this.handleTargetDefeated(caster, otherEnemy, weaponId);
+                }
+              }
+            }
+          }
+        } else if (skillId === 'crippling_volley') {
+          const slowDef = dataLoader.getStatusEffect('slow') || {
+            id: 'slow',
+            name: 'Slow',
+            durationMs: skillDef.durationMs ?? 4000,
+            tickIntervalMs: 1000,
+            damagePerTick: 0,
+            moveSpeedMultiplier: 0.5,
+            color: '#67e8f9'
+          };
+          enemyTarget.applyStatusEffect(slowDef);
+          const bleedDef = dataLoader.getStatusEffect('bleed') || {
+            id: 'bleed',
+            name: 'Bleed',
+            durationMs: 6000,
+            tickIntervalMs: 1000,
+            damagePerTick: 3,
+            isHarmful: true,
+            color: '#ef4444'
+          };
+          enemyTarget.applyStatusEffect(bleedDef);
+          this.createFloatingText(enemyTarget.x, enemyTarget.y - 10, `CRIPPLING VOLLEY! -${skillDamage.toFixed(1)}`, '#0284c7');
+          this.createFloatingText(enemyTarget.x, enemyTarget.y - 25, 'SLOWED & BLEEDING!', '#ef4444');
+        } else if (skillId === 'blade_barrage') {
+          const hasSkirmishStep = caster.hasStatusEffect('skirmish_step');
+          if (hasSkirmishStep) {
+            const maxEnergy = caster.maxEnergy ?? 100;
+            caster.energy = Math.min(maxEnergy, (caster.energy ?? 0) + 10);
+            skillDamage *= 1.25;
+            this.createFloatingText(caster.x, caster.y - 20, 'SKIRMISH MOMENTUM! +10 EN', '#38bdf8');
+          }
+          this.createFloatingText(enemyTarget.x, enemyTarget.y - 10, `BLADE BARRAGE! -${skillDamage.toFixed(1)}`, '#ef4444');
+          this.checkAndApplyBleed(caster, enemyTarget);
+        }
+
+        const downed = enemyTarget.takeDamage(skillDamage);
+        if (downed) {
+          this.handleTargetDefeated(caster, enemyTarget, weaponId);
+        }
+
+        const partnerExp = skillId === 'blade_barrage' ? 2 : 1;
+        const primaryProf = weaponId === 'daggers' ? 'daggers' : 'throwing_weapons';
+        const partnerProf = primaryProf === 'daggers' ? 'throwing_weapons' : 'daggers';
+        caster.progression.addProficiencyExp(primaryProf, 2);
+        caster.progression.addProficiencyExp(partnerProf, partnerExp);
         return true;
       }
 

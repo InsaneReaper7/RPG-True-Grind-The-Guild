@@ -45,7 +45,8 @@
     "dark_magic": { "level": 0, "currentExp": 0 },
     "light_armor": { "level": 0, "currentExp": 0 },
     "medium_armor": { "level": 0, "currentExp": 0 },
-    "heavy_armor": { "level": 0, "currentExp": 0 }
+    "heavy_armor": { "level": 0, "currentExp": 0 },
+    "fishing": { "level": 0, "currentExp": 0 }
   },
   "resources": {
     "wood": 1000,

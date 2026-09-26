@@ -202,5 +202,163 @@ Never ask Antigravity to jump ahead in this list — each milestone assumes the 
   - `test/downedLeaderSoftlockFix.test.ts` (100% pass across all 5 test cases)
   - Production build (`npm run build`) clean with 0 errors.
 
+**Resolved and shipped: Milestone — Thrower (Reachable & Complete).**
+- **Citation & Line References**:
+  - Exact citation in `docs/class_system (1).md` line 136: `| Thrower | Throwing Weapons 30 + Daggers 10 | Quick-handed skirmisher |`.
+  - Cited at line 500: `Throwing Weapons is now covered (Skirmisher -> Thrower), but it doesn't yet have an Expert/Master-tier class of its own`.
+  - GDD Section 12.2 audit confirmed Thrower is absent from Section 12.2; the 5-skill kit is transparently framed as an original, authentic hybrid design.
+- **Genuine Hybrid Identity (Throwing Weapons + Daggers)**:
+  - Unlocked at `throwing_weapons: 30` + `daggers: 10` in `data/classes.json`.
+  - Dual hidden skill bonuses: `evasion: 0.05` and `counterattack: 0.05`.
+  - Allowed sidearm pairing in `Player.ts`: can equip Throwing Weapons main + Dagger offhand, or Dagger main + Throwing Weapons offhand without requiring universal Dual Wielding.
+  - Cross-proficiency hybrid damage scaling (+0.15 to +0.25 scaling per partner weapon proficiency level).
+  - Cross-proficiency EXP training: attacks award EXP to both proficiencies (+2 wielded, +1/+2 partner).
+- **Full 5-Skill Kit (1, 10, 20, 30, 40 Unlock Cadence)**:
+  - `quick_toss` (Lv 1, 12 EN, 3.0s CD, 3 tiles): 140% weapon damage + partner scaling + Bleed check.
+  - `skirmish_step` (Lv 10, 18 EN, 7.0s CD, 4s duration): tactical self-buff granting +35% Evasion.
+  - `fan_of_knives` (Lv 20, 22 EN, 6.0s CD, 3 tiles): 160% weapon damage + 50% splash cleave to adjacent enemies within 1 tile.
+  - `crippling_volley` (Lv 30, 26 EN, 9.0s CD, 4 tiles): 185% weapon damage + 50% Slow and Bleed for 4s.
+  - `blade_barrage` (Lv 40 capstone, 35 EN, 12.0s CD, 4 tiles): 260% weapon damage + elevated hybrid scaling (+0.25/level); synergizes with `skirmish_step` to deal +25% bonus damage and refund 10 energy.
+- **Alchemical Bomber Audit & Explicit Deferral**:
+  - Audited `Alchemical Bomber` requirement in `docs/class_system (1).md` line 269: `Alchemy 30 + Throwing Weapons 60 + Journeyman Alchemist Lv 15`.
+  - Line 250 records `Journeyman Alchemist` as a Tier 2 crafting mastery class requiring `Alchemy 30, req. Apprentice Alchemist Lv 10`.
+  - Neither `Journeyman Alchemist` nor `Apprentice Alchemist` exists in `data/classes.json` or anywhere in the codebase.
+  - Alchemical Bomber is explicitly deferred to a future Crafting Mastery & Alchemy Expansion milestone, adhering to the project's strict prerequisite tracking discipline (matching Dragoon and Javelin precedents) rather than inventing a shortcut stand-in.
+- **Verification**:
+  - `test/milestone_thrower.test.ts` (100% pass across all tests).
+  - Production build (`npm run build`) clean with 0 errors.
+
+**Resolved and shipped: Milestone — Third Named Region (Glacial Caverns).**
+- **Depth Boundary & Progression Continuum**:
+  - Extends dungeon progression past Floor 10 into deep subterranean stratum.
+  - Capped `infernal_caldera` at `maxFloor: 10`, cleanly encapsulating the Floor 10 Boss milestone chamber.
+  - Established `glacial_caverns` starting at Floor 11 (`minFloor: 11`), fulfilling the requirement of a real, specific depth threshold meaningfully deeper than Floor 6.
+  - Complete 4-biome ladder:
+    - Ancient Crypts: Floors 1–2 (Upper Stone Chambers, slate gray & soft purple `#a78bfa`)
+    - Abyssal Depths: Floors 3–5 (Deep Void Stratum, obsidian & vibrant violet `#c084fc`, Floor 5 Boss Chamber)
+    - Infernal Caldera: Floors 6–10 (Scorched Subterranean Core, basalt & incandescent magma orange `#f97316`, Floor 10 Boss Chamber)
+    - Glacial Caverns: Floors 11+ (Sub-Zero Crystalline Depths, deep glacial slate & radiant cyan `#06b6d4`)
+- **Visual & Thematic Distinction**:
+  - Procedurally generated `tile-glacial-walkable`: deep sub-zero oceanic glacial slate foundation (`0x082f49`), rime frost border (`0x0284c7`), radiant cyan ice fissures (`0x06b6d4`, `0x67e8f9`), translucent ice pockets (`0x22d3ee`, `0xa5f3fc`), and diamond dust frost glints (`0xf0fdf4`).
+  - Procedurally generated `tile-glacial-obstacle`: pitch arctic permafrost bedrock (`0x030712`), frost crystalline frame (`0x0284c7`), jagged glacial ice crag facets (`0x0c4a6e`), central sapphire/cyan ice spires (`0x0369a1`, `0x38bdf8`), sub-zero crystal fissures (`0x0891b2`, `0x22d3ee`), and diamond glacial core flares.
+  - Distinct `#06b6d4` accent color dynamically tinting the HUD location badge.
+  - Atmospheric tagline: `"The Sub-Zero Crystalline Depths"`.
+- **System Parity & Zero Generation Impact**:
+  - Data-driven configuration registered in `data/dungeonConfig.json` and mirrored in `DataLoader.DEFAULT_REGIONS`.
+  - Zero modifications to core procedural dungeon generation logic (`DungeonGenerator.ts`). Multi-seed deterministic test standard confirmed 100% byte-identical room layouts, coordinates, grid matrices, and crystal/portal positions across seeds 42, 100, 777, and 9999.
+  - Teleporter crystal modal accurately announces next region only at cross-boundary floors (Floor 2→3: "Abyssal Depths", Floor 5→6: "Infernal Caldera", Floor 10→11: "Glacial Caverns"), and omits next-region preview when continuing descent within the same region.
+- **Stale Assertions Fixed**:
+  - Audited and updated prior region milestone test suites (`test/milestone44.test.ts` and `test/milestone56.test.ts`) where region counts were strictly asserted as 3 and Infernal Caldera was asserted as uncapped into Floor 50. All tests now pass cleanly without regressions.
+- **Verification**:
+  - `test/milestone_third_named_region.test.ts`: 100% pass across all 6 unit, topology, and deterministic invariance tests.
+  - `test/verify_milestone_third_region_browser.mjs`: Live browser E2E test executing a real continue-chain descent from Outpost -> Floor 1 -> Floor 2 -> Floor 3 -> Floor 5 -> Floor 6 -> Floor 10 -> Floor 11 (Glacial Caverns) -> Return to Outpost -> Fresh Re-entry.
+  - `npm run build`: Production bundle builds cleanly with 0 TypeScript errors.
+
+**Resolved and shipped: Milestone — Second Boss Enemy (Glacial Sovereign).**
+- **Boss Archetype & Thematic Identity**:
+  - Distinct identity from Abyssal Colossus: while Abyssal Colossus is a massive melee tank/brute (1 tile range, 500 HP, 35 damage, Titanic Cleave, Earthshaker Stun, Berserk Enrage frenzy), **Glacial Sovereign** is an icy crystalline monarch / ranged artillery spellcaster (4 tile range, 420 HP, 32 cold damage, 8 aggro radius, 1400ms attack cadence).
+  - Procedural avatar texture `glacial_sovereign-avatar` (36x36 diamond frost carapace, sharp cyan border `#06b6d4`, crystal horns, crown spire, frost facets, glowing azure eyes, pulsing glacial heart crystal).
+  - Cyan boss badge (`'👑 BOSS 👑'`, style `#06b6d4`) and distinct 8-point snowflake frost aura particles.
+- **Signature Combat Mechanics**:
+  - **Glacial Spike Nova / Permafrost Shards**: 40% cold splash damage fracturing to all other living party members within 3 tiles of the primary target upon ranged projectile impact.
+  - **Rime Frostbite**: 100% inflicts `frostbite` (4500ms duration, 1500ms tick, 3 frost damage/tick, 50% movement speed slow).
+  - **Permafrost Glaciation & Crystalline Barrier (<= 50% HP)**: Phase transition at or below 210 HP. Unlike Abyssal Colossus's attack speed/move speed frenzy Enrage, Glacial Sovereign encases itself in permafrost, conjuring a 100 HP Crystalline Ice Barrier (`iceBarrierHp: 100`) that completely absorbs incoming damage before main HP until shattered, and updates badge to `'❄️ CRYO SOVEREIGN ❄️'`.
+  - **Frost Thorns Reflection**: While glaciated, reflects 15% of all incoming melee damage back to attackers as cold damage.
+- **Spawn Logic, Thematic Regional Fit & Floor 10 Deliberate Resolution**:
+  - Zero modification to Boss-tier spawn rates or floor-interval logic (guaranteed every 5th floor + random chance unchanged).
+  - Explicit regional boss alignment eliminating accidental thematic mismatches:
+    - **Floor 5 (Abyssal Depths, Floors 3–5)**: Explicitly routes to `abyssal_colossus` via `abyssal_depths.bossEnemyId`.
+    - **Floor 10 (Infernal Caldera, Floors 6–10)**: Explicitly routes to `abyssal_colossus` via `infernal_caldera.bossEnemyId = "abyssal_colossus"`. This avoids silent fallback or random `bossPool` roulette that could inappropriately drop an ice monarch into the volcanic core. As a massive dark subterranean stone titan with tectonic Earthshaker Tremors, `abyssal_colossus` serves as the deliberate, documented subterranean boss placeholder for Infernal Caldera pending a future dedicated Fire/Magma Boss milestone. Multi-seed testing confirms 0% Glacial Sovereign bleed into Infernal Caldera.
+    - **Floor 15+ (Glacial Caverns, Floors 11+)**: Explicitly routes to `glacial_sovereign` via `glacial_caverns.bossEnemyId`.
+  - `bossPool: ["abyssal_colossus", "glacial_sovereign"]` registered in `data/dungeonConfig.json` with backward-compatible fallback `bossEnemyId: "abyssal_colossus"`.
+- **Harvest & Drop Table**:
+  - 4-item salvage/rare drop table in `data/enemies.json`:
+    - `glacial_core` (salvage, 1.0 roll chance, amount [1, 2], sellValue 75, craftable into cryo catalysts)
+    - `rime_carapace` (salvage, 0.85 roll chance, amount [1, 3], sellValue 65, craftable into frost mail)
+    - `glacial_essence` (salvage, 0.70 roll chance, amount [2, 4], sellValue 50, pure cryo reagents)
+    - `eye_of_the_sovereign` (rare_drop, 0.20 roll chance, amount [1, 1], sellValue 220, prized monarch relic)
+  - Registered items in `data/items.json` and tooltips in `src/ui/HUD.ts`.
+  - Guaranteed 20 Research Points awarded upon defeat via `calculateResearchPointsForEnemy`.
+- **Verification**:
+  - `test/milestone_second_boss.test.ts`: 100% pass across all unit tests, including dedicated multi-seed testing of Floor 5, Floor 10 (50 random seeds verifying 100% Abyssal Colossus with 0% Glacial Sovereign bleed), and Floor 15.
+  - `test/milestone34.test.ts`: 100% pass across all tests and 100-floor boss chamber simulations.
+  - `test/milestone_third_named_region.test.ts`: 100% pass.
+  - `test/verify_milestone_second_boss_browser.mjs`: Live browser E2E test in real Chrome instance verifying procedural generation on Floor 5 (`abyssal_colossus`), Floor 10 (`abyssal_colossus`), Floor 15 (`glacial_sovereign`), texture generation, ranged attacks, Glacial Spike Nova splash damage, Rime Frostbite affliction, Permafrost Glaciation barrier absorption, Frost Thorns reflection, and +20 RP award.
+  - `npm run build`: Production bundle (`tsc && vite build`) compiles cleanly with 0 errors.
+
+**Resolved and shipped: Milestone — Water Terrain Generation.**
+- **Tile & Obstacle Classification**:
+  - `TileType.FLOOR = 0`: Walkable floor terrain.
+  - `TileType.WALL = 1`: Impassable stone/bedrock obstacle.
+  - `TileType.WATER = 2`: Impassable water terrain (hard obstacle for movement, interactable from adjacent tiles).
+  - Stated walkability rule: water is strictly impassable to normal movement. EasyStar acceptable tiles remain strictly `[0]`.
+  - `Pathfinder`:
+    - `isObstacle(x, y)`: Returns true for wall (`1`) and water (`2`).
+    - `isWater(x, y)`: Returns true only for water (`2`).
+    - `isWall(x, y)`: Returns true only for wall (`1`).
+    - `isWalkable(x, y)`: Returns true only for floor (`0`).
+    - `hasLineOfSight(start, end)`: Water does not block vision or ranged projectiles (`isWall` blocks LOS).
+- **Procedural Visual Asset Ladder (Quad-Biome Theming)**:
+  - `tile-water` (Ancient Crypts / Standard): Subterranean freshwater cistern pool with soft ripples, caustic fluid lines, stone basin trim, and reflection glints.
+  - `tile-abyssal-water` (Abyssal Depths): Bioluminescent void spring with deep obsidian-purple foundation, radiant violet/magenta ripples, and glowing spore particles.
+  - `tile-caldera-water` (Infernal Caldera): Volcanic thermal pool / hot spring with scorched basalt rim, swirling incandescent amber/orange currents, and bubbling heat glints.
+  - `tile-glacial-water` (Glacial Caverns): Freezing sub-zero glacial melt pool with oceanic cyan base, frosted rime border, sharp ice-fracture wavelets, and floating diamond frost flecks.
+  - Registered in `data/dungeonConfig.json` and mirrored in `DataLoader.DEFAULT_REGIONS`.
+- **Procedural Placement Invariants (`DungeonGenerator.ts`)**:
+  - Restricts water generation to eligible rooms (`gathering`, `light_combat`) with minimum dimensions of 5x5.
+  - Excluded from `entrance` and `boss` chambers.
+  - **Corridor Exclusion**: Confined strictly to room interior; 0 water tiles placed in corridors.
+  - **Doorway Clearance**: Every water tile maintains Chebyshev distance >= 2 from all room perimeter doorway thresholds.
+  - **Feature Exclusion**: Strictly forbids spawning on `portalPos`, `crystalPos`, room center, enemy spawns, or gathering node / bush spawns.
+  - **Intra-Room Traversal Guarantee**: Intra-room BFS verifies that all room doorway entrances can reach every other doorway entrance and the room center through walkable floor (`0`) without obstruction.
+  - **Global Connectivity Invariant**: Verified via BFS from `portalPos` across all room centers and `crystalPos`.
+  - Driven by a deterministic local PRNG (`roomWaterSeed`), ensuring zero perturbation of sequential multi-floor RNG simulations.
+- **Adjacent-Tile Interaction**:
+  - Clicking on water routes selected party members to the nearest open adjacent walkable tile facing the water pool, mirroring gathering node interaction mechanics.
+  - Dispatches feedback toast (`"The water here looks too deep to cross."`).
+  - Scene methods: `isWater(x, y)`, `getWaterTiles()`, and `interactWithWater(waterTile, character)`.
+- **Verification**:
+  - `test/milestone_water_terrain.test.ts`: 100% pass across all 7 unit, topology, and multi-seed tests (500 seeds tested: 0 corridor bottlenecks < 2 tiles, 0 doorway bottlenecks, 100% full graph connectivity, 100% byte-for-byte deterministic seed invariance).
+  - `test/test_corridor_doorway_widths.ts`: 100% pass across 500 seeds.
+  - `test/milestone34.test.ts`: 100% pass across all tests and 100-floor boss encounter simulations.
+  - `test/milestone44.test.ts`, `test/milestone56.test.ts`, and `test/milestone_third_named_region.test.ts`: 100% pass.
+  - `test/verify_water_terrain_browser.mjs`: Live Chrome E2E browser test verifying water rendering, Pathfinder queries, click-to-water dispatch, and adjacent-tile movement.
+  - `npm run build`: Production bundle (`tsc && vite build`) compiles cleanly with 0 errors.
+
+**Resolved and shipped: Milestone — Fishing.**
+- **Specification & Documentation Audit (Documented vs Newly Designed Transparency Standard)**:
+  - **Already-Documented in Design Docs**:
+    - `docs/true_grind_gdd (2).md` Section 11.2 (Lines 308–310): Line 310 explicitly named `fishing spots (Fishing)` as one of the dungeon gathering nodes alongside Trees (Woodcutting), bushes (Foraging), rocks (Mining), and dig spots (Digging).
+    - `docs/true_grind_gdd (2).md` Section 11.2 universal gathering specification (Lines 312–314): Line 312 specifies channel-based interaction with progress bar ("takes a few real seconds") and combat damage interrupt (cancels attempt, wipes progress, zero yield/EXP, enters combat). Line 314 specifies node depletion rules (stays depleted for floor visit, reset only on fresh floor). *Note: The specific numeric duration of "2.5 seconds" (2500ms) is an inference adopted from the codebase standard in `data/gatheringNodes.json` (Line 2: `"defaultChannelDurationMs": 2500`), not a literal quote from the GDD.*
+    - `docs/true_grind_gdd (2).md` Section 11.2a Gathering Mode specification (Lines 316–318): Lines 316–318 specify the dedicated hotkey, dragging to draw a marquee selection area encompassing multiple nodes, and party queue execution. Line 329 also explicitly specifies that new node types should enter the same universal pool without special-case selection logic.
+    - `docs/class_system (1).md` lines 208, 221, 237:
+      - Line 208: Defines `Fishing` as an optional extra gathering skill.
+      - Line 221: Gathering Skills table lists `| Fishing | Fish, aquatic reagents | Cooking, Alchemy |`.
+      - Line 237: Cooking Recipe Tiers table lists `Fishing` among ingredient sources.
+  - **Newly Designed / Extrapolated to Complete Implementation**:
+    - No specific numeric loot tables or item weights were written in the original docs: implemented a balanced standard loot table in `data/gatheringNodes.json` yielding `raw_fish` (70% weight, 1x) and `aquatic_reagent` (30% weight, 1x), awarding standard +15 EXP.
+    - Added item definitions in `data/items.json`: `raw_fish` ("Raw Fish", 0.3 weight, gathering) and `aquatic_reagent` ("Aquatic Reagent", 0.1 weight, reagents).
+    - No Tier 0 class for Fishing was named in `class_system.md`: added Tier 0 Novice class `angler` in `data/classes.json` (`fishing: 10`, novice, fantasy: *"Patient hands, a line in the water, and an eye on the ripples"*), exactly matching the pattern of `Excavator` (`digging: 10`).
+- **8th Gathering Skill Mechanics**:
+  - Registered `fishing` proficiency across `data/player.json`, `ProgressionSystem.ts`, `DataLoader.ts`, and `HUD.ts` (accent color `#38bdf8`, Knowledge Base discipline entry).
+  - Procedural node placement (`spawnWaterFishingSpots` in `MainScene.ts`): automatically populates interactive `fishing_spot` nodes on water tiles in rooms with water pools that maintain adjacent walkable floor clearance.
+  - Node visuals: `TextureGenerator.ts` generates luminous swirling water ripples and fish silhouette for `fishing-spot`, and calm dissipated ripples for `fishing-spot-depleted`.
+  - Adjacent-bank channeling: interacting with a fishing spot paths the character to an open adjacent walkable bank tile facing the water (`dist <= 1.5`), channeling for 2500ms with floating progress bar. Clicking a water tile containing an active fishing spot also seamlessly begins fishing.
+  - On completion: awards resource yields, grants +15 Fishing EXP, displays floating text/toasts (`"🎣 Caught Raw Fish (+15 Fishing EXP)"`), and sets node state to `Fished Out` for remainder of floor visit.
+- **Gathering Mode Auto-Queue Integration**:
+  - Drag marquee selection in Gathering Mode encompasses `fishing_spot` nodes without any special-case handling.
+  - Auto-queue dispatches available workers to shore tiles adjacent to fishing spots to execute channeling and advance through the queue.
+- **Tier 0 Class Unlock**:
+  - Reaching level 10 in `fishing` unlocks the `Angler` class and notifies the progression system.
+- **Zero Regression on Water Terrain Generation**:
+  - Water terrain placement logic in `DungeonGenerator.ts` left strictly untouched.
+  - Impassable water movement and LOS invariants fully preserved.
+- **Verification**:
+  - `test/verify_fishing_browser.mjs`: 100% pass across all 6 live browser E2E suites: schema validation, procedural spawning, adjacent-shore channeling, +15 Fishing EXP and item yields, depleted label update, Gathering Mode drag marquee/queue integration, and Tier 0 Angler unlock.
+  - `test/verify_water_terrain_browser.mjs`: 100% pass across live Pathfinder queries and adjacent-tile water approach.
+  - `npm run build`: Production bundle (`tsc && vite build`) compiles cleanly with 0 errors.
+
+
+
 
 

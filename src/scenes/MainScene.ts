@@ -272,9 +272,12 @@ export class MainScene extends Phaser.Scene {
 
     const tilesetWalkable = this.tilemap.addTilesetImage('tile-walkable', activeRegion.walkableTexture);
     const tilesetObstacle = this.tilemap.addTilesetImage('tile-obstacle', activeRegion.obstacleTexture);
+    const waterTextureKey = activeRegion.waterTexture || 'tile-water';
+    const tilesetWater = this.tilemap.addTilesetImage('tile-water', waterTextureKey);
 
-    if (tilesetWalkable && tilesetObstacle) {
-      this.tilemap.createLayer(0, [tilesetWalkable, tilesetObstacle], 0, 0);
+    const availableTilesets = [tilesetWalkable, tilesetObstacle, tilesetWater].filter(Boolean) as Phaser.Tilemaps.Tileset[];
+    if (availableTilesets.length > 0) {
+      this.tilemap.createLayer(0, availableTilesets, 0, 0);
     }
 
     // 3. Initialize Pathfinder with fresh grid
@@ -472,6 +475,11 @@ export class MainScene extends Phaser.Scene {
       this.spawnGatheringNode(bspawn.x, bspawn.y, typeId);
     }
 
+    // 5d. Spawn Procedural Fishing Spots on Water Terrain (Milestone — Fishing)
+    if (this.dungeon.waterTiles && this.dungeon.waterTiles.length > 0) {
+      this.spawnWaterFishingSpots();
+    }
+
     // Target Selection Reticle
     this.targetReticle = this.add.sprite(-100, -100, 'target-reticle').setDepth(10000);
     this.targetReticle.setVisible(false);
@@ -535,6 +543,8 @@ export class MainScene extends Phaser.Scene {
     (window as any).__triggerPartyWipe = () => this.handlePartyWipe();
     (window as any).__toggleGatheringMode = (force?: boolean) => this.toggleGatheringMode(force);
     (window as any).__startGatheringQueue = (nodes: GatheringNode[]) => this.startGatheringQueue(nodes);
+    (window as any).__spawnFishingSpot = (x: number, y: number) => this.spawnGatheringNode(x, y, 'fishing_spot');
+    (window as any).__getFishingSpots = () => this.gatheringNodes.filter(n => n.nodeDef.skillId === 'fishing');
     (window as any).__getGatheringQueue = () => ({
       queue: this.gatheringQueue,
       workers: Array.from(this.gatheringQueueWorkers).map(w => w.entityName),
@@ -932,6 +942,13 @@ export class MainScene extends Phaser.Scene {
         }
 
         this.executePartyConvoyMovement(activeSelected, clickedTileX, clickedTileY, claimed);
+      } else if (this.gridMatrix[clickedTileY]?.[clickedTileX] === 2) {
+        // Milestone — Water Terrain Generation: Water is an impassable movement obstacle.
+        // Clicking water triggers approaching the nearest adjacent walkable tile to interact with the water.
+        const activeSelected = this.getSelectedMembers().filter(m => m.state !== 'downed' && m.state !== 'dead');
+        if (activeSelected.length > 0) {
+          this.interactWithWater({ x: clickedTileX, y: clickedTileY }, activeSelected);
+        }
       }
     });
 
@@ -1782,14 +1799,7 @@ export class MainScene extends Phaser.Scene {
         if (member.state === 'downed') {
           member.hp = Math.max(1, Math.floor(member.maxHp * 0.5));
           member.criticalHp = member.maxCriticalHp;
-          member.state = 'idle';
-          member.claimedDestination = null;
-          member.clearTarget();
-          if (member.avatarSprite) {
-            member.avatarSprite.setAngle(0);
-            member.avatarSprite.setAlpha(1);
-          }
-          member.hideReviveIcon();
+          member.clearDownedState();
         }
       }
 
@@ -2544,19 +2554,19 @@ export class MainScene extends Phaser.Scene {
     const config = dataLoader.getGatheringNodesConfig();
     const nodeDef: GatheringNodeDef = config?.nodes?.[nodeTypeId] || dataLoader.getGatheringNode(nodeTypeId) || {
       id: nodeTypeId,
-      name: nodeTypeId.includes('tree') ? 'Tree' : nodeTypeId.includes('rock') ? 'Rock Vein' : nodeTypeId.includes('dig') ? 'Dig Spot' : nodeTypeId.includes('vegetable') ? 'Wild Vegetable' : 'Wild Herbs',
-      skillId: nodeTypeId.includes('tree') ? 'woodcutting' : nodeTypeId.includes('rock') ? 'mining' : nodeTypeId.includes('dig') ? 'digging' : nodeTypeId.includes('vegetable') ? 'gardening' : 'foraging',
-      resourceId: nodeTypeId.includes('tree') ? 'wood' : nodeTypeId.includes('rock') ? 'ore' : nodeTypeId.includes('dig') ? 'dirt' : nodeTypeId.includes('vegetable') ? 'vegetable' : 'wild_herbs',
+      name: nodeTypeId.includes('tree') ? 'Tree' : nodeTypeId.includes('rock') ? 'Rock Vein' : nodeTypeId.includes('dig') ? 'Dig Spot' : nodeTypeId.includes('vegetable') ? 'Wild Vegetable' : nodeTypeId.includes('fish') ? 'Fishing Spot' : 'Wild Herbs',
+      skillId: nodeTypeId.includes('tree') ? 'woodcutting' : nodeTypeId.includes('rock') ? 'mining' : nodeTypeId.includes('dig') ? 'digging' : nodeTypeId.includes('vegetable') ? 'gardening' : nodeTypeId.includes('fish') ? 'fishing' : 'foraging',
+      resourceId: nodeTypeId.includes('tree') ? 'wood' : nodeTypeId.includes('rock') ? 'ore' : nodeTypeId.includes('dig') ? 'dirt' : nodeTypeId.includes('vegetable') ? 'vegetable' : nodeTypeId.includes('fish') ? 'raw_fish' : 'wild_herbs',
       yieldCount: nodeTypeId.includes('tree') ? 2 : 1,
       expGranted: 15,
       channelDurationMs: 2500,
       respawnTimeMs: 15000,
-      textureKey: nodeTypeId.includes('tree') ? 'woodcutting-tree' : nodeTypeId.includes('rock') ? 'mining-rock' : nodeTypeId.includes('dig') ? 'dig-spot' : nodeTypeId.includes('vegetable') ? 'vegetable-node' : 'foraging-bush',
-      textureDepletedKey: nodeTypeId.includes('tree') ? 'woodcutting-tree-depleted' : nodeTypeId.includes('rock') ? 'mining-rock-depleted' : nodeTypeId.includes('dig') ? 'dig-spot-depleted' : nodeTypeId.includes('vegetable') ? 'vegetable-node-depleted' : 'foraging-bush-depleted',
-      label: nodeTypeId.includes('tree') ? 'Tree' : nodeTypeId.includes('rock') ? 'Rock Vein' : nodeTypeId.includes('dig') ? 'Dig Spot' : nodeTypeId.includes('vegetable') ? 'Wild Vegetable' : 'Wild Herbs',
-      depletedLabel: nodeTypeId.includes('tree') ? 'Stump' : nodeTypeId.includes('rock') ? 'Depleted' : nodeTypeId.includes('dig') ? 'Excavated' : 'Stripped',
-      color: nodeTypeId.includes('tree') ? '#f59e0b' : nodeTypeId.includes('rock') ? '#94a3b8' : nodeTypeId.includes('dig') ? '#b45309' : nodeTypeId.includes('vegetable') ? '#22c55e' : '#34d399',
-      actionVerb: nodeTypeId.includes('tree') ? 'Logging' : nodeTypeId.includes('rock') ? 'Mining' : nodeTypeId.includes('dig') ? 'Digging' : nodeTypeId.includes('vegetable') ? 'Gardening' : 'Foraging'
+      textureKey: nodeTypeId.includes('tree') ? 'woodcutting-tree' : nodeTypeId.includes('rock') ? 'mining-rock' : nodeTypeId.includes('dig') ? 'dig-spot' : nodeTypeId.includes('vegetable') ? 'vegetable-node' : nodeTypeId.includes('fish') ? 'fishing-spot' : 'foraging-bush',
+      textureDepletedKey: nodeTypeId.includes('tree') ? 'woodcutting-tree-depleted' : nodeTypeId.includes('rock') ? 'mining-rock-depleted' : nodeTypeId.includes('dig') ? 'dig-spot-depleted' : nodeTypeId.includes('vegetable') ? 'vegetable-node-depleted' : nodeTypeId.includes('fish') ? 'fishing-spot-depleted' : 'foraging-bush-depleted',
+      label: nodeTypeId.includes('tree') ? 'Tree' : nodeTypeId.includes('rock') ? 'Rock Vein' : nodeTypeId.includes('dig') ? 'Dig Spot' : nodeTypeId.includes('vegetable') ? 'Wild Vegetable' : nodeTypeId.includes('fish') ? 'Fishing Spot' : 'Wild Herbs',
+      depletedLabel: nodeTypeId.includes('tree') ? 'Stump' : nodeTypeId.includes('rock') ? 'Depleted' : nodeTypeId.includes('dig') ? 'Excavated' : nodeTypeId.includes('vegetable') ? 'Harvested' : nodeTypeId.includes('fish') ? 'Fished Out' : 'Stripped',
+      color: nodeTypeId.includes('tree') ? '#f59e0b' : nodeTypeId.includes('rock') ? '#94a3b8' : nodeTypeId.includes('dig') ? '#b45309' : nodeTypeId.includes('vegetable') ? '#22c55e' : nodeTypeId.includes('fish') ? '#38bdf8' : '#34d399',
+      actionVerb: nodeTypeId.includes('tree') ? 'Logging' : nodeTypeId.includes('rock') ? 'Mining' : nodeTypeId.includes('dig') ? 'Digging' : nodeTypeId.includes('vegetable') ? 'Gardening' : nodeTypeId.includes('fish') ? 'Fishing' : 'Foraging'
     };
 
     const posX = x * this.tileSize + this.tileSize / 2;
@@ -2765,6 +2775,131 @@ export class MainScene extends Phaser.Scene {
     this.interactWithGatheringNode(bush);
   }
 
+  // Milestone — Water Terrain Generation: Adjacent-Tile Interaction & Queries
+  public isWater(x: number, y: number): boolean {
+    return this.gridMatrix[y]?.[x] === 2;
+  }
+
+  public getWaterTiles(): GridPos[] {
+    return this.dungeon?.waterTiles || [];
+  }
+
+  public interactWithWater(waterTile: GridPos, character?: Player | Player[]): void {
+    const activeSelected: Player[] = character
+      ? (Array.isArray(character)
+          ? character.filter(m => m.state !== 'downed' && m.state !== 'dead')
+          : (character.state !== 'downed' && character.state !== 'dead' ? [character] : []))
+      : (this.getSelectedMembers ? this.getSelectedMembers().filter(m => m.state !== 'downed' && m.state !== 'dead') : []);
+
+    if (activeSelected.length === 0) return;
+
+    // Milestone — Fishing: Check if an active (unharvested) fishing spot exists at this water tile
+    const activeFishingSpot = this.gatheringNodes.find(
+      n => !n.isHarvested && n.nodeDef.skillId === 'fishing' && n.x === waterTile.x && n.y === waterTile.y
+    );
+    if (activeFishingSpot) {
+      this.interactWithGatheringNode(activeFishingSpot, activeSelected);
+      return;
+    }
+
+    for (const member of activeSelected) {
+      this.cancelGatherChannel(member);
+      this.cancelReviveChannel(member);
+      member.clearTarget();
+    }
+
+    if (!this.party.some(m => m.targetEntity !== null)) {
+      this.targetReticle.setVisible(false);
+    }
+
+    // Find open adjacent walkable tiles around the water tile
+    const candidateAdj = [
+      { x: waterTile.x + 1, y: waterTile.y },
+      { x: waterTile.x - 1, y: waterTile.y },
+      { x: waterTile.x, y: waterTile.y + 1 },
+      { x: waterTile.x, y: waterTile.y - 1 },
+      { x: waterTile.x + 1, y: waterTile.y + 1 },
+      { x: waterTile.x - 1, y: waterTile.y + 1 },
+      { x: waterTile.x + 1, y: waterTile.y - 1 },
+      { x: waterTile.x - 1, y: waterTile.y - 1 }
+    ].filter(t =>
+      t.x > 0 && t.x < this.mapWidth - 1 &&
+      t.y > 0 && t.y < this.mapHeight - 1 &&
+      this.gridMatrix[t.y]?.[t.x] === 0
+    );
+
+    if (candidateAdj.length === 0) {
+      this.hud?.showToast('The water cannot be approached safely.', 'warn', 2000);
+      return;
+    }
+
+    const leader = activeSelected[0];
+    candidateAdj.sort((a, b) =>
+      Math.hypot(a.x - leader.gridPos.x, a.y - leader.gridPos.y) -
+      Math.hypot(b.x - leader.gridPos.x, b.y - leader.gridPos.y)
+    );
+
+    const targetDest = candidateAdj[0];
+    const claimed = new Set<string>();
+    for (const other of this.party) {
+      if (!activeSelected.includes(other) && other.state !== 'dead') {
+        claimed.add(`${other.gridPos.x},${other.gridPos.y}`);
+        if (other.claimedDestination) {
+          claimed.add(`${other.claimedDestination.x},${other.claimedDestination.y}`);
+        }
+      }
+    }
+
+    this.executePartyConvoyMovement(activeSelected, targetDest.x, targetDest.y, claimed);
+    this.hud?.showToast('The water here looks too deep to cross.', 'info', 2500);
+  }
+
+  /**
+   * Milestone — Fishing: Automatically populates fishing spots onto procedural water terrain.
+   * Every room with water pools receives interactive fishing spot nodes situated on water tiles.
+   */
+  public spawnWaterFishingSpots(): GatheringNode[] {
+    const spawned: GatheringNode[] = [];
+    if (!this.dungeon?.waterTiles || this.dungeon.waterTiles.length === 0) return spawned;
+
+    for (let rIdx = 0; rIdx < this.dungeon.rooms.length; rIdx++) {
+      const room = this.dungeon.rooms[rIdx];
+      const roomWater = this.dungeon.waterTiles.filter(
+        t => t.x >= room.x && t.x < room.x + room.width && t.y >= room.y && t.y < room.y + room.height
+      );
+      if (roomWater.length === 0) continue;
+
+      // Filter water tiles with at least one adjacent walkable floor tile
+      const validFishingTiles = roomWater.filter(t => {
+        const adjs = [
+          { x: t.x + 1, y: t.y }, { x: t.x - 1, y: t.y },
+          { x: t.x, y: t.y + 1 }, { x: t.x - 1, y: t.y },
+          { x: t.x + 1, y: t.y + 1 }, { x: t.x - 1, y: t.y + 1 },
+          { x: t.x + 1, y: t.y - 1 }, { x: t.x - 1, y: t.y - 1 }
+        ];
+        return adjs.some(a =>
+          a.x > 0 && a.x < this.mapWidth - 1 &&
+          a.y > 0 && a.y < this.mapHeight - 1 &&
+          this.gridMatrix[a.y]?.[a.x] === 0
+        );
+      });
+
+      if (validFishingTiles.length === 0) continue;
+
+      // Spawn 1 spot for pools with 2-3 tiles, 2 spots for larger pools >= 4 tiles
+      const countToSpawn = Math.min(validFishingTiles.length, roomWater.length >= 4 ? 2 : 1);
+      for (let i = 0; i < countToSpawn; i++) {
+        const step = Math.floor(validFishingTiles.length / countToSpawn);
+        const tile = validFishingTiles[Math.min(i * step, validFishingTiles.length - 1)];
+        if (!this.gatheringNodes.some(n => n.x === tile.x && n.y === tile.y)) {
+          const node = this.spawnGatheringNode(tile.x, tile.y, 'fishing_spot');
+          spawned.push(node);
+        }
+      }
+    }
+    return spawned;
+  }
+
   public startGatherChannel(character: Player, node: GatheringNode): boolean {
     if (node.isHarvested || character.state === 'downed' || character.state === 'dead') {
       return false;
@@ -2964,6 +3099,8 @@ export class MainScene extends Phaser.Scene {
       ? '🥩 Butchered'
       : node.nodeDef.actionVerb === 'Gardening'
       ? '🥕 Harvested'
+      : node.nodeDef.actionVerb === 'Fishing'
+      ? '🎣 Caught'
       : '🌿 Harvested';
 
     const seedBonusText = bonusSeeds > 0 ? ' & Seeds' : '';

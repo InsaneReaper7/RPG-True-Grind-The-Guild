@@ -726,6 +726,25 @@ export interface ExpTransaction {
   nextExp: number;
 }
 
+// Milestone — Water Terrain Generation: Tile & Obstacle Classification
+export enum TileType {
+  FLOOR = 0, // Walkable floor
+  WALL = 1,  // Impassable wall/bedrock
+  WATER = 2  // Impassable water terrain (hard movement obstacle, interactable from adjacent tiles)
+}
+
+export const TILE_FLOOR = TileType.FLOOR;
+export const TILE_WALL = TileType.WALL;
+export const TILE_WATER = TileType.WATER;
+
+export interface DungeonWaterConfig {
+  enabled: boolean;
+  chancePerEligibleRoom: number;
+  eligibleRoomTypes: DungeonRoomType[];
+  minPoolSize: number;
+  maxPoolSize: number;
+}
+
 // Milestone 13 & 34: Procedural Dungeon Generation Types
 export type DungeonRoomType = 'entrance' | 'gathering' | 'light_combat' | 'heavy_combat' | 'boss';
 
@@ -759,6 +778,7 @@ export interface DungeonConfig {
   };
   enemyPool: string[];
   bossEnemyId?: string;
+  bossPool?: string[];
   bossRoom?: boolean;
   bossMilestoneInterval?: number;
   bossRandomChance?: number;
@@ -770,6 +790,7 @@ export interface DungeonConfig {
   depthScaling?: DepthScalingConfig;
   floorRespawnTimerSec?: number;
   regions?: DungeonRegionDef[];
+  water?: DungeonWaterConfig;
 }
 
 export interface DungeonRegionDef {
@@ -779,8 +800,10 @@ export interface DungeonRegionDef {
   maxFloor?: number;
   walkableTexture: string;
   obstacleTexture: string;
+  waterTexture?: string;
   accentColor: string;
   tagline?: string;
+  bossEnemyId?: string;
 }
 
 export interface DepthScalingConfig {
@@ -861,12 +884,13 @@ export interface BushSpawnDef {
 export interface GeneratedDungeon {
   width: number;
   height: number;
-  gridMatrix: number[][]; // 0 = walkable, 1 = obstacle/wall
+  gridMatrix: number[][]; // TileType: 0 = walkable floor, 1 = obstacle/wall, 2 = water terrain
   rooms: DungeonRoom[];
   portalPos: GridPos;
   crystalPos: GridPos;
   enemySpawns: EnemySpawnDef[];
   bushSpawns: BushSpawnDef[];
+  waterTiles?: GridPos[];
 }
 
 export interface DynamicObstaclesConfig {

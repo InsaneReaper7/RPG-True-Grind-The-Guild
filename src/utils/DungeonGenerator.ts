@@ -1,10 +1,11 @@
-import type {
-  DungeonConfig,
-  DungeonRoom,
-  GeneratedDungeon,
-  EnemySpawnDef,
-  BushSpawnDef,
-  GridPos
+import {
+  type DungeonConfig,
+  type DungeonRoom,
+  type GeneratedDungeon,
+  type EnemySpawnDef,
+  type BushSpawnDef,
+  type GridPos,
+  TileType
 } from '../types/game.ts';
 import { GameState } from '../systems/GameState.ts';
 
@@ -19,7 +20,7 @@ export class DungeonGenerator {
   public static generate(
     config: DungeonConfig,
     rng: () => number = Math.random,
-    options?: { isDiggingUnlocked?: boolean; floorNumber?: number; forceBoss?: boolean }
+    options?: { isDiggingUnlocked?: boolean; floorNumber?: number; forceBoss?: boolean; forceBossEnemyId?: string }
   ): GeneratedDungeon {
     const width = config.mapWidth;
     const height = config.mapHeight;
@@ -467,6 +468,289 @@ export class DungeonGenerator {
       }
     }
 
+    // 5c. Milestone — Water Terrain Generation
+    // Placed in eligible rooms (gathering, light_combat) before enemies and bushes
+    // Subject to strict path, doorway clearance, and connectivity invariants
+    const waterTiles: GridPos[] = [];
+    const waterConfig = config.water;
+    const isWaterEnabled = waterConfig?.enabled ?? true;
+
+    if (isWaterEnabled && rooms.length >= 2) {
+      const eligibleTypes = new Set(waterConfig?.eligibleRoomTypes ?? ['gathering', 'light_combat']);
+      const chancePerRoom = waterConfig?.chancePerEligibleRoom ?? 0.6;
+      const minPoolSize = waterConfig?.minPoolSize ?? 2;
+      const maxPoolSize = waterConfig?.maxPoolSize ?? 5;
+
+      for (let rIdx = 0; rIdx < rooms.length; rIdx++) {
+        const room = rooms[rIdx];
+        if (room.type === 'entrance' || room.type === 'boss') continue;
+        if (!eligibleTypes.has(room.type)) continue;
+        if (room.width < 5 || room.height < 5) continue;
+
+        // Derive deterministic local PRNG for water terrain generation in this room
+        // based on room geometry and topology so:
+        // 1. Water generation is 100% deterministic given room layout
+        // 2. Identical seeds across non-boss floors produce byte-identical grid matrices
+        // 3. Sequential multi-floor simulations do not have their main RNG stream perturbed
+        let roomWaterSeed = (
+          (room.x * 1009) ^
+          (room.y * 2017) ^
+          (room.width * 3001) ^
+          (room.height * 4003) ^
+          (rIdx * 5009)
+        ) >>> 0;
+        const waterRng = () => {
+          roomWaterSeed = (roomWaterSeed * 9301 + 49297) % 233280;
+          return roomWaterSeed / 233280;
+        };
+
+        // Roll probability for this eligible room
+        if (waterRng() >= chancePerRoom) continue;
+
+        // 1. Identify all doorway perimeter threshold tiles for this room
+        // A doorway tile is a walkable tile (0) inside the room that is orthogonally adjacent to an outside tile with value 0
+        const doorwayTiles: GridPos[] = [];
+        for (let y = room.y; y < room.y + room.height; y++) {
+          for (let x = room.x; x < room.x + room.width; x++) {
+            if (gridMatrix[y]?.[x] === 0) {
+              const hasExternalWalkableNeighbor =
+                (x === room.x && gridMatrix[y]?.[x - 1] === 0) ||
+                (x === room.x + room.width - 1 && gridMatrix[y]?.[x + 1] === 0) ||
+                (y === room.y && gridMatrix[y - 1]?.[x] === 0) ||
+                (y === room.y + room.height - 1 && gridMatrix[y + 1]?.[x] === 0);
+              if (hasExternalWalkableNeighbor) {
+                doorwayTiles.push({ x, y });
+              }
+            }
+          }
+        }
+
+        // 2. Identify candidate interior tiles
+        // Must maintain at least 1-tile clearance from any doorway tile (Chebyshev distance >= 2)
+        // Must not be room center (room.centerX, room.centerY)
+        // Must not be crystalPos or adjacent to crystalPos
+        // Must not be portalPos
+        const isDoorwayBuffer = (tx: number, ty: number): boolean => {
+          for (const d of doorwayTiles) {
+            if (Math.abs(tx - d.x) <= 1 && Math.abs(ty - d.y) <= 1) {
+              return true;
+            }
+          }
+          return false;
+        };
+
+        const isProtectedTile = (tx: number, ty: number): boolean => {
+          if (tx === portalPos.x && ty === portalPos.y) return true;
+          if (tx === crystalPos.x && ty === crystalPos.y) return true;
+          if (Math.abs(tx - crystalPos.x) <= 1 && Math.abs(ty - crystalPos.y) <= 1) return true;
+          if (tx === room.centerX && ty === room.centerY) return true;
+          return isDoorwayBuffer(tx, ty);
+        };
+
+        const candidateInterior: GridPos[] = [];
+        for (let y = room.y + 1; y <= room.y + room.height - 2; y++) {
+          for (let x = room.x + 1; x <= room.x + room.width - 2; x++) {
+            if (gridMatrix[y]?.[x] === 0 && !isProtectedTile(x, y)) {
+              candidateInterior.push({ x, y });
+            }
+          }
+        }
+
+        if (candidateInterior.length === 0) continue;
+
+        // Shuffle candidate interior tiles
+        for (let i = candidateInterior.length - 1; i > 0; i--) {
+          const j = Math.floor(waterRng() * (i + 1));
+          const tmp = candidateInterior[i];
+          candidateInterior[i] = candidateInterior[j];
+          candidateInterior[j] = tmp;
+        }
+
+        // Desired pool size
+        const targetPoolSize = Math.min(
+          candidateInterior.length,
+          Math.floor(waterRng() * (maxPoolSize - minPoolSize + 1)) + minPoolSize
+        );
+
+        // Grow contiguous pool starting from seed tile
+        let bestPool: GridPos[] | null = null;
+        for (const seedTile of candidateInterior) {
+          const pool: GridPos[] = [seedTile];
+          const poolSet = new Set<string>([`${seedTile.x},${seedTile.y}`]);
+          const frontier: GridPos[] = [seedTile];
+
+          while (frontier.length > 0 && pool.length < targetPoolSize) {
+            const curr = frontier.shift()!;
+            const neighbors = [
+              { x: curr.x + 1, y: curr.y },
+              { x: curr.x - 1, y: curr.y },
+              { x: curr.x, y: curr.y + 1 },
+              { x: curr.x, y: curr.y - 1 }
+            ];
+            // Shuffle neighbor exploration
+            for (let i = neighbors.length - 1; i > 0; i--) {
+              const j = Math.floor(waterRng() * (i + 1));
+              const t = neighbors[i];
+              neighbors[i] = neighbors[j];
+              neighbors[j] = t;
+            }
+
+            for (const n of neighbors) {
+              const k = `${n.x},${n.y}`;
+              if (
+                !poolSet.has(k) &&
+                n.x >= room.x + 1 && n.x <= room.x + room.width - 2 &&
+                n.y >= room.y + 1 && n.y <= room.y + room.height - 2 &&
+                gridMatrix[n.y]?.[n.x] === 0 &&
+                !isProtectedTile(n.x, n.y)
+              ) {
+                poolSet.add(k);
+                pool.push(n);
+                frontier.push(n);
+                if (pool.length >= targetPoolSize) break;
+              }
+            }
+          }
+
+          if (pool.length < minPoolSize) continue;
+
+          // 3. Validation Check: Intra-Room Door-to-Door and Center Traversal
+          // Temporarily mark candidate pool as water (TileType.WATER = 2)
+          for (const p of pool) {
+            gridMatrix[p.y][p.x] = TileType.WATER;
+          }
+
+          let isValid = true;
+
+          // A. Check that all water tiles have at least one adjacent walkable floor tile in the room
+          for (const p of pool) {
+            const adjDirs = [
+              { x: 1, y: 0 }, { x: -1, y: 0 }, { x: 0, y: 1 }, { x: 0, y: -1 },
+              { x: 1, y: 1 }, { x: -1, y: 1 }, { x: 1, y: -1 }, { x: -1, y: -1 }
+            ];
+            const hasWalkableBank = adjDirs.some((d) => {
+              const ax = p.x + d.x;
+              const ay = p.y + d.y;
+              return ax >= room.x && ax < room.x + room.width &&
+                     ay >= room.y && ay < room.y + room.height &&
+                     gridMatrix[ay]?.[ax] === 0;
+            });
+            if (!hasWalkableBank) {
+              isValid = false;
+              break;
+            }
+          }
+
+          // B. Check intra-room door-to-door connectivity and center reachability
+          if (isValid) {
+            const startPos = doorwayTiles.length > 0 ? doorwayTiles[0] : { x: room.centerX, y: room.centerY };
+            const localVisited = new Set<string>();
+            const q: GridPos[] = [startPos];
+            localVisited.add(`${startPos.x},${startPos.y}`);
+
+            const cardinalDirs = [
+              { x: 1, y: 0 }, { x: -1, y: 0 }, { x: 0, y: 1 }, { x: 0, y: -1 }
+            ];
+
+            while (q.length > 0) {
+              const curr = q.shift()!;
+              for (const d of cardinalDirs) {
+                const nx = curr.x + d.x;
+                const ny = curr.y + d.y;
+                if (
+                  nx >= room.x && nx < room.x + room.width &&
+                  ny >= room.y && ny < room.y + room.height &&
+                  gridMatrix[ny]?.[nx] === 0
+                ) {
+                  const key = `${nx},${ny}`;
+                  if (!localVisited.has(key)) {
+                    localVisited.add(key);
+                    q.push({ x: nx, y: ny });
+                  }
+                }
+              }
+            }
+
+            // Every doorway must be visited
+            for (const d of doorwayTiles) {
+              if (!localVisited.has(`${d.x},${d.y}`)) {
+                isValid = false;
+                break;
+              }
+            }
+
+            // Room center must be visited
+            if (!localVisited.has(`${room.centerX},${room.centerY}`)) {
+              isValid = false;
+            }
+
+            // Crystal must be visited if in this room
+            if (crystalPos.x >= room.x && crystalPos.x < room.x + room.width &&
+                crystalPos.y >= room.y && crystalPos.y < room.y + room.height) {
+              if (!localVisited.has(`${crystalPos.x},${crystalPos.y}`)) {
+                isValid = false;
+              }
+            }
+          }
+
+          // C. Global Connectivity Verification: Ensure full dungeon connectivity from portalPos
+          if (isValid) {
+            const gVisited = new Set<string>();
+            const gQueue: GridPos[] = [{ x: portalPos.x, y: portalPos.y }];
+            gVisited.add(`${portalPos.x},${portalPos.y}`);
+            const cardinalDirs = [
+              { x: 1, y: 0 }, { x: -1, y: 0 }, { x: 0, y: 1 }, { x: 0, y: -1 }
+            ];
+
+            while (gQueue.length > 0) {
+              const curr = gQueue.shift()!;
+              for (const d of cardinalDirs) {
+                const nx = curr.x + d.x;
+                const ny = curr.y + d.y;
+                if (
+                  nx >= 0 && nx < width &&
+                  ny >= 0 && ny < height &&
+                  gridMatrix[ny]?.[nx] === 0
+                ) {
+                  const key = `${nx},${ny}`;
+                  if (!gVisited.has(key)) {
+                    gVisited.add(key);
+                    gQueue.push({ x: nx, y: ny });
+                  }
+                }
+              }
+            }
+
+            for (const r of rooms) {
+              if (!gVisited.has(`${r.centerX},${r.centerY}`)) {
+                isValid = false;
+                break;
+              }
+            }
+            if (!gVisited.has(`${crystalPos.x},${crystalPos.y}`)) {
+              isValid = false;
+            }
+          }
+
+          if (isValid) {
+            bestPool = pool;
+            break;
+          } else {
+            // Revert temporary water assignment
+            for (const p of pool) {
+              gridMatrix[p.y][p.x] = 0;
+            }
+          }
+        }
+
+        if (bestPool) {
+          for (const p of bestPool) {
+            waterTiles.push(p);
+          }
+        }
+      }
+    }
+
     // 6. Populate Rooms with Enemies and Bushes
     const enemySpawns: EnemySpawnDef[] = [];
     const bushSpawns: BushSpawnDef[] = [];
@@ -508,8 +792,24 @@ export class DungeonGenerator {
       }
 
       if (room.type === 'boss') {
-        // Milestone 34: Dedicated Boss Encounter Room - Spawn exactly 1 Boss at room center
-        const bossId = config.bossEnemyId || 'abyssal_colossus';
+        // Milestone 34 & Second Boss Enemy: Dedicated Boss Encounter Room - Spawn exactly 1 Boss at room center
+        const currentRegion = config.regions?.find((r) => {
+          const min = r.minFloor ?? 1;
+          const max = r.maxFloor ?? Infinity;
+          return floorNumber >= min && floorNumber <= max;
+        });
+
+        let bossId = options?.forceBossEnemyId;
+        if (!bossId) {
+          if (currentRegion?.bossEnemyId) {
+            bossId = currentRegion.bossEnemyId;
+          } else if (config.bossPool && config.bossPool.length > 0) {
+            bossId = config.bossPool[Math.floor(rng() * config.bossPool.length)];
+          } else {
+            bossId = config.bossEnemyId || 'abyssal_colossus';
+          }
+        }
+
         enemySpawns.push({
           enemyId: bossId,
           x: room.centerX,
@@ -596,7 +896,8 @@ export class DungeonGenerator {
       portalPos,
       crystalPos,
       enemySpawns,
-      bushSpawns
+      bushSpawns,
+      waterTiles
     };
   }
 }

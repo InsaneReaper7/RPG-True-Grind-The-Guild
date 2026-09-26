@@ -120,6 +120,26 @@
       "depletedLabel": "Harvested",
       "color": "#22c55e",
       "actionVerb": "Gardening"
+    },
+    "fishing_spot": {
+      "id": "fishing_spot",
+      "name": "Fishing Spot",
+      "skillId": "fishing",
+      "resourceId": "raw_fish",
+      "yieldCount": 1,
+      "expGranted": 15,
+      "channelDurationMs": 2500,
+      "respawnTimeMs": 15000,
+      "textureKey": "fishing-spot",
+      "textureDepletedKey": "fishing-spot-depleted",
+      "label": "Fishing Spot",
+      "depletedLabel": "Fished Out",
+      "color": "#38bdf8",
+      "actionVerb": "Fishing",
+      "lootTable": [
+        { "itemId": "raw_fish", "name": "Raw Fish", "weight": 70, "count": 1 },
+        { "itemId": "aquatic_reagent", "name": "Aquatic Reagent", "weight": 30, "count": 1 }
+      ]
     }
   }
 }

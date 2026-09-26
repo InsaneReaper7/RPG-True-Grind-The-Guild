@@ -29,6 +29,10 @@
     { "id": "abyssal_ingot", "name": "Abyssal Ingot", "weight": 2.0, "category": "reagents", "icon": "⬛" },
     { "id": "dread_essence", "name": "Dread Essence", "weight": 0.2, "category": "reagents", "icon": "☠️" },
     { "id": "heart_of_the_colossus", "name": "Heart of the Colossus", "weight": 1.0, "category": "reagents", "icon": "💖" },
+    { "id": "glacial_core", "name": "Glacial Core", "weight": 1.0, "category": "reagents", "icon": "❄️" },
+    { "id": "rime_carapace", "name": "Rime Carapace", "weight": 2.0, "category": "reagents", "icon": "🛡️" },
+    { "id": "glacial_essence", "name": "Glacial Essence", "weight": 0.2, "category": "reagents", "icon": "🧪" },
+    { "id": "eye_of_the_sovereign", "name": "Eye of the Sovereign", "weight": 1.0, "category": "reagents", "icon": "🧿" },
     { "id": "lockpick", "name": "Lockpick", "weight": 0.05, "category": "reagents", "icon": "🗝️" },
     { "id": "broken_lockbox", "name": "Broken Lockbox", "weight": 1.5, "category": "reagents", "icon": "🗃️" },
     { "id": "locked_box", "name": "Locked Box", "weight": 2.5, "category": "reagents", "icon": "📦" },
@@ -47,6 +51,8 @@
     { "id": "iron_ore", "name": "Iron Ore", "weight": 0.5, "category": "gathering", "icon": "⛏️" },
     { "id": "herbs", "name": "Herbs", "weight": 0.05, "category": "gathering", "icon": "🌿" },
     { "id": "raw_meat", "name": "Raw Meat", "weight": 0.3, "category": "reagents", "icon": "🥩" },
-    { "id": "slime_jelly", "name": "Slime Jelly", "weight": 0.2, "category": "reagents", "icon": "🧪" }
+    { "id": "slime_jelly", "name": "Slime Jelly", "weight": 0.2, "category": "reagents", "icon": "🧪" },
+    { "id": "raw_fish", "name": "Raw Fish", "weight": 0.3, "category": "gathering", "icon": "🐟" },
+    { "id": "aquatic_reagent", "name": "Aquatic Reagent", "weight": 0.1, "category": "reagents", "icon": "💧" }
   ]
 }

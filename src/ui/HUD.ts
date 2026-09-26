@@ -5537,6 +5537,7 @@ export class HUD {
       case 'digging': return '#b45309';
       case 'skinning': return '#eab308';
       case 'butchering': return '#ef4444';
+      case 'fishing': return '#38bdf8';
       case 'mace': return '#cbd5e1';
       case 'staff': return '#fbbf24';
       case 'healing_magic': return '#4ade80';
@@ -6416,6 +6417,10 @@ export class HUD {
     registerItem('abyssal_ingot', 'Abyssal Ingot', 'reagents', '⬛');
     registerItem('dread_essence', 'Dread Essence', 'reagents', '☠️');
     registerItem('heart_of_the_colossus', 'Heart of the Colossus', 'reagents', '💖');
+    registerItem('glacial_core', 'Glacial Core', 'reagents', '❄️');
+    registerItem('rime_carapace', 'Rime Carapace', 'reagents', '🛡️');
+    registerItem('glacial_essence', 'Glacial Essence', 'reagents', '🧪');
+    registerItem('eye_of_the_sovereign', 'Eye of the Sovereign', 'reagents', '🧿');
 
     // Dynamically discover enemy harvest & corpse drops
     const enemiesData = dataLoader.getEnemiesData();
@@ -6982,7 +6987,7 @@ export class HUD {
     }
 
     // Check gathering proficiencies
-    const gatherStats = ['foraging', 'woodcutting', 'mining', 'digging', 'skinning', 'butchering', 'gardening'];
+    const gatherStats = ['foraging', 'woodcutting', 'mining', 'digging', 'skinning', 'butchering', 'gardening', 'fishing'];
     for (const gs of gatherStats) {
       if (hasPartyProficiency(gs)) {
         const def = dataLoader.getTrainableStatDef(gs);

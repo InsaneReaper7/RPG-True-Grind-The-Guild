@@ -12,7 +12,7 @@ async function main() {
 
   console.log('--- TEST 1: Config Structure & Regions Schema ---');
   assert.ok(Array.isArray(dungeonConfig.regions), 'regions should be an array in dungeonConfig.json');
-  assert.strictEqual(dungeonConfig.regions.length, 3, 'Should have 3 regions configured');
+  assert.ok(dungeonConfig.regions.length >= 3, 'Should have at least 3 regions configured');
 
   const crypts = dungeonConfig.regions.find((r: any) => r.id === 'ancient_crypts');
   assert.ok(crypts, 'ancient_crypts region must exist');
@@ -42,7 +42,8 @@ async function main() {
     const regions = config.regions && config.regions.length > 0 ? config.regions : [
       { id: 'ancient_crypts', name: 'Ancient Crypts', minFloor: 1, maxFloor: 2, walkableTexture: 'tile-walkable', obstacleTexture: 'tile-obstacle', accentColor: '#a78bfa' },
       { id: 'abyssal_depths', name: 'Abyssal Depths', minFloor: 3, maxFloor: 5, walkableTexture: 'tile-abyssal-walkable', obstacleTexture: 'tile-abyssal-obstacle', accentColor: '#c084fc' },
-      { id: 'infernal_caldera', name: 'Infernal Caldera', minFloor: 6, walkableTexture: 'tile-caldera-walkable', obstacleTexture: 'tile-caldera-obstacle', accentColor: '#f97316' }
+      { id: 'infernal_caldera', name: 'Infernal Caldera', minFloor: 6, maxFloor: 10, walkableTexture: 'tile-caldera-walkable', obstacleTexture: 'tile-caldera-obstacle', accentColor: '#f97316' },
+      { id: 'glacial_caverns', name: 'Glacial Caverns', minFloor: 11, walkableTexture: 'tile-glacial-walkable', obstacleTexture: 'tile-glacial-obstacle', accentColor: '#06b6d4' }
     ];
     const match = regions.find((r: any) => {
       const min = r.minFloor ?? 1;

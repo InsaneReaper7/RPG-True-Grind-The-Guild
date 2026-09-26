@@ -150,6 +150,192 @@ export class TextureGenerator {
       g.destroy();
     }
 
+    // 2f. Third Named Region: Glacial Caverns Biome — Frosted Ice Sheet Floor with Radiant Cyan Veins
+    if (!scene.textures.exists('tile-glacial-walkable')) {
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      // Deep sub-zero glacial slate & packed rime base
+      g.fillStyle(0x082f49, 1);
+      g.fillRect(0, 0, tileSize, tileSize);
+      // Rime frost border
+      g.lineStyle(1, 0x0284c7, 0.75);
+      g.strokeRect(0, 0, tileSize, tileSize);
+      // Glacial ice fissures and frozen thermal cracks
+      g.lineStyle(1.5, 0x06b6d4, 0.85);
+      g.lineBetween(3, tileSize / 2 - 2, tileSize / 2 + 2, 4);
+      g.lineBetween(tileSize / 2 + 2, 4, tileSize - 4, tileSize / 2 + 1);
+      g.lineBetween(tileSize / 2, tileSize - 5, tileSize - 5, tileSize / 2 + 2);
+      // Radiant crystalline ice fracture cores
+      g.lineStyle(1, 0x67e8f9, 0.95);
+      g.lineBetween(5, tileSize / 2 - 2, tileSize / 2 + 2, 6);
+      g.lineBetween(tileSize / 2 + 2, 6, tileSize - 6, tileSize / 2 + 1);
+      // Translucent frozen ice crystal pockets
+      g.fillStyle(0x22d3ee, 0.9);
+      g.fillCircle(tileSize / 2, tileSize / 2, 2.5);
+      g.fillStyle(0xa5f3fc, 0.95);
+      g.fillCircle(tileSize / 2, tileSize / 2, 1.2);
+      g.fillStyle(0x38bdf8, 0.8);
+      g.fillCircle(tileSize / 2 - 6, tileSize / 2 + 5, 1.8);
+      g.fillCircle(tileSize / 2 + 6, tileSize / 2 - 6, 1.8);
+      // Diamond dust frost glints
+      g.fillStyle(0xf0fdf4, 0.95);
+      g.fillCircle(6, 6, 1);
+      g.fillCircle(tileSize - 6, tileSize - 6, 1);
+      g.generateTexture('tile-glacial-walkable', tileSize, tileSize);
+      g.destroy();
+    }
+
+    // 2g. Third Named Region: Glacial Caverns Biome — Permafrost Bedrock & Translucent Glacial Spire Crag
+    if (!scene.textures.exists('tile-glacial-obstacle')) {
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      // Pitch arctic permafrost bedrock foundation
+      g.fillStyle(0x030712, 1);
+      g.fillRect(0, 0, tileSize, tileSize);
+      // Glacial frost crystalline frame
+      g.lineStyle(2, 0x0284c7, 0.9);
+      g.strokeRect(2, 2, tileSize - 4, tileSize - 4);
+      // Jagged glacial ice crag facets
+      g.fillStyle(0x0c4a6e, 0.95);
+      g.fillTriangle(3, 3, 13, 3, 3, 13);
+      g.fillTriangle(tileSize - 3, tileSize - 3, tileSize - 13, tileSize - 3, tileSize - 3, tileSize - 13);
+      // Towering translucent glacial ice spire & crystalline facets
+      g.fillStyle(0x0369a1, 0.9);
+      g.fillTriangle(tileSize / 2, 4, tileSize / 2 - 7, tileSize / 2 + 5, tileSize / 2 + 7, tileSize / 2 + 5);
+      g.fillStyle(0x38bdf8, 0.9);
+      g.fillTriangle(tileSize / 2, 7, tileSize / 2 - 4, tileSize / 2 + 3, tileSize / 2 + 4, tileSize / 2 + 3);
+      // Radiant sub-zero crystal fissures slicing through rock
+      g.lineStyle(2, 0x0891b2, 0.9);
+      g.lineBetween(tileSize / 2 - 5, tileSize / 2 + 5, 5, tileSize - 5);
+      g.lineBetween(tileSize / 2 + 5, tileSize / 2 + 5, tileSize - 5, tileSize - 5);
+      g.lineBetween(4, tileSize / 2, tileSize - 4, tileSize / 2);
+      g.lineStyle(1.2, 0x22d3ee, 0.95);
+      g.lineBetween(tileSize / 2 - 5, tileSize / 2 + 5, 5, tileSize - 5);
+      g.lineBetween(tileSize / 2 + 5, tileSize / 2 + 5, tileSize - 5, tileSize - 5);
+      g.lineBetween(5, tileSize / 2, tileSize - 5, tileSize / 2);
+      // Diamond glacial core flare
+      g.fillStyle(0x67e8f9, 1);
+      g.fillCircle(tileSize / 2, tileSize / 2 + 2, 2.5);
+      g.fillStyle(0xf0fdf4, 1);
+      g.fillCircle(tileSize / 2, tileSize / 2 + 2, 1.2);
+      g.generateTexture('tile-glacial-obstacle', tileSize, tileSize);
+      g.destroy();
+    }
+
+    // 2h. Milestone — Water Terrain Generation: Quad-Biome Procedural Water Textures
+    // (1) Standard / Ancient Crypts — Subterranean Freshwater Cistern Pool
+    if (!scene.textures.exists('tile-water')) {
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      // Deep tranquil subterranean azure water foundation
+      g.fillStyle(0x0f2d4a, 1);
+      g.fillRect(0, 0, tileSize, tileSize);
+      // Soft stone pool basin border
+      g.lineStyle(1, 0x1e3a5f, 0.7);
+      g.strokeRect(0, 0, tileSize, tileSize);
+      // Gentle ripple waves and caustic fluid lines
+      g.lineStyle(1.5, 0x38bdf8, 0.65);
+      g.lineBetween(4, tileSize / 2 - 3, tileSize / 2 - 2, tileSize / 2 + 3);
+      g.lineBetween(tileSize / 2 - 2, tileSize / 2 + 3, tileSize - 5, tileSize / 2 - 2);
+      g.lineStyle(1, 0x60a5fa, 0.5);
+      g.lineBetween(7, tileSize / 2 + 4, tileSize / 2 + 3, tileSize / 2 - 3);
+      g.lineBetween(tileSize / 2 + 3, tileSize / 2 - 3, tileSize - 6, tileSize / 2 + 5);
+      // Fluid caustic refraction loops
+      g.fillStyle(0x93c5fd, 0.4);
+      g.fillCircle(tileSize / 2 - 4, tileSize / 2 - 2, 2.5);
+      g.fillCircle(tileSize / 2 + 5, tileSize / 2 + 3, 2);
+      // Light reflection glints
+      g.fillStyle(0xffffff, 0.9);
+      g.fillCircle(6, 7, 1);
+      g.fillCircle(tileSize - 7, tileSize - 7, 1.2);
+      g.generateTexture('tile-water', tileSize, tileSize);
+      g.destroy();
+    }
+
+    // (2) Abyssal Depths Biome — Bioluminescent Void Spring
+    if (!scene.textures.exists('tile-abyssal-water')) {
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      // Deep midnight obsidian-purple void water
+      g.fillStyle(0x150826, 1);
+      g.fillRect(0, 0, tileSize, tileSize);
+      // Abyssal boundary frame
+      g.lineStyle(1, 0x3b0764, 0.8);
+      g.strokeRect(0, 0, tileSize, tileSize);
+      // Glowing luminescent void ripples
+      g.lineStyle(1.5, 0x9333ea, 0.75);
+      g.lineBetween(3, tileSize / 2 - 2, tileSize / 2, tileSize / 2 + 4);
+      g.lineBetween(tileSize / 2, tileSize / 2 + 4, tileSize - 4, tileSize / 2 - 1);
+      g.lineStyle(1.2, 0xc084fc, 0.8);
+      g.lineBetween(6, tileSize / 2 + 3, tileSize / 2 + 2, tileSize / 2 - 3);
+      g.lineBetween(tileSize / 2 + 2, tileSize / 2 - 3, tileSize - 6, tileSize / 2 + 4);
+      // Radiant magenta caustic rings
+      g.fillStyle(0xe879f9, 0.45);
+      g.fillCircle(tileSize / 2, tileSize / 2, 2.8);
+      g.fillStyle(0x38bdf8, 0.7);
+      g.fillCircle(tileSize / 2, tileSize / 2, 1.2);
+      // Bioluminescent spore flecks
+      g.fillStyle(0xa855f7, 0.9);
+      g.fillCircle(7, 8, 1.2);
+      g.fillCircle(tileSize - 7, tileSize - 6, 1);
+      g.generateTexture('tile-abyssal-water', tileSize, tileSize);
+      g.destroy();
+    }
+
+    // (3) Infernal Caldera Biome — Volcanic Thermal Pool / Magma Springs
+    if (!scene.textures.exists('tile-caldera-water')) {
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      // Deep soot-scorched amber-crimson thermal liquid base
+      g.fillStyle(0x381005, 1);
+      g.fillRect(0, 0, tileSize, tileSize);
+      // Scorched basalt rim border
+      g.lineStyle(1, 0x78350f, 0.8);
+      g.strokeRect(0, 0, tileSize, tileSize);
+      // Swirling incandescent thermal currents
+      g.lineStyle(1.5, 0xd97706, 0.85);
+      g.lineBetween(4, tileSize / 2 - 2, tileSize / 2, tileSize / 2 + 3);
+      g.lineBetween(tileSize / 2, tileSize / 2 + 3, tileSize - 5, tileSize / 2 - 2);
+      g.lineStyle(1.2, 0xf97316, 0.9);
+      g.lineBetween(6, tileSize / 2 + 3, tileSize / 2 + 2, tileSize / 2 - 3);
+      g.lineBetween(tileSize / 2 + 2, tileSize / 2 - 3, tileSize - 6, tileSize / 2 + 4);
+      // Bubbling hot-spring mineral cores
+      g.fillStyle(0xfbbf24, 0.6);
+      g.fillCircle(tileSize / 2, tileSize / 2, 2.5);
+      g.fillStyle(0xfef08a, 0.85);
+      g.fillCircle(tileSize / 2, tileSize / 2, 1.2);
+      // Rising steam / spark glints
+      g.fillStyle(0xffedd5, 0.9);
+      g.fillCircle(6, 6, 1.2);
+      g.fillCircle(tileSize - 6, tileSize - 7, 1);
+      g.generateTexture('tile-caldera-water', tileSize, tileSize);
+      g.destroy();
+    }
+
+    // (4) Glacial Caverns Biome — Freezing Sub-Zero Glacial Melt Pool
+    if (!scene.textures.exists('tile-glacial-water')) {
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      // Deep sub-zero glacial oceanic cyan water base
+      g.fillStyle(0x052e42, 1);
+      g.fillRect(0, 0, tileSize, tileSize);
+      // Frosted rime border
+      g.lineStyle(1, 0x0891b2, 0.8);
+      g.strokeRect(0, 0, tileSize, tileSize);
+      // Sharp crystalline cyan wavelets
+      g.lineStyle(1.5, 0x06b6d4, 0.85);
+      g.lineBetween(3, tileSize / 2 - 2, tileSize / 2 - 1, tileSize / 2 + 3);
+      g.lineBetween(tileSize / 2 - 1, tileSize / 2 + 3, tileSize - 4, tileSize / 2 - 2);
+      g.lineStyle(1.2, 0x22d3ee, 0.9);
+      g.lineBetween(6, tileSize / 2 + 4, tileSize / 2 + 2, tileSize / 2 - 2);
+      g.lineBetween(tileSize / 2 + 2, tileSize / 2 - 2, tileSize - 5, tileSize / 2 + 3);
+      // Floating translucent ice crystal flecks
+      g.fillStyle(0x67e8f9, 0.6);
+      g.fillCircle(tileSize / 2, tileSize / 2, 2.5);
+      g.fillStyle(0xe0f2fe, 0.85);
+      g.fillCircle(tileSize / 2, tileSize / 2, 1.2);
+      // Diamond frost sparkles
+      g.fillStyle(0xffffff, 0.95);
+      g.fillCircle(5, 6, 1.2);
+      g.fillCircle(tileSize - 6, tileSize - 6, 1);
+      g.generateTexture('tile-glacial-water', tileSize, tileSize);
+      g.destroy();
+    }
+
     // 3. Player Avatar Texture (Blue Circle with Sword indicator)
     if (!scene.textures.exists('player-avatar')) {
       const size = 28;
@@ -524,6 +710,84 @@ export class TextureGenerator {
       g.fillCircle(size / 2, 23, 1.5);
 
       g.generateTexture('abyssal_colossus-avatar', size, size);
+      g.destroy();
+    }
+
+    // 4l. Glacial Sovereign Avatar Texture (Milestone — Second Boss Enemy: Sub-Zero Crystalline Monarch with Diamond Frost Spikes & Pulsing Cryo Core)
+    if (!scene.textures.exists('glacial_sovereign-avatar')) {
+      const size = 36;
+      const g = scene.make.graphics({ x: 0, y: 0 });
+
+      // Outer crystalline glacial carapace silhouette (deep sub-zero glacial oceanic slate)
+      g.fillStyle(0x082f49, 1);
+      g.beginPath();
+      g.moveTo(size / 2, 2);
+      g.lineTo(size - 3, 8);
+      g.lineTo(size - 1, size - 8);
+      g.lineTo(size / 2, size - 2);
+      g.lineTo(1, size - 8);
+      g.lineTo(3, 8);
+      g.closePath();
+      g.fillPath();
+
+      // Sharp Radiant Cyan Rime Frost Border
+      g.lineStyle(2.5, 0x06b6d4, 1);
+      g.strokePath();
+
+      // Twin Glacial Crystal Crown Horns
+      g.fillStyle(0x0284c7, 1);
+      g.fillTriangle(3, 8, 1, 0, 9, 4);
+      g.fillTriangle(size - 3, 8, size - 1, 0, size - 9, 4);
+      // Diamond ice tip accents on horns
+      g.fillStyle(0x67e8f9, 1);
+      g.fillTriangle(3, 6, 1, 0, 7, 3);
+      g.fillTriangle(size - 3, 6, size - 1, 0, size - 7, 3);
+
+      // Crystalline Crown Spire Center
+      g.fillStyle(0x38bdf8, 1);
+      g.fillTriangle(size / 2 - 3, 4, size / 2, 0, size / 2 + 3, 4);
+
+      // Jagged Glacial Shoulder Spikes
+      g.fillStyle(0x0c4a6e, 1);
+      g.fillRect(0, 13, 5, 8);
+      g.fillRect(size - 5, 13, 5, 8);
+      g.fillStyle(0x22d3ee, 1);
+      g.fillTriangle(0, 13, 0, 17, -2, 15);
+      g.fillTriangle(size, 13, size, 17, size + 2, 15);
+
+      // Sub-zero crystal lattice fissures
+      g.lineStyle(1.5, 0x38bdf8, 1);
+      g.lineBetween(size / 2, 9, size / 2, size - 7);
+      g.lineBetween(size / 2 - 8, 17, size / 2 + 8, 17);
+      g.lineBetween(size / 2 - 6, 25, size / 2 + 6, 25);
+      // Diagonal crystal branch fissures
+      g.lineStyle(1, 0xa5f3fc, 0.9);
+      g.lineBetween(size / 2, 17, size / 2 - 5, 21);
+      g.lineBetween(size / 2, 17, size / 2 + 5, 21);
+
+      // Frozen Mask / Eye Visor Area (deep sub-zero abyss)
+      g.fillStyle(0x031d2e, 1);
+      g.fillRoundedRect(size / 2 - 9, 10, 18, 9, 2);
+
+      // Glowing Piercing Frozen Azure Eyes
+      g.fillStyle(0x22d3ee, 1);
+      g.fillRect(size / 2 - 7, 12, 4, 3);
+      g.fillRect(size / 2 + 3, 12, 4, 3);
+
+      // Diamond Frost Eye Core Glints
+      g.fillStyle(0xffffff, 1);
+      g.fillRect(size / 2 - 5, 13, 2, 2);
+      g.fillRect(size / 2 + 3, 13, 2, 2);
+
+      // Pulsing Glacial Heart Crystal Core
+      g.fillStyle(0x0284c7, 1);
+      g.fillCircle(size / 2, 23, 3.5);
+      g.fillStyle(0x06b6d4, 1);
+      g.fillCircle(size / 2, 23, 2.5);
+      g.fillStyle(0xe0f2fe, 1);
+      g.fillCircle(size / 2, 23, 1.2);
+
+      g.generateTexture('glacial_sovereign-avatar', size, size);
       g.destroy();
     }
 
@@ -1559,6 +1823,53 @@ export class TextureGenerator {
       g.fillCircle(tileSize / 2 + 4, tileSize / 2 + 3, 2);
 
       g.generateTexture('vegetable-node-depleted', tileSize, tileSize);
+      g.destroy();
+    }
+
+    // 17. Milestone — Fishing: Fishing Spot & Depleted Textures
+    if (!scene.textures.exists('fishing-spot')) {
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      // Soft translucent water ring
+      g.fillStyle(0x0284c7, 0.45);
+      g.fillCircle(tileSize / 2, tileSize / 2, tileSize / 2 - 3);
+
+      // Inner swirling concentric ripples
+      g.lineStyle(1.5, 0x38bdf8, 0.9);
+      g.strokeCircle(tileSize / 2, tileSize / 2, tileSize / 2 - 5);
+      g.lineStyle(1, 0x7dd3fc, 0.7);
+      g.strokeCircle(tileSize / 2, tileSize / 2, tileSize / 2 - 9);
+
+      // Swimming fish silhouette beneath the ripples
+      g.fillStyle(0x075985, 0.85);
+      g.fillEllipse(tileSize / 2 + 1, tileSize / 2 + 1, 6, 3);
+      g.fillTriangle(
+        tileSize / 2 + 6, tileSize / 2 + 1,
+        tileSize / 2 + 10, tileSize / 2 - 2,
+        tileSize / 2 + 10, tileSize / 2 + 4
+      );
+
+      // Luminous surface water sparkles / bubbles
+      g.fillStyle(0xffffff, 0.95);
+      g.fillCircle(tileSize / 2 - 4, tileSize / 2 - 3, 1.5);
+      g.fillStyle(0xbae6fd, 0.85);
+      g.fillCircle(tileSize / 2 + 3, tileSize / 2 - 5, 1.2);
+      g.fillCircle(tileSize / 2 - 2, tileSize / 2 + 5, 1);
+
+      g.generateTexture('fishing-spot', tileSize, tileSize);
+      g.destroy();
+    }
+
+    if (!scene.textures.exists('fishing-spot-depleted')) {
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      // Calm, still water circle with faint dissipated ripple
+      g.fillStyle(0x0f172a, 0.35);
+      g.fillCircle(tileSize / 2, tileSize / 2, tileSize / 2 - 4);
+      g.lineStyle(1, 0x38bdf8, 0.3);
+      g.strokeCircle(tileSize / 2, tileSize / 2, tileSize / 2 - 7);
+      g.lineStyle(1, 0x64748b, 0.2);
+      g.strokeCircle(tileSize / 2, tileSize / 2, tileSize / 2 - 11);
+
+      g.generateTexture('fishing-spot-depleted', tileSize, tileSize);
       g.destroy();
     }
 

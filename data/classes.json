@@ -427,6 +427,29 @@
           "share": 0.5
         }
       }
+    },
+    {
+      "id": "thrower",
+      "name": "Thrower",
+      "tier": "adept",
+      "requirements": [
+        { "type": "proficiency", "target": "throwing_weapons", "value": 30 },
+        { "type": "proficiency", "target": "daggers", "value": 10 }
+      ],
+      "fantasy": "Quick-handed skirmisher",
+      "hiddenSkillBonuses": {
+        "evasion": 0.05,
+        "counterattack": 0.05
+      }
+    },
+    {
+      "id": "angler",
+      "name": "Angler",
+      "tier": "novice",
+      "requirements": [
+        { "type": "proficiency", "target": "fishing", "value": 10 }
+      ],
+      "fantasy": "Patient hands, a line in the water, and an eye on the ripples"
     }
   ]
 }

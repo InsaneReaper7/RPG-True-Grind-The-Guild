@@ -206,6 +206,26 @@ export class DataLoader {
               { itemId: 'seeds', name: 'Seeds', weight: 20, count: 1 },
               { itemId: 'locked_box', name: 'Locked Box', weight: 15, count: 1 }
             ]
+          },
+          fishing_spot: {
+            id: 'fishing_spot',
+            name: 'Fishing Spot',
+            skillId: 'fishing',
+            resourceId: 'raw_fish',
+            yieldCount: 1,
+            expGranted: 15,
+            channelDurationMs: 2500,
+            respawnTimeMs: 15000,
+            textureKey: 'fishing-spot',
+            textureDepletedKey: 'fishing-spot-depleted',
+            label: 'Fishing Spot',
+            depletedLabel: 'Fished Out',
+            color: '#38bdf8',
+            actionVerb: 'Fishing',
+            lootTable: [
+              { itemId: 'raw_fish', name: 'Raw Fish', weight: 70, count: 1 },
+              { itemId: 'aquatic_reagent', name: 'Aquatic Reagent', weight: 30, count: 1 }
+            ]
           }
         }
       };
@@ -224,6 +244,7 @@ export class DataLoader {
       maxFloor: 2,
       walkableTexture: 'tile-walkable',
       obstacleTexture: 'tile-obstacle',
+      waterTexture: 'tile-water',
       accentColor: '#a78bfa',
       tagline: 'The Upper Stone Chambers'
     },
@@ -234,17 +255,33 @@ export class DataLoader {
       maxFloor: 5,
       walkableTexture: 'tile-abyssal-walkable',
       obstacleTexture: 'tile-abyssal-obstacle',
+      waterTexture: 'tile-abyssal-water',
       accentColor: '#c084fc',
-      tagline: 'The Deep Void Stratum'
+      tagline: 'The Deep Void Stratum',
+      bossEnemyId: 'abyssal_colossus'
     },
     {
       id: 'infernal_caldera',
       name: 'Infernal Caldera',
       minFloor: 6,
+      maxFloor: 10,
       walkableTexture: 'tile-caldera-walkable',
       obstacleTexture: 'tile-caldera-obstacle',
+      waterTexture: 'tile-caldera-water',
       accentColor: '#f97316',
-      tagline: 'The Scorched Subterranean Core'
+      tagline: 'The Scorched Subterranean Core',
+      bossEnemyId: 'abyssal_colossus'
+    },
+    {
+      id: 'glacial_caverns',
+      name: 'Glacial Caverns',
+      minFloor: 11,
+      walkableTexture: 'tile-glacial-walkable',
+      obstacleTexture: 'tile-glacial-obstacle',
+      waterTexture: 'tile-glacial-water',
+      accentColor: '#06b6d4',
+      tagline: 'The Sub-Zero Crystalline Depths',
+      bossEnemyId: 'glacial_sovereign'
     }
   ];
 
@@ -268,6 +305,13 @@ export class DataLoader {
         roomCount: { min: 5, max: 7 },
         roomSize: { minWidth: 7, maxWidth: 12, minHeight: 7, maxHeight: 12 },
         corridorWidth: 2,
+        water: {
+          enabled: true,
+          chancePerEligibleRoom: 0.6,
+          eligibleRoomTypes: ['gathering', 'light_combat'],
+          minPoolSize: 2,
+          maxPoolSize: 5
+        },
         roomTypes: {
           gathering: { weight: 25, bushesRange: [2, 4], enemiesRange: [0, 0] },
           light_combat: { weight: 45, bushesRange: [1, 3], enemiesRange: [1, 2] },
@@ -634,6 +678,14 @@ export class DataLoader {
         id: 'heavy_armor',
         name: 'Heavy Armor',
         description: 'Proficiency with heavy plate, mail, and bulky armor in combat.'
+      };
+    }
+
+    if (id === 'fishing') {
+      return {
+        id: 'fishing',
+        name: 'Fishing',
+        description: 'Harvesting raw fish and aquatic reagents from deep water pools in dungeons.'
       };
     }
 

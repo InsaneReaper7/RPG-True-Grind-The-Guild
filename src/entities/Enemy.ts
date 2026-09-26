@@ -28,6 +28,10 @@ export class Enemy extends Entity {
   public corpseNode?: any = null;
 
   public isEnraged: boolean = false;
+  public isGlaciated: boolean = false;
+  public iceBarrierHp: number = 0;
+  public maxIceBarrierHp: number = 100;
+  public attackRangeTiles: number = 1;
   public initialAttackIntervalMs: number;
   public enragedAttackIntervalMs: number;
   public initialMoveSpeed: number;
@@ -46,6 +50,7 @@ export class Enemy extends Entity {
 
     this.enemyData = enemyData;
     this.moveSpeed = enemyData.moveSpeed;
+    this.attackRangeTiles = enemyData.attackRangeTiles ?? 1;
     this.spawnPos = { x, y };
     this.initialAttackIntervalMs = enemyData.attackIntervalMs;
     this.enragedAttackIntervalMs = Math.round(enemyData.attackIntervalMs * 0.68);
@@ -101,31 +106,53 @@ export class Enemy extends Entity {
     } else if (this.enemyData.tier === 'boss') {
       if (scene.add && typeof scene.add.graphics === 'function') {
         this.eliteAura = scene.add.graphics();
-        // Outer crimson blazing circle
-        this.eliteAura.lineStyle(3, 0xdc2626, 0.95);
-        this.eliteAura.strokeCircle(0, 0, 24);
-        this.eliteAura.fillStyle(0xef4444, 0.28);
-        this.eliteAura.fillCircle(0, 0, 24);
-        // Four cardinal crest spikes
-        this.eliteAura.lineStyle(2, 0xdc2626, 0.9);
-        if (typeof (this.eliteAura as any).lineBetween === 'function') {
-          (this.eliteAura as any).lineBetween(0, -28, 0, -22);
-          (this.eliteAura as any).lineBetween(0, 22, 0, 28);
-          (this.eliteAura as any).lineBetween(-28, 0, -22, 0);
-          (this.eliteAura as any).lineBetween(22, 0, 28, 0);
+        if (this.enemyData.id === 'glacial_sovereign') {
+          // Glacial Sovereign: Sub-zero crystalline cyan aura with 8-point snowflake spikes
+          this.eliteAura.lineStyle(3, 0x06b6d4, 0.95);
+          this.eliteAura.strokeCircle(0, 0, 24);
+          this.eliteAura.fillStyle(0x0891b2, 0.28);
+          this.eliteAura.fillCircle(0, 0, 24);
+          this.eliteAura.lineStyle(2, 0x38bdf8, 0.9);
+          if (typeof (this.eliteAura as any).lineBetween === 'function') {
+            (this.eliteAura as any).lineBetween(0, -28, 0, -22);
+            (this.eliteAura as any).lineBetween(0, 22, 0, 28);
+            (this.eliteAura as any).lineBetween(-28, 0, -22, 0);
+            (this.eliteAura as any).lineBetween(22, 0, 28, 0);
+            (this.eliteAura as any).lineBetween(-20, -20, -15, -15);
+            (this.eliteAura as any).lineBetween(15, 15, 20, 20);
+            (this.eliteAura as any).lineBetween(-20, 20, -15, 15);
+            (this.eliteAura as any).lineBetween(15, -15, 20, -20);
+          }
+          this.eliteAura.lineStyle(1.5, 0xa5f3fc, 0.85);
+          this.eliteAura.strokeCircle(0, 0, 16);
+        } else {
+          // Abyssal Colossus: Outer crimson blazing circle
+          this.eliteAura.lineStyle(3, 0xdc2626, 0.95);
+          this.eliteAura.strokeCircle(0, 0, 24);
+          this.eliteAura.fillStyle(0xef4444, 0.28);
+          this.eliteAura.fillCircle(0, 0, 24);
+          // Four cardinal crest spikes
+          this.eliteAura.lineStyle(2, 0xdc2626, 0.9);
+          if (typeof (this.eliteAura as any).lineBetween === 'function') {
+            (this.eliteAura as any).lineBetween(0, -28, 0, -22);
+            (this.eliteAura as any).lineBetween(0, 22, 0, 28);
+            (this.eliteAura as any).lineBetween(-28, 0, -22, 0);
+            (this.eliteAura as any).lineBetween(22, 0, 28, 0);
+          }
+          // Inner fiery amber core ring
+          this.eliteAura.lineStyle(1.5, 0xf59e0b, 0.85);
+          this.eliteAura.strokeCircle(0, 0, 16);
         }
-        // Inner fiery amber core ring
-        this.eliteAura.lineStyle(1.5, 0xf59e0b, 0.85);
-        this.eliteAura.strokeCircle(0, 0, 16);
         this.addAt(this.eliteAura, 0); // Behind avatar
         this.tierAura = this.eliteAura;
       }
       if (scene.add && typeof scene.add.text === 'function') {
+        const isGlacial = this.enemyData.id === 'glacial_sovereign';
         this.eliteLabel = scene.add.text(0, -this.tileSize / 2 - 30, '👑 BOSS 👑', {
           fontSize: '10px',
-          color: '#ef4444',
+          color: isGlacial ? '#06b6d4' : '#ef4444',
           fontStyle: 'bold',
-          backgroundColor: 'rgba(50,0,0,0.85)',
+          backgroundColor: isGlacial ? 'rgba(0,30,50,0.85)' : 'rgba(50,0,0,0.85)',
           padding: { x: 4, y: 1 }
         }).setOrigin(0.5);
         this.add(this.eliteLabel);
@@ -173,16 +200,89 @@ export class Enemy extends Entity {
       }
     }
 
-    const isDowned = super.takeDamage(amount);
+    let effectiveDamage = amount;
+    // Glacial Sovereign: Crystalline Ice Barrier absorbs incoming damage
+    if (this.iceBarrierHp > 0 && effectiveDamage > 0) {
+      const absorbed = Math.min(this.iceBarrierHp, effectiveDamage);
+      this.iceBarrierHp -= absorbed;
+      effectiveDamage -= absorbed;
+      console.log(`[Combat:Barrier] ❄️ ${this.entityName}'s Crystalline Ice Barrier absorbed ${absorbed} damage! Remaining: ${this.iceBarrierHp}`);
+      if (this.scene && typeof (this.scene as any).createFloatingText === 'function') {
+        (this.scene as any).createFloatingText(this.x, this.y - 20, `ABSORBED ${absorbed.toFixed(0)}!`, '#38bdf8');
+      }
+      if (this.iceBarrierHp <= 0) {
+        console.log(`[Combat:Barrier] ❄️ ${this.entityName}'s Crystalline Ice Barrier SHATTERED!`);
+        if (this.scene && typeof (this.scene as any).createFloatingText === 'function') {
+          (this.scene as any).createFloatingText(this.x, this.y - 28, 'BARRIER SHATTERED!', '#67e8f9');
+        }
+      }
+    }
 
-    // Milestone 34: Boss Tier Enrage Phase Trigger at Critical HP (<= 50% HP)
-    if (this.enemyData.tier === 'boss' && !this.isEnraged && this.state !== 'dead' && this.state !== 'downed') {
+    const isDowned = super.takeDamage(effectiveDamage);
+
+    // Boss Tier Critical HP Phase Trigger (<= 50% HP)
+    if (this.enemyData.tier === 'boss' && this.state !== 'dead' && this.state !== 'downed') {
       if (this.hp <= this.criticalHp) {
-        this.triggerEnrage();
+        if (this.enemyData.id === 'glacial_sovereign' && !this.isGlaciated) {
+          this.triggerGlaciation();
+        } else if (this.enemyData.id !== 'glacial_sovereign' && !this.isEnraged) {
+          this.triggerEnrage();
+        }
       }
     }
 
     return isDowned;
+  }
+
+  /**
+   * Enters Glacial Sovereign Permafrost Glaciation phase:
+   * Conjures a 100 HP Crystalline Ice Barrier, shifts aura into a radiant sub-zero blizzard vortex,
+   * activates Frost Thorns damage reflection, and updates visuals.
+   */
+  public triggerGlaciation(): void {
+    this.isGlaciated = true;
+    this.iceBarrierHp = this.maxIceBarrierHp;
+    console.log(`%c[Combat:Glaciation] ❄️ ${this.entityName} has entered PERMAFROST GLACIATION! Conjured 100 HP Crystalline Ice Barrier and active Frost Thorns!`, 'color: #06b6d4; font-weight: bold;');
+
+    // Avatar cyan frost tint
+    if (this.avatarSprite && typeof this.avatarSprite.setTint === 'function') {
+      this.avatarSprite.setTint(0xbae6fd);
+    }
+
+    // Intensified glacial crystalline aura
+    if (this.eliteAura) {
+      this.eliteAura.clear();
+      // Outer radiant cyan crystalline vortex
+      this.eliteAura.lineStyle(3.5, 0x06b6d4, 1.0);
+      this.eliteAura.strokeCircle(0, 0, 26);
+      this.eliteAura.fillStyle(0x0891b2, 0.40);
+      this.eliteAura.fillCircle(0, 0, 26);
+      // 8-point snowflake frost spikes
+      if (typeof (this.eliteAura as any).lineBetween === 'function') {
+        // Cardinal spikes
+        (this.eliteAura as any).lineBetween(0, -32, 0, -24);
+        (this.eliteAura as any).lineBetween(0, 24, 0, 32);
+        (this.eliteAura as any).lineBetween(-32, 0, -24, 0);
+        (this.eliteAura as any).lineBetween(24, 0, 32, 0);
+        // Diagonal spikes
+        (this.eliteAura as any).lineBetween(-22, -22, -16, -16);
+        (this.eliteAura as any).lineBetween(16, 16, 22, 22);
+        (this.eliteAura as any).lineBetween(-22, 22, -16, 16);
+        (this.eliteAura as any).lineBetween(16, -16, 22, -22);
+      }
+      // Inner diamond frost core ring
+      this.eliteAura.lineStyle(2, 0xa5f3fc, 0.95);
+      this.eliteAura.strokeCircle(0, 0, 18);
+    }
+
+    if (this.eliteLabel) {
+      this.eliteLabel.setText('❄️ CRYO SOVEREIGN ❄️');
+      this.eliteLabel.setStyle({ color: '#22d3ee' });
+    }
+
+    if (this.scene && typeof (this.scene as any).createFloatingText === 'function') {
+      (this.scene as any).createFloatingText(this.x, this.y - 24, 'PERMAFROST AWAKENING!', '#06b6d4');
+    }
   }
 
   /**
@@ -220,7 +320,7 @@ export class Enemy extends Entity {
     }
   }
 
-  protected override onDowned(): void {
+  public override onDowned(): void {
     super.onDowned();
     this.markDead();
   }
@@ -273,6 +373,8 @@ export class Enemy extends Entity {
     this.isButchered = false;
     this.corpseNode = null;
     this.isEnraged = false;
+    this.isGlaciated = false;
+    this.iceBarrierHp = 0;
     this.enemyData.attackIntervalMs = this.initialAttackIntervalMs;
     this.moveSpeed = this.initialMoveSpeed;
     this.activeStatusEffects.clear();
@@ -292,26 +394,49 @@ export class Enemy extends Entity {
       this.eliteAura.setVisible(true);
       if (this.enemyData.tier === 'boss') {
         this.eliteAura.clear();
-        this.eliteAura.lineStyle(3, 0xdc2626, 0.95);
-        this.eliteAura.strokeCircle(0, 0, 24);
-        this.eliteAura.fillStyle(0xef4444, 0.28);
-        this.eliteAura.fillCircle(0, 0, 24);
-        this.eliteAura.lineStyle(2, 0xdc2626, 0.9);
-        if (typeof (this.eliteAura as any).lineBetween === 'function') {
-          (this.eliteAura as any).lineBetween(0, -28, 0, -22);
-          (this.eliteAura as any).lineBetween(0, 22, 0, 28);
-          (this.eliteAura as any).lineBetween(-28, 0, -22, 0);
-          (this.eliteAura as any).lineBetween(22, 0, 28, 0);
+        if (this.enemyData.id === 'glacial_sovereign') {
+          this.eliteAura.lineStyle(3, 0x06b6d4, 0.95);
+          this.eliteAura.strokeCircle(0, 0, 24);
+          this.eliteAura.fillStyle(0x0891b2, 0.28);
+          this.eliteAura.fillCircle(0, 0, 24);
+          this.eliteAura.lineStyle(2, 0x38bdf8, 0.9);
+          if (typeof (this.eliteAura as any).lineBetween === 'function') {
+            (this.eliteAura as any).lineBetween(0, -28, 0, -22);
+            (this.eliteAura as any).lineBetween(0, 22, 0, 28);
+            (this.eliteAura as any).lineBetween(-28, 0, -22, 0);
+            (this.eliteAura as any).lineBetween(22, 0, 28, 0);
+            (this.eliteAura as any).lineBetween(-20, -20, -15, -15);
+            (this.eliteAura as any).lineBetween(15, 15, 20, 20);
+            (this.eliteAura as any).lineBetween(-20, 20, -15, 15);
+            (this.eliteAura as any).lineBetween(15, -15, 20, -20);
+          }
+          this.eliteAura.lineStyle(1.5, 0xa5f3fc, 0.85);
+          this.eliteAura.strokeCircle(0, 0, 16);
+        } else {
+          this.eliteAura.lineStyle(3, 0xdc2626, 0.95);
+          this.eliteAura.strokeCircle(0, 0, 24);
+          this.eliteAura.fillStyle(0xef4444, 0.28);
+          this.eliteAura.fillCircle(0, 0, 24);
+          this.eliteAura.lineStyle(2, 0xdc2626, 0.9);
+          if (typeof (this.eliteAura as any).lineBetween === 'function') {
+            (this.eliteAura as any).lineBetween(0, -28, 0, -22);
+            (this.eliteAura as any).lineBetween(0, 22, 0, 28);
+            (this.eliteAura as any).lineBetween(-28, 0, -22, 0);
+            (this.eliteAura as any).lineBetween(22, 0, 28, 0);
+          }
+          this.eliteAura.lineStyle(1.5, 0xf59e0b, 0.85);
+          this.eliteAura.strokeCircle(0, 0, 16);
         }
-        this.eliteAura.lineStyle(1.5, 0xf59e0b, 0.85);
-        this.eliteAura.strokeCircle(0, 0, 16);
       }
     }
     if (this.eliteLabel) {
       this.eliteLabel.setVisible(true);
-      if (this.enemyData.tier === 'boss') {
+      if (this.enemyData.id === 'glacial_sovereign') {
         this.eliteLabel.setText('👑 BOSS 👑');
-        this.eliteLabel.setStyle({ color: '#ef4444' });
+        this.eliteLabel.setStyle({ color: '#06b6d4', backgroundColor: 'rgba(0,30,50,0.85)' });
+      } else if (this.enemyData.tier === 'boss') {
+        this.eliteLabel.setText('👑 BOSS 👑');
+        this.eliteLabel.setStyle({ color: '#ef4444', backgroundColor: 'rgba(50,0,0,0.85)' });
       }
     }
     if (this.nameLabel) {

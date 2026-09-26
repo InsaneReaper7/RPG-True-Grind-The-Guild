@@ -73,9 +73,9 @@ function makeSeededRng(seed: number) {
   };
 }
 
-async function runMilestone56Tests() {
+async function runThirdNamedRegionTests() {
   console.log('================================================================');
-  console.log('🌋 RUNNING MILESTONE 56: SECOND NAMED REGION (INFERNAL CALDERA) 🌋');
+  console.log('❄️ RUNNING MILESTONE: THIRD NAMED REGION (GLACIAL CAVERNS) ❄️');
   console.log('================================================================\n');
 
   const { DataLoader } = await import(pathToFileURL(path.resolve(workspaceDir, 'src/utils/DataLoader.ts')).href);
@@ -92,9 +92,9 @@ async function runMilestone56Tests() {
   console.log('--- TEST 1: DungeonConfig & Regions Array Schema ---');
   const config = dataLoader.getDungeonConfig();
   assert.ok(Array.isArray(config.regions), 'regions must be an array');
-  assert.ok(config.regions.length >= 3, 'Must have at least 3 regions configured');
+  assert.strictEqual(config.regions.length, 4, 'Must have exactly 4 regions configured');
 
-  const [region1, region2, region3] = config.regions;
+  const [region1, region2, region3, region4] = config.regions;
 
   // Region 1: Ancient Crypts
   assert.strictEqual(region1.id, 'ancient_crypts');
@@ -104,7 +104,7 @@ async function runMilestone56Tests() {
   assert.strictEqual(region1.walkableTexture, 'tile-walkable');
   assert.strictEqual(region1.obstacleTexture, 'tile-obstacle');
   assert.strictEqual(region1.accentColor, '#a78bfa');
-  assert.ok(region1.tagline, 'ancient_crypts has a tagline');
+  assert.strictEqual(region1.tagline, 'The Upper Stone Chambers');
 
   // Region 2: Abyssal Depths
   assert.strictEqual(region2.id, 'abyssal_depths');
@@ -114,27 +114,42 @@ async function runMilestone56Tests() {
   assert.strictEqual(region2.walkableTexture, 'tile-abyssal-walkable');
   assert.strictEqual(region2.obstacleTexture, 'tile-abyssal-obstacle');
   assert.strictEqual(region2.accentColor, '#c084fc');
-  assert.ok(region2.tagline, 'abyssal_depths has a tagline');
+  assert.strictEqual(region2.tagline, 'The Deep Void Stratum');
 
   // Region 3: Infernal Caldera
   assert.strictEqual(region3.id, 'infernal_caldera');
   assert.strictEqual(region3.name, 'Infernal Caldera');
-  assert.strictEqual(region3.minFloor, 6, 'Infernal Caldera must start at Floor 6');
-  assert.ok(region3.maxFloor === undefined || region3.maxFloor >= 10, 'Infernal Caldera covers through floor 10');
+  assert.strictEqual(region3.minFloor, 6);
+  assert.strictEqual(region3.maxFloor, 10, 'Infernal Caldera must cap at Floor 10');
   assert.strictEqual(region3.walkableTexture, 'tile-caldera-walkable');
   assert.strictEqual(region3.obstacleTexture, 'tile-caldera-obstacle');
-  assert.strictEqual(region3.accentColor, '#f97316', 'Accent color must be vibrant molten lava orange');
+  assert.strictEqual(region3.accentColor, '#f97316');
   assert.strictEqual(region3.tagline, 'The Scorched Subterranean Core');
 
-  // Also check DEFAULT_REGIONS fallback parity
-  assert.ok(DataLoader.DEFAULT_REGIONS.length >= 3, 'DEFAULT_REGIONS must contain at least 3 regions');
-  assert.strictEqual(DataLoader.DEFAULT_REGIONS[2].id, 'infernal_caldera');
-  assert.strictEqual(DataLoader.DEFAULT_REGIONS[2].minFloor, 6);
+  // Region 4: Glacial Caverns (Third Named Region)
+  assert.strictEqual(region4.id, 'glacial_caverns');
+  assert.strictEqual(region4.name, 'Glacial Caverns');
+  assert.strictEqual(region4.minFloor, 11, 'Glacial Caverns must start at Floor 11 (meaningfully deeper than Floor 6)');
+  assert.strictEqual(region4.maxFloor, undefined, 'Glacial Caverns extends into deep stratum');
+  assert.strictEqual(region4.walkableTexture, 'tile-glacial-walkable');
+  assert.strictEqual(region4.obstacleTexture, 'tile-glacial-obstacle');
+  assert.strictEqual(region4.accentColor, '#06b6d4', 'Accent color must be vibrant sub-zero cyan');
+  assert.strictEqual(region4.tagline, 'The Sub-Zero Crystalline Depths');
 
-  console.log('✓ PASS: Regions configuration and DataLoader fallback array schema verified.');
+  // Check DataLoader.DEFAULT_REGIONS parity
+  assert.strictEqual(DataLoader.DEFAULT_REGIONS.length, 4, 'DEFAULT_REGIONS must contain 4 regions');
+  assert.strictEqual(DataLoader.DEFAULT_REGIONS[2].id, 'infernal_caldera');
+  assert.strictEqual(DataLoader.DEFAULT_REGIONS[2].maxFloor, 10);
+  assert.strictEqual(DataLoader.DEFAULT_REGIONS[3].id, 'glacial_caverns');
+  assert.strictEqual(DataLoader.DEFAULT_REGIONS[3].minFloor, 11);
+  assert.strictEqual(DataLoader.DEFAULT_REGIONS[3].walkableTexture, 'tile-glacial-walkable');
+  assert.strictEqual(DataLoader.DEFAULT_REGIONS[3].obstacleTexture, 'tile-glacial-obstacle');
+  assert.strictEqual(DataLoader.DEFAULT_REGIONS[3].accentColor, '#06b6d4');
+
+  console.log('✓ PASS: All 4 regions configured with authentic metadata and DataLoader fallback parity.');
 
   // -------------------------------------------------------------------
-  // TEST 2: DataLoader Floor Depth Resolution
+  // TEST 2: Dynamic Floor Depth Resolution Across All Biomes
   // -------------------------------------------------------------------
   console.log('\n--- TEST 2: Dynamic Floor Depth Resolution Across Entire Run ---');
   // Floors 1 & 2 -> Ancient Crypts
@@ -146,35 +161,53 @@ async function runMilestone56Tests() {
   assert.strictEqual(dataLoader.getRegionForFloor(4).id, 'abyssal_depths');
   assert.strictEqual(dataLoader.getRegionForFloor(5).id, 'abyssal_depths');
 
-  // Floors 6, 7, 10 -> Infernal Caldera
+  // Floors 6, 7, 8, 9, 10 -> Infernal Caldera
   assert.strictEqual(dataLoader.getRegionForFloor(6).id, 'infernal_caldera');
   assert.strictEqual(dataLoader.getRegionForFloor(7).id, 'infernal_caldera');
+  assert.strictEqual(dataLoader.getRegionForFloor(8).id, 'infernal_caldera');
+  assert.strictEqual(dataLoader.getRegionForFloor(9).id, 'infernal_caldera');
   assert.strictEqual(dataLoader.getRegionForFloor(10).id, 'infernal_caldera');
 
-  console.log('✓ PASS: Floor depth resolution resolves correct regions accurately across all floors.');
+  // Floors 11, 12, 15, 20, 50 -> Glacial Caverns
+  assert.strictEqual(dataLoader.getRegionForFloor(11).id, 'glacial_caverns');
+  assert.strictEqual(dataLoader.getRegionForFloor(12).id, 'glacial_caverns');
+  assert.strictEqual(dataLoader.getRegionForFloor(15).id, 'glacial_caverns');
+  assert.strictEqual(dataLoader.getRegionForFloor(20).id, 'glacial_caverns');
+  assert.strictEqual(dataLoader.getRegionForFloor(50).id, 'glacial_caverns');
+
+  console.log('✓ PASS: Depth resolution maps accurately across all 4 biome boundaries.');
 
   // -------------------------------------------------------------------
-  // TEST 3: Tri-Biome Visual & Texture Distinction
+  // TEST 3: Visual & Texture Distinctiveness Across Quad-Biome Spectrum
   // -------------------------------------------------------------------
   console.log('\n--- TEST 3: Visual & Texture Distinctiveness ---');
-  // Confirm that each biome's walkable and obstacle textures are distinct strings
-  const textures = [
+  const allWalkables = [
     region1.walkableTexture,
-    region1.obstacleTexture,
     region2.walkableTexture,
-    region2.obstacleTexture,
     region3.walkableTexture,
-    region3.obstacleTexture
+    region4.walkableTexture
   ];
-  const uniqueTextures = new Set(textures);
-  assert.strictEqual(uniqueTextures.size, 6, 'All 6 tile textures across the 3 biomes must be distinct');
+  const allObstacles = [
+    region1.obstacleTexture,
+    region2.obstacleTexture,
+    region3.obstacleTexture,
+    region4.obstacleTexture
+  ];
+  const allAccents = [
+    region1.accentColor,
+    region2.accentColor,
+    region3.accentColor,
+    region4.accentColor
+  ];
 
-  // Confirm that each biome's accent colors are distinct
-  const accents = [region1.accentColor, region2.accentColor, region3.accentColor];
-  const uniqueAccents = new Set(accents);
-  assert.strictEqual(uniqueAccents.size, 3, 'All 3 region accent colors must be visually distinct');
+  // All walkable texture keys must be unique
+  assert.strictEqual(new Set(allWalkables).size, 4, 'All 4 walkable textures must be distinct');
+  // All obstacle texture keys must be unique
+  assert.strictEqual(new Set(allObstacles).size, 4, 'All 4 obstacle textures must be distinct');
+  // All accent colors must be unique
+  assert.strictEqual(new Set(allAccents).size, 4, 'All 4 accent colors must be distinct');
 
-  // Mock scene texture generation check
+  // Verify procedural generation in TextureGenerator
   const generatedTextures: Record<string, boolean> = {};
   const mockScene: any = {
     textures: {
@@ -201,84 +234,92 @@ async function runMilestone56Tests() {
   };
 
   TextureGenerator.generatePlaceholderTextures(mockScene, 32);
+
   assert.ok(generatedTextures['tile-walkable'], 'tile-walkable generated');
   assert.ok(generatedTextures['tile-obstacle'], 'tile-obstacle generated');
   assert.ok(generatedTextures['tile-abyssal-walkable'], 'tile-abyssal-walkable generated');
   assert.ok(generatedTextures['tile-abyssal-obstacle'], 'tile-abyssal-obstacle generated');
   assert.ok(generatedTextures['tile-caldera-walkable'], 'tile-caldera-walkable generated');
   assert.ok(generatedTextures['tile-caldera-obstacle'], 'tile-caldera-obstacle generated');
+  assert.ok(generatedTextures['tile-glacial-walkable'], 'tile-glacial-walkable generated');
+  assert.ok(generatedTextures['tile-glacial-obstacle'], 'tile-glacial-obstacle generated');
 
-  console.log('✓ PASS: Tri-biome visual assets, accents, and procedural textures generated and verified.');
+  console.log('✓ PASS: Quad-biome textures, accents, and procedural generation validated.');
 
   // -------------------------------------------------------------------
-  // TEST 4: Zero Changes to Core Generation Logic & Deterministic Invariance
+  // TEST 4: Zero Impact on Procedural Generation (Deterministic Multi-Seed Test)
   // -------------------------------------------------------------------
   console.log('\n--- TEST 4: Zero Impact on Procedural Generation (Deterministic Invariance) ---');
-  const testSeeds = [42, 12345, 99999, 777777];
-
+  const testSeeds = [42, 100, 777, 9999];
   for (const seed of testSeeds) {
-    // Generate floor 1 (Ancient Crypts), floor 3 (Abyssal Depths), floor 6 (Infernal Caldera)
-    // with the identical seeded RNG stream
-    const rngFloor1 = makeSeededRng(seed);
-    const dungeon1 = DungeonGenerator.generate(config, rngFloor1, { floorNumber: 1 });
+    const rng1 = makeSeededRng(seed);
+    const dungeon1 = DungeonGenerator.generate(config, rng1, { floorNumber: 1 });
 
-    const rngFloor3 = makeSeededRng(seed);
-    const dungeon3 = DungeonGenerator.generate(config, rngFloor3, { floorNumber: 3 });
+    const rng3 = makeSeededRng(seed);
+    const dungeon3 = DungeonGenerator.generate(config, rng3, { floorNumber: 3 });
 
-    const rngFloor6 = makeSeededRng(seed);
-    const dungeon6 = DungeonGenerator.generate(config, rngFloor6, { floorNumber: 6 });
+    const rng6 = makeSeededRng(seed);
+    const dungeon6 = DungeonGenerator.generate(config, rng6, { floorNumber: 6 });
 
-    // 4a. Grid dimensions invariant
+    const rng11 = makeSeededRng(seed);
+    const dungeon11 = DungeonGenerator.generate(config, rng11, { floorNumber: 11 });
+
+    // Grid Dimensions
     assert.strictEqual(dungeon1.width, dungeon3.width);
     assert.strictEqual(dungeon1.width, dungeon6.width);
+    assert.strictEqual(dungeon1.width, dungeon11.width);
     assert.strictEqual(dungeon1.height, dungeon3.height);
     assert.strictEqual(dungeon1.height, dungeon6.height);
+    assert.strictEqual(dungeon1.height, dungeon11.height);
 
-    // 4b. Grid matrix cell-by-cell byte equality
+    // Byte-for-byte grid matrix match
     for (let y = 0; y < dungeon1.height; y++) {
       for (let x = 0; x < dungeon1.width; x++) {
-        assert.strictEqual(
-          dungeon1.gridMatrix[y][x],
-          dungeon3.gridMatrix[y][x],
-          `Seed ${seed}: Tile mismatch between Floor 1 and 3 at (${x}, ${y})`
-        );
-        assert.strictEqual(
-          dungeon1.gridMatrix[y][x],
-          dungeon6.gridMatrix[y][x],
-          `Seed ${seed}: Tile mismatch between Floor 1 and 6 at (${x}, ${y})`
-        );
+        assert.strictEqual(dungeon1.gridMatrix[y][x], dungeon3.gridMatrix[y][x]);
+        assert.strictEqual(dungeon1.gridMatrix[y][x], dungeon6.gridMatrix[y][x]);
+        assert.strictEqual(dungeon1.gridMatrix[y][x], dungeon11.gridMatrix[y][x]);
       }
     }
 
-    // 4c. Rooms count and coordinates
+    // Room layouts
     assert.strictEqual(dungeon1.rooms.length, dungeon3.rooms.length);
     assert.strictEqual(dungeon1.rooms.length, dungeon6.rooms.length);
+    assert.strictEqual(dungeon1.rooms.length, dungeon11.rooms.length);
     for (let i = 0; i < dungeon1.rooms.length; i++) {
       const r1 = dungeon1.rooms[i];
       const r3 = dungeon3.rooms[i];
       const r6 = dungeon6.rooms[i];
+      const r11 = dungeon11.rooms[i];
       assert.strictEqual(r1.x, r3.x);
       assert.strictEqual(r1.x, r6.x);
+      assert.strictEqual(r1.x, r11.x);
       assert.strictEqual(r1.y, r3.y);
       assert.strictEqual(r1.y, r6.y);
+      assert.strictEqual(r1.y, r11.y);
       assert.strictEqual(r1.width, r3.width);
       assert.strictEqual(r1.width, r6.width);
+      assert.strictEqual(r1.width, r11.width);
       assert.strictEqual(r1.height, r3.height);
       assert.strictEqual(r1.height, r6.height);
+      assert.strictEqual(r1.height, r11.height);
       assert.strictEqual(r1.centerX, r3.centerX);
       assert.strictEqual(r1.centerX, r6.centerX);
+      assert.strictEqual(r1.centerX, r11.centerX);
       assert.strictEqual(r1.centerY, r3.centerY);
       assert.strictEqual(r1.centerY, r6.centerY);
+      assert.strictEqual(r1.centerY, r11.centerY);
     }
 
-    // 4d. Portal and Crystal coordinates
+    // Portal and Crystal coordinates
     assert.deepStrictEqual(dungeon1.portalPos, dungeon3.portalPos);
     assert.deepStrictEqual(dungeon1.portalPos, dungeon6.portalPos);
+    assert.deepStrictEqual(dungeon1.portalPos, dungeon11.portalPos);
     assert.deepStrictEqual(dungeon1.crystalPos, dungeon3.crystalPos);
     assert.deepStrictEqual(dungeon1.crystalPos, dungeon6.crystalPos);
+    assert.deepStrictEqual(dungeon1.crystalPos, dungeon11.crystalPos);
   }
 
-  console.log('✓ PASS: Deterministic seed invariance confirmed across 4 random seeds — 0 generation logic impact.');
+  console.log('✓ PASS: Deterministic seed invariance confirmed across 4 random seeds across all 4 regions — 0 generation logic impact.');
 
   // -------------------------------------------------------------------
   // TEST 5: Teleporter Crystal Next-Region Prediction & Boundary Transitions
@@ -296,19 +337,26 @@ async function runMilestone56Tests() {
   // Floor 2 -> 3: Boundary cross! Preview shows "Abyssal Depths"
   assert.strictEqual(getCrystalNextRegionPreview(2), 'Abyssal Depths');
 
-  // Floor 3 -> 4: Same region (Abyssal Depths), preview undefined
+  // Floor 3 -> 4, 4 -> 5: Same region (Abyssal Depths)
   assert.strictEqual(getCrystalNextRegionPreview(3), undefined);
-
-  // Floor 4 -> 5: Same region (Abyssal Depths), preview undefined
   assert.strictEqual(getCrystalNextRegionPreview(4), undefined);
 
   // Floor 5 -> 6: Boundary cross! Preview shows "Infernal Caldera"
   assert.strictEqual(getCrystalNextRegionPreview(5), 'Infernal Caldera');
 
-  // Floor 6 -> 7: Same region (Infernal Caldera), preview undefined
+  // Floor 6 -> 7, 7 -> 8, 8 -> 9, 9 -> 10: Same region (Infernal Caldera)
   assert.strictEqual(getCrystalNextRegionPreview(6), undefined);
+  assert.strictEqual(getCrystalNextRegionPreview(7), undefined);
+  assert.strictEqual(getCrystalNextRegionPreview(8), undefined);
+  assert.strictEqual(getCrystalNextRegionPreview(9), undefined);
 
-  console.log('✓ PASS: Crystal modal accurately announces next region only at Floor 2->3 and Floor 5->6 boundaries.');
+  // Floor 10 -> 11: Boundary cross! Preview shows "Glacial Caverns"
+  assert.strictEqual(getCrystalNextRegionPreview(10), 'Glacial Caverns');
+
+  // Floor 11 -> 12: Same region (Glacial Caverns)
+  assert.strictEqual(getCrystalNextRegionPreview(11), undefined);
+
+  console.log('✓ PASS: Crystal modal accurately announces next region only at Floor 2->3, 5->6, and 10->11 boundaries.');
 
   // -------------------------------------------------------------------
   // TEST 6: Toast Announcement Format & Tagline Consistency
@@ -345,14 +393,23 @@ async function runMilestone56Tests() {
   const toast7 = formatRegionEntryToast(7);
   assert.strictEqual(toast7, null, 'Floor 7 stays in Infernal Caldera, no entry toast');
 
+  const toast10 = formatRegionEntryToast(10);
+  assert.strictEqual(toast10, null, 'Floor 10 stays in Infernal Caldera, no entry toast');
+
+  const toast11 = formatRegionEntryToast(11);
+  assert.strictEqual(toast11, '🌌 Entering Glacial Caverns (Floor 11) — The Sub-Zero Crystalline Depths');
+
+  const toast12 = formatRegionEntryToast(12);
+  assert.strictEqual(toast12, null, 'Floor 12 stays in Glacial Caverns, no entry toast');
+
   console.log('✓ PASS: Toast notifications trigger exclusively on boundary crossings with authentic taglines.');
 
   console.log('\n================================================================');
-  console.log('🎉 ALL 6 MILESTONE 56 UNIT & TOPOLOGY TESTS PASSED CLEANLY! 🎉');
+  console.log('🎉 ALL 6 THIRD NAMED REGION UNIT & TOPOLOGY TESTS PASSED! 🎉');
   console.log('================================================================\n');
 }
 
-runMilestone56Tests().catch((err) => {
-  console.error('Milestone 56 Test Suite Failure:', err);
+runThirdNamedRegionTests().catch((err) => {
+  console.error('Test Suite Failed:', err);
   process.exit(1);
 });

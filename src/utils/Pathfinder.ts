@@ -73,7 +73,22 @@ export class Pathfinder {
 
   public isObstacle(x: number, y: number): boolean {
     if (x < 0 || x >= this.gridWidth || y < 0 || y >= this.gridHeight) return true;
+    return this.gridMatrix[y][x] !== 0; // Both Wall (1) and Water (2) are movement obstacles
+  }
+
+  public isWall(x: number, y: number): boolean {
+    if (x < 0 || x >= this.gridWidth || y < 0 || y >= this.gridHeight) return true;
     return this.gridMatrix[y][x] === 1;
+  }
+
+  public isWater(x: number, y: number): boolean {
+    if (x < 0 || x >= this.gridWidth || y < 0 || y >= this.gridHeight) return false;
+    return this.gridMatrix[y][x] === 2;
+  }
+
+  public isWalkable(x: number, y: number): boolean {
+    if (x < 0 || x >= this.gridWidth || y < 0 || y >= this.gridHeight) return false;
+    return this.gridMatrix[y][x] === 0;
   }
 
   public hasLineOfSight(start: GridPos, end: GridPos): boolean {
@@ -116,18 +131,18 @@ export class Pathfinder {
         continue;
       }
 
-      // Check if current tile is an obstacle (excluding start and end tiles themselves)
+      // Check if current tile is an obstacle that blocks sight (walls block sight, water does not)
       const isStartOrEnd = (currX === start.x && currY === start.y) || (currX === end.x && currY === end.y);
-      if (!isStartOrEnd && this.isObstacle(currX, currY)) {
+      if (!isStartOrEnd && this.isWall(currX, currY)) {
         return false;
       }
 
       // Check for diagonal corner-cutting:
       // If moving diagonally between (prevTileX, prevTileY) and (currX, currY)
       if (currX !== prevTileX && currY !== prevTileY) {
-        const corner1Blocked = this.isObstacle(prevTileX, currY);
-        const corner2Blocked = this.isObstacle(currX, prevTileY);
-        // If either corner tile is an obstacle, LOS cannot squeeze past the corner
+        const corner1Blocked = this.isWall(prevTileX, currY);
+        const corner2Blocked = this.isWall(currX, prevTileY);
+        // If either corner tile is a wall, LOS cannot squeeze past the corner
         if (corner1Blocked || corner2Blocked) {
           return false;
         }

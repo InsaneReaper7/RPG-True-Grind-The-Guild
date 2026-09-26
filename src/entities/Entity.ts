@@ -328,7 +328,7 @@ export class Entity extends Phaser.GameObjects.Container {
     return restored;
   }
 
-  protected onDowned(): void {
+  public onDowned(): void {
     this.state = 'downed';
     this.path = [];
     this.targetWorldPos = null;
@@ -339,6 +339,20 @@ export class Entity extends Phaser.GameObjects.Container {
 
     // Milestone 42: Clear persistent status effects on Downed transition generically
     this.clearPersistentStatusEffects();
+  }
+
+  public clearDownedState(): void {
+    if (this.state === 'downed') {
+      this.state = 'idle';
+    }
+    this.path = [];
+    this.targetWorldPos = null;
+    this.claimedDestination = null;
+    if (this.avatarSprite) {
+      this.avatarSprite.setAngle(0);
+      this.avatarSprite.setAlpha(1);
+    }
+    this.drawHpBar();
   }
 
   public applyStatusEffect(effectDef: StatusEffectDef): void {

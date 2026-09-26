@@ -461,6 +461,10 @@ export class GameState {
     return this.isResearchCompleted('research_gardening') || this.isResearchCompleted('gardening');
   }
 
+  public isFishingUnlocked(): boolean {
+    return true;
+  }
+
   // --- Clock & Game Day System (Milestone 7 & 39) ---
   public getCurrentGameDay(): number {
     return this.currentGameDay;
@@ -1436,13 +1440,21 @@ export class GameState {
     const leaderSnap = snap.party?.[0];
     const isLeaderDowned = (leaderSnap?.state === 'downed' || (player.hp <= 0 && player.criticalHp <= 0)) && player.hp <= 0 && player.criticalHp <= 0;
     if (isLeaderDowned) {
-      player.state = 'downed';
-      (player as any).avatarSprite?.setAngle(90);
-      (player as any).avatarSprite?.setAlpha(0.6);
+      if (typeof (player as any).onDowned === 'function') {
+        (player as any).onDowned();
+      } else {
+        player.state = 'downed';
+        (player as any).avatarSprite?.setAngle(90);
+        (player as any).avatarSprite?.setAlpha(0.6);
+      }
     } else {
-      player.state = 'idle';
-      (player as any).avatarSprite?.setAngle(0);
-      (player as any).avatarSprite?.setAlpha(1);
+      if (typeof (player as any).clearDownedState === 'function') {
+        (player as any).clearDownedState();
+      } else {
+        player.state = 'idle';
+        (player as any).avatarSprite?.setAngle(0);
+        (player as any).avatarSprite?.setAlpha(1);
+      }
     }
 
     if (leaderSnap?.inventory) {

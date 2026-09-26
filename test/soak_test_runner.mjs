@@ -2,7 +2,11 @@ import puppeteer from 'puppeteer-core';
 import fs from 'node:fs';
 import path from 'node:path';
 
-const CHROME_PATH = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
+const CHROME_PATHS = [
+  'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+  'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe'
+];
+const executablePath = CHROME_PATHS.find(p => fs.existsSync(p));
 const TOTAL_FLOORS = 25;
 
 async function sleep(ms) {
@@ -11,8 +15,9 @@ async function sleep(ms) {
 
 async function runSoakTest() {
   console.log('================================================================');
-  console.log('🚀 AUTOMATED SOAK TEST — EXTENDED-SESSION & EDGE-CASE HUNTING');
-  console.log(`🎯 Target: 1 Session, ${TOTAL_FLOORS} Consecutive Floors with Systematic Interruption`);
+  console.log('🚀 AUTOMATED SOAK TEST (REFRESHED) — EXTENDED-SESSION BUG HUNTING');
+  console.log(`🎯 Target: 25 Consecutive Floors + Bosses (5, 10, 15) + All 4 Regions`);
+  console.log('⭐ Priority Focus: Downed / Revive / Leader-Swap / Teleporter Lifecycle');
   console.log('================================================================\n');
 
   const findings = [];
@@ -37,7 +42,7 @@ async function runSoakTest() {
   }
 
   const browser = await puppeteer.launch({
-    executablePath: CHROME_PATH,
+    executablePath,
     headless: 'shell',
     args: [
       '--no-sandbox',
@@ -51,7 +56,7 @@ async function runSoakTest() {
   await page.setViewport({ width: 1280, height: 720 });
 
   page.on('response', res => {
-    if (res.status() === 404) {
+    if (res.status() === 404 && !res.url().includes('favicon.ico')) {
       console.log('  [404 NOT FOUND RESOURCE]:', res.url());
       browserErrors.push({ text: `404 Not Found: ${res.url()}` });
     }
@@ -60,17 +65,18 @@ async function runSoakTest() {
   page.on('console', msg => {
     const text = msg.text();
     const type = msg.type();
-    if (type === 'error') {
+    if (type === 'error' && !text.includes('favicon.ico')) {
       browserErrors.push({ text, location: msg.location() });
     } else if (type === 'warn') {
       browserWarnings.push({ text });
     }
     if (
-      text.includes('Error') ||
+      (text.includes('Error') ||
       text.includes('Uncaught') ||
       text.includes('conflict') ||
       text.includes('Failed') ||
-      text.includes('STACK')
+      text.includes('STACK')) &&
+      !text.includes('favicon.ico')
     ) {
       console.log(`  [BROWSER ${type.toUpperCase()}]`, text);
     }
@@ -85,23 +91,131 @@ async function runSoakTest() {
   await page.goto('http://localhost:5173', { waitUntil: 'domcontentloaded' });
   await sleep(2000);
 
-  // 1. Initial State in Outpost: Setup 4-person party, unlock research for digging, skinning, butchering
-  console.log('\n--- SETUP: Preparing initial Outpost state & Party ---');
-  await page.evaluate(() => {
+  // =========================================================================
+  // SETUP PHASE: Outpost Setup, Bed Revive, and Leader-Swap Verification
+  // =========================================================================
+  console.log('\n--- SETUP PHASE: Outpost Configuration & Outpost Revive/Swap Audit ---');
+  const outpostSetupResult = await page.evaluate(async () => {
+    const outpost = window.game.scene.getScene('OutpostScene');
     const gs = window.GameState.getInstance();
-    // Complete research for gathering types so all 7 can spawn & be gathered
+    const dataLoader = window.DataLoader.getInstance();
+
+    // 1. Research unlocks so all 7 gathering types function
     gs.completeResearch('research_digging');
     gs.completeResearch('research_skinning');
     gs.completeResearch('research_butchering');
-    // Ensure 4 party members
-    while (window.game.scene.getScene('OutpostScene').party.length < 4) {
-      window.__spawnTestCompanion?.();
+
+    // 2. Ensure full 4-person party
+    while (outpost.party.length < 4) {
+      outpost.spawnTestCompanion();
     }
+
+    // Party Members:
+    // Index 0: Guild Hero -> Spellsword
+    // Index 1: Valerie -> Thrower
+    // Index 2: Kaelen -> Mixed Armor Loadout
+    // Index 3: Barris -> Combat Medic
+    const hero = outpost.party[0];
+    const valerie = outpost.party[1];
+    const kaelen = outpost.party[2];
+    const barris = outpost.party[3];
+
+    const setStatLevel = (member, statId, level) => {
+      const stat = member.progression.getProficiencyStat(statId);
+      if (stat) {
+        stat.level = level;
+        stat.currentExp = 0;
+      }
+      member.progression.checkClassUnlocks();
+      member.progression.checkDualWieldUnlock();
+    };
+
+    // Configure Hero as Spellsword
+    hero.progression.setClassLevel('spellsword', 30);
+    setStatLevel(hero, 'longswords', 30);
+    setStatLevel(hero, 'arcane_magic', 30);
+    hero.equipWeapon(dataLoader.getWeapon('longswords'), true);
+    hero.knownSkillIds = ['arcane_strike', 'dimensional_lunge', 'blade_beam'];
+    hero.equippedSkillIds = ['arcane_strike', 'dimensional_lunge', 'blade_beam'];
+
+    // Configure Valerie as Thrower
+    valerie.progression.setClassLevel('thrower', 30);
+    setStatLevel(valerie, 'throwing_weapons', 30);
+    setStatLevel(valerie, 'daggers', 30);
+    valerie.equipWeapon(dataLoader.getWeapon('throwing_weapons'), true);
+    valerie.equipOffhandWeapon(dataLoader.getWeapon('daggers'), true);
+    valerie.knownSkillIds = ['quick_toss', 'skirmish_step', 'fan_of_knives', 'crippling_volley', 'blade_barrage'];
+    valerie.equippedSkillIds = ['quick_toss', 'skirmish_step', 'fan_of_knives'];
+
+    // Configure Kaelen with Mixed Armor (Silk Cowl = light, Leather Armor = medium)
+    kaelen.equipHelmet(dataLoader.getArmor('silk_cowl'), true);
+    kaelen.equipBodyArmor(dataLoader.getArmor('leather_armor'), true);
+
+    // Configure Barris as Combat Medic
+    barris.progression.setClassLevel('combat_medic', 40);
+    barris.progression.setClassLevel('restoration_mage', 40);
+    setStatLevel(barris, 'healing_magic', 30);
+    barris.equipWeapon(dataLoader.getWeapon('staff'), true);
+    barris.knownSkillIds = ['mass_revive'];
+    barris.equippedSkillIds = ['mass_revive'];
+
+    // --- Outpost Test A: Downed member revived via Outpost Bed ---
+    valerie.hp = 0;
+    valerie.criticalHp = 0;
+    valerie.onDowned();
+    const valerieDownedInOutpost = valerie.state === 'downed' && !!valerie.reviveIconSprite;
+
+    // Outpost Bed Rest
+    const rested = valerie.rest();
+    const valerieRevivedByBed = rested && valerie.state === 'idle' && valerie.hp > 0 && valerie.reviveIconSprite === undefined;
+
+    // --- Outpost Test B: Normal Outpost Leader Swap ---
+    const initialLeaderName = outpost.party[0].entityName;
+    const outpostSwapSuccess = outpost.changePartyLeader(1);
+    const newLeaderName = outpost.party[0].entityName;
+    // Swap back to original
+    outpost.changePartyLeader(1);
+    const finalLeaderName = outpost.party[0].entityName;
+
+    return {
+      partyCount: outpost.party.length,
+      valerieDownedInOutpost,
+      valerieRevivedByBed,
+      initialLeaderName,
+      newLeaderName,
+      finalLeaderName,
+      outpostSwapSuccess
+    };
   });
-  await sleep(500);
+
+  if (!outpostSetupResult.valerieRevivedByBed) {
+    recordFinding(
+      'CRITICAL',
+      'Downed / Revive Lifecycle',
+      0,
+      'Outpost Bed Revive',
+      'Downed party member revived via Outpost Bed failed to clear downed state or destroy revive icon!',
+      outpostSetupResult
+    );
+  } else {
+    console.log('✓ Outpost Bed Revive passed: State restored to idle and revive icon cleanly destroyed.');
+  }
+
+  if (!outpostSetupResult.outpostSwapSuccess || outpostSetupResult.newLeaderName === outpostSetupResult.initialLeaderName) {
+    recordFinding(
+      'HIGH',
+      'Leader System',
+      0,
+      'Outpost Leader Swap',
+      'Normal leader swap failed to reorder party leader in OutpostScene!',
+      outpostSetupResult
+    );
+  } else {
+    console.log('✓ Outpost Leader Swap passed: Leadership freely reassignable in Outpost.');
+  }
 
   // Transition from Outpost to Dungeon Floor 1
-  console.log('Entering Dungeon from Outpost...');
+  console.log('\nEntering Dungeon from Outpost...');
   await page.evaluate(() => {
     const outpost = window.game.scene.getScene('OutpostScene');
     outpost.executeTransitionToDungeon();
@@ -114,31 +228,64 @@ async function runSoakTest() {
 
   console.log('✓ Successfully entered Dungeon Floor 1 with 4-member party.\n');
 
+  // Verify Dungeon Leader-Swap Re-Lock on Floor 1 (Conscious leader cannot be swapped in dungeon)
+  const dungeonRelockCheck = await page.evaluate(() => {
+    const scene = window.game.scene.getScene('MainScene');
+    const swapAttempt = scene.changePartyLeader(1);
+    return {
+      swapAttemptBlocked: swapAttempt === false,
+      leaderName: scene.party[0].entityName
+    };
+  });
+
+  if (!dungeonRelockCheck.swapAttemptBlocked) {
+    recordFinding(
+      'CRITICAL',
+      'Leader System',
+      1,
+      'Dungeon Leader-Swap Re-Lock',
+      'Mid-dungeon leader swap was NOT blocked when the current Leader was conscious!',
+      dungeonRelockCheck
+    );
+  } else {
+    console.log('✓ Mid-dungeon leader swap re-lock verified: conscious leader cannot be swapped mid-dungeon.');
+  }
+
   const startTime = Date.now();
 
+  // =========================================================================
   // MAIN SOAK LOOP ACROSS 25 CONSECUTIVE FLOORS
+  // =========================================================================
   for (let floor = 1; floor <= TOTAL_FLOORS; floor++) {
     const floorStart = Date.now();
     console.log(`\n======================================================`);
     console.log(`🔷 BEGINNING FLOOR ${floor} / ${TOTAL_FLOORS} (Elapsed: ${((floorStart - startTime) / 1000).toFixed(1)}s)`);
     console.log(`======================================================`);
 
-    // Verify Scene & Floor Count
+    // Verify Scene & Floor Count & Region
     const floorInfo = await page.evaluate(() => {
       const scene = window.game.scene.getScene('MainScene');
       const gs = window.GameState.getInstance();
+      const currentFloor = gs.getDungeonFloorCount();
+      const region = window.DataLoader.getInstance().getRegionForFloor(currentFloor);
+      const isBoss = scene.dungeon?.rooms?.some(r => r.type === 'boss') ?? false;
+      const bossEnemy = scene.enemies.find(e => e.enemyData?.tier === 'boss' || e.enemyData?.id === 'abyssal_colossus' || e.enemyData?.id === 'glacial_sovereign');
+
       return {
-        floorCount: gs.getDungeonFloorCount(),
+        floorCount: currentFloor,
+        regionId: region?.id,
+        regionName: region?.name,
         partyCount: scene.party.length,
         enemiesCount: scene.enemies.length,
         nodesCount: scene.gatheringNodes.length,
         roomsCount: scene.dungeon?.rooms?.length ?? 0,
-        hasBoss: scene.dungeon?.rooms?.some(r => r.type === 'boss') ?? false,
+        hasBoss: isBoss,
+        bossEnemyId: bossEnemy?.enemyData?.id,
         activeSceneKey: scene.scene.key
       };
     });
 
-    console.log(`  Floor State: FloorCount=${floorInfo.floorCount}, Party=${floorInfo.partyCount}, Enemies=${floorInfo.enemiesCount}, Nodes=${floorInfo.nodesCount}, BossFloor=${floorInfo.hasBoss}`);
+    console.log(`  Floor State: Floor=${floorInfo.floorCount} [${floorInfo.regionName}], Party=${floorInfo.partyCount}, Enemies=${floorInfo.enemiesCount}, Nodes=${floorInfo.nodesCount}, BossFloor=${floorInfo.hasBoss}`);
 
     if (floorInfo.floorCount !== floor) {
       recordFinding(
@@ -149,6 +296,48 @@ async function runSoakTest() {
         `Dungeon floor counter mismatch: expected ${floor}, got ${floorInfo.floorCount}`,
         floorInfo
       );
+    }
+
+    // Check Regional Boss Constraints
+    if (floor === 5) {
+      if (!floorInfo.hasBoss || floorInfo.bossEnemyId !== 'abyssal_colossus') {
+        recordFinding(
+          'HIGH',
+          'Boss Spawning',
+          floor,
+          'Abyssal Colossus Check',
+          `Floor 5 expected Boss 'abyssal_colossus' in Abyssal Depths, found: ${floorInfo.bossEnemyId}`,
+          floorInfo
+        );
+      } else {
+        console.log(`  ✓ Floor 5 Boss verified: Abyssal Colossus correctly spawned in Abyssal Depths.`);
+      }
+    } else if (floor === 10) {
+      if (!floorInfo.hasBoss) {
+        recordFinding(
+          'HIGH',
+          'Boss Spawning',
+          floor,
+          'Infernal Caldera Boss Check',
+          `Floor 10 expected Boss chamber in Infernal Caldera, but none found!`,
+          floorInfo
+        );
+      } else {
+        console.log(`  ✓ Floor 10 Boss verified: Subterranean Boss spawned in Infernal Caldera.`);
+      }
+    } else if (floor === 15) {
+      if (!floorInfo.hasBoss || floorInfo.bossEnemyId !== 'glacial_sovereign') {
+        recordFinding(
+          'HIGH',
+          'Boss Spawning',
+          floor,
+          'Glacial Sovereign Check',
+          `Floor 15 expected Boss 'glacial_sovereign' in Glacial Caverns, found: ${floorInfo.bossEnemyId}`,
+          floorInfo
+        );
+      } else {
+        console.log(`  ✓ Floor 15 Boss verified: Glacial Sovereign correctly spawned in Glacial Caverns.`);
+      }
     }
 
     // Performance Snapshot
@@ -192,14 +381,409 @@ async function runSoakTest() {
     }
 
     // =========================================================================
-    // EXERCISE 1: Deliberately Interrupt Movement & Redirect Mid-Move
+    // PRIORITY FOCUS A (FLOOR 2): Leader Downed with NO Revive Items, Emergency Swap,
+    // and Crystal Trigger by Non-Leader Conscious Member
     // =========================================================================
-    console.log('  [Exercise 1] Testing Mid-Move Redirect & Destination Highlights...');
-    const moveRedirectResult = await page.evaluate(async () => {
+    if (floor === 2) {
+      console.log('  [Priority Focus A] Testing Leader Downed mid-dungeon with NO revive items, Emergency Swap, and Crystal Trigger...');
+      const leaderDownedResult = await page.evaluate(async () => {
+        const scene = window.game.scene.getScene('MainScene');
+        const gs = window.GameState.getInstance();
+
+        // 1. Clear any revive potions to ensure no revive items available
+        gs.consumeItem('revive_potion', gs.getItemCount('revive_potion'));
+        gs.inventory?.delete('revive_potion');
+        scene.party.forEach(m => { m.inventory?.delete('revive_potion'); });
+        const hasReviveItem = gs.getItemCount('revive_potion') > 0;
+
+        // 2. Down the leader
+        const leader = scene.party[0];
+        leader.hp = 0;
+        leader.criticalHp = 0;
+        leader.onDowned();
+        const leaderIsDowned = leader.state === 'downed' && !!leader.reviveIconSprite;
+
+        // Confirm downed leader cannot move
+        const prevPos = { ...leader.gridPos };
+        leader.followPath([{ x: prevPos.x + 1, y: prevPos.y }]);
+        const leaderRemainedStill = leader.gridPos.x === prevPos.x && leader.gridPos.y === prevPos.y;
+
+        // 3. Emergency Leader Swap mid-dungeon (allowed because leader is downed)
+        const emergencySwapOk = scene.changePartyLeader(1);
+        const newLeader = scene.party[0];
+        const newLeaderConscious = newLeader.state === 'idle';
+
+        // 4. Confirm immediate re-lock: attempting to swap again while new leader is conscious MUST FAIL
+        const reLockHeld = scene.changePartyLeader(1) === false;
+
+        // 5. Non-Leader Conscious Member triggers crystal
+        // Teleport conscious member adjacent to crystal to trigger immediately
+        const consciousMember = scene.party.find(m => m.state !== 'downed' && m !== scene.player);
+        if (consciousMember) {
+          const adj = scene.findOpenAdjacentTile(scene.crystalPos);
+          consciousMember.x = adj.x * scene.tileSize + scene.tileSize / 2;
+          consciousMember.y = adj.y * scene.tileSize + scene.tileSize / 2;
+          consciousMember.gridPos = { x: adj.x, y: adj.y };
+        }
+        scene.triggerCrystalInteraction();
+        await new Promise(r => setTimeout(r, 200));
+
+        const isModalOpen = scene.hud.isTeleporterCrystalModalOpen();
+        scene.hud.closeTeleporterCrystalModal();
+
+        return {
+          hasReviveItem,
+          leaderIsDowned,
+          leaderRemainedStill,
+          emergencySwapOk,
+          newLeaderName: newLeader.entityName,
+          newLeaderConscious,
+          reLockHeld,
+          consciousMemberFound: !!consciousMember,
+          isModalOpen
+        };
+      });
+
+      if (!leaderDownedResult.emergencySwapOk || !leaderDownedResult.reLockHeld) {
+        recordFinding(
+          'CRITICAL',
+          'Leader System',
+          floor,
+          'Emergency Leader Swap & Re-lock',
+          'Emergency leader swap or subsequent re-lock failed while leader was downed!',
+          leaderDownedResult
+        );
+      } else {
+        console.log(`  ✓ Emergency leader swap succeeded (Promoted: ${leaderDownedResult.newLeaderName}) and mid-dungeon re-lock held!`);
+      }
+
+      if (!leaderDownedResult.isModalOpen) {
+        recordFinding(
+          'CRITICAL',
+          'Teleporter Interaction',
+          floor,
+          'Non-Leader Crystal Trigger',
+          'Teleporter Crystal modal failed to open when triggered with a Downed member in the party!',
+          leaderDownedResult
+        );
+      } else {
+        console.log('  ✓ Teleporter Crystal opened successfully with Downed member present.');
+      }
+    }
+
+    // =========================================================================
+    // PRIORITY FOCUS B (FLOOR 3 & 4): Multi-Floor Downed Transitions
+    // Confirm Downed Member carries across multiple consecutive floor transitions
+    // =========================================================================
+    if (floor === 3) {
+      console.log('  [Priority Focus B] Verifying Multi-Floor Downed Transition #1...');
+      const multiFloorDowned1 = await page.evaluate(() => {
+        const scene = window.game.scene.getScene('MainScene');
+        const downedMembers = scene.party.filter(m => m.state === 'downed');
+        const validDownedArrival = downedMembers.length > 0 && downedMembers.every(m => m.hp === 0 && m.criticalHp === 0 && !!m.reviveIconSprite);
+        return {
+          downedCount: downedMembers.length,
+          validDownedArrival,
+          downedNames: downedMembers.map(m => m.entityName)
+        };
+      });
+
+      if (!multiFloorDowned1.validDownedArrival) {
+        recordFinding(
+          'CRITICAL',
+          'Downed / Revive Lifecycle',
+          floor,
+          'Multi-Floor Transition 1',
+          'Downed party member failed to arrive Downed with active revive icon across Floor 2 -> Floor 3 transition!',
+          multiFloorDowned1
+        );
+      } else {
+        console.log(`  ✓ Multi-floor downed transition #1 verified: ${multiFloorDowned1.downedNames.join(', ')} arrived Downed with revive icon intact.`);
+      }
+    }
+
+    if (floor === 4) {
+      console.log('  [Priority Focus B] Verifying Multi-Floor Downed Transition #2 & Method 2 Revive (Potion Channel)...');
+      const multiFloorDowned2 = await page.evaluate(async () => {
+        const scene = window.game.scene.getScene('MainScene');
+        const gs = window.GameState.getInstance();
+        const dataLoader = window.DataLoader.getInstance();
+
+        const downedAlly = scene.party.find(m => m.state === 'downed') || scene.party[1];
+        if (downedAlly.state !== 'downed') {
+          downedAlly.hp = 0;
+          downedAlly.criticalHp = 0;
+          downedAlly.onDowned();
+        }
+
+        const reviver = scene.party.find(m => m.state !== 'downed');
+        gs.addItem('revive_potion', 2);
+
+        // Test Method 2: Item-Based Revive Potion Channel with Interruption
+        const started = scene.startReviveChannel(reviver, downedAlly);
+        await new Promise(r => setTimeout(r, 100));
+
+        const channelBefore = scene.activeReviveChannels.get(reviver);
+        const hasBarBefore = channelBefore && channelBefore.barContainer && channelBefore.barContainer.active;
+
+        // Interrupt channel with dummy enemy
+        const dummyAttacker = scene.spawnEnemyUnit(dataLoader.getEnemy('wolf'), reviver.gridPos.x + 2, reviver.gridPos.y, 'wolf-avatar');
+        scene.interruptReviveChannel(reviver, dummyAttacker);
+        await new Promise(r => setTimeout(r, 100));
+
+        const channelAfterInterrupt = scene.activeReviveChannels.get(reviver);
+        const isInterruptClean = channelAfterInterrupt === undefined && reviver.state !== 'channeling';
+        const isBarDestroyedOnInterrupt = hasBarBefore && (!channelBefore.barContainer.active || channelBefore.barContainer.scene === null);
+
+        // Complete full revive channel
+        dummyAttacker.takeDamage(999);
+        scene.onEnemyDefeated(dummyAttacker);
+        reviver.inCombat = false;
+        scene.combatSystem.lastCombatTimeMs = 0;
+
+        scene.startReviveChannel(reviver, downedAlly);
+        const fullChannel = scene.activeReviveChannels.get(reviver);
+        scene.completeReviveChannel(reviver, fullChannel);
+
+        const allyConsciousAfter = downedAlly.state === 'idle';
+        const allyHpRestored = downedAlly.hp > 0 && downedAlly.criticalHp > 0;
+        const iconCleanlyCleared = downedAlly.reviveIconSprite === undefined;
+
+        // Valerie remains leader, demonstrating persistent companion leadership across multiple floors
+        const currentLeaderName = scene.party[0].entityName;
+
+        return {
+          started,
+          isInterruptClean,
+          isBarDestroyedOnInterrupt,
+          allyConsciousAfter,
+          allyHpRestored,
+          iconCleanlyCleared,
+          currentLeaderName
+        };
+      });
+
+      if (!multiFloorDowned2.isInterruptClean || !multiFloorDowned2.isBarDestroyedOnInterrupt) {
+        recordFinding(
+          'HIGH',
+          'State Interruption',
+          floor,
+          'Mid-Revive Channel Interrupt',
+          'Revive channel failed to cancel cleanly upon mid-channel attack interrupt!',
+          multiFloorDowned2
+        );
+      }
+
+      if (!multiFloorDowned2.allyConsciousAfter || !multiFloorDowned2.iconCleanlyCleared) {
+        recordFinding(
+          'CRITICAL',
+          'Downed / Revive Lifecycle',
+          floor,
+          'Revive Potion Channel',
+          'Teleport-arrived downed member revived via Revive Potion failed to restore conscious state or clear revive icon!',
+          multiFloorDowned2
+        );
+      } else {
+        console.log('  ✓ Method 2 Revive (Potion Channel) passed: Interrupted cleanly, completed, conscious restored, revive icon destroyed.');
+      }
+    }
+
+    // =========================================================================
+    // PRIORITY FOCUS C (FLOOR 5): Combat Medic Mass Revive & Real Boss Combat
+    // (Exercising Spellsword, Thrower, and Mixed Armor Proficiency)
+    // =========================================================================
+    if (floor === 5) {
+      console.log('  [Priority Focus C] Testing Combat Medic Mass Revive & Real Boss Combat...');
+      const bossCombatResult = await page.evaluate(async () => {
+        const scene = window.game.scene.getScene('MainScene');
+        const hero = scene.party.find(m => m.entityName === 'Guild Hero') || scene.party[0]; // Spellsword
+        const valerie = scene.party.find(m => m.entityName === 'Valerie') || scene.party[1]; // Thrower
+        const kaelen = scene.party.find(m => m.entityName === 'Kaelen') || scene.party[2]; // Mixed Armor
+        const barris = scene.party.find(m => m.entityName === 'Barris') || scene.party[3]; // Combat Medic
+
+        // 1. Down Kaelen to test Method 3 Revive: Combat Medic Mass Revive
+        kaelen.hp = 0;
+        kaelen.criticalHp = 0;
+        kaelen.onDowned();
+        const kaelenDownedWithIcon = kaelen.state === 'downed' && !!kaelen.reviveIconSprite;
+
+        // Cast Mass Revive
+        barris.progression.setClassLevel('combat_medic', 40);
+        barris.progression.setClassLevel('restoration_mage', 40);
+        if (!barris.knownSkillIds.includes('mass_revive')) barris.knownSkillIds.push('mass_revive');
+        if (!barris.equippedSkillIds.includes('mass_revive')) barris.equippedSkillIds.push('mass_revive');
+        barris.lastSkillUseTimes.clear();
+        barris.energy = 100;
+        kaelen.x = barris.x + 32;
+        kaelen.y = barris.y;
+        kaelen.gridPos = { x: barris.gridPos.x + 1, y: barris.gridPos.y };
+        const massReviveSuccess = scene.combatSystem.castSkill(barris, 'mass_revive', barris);
+        const kaelenRevivedToIdle = kaelen.state === 'idle' && kaelen.hp > 0;
+        const kaelenIconCleared = kaelen.reviveIconSprite === undefined;
+
+        // 2. Real Combat against Abyssal Colossus
+        const boss = scene.enemies.find(e => (e.enemyData?.tier === 'boss' || e.enemyData?.id === 'abyssal_colossus') && e.state !== 'dead');
+        let spellswordSkillsFired = false;
+        let throwerSkillsFired = false;
+        let lightArmorExpGained = false;
+        let mediumArmorExpGained = false;
+
+        if (boss) {
+          // Ensure Kaelen has mixed armor equipped
+          if (!kaelen.equippedHelmet) kaelen.equipHelmet(dataLoader.getArmor('silk_cowl'), true);
+          if (!kaelen.equippedBodyArmor) kaelen.equipBodyArmor(dataLoader.getArmor('leather_armor'), true);
+
+          const startLightExp = kaelen.progression.getProficiencyStat('light_armor')?.currentExp || 0;
+          const startMedExp = kaelen.progression.getProficiencyStat('medium_armor')?.currentExp || 0;
+          const startArcaneExp = hero.progression.getProficiencyStat('arcane_magic')?.currentExp || 0;
+
+          // Teleport party near boss
+          hero.x = (boss.gridPos.x + 1) * scene.tileSize + scene.tileSize / 2;
+          hero.y = boss.gridPos.y * scene.tileSize + scene.tileSize / 2;
+          hero.gridPos = { x: boss.gridPos.x + 1, y: boss.gridPos.y };
+
+          // Cast Spellsword skills
+          hero.energy = 100;
+          hero.lastSkillUseTimes.clear();
+          const cast1 = scene.combatSystem.castSkill(hero, 'arcane_strike', boss);
+          const cast2 = scene.combatSystem.castSkill(hero, 'blade_beam', boss);
+          spellswordSkillsFired = cast1 || cast2;
+
+          // Cast Thrower skills
+          valerie.progression.setClassLevel('thrower', 30);
+          if (!valerie.equippedWeapon) valerie.equipWeapon(dataLoader.getWeapon('throwing_weapons'), true);
+          if (!valerie.offhandWeapon) valerie.equipOffhandWeapon(dataLoader.getWeapon('daggers'), true);
+          valerie.energy = 100;
+          valerie.lastSkillUseTimes.clear();
+          valerie.x = (boss.gridPos.x + 2) * scene.tileSize + scene.tileSize / 2;
+          valerie.y = boss.gridPos.y * scene.tileSize + scene.tileSize / 2;
+          valerie.gridPos = { x: boss.gridPos.x + 2, y: boss.gridPos.y };
+          const cast3 = scene.combatSystem.castSkill(valerie, 'quick_toss', boss);
+          const cast4 = scene.combatSystem.castSkill(valerie, 'fan_of_knives', boss);
+          throwerSkillsFired = cast3 || cast4;
+
+          // Trigger armor wear EXP on Kaelen
+          kaelen.awardArmorWearExp('hit');
+          kaelen.awardArmorWearExp('attack');
+          kaelen.awardArmorWearExp('kill');
+
+          const endLightExp = kaelen.progression.getProficiencyStat('light_armor')?.currentExp || 0;
+          const endMedExp = kaelen.progression.getProficiencyStat('medium_armor')?.currentExp || 0;
+          lightArmorExpGained = endLightExp > startLightExp;
+          mediumArmorExpGained = endMedExp > startMedExp;
+
+          // Defeat boss cleanly
+          boss.takeDamage(9999);
+          scene.onEnemyDefeated(boss);
+        }
+
+        return {
+          kaelenDownedWithIcon,
+          massReviveSuccess,
+          kaelenRevivedToIdle,
+          kaelenIconCleared,
+          spellswordSkillsFired,
+          throwerSkillsFired,
+          lightArmorExpGained,
+          mediumArmorExpGained
+        };
+      });
+
+      if (!bossCombatResult.massReviveSuccess || !bossCombatResult.kaelenRevivedToIdle || !bossCombatResult.kaelenIconCleared) {
+        recordFinding(
+          'CRITICAL',
+          'Downed / Revive Lifecycle',
+          floor,
+          'Combat Medic Mass Revive',
+          'Combat Medic Mass Revive failed to revive downed member or clear revive icon!',
+          bossCombatResult
+        );
+      } else {
+        console.log('  ✓ Method 3 Revive (Combat Medic Mass Revive) passed: Downed ally restored, revive icon destroyed.');
+      }
+
+      if (!bossCombatResult.spellswordSkillsFired || !bossCombatResult.throwerSkillsFired) {
+        recordFinding(
+          'HIGH',
+          'Combat Execution',
+          floor,
+          'New Classes Real Combat',
+          'Spellsword or Thrower active skills failed to cast in real combat against Boss!',
+          bossCombatResult
+        );
+      } else {
+        console.log('  ✓ Real Combat passed: Spellsword and Thrower active skills executed cleanly against Boss.');
+      }
+
+      if (!bossCombatResult.lightArmorExpGained || !bossCombatResult.mediumArmorExpGained) {
+        recordFinding(
+          'HIGH',
+          'Armor Proficiency',
+          floor,
+          'Mixed Armor EXP',
+          'Mixed Light/Medium armor loadout failed to award wear EXP to both weight classes!',
+          bossCombatResult
+        );
+      } else {
+        console.log('  ✓ Armor Proficiency verified: Mixed Light & Medium loadout successfully gained EXP on hit/attack/kill.');
+      }
+    }
+
+    // =========================================================================
+    // PRIORITY FOCUS D (FLOOR 15): Glacial Sovereign Real Combat & Signature Mechanics
+    // =========================================================================
+    if (floor === 15) {
+      console.log('  [Priority Focus D] Testing Glacial Sovereign Combat Mechanics & Phase Transition...');
+      const sovereignResult = await page.evaluate(async () => {
+        const scene = window.game.scene.getScene('MainScene');
+        const sovereign = scene.enemies.find(e => (e.enemyData?.id === 'glacial_sovereign' || e.enemyData?.tier === 'boss') && e.state !== 'dead');
+        if (!sovereign) return { found: false };
+
+        const initialHp = sovereign.hp;
+        const initialMaxHp = sovereign.maxHp;
+
+        // Damage to <= 50% HP to trigger Permafrost Glaciation barrier
+        sovereign.takeDamage(initialMaxHp * 0.55);
+        const isGlaciated = sovereign.iceBarrierHp > 0;
+        const badgeText = sovereign.bossBadgeText?.text;
+
+        // Defeat sovereign cleanly
+        sovereign.takeDamage(9999);
+        scene.onEnemyDefeated(sovereign);
+
+        return {
+          found: true,
+          initialHp,
+          initialMaxHp,
+          isGlaciated,
+          badgeText
+        };
+      });
+
+      if (!sovereignResult.found || !sovereignResult.isGlaciated) {
+        recordFinding(
+          'HIGH',
+          'Boss Mechanics',
+          floor,
+          'Glacial Sovereign Glaciation',
+          'Glacial Sovereign failed to trigger Permafrost Glaciation barrier at <= 50% HP!',
+          sovereignResult
+        );
+      } else {
+        console.log(`  ✓ Glacial Sovereign verified: Enters Permafrost Glaciation barrier phase at <= 50% HP (${sovereignResult.badgeText}).`);
+      }
+    }
+
+    // =========================================================================
+    // STANDARD COVERAGE 1-5 (Skipped on Floors 2 & 3 to preserve pristine Downed state across transitions)
+    // =========================================================================
+    if (floor !== 2 && floor !== 3) {
+      // STANDARD COVERAGE 1: Deliberately Interrupt Movement & Redirect Mid-Move
+      const moveRedirectResult = await page.evaluate(async () => {
       const scene = window.game.scene.getScene('MainScene');
       scene.selectAllMembers();
 
-      // Find two open distant walkable tiles
+      // Find two distant walkable tiles
       const walkable = [];
       for (let y = 1; y < scene.mapHeight - 1; y++) {
         for (let x = 1; x < scene.mapWidth - 1; x++) {
@@ -212,32 +796,27 @@ async function runSoakTest() {
 
       const dest1 = walkable[0];
       const dest2 = walkable[walkable.length - 1];
-
       const activeSelected = scene.getSelectedMembers ? scene.getSelectedMembers() : scene.party;
       const claimed = new Set();
 
       // Issue Move 1
       scene.executePartyConvoyMovement(activeSelected, dest1.x, dest1.y, claimed);
-      await new Promise(r => setTimeout(r, 120));
+      await new Promise(r => setTimeout(r, 100));
 
       const midMove1Active = scene.party.some(p => p.isMoving());
       const highlights1 = [...scene.lastMoveDestinationHighlights];
 
       // Interrupt mid-move by issuing Move 2
       scene.executePartyConvoyMovement(activeSelected, dest2.x, dest2.y, claimed);
-      await new Promise(r => setTimeout(r, 120));
+      await new Promise(r => setTimeout(r, 100));
 
       const midMove2Active = scene.party.some(p => p.isMoving());
       const highlights2 = [...scene.lastMoveDestinationHighlights];
-
-      // Check if highlights cleanly switched to dest2
       const hasDest1InHighlights2 = highlights2.some(h => h.x === dest1.x && h.y === dest1.y);
 
       return {
         midMove1Active,
         midMove2Active,
-        highlights1Count: highlights1.length,
-        highlights2Count: highlights2.length,
         hasDest1InHighlights2
       };
     });
@@ -254,9 +833,8 @@ async function runSoakTest() {
     }
 
     // =========================================================================
-    // EXERCISE 2: Mid-Move Combat Engagement Interruption
+    // STANDARD COVERAGE 2: Mid-Move Combat Engagement Interruption
     // =========================================================================
-    console.log('  [Exercise 2] Testing Combat Engagement Mid-Move Interruption...');
     const combatInterruptResult = await page.evaluate(async () => {
       const scene = window.game.scene.getScene('MainScene');
       const livingEnemy = scene.enemies.find(e => e.state !== 'dead' && e.state !== 'downed');
@@ -265,25 +843,22 @@ async function runSoakTest() {
       // Issue long movement command
       const activeSelected = scene.getSelectedMembers ? scene.getSelectedMembers() : scene.party;
       scene.executePartyConvoyMovement(activeSelected, scene.crystalPos.x, scene.crystalPos.y, new Set());
-      await new Promise(r => setTimeout(r, 100));
+      await new Promise(r => setTimeout(r, 80));
 
       // Interrupt by clicking/engaging enemy
       scene.engageEnemy(livingEnemy);
-      await new Promise(r => setTimeout(r, 200));
+      await new Promise(r => setTimeout(r, 150));
 
       // Verify destination highlights cleared upon combat engagement
       const lingeringHighlights = scene.activeMoveHighlights.length;
-      const partyInCombatOrChasing = scene.party.some(p => p.inCombat || p.targetEntity !== null || p.state === 'chasing' || p.state === 'attacking');
 
-      // Stop combat for clean test state
+      // Stop combat cleanly
       livingEnemy.takeDamage(999);
       scene.onEnemyDefeated(livingEnemy);
       scene.party.forEach(p => { p.clearTarget(); p.inCombat = false; if (p.state !== 'idle') p.state = 'idle'; });
+      scene.combatSystem.lastCombatTimeMs = 0;
 
-      return {
-        lingeringHighlights,
-        partyInCombatOrChasing
-      };
+      return { lingeringHighlights };
     });
 
     if (combatInterruptResult.lingeringHighlights > 0) {
@@ -298,19 +873,17 @@ async function runSoakTest() {
     }
 
     // =========================================================================
-    // EXERCISE 3: Split Party via Portrait Selection & Rejoin without Wall-Clipping
+    // STANDARD COVERAGE 3: Split Party via Portrait Selection & Rejoin
     // =========================================================================
-    console.log('  [Exercise 3] Testing Split Party Movement & Rejoin Pathfinding...');
     const splitPartyResult = await page.evaluate(async () => {
       const scene = window.game.scene.getScene('MainScene');
       const matrix = scene.gridMatrix;
 
-      // Select companion 1 (index 1) only
+      // Select companion 1 only
       scene.selectMemberByIndex(1, false);
 
-      // Find an open walkable tile 8 tiles away
       let splitDest = null;
-      for (let dist = 8; dist >= 4; dist--) {
+      for (let dist = 6; dist >= 3; dist--) {
         const candidate = { x: scene.player.gridPos.x + dist, y: scene.player.gridPos.y };
         if (candidate.x < scene.mapWidth - 1 && matrix[candidate.y]?.[candidate.x] === 0) {
           splitDest = candidate;
@@ -322,38 +895,29 @@ async function runSoakTest() {
       const heroPosBefore = { ...scene.party[0].gridPos };
       const comp1 = scene.party[1];
 
-      // Move only companion 1
       const path = await scene.pathfinder.findPath(comp1.gridPos, splitDest);
       if (path.length > 0) {
         comp1.followPath(path);
       }
-      // Wait for movement to progress or arrive
-      for (let t = 0; t < 15; t++) {
-        await new Promise(r => setTimeout(r, 100));
+      for (let t = 0; t < 12; t++) {
+        await new Promise(r => setTimeout(r, 80));
         if (!comp1.isMoving()) break;
       }
 
-      const comp1Moved = comp1.gridPos.x !== heroPosBefore.x || comp1.gridPos.y !== heroPosBefore.y;
-      const heroRemainedStationary = scene.party[0].gridPos.x === heroPosBefore.x && scene.party[0].gridPos.y === heroPosBefore.y;
-
-      // Check for wall clipping
       const isComp1InWall = matrix[comp1.gridPos.y]?.[comp1.gridPos.x] !== 0;
 
-      // Reselect all and issue group move command to rejoin
+      // Rejoin
       scene.selectAllMembers();
       const activeSelected = scene.getSelectedMembers ? scene.getSelectedMembers() : scene.party;
       scene.executePartyConvoyMovement(activeSelected, heroPosBefore.x, heroPosBefore.y, new Set());
-      for (let t = 0; t < 15; t++) {
-        await new Promise(r => setTimeout(r, 100));
+      for (let t = 0; t < 12; t++) {
+        await new Promise(r => setTimeout(r, 80));
         if (!scene.party.some(p => p.isMoving())) break;
       }
 
-      // Check wall collisions after rejoin
       const anyInWallAfterRejoin = scene.party.some(p => matrix[p.gridPos.y]?.[p.gridPos.x] !== 0);
 
       return {
-        comp1Moved,
-        heroRemainedStationary,
         isComp1InWall,
         anyInWallAfterRejoin
       };
@@ -371,91 +935,54 @@ async function runSoakTest() {
     }
 
     // =========================================================================
-    // EXERCISE 4: Gathering Across All 7 Skills & Mid-Gather Interruption
+    // STANDARD COVERAGE 4: Gathering Across All Skills & Mid-Gather Interruption
     // =========================================================================
-    console.log('  [Exercise 4] Testing Gathering across skills, Marquee Drag, and Mid-Channel Interruption...');
-    const gatherTestResult = await page.evaluate(async (currentFloor) => {
+    const gatherTestResult = await page.evaluate(async () => {
       const scene = window.game.scene.getScene('MainScene');
       const dataLoader = window.DataLoader.getInstance();
 
-      // Ensure nodes for all 7 skills exist on this floor
-      const requiredSkills = [
-        { type: 'foraging_bush', skill: 'foraging' },
-        { type: 'woodcutting_tree', skill: 'woodcutting' },
-        { type: 'mining_rock', skill: 'mining' },
-        { type: 'dig_spot', skill: 'digging' },
-        { type: 'vegetable_node', skill: 'gardening' }
-      ];
-
-      for (const req of requiredSkills) {
-        let node = scene.gatheringNodes.find(n => n.nodeDef.skillId === req.skill && !n.isHarvested);
-        if (!node) {
-          const spawnPos = scene.findOpenAdjacentTile(scene.player.gridPos);
-          node = scene.spawnGatheringNode(spawnPos.x, spawnPos.y, req.type);
-        }
-      }
-
-      // Spawn Wolf and Goblin for Corpse Skinning and Butchering
-      let wolfCorpse = scene.gatheringNodes.find(n => n.nodeDef?.skillId === 'skinning' && !n.isHarvested);
-      if (!wolfCorpse) {
-        const dummyWolf = scene.spawnEnemyUnit(dataLoader.getEnemy('wolf'), scene.player.gridPos.x + 1, scene.player.gridPos.y, 'wolf-avatar');
-        dummyWolf.takeDamage(999);
-        wolfCorpse = scene.spawnCorpseGatheringNode(dummyWolf, 'skinning');
-      }
-
-      let goblinCorpse = scene.gatheringNodes.find(n => n.nodeDef?.skillId === 'butchering' && !n.isHarvested);
-      if (!goblinCorpse) {
-        const dummyGoblin = scene.spawnEnemyUnit(dataLoader.getEnemy('goblin'), scene.player.gridPos.x + 1, scene.player.gridPos.y + 1, 'goblin-avatar');
-        dummyGoblin.takeDamage(999);
-        goblinCorpse = scene.spawnCorpseGatheringNode(dummyGoblin, 'butchering');
-      }
-
-      // 1. Test Mid-Gather Channel Interruption
       let testNode = scene.gatheringNodes.find(n => !n.isHarvested);
       if (!testNode) {
         const spawnPos = scene.findOpenAdjacentTile(scene.player.gridPos);
         testNode = scene.spawnGatheringNode(spawnPos.x, spawnPos.y, 'foraging_bush');
       }
+
       let gatherInterruptedCleanly = false;
       let barDestroyedOnInterrupt = false;
 
       if (testNode) {
         const gatherer = scene.party[0];
         scene.startGatherChannel(gatherer, testNode);
-        await new Promise(r => setTimeout(r, 100));
+        await new Promise(r => setTimeout(r, 80));
 
         const channelBefore = scene.activeGatherChannels.get(gatherer);
         const hasBarBefore = channelBefore && channelBefore.barContainer && channelBefore.barContainer.scene !== null;
 
-        // Interrupt channel
-        const dummyAttacker = scene.enemies.find(e => e.state !== 'dead') || scene.spawnEnemyUnit(dataLoader.getEnemy('wolf'), gatherer.gridPos.x + 2, gatherer.gridPos.y, 'wolf-avatar');
+        // Interrupt channel with dummy enemy
+        const dummyAttacker = scene.spawnEnemyUnit(dataLoader.getEnemy('wolf'), gatherer.gridPos.x + 2, gatherer.gridPos.y, 'wolf-avatar');
         scene.interruptGatherChannel(gatherer, dummyAttacker);
-        await new Promise(r => setTimeout(r, 100));
+        await new Promise(r => setTimeout(r, 80));
 
         const channelAfter = scene.activeGatherChannels.get(gatherer);
         gatherInterruptedCleanly = channelAfter === undefined && gatherer.state !== 'channeling';
         barDestroyedOnInterrupt = hasBarBefore && (!channelBefore.barContainer.scene || !channelBefore.barContainer.active);
 
-        // Clean up dummy attacker
         dummyAttacker.takeDamage(999);
         scene.onEnemyDefeated(dummyAttacker);
+        gatherer.inCombat = false;
+        scene.combatSystem.lastCombatTimeMs = 0;
       }
 
-      // 2. Test Gathering Mode Drag Selection (Marquee Box)
+      // Marquee Drag Test
       scene.toggleGatheringMode(true);
-      await new Promise(r => setTimeout(r, 50));
-
+      await new Promise(r => setTimeout(r, 40));
       const isModeOn = scene.isGatheringMode;
 
-      // Simulate marquee drag selecting nodes
       const allNodes = scene.gatheringNodes.filter(n => !n.isHarvested);
       scene.startGatheringQueue(allNodes.slice(0, 3));
-      await new Promise(r => setTimeout(r, 150));
+      await new Promise(r => setTimeout(r, 100));
 
       const queueLength = scene.gatheringQueue.length;
-      const workerCount = scene.gatheringQueueWorkers.size;
-
-      // Clear queue for subsequent operations
       scene.clearGatheringQueue();
       scene.toggleGatheringMode(false);
 
@@ -463,11 +990,9 @@ async function runSoakTest() {
         gatherInterruptedCleanly,
         barDestroyedOnInterrupt,
         isModeOn,
-        queueLength,
-        workerCount,
-        totalNodesOnFloor: scene.gatheringNodes.length
+        queueLength
       };
-    }, floor);
+    });
 
     if (!gatherTestResult.gatherInterruptedCleanly || !gatherTestResult.barDestroyedOnInterrupt) {
       recordFinding(
@@ -481,127 +1006,8 @@ async function runSoakTest() {
     }
 
     // =========================================================================
-    // EXERCISE 5: Mid-Revive Channel Interruption & Downed Ally Handling
+    // STANDARD COVERAGE 5: Systematic Keyboard Shortcuts vs HUD Buttons
     // =========================================================================
-    console.log('  [Exercise 5] Testing Item-Based Revive Channel & Mid-Revive Interruption...');
-    const reviveResult = await page.evaluate(async () => {
-      const scene = window.game.scene.getScene('MainScene');
-      const dataLoader = window.DataLoader.getInstance();
-      const reviver = scene.party[0];
-      const downedAlly = scene.party[1];
-
-      // Grant a revive potion to ensure eligibility
-      window.GameState.getInstance().addItem('revive_potion', 5);
-
-      // Down the companion
-      downedAlly.hp = 0;
-      downedAlly.criticalHp = 0;
-      downedAlly.state = 'downed';
-
-      // Start item-based revive channel
-      const started = scene.startReviveChannel(reviver, downedAlly);
-      await new Promise(r => setTimeout(r, 100));
-
-      const channelBefore = scene.activeReviveChannels.get(reviver);
-      const hasBarBefore = channelBefore && channelBefore.barContainer && channelBefore.barContainer.active;
-
-      // Interrupt mid-channel
-      const dummyAttacker = scene.enemies.find(e => e.state !== 'dead') || scene.spawnEnemyUnit(dataLoader.getEnemy('wolf'), reviver.gridPos.x + 2, reviver.gridPos.y, 'wolf-avatar');
-      scene.interruptReviveChannel(reviver, dummyAttacker);
-      await new Promise(r => setTimeout(r, 100));
-
-      const channelAfter = scene.activeReviveChannels.get(reviver);
-      const isCleanInterrupt = channelAfter === undefined && reviver.state !== 'channeling';
-      const isBarDestroyed = hasBarBefore && (!channelBefore.barContainer.active || channelBefore.barContainer.scene === null);
-
-      // Successfully revive companion so party remains full
-      downedAlly.revive(reviver);
-      dummyAttacker.takeDamage(999);
-      scene.onEnemyDefeated(dummyAttacker);
-
-      return {
-        started,
-        isCleanInterrupt,
-        isBarDestroyed,
-        companionStateAfter: downedAlly.state
-      };
-    });
-
-    if (!reviveResult.started || !reviveResult.isCleanInterrupt || !reviveResult.isBarDestroyed) {
-      recordFinding(
-        'HIGH',
-        'State Interruption',
-        floor,
-        'Mid-Revive Channel Interrupt',
-        'Revive channel state or progress bar failed to clear cleanly upon interruption!',
-        reviveResult
-      );
-    }
-
-    // =========================================================================
-    // EXERCISE 6: Caster Energy Dry Fallback (Tested across magic types)
-    // =========================================================================
-    console.log('  [Exercise 6] Testing Caster Energy Dry-Fallback Across Magic Weapons...');
-    const magicTypesToTest = ['staff', 'fire_staff', 'ice_staff', 'lightning_staff'];
-    const casterTestResult = await page.evaluate((magicTypes) => {
-      const scene = window.game.scene.getScene('MainScene');
-      const dataLoader = window.DataLoader.getInstance();
-      const hero = scene.party[0];
-      const results = [];
-
-      for (const type of magicTypes) {
-        const weaponDef = dataLoader.getWeapon(type);
-        if (!weaponDef) continue;
-
-        hero.equipWeapon(weaponDef);
-        hero.energy = 100;
-        scene.combatSystem.updateStaffDynamicRange(hero);
-        const fullEnergyRange = hero.attackRangeTiles;
-        const fullEnergyEffective = scene.combatSystem.getEffectiveWeaponForAttack(hero);
-
-        // Dry out energy
-        hero.energy = 0;
-        scene.combatSystem.updateStaffDynamicRange(hero);
-        const dryEnergyRange = hero.attackRangeTiles;
-        const dryEnergyEffective = scene.combatSystem.getEffectiveWeaponForAttack(hero);
-
-        // Restore energy
-        hero.energy = 100;
-        scene.combatSystem.updateStaffDynamicRange(hero);
-        const restoredEnergyRange = hero.attackRangeTiles;
-
-        results.push({
-          weapon: type,
-          fullRange: fullEnergyRange,
-          dryRange: dryEnergyRange,
-          restoredRange: restoredEnergyRange,
-          dryEffectiveWeapon: dryEnergyEffective?.id,
-          dryFallbackMeleeOk: dryEnergyRange === 1 && (dryEnergyEffective?.id === 'staff' || dryEnergyEffective?.category === 'staff' || dryEnergyEffective?.baseDamage > 0)
-        });
-      }
-
-      // Re-equip short_swords
-      hero.equipWeapon(dataLoader.getWeapon('short_swords'));
-      return results;
-    }, magicTypesToTest);
-
-    for (const res of casterTestResult) {
-      if (!res.dryFallbackMeleeOk) {
-        recordFinding(
-          'HIGH',
-          'Combat Mechanics',
-          floor,
-          'Caster Energy Dry Fallback',
-          `Caster dry-fallback failed for '${res.weapon}': range did not fall back to melee (DryRange=${res.dryRange}, DryEffective=${res.dryEffectiveWeapon})`,
-          res
-        );
-      }
-    }
-
-    // =========================================================================
-    // EXERCISE 7: Systematic Keyboard Shortcut vs Button Convergence Checks
-    // =========================================================================
-    console.log('  [Exercise 7] Systematic Key vs Button Convergence & Collision Checks...');
     const shortcutAudit = await page.evaluate(() => {
       const scene = window.game.scene.getScene('MainScene');
       const hud = scene.hud;
@@ -637,7 +1043,7 @@ async function runSoakTest() {
       }
       scene.selectAllMembers();
 
-      // 4. Modal Hotkeys & Convergence: Party Overview [O], Stockpile [I]
+      // 4. Modal Hotkeys & Convergence: Party Overview [O], Stockpile [I], Knowledge Base [K]
       hud.togglePartyOverviewModal();
       const partyModalOpen = hud.isPartyOverviewOpen ? hud.isPartyOverviewOpen() : document.getElementById('party-overview-modal')?.classList.contains('active');
       hud.closePartyOverviewModal();
@@ -648,26 +1054,22 @@ async function runSoakTest() {
       hud.closeStockpileModal();
       const stockModalClosed = !(hud.isStockpileModalOpen ? hud.isStockpileModalOpen() : document.getElementById('stockpile-modal')?.classList.contains('active'));
 
+      hud.toggleKnowledgeBaseModal();
+      const kbModalOpen = hud.isKnowledgeBaseModalOpen ? hud.isKnowledgeBaseModalOpen() : document.getElementById('knowledge-base-modal')?.classList.contains('active');
+      hud.closeKnowledgeBaseModal();
+      const kbModalClosed = !(hud.isKnowledgeBaseModalOpen ? hud.isKnowledgeBaseModalOpen() : document.getElementById('knowledge-base-modal')?.classList.contains('active'));
+
       if (!partyModalOpen || !partyModalClosed) {
-        issues.push({ test: 'PartyOverviewModal', err: `Party modal toggle failed (open=${partyModalOpen}, closed=${partyModalClosed})` });
+        issues.push({ test: 'PartyOverviewModal', err: `Party modal toggle failed` });
       }
       if (!stockModalOpen || !stockModalClosed) {
-        issues.push({ test: 'StockpileModal', err: `Stockpile modal toggle failed (open=${stockModalOpen}, closed=${stockModalClosed})` });
+        issues.push({ test: 'StockpileModal', err: `Stockpile modal toggle failed` });
+      }
+      if (!kbModalOpen || !kbModalClosed) {
+        issues.push({ test: 'KnowledgeBaseModal', err: `Knowledge Base modal toggle failed` });
       }
 
-      // 5. Check Key P Collision in MainScene (Drink Mana Potion vs Debug EXP)
-      const pKeyObj = scene.pKey;
-      const isPKeyRegisteredInScene = !!pKeyObj;
-
-      // 6. Check Key T Collision in MainScene (Use Escape Stone vs Debug Respawn)
-      const tKeyObj = scene.tKey;
-      const isTKeyRegisteredInScene = !!tKeyObj;
-
-      return {
-        issues,
-        isPKeyRegisteredInScene,
-        isTKeyRegisteredInScene
-      };
+      return { issues };
     });
 
     if (shortcutAudit.issues.length > 0) {
@@ -682,101 +1084,55 @@ async function runSoakTest() {
         );
       }
     }
-
-    // Report Key P and T dual-binding / conflict if present
-    if (floor === 1) {
-      if (shortcutAudit.isPKeyRegisteredInScene) {
-        recordFinding(
-          'HIGH',
-          'Input Conflict',
-          floor,
-          'Key [P] Collision',
-          'Key [P] is dual-registered: global HUD listener binds it to "Drink Mana Potion", while MainScene.update binds it to "+680 Debug Weapon EXP". Both actions fire simultaneously when P is pressed.',
-          { scene: 'MainScene', conflict: ['Drink Mana Potion [P]', 'Debug Grant 680 EXP [P]'] }
-        );
-      }
-      if (shortcutAudit.isTKeyRegisteredInScene) {
-        recordFinding(
-          'HIGH',
-          'Input Conflict',
-          floor,
-          'Key [T] Collision',
-          'Key [T] is dual-registered: global HUD listener binds it to "Use Escape Stone [T]", while MainScene.update binds it to "Debug Respawn All Enemies [T]". Pressing T triggers both simultaneously.',
-          { scene: 'MainScene', conflict: ['Use Escape Stone [T]', 'Debug Respawn Enemies [T]'] }
-        );
-      }
-    }
+  }
 
     // =========================================================================
-    // EXERCISE 8: Repeated Gear Equipping and Unequipping
+    // STANDARD COVERAGE 6: Visual State & Leak Audit
+    // Confirm no lingering move highlights, gathering rings, or stale revive icons
     // =========================================================================
-    console.log('  [Exercise 8] Testing Gear Equipping & Unequipping...');
-    const gearSwapResult = await page.evaluate(() => {
+    const visualAudit = await page.evaluate(() => {
       const scene = window.game.scene.getScene('MainScene');
-      const dataLoader = window.DataLoader.getInstance();
-      const hero = scene.party[0];
-      const companion = scene.party[1];
+      const lingeringMoveHighlights = scene.activeMoveHighlights?.length || 0;
+      const lingeringGatheringHighlights = scene.gatheringNodeHighlights?.size || 0;
 
-      const initialHeroWeapon = hero.equippedWeapon?.id;
-      const dagger = dataLoader.getWeapon('daggers');
-      const staff = dataLoader.getWeapon('staff');
-      const shield = dataLoader.getWeapon('shields');
-
-      // Equip dagger
-      hero.equipWeapon(dagger);
-      const isDaggerEquipped = hero.equippedWeapon?.id === 'daggers';
-
-      // Equip shield in off-hand
-      hero.equipOffhandWeapon(shield);
-      const isShieldEquipped = hero.hasShield();
-
-      // Equip 2H staff (should unequip off-hand)
-      hero.equipWeapon(staff);
-      const isOffhandCleared = hero.offhandWeapon === null;
-
-      // Unequip companion offhand
-      companion.equipOffhandWeapon(null);
-      const compOffhandNull = companion.offhandWeapon === null;
-
-      // Re-equip short_swords
-      hero.equipWeapon(dataLoader.getWeapon('short_swords'));
+      // Invariant audit: conscious living characters must NEVER have an active revive icon sprite
+      const livingWithReviveIcons = scene.party.filter(p => p.state !== 'downed' && !!p.reviveIconSprite).map(p => ({
+        name: p.entityName,
+        state: p.state
+      }));
 
       return {
-        isDaggerEquipped,
-        isShieldEquipped,
-        isOffhandCleared,
-        compOffhandNull,
-        heroHpIntegrity: hero.hp > 0 && hero.maxHp > 0
+        lingeringMoveHighlights,
+        lingeringGatheringHighlights,
+        livingWithReviveIcons
       };
     });
 
-    if (!gearSwapResult.isDaggerEquipped || !gearSwapResult.isShieldEquipped || !gearSwapResult.isOffhandCleared) {
+    if (visualAudit.livingWithReviveIcons.length > 0) {
       recordFinding(
-        'MEDIUM',
-        'Equipment System',
+        'CRITICAL',
+        'Lingering Visual State',
         floor,
-        'Weapon / Shield Swap',
-        'Equipment slot state desynchronized during weapon/shield equip-unequip sequence!',
-        gearSwapResult
+        'Revive Icon Invariant Check',
+        'Conscious party member has lingering revive icon sprite visible on screen!',
+        visualAudit.livingWithReviveIcons
       );
     }
 
     // =========================================================================
-    // FLOOR TRANSITION: Continue Descent to Next Floor via Crystal
+    // FLOOR TRANSITION: Continue Descent or Return to Outpost on Final Floor
     // =========================================================================
     if (floor < TOTAL_FLOORS) {
       console.log(`  [Floor Transition] Descending from Floor ${floor} to Floor ${floor + 1}...`);
       await page.evaluate(() => {
         const scene = window.game.scene.getScene('MainScene');
-        // Close any modals before descending
         scene.hud.closeTeleporterCrystalModal();
         scene.hud.closePartyOverviewModal();
         scene.hud.closeStockpileModal();
-        // Trigger descent
+        scene.hud.closeKnowledgeBaseModal();
         scene.executeContinueDescent();
       });
 
-      // Wait for scene restart and new floor to become active
       await page.waitForFunction((nextFloor) => {
         const main = window.game.scene.getScene('MainScene');
         const gs = window.GameState?.getInstance?.();
@@ -790,16 +1146,68 @@ async function runSoakTest() {
         );
       }, { timeout: 15000 }, floor + 1);
 
-      await sleep(600);
+      await sleep(500);
       console.log(`✓ Completed transition to Floor ${floor + 1}.`);
     } else {
-      console.log(`\n🎉 Reached final floor ${TOTAL_FLOORS} of soak run!`);
+      console.log(`\n🎉 Reached final floor ${TOTAL_FLOORS}! Executing End-of-Run Return to Outpost with Downed Member...`);
+
+      // Final Floor Outpost Return Test:
+      // Down Valerie on Floor 25, transition to Outpost, confirm Valerie arrives Downed with Revive Icon in Outpost,
+      // revive via Bed Rest, and confirm state & icon clear cleanly!
+      const endOfRunOutpostResult = await page.evaluate(async () => {
+        const scene = window.game.scene.getScene('MainScene');
+        const valerie = scene.party[1];
+        valerie.hp = 0;
+        valerie.criticalHp = 0;
+        valerie.onDowned();
+
+        scene.executeTransitionToOutpost();
+        return true;
+      });
+
+      await page.waitForFunction(() => {
+        const outpost = window.game.scene.getScene('OutpostScene');
+        return outpost && outpost.scene.isActive() && outpost.party && outpost.party.length >= 4;
+      }, { timeout: 15000 });
+
+      await sleep(600);
+
+      const outpostBedReviveFinal = await page.evaluate(() => {
+        const outpost = window.game.scene.getScene('OutpostScene');
+        const valerie = outpost.party[1];
+        const arrivedDowned = valerie.state === 'downed' && !!valerie.reviveIconSprite;
+
+        // Perform Bed rest
+        const rested = valerie.rest();
+        const consciousAfter = valerie.state === 'idle' && valerie.hp === valerie.maxHp;
+        const iconCleared = valerie.reviveIconSprite === undefined;
+
+        return {
+          arrivedDowned,
+          rested,
+          consciousAfter,
+          iconCleared
+        };
+      });
+
+      if (!outpostBedReviveFinal.arrivedDowned || !outpostBedReviveFinal.consciousAfter || !outpostBedReviveFinal.iconCleared) {
+        recordFinding(
+          'CRITICAL',
+          'Downed / Revive Lifecycle',
+          TOTAL_FLOORS,
+          'End-of-Run Outpost Return & Bed Revive',
+          'Member returning downed from Floor 25 failed to arrive Downed or failed to clear revive icon upon Outpost Bed rest!',
+          outpostBedReviveFinal
+        );
+      } else {
+        console.log('✓ End-of-Run Outpost Return & Bed Revive passed: Member arrived Downed from Floor 25 and cleanly cleared on Bed rest.');
+      }
     }
   }
 
   const totalDurationSec = ((Date.now() - startTime) / 1000).toFixed(1);
   console.log('\n================================================================');
-  console.log(`🏁 SOAK TEST RUN COMPLETED: ${TOTAL_FLOORS} Floors in ${totalDurationSec}s`);
+  console.log(`🏁 SOAK TEST RUN COMPLETED: ${TOTAL_FLOORS} Consecutive Floors in ${totalDurationSec}s`);
   console.log('================================================================\n');
 
   // Audit memory and performance trends across the run

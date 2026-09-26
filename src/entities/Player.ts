@@ -217,7 +217,13 @@ export class Player extends Entity {
     const isMainThrowing = this.equippedWeapon?.id === 'throwing_weapons' || this.equippedWeapon?.proficiencyId === 'throwing_weapons';
     const isOffhand1HSpear = (weapon.id === 'spears' || weapon.proficiencyId === 'spears') && !weapon.twoHanded;
     const isJavelinSidearm = isJavelin && ((isMainSpear && isOffhandThrowing) || (isMainThrowing && isOffhand1HSpear));
-    const isAllowedSidearm = isBowSidearmDagger || isJavelinSidearm;
+
+    const isThrower = this.activeClass === 'thrower' || (this.progression && this.progression.getClassLevel('thrower') > 0);
+    const isOffhandDagger = weapon.id === 'daggers' || weapon.proficiencyId === 'daggers';
+    const isMainDagger = this.equippedWeapon?.id === 'daggers' || this.equippedWeapon?.proficiencyId === 'daggers';
+    const isThrowerSidearm = isThrower && ((isMainThrowing && isOffhandDagger) || (isMainDagger && isOffhandThrowing));
+
+    const isAllowedSidearm = isBowSidearmDagger || isJavelinSidearm || isThrowerSidearm;
 
     if (this.equippedWeapon?.twoHanded) {
       if (!isAllowedSidearm) {
@@ -725,13 +731,19 @@ export class Player extends Entity {
     }
   }
 
-  protected override onDowned(): void {
+  public override onDowned(): void {
     super.onDowned();
     this.showReviveIcon();
   }
 
+  public override clearDownedState(): void {
+    super.clearDownedState();
+    this.clearTarget();
+    this.hideReviveIcon();
+  }
+
   public showReviveIcon(): void {
-    if (this.reviveIconSprite || !this.scene?.add) return;
+    if (this.state !== 'downed' || this.reviveIconSprite || !this.scene?.add) return;
 
     const posX = this.x;
     const posY = this.y - 24;
@@ -784,14 +796,7 @@ export class Player extends Entity {
 
     this.hp = Math.floor(this.maxHp * 0.5);
     this.criticalHp = this.maxCriticalHp;
-    this.state = 'idle';
-    this.claimedDestination = null;
-    this.clearTarget();
-
-    this.avatarSprite.setAngle(0);
-    this.avatarSprite.setAlpha(1);
-    this.drawHpBar();
-    this.hideReviveIcon();
+    this.clearDownedState();
     console.log(`[Player] Revived with ${this.hp} Main HP and ${this.criticalHp} Critical HP!`);
 
     // Track Ally Revived activity on the reviver (or leader/first non-downed living ally)
@@ -847,16 +852,17 @@ export class Player extends Entity {
     const wasFull =
       this.hp >= this.maxHp &&
       this.criticalHp >= this.maxCriticalHp &&
-      this.energy >= this.maxEnergy;
+      this.energy >= this.maxEnergy &&
+      this.state !== 'downed';
 
     this.hp = this.maxHp;
     this.criticalHp = this.maxCriticalHp;
     this.energy = this.maxEnergy;
 
     if (this.state === 'downed') {
-      this.state = 'idle';
-      this.avatarSprite.setAngle(0);
-      this.avatarSprite.setAlpha(1);
+      this.clearDownedState();
+    } else {
+      this.hideReviveIcon();
     }
 
     if (this.activeStatusEffects.size > 0) {
@@ -1056,15 +1062,9 @@ export class Player extends Entity {
     // When Main HP <= 0 but Critical HP > 0, the character is in Critical state (conscious, warning-only), NOT downed.
     const isDowned = (snapshot.state === 'downed' || (this.hp <= 0 && this.criticalHp <= 0)) && this.hp <= 0 && this.criticalHp <= 0;
     if (isDowned) {
-      this.state = 'downed';
-      this.avatarSprite.setAngle(90);
-      this.avatarSprite.setAlpha(0.6);
-      this.showReviveIcon();
+      this.onDowned();
     } else {
-      this.state = 'idle';
-      this.avatarSprite.setAngle(0);
-      this.avatarSprite.setAlpha(1);
-      this.hideReviveIcon();
+      this.clearDownedState();
     }
 
     if (snapshot.baseCarryCapacity !== undefined) {
@@ -1153,6 +1153,11 @@ export class Player extends Entity {
 
   public override update(time: number, delta: number): void {
     super.update(time, delta);
+
+    // Invariant: Living/conscious characters must never have a lingering revive icon
+    if (this.state !== 'downed' && this.reviveIconSprite) {
+      this.hideReviveIcon();
+    }
 
     if (this.state !== 'downed' && this.state !== 'dead') {
       // 1. Passive Energy regeneration over time (strictly out-of-combat)

@@ -1140,6 +1140,91 @@
         }
       ],
       "description": "Spellsword capstone: slashes the longsword with overwhelming force, unleashing a crescent wave of compressed arcane energy that strikes targets up to 4 tiles away for 260% weapon damage plus unconditional bonus scaling from Arcane Magic level. If Runic Infusion is active, refunds 10 energy and cleaves adjacent enemies."
+    },
+    {
+      "id": "quick_toss",
+      "name": "Quick Toss",
+      "energyCost": 12,
+      "cooldownMs": 3000,
+      "damageMultiplier": 1.4,
+      "rangeTiles": 3,
+      "targetType": "enemy",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "thrower",
+          "value": 1
+        }
+      ],
+      "description": "Thrower baseline: quick-handed flick of a balanced throwing weapon or dagger up to 3 tiles away, dealing 140% weapon damage with rapid recovery."
+    },
+    {
+      "id": "skirmish_step",
+      "name": "Skirmish Step",
+      "energyCost": 18,
+      "cooldownMs": 7000,
+      "durationMs": 4000,
+      "targetType": "self",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "thrower",
+          "value": 10
+        }
+      ],
+      "description": "Quick-footed tactical maneuver granting +35% Evasion for 4s, reinforcing the hit-and-run skirmisher fantasy."
+    },
+    {
+      "id": "fan_of_knives",
+      "name": "Fan of Knives",
+      "energyCost": 22,
+      "cooldownMs": 6000,
+      "damageMultiplier": 1.6,
+      "rangeTiles": 3,
+      "targetType": "enemy",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "thrower",
+          "value": 20
+        }
+      ],
+      "description": "Throws a spread of sharp blades at the target and nearby enemies up to 3 tiles away, dealing 160% weapon damage and cleaving adjacent foes."
+    },
+    {
+      "id": "crippling_volley",
+      "name": "Crippling Volley",
+      "energyCost": 26,
+      "cooldownMs": 9000,
+      "durationMs": 4000,
+      "damageMultiplier": 1.85,
+      "rangeTiles": 4,
+      "targetType": "enemy",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "thrower",
+          "value": 30
+        }
+      ],
+      "description": "Hurls a targeted projectile at the enemy's legs up to 4 tiles away, dealing 185% weapon damage and applying 50% Slow and Bleed for 4s."
+    },
+    {
+      "id": "blade_barrage",
+      "name": "Blade Barrage",
+      "energyCost": 35,
+      "cooldownMs": 12000,
+      "damageMultiplier": 2.6,
+      "rangeTiles": 4,
+      "targetType": "enemy",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "thrower",
+          "value": 40
+        }
+      ],
+      "description": "Thrower capstone: unleashes a rapid, deadly barrage of thrown blades and daggers up to 4 tiles away, dealing 260% weapon damage plus +0.25 bonus damage per point of the hybrid partner proficiency."
     }
   ]
 }

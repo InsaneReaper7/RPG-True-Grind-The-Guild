@@ -186,6 +186,25 @@
         { "method": "salvage", "item": "dread_essence", "tags": ["alchemy", "enchanting"], "note": "Concentrated dread energy distilled from centuries of dungeon slumber" },
         { "method": "rare_drop", "item": "heart_of_the_colossus", "tags": ["jewelcrafting", "enchanting", "blacksmithing", "armorsmithing"], "note": "Legendary pinnacle artifact radiating immense planar power. The ultimate treasure of the deep dungeon." }
       ]
+    },
+    {
+      "id": "glacial_sovereign",
+      "name": "Glacial Sovereign",
+      "tier": "boss",
+      "hp": 420,
+      "criticalHpMax": 210,
+      "meleeDamage": 32,
+      "aggroRadius": 8,
+      "attackIntervalMs": 1400,
+      "moveSpeed": 85,
+      "attackRangeTiles": 4,
+      "researchPoints": 20,
+      "harvest": [
+        { "method": "salvage", "item": "glacial_core", "tags": ["blacksmithing", "jewelcrafting", "enchanting"], "note": "Sub-zero crystalline heart radiating perpetual absolute zero temperature" },
+        { "method": "salvage", "item": "rime_carapace", "tags": ["armorsmithing", "blacksmithing"], "note": "Hardened glacial ice plate formed under centuries of subterranean arctic pressure" },
+        { "method": "salvage", "item": "glacial_essence", "tags": ["alchemy", "enchanting"], "note": "Distilled essence of pure arctic frost capable of flash-freezing alchemical compounds" },
+        { "method": "rare_drop", "item": "eye_of_the_sovereign", "tags": ["jewelcrafting", "enchanting", "blacksmithing", "armorsmithing"], "note": "Legendary crystalline gem radiating intense diamond dust frost. The crown jewel of the Glacial Caverns." }
+      ]
     }
   ]
 }

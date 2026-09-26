@@ -47,6 +47,10 @@
     "spider"
   ],
   "bossEnemyId": "abyssal_colossus",
+  "bossPool": [
+    "abyssal_colossus",
+    "glacial_sovereign"
+  ],
   "bossMilestoneInterval": 5,
   "bossRandomChance": 0.02,
   "bossRoom": true,
@@ -64,6 +68,16 @@
     "maxBossRandomChance": 0.025
   },
   "floorRespawnTimerSec": 300,
+  "water": {
+    "enabled": true,
+    "chancePerEligibleRoom": 0.6,
+    "eligibleRoomTypes": [
+      "gathering",
+      "light_combat"
+    ],
+    "minPoolSize": 2,
+    "maxPoolSize": 5
+  },
   "regions": [
     {
       "id": "ancient_crypts",
@@ -72,6 +86,7 @@
       "maxFloor": 2,
       "walkableTexture": "tile-walkable",
       "obstacleTexture": "tile-obstacle",
+      "waterTexture": "tile-water",
       "accentColor": "#a78bfa",
       "tagline": "The Upper Stone Chambers"
     },
@@ -82,17 +97,33 @@
       "maxFloor": 5,
       "walkableTexture": "tile-abyssal-walkable",
       "obstacleTexture": "tile-abyssal-obstacle",
+      "waterTexture": "tile-abyssal-water",
       "accentColor": "#c084fc",
-      "tagline": "The Deep Void Stratum"
+      "tagline": "The Deep Void Stratum",
+      "bossEnemyId": "abyssal_colossus"
     },
     {
       "id": "infernal_caldera",
       "name": "Infernal Caldera",
       "minFloor": 6,
+      "maxFloor": 10,
       "walkableTexture": "tile-caldera-walkable",
       "obstacleTexture": "tile-caldera-obstacle",
+      "waterTexture": "tile-caldera-water",
       "accentColor": "#f97316",
-      "tagline": "The Scorched Subterranean Core"
+      "tagline": "The Scorched Subterranean Core",
+      "bossEnemyId": "abyssal_colossus"
+    },
+    {
+      "id": "glacial_caverns",
+      "name": "Glacial Caverns",
+      "minFloor": 11,
+      "walkableTexture": "tile-glacial-walkable",
+      "obstacleTexture": "tile-glacial-obstacle",
+      "waterTexture": "tile-glacial-water",
+      "accentColor": "#06b6d4",
+      "tagline": "The Sub-Zero Crystalline Depths",
+      "bossEnemyId": "glacial_sovereign"
     }
   ]
 }

@@ -52,6 +52,16 @@
       "color": "#67e8f9"
     },
     {
+      "id": "frostbite",
+      "name": "Frostbite",
+      "durationMs": 4500,
+      "tickIntervalMs": 1500,
+      "damagePerTick": 3,
+      "moveSpeedMultiplier": 0.5,
+      "isHarmful": true,
+      "color": "#06b6d4"
+    },
+    {
       "id": "guard_up",
       "name": "Guard Up",
       "durationMs": 5000,
@@ -269,6 +279,15 @@
       "shieldAmount": 40,
       "parryBonus": 0.20,
       "color": "#6366f1"
+    },
+    {
+      "id": "skirmish_step",
+      "name": "Skirmish Step",
+      "durationMs": 4000,
+      "tickIntervalMs": 4000,
+      "damagePerTick": 0,
+      "evasionBonus": 0.35,
+      "color": "#38bdf8"
     }
   ]
 }
