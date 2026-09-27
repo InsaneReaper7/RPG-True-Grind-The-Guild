@@ -390,6 +390,36 @@ Never ask Antigravity to jump ahead in this list — each milestone assumes the 
   - `test/milestone_water_terrain.test.ts` & `test/verify_water_terrain_browser.mjs`: 100% pass across water terrain unit and browser tests.
   - `npm run build`: Production bundle (`tsc && vite build`) compiles cleanly with 0 errors.
 
+**Resolved and shipped: Crafting Output Routing & Equipment Conservation.**
+- **Crafting Output to Character Inventory**:
+  - All Outpost crafting stations (Blacksmithing, Armorsmithing, Bowyer, Alchemy, Cooking) route crafted output goods and crafting EXP directly to the active Party Leader's personal inventory grid, adding to their carried weight.
+  - Raw crafting inputs consume centrally from the shared party stockpile (`GameState`), allowing an empty-handed promoted leader to craft cleanly without personal reagents.
+  - Explicit `resultItemId` audit: verified all 6 Alchemy recipes (`bandage`, `antidote`, `energy_potion`, `mana_potion`, `revive_potion`, `escape_stone`) specify valid item targets matching `data/items.json`.
+- **Data-Driven Recipe Coverage**:
+  - Full audit across all 13 physical weapon families and 5 armor slots confirms 100% recipe coverage across Blacksmithing, Armorsmithing, and Bowyer (with Fist documented as an unarmed baseline).
+- **Equipment Source-of-Truth & Conservation Rule**:
+  - **Equipping Rule**: `handleSlotDrop` deducts from the character's personal inventory first; if not present, it deducts from the shared party stockpile via `gameState.consumeItem`.
+  - **Unequipping / Swapping Rule**: Removed or swapped gear returns exclusively to that character's personal inventory (`member.addItem`), never duplicated into the stockpile.
+  - **Walkthrough Note for the Record**:
+    > *"Because removed gear always returns to personal inventory, any item equipped from the stockpile migrates into that character's bag when it's unequipped, and adds to their carried weight."*
+  - **Conservation Invariant Verification (`test/craftingInventoryRouting.test.ts` Test 2)**:
+    - *Stockpile-Sourced Equip*: Starting at Personal=0, Stockpile=1, equipping decrements Stockpile 1 -> 0 and increments Equipped 0 -> 1 (`Total = 1`).
+    - *Direct Unequip*: Direct unequip from paperdoll without weapon swap decrements Equipped 1 -> 0 and increments Personal 0 -> 1 into carried bag (`Total = 1`).
+    - *Both-Stores Priority*: When present in both stores (Personal=1, Stockpile=1), equipping consumes personal inventory first (Personal 1 -> 0, Stockpile untouched at 1, Equipped 0 -> 1, `Total = 2`).
+    - *10 Stockpile-Sourced Cycles*: 10 cycles alternating Stockpile 1 -> 0 -> 1 and Personal 0 -> 1 -> 0 with redeposit between cycles, proving exact item conservation (`Total = 1`) across all 30 steps.
+    - *10 Swap Cycles Dual-Weapon Tracking*: 10 cycles of Katana-to-Greatsword swapping logging and asserting constant totals for both Katana (`Total = 2`) and Greatsword (`Total = 10`) at every step.
+- **Stash Exploit Closure & Drag Restrictions**:
+  - Unowned equipment in party overview modals is marked non-draggable (`draggable="false"`).
+  - `handleSlotDrop` strictly validates item presence in either personal bag or stockpile before allowing equips, closing client-side injection / duplication exploits.
+- **Encumbrance Recalculation Across All Routes**:
+  - Encumbrance and speed penalties (-80%) update reliably across every route: item drops, gathering yields, stockpile deposits, inter-party transfers, and companion promotions.
+- **Verification**:
+  - `test/craftingInventoryRouting.test.ts`: 100% pass across all 7 test suites (recipe audit, 5-part equipment conservation suite, encumbrance routing, alchemy item targets, empty-handed leader input source, debug flag gating, stash exploit closure).
+  - `test/craftingStationRecipeFilter.test.ts`: 100% pass across all 9 suites (unlocked filtering, Cooking undiscovered count secrecy, OutpostScene leader change re-renders).
+  - `test/milestone51.test.ts` & `test/milestone35.test.ts`: 100% regression pass.
+  - `npm run build`: Production bundle (`tsc && vite build`) compiles cleanly with 0 errors.
+
+
 
 
 
