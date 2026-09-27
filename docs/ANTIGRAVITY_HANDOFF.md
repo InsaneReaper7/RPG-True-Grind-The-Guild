@@ -358,6 +358,38 @@ Never ask Antigravity to jump ahead in this list — each milestone assumes the 
   - `test/verify_water_terrain_browser.mjs`: 100% pass across live Pathfinder queries and adjacent-tile water approach.
   - `npm run build`: Production bundle (`tsc && vite build`) compiles cleanly with 0 errors.
 
+**Resolved and shipped: Fishing Correction — Research Gate, Craftable Fishing Rod, and Generic Personal Tool Requirement.**
+- **Research Tree Gate (`research_fishing`)**:
+  - Gated Fishing behind the research unlock `research_fishing` in `data/researchTree.json` (Cost: 10 RP, category: `'gathering'`, prereqs: `[]`), matching the existing unlock paradigm of Digging, Skinning, Butchering, and Gardening.
+  - `spawnWaterFishingSpots()` in `MainScene.ts` checks `GameState.getInstance().isFishingUnlocked()` (`this.isResearchCompleted('research_fishing')`); fishing spot nodes are completely hidden and never placed in dungeon waters while locked.
+  - Registered node icon `🎣` in `HUD.ts` with research completion feedback toast.
+  - Unlocking tested via modal interaction (`scene.hud.openResearchTreeModal()` spending 10 RP via UI button).
+- **Craftable Fishing Rod (`fishing_rod`)**:
+  - Added `fishing_rod` item definition to `data/items.json` (`category: "reagents"`, `weight: 1.0`, `icon: "🎣"`), matching the tool classification of `lockpick`.
+  - Added `fishing_rod` recipe to `data/blacksmithRecipes.json` (`requiredLevel: 0`, `expGranted: 20`, ingredients: `wood: 3, spider_silk: 2`).
+  - Implements Outpost crafting routing rules: consumes materials from shared party stockpile, awards +20 Blacksmithing EXP to the Party Leader, and deposits the rod into the Leader's personal inventory.
+- **Generic Data-Driven Tool Requirement Schema (`requiredToolItemId`)**:
+  - Extended `GatheringNodeDef` interface in `src/types/game.ts` with optional `requiredToolItemId?: string;`.
+  - Configured `"requiredToolItemId": "fishing_rod"` on `fishing_spot` in `data/gatheringNodes.json` and `DataLoader.ts`.
+  - Implemented generic `canInteractWithGatheringNode(node, character)` in `MainScene.ts`: validates depleted state, incapacitation, and presence of `requiredToolItemId` in character's personal inventory with **zero hardcoded skill checks** (audited in Test 7: no `skillId === 'fishing'` or any skill name in the interaction/tool-check path).
+  - Verified with synthetic dummy node (`synthetic_resonator_matrix`) and synthetic dummy tool (`synthetic_plasma_resonator`), proving 100% data-driven engine support.
+- **Personal Inventory & Non-Consumption Mechanics**:
+  - Tool item must be carried personally in the specific character's inventory (`character.getItemCount(...) > 0`). Party members lacking the tool cannot interact or channel.
+  - The tool is **persistently carried and not consumed** upon successful harvest completion.
+  - **Mid-Channel Removal Edge Case**: If the required tool is removed mid-channel (e.g., inventory transfer), channeling aborts immediately with zero yield and node remains unharvested.
+  - **Gathering Mode Auto-Queue Filtering**: Marquee drag selection skips tool-lacking nodes when no party member carries the tool with **exactly one warning toast** (audited in Test 5), while tool carriers are correctly assigned and unassigned nodes remain safely queued.
+- **One-Time Pre-Gate Save Migration**:
+  - Added migration logic to `GameState.restoreFromLoadedSnapshot(snap)`: automatically grants `research_fishing` if the Party Leader or any companion in an existing save file possesses Fishing progress (`currentExp > 0` or `level > 0`), preventing locked-out states on prior saves while preserving the lock for fresh games.
+- **Seed Determinism Invariance (`MainScene.create()`)**:
+  - Full-scene generation invariance verified across seeds using `MainScene.create()`.
+  - Tested 8 seeds (all spawning $\ge 1$ fishing spots when unlocked), confirming byte-for-byte exact equality of all non-fishing entities (enemies matched by id, position, hp; non-fishing gathering nodes matched by id and position; dungeon rooms matched by position, dimensions, type; and water tiles matched by position) between locked and unlocked scene builds.
+- **Verification**:
+  - `test/fishing_correction.test.ts`: 100% pass across all unit and integration tests (static schema, Blacksmith crafting transaction, full scene seed invariance, retroactive save migration, personal inventory tool check and mid-channel cancellation, Gathering Mode single toast, synthetic generic node proof, and zero skill-name code audit).
+  - `test/verify_fishing_browser.mjs`: 100% pass across live Chrome E2E browser tests (modal RP research unlock, Blacksmith rod crafting from stockpile to leader inventory, personal inventory tool check, shore channeling with crafted rod, rod non-consumption, dual-case Gathering Mode marquee queue/skip toast, and Tier 0 Angler unlock).
+  - `test/milestone26.test.ts`: 100% pass across all 10 Gathering Mode regression tests.
+  - `test/milestone_water_terrain.test.ts` & `test/verify_water_terrain_browser.mjs`: 100% pass across water terrain unit and browser tests.
+  - `npm run build`: Production bundle (`tsc && vite build`) compiles cleanly with 0 errors.
+
 
 
 

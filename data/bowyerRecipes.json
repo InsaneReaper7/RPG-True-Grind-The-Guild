@@ -38,6 +38,17 @@
       },
       "expGranted": 80,
       "description": "A heavy war bow fitted with curved beast-claw nocks for devastating long-range strikes."
+    },
+    {
+      "id": "quarterstaff",
+      "name": "Hardwood Quarterstaff",
+      "resultWeaponId": "staff",
+      "requiredLevel": 0,
+      "ingredients": {
+        "wood": 5
+      },
+      "expGranted": 20,
+      "description": "A balanced quarterstaff shaped from seasoned hardwood. Used for bludgeoning or as a conduit for mystical arts."
     }
   ]
 }

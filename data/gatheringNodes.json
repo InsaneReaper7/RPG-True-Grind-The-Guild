@@ -136,6 +136,7 @@
       "depletedLabel": "Fished Out",
       "color": "#38bdf8",
       "actionVerb": "Fishing",
+      "requiredToolItemId": "fishing_rod",
       "lootTable": [
         { "itemId": "raw_fish", "name": "Raw Fish", "weight": 70, "count": 1 },
         { "itemId": "aquatic_reagent", "name": "Aquatic Reagent", "weight": 30, "count": 1 }

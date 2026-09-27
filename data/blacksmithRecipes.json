@@ -135,6 +135,19 @@
       "description": "A slender steel pick forged from scrap metal. Essential tool required to pick Locked Boxes."
     },
     {
+      "id": "fishing_rod",
+      "name": "Fishing Rod",
+      "resultItemId": "fishing_rod",
+      "resultCount": 1,
+      "requiredLevel": 0,
+      "ingredients": {
+        "wood": 3,
+        "spider_silk": 2
+      },
+      "expGranted": 20,
+      "description": "A flexible rod shaped from seasoned timber and strung with fine spider silk. Essential tool required for fishing in subterranean waters."
+    },
+    {
       "id": "smelt_broken_lockbox",
       "name": "Smelt Broken Lockbox",
       "resultItemId": "steel_scrap",
@@ -145,6 +158,54 @@
       },
       "expGranted": 15,
       "description": "Smelt a ruined lockbox in the forge to reclaim 2 Steel Scrap."
+    },
+    {
+      "id": "iron_shield",
+      "name": "Iron Shield",
+      "resultWeaponId": "shields",
+      "requiredLevel": 0,
+      "ingredients": {
+        "ore": 4,
+        "wood": 2
+      },
+      "expGranted": 25,
+      "description": "A sturdy iron-rimmed wooden shield capable of deflecting and blocking enemy blows."
+    },
+    {
+      "id": "short_sword",
+      "name": "Iron Shortsword",
+      "resultWeaponId": "short_swords",
+      "requiredLevel": 0,
+      "ingredients": {
+        "ore": 3,
+        "wood": 1
+      },
+      "expGranted": 20,
+      "description": "A nimble iron blade suited for rapid thrusts and close-quarters melee combat."
+    },
+    {
+      "id": "greatsword",
+      "name": "Steel Greatsword",
+      "resultWeaponId": "greatswords",
+      "requiredLevel": 0,
+      "ingredients": {
+        "ore": 8,
+        "wood": 3
+      },
+      "expGranted": 35,
+      "description": "A massive two-handed greatsword forged from heavy iron and seasoned timber, capable of crushing blows."
+    },
+    {
+      "id": "daggers",
+      "name": "Iron Daggers",
+      "resultWeaponId": "daggers",
+      "requiredLevel": 0,
+      "ingredients": {
+        "ore": 2,
+        "wood": 1
+      },
+      "expGranted": 15,
+      "description": "A pair of lightweight iron daggers designed for rapid stabbing strikes."
     }
   ]
 }

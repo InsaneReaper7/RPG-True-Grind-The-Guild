@@ -249,7 +249,7 @@ export class MainScene extends Phaser.Scene {
     // 1. Procedural Dungeon Generation (Milestone 13 / 34)
     const dungeonConfig = dataLoader.getDungeonConfig();
     const floorNumber = GameState.getInstance().incrementDungeonFloorCount();
-    this.dungeon = DungeonGenerator.generate(dungeonConfig, Math.random, { floorNumber });
+    this.dungeon = this.dungeon || DungeonGenerator.generate(dungeonConfig, Math.random, { floorNumber });
     this.mapWidth = this.dungeon.width;
     this.mapHeight = this.dungeon.height;
     this.gridMatrix = this.dungeon.gridMatrix;
@@ -476,7 +476,7 @@ export class MainScene extends Phaser.Scene {
     }
 
     // 5d. Spawn Procedural Fishing Spots on Water Terrain (Milestone — Fishing)
-    if (this.dungeon.waterTiles && this.dungeon.waterTiles.length > 0) {
+    if (GameState.getInstance().isFishingUnlocked() && this.dungeon.waterTiles && this.dungeon.waterTiles.length > 0) {
       this.spawnWaterFishingSpots();
     }
 
@@ -2608,25 +2608,56 @@ export class MainScene extends Phaser.Scene {
     return this.spawnGatheringNode(x, y, 'foraging_bush');
   }
 
+  /**
+   * Generic check for whether a character can interact with a gathering node.
+   * Evaluates depletion, living state, and data-driven requiredToolItemId prerequisite.
+   * (Zero skill-name or skillId special casing).
+   */
+  public canInteractWithGatheringNode(node: GatheringNode, character: Player): { canInteract: boolean; reason?: string } {
+    if (node.isHarvested) {
+      return { canInteract: false, reason: `${node.nodeDef.name} is depleted` };
+    }
+    if (character.state === 'downed' || character.state === 'dead') {
+      return { canInteract: false, reason: `${character.entityName} is incapacitated` };
+    }
+    if (node.nodeDef.requiredToolItemId && character.getItemCount(node.nodeDef.requiredToolItemId) <= 0) {
+      const toolDef = DataLoader.getInstance().getItem(node.nodeDef.requiredToolItemId);
+      const toolName = toolDef?.name || node.nodeDef.requiredToolItemId;
+      return { canInteract: false, reason: `${character.entityName} must carry a ${toolName}` };
+    }
+    return { canInteract: true };
+  }
+
   public interactWithGatheringNode(node: GatheringNode, character?: Player | Player[]): void {
     if (node.isHarvested) {
       this.hud?.showToast(`🌿 ${node.nodeDef.name} is depleted. Stays depleted for remainder of visit.`, 'info', 2000);
       return;
     }
 
-    const resolvedActors: Player[] = character
+    const candidateActors: Player[] = character
       ? (Array.isArray(character)
           ? character.filter(m => m.state !== 'downed' && m.state !== 'dead')
           : (character.state !== 'downed' && character.state !== 'dead' ? [character] : []))
       : (this.getSelectedMembers ? this.getSelectedMembers().filter(m => m.state !== 'downed' && m.state !== 'dead') : []);
 
-    if (resolvedActors.length === 0) {
+    if (candidateActors.length === 0) {
       if (this.player && this.player.state !== 'downed' && this.player.state !== 'dead') {
-        resolvedActors.push(this.player);
+        candidateActors.push(this.player);
       } else {
         return;
       }
     }
+
+    // Generic per-character tool requirement enforcement
+    const eligibleActors = candidateActors.filter(m => this.canInteractWithGatheringNode(node, m).canInteract);
+    if (eligibleActors.length === 0) {
+      const primary = candidateActors[0];
+      const check = this.canInteractWithGatheringNode(node, primary);
+      this.hud?.showToast(`⚠️ ${check.reason || 'Cannot interact with gathering node'}`, 'warn', 2500);
+      return;
+    }
+
+    const resolvedActors = eligibleActors;
 
     // Cancel existing gather channels and clear targets ONLY for resolvedActors
     for (const actor of resolvedActors) {
@@ -2860,6 +2891,7 @@ export class MainScene extends Phaser.Scene {
    */
   public spawnWaterFishingSpots(): GatheringNode[] {
     const spawned: GatheringNode[] = [];
+    if (!GameState.getInstance().isFishingUnlocked()) return spawned;
     if (!this.dungeon?.waterTiles || this.dungeon.waterTiles.length === 0) return spawned;
 
     for (let rIdx = 0; rIdx < this.dungeon.rooms.length; rIdx++) {
@@ -2873,7 +2905,7 @@ export class MainScene extends Phaser.Scene {
       const validFishingTiles = roomWater.filter(t => {
         const adjs = [
           { x: t.x + 1, y: t.y }, { x: t.x - 1, y: t.y },
-          { x: t.x, y: t.y + 1 }, { x: t.x - 1, y: t.y },
+          { x: t.x, y: t.y + 1 }, { x: t.x, y: t.y - 1 },
           { x: t.x + 1, y: t.y + 1 }, { x: t.x - 1, y: t.y + 1 },
           { x: t.x + 1, y: t.y - 1 }, { x: t.x - 1, y: t.y - 1 }
         ];
@@ -2901,7 +2933,8 @@ export class MainScene extends Phaser.Scene {
   }
 
   public startGatherChannel(character: Player, node: GatheringNode): boolean {
-    if (node.isHarvested || character.state === 'downed' || character.state === 'dead') {
+    const check = this.canInteractWithGatheringNode(node, character);
+    if (!check.canInteract) {
       return false;
     }
 
@@ -2969,6 +3002,22 @@ export class MainScene extends Phaser.Scene {
 
     if (character.state === 'channeling') {
       character.state = 'idle';
+    }
+
+    // Edge case 1: Tool was removed mid-channel (e.g. inventory transfer)
+    if (channel.node.nodeDef.requiredToolItemId && character.getItemCount(channel.node.nodeDef.requiredToolItemId) <= 0) {
+      const toolDef = DataLoader.getInstance().getItem(channel.node.nodeDef.requiredToolItemId);
+      const toolName = toolDef?.name || channel.node.nodeDef.requiredToolItemId;
+      this.hud?.showToast(`⚠️ Gathering interrupted: ${character.entityName} no longer carries a ${toolName}!`, 'warn', 2500);
+      console.warn(`[Gathering] Channel cancelled: ${character.entityName} lost required tool ${channel.node.nodeDef.requiredToolItemId} mid-channel.`);
+      if (this.gatheringWorkerNodeAssignments.has(character)) {
+        this.gatheringWorkerNodeAssignments.delete(character);
+        if (!channel.node.isHarvested && !this.gatheringQueue.includes(channel.node)) {
+          this.gatheringQueue.push(channel.node);
+        }
+        this.processGatheringQueue();
+      }
+      return;
     }
 
     this.harvestGatheringNode(channel.node, character);
@@ -3865,7 +3914,36 @@ export class MainScene extends Phaser.Scene {
       worker.clearTarget();
     }
 
-    this.gatheringQueue = [...validNodes];
+    // Edge case 2: Filter out nodes requiring a tool that NO active worker carries, with single summary toast
+    const eligibleNodes: GatheringNode[] = [];
+    let skippedMissingToolCount = 0;
+    let missingToolName = '';
+
+    for (const node of validNodes) {
+      if (node.nodeDef.requiredToolItemId) {
+        const toolId = node.nodeDef.requiredToolItemId;
+        const hasCarrier = workers.some(w => w.getItemCount(toolId) > 0);
+        if (!hasCarrier) {
+          skippedMissingToolCount++;
+          if (!missingToolName) {
+            const toolDef = DataLoader.getInstance().getItem(toolId);
+            missingToolName = toolDef?.name || toolId;
+          }
+          continue;
+        }
+      }
+      eligibleNodes.push(node);
+    }
+
+    if (skippedMissingToolCount > 0) {
+      this.hud?.showToast(`⚠️ Skipped ${skippedMissingToolCount} node(s): No party member is carrying a ${missingToolName}.`, 'warn', 3000);
+    }
+
+    if (eligibleNodes.length === 0) {
+      return;
+    }
+
+    this.gatheringQueue = [...eligibleNodes];
     this.gatheringQueueWorkers = new Set(workers);
     this.gatheringWorkerNodeAssignments.clear();
 
@@ -3900,7 +3978,11 @@ export class MainScene extends Phaser.Scene {
       for (const ch of this.activeGatherChannels.values()) {
         assignedNodes.add(ch.node);
       }
-      const availableNodes = this.gatheringQueue.filter(n => !n.isHarvested && !assignedNodes.has(n));
+      const availableNodes = this.gatheringQueue.filter(n => {
+        if (n.isHarvested || assignedNodes.has(n)) return false;
+        if (!this.canInteractWithGatheringNode(n, worker).canInteract) return false;
+        return true;
+      });
 
       if (availableNodes.length === 0) {
         continue;

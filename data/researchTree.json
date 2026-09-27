@@ -68,6 +68,13 @@
       "cost": 10,
       "prerequisites": ["research_digging"],
       "description": "Unlocks planting plots for cultivating crops in the Outpost and begins the study of agriculture."
+    },
+    {
+      "id": "research_fishing",
+      "name": "Fishing",
+      "cost": 10,
+      "prerequisites": [],
+      "description": "Unlocks fishing spots in dungeon water bodies, allowing fish and aquatic reagents to be gathered."
     }
   ]
 }

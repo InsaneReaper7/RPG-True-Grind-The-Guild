@@ -115,6 +115,8 @@ if (typeof (global as any).window === 'undefined') {
   (global as any).document = {
     getElementById: (id: string) => domElements.get(id) || createMockElement(id),
     createElement: (tag: string) => createMockElement(),
+    querySelector: () => null,
+    querySelectorAll: () => [],
     addEventListener: noop,
     removeEventListener: noop,
     documentElement: {},

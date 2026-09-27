@@ -53,6 +53,7 @@
     { "id": "raw_meat", "name": "Raw Meat", "weight": 0.3, "category": "reagents", "icon": "🥩" },
     { "id": "slime_jelly", "name": "Slime Jelly", "weight": 0.2, "category": "reagents", "icon": "🧪" },
     { "id": "raw_fish", "name": "Raw Fish", "weight": 0.3, "category": "gathering", "icon": "🐟" },
-    { "id": "aquatic_reagent", "name": "Aquatic Reagent", "weight": 0.1, "category": "reagents", "icon": "💧" }
+    { "id": "aquatic_reagent", "name": "Aquatic Reagent", "weight": 0.1, "category": "reagents", "icon": "💧" },
+    { "id": "fishing_rod", "name": "Fishing Rod", "weight": 1.0, "category": "reagents", "icon": "🎣" }
   ]
 }

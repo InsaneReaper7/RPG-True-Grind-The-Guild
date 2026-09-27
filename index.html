@@ -925,7 +925,7 @@
       border-color: #2dd4bf;
       box-shadow: 0 0 10px rgba(45, 212, 191, 0.3);
     }
-    .stockpile-toggle-btn {
+    .stockpile-toggle-btn, .crafting-toggle-btn {
       background: rgba(30, 41, 59, 0.8);
       border: 1px solid rgba(148, 163, 184, 0.3);
       border-radius: 4px;
@@ -940,7 +940,7 @@
       transition: all 0.15s ease;
       white-space: nowrap;
     }
-    .stockpile-toggle-btn:hover {
+    .stockpile-toggle-btn:hover, .crafting-toggle-btn:hover {
       background: rgba(45, 212, 191, 0.2);
       border-color: #2dd4bf;
     }
@@ -2815,7 +2815,12 @@
           <span>🎭 Hero Mood: <strong id="alchemy-mood-value">High (100)</strong></span>
           <span id="alchemy-mood-effect" style="font-weight: bold; color: #fef08a;">+100% Crafting Yield (2x Bandages)</span>
         </div>
-        <div class="loadout-section-title">Alchemy Recipes</div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <div class="loadout-section-title" style="margin-bottom: 0;">Alchemy Recipes</div>
+          <button id="alchemy-toggle-filter-btn" class="stockpile-toggle-btn crafting-toggle-btn" type="button" title="Toggle between showing unlocked recipes vs all recipes" style="border-color: #2dd4bf; background: rgba(13, 148, 136, 0.3); color: #2dd4bf;">
+            <span id="alchemy-toggle-filter-indicator">✅</span> <span id="alchemy-toggle-filter-label">Showing: Unlocked Only</span>
+          </button>
+        </div>
         <div id="alchemy-recipes-container" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px;">
           <!-- Dynamically populated -->
         </div>
@@ -2892,7 +2897,12 @@
         </div>
 
         <!-- 3. Discovered Recipes List (Cook On Demand) -->
-        <div class="loadout-section-title">📖 Discovered Recipes (Cook On Demand)</div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <div class="loadout-section-title" style="margin-bottom: 0;">📖 Discovered Recipes (Cook On Demand)</div>
+          <button id="cooking-toggle-filter-btn" class="stockpile-toggle-btn crafting-toggle-btn" type="button" title="Toggle between showing unlocked recipes vs all recipes" style="border-color: #2dd4bf; background: rgba(13, 148, 136, 0.3); color: #2dd4bf;">
+            <span id="cooking-toggle-filter-indicator">✅</span> <span id="cooking-toggle-filter-label">Showing: Unlocked Only</span>
+          </button>
+        </div>
         <div id="cooking-recipes-container" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px;">
           <!-- Dynamically populated with cards of discovered recipes -->
         </div>
@@ -2934,7 +2944,12 @@
         </div>
 
         <!-- 2. Forging Recipes List (Tier-Unlocked) -->
-        <div class="loadout-section-title">⚒️ Forge Weapons (Tier-Unlocked)</div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <div class="loadout-section-title" style="margin-bottom: 0;">⚒️ Forge Weapons (Tier-Unlocked)</div>
+          <button id="blacksmithing-toggle-filter-btn" class="stockpile-toggle-btn crafting-toggle-btn" type="button" title="Toggle between showing unlocked recipes vs all recipes" style="border-color: #2dd4bf; background: rgba(13, 148, 136, 0.3); color: #2dd4bf;">
+            <span id="blacksmithing-toggle-filter-indicator">✅</span> <span id="blacksmithing-toggle-filter-label">Showing: Unlocked Only</span>
+          </button>
+        </div>
         <div id="blacksmithing-recipes-container" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px;">
           <!-- Dynamically populated with forge cards -->
         </div>
@@ -2968,7 +2983,12 @@
         </div>
 
         <!-- 2. Armorsmithing Recipes List (Tier-Unlocked) -->
-        <div class="loadout-section-title">🛡️ Craft Armor (Tier-Unlocked)</div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <div class="loadout-section-title" style="margin-bottom: 0;">🛡️ Craft Armor (Tier-Unlocked)</div>
+          <button id="armorsmithing-toggle-filter-btn" class="stockpile-toggle-btn crafting-toggle-btn" type="button" title="Toggle between showing unlocked recipes vs all recipes" style="border-color: #2dd4bf; background: rgba(13, 148, 136, 0.3); color: #2dd4bf;">
+            <span id="armorsmithing-toggle-filter-indicator">✅</span> <span id="armorsmithing-toggle-filter-label">Showing: Unlocked Only</span>
+          </button>
+        </div>
         <div id="armorsmithing-recipes-container" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px;">
           <!-- Dynamically populated with armor craft cards -->
         </div>
@@ -3006,7 +3026,12 @@
         </div>
 
         <!-- 2. Bowyer Recipes List (Tier-Unlocked) -->
-        <div class="loadout-section-title">🏹 Craft Bows (Tier-Unlocked)</div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <div class="loadout-section-title" style="margin-bottom: 0;">🏹 Craft Bows (Tier-Unlocked)</div>
+          <button id="bowyer-toggle-filter-btn" class="stockpile-toggle-btn crafting-toggle-btn" type="button" title="Toggle between showing unlocked recipes vs all recipes" style="border-color: #2dd4bf; background: rgba(13, 148, 136, 0.3); color: #2dd4bf;">
+            <span id="bowyer-toggle-filter-indicator">✅</span> <span id="bowyer-toggle-filter-label">Showing: Unlocked Only</span>
+          </button>
+        </div>
         <div id="bowyer-recipes-container" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px;">
           <!-- Dynamically populated with bow craft cards -->
         </div>

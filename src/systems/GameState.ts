@@ -63,6 +63,9 @@ export class GameState {
   public static getInstance(): GameState {
     if (!GameState.instance) {
       GameState.instance = new GameState();
+      if (typeof window !== 'undefined') {
+        (window as any).GameState = GameState;
+      }
     }
     return GameState.instance;
   }
@@ -462,7 +465,7 @@ export class GameState {
   }
 
   public isFishingUnlocked(): boolean {
-    return true;
+    return this.isResearchCompleted('research_fishing');
   }
 
   // --- Clock & Game Day System (Milestone 7 & 39) ---
@@ -1014,6 +1017,17 @@ export class GameState {
   public discardItem(player: Player, itemId: string, count: number = 1): boolean {
     if (count <= 0) return false;
     return player.removeItem(itemId, count);
+  }
+
+  public depositItem(player: Player, itemId: string, count: number = 1): boolean {
+    if (count <= 0) return false;
+    if (player.getItemCount(itemId) < count) return false;
+    const removed = player.removeItem(itemId, count);
+    if (removed) {
+      this.addItem(itemId, count);
+      return true;
+    }
+    return false;
   }
 
   // --- Lockpicking System (Milestone 38) ---
@@ -1711,6 +1725,33 @@ export class GameState {
     this.researchPoints = snap.researchPoints ?? 0;
     this.unlockedBuildables = new Set(snap.unlockedBuildables ?? ['floor', 'wall', 'door', 'bed', 'research_station']);
     this.completedResearchIds = new Set(snap.completedResearchIds ?? []);
+
+    // One-time migration for Fishing Research Gate:
+    // If research_fishing is not completed, but any party member (leader or companion) has Fishing EXP > 0 or level > 0,
+    // grant research_fishing retroactively to preserve pre-gate save access.
+    if (!this.completedResearchIds.has('research_fishing')) {
+      let hasPreGateFishing = false;
+      const leaderFishingExp = (snap.proficiencies?.fishing?.currentExp ?? 0) + (snap.proficiencies?.fishing?.level ?? 0);
+      if (leaderFishingExp > 0) {
+        hasPreGateFishing = true;
+      }
+      if (!hasPreGateFishing && snap.party) {
+        for (const companion of snap.party) {
+          const compFishingExp = (companion.proficiencies?.fishing?.currentExp ?? 0) + (companion.proficiencies?.fishing?.level ?? 0);
+          if (compFishingExp > 0) {
+            hasPreGateFishing = true;
+            break;
+          }
+        }
+      }
+      if (hasPreGateFishing) {
+        this.completedResearchIds.add('research_fishing');
+        if (this.snapshot) {
+          this.snapshot.completedResearchIds = Array.from(this.completedResearchIds);
+        }
+        console.log('[GameState] 🎣 Migration applied: Existing party possesses Fishing progress (EXP > 0). Granted research_fishing retroactively.');
+      }
+    }
 
     this.inventory.clear();
     if (snap.inventory) {

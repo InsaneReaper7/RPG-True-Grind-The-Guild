@@ -3,6 +3,7 @@
     {
       "id": "bandage",
       "name": "Bandage",
+      "resultItemId": "bandage",
       "cures": ["bleed"],
       "ingredients": {
         "wood": 5
@@ -13,6 +14,7 @@
     {
       "id": "antidote",
       "name": "Antidote",
+      "resultItemId": "antidote",
       "cures": ["poison"],
       "ingredients": {
         "wild_herbs": 1
@@ -23,6 +25,7 @@
     {
       "id": "energy_potion",
       "name": "Energy Potion",
+      "resultItemId": "energy_potion",
       "ingredients": {
         "wild_herbs": 2,
         "wood": 2
@@ -37,6 +40,7 @@
     {
       "id": "mana_potion",
       "name": "Mana Potion",
+      "resultItemId": "mana_potion",
       "ingredients": {
         "wild_herbs": 2,
         "ectoplasm": 1
@@ -51,6 +55,7 @@
     {
       "id": "revive_potion",
       "name": "Revive Potion",
+      "resultItemId": "revive_potion",
       "ingredients": {
         "wild_herbs": 3,
         "ectoplasm": 1
@@ -61,6 +66,7 @@
     {
       "id": "escape_stone",
       "name": "Escape Stone",
+      "resultItemId": "escape_stone",
       "ingredients": {
         "wood": 1
       },

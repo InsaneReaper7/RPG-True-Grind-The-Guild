@@ -1,6 +1,6 @@
 import type { Player } from '../entities/Player.ts';
 import { ProgressionSystem } from '../systems/ProgressionSystem.ts';
-import type { ClassDef, HiddenSkillDef, TrainableStat, FoodQuality, ExpTransaction, ArmorSlot, ResearchNodeDef, KnowledgeBaseTab } from '../types/game.ts';
+import type { ClassDef, HiddenSkillDef, TrainableStat, FoodQuality, ExpTransaction, ArmorSlot, ArmorDef, ResearchNodeDef, KnowledgeBaseTab } from '../types/game.ts';
 import { getArmorHpSplit } from '../types/game.ts';
 import { DataLoader } from '../utils/DataLoader.ts';
 import { GameState } from '../systems/GameState.ts';
@@ -270,7 +270,20 @@ export class HUD {
   private showHeldOnly: boolean = false;
   private lastStockpileUpdateTime: number = 0;
   private renderedStockpileStructureKey: string = '';
-  private static lastRenderedStockpileStructureKey: string = '';
+  public static lastRenderedStockpileStructureKey: string = '';
+  // Crafting Station Recipe Filter State (Hide Unlearned/Unlockable Recipes)
+  public craftingStationFilterCraftableOnly: Record<string, boolean> = {
+    blacksmithing: true,
+    armorsmithing: true,
+    bowyer: true,
+    alchemy: true,
+    cooking: true
+  };
+  public blacksmithingToggleFilterBtn: HTMLElement | null = null;
+  public armorsmithingToggleFilterBtn: HTMLElement | null = null;
+  public bowyerToggleFilterBtn: HTMLElement | null = null;
+  public alchemyToggleFilterBtn: HTMLElement | null = null;
+  public cookingToggleFilterBtn: HTMLElement | null = null;
 
   // Knowledge Base (Guild Codex) Elements & State (Milestone 50)
   private knowledgeBaseModalEl: HTMLElement | null = null;
@@ -661,6 +674,24 @@ export class HUD {
         HUD.activeInstance?.closeBowyerModal();
       };
     }
+
+    // Crafting Station Filter Toggle Buttons (Milestone: Crafting Station Recipe Filter)
+    this.blacksmithingToggleFilterBtn = document.getElementById('blacksmithing-toggle-filter-btn');
+    this.armorsmithingToggleFilterBtn = document.getElementById('armorsmithing-toggle-filter-btn');
+    this.bowyerToggleFilterBtn = document.getElementById('bowyer-toggle-filter-btn');
+    this.alchemyToggleFilterBtn = document.getElementById('alchemy-toggle-filter-btn');
+    this.cookingToggleFilterBtn = document.getElementById('cooking-toggle-filter-btn');
+
+    const craftingStations = ['blacksmithing', 'armorsmithing', 'bowyer', 'alchemy', 'cooking'] as const;
+    craftingStations.forEach((st) => {
+      const btn = document.getElementById(`${st}-toggle-filter-btn`);
+      if (btn) {
+        btn.onclick = () => {
+          this.toggleCraftingFilter(st);
+        };
+      }
+      this.updateCraftingFilterToggleUI(st);
+    });
 
     // Milestone 16 Elements
     this.floorTimerBadgeEl = document.getElementById('floor-timer-badge');
@@ -2009,6 +2040,7 @@ export class HUD {
   public setLocation(name: string, isOutpost: boolean, customColor?: string): void {
     this.isOutpost = isOutpost;
     HUD.activeInstance = this;
+    (window as any).activeHUD = this;
 
     if (this.locationBadgeEl) {
       this.locationBadgeEl.innerText = name.toUpperCase();
@@ -3648,6 +3680,18 @@ export class HUD {
 
     const items: InventoryDisplayItem[] = [];
 
+    const getAvailableCount = (itemId: string): number => {
+      let total = gameState.getItemCount(itemId);
+      if (this.currentParty && this.currentParty.length > 0) {
+        for (const member of this.currentParty) {
+          total += member.getItemCount(itemId);
+        }
+      } else if (this.currentPlayer) {
+        total += this.currentPlayer.getItemCount(itemId);
+      }
+      return total;
+    };
+
     if (this.partyInventoryFilter === 'all' || this.partyInventoryFilter === 'weapons') {
       for (const w of allWeapons) {
         if (w.category !== 'magic' || w.conduitWeaponId || w.spellWeaponId || w.baseDamage > 0) {
@@ -3655,7 +3699,7 @@ export class HUD {
           const icon = isShield ? '🛡️' : (w.category === 'ranged' ? '🏹' : (w.category === 'magic' ? '✨' : '⚔️'));
           const slot = isShield ? 'offhand' : 'main';
           const displaySlot = isShield ? 'Shield / Off-Hand' : (w.twoHanded ? '2H Weapon' : '1H Weapon');
-          const count = gameState.getItemCount(w.id);
+          const count = getAvailableCount(w.id);
           items.push({
             id: w.id,
             name: w.name,
@@ -3674,7 +3718,7 @@ export class HUD {
       for (const a of allArmors) {
         if (a.slot === 'helmet' || a.slot === 'body') {
           const icon = a.slot === 'helmet' ? '🪖' : '🛡️';
-          const count = gameState.getItemCount(a.id);
+          const count = getAvailableCount(a.id);
           items.push({
             id: a.id,
             name: a.name,
@@ -3693,7 +3737,7 @@ export class HUD {
       for (const a of allArmors) {
         if (a.slot === 'necklace' || a.slot === 'ring' || a.slot === 'accessory') {
           const icon = a.slot === 'necklace' ? '📿' : (a.slot === 'ring' ? '💍' : '🔮');
-          const count = gameState.getItemCount(a.id);
+          const count = getAvailableCount(a.id);
           items.push({
             id: a.id,
             name: a.name,
@@ -3754,8 +3798,16 @@ export class HUD {
     }
 
     let html = '';
+    const debugBypass = typeof window !== 'undefined' && Boolean((window as any).__debugBypassEquipCheck);
     for (const item of items) {
-      const countBadge = item.count > 0 ? `<span style="font-size: 9px; color: #a78bfa; background: rgba(139, 92, 246, 0.2); padding: 1px 5px; border-radius: 3px; font-weight: bold;">x${item.count}</span>` : '';
+      const isOwned = item.count > 0;
+      const canDrag = isOwned || debugBypass;
+      const countBadge = isOwned
+        ? `<span style="font-size: 9px; color: #a78bfa; background: rgba(139, 92, 246, 0.2); padding: 1px 5px; border-radius: 3px; font-weight: bold;">x${item.count}</span>`
+        : (debugBypass
+          ? `<span style="font-size: 9px; color: #f59e0b; background: rgba(245, 158, 11, 0.2); padding: 1px 5px; border-radius: 3px;">DEBUG</span>`
+          : `<span style="font-size: 9px; color: #9ca3af; background: rgba(55, 65, 81, 0.5); padding: 1px 5px; border-radius: 3px;">Craft Required</span>`);
+
       if ((item as any).isBox) {
         html += `
         <div class="inventory-item-card" data-item-id="${item.id}" data-item-type="item" data-item-slot="none" draggable="false">
@@ -3774,7 +3826,7 @@ export class HUD {
         `;
       } else {
         html += `
-        <div class="inventory-item-card" draggable="true" data-item-id="${item.id}" data-item-type="${item.type}" data-item-slot="${item.slot}">
+        <div class="inventory-item-card" draggable="${canDrag ? 'true' : 'false'}" data-item-id="${item.id}" data-item-type="${item.type}" data-item-slot="${item.slot}" style="${!canDrag ? 'opacity: 0.55; cursor: not-allowed;' : ''}">
           <div style="display: flex; align-items: center; gap: 6px;">
             <span style="font-size: 14px;">${item.icon}</span>
             <div>
@@ -3807,6 +3859,10 @@ export class HUD {
     const cards = listEl.querySelectorAll<HTMLElement>('.inventory-item-card');
     cards.forEach(card => {
       card.ondragstart = (e: DragEvent) => {
+        if (card.getAttribute('draggable') !== 'true') {
+          e.preventDefault();
+          return;
+        }
         const itemId = card.dataset.itemId || '';
         const itemType = (card.dataset.itemType || 'weapon') as 'weapon' | 'armor';
         const itemSlot = card.dataset.itemSlot || '';
@@ -3868,6 +3924,16 @@ export class HUD {
     member: Player
   ): boolean {
     const dataLoader = DataLoader.getInstance();
+    const gameState = GameState.getInstance();
+    const debugBypass = typeof window !== 'undefined' && Boolean((window as any).__debugBypassEquipCheck);
+
+    const hasInPersonal = member.getItemCount(payload.itemId) > 0;
+    const hasInStockpile = gameState.getItemCount(payload.itemId) > 0;
+    if (!debugBypass && !hasInPersonal && !hasInStockpile) {
+      const itemDef = dataLoader.getArmor(payload.itemId) || dataLoader.getWeapon(payload.itemId);
+      this.showToast(`❌ Cannot equip ${itemDef?.name || payload.itemId}: You do not own this equipment! Craft it first at an Outpost station.`, 'error', 3000);
+      return false;
+    }
 
     // 1. Incompatible slot assignment
     if (['helmet', 'body', 'necklace', 'ring', 'accessory'].includes(targetSlot)) {
@@ -3887,8 +3953,23 @@ export class HUD {
         return false;
       }
 
+      let prevArmor: ArmorDef | null = null;
+      if (targetSlot === 'helmet') prevArmor = member.equippedHelmet;
+      else if (targetSlot === 'body') prevArmor = member.equippedBodyArmor;
+      else if (targetSlot === 'necklace') prevArmor = member.equippedNecklace;
+      else if (targetSlot === 'ring') prevArmor = member.equippedRing;
+      else if (targetSlot === 'accessory') prevArmor = member.equippedAccessory;
+
       const success = member.equipArmorSlot(targetSlot as ArmorSlot, armor, this.isOutpost);
       if (success) {
+        if (!debugBypass) {
+          if (!member.removeItem(payload.itemId, 1)) {
+            gameState.consumeItem(payload.itemId, 1);
+          }
+          if (prevArmor) {
+            member.addItem(prevArmor.id, 1);
+          }
+        }
         this.showToast(`🛡️ Equipped ${armor.name} in ${targetSlot}!`, 'success');
         this.renderPartyOverviewModal(true);
         if (this.currentPlayer && this.currentProgression) {
@@ -3914,8 +3995,21 @@ export class HUD {
         return false;
       }
 
+      const prevWeapon = member.equippedWeapon?.id !== 'fist' ? member.equippedWeapon : null;
+      const prevOffhand = (weapon?.twoHanded && member.offhandWeapon) ? member.offhandWeapon : null;
       const success = member.equipWeapon(weapon, this.isOutpost);
       if (success) {
+        if (!debugBypass) {
+          if (!member.removeItem(payload.itemId, 1)) {
+            gameState.consumeItem(payload.itemId, 1);
+          }
+          if (prevWeapon) {
+            member.addItem(prevWeapon.id, 1);
+          }
+          if (prevOffhand && !member.offhandWeapon) {
+            member.addItem(prevOffhand.id, 1);
+          }
+        }
         this.showToast(`⚔️ Equipped ${weapon.name} in Main Hand!`, 'success');
         this.renderPartyOverviewModal(true);
         if (this.currentPlayer && this.currentProgression) {
@@ -3949,8 +4043,17 @@ export class HUD {
         return false;
       }
 
+      const prevOffhand = member.offhandWeapon;
       const success = member.equipOffhandWeapon(weapon, this.isOutpost);
       if (success) {
+        if (!debugBypass) {
+          if (!member.removeItem(payload.itemId, 1)) {
+            gameState.consumeItem(payload.itemId, 1);
+          }
+          if (prevOffhand) {
+            member.addItem(prevOffhand.id, 1);
+          }
+        }
         this.showToast(`${isShield ? '🛡️' : '⚔️'} Equipped ${weapon.name} in Off-Hand!`, 'success');
         this.renderPartyOverviewModal(true);
         if (this.currentPlayer && this.currentProgression) {
@@ -4030,8 +4133,12 @@ export class HUD {
             this.showToast('⚠️ Weapons can only be unequipped at the Outpost!', 'warn');
             return;
           }
+          const prev = member.equippedWeapon?.id !== 'fist' ? member.equippedWeapon : null;
           const success = member.equipWeapon(null, this.isOutpost);
           if (success) {
+            if (prev) {
+              member.addItem(prev.id, 1);
+            }
             this.showToast('Unequipped weapon — fighting barehanded with Fist!', 'info');
             this.renderPartyOverviewModal(true);
             if (this.currentPlayer && this.currentProgression) {
@@ -4046,8 +4153,12 @@ export class HUD {
             this.showToast('⚠️ Off-hand gear can only be unequipped at the Outpost!', 'warn');
             return;
           }
+          const prev = member.offhandWeapon;
           const success = member.equipOffhandWeapon(null, this.isOutpost);
           if (success) {
+            if (prev) {
+              member.addItem(prev.id, 1);
+            }
             this.showToast('Unequipped offhand gear', 'info');
             this.renderPartyOverviewModal(true);
             if (this.currentPlayer && this.currentProgression) {
@@ -4062,8 +4173,18 @@ export class HUD {
             this.showToast('⚠️ Armor can only be unequipped at the Outpost!', 'warn');
             return;
           }
+          let prevArmor: ArmorDef | null = null;
+          if (slot === 'helmet') prevArmor = member.equippedHelmet;
+          else if (slot === 'body') prevArmor = member.equippedBodyArmor;
+          else if (slot === 'necklace') prevArmor = member.equippedNecklace;
+          else if (slot === 'ring') prevArmor = member.equippedRing;
+          else if (slot === 'accessory') prevArmor = member.equippedAccessory;
+
           const success = member.equipArmorSlot(slot as ArmorSlot, null, this.isOutpost);
           if (success) {
+            if (prevArmor) {
+              member.addItem(prevArmor.id, 1);
+            }
             this.showToast(`Unequipped ${slot}`, 'info');
             this.renderPartyOverviewModal(true);
             if (this.currentPlayer && this.currentProgression) {
@@ -4535,7 +4656,8 @@ export class HUD {
       research_bowyer_station: '🏹',
       research_alchemy_station: '⚗️',
       research_digging: '⛏️',
-      research_gardening: '🌱'
+      research_gardening: '🌱',
+      research_fishing: '🎣'
     };
 
     const romanNumerals = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII'];
@@ -4655,6 +4777,8 @@ export class HUD {
                 this.showToast(`✨ Research Complete: Harvest Enemy Skin unlocked! Animal corpses can now be skinned in dungeons.`, 'success', 3500);
               } else if (node.id === 'research_butchering' || node.id.includes('butchering')) {
                 this.showToast(`✨ Research Complete: Harvest Enemy Meat unlocked! Eligible monster corpses can now be butchered in dungeons.`, 'success', 3500);
+              } else if (node.id === 'research_fishing') {
+                this.showToast(`✨ Research Complete: Fishing unlocked! Fishing spots will now appear in dungeon waters.`, 'success', 3500);
               } else {
                 this.showToast(`✨ Research Complete: ${node.name} unlocked in Build Mode!`, 'success', 3500);
               }
@@ -4970,10 +5094,24 @@ export class HUD {
       return gameState.getItemCount(ingId) >= count;
     };
 
+    this.currentPlayer = player;
+    this.currentProgression = progression;
+    this.updateCraftingFilterToggleUI('alchemy');
+    const isCraftableOnly = this.isCraftingFilterActive('alchemy');
+
     // 3. Recipes list
     if (this.alchemyRecipesContainerEl) {
       this.alchemyRecipesContainerEl.innerHTML = '';
+      let visibleCount = 0;
       for (const recipe of alchemyRecipes) {
+        const reqLevel = recipe.requiredLevel ?? 0;
+        const isLevelUnlocked = alchemyStat.level >= reqLevel;
+
+        if (isCraftableOnly && !isLevelUnlocked) {
+          continue;
+        }
+        visibleCount++;
+
         const ingredients = recipe.ingredients || {};
         const ingredientEntries = Object.entries(ingredients);
 
@@ -4984,21 +5122,26 @@ export class HUD {
         const costLabel = `Cost: ${costLabelParts.join(' + ')}`;
 
         const card = document.createElement('div');
-        card.style.cssText = 'background: rgba(31, 41, 55, 0.85); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 8px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; gap: 12px;';
+        card.style.cssText = `background: rgba(31, 41, 55, ${isLevelUnlocked ? '0.85' : '0.4'}); border: 1px solid ${isLevelUnlocked ? 'rgba(255, 255, 255, 0.15)' : 'rgba(239, 68, 68, 0.3)'}; border-radius: 8px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; gap: 12px;`;
 
         const craftLabel = yieldQuantity > 1 ? `⚗️ Craft ${yieldQuantity}x (+${recipe.expGranted} EXP)` : `⚗️ Craft (+${recipe.expGranted} EXP)`;
         const missingIng = ingredientEntries.find(([ingId, cost]) => !hasIngredient(ingId, cost));
         const missingLabel = missingIng ? `Needs ${getIngredientLabel(missingIng[0], missingIng[1])}` : 'Missing items';
 
-        const btnHtml = canAffordAll
-          ? `<button type="button" class="btn-action" style="background: #059669; border-color: #34d399; font-size: 12px; padding: 6px 14px;" data-craft-recipe="${recipe.id}">${craftLabel}</button>`
-          : `<button type="button" disabled style="background: #374151; color: #9ca3af; border: 1px solid #4b5563; border-radius: 6px; font-size: 12px; padding: 6px 14px; cursor: not-allowed;">${missingLabel}</button>`;
+        let btnHtml = '';
+        if (!isLevelUnlocked) {
+          btnHtml = `<span style="font-size: 11px; color: #ef4444; font-weight: bold; padding: 6px 12px; background: rgba(239, 68, 68, 0.1); border-radius: 4px;">🔒 Req. Alchemy Lv ${reqLevel}</span>`;
+        } else if (canAffordAll) {
+          btnHtml = `<button type="button" class="btn-action" style="background: #059669; border-color: #34d399; font-size: 12px; padding: 6px 14px;" data-craft-recipe="${recipe.id}">${craftLabel}</button>`;
+        } else {
+          btnHtml = `<button type="button" disabled style="background: #374151; color: #9ca3af; border: 1px solid #4b5563; border-radius: 6px; font-size: 12px; padding: 6px 14px; cursor: not-allowed;">${missingLabel}</button>`;
+        }
 
         const yieldNotice = yieldQuantity > 1 ? `<span style="font-size: 11px; color: #34d399; font-weight: bold;">Yield: ${yieldQuantity}x</span>` : `<span style="font-size: 11px; color: #9ca3af;">Yield: 1x</span>`;
 
         card.innerHTML = `
           <div style="flex: 1;">
-            <div style="font-size: 14px; font-weight: bold; color: #34d399; display: flex; align-items: center; gap: 8px;">
+            <div style="font-size: 14px; font-weight: bold; color: ${isLevelUnlocked ? '#34d399' : '#9ca3af'}; display: flex; align-items: center; gap: 8px;">
               <span>${recipe.name}</span>
               <span style="font-size: 11px; color: #fbbf24; font-weight: normal;">${costLabel}</span>
               ${yieldNotice}
@@ -5022,7 +5165,13 @@ export class HUD {
                   gameState.consumeItem(ingId, cost);
                 }
               }
-              gameState.addItem(recipe.id, yieldQuantity);
+              const wasEncumbered = player.isEncumbered;
+              const resultId = recipe.resultItemId || recipe.id;
+              player.addItem(resultId, yieldQuantity);
+              if (!wasEncumbered && player.isEncumbered) {
+                this.showToast(`⚠️ ${player.entityName} is ENCUMBERED (-80% Movement Speed)!`, 'warn', 3000);
+              }
+              gameState.addItem(resultId, yieldQuantity);
               progression.addProficiencyExp('alchemy', recipe.expGranted);
               const bonusText = yieldQuantity > 1 ? ` (${moodTier.name} ${yieldQuantity}x Bonus!)` : '';
               this.showToast(`⚗️ Crafted ${yieldQuantity}x ${recipe.name}!${bonusText} (+${recipe.expGranted} Alchemy EXP)`, 'success', 2500);
@@ -5035,6 +5184,14 @@ export class HUD {
         }
 
         this.alchemyRecipesContainerEl.appendChild(card);
+      }
+
+      if (visibleCount === 0) {
+        this.alchemyRecipesContainerEl.innerHTML = `
+          <div style="font-size: 11px; color: #9ca3af; font-style: italic; background: rgba(31, 41, 55, 0.4); padding: 12px; border-radius: 6px; text-align: center;">
+            No recipes unlocked at your current Alchemy level (Lv ${alchemyStat.level}). Toggle "Show All" to view all recipes.
+          </div>
+        `;
       }
     }
 
@@ -5697,6 +5854,13 @@ export class HUD {
       if (isAlreadyKnown) {
         // RE-COMBINATION SAFETY NET: Already known! Routes straight to cooking without re-rolling discovery.
         const quality = HUD.calculateDishQuality(cookingLevel, matchedRecipe.maxQuality);
+        if (this.currentPlayer) {
+          const wasEnc = this.currentPlayer.isEncumbered;
+          this.currentPlayer.addItem(matchedRecipe.resultFoodId, 1);
+          if (!wasEnc && this.currentPlayer.isEncumbered) {
+            this.showToast(`⚠️ ${this.currentPlayer.entityName} is ENCUMBERED (-80% Movement Speed)!`, 'warn', 3000);
+          }
+        }
         gameState.addFoodItem(matchedRecipe.resultFoodId, 1, quality);
         this.currentProgression.addProficiencyExp('cooking', matchedRecipe.expGranted);
 
@@ -5714,6 +5878,13 @@ export class HUD {
         if (discoverySuccess) {
           gameState.discoverCookingRecipe(matchedRecipe.id);
           const quality = HUD.calculateDishQuality(cookingLevel, matchedRecipe.maxQuality);
+          if (this.currentPlayer) {
+            const wasEnc = this.currentPlayer.isEncumbered;
+            this.currentPlayer.addItem(matchedRecipe.resultFoodId, 1);
+            if (!wasEnc && this.currentPlayer.isEncumbered) {
+              this.showToast(`⚠️ ${this.currentPlayer.entityName} is ENCUMBERED (-80% Movement Speed)!`, 'warn', 3000);
+            }
+          }
           gameState.addFoodItem(matchedRecipe.resultFoodId, 1, quality);
           // Discovery bonus EXP
           const exp = matchedRecipe.expGranted + 20;
@@ -5783,74 +5954,106 @@ export class HUD {
       this.cookingStockpileWolfMeatEl.innerText = `${wolfMeat}`;
     }
 
+    this.currentPlayer = player;
+    this.currentProgression = progression;
+    this.updateCraftingFilterToggleUI('cooking');
+    const isCraftableOnly = this.isCraftingFilterActive('cooking');
+
     // 3. Known / Discovered Recipes
     if (this.cookingRecipesContainerEl) {
       this.cookingRecipesContainerEl.innerHTML = '';
       const allRecipes = dataLoader.getCookingRecipes();
-      const discovered = allRecipes.filter((r) => gameState.isCookingRecipeDiscovered(r.id));
+      let visibleCount = 0;
+      let undiscoveredCount = 0;
 
-      if (discovered.length === 0) {
-        this.cookingRecipesContainerEl.innerHTML = `
-          <div style="font-size: 11px; color: #6b7280; font-style: italic; background: rgba(31, 41, 55, 0.4); padding: 10px; border-radius: 6px; text-align: center;">
-            No recipes discovered yet. Combine raw ingredients in the Experimentation panel above!
-          </div>
-        `;
-      } else {
-        for (const recipe of discovered) {
-          const card = document.createElement('div');
-          card.style.cssText = 'background: rgba(31, 41, 55, 0.85); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 8px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; gap: 10px;';
+      for (const recipe of allRecipes) {
+        const isDiscovered = gameState.isCookingRecipeDiscovered(recipe.id);
 
-          let canCook = true;
-          const ingStrings: string[] = [];
-          for (const [item, qty] of Object.entries(recipe.ingredients)) {
-            const has = gameState.getItemCount(item);
-            if (has < qty) canCook = false;
-            const itemLabel = item.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-            ingStrings.push(`${itemLabel} (${has}/${qty})`);
-          }
-
-          const ceilingBadge = recipe.maxQuality === 'excellent'
-            ? `<span style="font-size: 10px; color: #f87171; background: rgba(239, 68, 68, 0.2); border: 1px solid #ef4444; border-radius: 3px; padding: 1px 5px;">Max: Excellent (Monster Meat)</span>`
-            : `<span style="font-size: 10px; color: #a855f7; background: rgba(168, 85, 247, 0.2); border: 1px solid #a855f7; border-radius: 3px; padding: 1px 5px;">Max: Perfect (Wolf Meat)</span>`;
-
-          const cookBtnHtml = canCook
-            ? `<button type="button" class="btn-action" style="background: #ea580c; border-color: #f97316; font-size: 11px; padding: 5px 12px;" data-cook-recipe="${recipe.id}">🍲 Cook (+${recipe.expGranted} EXP)</button>`
-            : `<button type="button" disabled style="background: #374151; color: #9ca3af; border: 1px solid #4b5563; border-radius: 6px; font-size: 11px; padding: 5px 12px; cursor: not-allowed;">Missing Ingredients</button>`;
-
-          card.innerHTML = `
-            <div style="flex: 1;">
-              <div style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: bold; color: #f97316;">
-                <span>${recipe.name}</span>
-                ${ceilingBadge}
-                <span style="font-size: 10px; color: #60a5fa; font-weight: normal;">+${recipe.expGranted} Cooking EXP</span>
-              </div>
-              <div style="font-size: 10px; color: #9ca3af; margin-top: 2px;">${recipe.description}</div>
-              <div style="font-size: 11px; color: ${canCook ? '#34d399' : '#fbbf24'}; margin-top: 4px;">
-                Ingredients: ${ingStrings.join(', ')}
-              </div>
-            </div>
-            <div>${cookBtnHtml}</div>
-          `;
-
-          const btn = card.querySelector<HTMLButtonElement>(`[data-cook-recipe="${recipe.id}"]`);
-          if (btn) {
-            btn.onclick = () => {
-              for (const [item, qty] of Object.entries(recipe.ingredients)) {
-                gameState.consumeItem(item, qty);
-              }
-              const quality = HUD.calculateDishQuality(cookingStat.level, recipe.maxQuality);
-              gameState.addFoodItem(recipe.resultFoodId, 1, quality);
-              progression.addProficiencyExp('cooking', recipe.expGranted);
-
-              const qBadge = quality.toUpperCase();
-              this.showToast(`🍲 Cooked 1x ${recipe.name} [${qBadge}]! (+${recipe.expGranted} Cooking EXP)`, 'success', 2500);
-              this.renderCookingModal(player, progression);
-              this.update(player, progression, 0);
-            };
-          }
-
-          this.cookingRecipesContainerEl.appendChild(card);
+        if (!isDiscovered) {
+          undiscoveredCount++;
+          // Secrecy rule: never render undiscovered recipes as cards, names, ingredients or badges
+          continue;
         }
+
+        visibleCount++;
+
+        const card = document.createElement('div');
+        card.style.cssText = `background: rgba(31, 41, 55, 0.85); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 8px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; gap: 10px;`;
+
+        let canCook = true;
+        const ingStrings: string[] = [];
+        for (const [item, qty] of Object.entries(recipe.ingredients)) {
+          const has = gameState.getItemCount(item);
+          if (has < qty) canCook = false;
+          const itemLabel = item.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+          ingStrings.push(`${itemLabel} (${has}/${qty})`);
+        }
+
+        const ceilingBadge = recipe.maxQuality === 'excellent'
+          ? `<span style="font-size: 10px; color: #f87171; background: rgba(239, 68, 68, 0.2); border: 1px solid #ef4444; border-radius: 3px; padding: 1px 5px;">Max: Excellent (Monster Meat)</span>`
+          : `<span style="font-size: 10px; color: #a855f7; background: rgba(168, 85, 247, 0.2); border: 1px solid #a855f7; border-radius: 3px; padding: 1px 5px;">Max: Perfect (Wolf Meat)</span>`;
+
+        let cookBtnHtml = '';
+        if (canCook) {
+          cookBtnHtml = `<button type="button" class="btn-action" style="background: #ea580c; border-color: #f97316; font-size: 11px; padding: 5px 12px;" data-cook-recipe="${recipe.id}">🍲 Cook (+${recipe.expGranted} EXP)</button>`;
+        } else {
+          cookBtnHtml = `<button type="button" disabled style="background: #374151; color: #9ca3af; border: 1px solid #4b5563; border-radius: 6px; font-size: 11px; padding: 5px 12px; cursor: not-allowed;">Missing Ingredients</button>`;
+        }
+
+        card.innerHTML = `
+          <div style="flex: 1;">
+            <div style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: bold; color: #f97316;">
+              <span>${recipe.name}</span>
+              ${ceilingBadge}
+              <span style="font-size: 10px; color: #60a5fa; font-weight: normal;">+${recipe.expGranted} Cooking EXP</span>
+            </div>
+            <div style="font-size: 10px; color: #9ca3af; margin-top: 2px;">${recipe.description}</div>
+            <div style="font-size: 11px; color: ${canCook ? '#34d399' : '#fbbf24'}; margin-top: 4px;">
+              Ingredients: ${ingStrings.join(', ')}
+            </div>
+          </div>
+          <div>${cookBtnHtml}</div>
+        `;
+
+        const btn = card.querySelector<HTMLButtonElement>(`[data-cook-recipe="${recipe.id}"]`);
+        if (btn) {
+          btn.onclick = () => {
+            for (const [item, qty] of Object.entries(recipe.ingredients)) {
+              gameState.consumeItem(item, qty);
+            }
+            const quality = HUD.calculateDishQuality(cookingStat.level, recipe.maxQuality);
+            const wasEnc = player.isEncumbered;
+            player.addItem(recipe.resultFoodId, 1);
+            if (!wasEnc && player.isEncumbered) {
+              this.showToast(`⚠️ ${player.entityName} is ENCUMBERED (-80% Movement Speed)!`, 'warn', 3000);
+            }
+            gameState.addFoodItem(recipe.resultFoodId, 1, quality);
+            progression.addProficiencyExp('cooking', recipe.expGranted);
+
+            const qBadge = quality.toUpperCase();
+            this.showToast(`🍲 Cooked 1x ${recipe.name} [${qBadge}]! (+${recipe.expGranted} Cooking EXP)`, 'success', 2500);
+            this.renderCookingModal(player, progression);
+            this.update(player, progression, 0);
+          };
+        }
+
+        this.cookingRecipesContainerEl.appendChild(card);
+      }
+
+      if (visibleCount === 0) {
+        const emptyDiv = document.createElement('div');
+        emptyDiv.style.cssText = 'font-size: 11px; color: #9ca3af; font-style: italic; background: rgba(31, 41, 55, 0.4); padding: 12px; border-radius: 6px; text-align: center;';
+        emptyDiv.innerText = 'No recipes discovered yet. Combine ingredients in the Experimentation panel above to discover dishes.';
+        this.cookingRecipesContainerEl.appendChild(emptyDiv);
+      }
+
+      // In "Show All" (!isCraftableOnly), show single undiscovered count line if any remain undiscovered
+      if (!isCraftableOnly && undiscoveredCount > 0) {
+        const countDiv = document.createElement('div');
+        countDiv.className = 'cooking-undiscovered-count-banner';
+        countDiv.style.cssText = 'background: rgba(31, 41, 55, 0.4); border: 1px dashed rgba(148, 163, 184, 0.25); border-radius: 8px; padding: 10px; text-align: center; color: #94a3b8; font-size: 12px; font-weight: 500; margin-top: 4px;';
+        countDiv.innerHTML = `🔒 ${undiscoveredCount} recipe${undiscoveredCount === 1 ? '' : 's'} still undiscovered`;
+        this.cookingRecipesContainerEl.appendChild(countDiv);
       }
     }
 
@@ -5931,6 +6134,11 @@ export class HUD {
   }
 
   public renderBlacksmithingModal(player: Player, progression: ProgressionSystem): void {
+    this.currentPlayer = player;
+    this.currentProgression = progression;
+    this.updateCraftingFilterToggleUI('blacksmithing');
+    const isCraftableOnly = this.isCraftingFilterActive('blacksmithing');
+
     const gameState = GameState.getInstance();
     const dataLoader = DataLoader.getInstance();
 
@@ -5959,9 +6167,15 @@ export class HUD {
     if (this.blacksmithingRecipesContainerEl) {
       this.blacksmithingRecipesContainerEl.innerHTML = '';
       const recipes = dataLoader.getBlacksmithRecipes();
+      let visibleCount = 0;
 
       for (const recipe of recipes) {
-        const isLevelUnlocked = bsStat.level >= recipe.requiredLevel;
+        const isLevelUnlocked = bsStat.level >= (recipe.requiredLevel ?? 0);
+        if (isCraftableOnly && !isLevelUnlocked) {
+          continue;
+        }
+        visibleCount++;
+
         let canAfford = true;
         for (const [item, qty] of Object.entries(recipe.ingredients)) {
           if (gameState.getItemCount(item) < qty) {
@@ -5987,7 +6201,11 @@ export class HUD {
           ? `Base Dmg: ${weaponDef.baseDamage} | Stun: ${stunPct}% | Speed: ${weaponDef.attackIntervalMs}ms`
           : (recipe.resultItemId === 'steel_scrap'
               ? 'Smelting · Yields 2x Steel Scrap'
-              : (recipe.resultItemId === 'lockpick' ? 'Tool · Required for Lockpicking' : ''));
+              : (recipe.resultItemId === 'lockpick'
+                  ? 'Tool · Required for Lockpicking'
+                  : (recipe.resultItemId === 'fishing_rod'
+                      ? 'Tool · Required for Fishing'
+                      : '')));
 
         let actionBtnHtml = '';
         if (!isLevelUnlocked) {
@@ -6024,6 +6242,11 @@ export class HUD {
             // Add forged weapon or crafted item to inventory
             const resultId = recipe.resultItemId || recipe.resultWeaponId || recipe.id;
             const resultQty = recipe.resultCount ?? 1;
+            const wasEnc = player.isEncumbered;
+            player.addItem(resultId, resultQty);
+            if (!wasEnc && player.isEncumbered) {
+              this.showToast(`⚠️ ${player.entityName} is ENCUMBERED (-80% Movement Speed)!`, 'warn', 3000);
+            }
             gameState.addItem(resultId, resultQty);
             // Award Blacksmithing EXP
             progression.addProficiencyExp('blacksmithing', recipe.expGranted);
@@ -6037,6 +6260,14 @@ export class HUD {
         }
 
         this.blacksmithingRecipesContainerEl.appendChild(card);
+      }
+
+      if (visibleCount === 0) {
+        this.blacksmithingRecipesContainerEl.innerHTML = `
+          <div style="font-size: 11px; color: #9ca3af; font-style: italic; background: rgba(31, 41, 55, 0.4); padding: 12px; border-radius: 6px; text-align: center;">
+            No recipes unlocked at your current Blacksmithing level (Lv ${bsStat.level}). Toggle "Show All" to view all recipes.
+          </div>
+        `;
       }
     }
   }
@@ -6063,6 +6294,11 @@ export class HUD {
   }
 
   public renderArmorsmithingModal(player: Player, progression: ProgressionSystem): void {
+    this.currentPlayer = player;
+    this.currentProgression = progression;
+    this.updateCraftingFilterToggleUI('armorsmithing');
+    const isCraftableOnly = this.isCraftingFilterActive('armorsmithing');
+
     const gameState = GameState.getInstance();
     const dataLoader = DataLoader.getInstance();
 
@@ -6088,9 +6324,15 @@ export class HUD {
     if (this.armorsmithingRecipesContainerEl) {
       this.armorsmithingRecipesContainerEl.innerHTML = '';
       const recipes = dataLoader.getArmorsmithRecipes();
+      let visibleCount = 0;
 
       for (const recipe of recipes) {
-        const isLevelUnlocked = asStat.level >= recipe.requiredLevel;
+        const isLevelUnlocked = asStat.level >= (recipe.requiredLevel ?? 0);
+        if (isCraftableOnly && !isLevelUnlocked) {
+          continue;
+        }
+        visibleCount++;
+
         let canAfford = true;
         for (const [item, qty] of Object.entries(recipe.ingredients)) {
           if (gameState.getItemCount(item) < qty) {
@@ -6152,6 +6394,11 @@ export class HUD {
               gameState.consumeItem(item, qty);
             }
             // Add crafted armor to inventory
+            const wasEnc = player.isEncumbered;
+            player.addItem(recipe.resultArmorId, 1);
+            if (!wasEnc && player.isEncumbered) {
+              this.showToast(`⚠️ ${player.entityName} is ENCUMBERED (-80% Movement Speed)!`, 'warn', 3000);
+            }
             gameState.addItem(recipe.resultArmorId, 1);
             // Award Armorsmithing EXP
             progression.addProficiencyExp('armorsmithing', recipe.expGranted);
@@ -6163,6 +6410,14 @@ export class HUD {
         }
 
         this.armorsmithingRecipesContainerEl.appendChild(card);
+      }
+
+      if (visibleCount === 0) {
+        this.armorsmithingRecipesContainerEl.innerHTML = `
+          <div style="font-size: 11px; color: #9ca3af; font-style: italic; background: rgba(31, 41, 55, 0.4); padding: 12px; border-radius: 6px; text-align: center;">
+            No recipes unlocked at your current Armorsmithing level (Lv ${asStat.level}). Toggle "Show All" to view all recipes.
+          </div>
+        `;
       }
     }
   }
@@ -6189,6 +6444,11 @@ export class HUD {
   }
 
   public renderBowyerModal(player: Player, progression: ProgressionSystem): void {
+    this.currentPlayer = player;
+    this.currentProgression = progression;
+    this.updateCraftingFilterToggleUI('bowyer');
+    const isCraftableOnly = this.isCraftingFilterActive('bowyer');
+
     const gameState = GameState.getInstance();
     const dataLoader = DataLoader.getInstance();
 
@@ -6219,9 +6479,15 @@ export class HUD {
     if (this.bowyerRecipesContainerEl) {
       this.bowyerRecipesContainerEl.innerHTML = '';
       const recipes = dataLoader.getBowyerRecipes();
+      let visibleCount = 0;
 
       for (const recipe of recipes) {
-        const isLevelUnlocked = byStat.level >= recipe.requiredLevel;
+        const isLevelUnlocked = byStat.level >= (recipe.requiredLevel ?? 0);
+        if (isCraftableOnly && !isLevelUnlocked) {
+          continue;
+        }
+        visibleCount++;
+
         let canAfford = true;
         for (const [item, qty] of Object.entries(recipe.ingredients)) {
           if (gameState.getItemCount(item) < qty) {
@@ -6274,6 +6540,11 @@ export class HUD {
               gameState.consumeItem(item, qty);
             }
             // Add crafted bow to inventory
+            const wasEnc = player.isEncumbered;
+            player.addItem(recipe.resultWeaponId, 1);
+            if (!wasEnc && player.isEncumbered) {
+              this.showToast(`⚠️ ${player.entityName} is ENCUMBERED (-80% Movement Speed)!`, 'warn', 3000);
+            }
             gameState.addItem(recipe.resultWeaponId, 1);
             // Award Bowyer EXP
             progression.addProficiencyExp('bowyer', recipe.expGranted);
@@ -6286,6 +6557,98 @@ export class HUD {
 
         this.bowyerRecipesContainerEl.appendChild(card);
       }
+
+      if (visibleCount === 0) {
+        this.bowyerRecipesContainerEl.innerHTML = `
+          <div style="font-size: 11px; color: #9ca3af; font-style: italic; background: rgba(31, 41, 55, 0.4); padding: 12px; border-radius: 6px; text-align: center;">
+            No recipes unlocked at your current Bowyer level (Lv ${byStat.level}). Toggle "Show All" to view all recipes.
+          </div>
+        `;
+      }
+    }
+  }
+
+  // --- CRAFTING STATIONS RECIPE FILTER SYSTEM ---
+
+  public isCraftingFilterActive(station: 'blacksmithing' | 'armorsmithing' | 'bowyer' | 'alchemy' | 'cooking' | string): boolean {
+    return this.craftingStationFilterCraftableOnly[station] ?? true;
+  }
+
+  public setCraftingFilterActive(station: 'blacksmithing' | 'armorsmithing' | 'bowyer' | 'alchemy' | 'cooking' | string, active: boolean): void {
+    this.craftingStationFilterCraftableOnly[station] = active;
+    this.updateCraftingFilterToggleUI(station);
+  }
+
+  public toggleCraftingFilter(station: 'blacksmithing' | 'armorsmithing' | 'bowyer' | 'alchemy' | 'cooking' | string): void {
+    const nextState = !this.isCraftingFilterActive(station);
+    this.setCraftingFilterActive(station, nextState);
+    if (this.currentPlayer && this.currentProgression) {
+      switch (station) {
+        case 'blacksmithing':
+          this.renderBlacksmithingModal(this.currentPlayer, this.currentProgression);
+          break;
+        case 'armorsmithing':
+          this.renderArmorsmithingModal(this.currentPlayer, this.currentProgression);
+          break;
+        case 'bowyer':
+          this.renderBowyerModal(this.currentPlayer, this.currentProgression);
+          break;
+        case 'alchemy':
+          this.renderAlchemyModal(this.currentPlayer, this.currentProgression);
+          break;
+        case 'cooking':
+          this.renderCookingModal(this.currentPlayer, this.currentProgression);
+          break;
+      }
+    }
+  }
+
+  public updateCraftingFilterToggleUI(station: 'blacksmithing' | 'armorsmithing' | 'bowyer' | 'alchemy' | 'cooking' | string): void {
+    const isCraftableOnly = this.isCraftingFilterActive(station);
+    const btn = document.getElementById(`${station}-toggle-filter-btn`);
+    const label = document.getElementById(`${station}-toggle-filter-label`);
+    const indicator = document.getElementById(`${station}-toggle-filter-indicator`);
+
+    if (label) {
+      label.innerText = isCraftableOnly ? 'Showing: Unlocked Only' : 'Showing: All Recipes';
+    }
+    if (indicator) {
+      indicator.innerText = isCraftableOnly ? '✅' : '👁️';
+    }
+    if (btn) {
+      if (isCraftableOnly) {
+        btn.style.borderColor = '#2dd4bf';
+        btn.style.background = 'rgba(13, 148, 136, 0.3)';
+        btn.style.color = '#2dd4bf';
+      } else {
+        btn.style.borderColor = 'rgba(148, 163, 184, 0.3)';
+        btn.style.background = 'rgba(30, 41, 59, 0.8)';
+        btn.style.color = '#e2e8f0';
+      }
+    }
+  }
+
+  /**
+   * Refreshes any currently open crafting station modal with the active party leader and progression.
+   * Triggered explicitly upon party leader changes (e.g., in OutpostScene.changePartyLeader),
+   * avoiding costly per-frame DOM rebuilding inside the 60fps HUD.update loop.
+   */
+  public refreshOpenCraftingModals(): void {
+    if (!this.currentPlayer || !this.currentProgression) return;
+    if (this.isBlacksmithingModalOpen()) {
+      this.renderBlacksmithingModal(this.currentPlayer, this.currentProgression);
+    }
+    if (this.isArmorsmithingModalOpen()) {
+      this.renderArmorsmithingModal(this.currentPlayer, this.currentProgression);
+    }
+    if (this.isBowyerModalOpen()) {
+      this.renderBowyerModal(this.currentPlayer, this.currentProgression);
+    }
+    if (this.isAlchemyModalOpen()) {
+      this.renderAlchemyModal(this.currentPlayer, this.currentProgression);
+    }
+    if (this.isCookingModalOpen()) {
+      this.renderCookingModal(this.currentPlayer, this.currentProgression);
     }
   }
 

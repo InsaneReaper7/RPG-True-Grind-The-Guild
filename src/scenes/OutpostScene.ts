@@ -1266,6 +1266,7 @@ export class OutpostScene extends Phaser.Scene {
     // Refresh HUD selection and view
     this.hud?.setSelectedMemberIndices(this.party.map((_, i) => i));
     this.hud?.update(this.player, this.progressionSystem, this.time.now, this.party);
+    this.hud?.refreshOpenCraftingModals();
     this.hud?.renderPartyOverviewModal(true);
 
     this.hud?.showToast(`👑 ${newLeader.entityName} is now the Party Leader!`, 'success', 3500);

@@ -415,7 +415,8 @@ async function runMilestone35Tests() {
   hud.setLocation('Guild Outpost', true);
   hud.update(hero, hero.progression, 0, [hero]);
 
-  // Open the Party Overview Modal
+  // Open the Party Overview Modal (with debug bypass for paperdoll structural testing)
+  (window as any).__debugBypassEquipCheck = true;
   hud.openPartyOverviewModal();
 
   const rosterEl = getOrCreateElement('party-overview-roster');

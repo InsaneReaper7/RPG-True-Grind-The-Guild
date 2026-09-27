@@ -389,6 +389,7 @@ export interface ResearchTreeData {
 export interface AlchemyRecipeDef {
   id: string;
   name: string;
+  resultItemId?: string;
   cures?: string[];
   ingredients: Record<string, number>;
   expGranted: number;
@@ -396,6 +397,7 @@ export interface AlchemyRecipeDef {
   buffDurationMs?: number;
   buffRegenPerSec?: number;
   targetRegenSkill?: string;
+  requiredLevel?: number;
   description: string;
 }
 
@@ -410,6 +412,7 @@ export interface CookingRecipeDef {
   resultFoodId: string;
   expGranted: number;
   maxQuality?: FoodQuality;
+  requiredLevel?: number;
   description: string;
 }
 
@@ -858,6 +861,7 @@ export interface GatheringNodeDef {
   color: string;
   actionVerb: string;
   lootTable?: GatheringLootEntry[];
+  requiredToolItemId?: string;
 }
 
 export interface GatheringNodesConfig {
