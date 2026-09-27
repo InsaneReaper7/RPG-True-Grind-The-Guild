@@ -101,7 +101,39 @@ async function runWaterTerrainBrowserVerification() {
       return s && s.scene.isActive();
     }, { timeout: 15000 });
 
-    console.log('✓ Game booted into OutpostScene. Transitioning to Dungeon Floor 1...');
+    // Step 0: Verify OutpostScene tilemap texture rendering (grass vs perimeter walls)
+    const outpostInspection = await page.evaluate(() => {
+      const scene = window.game.scene.getScene('OutpostScene');
+      const tm = scene.tilemap;
+      const layer = tm.getLayer(0);
+      let grassCount = 0;
+      let wallCount = 0;
+      let wrongGrassCount = 0;
+      let unrenderedWallCount = 0;
+
+      for (let y = 0; y < layer.height; y++) {
+        for (let x = 0; x < layer.width; x++) {
+          const val = scene.gridMatrix[y][x];
+          const tile = layer.data[y][x];
+          const key = tile.tileset?.image?.key;
+          if (val === 0) {
+            grassCount++;
+            if (key !== 'tile-outpost-grass') wrongGrassCount++;
+          } else if (val === 1) {
+            wallCount++;
+            if (key !== 'tile-outpost-wall') unrenderedWallCount++;
+          }
+        }
+      }
+      return { grassCount, wallCount, wrongGrassCount, unrenderedWallCount };
+    });
+
+    console.log(`[E2E Outpost] Grass: ${outpostInspection.grassCount} (wrong: ${outpostInspection.wrongGrassCount}), Walls: ${outpostInspection.wallCount} (unrendered: ${outpostInspection.unrenderedWallCount})`);
+    assert.strictEqual(outpostInspection.wrongGrassCount, 0, 'Outpost grass tiles must render with tile-outpost-grass');
+    assert.strictEqual(outpostInspection.unrenderedWallCount, 0, 'Outpost perimeter walls must render with tile-outpost-wall');
+    console.log('✓ Validated OutpostScene tilemap rendering: Grass and Walls correctly bound to distinct tileset textures.');
+
+    console.log('✓ Transitioning from Outpost to Dungeon Floor 1...');
 
     // Transition from Outpost to Dungeon
     await page.evaluate(() => {
@@ -127,20 +159,66 @@ async function runWaterTerrainBrowserVerification() {
       const activeRegion = scene.activeRegion || window.__lastActiveRegion;
       const matrixWaterCount = scene.gridMatrix.flat().filter((tile) => tile === 2).length;
 
+      // Verify tilemap layer rendered textures across all tiles
+      const layer = scene.tilemap.getLayer(0);
+      let floorCount = 0;
+      let floorWrongTex = 0;
+      let wallCount = 0;
+      let wallWrongTex = 0;
+      let waterCount = 0;
+      let waterWrongTex = 0;
+      const waterVariantIndices = new Set();
+
+      for (let y = 0; y < layer.height; y++) {
+        for (let x = 0; x < layer.width; x++) {
+          const val = scene.gridMatrix[y][x];
+          const tile = layer.data[y][x];
+          const key = tile.tileset?.image?.key;
+
+          if (val === 0) {
+            floorCount++;
+            if (key !== activeRegion.walkableTexture) floorWrongTex++;
+          } else if (val === 1) {
+            wallCount++;
+            if (key !== activeRegion.obstacleTexture) wallWrongTex++;
+          } else if (val === 2) {
+            waterCount++;
+            waterVariantIndices.add(tile.index);
+            if (!key || !key.startsWith(activeRegion.waterTexture || 'tile-water')) {
+              waterWrongTex++;
+            }
+          }
+        }
+      }
+
       return {
         floorNumber: window.GameState?.getInstance?.()?.getDungeonFloorCount() || 1,
         activeRegionId: activeRegion?.id,
         activeRegionWaterTexture: activeRegion?.waterTexture,
+        activeRegionWalkableTexture: activeRegion?.walkableTexture,
+        activeRegionObstacleTexture: activeRegion?.obstacleTexture,
         waterTilesCount: waterTiles.length,
         matrixWaterCount,
-        waterTiles
+        waterTiles,
+        floorCount,
+        floorWrongTex,
+        wallCount,
+        wallWrongTex,
+        waterCount,
+        waterWrongTex,
+        waterVariantCount: waterVariantIndices.size
       };
     });
 
     console.log(`[E2E] Floor ${dungeonInspection.floorNumber} (${dungeonInspection.activeRegionId}): Found ${dungeonInspection.waterTilesCount} water tile(s) registered, ${dungeonInspection.matrixWaterCount} in gridMatrix.`);
     console.log(`[E2E] Active Region Water Texture: '${dungeonInspection.activeRegionWaterTexture}'`);
+    console.log(`[E2E] Floor tiles checked: ${dungeonInspection.floorCount} (wrong: ${dungeonInspection.floorWrongTex}) | Walls checked: ${dungeonInspection.wallCount} (wrong: ${dungeonInspection.wallWrongTex}) | Water tiles: ${dungeonInspection.waterCount} (wrong: ${dungeonInspection.waterWrongTex})`);
 
     assert.ok(dungeonInspection.activeRegionWaterTexture, 'Active region must have waterTexture configured');
+    assert.strictEqual(dungeonInspection.floorWrongTex, 0, 'Dungeon floor tiles must NOT render as water; must use walkableTexture');
+    assert.strictEqual(dungeonInspection.wallWrongTex, 0, 'Dungeon wall tiles must render with obstacleTexture');
+    assert.strictEqual(dungeonInspection.waterWrongTex, 0, 'Dungeon water tiles must render with regional water texture variants');
+    console.log('✓ Validated MainScene tilemap layer: Floors render walkableTexture, walls render obstacleTexture, and water renders water variants.');
 
     // 2. If Floor 1 didn't roll water (chance is 60%), let's regenerate with guaranteed water or test water interact
     const waterTileToTest = await page.evaluate(() => {

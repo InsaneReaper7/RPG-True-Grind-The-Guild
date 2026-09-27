@@ -270,14 +270,26 @@ export class MainScene extends Phaser.Scene {
       tileHeight: this.tileSize
     });
 
-    const tilesetWalkable = this.tilemap.addTilesetImage('tile-walkable', activeRegion.walkableTexture);
-    const tilesetObstacle = this.tilemap.addTilesetImage('tile-obstacle', activeRegion.obstacleTexture);
+    const tilesetWalkable = this.tilemap.addTilesetImage('tile-walkable', activeRegion.walkableTexture, this.tileSize, this.tileSize, 0, 0, 0);
+    const tilesetObstacle = this.tilemap.addTilesetImage('tile-obstacle', activeRegion.obstacleTexture, this.tileSize, this.tileSize, 0, 0, 1);
     const waterTextureKey = activeRegion.waterTexture || 'tile-water';
-    const tilesetWater = this.tilemap.addTilesetImage('tile-water', waterTextureKey);
+    const tilesetWater0 = this.tilemap.addTilesetImage('tile-water', waterTextureKey, this.tileSize, this.tileSize, 0, 0, 2);
+    const tilesetWater1 = this.tilemap.addTilesetImage('tile-water-1', `${waterTextureKey}-1`, this.tileSize, this.tileSize, 0, 0, 3);
+    const tilesetWater2 = this.tilemap.addTilesetImage('tile-water-2', `${waterTextureKey}-2`, this.tileSize, this.tileSize, 0, 0, 4);
 
-    const availableTilesets = [tilesetWalkable, tilesetObstacle, tilesetWater].filter(Boolean) as Phaser.Tilemaps.Tileset[];
+    const availableTilesets = [tilesetWalkable, tilesetObstacle, tilesetWater0, tilesetWater1, tilesetWater2].filter(Boolean) as Phaser.Tilemaps.Tileset[];
     if (availableTilesets.length > 0) {
       this.tilemap.createLayer(0, availableTilesets, 0, 0);
+    }
+
+    // Break up water pool repetition via deterministic coordinate-hash variant selection
+    // (Math.imul 32-bit integer arithmetic, zero RNG calls to preserve seed determinism)
+    if (this.dungeon?.waterTiles && this.dungeon.waterTiles.length > 0) {
+      for (const wt of this.dungeon.waterTiles) {
+        const h = (Math.imul(wt.x, 374761393) ^ Math.imul(wt.y, 668265263)) ^ 0x5bf03635;
+        const variant = Math.abs(h) % 3;
+        this.tilemap.putTileAt?.(2 + variant, wt.x, wt.y, false, 0);
+      }
     }
 
     // 3. Initialize Pathfinder with fresh grid

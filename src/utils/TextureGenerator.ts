@@ -220,120 +220,177 @@ export class TextureGenerator {
       g.destroy();
     }
 
-    // 2h. Milestone — Water Terrain Generation: Quad-Biome Procedural Water Textures
-    // (1) Standard / Ancient Crypts — Subterranean Freshwater Cistern Pool
-    if (!scene.textures.exists('tile-water')) {
-      const g = scene.make.graphics({ x: 0, y: 0 });
-      // Deep tranquil subterranean azure water foundation
-      g.fillStyle(0x0f2d4a, 1);
-      g.fillRect(0, 0, tileSize, tileSize);
-      // Soft stone pool basin border
-      g.lineStyle(1, 0x1e3a5f, 0.7);
-      g.strokeRect(0, 0, tileSize, tileSize);
-      // Gentle ripple waves and caustic fluid lines
-      g.lineStyle(1.5, 0x38bdf8, 0.65);
-      g.lineBetween(4, tileSize / 2 - 3, tileSize / 2 - 2, tileSize / 2 + 3);
-      g.lineBetween(tileSize / 2 - 2, tileSize / 2 + 3, tileSize - 5, tileSize / 2 - 2);
-      g.lineStyle(1, 0x60a5fa, 0.5);
-      g.lineBetween(7, tileSize / 2 + 4, tileSize / 2 + 3, tileSize / 2 - 3);
-      g.lineBetween(tileSize / 2 + 3, tileSize / 2 - 3, tileSize - 6, tileSize / 2 + 5);
-      // Fluid caustic refraction loops
-      g.fillStyle(0x93c5fd, 0.4);
-      g.fillCircle(tileSize / 2 - 4, tileSize / 2 - 2, 2.5);
-      g.fillCircle(tileSize / 2 + 5, tileSize / 2 + 3, 2);
-      // Light reflection glints
-      g.fillStyle(0xffffff, 0.9);
-      g.fillCircle(6, 7, 1);
-      g.fillCircle(tileSize - 7, tileSize - 7, 1.2);
-      g.generateTexture('tile-water', tileSize, tileSize);
-      g.destroy();
-    }
+    // 2h. Milestone — Water Terrain Generation: Quad-Biome Procedural Water Textures (3 Seamless Variants per Biome)
+    const waterBiomes = [
+      {
+        baseKey: 'tile-water',
+        baseColor: 0x0f2d4a,    // Tranquil deep subterranean azure
+        causticColor: 0x163e66, // Subsurface deep azure caustic pool
+        causticAlpha: 0.5,
+        waveColor1: 0x38bdf8,   // Sky blue wavelet crest
+        waveAlpha1: 0.7,
+        waveColor2: 0x60a5fa,   // Soft periwinkle ripple shadow
+        waveAlpha2: 0.4,
+        glintColor1: 0xffffff,
+        glintAlpha1: 0.85,
+        glintColor2: 0xbae6fd,
+        glintAlpha2: 0.5
+      },
+      {
+        baseKey: 'tile-abyssal-water',
+        baseColor: 0x0c0418,    // Midnight obsidian-purple void water
+        causticColor: 0x270747, // Ambient void purple sheen
+        causticAlpha: 0.5,
+        waveColor1: 0xc084fc,   // Radiant violet void wavelet
+        waveAlpha1: 0.75,
+        waveColor2: 0x9333ea,   // Deep magenta void undertone
+        waveAlpha2: 0.45,
+        glintColor1: 0x38bdf8,  // Cyan spore sparkle
+        glintAlpha1: 0.75,
+        glintColor2: 0xd8b4fe,
+        glintAlpha2: 0.5
+      },
+      {
+        baseKey: 'tile-caldera-water',
+        baseColor: 0x221815,    // Dark thermal mineral liquid pool (distinctly non-lava, dark charcoal-umber)
+        causticColor: 0x3d251c, // Dark sulfur-mineral subsurface pool
+        causticAlpha: 0.5,
+        waveColor1: 0xd97706,   // Warm amber steam ripple crest
+        waveAlpha1: 0.7,
+        waveColor2: 0xb45309,   // Deep warm mineral undertone
+        waveAlpha2: 0.4,
+        glintColor1: 0xfef08a,  // Steam glint
+        glintAlpha1: 0.85,
+        glintColor2: 0xffedd5,
+        glintAlpha2: 0.5
+      },
+      {
+        baseKey: 'tile-glacial-water',
+        baseColor: 0x041b29,    // Deep sub-zero glacial oceanic navy
+        causticColor: 0x084259, // Subsurface cyan ice melt sheen
+        causticAlpha: 0.5,
+        waveColor1: 0x22d3ee,   // Sharp crystalline cyan ice-melt wavelet
+        waveAlpha1: 0.8,
+        waveColor2: 0x06b6d4,   // Deep radiant cyan undertone
+        waveAlpha2: 0.45,
+        glintColor1: 0xffffff,  // Diamond frost sparkle
+        glintAlpha1: 0.9,
+        glintColor2: 0xa5f3fc,
+        glintAlpha2: 0.6
+      }
+    ];
 
-    // (2) Abyssal Depths Biome — Bioluminescent Void Spring
-    if (!scene.textures.exists('tile-abyssal-water')) {
-      const g = scene.make.graphics({ x: 0, y: 0 });
-      // Deep midnight obsidian-purple void water
-      g.fillStyle(0x150826, 1);
-      g.fillRect(0, 0, tileSize, tileSize);
-      // Abyssal boundary frame
-      g.lineStyle(1, 0x3b0764, 0.8);
-      g.strokeRect(0, 0, tileSize, tileSize);
-      // Glowing luminescent void ripples
-      g.lineStyle(1.5, 0x9333ea, 0.75);
-      g.lineBetween(3, tileSize / 2 - 2, tileSize / 2, tileSize / 2 + 4);
-      g.lineBetween(tileSize / 2, tileSize / 2 + 4, tileSize - 4, tileSize / 2 - 1);
-      g.lineStyle(1.2, 0xc084fc, 0.8);
-      g.lineBetween(6, tileSize / 2 + 3, tileSize / 2 + 2, tileSize / 2 - 3);
-      g.lineBetween(tileSize / 2 + 2, tileSize / 2 - 3, tileSize - 6, tileSize / 2 + 4);
-      // Radiant magenta caustic rings
-      g.fillStyle(0xe879f9, 0.45);
-      g.fillCircle(tileSize / 2, tileSize / 2, 2.8);
-      g.fillStyle(0x38bdf8, 0.7);
-      g.fillCircle(tileSize / 2, tileSize / 2, 1.2);
-      // Bioluminescent spore flecks
-      g.fillStyle(0xa855f7, 0.9);
-      g.fillCircle(7, 8, 1.2);
-      g.fillCircle(tileSize - 7, tileSize - 6, 1);
-      g.generateTexture('tile-abyssal-water', tileSize, tileSize);
-      g.destroy();
-    }
+    for (const b of waterBiomes) {
+      const variantKeys = [b.baseKey, `${b.baseKey}-1`, `${b.baseKey}-2`];
 
-    // (3) Infernal Caldera Biome — Volcanic Thermal Pool / Magma Springs
-    if (!scene.textures.exists('tile-caldera-water')) {
-      const g = scene.make.graphics({ x: 0, y: 0 });
-      // Deep soot-scorched amber-crimson thermal liquid base
-      g.fillStyle(0x381005, 1);
-      g.fillRect(0, 0, tileSize, tileSize);
-      // Scorched basalt rim border
-      g.lineStyle(1, 0x78350f, 0.8);
-      g.strokeRect(0, 0, tileSize, tileSize);
-      // Swirling incandescent thermal currents
-      g.lineStyle(1.5, 0xd97706, 0.85);
-      g.lineBetween(4, tileSize / 2 - 2, tileSize / 2, tileSize / 2 + 3);
-      g.lineBetween(tileSize / 2, tileSize / 2 + 3, tileSize - 5, tileSize / 2 - 2);
-      g.lineStyle(1.2, 0xf97316, 0.9);
-      g.lineBetween(6, tileSize / 2 + 3, tileSize / 2 + 2, tileSize / 2 - 3);
-      g.lineBetween(tileSize / 2 + 2, tileSize / 2 - 3, tileSize - 6, tileSize / 2 + 4);
-      // Bubbling hot-spring mineral cores
-      g.fillStyle(0xfbbf24, 0.6);
-      g.fillCircle(tileSize / 2, tileSize / 2, 2.5);
-      g.fillStyle(0xfef08a, 0.85);
-      g.fillCircle(tileSize / 2, tileSize / 2, 1.2);
-      // Rising steam / spark glints
-      g.fillStyle(0xffedd5, 0.9);
-      g.fillCircle(6, 6, 1.2);
-      g.fillCircle(tileSize - 6, tileSize - 7, 1);
-      g.generateTexture('tile-caldera-water', tileSize, tileSize);
-      g.destroy();
-    }
+      for (let v = 0; v < variantKeys.length; v++) {
+        const texKey = variantKeys[v];
+        if (scene.textures.exists(texKey)) continue;
 
-    // (4) Glacial Caverns Biome — Freezing Sub-Zero Glacial Melt Pool
-    if (!scene.textures.exists('tile-glacial-water')) {
-      const g = scene.make.graphics({ x: 0, y: 0 });
-      // Deep sub-zero glacial oceanic cyan water base
-      g.fillStyle(0x052e42, 1);
-      g.fillRect(0, 0, tileSize, tileSize);
-      // Frosted rime border
-      g.lineStyle(1, 0x0891b2, 0.8);
-      g.strokeRect(0, 0, tileSize, tileSize);
-      // Sharp crystalline cyan wavelets
-      g.lineStyle(1.5, 0x06b6d4, 0.85);
-      g.lineBetween(3, tileSize / 2 - 2, tileSize / 2 - 1, tileSize / 2 + 3);
-      g.lineBetween(tileSize / 2 - 1, tileSize / 2 + 3, tileSize - 4, tileSize / 2 - 2);
-      g.lineStyle(1.2, 0x22d3ee, 0.9);
-      g.lineBetween(6, tileSize / 2 + 4, tileSize / 2 + 2, tileSize / 2 - 2);
-      g.lineBetween(tileSize / 2 + 2, tileSize / 2 - 2, tileSize - 5, tileSize / 2 + 3);
-      // Floating translucent ice crystal flecks
-      g.fillStyle(0x67e8f9, 0.6);
-      g.fillCircle(tileSize / 2, tileSize / 2, 2.5);
-      g.fillStyle(0xe0f2fe, 0.85);
-      g.fillCircle(tileSize / 2, tileSize / 2, 1.2);
-      // Diamond frost sparkles
-      g.fillStyle(0xffffff, 0.95);
-      g.fillCircle(5, 6, 1.2);
-      g.fillCircle(tileSize - 6, tileSize - 6, 1);
-      g.generateTexture('tile-glacial-water', tileSize, tileSize);
-      g.destroy();
+        const g = scene.make.graphics({ x: 0, y: 0 });
+
+        // Solid liquid base (no border stroke - seamless contiguous pool)
+        g.fillStyle(b.baseColor, 1);
+        g.fillRect(0, 0, tileSize, tileSize);
+
+        if (v === 0) {
+          // Variant 0: Upper-right primary wave, lower-left secondary wave
+          g.fillStyle(b.causticColor, b.causticAlpha);
+          g.fillEllipse(9, 13, 10, 5);
+          g.fillEllipse(23, 23, 10, 5);
+
+          // Primary horizontal wavelets (1px subtle peak, safe margin >= 4px)
+          g.lineStyle(1.2, b.waveColor1, b.waveAlpha1);
+          g.lineBetween(14, 8, 18, 7);
+          g.lineBetween(18, 7, 22, 7);
+          g.lineBetween(22, 7, 26, 8);
+
+          g.lineBetween(4, 20, 8, 19);
+          g.lineBetween(8, 19, 12, 19);
+          g.lineBetween(12, 19, 16, 20);
+
+          // Secondary subtle shadow undertones
+          g.lineStyle(1.0, b.waveColor2, b.waveAlpha2);
+          g.lineBetween(15, 10, 19, 9);
+          g.lineBetween(19, 9, 23, 9);
+          g.lineBetween(23, 9, 27, 10);
+
+          g.lineBetween(5, 22, 9, 21);
+          g.lineBetween(9, 21, 13, 21);
+          g.lineBetween(13, 21, 17, 22);
+
+          // Surface sparkles
+          g.fillStyle(b.glintColor1, b.glintAlpha1);
+          g.fillRect(20, 6, 1, 1);
+          g.fillRect(10, 18, 1, 1);
+          g.fillStyle(b.glintColor2, b.glintAlpha2);
+          g.fillRect(5, 8, 1, 1);
+          g.fillRect(27, 28, 1, 1);
+        } else if (v === 1) {
+          // Variant 1: Upper-left primary wave, lower-right secondary wave
+          g.fillStyle(b.causticColor, b.causticAlpha);
+          g.fillEllipse(22, 12, 10, 5);
+          g.fillEllipse(10, 24, 10, 5);
+
+          g.lineStyle(1.2, b.waveColor1, b.waveAlpha1);
+          g.lineBetween(5, 9, 9, 8);
+          g.lineBetween(9, 8, 13, 8);
+          g.lineBetween(13, 8, 17, 9);
+
+          g.lineBetween(15, 21, 19, 20);
+          g.lineBetween(19, 20, 23, 20);
+          g.lineBetween(23, 20, 27, 21);
+
+          g.lineStyle(1.0, b.waveColor2, b.waveAlpha2);
+          g.lineBetween(6, 11, 10, 10);
+          g.lineBetween(10, 10, 14, 10);
+          g.lineBetween(14, 10, 18, 11);
+
+          g.lineBetween(16, 23, 20, 22);
+          g.lineBetween(20, 22, 24, 22);
+          g.lineBetween(24, 22, 28, 23);
+
+          g.fillStyle(b.glintColor1, b.glintAlpha1);
+          g.fillRect(11, 7, 1, 1);
+          g.fillRect(21, 19, 1, 1);
+          g.fillStyle(b.glintColor2, b.glintAlpha2);
+          g.fillRect(26, 8, 1, 1);
+          g.fillRect(6, 27, 1, 1);
+        } else {
+          // Variant 2: Mid-center primary wave, low-spread secondary wave
+          g.fillStyle(b.causticColor, b.causticAlpha);
+          g.fillEllipse(16, 18, 11, 5);
+          g.fillEllipse(24, 8, 8, 4);
+
+          g.lineStyle(1.2, b.waveColor1, b.waveAlpha1);
+          g.lineBetween(10, 13, 14, 12);
+          g.lineBetween(14, 12, 18, 12);
+          g.lineBetween(18, 12, 22, 13);
+
+          g.lineBetween(6, 25, 10, 24);
+          g.lineBetween(10, 24, 14, 24);
+          g.lineBetween(14, 24, 18, 25);
+
+          g.lineStyle(1.0, b.waveColor2, b.waveAlpha2);
+          g.lineBetween(11, 15, 15, 14);
+          g.lineBetween(15, 14, 19, 14);
+          g.lineBetween(19, 14, 23, 15);
+
+          g.lineBetween(7, 27, 11, 26);
+          g.lineBetween(11, 26, 15, 26);
+          g.lineBetween(15, 26, 19, 27);
+
+          g.fillStyle(b.glintColor1, b.glintAlpha1);
+          g.fillRect(16, 11, 1, 1);
+          g.fillRect(12, 23, 1, 1);
+          g.fillStyle(b.glintColor2, b.glintAlpha2);
+          g.fillRect(25, 14, 1, 1);
+          g.fillRect(8, 9, 1, 1);
+        }
+
+        g.generateTexture(texKey, tileSize, tileSize);
+        g.destroy();
+      }
     }
 
     // 3. Player Avatar Texture (Blue Circle with Sword indicator)

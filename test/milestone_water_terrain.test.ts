@@ -159,12 +159,13 @@ async function runWaterTerrainTests() {
 
   TextureGenerator.generatePlaceholderTextures(mockScene, 32);
 
-  assert.ok(generatedTextures['tile-water'], 'tile-water texture must be generated');
-  assert.ok(generatedTextures['tile-abyssal-water'], 'tile-abyssal-water texture must be generated');
-  assert.ok(generatedTextures['tile-caldera-water'], 'tile-caldera-water texture must be generated');
-  assert.ok(generatedTextures['tile-glacial-water'], 'tile-glacial-water texture must be generated');
+  for (const base of ['tile-water', 'tile-abyssal-water', 'tile-caldera-water', 'tile-glacial-water']) {
+    assert.ok(generatedTextures[base], `${base} (variant 0) must be generated`);
+    assert.ok(generatedTextures[`${base}-1`], `${base}-1 (variant 1) must be generated`);
+    assert.ok(generatedTextures[`${base}-2`], `${base}-2 (variant 2) must be generated`);
+  }
 
-  console.log('✓ PASS: All 4 procedural water textures generated cleanly.');
+  console.log('✓ PASS: All 12 procedural water texture variants (3 per biome) generated cleanly.');
 
   // -------------------------------------------------------------------
   // TEST 3: Stated Walkability / Obstacle Classification & Line of Sight

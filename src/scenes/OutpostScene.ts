@@ -129,8 +129,8 @@ export class OutpostScene extends Phaser.Scene {
       tileHeight: this.tileSize
     });
 
-    const tilesetGrass = this.tilemap.addTilesetImage('tile-outpost-grass', 'tile-outpost-grass');
-    const tilesetWall = this.tilemap.addTilesetImage('tile-outpost-wall', 'tile-outpost-wall');
+    const tilesetGrass = this.tilemap.addTilesetImage('tile-outpost-grass', 'tile-outpost-grass', this.tileSize, this.tileSize, 0, 0, 0);
+    const tilesetWall = this.tilemap.addTilesetImage('tile-outpost-wall', 'tile-outpost-wall', this.tileSize, this.tileSize, 0, 0, 1);
 
     if (tilesetGrass && tilesetWall) {
       this.tilemap.createLayer(0, [tilesetGrass, tilesetWall], 0, 0);

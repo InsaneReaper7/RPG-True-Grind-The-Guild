@@ -419,6 +419,50 @@ Never ask Antigravity to jump ahead in this list — each milestone assumes the 
   - `test/milestone51.test.ts` & `test/milestone35.test.ts`: 100% regression pass.
   - `npm run build`: Production bundle (`tsc && vite build`) compiles cleanly with 0 errors.
 
+**Resolved and shipped: Dungeon Floor & Water Rendering Overhaul — Phaser Tilemap GID Root Cause, Regional Floor Restoration, and Seamless Multi-Variant Water System.**
+- **Phaser 3 Tilemap GID Root Cause**:
+  - In Phaser 3, `tilemap.addTilesetImage(name, key, tileWidth, tileHeight, tileMargin, tileSpacing, gid)` defaults `gid` to `0` if omitted.
+  - When multiple tilesets are registered without an explicit `gid`, each call registers at GID 0. During `BuildTilesetIndex`, Phaser maps tile indices sequentially starting from each tileset's `firstgid` (`index = firstgid + localId`). Each successive registration without a distinct `gid` overwrote index 0 (`tiles[0]`) with its own texture, leaving higher indices (`1`, `2`) unmapped (`NULL_TILESET`, rendering completely transparent/invisible).
+- **Historical Git Audit (When Did It Break?)**:
+  - `addTilesetImage` was audited across git history using `git log -S "addTilesetImage"`:
+    - **Milestone 1 (`9d57f61`)**: Registered `tile-walkable` then `tile-obstacle` without GIDs. `tiles[0]` was overwritten with `tile-obstacle`. Floor rendered as wall texture, and walls (`1`) were invisible (`NULL_TILESET`). **Perimeter walls have been invisible since Day One of the project.**
+    - **Outpost Milestone 4 (`71a3bf1`)**: Registered `tile-outpost-grass` then `tile-outpost-wall` without GIDs. `tiles[0]` was overwritten with `tile-outpost-wall`. All grass rendered as wall, and outpost walls were invisible.
+    - **Water Terrain Milestone (`5e137af`)**: Added `tile-water` as the 3rd tileset without GID. Overwrote `tiles[0]` with `tile-water`. All dungeon floors rendered as water, while walls (`1`) and water pools (`2`) were unrendered.
+  - **Important Retrospective Note**:
+    > *Earlier handoff and milestone entries describing regional tile visuals (Ancient Crypts slate, Abyssal Depths basalt, Infernal Caldera fiery floor, Glacial Caverns rime) were verified from texture generation canvas previews only and were never actually visible in-game until this fix. With this fix, authentic regional floors and perimeter walls render in-game for the first time.*
+- **Tileset & Layer Scope Verification**:
+  - Full codebase audit (`git grep`) confirms **no other `addTilesetImage` calls, tilemap instantiations, or overlay/decoration layers exist anywhere in the codebase** outside of `MainScene.ts` and `OutpostScene.ts`.
+- **Code Audit: Zero Gameplay Reads on Rendered Tilemap Indices**:
+  - Verified across all files: zero gameplay systems (pathfinding, fishing, interaction clicks, build mode, fog of war, minimap) read tile types from the Phaser tilemap layer (`getTileAt`, `layer.data`).
+  - All game mechanics strictly query `gridMatrix[y][x]` or `Pathfinder.isWalkable(x, y)`. Assigning distinct GIDs `2`, `3`, and `4` for water variants introduces zero gameplay regressions.
+- **Explicit GID Registration**:
+  - `MainScene.ts`: Registered explicit GIDs: `tile-walkable` (GID 0), `tile-obstacle` (GID 1), `tile-water` (GID 2), `tile-water-1` (GID 3), `tile-water-2` (GID 4).
+  - `OutpostScene.ts`: Registered `tile-outpost-grass` (GID 0) and `tile-outpost-wall` (GID 1).
+- **Seamless Procedural Water System (3 Variants Per Biome)**:
+  - Overhauled `TextureGenerator.ts` across all 4 biomes (`tile-water`, `tile-abyssal-water`, `tile-caldera-water`, `tile-glacial-water`) generating 12 total textures (base, `-1`, `-2`).
+  - Completely removed outer `strokeRect` borders that created artificial grid patterns.
+  - Wavelets and caustics are generated $\ge 4\text{px}$ from tile boundaries, guaranteeing zero tile-edge clipping or seams.
+  - **Infernal Caldera Mineral Water**: Caldera water uses a dark thermal mineral base (`0x221815`) with amber steam wavelets (`0xd97706`), rendering unambiguously as liquid water and preventing visual confusion with upcoming hazardous lava mechanics.
+- **Deterministic Coordinate Hash Variant Selection**:
+  - In `MainScene.ts`, water tiles are assigned variants using a 32-bit coordinate hash with `Math.imul`:
+    `const h = (Math.imul(wt.x, 374761393) ^ Math.imul(wt.y, 668265263)) ^ 0x5bf03635;`
+    `this.tilemap.putTileAt(2 + (Math.abs(h) % 3), wt.x, wt.y, false, 0);`
+  - Coordinate-only; does not advance or mutate dungeon RNG, fully preserving seed determinism.
+- **Rendered-Texture Assertions in E2E Browser Test**:
+  - Extended `test/verify_water_terrain_browser.mjs` to assert actual rendered texture keys via `layer.data[y][x].tileset.image.key`:
+    - Outpost grass tiles assert `tile-outpost-grass` (0 wrong).
+    - Outpost wall tiles assert `tile-outpost-wall` (0 unrendered).
+    - MainScene floor tiles assert `activeRegion.walkableTexture` (0 wrong).
+    - MainScene wall tiles assert `activeRegion.obstacleTexture` (0 wrong).
+    - MainScene water tiles assert regional water texture variants (0 wrong).
+- **Verification**:
+  - `test/milestone_water_terrain.test.ts`: 100% pass across all 7 unit and topology tests (all 12 variants verified, 500-seed regression with 0 reachability/bottleneck failures, seed determinism verified).
+  - `test/fishing_correction.test.ts`: 100% pass across all 7 tests.
+  - `test/verify_water_terrain_browser.mjs`: 100% pass across Outpost rendering, dungeon floor/wall/water rendering, pathfinding, and adjacent interaction.
+  - `test/verify_fishing_browser.mjs`: 100% pass across live fishing E2E workflows.
+  - `cmd /c npm run build`: Production bundle (`tsc && vite build`) compiles cleanly with 0 TypeScript errors.
+
+
 
 
 
