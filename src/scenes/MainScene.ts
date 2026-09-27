@@ -283,7 +283,7 @@ export class MainScene extends Phaser.Scene {
       const seed = this.assignedSeed ?? (Math.floor(Math.random() * 1000000) + 1);
       this.currentFloorSeed = seed;
       const rng = DungeonGenerator.createRng(seed);
-      this.dungeon = DungeonGenerator.generate(dungeonConfig, rng, { floorNumber });
+      this.dungeon = DungeonGenerator.generate(dungeonConfig, rng, { floorNumber, currentFloorSeed: seed, seed });
       this.dungeon.seed = seed;
     } else {
       if (this.assignedSeed !== null && this.assignedSeed !== undefined) {

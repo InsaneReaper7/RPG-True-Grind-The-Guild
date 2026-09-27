@@ -31,7 +31,7 @@ export class DungeonGenerator {
   public static generate(
     config: DungeonConfig,
     rng: () => number = Math.random,
-    options?: { isDiggingUnlocked?: boolean; floorNumber?: number; forceBoss?: boolean; forceBossEnemyId?: string }
+    options?: { isDiggingUnlocked?: boolean; floorNumber?: number; currentFloorSeed?: number; seed?: number; forceBoss?: boolean; forceBossEnemyId?: string }
   ): GeneratedDungeon {
     const width = config.mapWidth;
     const height = config.mapHeight;
@@ -871,17 +871,11 @@ export class DungeonGenerator {
           tileIdx++;
         }
 
-        // Gathering Nodes (Foraging Bushes, Woodcutting Trees, Mining Rocks, and Research-Gated Dig Spots)
+        // Gathering Nodes (Foraging Bushes, Woodcutting Trees, Mining Rocks)
         const [minB, maxB] = roomConfig?.bushesRange ?? (
           room.type === 'gathering' ? [2, 4] : room.type === 'light_combat' ? [1, 3] : room.type === 'heavy_combat' ? [2, 5] : [0, 0]
         );
-        const isDiggingUnlocked = options?.isDiggingUnlocked ?? (
-          typeof GameState !== 'undefined' ? GameState.getInstance().isDiggingUnlocked() : false
-        );
         const nodeTypes = ['foraging_bush', 'woodcutting_tree', 'mining_rock'];
-        if (isDiggingUnlocked) {
-          nodeTypes.push('dig_spot');
-        }
         const vegetableNodeChance = (config as any).vegetableNodeChance ?? 0.10;
         const bushCount = Math.min(Math.max(0, interiorTiles.length - tileIdx), randInt(minB, maxB));
         for (let i = 0; i < bushCount; i++) {
@@ -897,6 +891,158 @@ export class DungeonGenerator {
         }
       }
       // 'entrance' room: 0 bushes, 0 enemies
+    }
+
+    // Milestone — Digging: Procedural Dig Spots Placed in Additive Post-Generation Pass
+    const isDiggingUnlocked = options?.isDiggingUnlocked ?? (
+      typeof GameState !== 'undefined' ? GameState.getInstance().isDiggingUnlocked() : false
+    );
+
+    if (isDiggingUnlocked) {
+      // Seed the dig pass from the floor seed (with deterministic layout fallback if not provided)
+      const floorSeed = options?.currentFloorSeed ?? options?.seed ?? (
+        (portalPos.x * 73856093) ^
+        (portalPos.y * 19349663) ^
+        (crystalPos.x * 83492791) ^
+        (crystalPos.y * 23456789) ^
+        (rooms.length * 39334273)
+      ) >>> 0;
+
+      // Deterministic PRNG derived from floor seed + fixed salt.
+      // Strictly does NOT consume the shared dungeon RNG stream.
+      let digSeed = (floorSeed ^ 0x9E3779B9) >>> 0;
+      const digRng = () => {
+        digSeed = (digSeed * 9301 + 49297) % 233280;
+        return digSeed / 233280;
+      };
+
+      // Identify doorway tiles for clearance checks
+      const doorwayTiles = new Set<string>();
+      for (const r of rooms) {
+        for (let y = r.y; y < r.y + r.height; y++) {
+          for (let x = r.x; x < r.x + r.width; x++) {
+            if (gridMatrix[y]?.[x] === 0 || gridMatrix[y]?.[x] === TileType.WATER) {
+              const hasExternalWalkable =
+                (x === r.x && gridMatrix[y]?.[x - 1] === 0) ||
+                (x === r.x + r.width - 1 && gridMatrix[y]?.[x + 1] === 0) ||
+                (y === r.y && gridMatrix[y - 1]?.[x] === 0) ||
+                (y === r.y + r.height - 1 && gridMatrix[y + 1]?.[x] === 0);
+              if (hasExternalWalkable) {
+                doorwayTiles.add(`${x},${y}`);
+              }
+            }
+          }
+        }
+      }
+
+      // Existing occupied tile set
+      const occupiedTiles = new Set<string>();
+      occupiedTiles.add(`${portalPos.x},${portalPos.y}`);
+      occupiedTiles.add(`${crystalPos.x},${crystalPos.y}`);
+      for (const e of enemySpawns) {
+        occupiedTiles.add(`${e.x},${e.y}`);
+      }
+      for (const b of bushSpawns) {
+        occupiedTiles.add(`${b.x},${b.y}`);
+      }
+      for (const wt of waterTiles) {
+        occupiedTiles.add(`${wt.x},${wt.y}`);
+      }
+
+      // Eligible rooms: not entrance, not boss
+      const eligibleRooms = rooms.filter(r => r.type !== 'entrance' && r.type !== 'boss');
+
+      // Target count: strictly 2 to 3 dig spots per floor
+      const targetCount = 2 + Math.floor(digRng() * 2);
+
+      interface CandidateTile {
+        x: number;
+        y: number;
+        roomIndex: number;
+      }
+
+      const roomCandidates = new Map<number, CandidateTile[]>();
+      for (const room of eligibleRooms) {
+        const candidates: CandidateTile[] = [];
+        for (let y = room.y + 1; y <= room.y + room.height - 2; y++) {
+          for (let x = room.x + 1; x <= room.x + room.width - 2; x++) {
+            if (gridMatrix[y]?.[x] !== 0) continue;
+            if (x === room.centerX && y === room.centerY) continue;
+            const key = `${x},${y}`;
+            if (occupiedTiles.has(key)) continue;
+
+            // Check doorway clearance (>= 1-tile clearance from any doorway tile)
+            let tooCloseToDoor = false;
+            for (const dKey of doorwayTiles) {
+              const commaIdx = dKey.indexOf(',');
+              const dx = Number(dKey.slice(0, commaIdx));
+              const dy = Number(dKey.slice(commaIdx + 1));
+              if (Math.abs(x - dx) <= 1 && Math.abs(y - dy) <= 1) {
+                tooCloseToDoor = true;
+                break;
+              }
+            }
+            if (tooCloseToDoor) continue;
+
+            candidates.push({ x, y, roomIndex: room.id });
+          }
+        }
+        if (candidates.length > 0) {
+          roomCandidates.set(room.id, candidates);
+        }
+      }
+
+      // Distribute dig spots across eligible rooms
+      const candidateRoomIds = Array.from(roomCandidates.keys());
+      for (let i = candidateRoomIds.length - 1; i > 0; i--) {
+        const j = Math.floor(digRng() * (i + 1));
+        [candidateRoomIds[i], candidateRoomIds[j]] = [candidateRoomIds[j], candidateRoomIds[i]];
+      }
+
+      let placedCount = 0;
+      // First pass: pick 1 spot per room
+      for (const rId of candidateRoomIds) {
+        if (placedCount >= targetCount) break;
+        const candidates = roomCandidates.get(rId)!;
+        const available = candidates.filter(c => !occupiedTiles.has(`${c.x},${c.y}`));
+        if (available.length > 0) {
+          const pickIdx = Math.floor(digRng() * available.length);
+          const picked = available[pickIdx];
+          bushSpawns.push({
+            x: picked.x,
+            y: picked.y,
+            roomIndex: picked.roomIndex,
+            nodeTypeId: 'dig_spot'
+          });
+          occupiedTiles.add(`${picked.x},${picked.y}`);
+          placedCount++;
+        }
+      }
+
+      // Second pass: if targetCount not yet met, pick from remaining candidates across rooms
+      if (placedCount < targetCount) {
+        const allRemaining: CandidateTile[] = [];
+        for (const rId of candidateRoomIds) {
+          const candidates = roomCandidates.get(rId)!;
+          for (const c of candidates) {
+            if (!occupiedTiles.has(`${c.x},${c.y}`)) {
+              allRemaining.push(c);
+            }
+          }
+        }
+        while (placedCount < targetCount && allRemaining.length > 0) {
+          const pickIdx = Math.floor(digRng() * allRemaining.length);
+          const picked = allRemaining.splice(pickIdx, 1)[0];
+          bushSpawns.push({
+            x: picked.x,
+            y: picked.y,
+            roomIndex: picked.roomIndex,
+            nodeTypeId: 'dig_spot'
+          });
+          occupiedTiles.add(`${picked.x},${picked.y}`);
+          placedCount++;
+        }
+      }
     }
 
     return {

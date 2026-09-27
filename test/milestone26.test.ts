@@ -234,19 +234,19 @@ function createMockPlayer(id: string, name: string, x: number, y: number, slot: 
 function createTestNode(id: string, x: number, y: number, typeId: string = 'foraging_bush'): GatheringNode {
   const nodeDef: GatheringNodeDef = {
     id: typeId,
-    name: typeId.includes('tree') ? 'Tree' : typeId.includes('rock') ? 'Rock Vein' : 'Wild Herbs',
-    skillId: typeId.includes('tree') ? 'woodcutting' : typeId.includes('rock') ? 'mining' : 'foraging',
-    resourceId: typeId.includes('tree') ? 'wood' : typeId.includes('rock') ? 'ore' : 'wild_herbs',
+    name: typeId.includes('tree') ? 'Tree' : typeId.includes('rock') ? 'Rock Vein' : typeId.includes('dig') ? 'Dig Spot' : 'Wild Herbs',
+    skillId: typeId.includes('tree') ? 'woodcutting' : typeId.includes('rock') ? 'mining' : typeId.includes('dig') ? 'digging' : 'foraging',
+    resourceId: typeId.includes('tree') ? 'wood' : typeId.includes('rock') ? 'ore' : typeId.includes('dig') ? 'dirt' : 'wild_herbs',
     yieldCount: 1,
     expGranted: 15,
     channelDurationMs: 2500,
     respawnTimeMs: 15000,
-    textureKey: 'bush-avatar',
-    textureDepletedKey: 'bush-depleted',
-    label: 'Wild Herbs',
-    depletedLabel: 'Stripped',
-    color: '#34d399',
-    actionVerb: 'Foraging'
+    textureKey: typeId.includes('dig') ? 'dig-spot' : 'bush-avatar',
+    textureDepletedKey: typeId.includes('dig') ? 'dig-spot-depleted' : 'bush-depleted',
+    label: typeId.includes('dig') ? 'Dig Spot' : 'Wild Herbs',
+    depletedLabel: typeId.includes('dig') ? 'Excavated' : 'Stripped',
+    color: typeId.includes('dig') ? '#b45309' : '#34d399',
+    actionVerb: typeId.includes('dig') ? 'Digging' : 'Foraging'
   };
 
   const sprite = createMockSprite() as any;
@@ -858,8 +858,77 @@ async function runTests() {
   assert.equal(barris.pathHistory.length, 0, 'Barris remains stationary');
   console.log('✓ PASS: Multi-member commanded subset executes queue in parallel while unselected members remain strictly stationary.');
 
+  // --------------------------------------------------------------------------
+  // TEST 11: Mixed Node Types (Base Nodes + Dig Spots) Marquee Drag & Gathering
+  // --------------------------------------------------------------------------
+  console.log('\n--- TEST 11: Mixed Base Nodes & Dig Spots Marquee Drag & Parallel Gathering ---');
+  for (const m of testScene.party) {
+    m.state = 'idle';
+    m.targetEntity = null;
+    m.claimedDestination = null;
+    m.pathHistory = [];
+    testScene.cancelGatherChannel(m);
+  }
+  hero.gridPos = { x: 5, y: 10 };
+  valerie.gridPos = { x: 5, y: 11 };
+  kaelen.gridPos = { x: 6, y: 10 };
+  barris.gridPos = { x: 6, y: 11 };
+  testScene.gatheringQueue = [];
+  testScene.gatheringQueueWorkers.clear();
+  testScene.gatheringWorkerNodeAssignments.clear();
+
+  testScene.selectAllMembers();
+  assert.equal(testScene.selectedMembers.size, 4);
+
+  const mixedBush = createTestNode('mb_bush', 10, 10, 'foraging_bush');
+  const mixedTree = createTestNode('mb_tree', 12, 10, 'woodcutting_tree');
+  const mixedRock = createTestNode('mb_rock', 14, 10, 'mining_rock');
+  const mixedDig1 = createTestNode('mb_dig1', 16, 10, 'dig_spot');
+  const mixedDig2 = createTestNode('mb_dig2', 18, 10, 'dig_spot');
+
+  testScene.gatheringNodes = [mixedBush, mixedTree, mixedRock, mixedDig1, mixedDig2];
+
+  // Marquee drag over all 5 mixed nodes (pixel coordinates covering x: 9-19 tiles, y: 9-11 tiles)
+  testScene.toggleGatheringMode(true);
+  const selectedMixed = testScene.executeMarqueeDragSelection(9 * 32, 9 * 32, 19 * 32, 11 * 32);
+  assert.equal(selectedMixed.length, 5, 'Must marquee-select all 5 mixed nodes');
+
+  // Verify initial 4 workers assigned to first 4 nodes in parallel
+  assert.equal(testScene.gatheringWorkerNodeAssignments.size, 4, 'All 4 workers assigned simultaneously');
+  assert.equal(testScene.gatheringQueue.length, 1, '5th node remains in queue');
+
+  // Complete channels for the 4 active workers
+  for (const member of [hero, valerie, kaelen, barris]) {
+    const ch = testScene.activeGatherChannels.get(member);
+    assert.ok(ch, `${member.entityName} must have an active gather channel`);
+    testScene.completeGatherChannel(member, ch);
+  }
+
+  // One worker should have chained to the 5th node (mixedDig2)
+  assert.equal(testScene.gatheringQueue.length, 0, 'Queue must now be empty');
+  assert.equal(testScene.gatheringWorkerNodeAssignments.size, 1, '1 worker assigned to the last mixed node');
+
+  // Find worker assigned to 5th node and complete channel
+  let lastWorker: any = null;
+  for (const member of [hero, valerie, kaelen, barris]) {
+    if (testScene.activeGatherChannels.has(member)) {
+      lastWorker = member;
+      break;
+    }
+  }
+  assert.ok(lastWorker, 'One worker must be actively gathering the 5th node');
+  testScene.completeGatherChannel(lastWorker, testScene.activeGatherChannels.get(lastWorker));
+
+  // All 5 nodes harvested cleanly
+  assert.equal(mixedBush.isHarvested, true, 'Base bush harvested');
+  assert.equal(mixedTree.isHarvested, true, 'Base tree harvested');
+  assert.equal(mixedRock.isHarvested, true, 'Base rock harvested');
+  assert.equal(mixedDig1.isHarvested, true, 'First dig spot harvested');
+  assert.equal(mixedDig2.isHarvested, true, 'Second dig spot harvested');
+  console.log('✓ PASS: Party successfully marquee-selected and gathered a mix of base gathering nodes and dig spots simultaneously.');
+
   console.log('\n====================================================');
-  console.log('ALL 10 MILESTONE 26 TESTS PASSED CLEANLY AND PROVEN!');
+  console.log('ALL 11 MILESTONE 26 TESTS PASSED CLEANLY AND PROVEN!');
   console.log('====================================================\n');
 }
 

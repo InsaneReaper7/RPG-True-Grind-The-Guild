@@ -498,3 +498,30 @@ Never ask Antigravity to jump ahead in this list — each milestone assumes the 
   - `verify_fishing_browser.mjs`: 100% pass.
   - `scripts/alpha_checkpoint_harness_v2.mjs`: 100% pass across all stages (cold start boot, build mode placement, tutorial progression, 5-seed deadlock re-test with 0 stalls, 15-trip realistic play loop, research unlock, blacksmith crafting, inventory routing, and return combat).
   - `npm run build`: Production bundle (`tsc && vite build`) built cleanly in 3.65s with 0 errors.
+
+**Resolved and shipped: Fix — Digging Spots Must Add to the Floor, Not Reshuffle It.**
+- **Root Cause**:
+  - `DungeonGenerator.ts` assigned node types using `nodeTypes[(rIdx + i) % nodeTypes.length]` with `nodeTypes.push('dig_spot')` when `isDiggingUnlocked` was true.
+  - Pushing `'dig_spot'` into the array expanded `nodeTypes.length` from 3 to 4, shifting modulo indexing across every room for identical seeds and mutating non-dig gathering node types and positions.
+  - Furthermore, `dig_spot` consumed room gathering slots from `randInt(minB, maxB)`, reducing non-dig gathering nodes on every floor (from 9–11 down to 6–9 across audited seeds). Unlocking Digging penalized the player by depriving them of Wood, Ore, and Herbs.
+- **Root Fix**:
+  - **Base Gathering Modulo Pool Isolation**: In `DungeonGenerator.ts`, `nodeTypes` is strictly locked to `['foraging_bush', 'woodcutting_tree', 'mining_rock']`. All base gathering nodes (and rare vegetable nodes) generate with 100% byte-for-byte identical types, positions, counts, and RNG consumption regardless of whether Digging is locked or unlocked.
+  - **Additive Post-Generation Placement Pass**: Dig spots are placed in a dedicated pass after the floor, corridors, water terrain, rooms, portal, crystal, enemies, and base nodes are generated.
+  - **Deterministic Local PRNG**: Derived `digRng` directly from `(floorSeed ^ 0x9E3779B9) >>> 0`, where `floorSeed = options?.currentFloorSeed ?? options?.seed`. Strictly avoids calling or perturbing the shared dungeon RNG stream.
+  - **Target Count (2–3 Spots)**: Evaluates `targetCount = 2 + Math.floor(digRng() * 2)`, guaranteeing exactly 2 or 3 dig spots per floor when unlocked (0 when locked).
+  - **Placement Invariants (Reusing Water-Terrain Checks)**:
+    - Floor tiles only (`gridMatrix[y][x] === 0`). Never wall (`1`) or water (`2`).
+    - Strictly inside eligible rooms (`room.type !== 'entrance' && room.type !== 'boss'`). Never in corridors.
+    - Inside room interior (`x >= room.x + 1 && x <= room.x + room.width - 2`, `y >= room.y + 1 && y <= room.y + room.height - 2`), never on perimeter walls.
+    - Clearance from doorways: Identifies doorway threshold perimeter tiles; candidate tiles must not be doorway tiles and must maintain >= 1-tile clearance from any doorway tile.
+    - Zero entity overlap: Avoids `portalPos`, `crystalPos`, room center, enemies in `enemySpawns`, base nodes in `bushSpawns`, water tiles in `waterTiles`, and other placed dig spots.
+  - **Integration & Non-Retroactivity**: Placed dig spots are appended to `bushSpawns`, allowing `MainScene.create()` to instantiate them without special cases. Pre-existing floors generated prior to research unlock retain their `bushSpawns` without retroactively gaining dig spots.
+- **Verification Evidence**:
+  - `test/milestone_alpha_digging_determinism.test.ts`: 100% pass across all 8 seeds with `MainScene.create()`. Every non-dig gathering node (exact count, position, and type), enemy, room, water tile, portal, and crystal is 100% identical between locked and unlocked. Dig spot counts: exactly 0 when locked, 2–3 when unlocked. Coordinates per seed and room boundaries printed in runner output.
+  - `test/milestone_alpha_dig_placement_validity.test.ts`: 100% pass across 500 seeds with 0 invalid tiles, 0 corridor placements, 0 doorway clearance violations, 0 entrance/boss room placements, and 0 entity overlaps (1241 total dig spots placed, avg 2.48/floor).
+  - `test/milestone26.test.ts`: 100% pass across all 11 tests, including Test 11 where the party marquee-selects a mix of base nodes and dig spots and gathers both simultaneously in parallel.
+  - `test/milestone30.test.ts`: 100% pass across all 7 tests (strict gating, non-retroactivity, 4-item loot table, excavator unlock).
+  - `test/milestone_water_terrain.test.ts`: 100% pass across all 7 tests (500 seeds verified).
+  - `test/fishing_correction.test.ts`: 100% pass across all 7 tests (seed determinism and scene invariance).
+  - `test/milestone32.test.ts`: 100% pass across all 7 tests.
+  - `npm run build`: Production bundle (`tsc && vite build`) compiled cleanly in 3.23s with 0 errors.

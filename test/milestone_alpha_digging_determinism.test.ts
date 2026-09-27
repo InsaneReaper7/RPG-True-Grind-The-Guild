@@ -277,7 +277,7 @@ async function runDiggingDeterminismTest() {
         return s / 233280;
       };
     };
-    const dungeonA = DungeonGenerator.generate(dungeonConfig, makeRngA(), { floorNumber: 1 });
+    const dungeonA = DungeonGenerator.generate(dungeonConfig, makeRngA(), { floorNumber: 1, currentFloorSeed: seed });
     const { scene: sceneA } = createMockMainScene(MainScene, seed);
     sceneA.dungeon = dungeonA;
 
@@ -319,7 +319,7 @@ async function runDiggingDeterminismTest() {
         return s / 233280;
       };
     };
-    const dungeonB = DungeonGenerator.generate(dungeonConfig, makeRngB(), { floorNumber: 1 });
+    const dungeonB = DungeonGenerator.generate(dungeonConfig, makeRngB(), { floorNumber: 1, currentFloorSeed: seed });
     const { scene: sceneB } = createMockMainScene(MainScene, seed);
     sceneB.dungeon = dungeonB;
 
@@ -346,6 +346,20 @@ async function runDiggingDeterminismTest() {
     const portalB = sceneB.dungeonPortal ? { x: sceneB.dungeonPortal.x, y: sceneB.dungeonPortal.y } : null;
     const crystalB = sceneB.teleporterCrystal ? { x: sceneB.teleporterCrystal.x, y: sceneB.teleporterCrystal.y } : null;
 
+    // Dig spot coordinates and room resolution for unlocked scenario
+    const digSpotCoords = digNodesB.map((n: any) => {
+      const room = dungeonB.rooms.find((r: any) =>
+        n.x >= r.x && n.x < r.x + r.width && n.y >= r.y && n.y < r.y + r.height
+      );
+      return {
+        x: n.x,
+        y: n.y,
+        roomIndex: room ? room.id : -1,
+        roomType: room ? room.type : 'corridor',
+        roomBounds: room ? `[${room.x},${room.y} ${room.width}x${room.height}]` : 'outside'
+      };
+    });
+
     // Comparisons
     const roomsMatch = JSON.stringify(dungeonA.rooms) === JSON.stringify(dungeonB.rooms);
     const waterMatch = JSON.stringify(dungeonA.waterTiles) === JSON.stringify(dungeonB.waterTiles);
@@ -361,7 +375,6 @@ async function runDiggingDeterminismTest() {
     else if (!crystalMatch) firstMismatch = 'crystal';
     else if (!enemiesMatch) firstMismatch = 'enemies';
     else if (!nonDigNodesMatch) {
-      // Find the first mismatching non-dig node
       const maxLen = Math.max(nonDigNodesA.length, nonDigNodesB.length);
       for (let i = 0; i < maxLen; i++) {
         const a = nonDigNodesA[i];
@@ -376,10 +389,21 @@ async function runDiggingDeterminismTest() {
 
     const isIdentical = roomsMatch && waterMatch && portalMatch && crystalMatch && enemiesMatch && nonDigNodesMatch;
 
+    // Strict validation assertions per seed
+    assert.strictEqual(digNodesA.length, 0, `Seed ${seed}: Must have 0 dig spots when locked`);
+    assert.ok(digNodesB.length >= 2 && digNodesB.length <= 3, `Seed ${seed}: Dig spots count must be 2-3 when unlocked (got ${digNodesB.length})`);
+    assert.strictEqual(isIdentical, true, `Seed ${seed}: Full scene must be identical between locked and unlocked! Mismatch: ${firstMismatch}`);
+    for (const spot of digSpotCoords) {
+      assert.notStrictEqual(spot.roomType, 'corridor', `Seed ${seed}: Dig spot at (${spot.x}, ${spot.y}) must be inside a room, not in corridor`);
+      assert.notStrictEqual(spot.roomType, 'entrance', `Seed ${seed}: Dig spot at (${spot.x}, ${spot.y}) cannot spawn in entrance room`);
+      assert.notStrictEqual(spot.roomType, 'boss', `Seed ${seed}: Dig spot at (${spot.x}, ${spot.y}) cannot spawn in boss room`);
+    }
+
     const result = {
       seed,
       digNodesLocked: digNodesA.length,
       digNodesUnlocked: digNodesB.length,
+      digSpotCoords,
       roomsMatch,
       waterMatch,
       portalMatch,
@@ -394,6 +418,7 @@ async function runDiggingDeterminismTest() {
     auditResults.push(result);
 
     console.log(`Seed ${seed}: Dig spots = ${digNodesB.length} (unlocked) vs ${digNodesA.length} (locked)`);
+    console.log(`        Coordinates: ${digSpotCoords.map(c => `(${c.x},${c.y}) in Room ${c.roomIndex} [${c.roomType} ${c.roomBounds}]`).join(', ')}`);
     console.log(`        Rooms match: ${roomsMatch} | Water match: ${waterMatch} | Portal match: ${portalMatch} | Crystal match: ${crystalMatch}`);
     console.log(`        Enemies match: ${enemiesMatch} (Count: ${enemiesA.length} vs ${enemiesB.length})`);
     console.log(`        Non-dig nodes match: ${nonDigNodesMatch} (Count: ${nonDigNodesA.length} vs ${nonDigNodesB.length})`);
