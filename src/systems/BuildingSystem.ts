@@ -188,8 +188,20 @@ export class BuildingSystem {
     currentWood: number,
     constructionLevel: number = 0,
     currentClay: number = 0,
-    gardeningLevel: number = 0
+    gardeningLevel: number = 0,
+    isUnlockedFn?: (id: string) => boolean
   ): { valid: boolean; reason?: string } {
+    // 0. Research unlock check for lockedByDefault buildables
+    if (blueprint.lockedByDefault) {
+      const isUnlocked = isUnlockedFn ? isUnlockedFn(blueprint.id) : false;
+      if (!isUnlocked) {
+        return {
+          valid: false,
+          reason: `Cannot place ${blueprint.name}: Research not yet unlocked!`
+        };
+      }
+    }
+
     // 1. Required proficiency check (e.g. Seed Maker requires Gardening Level 25)
     if (blueprint.requiredProficiency) {
       const req = blueprint.requiredProficiency;

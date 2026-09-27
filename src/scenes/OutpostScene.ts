@@ -74,12 +74,46 @@ export class OutpostScene extends Phaser.Scene {
     super({ key: 'OutpostScene' });
   }
 
+  public init(): void {
+    this.resetPerVisitState();
+  }
+
+  public resetPerVisitState(): void {
+    this.isTransitioning = false;
+    this.isCameraLocked = true;
+    this.isBuildMode = false;
+    this.selectedBuildableId = 'floor';
+    this.currentRotation = 0;
+    this.warnedAboutRecruit = false;
+    this.lastLoggedHoverKey = '';
+    this.cachedRoomMap.clear();
+    this.lastKnownMemberTiles.clear();
+    this.lastClassifiedMemberRooms.clear();
+    this.clearMoveHighlightTimers();
+    this.clearMoveDestinationHighlights();
+    this.lastMoveDestinationHighlights = [];
+    this.activeMoveHighlights = [];
+    for (const channel of this.activeReviveChannels.values()) {
+      channel.barContainer?.destroy();
+    }
+    this.activeReviveChannels.clear();
+    for (const sprite of this.placedSprites.values()) {
+      sprite?.destroy();
+    }
+    this.placedSprites.clear();
+    for (const iconData of this.harvestIcons.values()) {
+      iconData.tween?.stop();
+      iconData.sprite?.destroy();
+    }
+    this.harvestIcons.clear();
+  }
+
   public preload(): void {
     TextureGenerator.generatePlaceholderTextures(this, this.tileSize);
   }
 
   public create(): void {
-    this.isTransitioning = false;
+    this.resetPerVisitState();
     this.buildingSystem = new BuildingSystem(this.mapWidth, this.mapHeight);
 
     // Disable browser right-click context menu so right-click demolish works smoothly
@@ -1324,6 +1358,12 @@ export class OutpostScene extends Phaser.Scene {
   }
 
   public selectBuildable(id: string): void {
+    const dataLoader = DataLoader.getInstance();
+    const blueprint = dataLoader.getBuildable(id);
+    if (blueprint?.lockedByDefault && !GameState.getInstance().isBuildableUnlocked(id)) {
+      this.hud.showToast(`Cannot select ${blueprint.name}: Research not yet unlocked!`, 'warn', 2500);
+      return;
+    }
     this.selectedBuildableId = id;
     this.currentRotation = 0;
     this.hud.updateBuildOverlay(
@@ -1456,7 +1496,8 @@ export class OutpostScene extends Phaser.Scene {
       GameState.getInstance().getWood(),
       constLevel,
       currentClay,
-      gardeningLevel
+      gardeningLevel,
+      (id) => GameState.getInstance().isBuildableUnlocked(id)
     );
 
     if (validation.valid && !blueprint.walkable && this.party.some((m) => m.gridPos.x === tileX && m.gridPos.y === tileY)) {
@@ -1513,7 +1554,8 @@ export class OutpostScene extends Phaser.Scene {
       GameState.getInstance().getWood(),
       constLevel,
       currentClay,
-      gardeningLevel
+      gardeningLevel,
+      (id) => GameState.getInstance().isBuildableUnlocked(id)
     );
 
     if (validation.valid && !blueprint.walkable && this.party.some((m) => m.gridPos.x === x && m.gridPos.y === y)) {

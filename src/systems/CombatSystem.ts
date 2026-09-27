@@ -1528,7 +1528,7 @@ export class CombatSystem {
                 this.createFloatingText(member.x, member.y - 20, `${effectiveWeapon.name} Level ${newLevel}!`, '#22c55e');
               }
 
-              if (isDW) {
+              if (isDW && this.isLegitimatelyDualWielding(member)) {
                 member.progression.addProficiencyExp('dual_wielding', 2);
               }
 
@@ -1573,28 +1573,43 @@ export class CombatSystem {
               energyCost
             );
 
-            // DUAL WIELDING: Offhand weapon attack strike
-            if (isDW && member.offhandWeapon && target.state !== 'downed' && target.state !== 'dead') {
-              const offWpn = member.offhandWeapon;
+            // DUAL WIELDING / SIDEARM: Offhand weapon attack strike
+            const isScoutSidearm = (member.activeClass === 'scout' || (member.progression && member.progression.getClassLevel('scout') > 0)) &&
+              (member.equippedWeapon?.proficiencyId === 'bows' || member.equippedWeapon?.id === 'bows' || member.equippedWeapon?.category === 'ranged') &&
+              (member.offhandWeapon?.proficiencyId === 'daggers' || member.offhandWeapon?.id === 'daggers');
+            const isJavelinSidearm = (member.activeClass === 'javelin' || (member.progression && member.progression.getClassLevel('javelin') > 0)) &&
+              member.offhandWeapon && (member.offhandWeapon.proficiencyId === 'throwing_weapons' || member.offhandWeapon.id === 'throwing_weapons' || member.offhandWeapon.proficiencyId === 'spears' || member.offhandWeapon.id === 'spears');
+            const isThrowerSidearm = (member.activeClass === 'thrower' || (member.progression && member.progression.getClassLevel('thrower') > 0)) &&
+              member.offhandWeapon && (member.offhandWeapon.proficiencyId === 'throwing_weapons' || member.offhandWeapon.id === 'throwing_weapons' || member.offhandWeapon.proficiencyId === 'daggers' || member.offhandWeapon.id === 'daggers');
+            const isAllowedSidearm = isScoutSidearm || isJavelinSidearm || isThrowerSidearm;
+
+            const canOffhandStrike = member.offhandWeapon && (
+              isDW || (isAllowedSidearm && distanceTiles <= (member.offhandWeapon.attackRangeTiles ?? 1))
+            );
+
+            if (canOffhandStrike && target.state !== 'downed' && target.state !== 'dead') {
+              const offWpn = member.offhandWeapon!;
               const offProfId = offWpn.proficiencyId ?? offWpn.id;
               const offLevel = member.progression.getProficiencyLevel(offProfId);
               const offBonusDmg = offWpn.levelBonus?.damagePerLevel ?? 0;
               const offBonusAcc = offWpn.levelBonus?.accuracyPerLevel ?? 0;
               const offRawDamage = offWpn.baseDamage + offLevel * offBonusDmg;
               const offEffectiveDamage = offRawDamage * moodTier.combatDamageMultiplier;
+              const activeDwPenalty = isDW ? dwPenalty : 0;
               const offEffectiveAccuracy =
-                (offWpn.baseAccuracy ?? 0.65) + offLevel * offBonusAcc + moodTier.combatAccuracyBonus - dwPenalty;
+                (offWpn.baseAccuracy ?? 0.65) + offLevel * offBonusAcc + moodTier.combatAccuracyBonus - activeDwPenalty;
 
               this.createAttackEffect(member.x, member.y, target.x, target.y, 0xa855f7);
 
               const offHitRoll = Math.random();
               const isOffHit = offHitRoll < offEffectiveAccuracy;
+              const strikeTag = isDW ? 'Dual Wield' : 'Sidearm';
 
               if (!isOffHit) {
                 console.log(
-                  `[Dual Wield] ${member.entityName} offhand strike with ${offWpn.name} MISSED! (Hit Chance: ${(offEffectiveAccuracy * 100).toFixed(1)}% [DW Penalty: -${(dwPenalty * 100).toFixed(0)}%], Roll: ${(offHitRoll * 100).toFixed(1)}%)`
+                  `[${strikeTag}] ${member.entityName} offhand strike with ${offWpn.name} MISSED! (Hit Chance: ${(offEffectiveAccuracy * 100).toFixed(1)}%${isDW ? ` [DW Penalty: -${(dwPenalty * 100).toFixed(0)}%]` : ''}, Roll: ${(offHitRoll * 100).toFixed(1)}%)`
                 );
-                this.createFloatingText(target.x, target.y - 22, 'DW MISS', '#9ca3af');
+                this.createFloatingText(target.x, target.y - 22, `${strikeTag} MISS`, '#9ca3af');
               } else {
                 let offDmg = offEffectiveDamage;
                 if (member.hasStatusEffect('blessed_weapons')) {
@@ -1606,15 +1621,17 @@ export class CombatSystem {
                   offDmg *= (1 + passiveImbuement.bonusDamagePercent);
                 }
                 console.log(
-                  `[Dual Wield] ⚔️ ${member.entityName} offhand strike with ${offWpn.name} hits ${target.entityName} for ${offDmg.toFixed(1)} damage! (DW Penalty: -${(dwPenalty * 100).toFixed(0)}%, Hit Chance: ${(offEffectiveAccuracy * 100).toFixed(1)}%)`
+                  `[${strikeTag}] ⚔️ ${member.entityName} offhand strike with ${offWpn.name} hits ${target.entityName} for ${offDmg.toFixed(1)} damage! (${isDW ? `DW Penalty: -${(dwPenalty * 100).toFixed(0)}%, ` : ''}Hit Chance: ${(offEffectiveAccuracy * 100).toFixed(1)}%)`
                 );
-                this.createFloatingText(target.x, target.y - 22, `-${offDmg.toFixed(1)} (DW)`, '#c084fc');
+                this.createFloatingText(target.x, target.y - 22, `-${offDmg.toFixed(1)} (${strikeTag})`, '#c084fc');
 
                 member.progression.addProficiencyExp(offProfId, 2);
-                const dwResult = member.progression.addProficiencyExp('dual_wielding', 2);
-                if (dwResult.leveledUp) {
-                  const dwLv = member.progression.getProficiencyLevel('dual_wielding');
-                  this.createFloatingText(member.x, member.y - 20, `Dual Wield Level ${dwLv}!`, '#a855f7');
+                if (this.isLegitimatelyDualWielding(member)) {
+                  const dwResult = member.progression.addProficiencyExp('dual_wielding', 2);
+                  if (dwResult.leveledUp) {
+                    const dwLv = member.progression.getProficiencyLevel('dual_wielding');
+                    this.createFloatingText(member.x, member.y - 20, `Dual Wield Level ${dwLv}!`, '#a855f7');
+                  }
                 }
 
                 this.checkAndApplyStun(member, target, offWpn);
@@ -2332,9 +2349,20 @@ export class CombatSystem {
       this.createFloatingText(killer.x, killer.y - 20, `Level Up! Level ${newLevel}`, '#22c55e');
     }
 
-    if (killer.isDualWielding() && killer.offhandWeapon) {
+    const isKillerScoutSidearm = (killer.activeClass === 'scout' || (killer.progression && killer.progression.getClassLevel('scout') > 0)) &&
+      (killer.equippedWeapon?.proficiencyId === 'bows' || killer.equippedWeapon?.id === 'bows' || killer.equippedWeapon?.category === 'ranged') &&
+      (killer.offhandWeapon?.proficiencyId === 'daggers' || killer.offhandWeapon?.id === 'daggers');
+    const isKillerJavelinSidearm = (killer.activeClass === 'javelin' || (killer.progression && killer.progression.getClassLevel('javelin') > 0)) &&
+      killer.offhandWeapon && (killer.offhandWeapon.proficiencyId === 'throwing_weapons' || killer.offhandWeapon.id === 'throwing_weapons' || killer.offhandWeapon.proficiencyId === 'spears' || killer.offhandWeapon.id === 'spears');
+    const isKillerThrowerSidearm = (killer.activeClass === 'thrower' || (killer.progression && killer.progression.getClassLevel('thrower') > 0)) &&
+      killer.offhandWeapon && (killer.offhandWeapon.proficiencyId === 'throwing_weapons' || killer.offhandWeapon.id === 'throwing_weapons' || killer.offhandWeapon.proficiencyId === 'daggers' || killer.offhandWeapon.id === 'daggers');
+    const isKillerSidearm = isKillerScoutSidearm || isKillerJavelinSidearm || isKillerThrowerSidearm;
+
+    if ((killer.isDualWielding() || isKillerSidearm) && killer.offhandWeapon) {
       killer.progression.addProficiencyExp(killer.offhandWeapon.proficiencyId ?? killer.offhandWeapon.id, 2);
-      killer.progression.addProficiencyExp('dual_wielding', 2);
+      if (this.isLegitimatelyDualWielding(killer)) {
+        killer.progression.addProficiencyExp('dual_wielding', 2);
+      }
     }
 
     killer?.awardArmorWearExp?.('kill');
@@ -2404,6 +2432,23 @@ export class CombatSystem {
         this.onEnemyDeathCallback(target);
       }
     }
+  }
+
+  public isLegitimatelyDualWielding(member: Player): boolean {
+    if (!member) return false;
+    if (typeof member.isDualWielding === 'function' && !member.isDualWielding()) return false;
+    const main = member.equippedWeapon;
+    const off = member.offhandWeapon;
+    if (!main || !off) return false;
+    // Both must be one-handed melee weapons (never ranged, two-handed, or shield)
+    const isMain1H = (main.category === 'melee_1h' || (main.category as string) === 'melee') && !main.twoHanded;
+    const isOffhand1H = (off.category === 'melee_1h' || (off.category as string) === 'melee') && !off.twoHanded;
+    if (!isMain1H || !isOffhand1H) return false;
+    // Dual Wielding must be unlocked
+    if (member.progression && typeof member.progression.isDualWieldUnlocked === 'function') {
+      if (!member.progression.isDualWieldUnlocked()) return false;
+    }
+    return true;
   }
 
   public createSkillAttackEffect(fromX: number, fromY: number, toX: number, toY: number): void {

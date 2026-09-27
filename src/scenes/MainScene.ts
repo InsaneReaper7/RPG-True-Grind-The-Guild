@@ -104,7 +104,9 @@ export class MainScene extends Phaser.Scene {
   private crystalSprite!: Phaser.GameObjects.Sprite;
   private crystalPos: GridPos = { x: 0, y: 0 };
   private isTransitioning: boolean = false;
-  private isWiping: boolean = false;
+  public isWiping: boolean = false;
+  public assignedSeed: number | null = null;
+  public currentFloorSeed: number | null = null;
 
   private wasdKeys!: {
     W: Phaser.Input.Keyboard.Key;
@@ -147,26 +149,39 @@ export class MainScene extends Phaser.Scene {
     super({ key: 'MainScene' });
   }
 
-  public preload(): void {
-    // Generate procedural placeholder textures
-    TextureGenerator.generatePlaceholderTextures(this, this.tileSize);
+  public init(data?: { seed?: number; dungeon?: GeneratedDungeon }): void {
+    this.resetPerVisitState();
+    if (data?.seed !== undefined) {
+      this.assignedSeed = data.seed;
+    }
+    if (data?.dungeon) {
+      this.dungeon = data.dungeon;
+    }
   }
 
-  public create(): void {
+  public resetPerVisitState(): void {
+    this.isWiping = false;
     this.isTransitioning = false;
-    this.enemies = [];
     this.isCameraLocked = true;
+    this.floorTimerRemainingMs = this.floorTimerDurationMs;
+    this.bossEncounterAnnounced = false;
+    this.enemies = [];
+    this.selectedMembers.clear();
+    this.clearMoveHighlightTimers();
+    this.clearMoveDestinationHighlights();
+    this.lastMoveDestinationHighlights = [];
+    this.activeMoveHighlights = [];
 
-    // Clean up previous overlay, gathering channels, or timers if restarting scene
+    // Clean up previous overlay, gathering channels, or timers
     if (this.tileClaimOverlay) {
       this.tileClaimOverlay.destroy();
     }
     for (const channel of this.activeGatherChannels.values()) {
-      channel.barContainer.destroy();
+      channel.barContainer?.destroy();
     }
     this.activeGatherChannels.clear();
     for (const channel of this.activeReviveChannels.values()) {
-      channel.barContainer.destroy();
+      channel.barContainer?.destroy();
     }
     this.activeReviveChannels.clear();
     for (const timer of this.gatheringArrivalTimers.values()) {
@@ -180,11 +195,6 @@ export class MainScene extends Phaser.Scene {
     }
     this.gatheringNodes = [];
 
-    // Milestone 26: Initialize Gathering Mode Graphics and State
-    if (this.gatheringMarqueeGraphics) {
-      this.gatheringMarqueeGraphics.destroy();
-    }
-    this.gatheringMarqueeGraphics = this.add.graphics().setDepth(10002);
     this.isGatheringMode = false;
     this.isGatheringDrag = false;
     this.gatherDragStart = null;
@@ -192,14 +202,31 @@ export class MainScene extends Phaser.Scene {
     this.gatheringQueue = [];
     this.gatheringQueueWorkers.clear();
     this.gatheringWorkerNodeAssignments.clear();
+  }
+
+  public preload(): void {
+    // Generate procedural placeholder textures
+    TextureGenerator.generatePlaceholderTextures(this, this.tileSize);
+  }
+
+  public create(): void {
+    const preservedDungeon = this.dungeon;
+    this.resetPerVisitState();
+    if (preservedDungeon) {
+      this.dungeon = preservedDungeon;
+    }
+
+    // Milestone 26: Initialize Gathering Mode Graphics and State
+    if (this.gatheringMarqueeGraphics) {
+      this.gatheringMarqueeGraphics.destroy();
+    }
+    this.gatheringMarqueeGraphics = this.add.graphics().setDepth(10002);
 
     // Initialize Move Destination Highlight Graphics
     if (this.moveHighlightGraphics) {
       this.moveHighlightGraphics.destroy();
     }
     this.moveHighlightGraphics = this.add.graphics().setDepth(10002);
-    this.lastMoveDestinationHighlights = [];
-    this.activeMoveHighlights = [];
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.cameras?.main?.stopFollow();
@@ -226,6 +253,9 @@ export class MainScene extends Phaser.Scene {
         }
       }
       this.gatheringNodes = [];
+      this.dungeon = null as any;
+      this.assignedSeed = null;
+      this.isWiping = false;
       if (this.hud) {
         this.hud.destroy();
       }
@@ -249,7 +279,20 @@ export class MainScene extends Phaser.Scene {
     // 1. Procedural Dungeon Generation (Milestone 13 / 34)
     const dungeonConfig = dataLoader.getDungeonConfig();
     const floorNumber = GameState.getInstance().incrementDungeonFloorCount();
-    this.dungeon = this.dungeon || DungeonGenerator.generate(dungeonConfig, Math.random, { floorNumber });
+    if (!this.dungeon) {
+      const seed = this.assignedSeed ?? (Math.floor(Math.random() * 1000000) + 1);
+      this.currentFloorSeed = seed;
+      const rng = DungeonGenerator.createRng(seed);
+      this.dungeon = DungeonGenerator.generate(dungeonConfig, rng, { floorNumber });
+      this.dungeon.seed = seed;
+    } else {
+      if (this.assignedSeed !== null && this.assignedSeed !== undefined) {
+        this.dungeon.seed = this.assignedSeed;
+        this.currentFloorSeed = this.assignedSeed;
+      } else if (this.dungeon.seed !== undefined) {
+        this.currentFloorSeed = this.dungeon.seed;
+      }
+    }
     this.mapWidth = this.dungeon.width;
     this.mapHeight = this.dungeon.height;
     this.gridMatrix = this.dungeon.gridMatrix;
@@ -1768,6 +1811,8 @@ export class MainScene extends Phaser.Scene {
     GameState.getInstance().saveSnapshot(this.player, this.progressionSystem, this.time.now);
 
     // Restart MainScene to generate the next floor
+    this.dungeon = null as any;
+    this.assignedSeed = null;
     this.scene.restart();
   }
 
@@ -1781,6 +1826,10 @@ export class MainScene extends Phaser.Scene {
     GameState.getInstance().resetDungeonFloorCount();
     GameState.getInstance().saveToDisk();
     TutorialSystem.getInstance().completeStepId('return_outpost');
+
+    this.dungeon = null as any;
+    this.assignedSeed = null;
+    this.isWiping = false;
 
     // Switch active scene to OutpostScene
     this.scene.start('OutpostScene');
@@ -1822,6 +1871,10 @@ export class MainScene extends Phaser.Scene {
       GameState.getInstance().resetDungeonFloorCount();
       GameState.getInstance().saveToDisk();
       TutorialSystem.getInstance().completeStepId('return_outpost');
+
+      this.dungeon = null as any;
+      this.assignedSeed = null;
+      this.isWiping = false;
 
       // Transition back to Guild Outpost safe zone
       if (this.scene && typeof this.scene.start === 'function') {

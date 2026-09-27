@@ -670,9 +670,12 @@ async function runDarkKnightPassiveImbuementTests() {
     const combat = new CombatSystem(scene, [], [], scene.pathfinder);
     const prog = new ProgressionSystem(classesData, 'DW DK Hero');
     prog.setClassLevel('dark_knight', 50);
+    // Enable dual wielding unlock on progression for this test
+    (prog as any).dualWieldUnlocked = true;
 
-    const player = createMockPlayer('p-dw', 'DW DK', 5, 5, longswords, prog, 'dark_knight');
-    player.offhandWeapon = daggers; // Dual wielding Longsword + Dagger
+    const longsword1h = dataLoader.getWeapon('longsword_1h') || longswords;
+    const player = createMockPlayer('p-dw', 'DW DK', 5, 5, longsword1h, prog, 'dark_knight');
+    player.offhandWeapon = daggers; // Dual wielding 1H Longsword + Dagger
     const enemy = createMockEnemy('enemy-dw', 'DW Dummy', 6, 5, 300);
     enemy.lastAttackTime = 10000;
     combat.party = [player];

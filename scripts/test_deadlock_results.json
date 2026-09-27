@@ -1,0 +1,169 @@
+[
+  {
+    "seed": 1,
+    "roomCount": 5,
+    "rockPositions": [
+      {
+        "x": 29,
+        "y": 13
+      },
+      {
+        "x": 41,
+        "y": 18
+      },
+      {
+        "x": 11,
+        "y": 37
+      },
+      {
+        "x": 10,
+        "y": 27
+      }
+    ],
+    "testedRock": {
+      "x": 29,
+      "y": 13
+    },
+    "roomClearedBeforeGathering": true,
+    "actionTimestamp": "2026-09-27T16:06:37.699Z",
+    "channelStarted": true,
+    "channelStartTimestamp": "2026-09-27T16:06:38.907Z",
+    "channelCompleted": false,
+    "channelCompleteTimestamp": null,
+    "interrupted": true,
+    "stallOver5s": false,
+    "durationSec": 3.01970000000298
+  },
+  {
+    "seed": 2,
+    "roomCount": 5,
+    "rockPositions": [
+      {
+        "x": 24,
+        "y": 25
+      },
+      {
+        "x": 4,
+        "y": 21
+      },
+      {
+        "x": 15,
+        "y": 5
+      }
+    ],
+    "testedRock": {
+      "x": 24,
+      "y": 25
+    },
+    "roomClearedBeforeGathering": true,
+    "actionTimestamp": "2026-09-27T16:06:48.851Z",
+    "channelStarted": true,
+    "channelStartTimestamp": "2026-09-27T16:06:50.688Z",
+    "channelCompleted": true,
+    "channelCompleteTimestamp": "2026-09-27T16:06:53.106Z",
+    "interrupted": false,
+    "stallOver5s": false,
+    "durationSec": 4.255299999997019
+  },
+  {
+    "seed": 3,
+    "roomCount": 5,
+    "rockPositions": [
+      {
+        "x": 10,
+        "y": 39
+      },
+      {
+        "x": 13,
+        "y": 10
+      },
+      {
+        "x": 17,
+        "y": 41
+      }
+    ],
+    "testedRock": {
+      "x": 10,
+      "y": 39
+    },
+    "roomClearedBeforeGathering": true,
+    "actionTimestamp": "2026-09-27T16:06:53.718Z",
+    "channelStarted": false,
+    "channelStartTimestamp": null,
+    "channelCompleted": false,
+    "channelCompleteTimestamp": null,
+    "interrupted": true,
+    "stallOver5s": false,
+    "durationSec": 1.017
+  },
+  {
+    "seed": 4,
+    "roomCount": 6,
+    "rockPositions": [
+      {
+        "x": 18,
+        "y": 14
+      },
+      {
+        "x": 20,
+        "y": 41
+      },
+      {
+        "x": 26,
+        "y": 5
+      },
+      {
+        "x": 38,
+        "y": 28
+      }
+    ],
+    "testedRock": {
+      "x": 18,
+      "y": 14
+    },
+    "roomClearedBeforeGathering": true,
+    "actionTimestamp": "2026-09-27T16:07:07.193Z",
+    "channelStarted": true,
+    "channelStartTimestamp": "2026-09-27T16:07:07.995Z",
+    "channelCompleted": true,
+    "channelCompleteTimestamp": "2026-09-27T16:07:10.405Z",
+    "interrupted": false,
+    "stallOver5s": false,
+    "durationSec": 3.21279999999702
+  },
+  {
+    "seed": 5,
+    "roomCount": 6,
+    "rockPositions": [
+      {
+        "x": 13,
+        "y": 41
+      },
+      {
+        "x": 17,
+        "y": 13
+      },
+      {
+        "x": 18,
+        "y": 24
+      },
+      {
+        "x": 34,
+        "y": 6
+      }
+    ],
+    "testedRock": {
+      "x": 13,
+      "y": 41
+    },
+    "roomClearedBeforeGathering": true,
+    "actionTimestamp": "2026-09-27T16:07:25.457Z",
+    "channelStarted": true,
+    "channelStartTimestamp": "2026-09-27T16:07:26.461Z",
+    "channelCompleted": true,
+    "channelCompleteTimestamp": "2026-09-27T16:07:28.872Z",
+    "interrupted": false,
+    "stallOver5s": false,
+    "durationSec": 3.4142000000029804
+  }
+]

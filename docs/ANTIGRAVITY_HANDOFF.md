@@ -462,9 +462,39 @@ Never ask Antigravity to jump ahead in this list — each milestone assumes the 
   - `test/verify_fishing_browser.mjs`: 100% pass across live fishing E2E workflows.
   - `cmd /c npm run build`: Production bundle (`tsc && vite build`) compiles cleanly with 0 TypeScript errors.
 
-
-
-
-
-
-
+**Resolved and shipped: Urgent Alpha Checkpoint Fixes — Second-Wipe Soft-Lock, Stale Scene State, Dungeon Floor Seed Diversity, and Dual Wielding EXP Leak.**
+- **Bug 1: Second Party Wipe Soft-Lock & Stale Scene State**:
+  - **Root Cause**: Phaser 3 caches and reuses Scene instances (`MainScene` and `OutpostScene`). On the first party wipe, `MainScene.handlePartyWipe()` set `this.isWiping = true`. However, neither `MainScene.create()` nor `init()` reset `isWiping`. When the player returned from the Outpost and wiped a second time, the check `if (this.isWiping || this.isTransitioning) return;` suppressed the wipe flow, leaving the party downed indefinitely.
+  - **Root Fix**: Implemented Phaser `init()` and dedicated `resetPerVisitState()` methods on both `MainScene` and `OutpostScene`. Every per-visit field is systematically reset on entry.
+  - **Comprehensive Field Audit**:
+    - *MainScene Per-Visit (Reset in init / resetPerVisitState)*: `isWiping` (`false`), `isTransitioning` (`false`), `isCameraLocked` (`true`), `floorTimerRemainingMs` (`floorTimerDurationMs`), `bossEncounterAnnounced` (`false`), `enemies` (`[]`), `selectedMembers` (`clear()`), `lastMoveDestinationHighlights` (`[]`), `activeMoveHighlights` (`[]`), `tileClaimOverlay` (`destroy()`), `activeGatherChannels` (`destroy() + clear()`), `activeReviveChannels` (`destroy() + clear()`), `gatheringArrivalTimers` (`remove() + clear()`), `gatheringNodes` (`respawnTimer.remove() + []`), `isGatheringMode` (`false`), `isGatheringDrag` (`false`), `gatherDragStart` (`null`), `currentGatherSelectionHighlights` (`[]`), `gatheringQueue` (`[]`), `gatheringQueueWorkers` (`clear()`), `gatheringWorkerNodeAssignments` (`clear()`), `dungeon` (`null` on exit/wipe/continue, preserved only when explicitly passed to restart), `assignedSeed` (`null`), `currentFloorSeed` (`undefined`).
+    - *MainScene Cross-Visit / Persistent*: `gameState`, `pathfinder`, `combatSystem`, `gatheringSystem`, `buildingSystem`, `hud`, `player`, `party`, `mapWidth`, `mapHeight`, `tileSize`.
+    - *OutpostScene Per-Visit (Reset in init / resetPerVisitState)*: `isTransitioning` (`false`), `isBuildMode` (`false`), `isPlacementValid` (`false`), `selectedBuildableDef` (`null`), `placementGhost` (`destroy() + null`), `roomLabels` (`destroy() + []`), `placementWarningText` (`destroy() + null`), `wallCandidateHighlights` (`[]`), `selectedMembers` (`clear()`), `lastMoveDestinationHighlights` (`[]`), `activeMoveHighlights` (`[]`).
+    - *OutpostScene Cross-Visit / Persistent*: `gameState`, `pathfinder`, `buildingSystem`, `hud`, `player`, `party`.
+  - **Verification**: Verified via `test/verify_three_consecutive_wipes.mjs` in a real browser session (3 consecutive wipes taking lethal damage, returning to Outpost each time with 100% reliability).
+- **Bug 2: Dungeon Layout Reused on Re-entry**:
+  - **Root Cause**: `this.dungeon = this.dungeon || DungeonGenerator.generate(...)` reused the first generated dungeon object across all subsequent portal entries and continue descents.
+  - **Root Fix**: Added `DungeonGenerator.createRng(seed)` using a deterministic Linear Congruential Generator. Added `seed` to `GeneratedDungeon`. `MainScene` generates a unique random seed for each portal entry and crystal Continue, sets `this.dungeon.seed`, and nulls `this.dungeon` upon transition to Outpost, wipe, or crystal Continue descent (`executeContinueDescent`).
+  - **Verification**: Verified via `test/verify_floor_seeds_and_determinism.mjs`:
+    - 3 consecutive portal entries produced 3 distinct seeds (`10984`, `984196`, `853110`) and distinct room layouts.
+    - Crystal Continue generated a fresh floor with new seed `507963`.
+    - Identical seeds produced 100% byte-identical `gridMatrix`, room rects, `portalPos`, and `crystalPos`.
+- **Bug 3: Dual Wielding EXP Leak on Sidearms**:
+  - **Root Cause**: `CombatSystem` awarded `dual_wielding` proficiency EXP whenever `attacker.offhandWeapon` was present, and `Player.isDualWielding()` only checked if `offhandWeapon !== null`. Valerie (Scout, Bow + Dagger sidearm) was treated as dual wielding, struck with daggers at range, and received `dual_wielding` EXP.
+  - **Root Fix**:
+    - Updated `Player.isDualWielding()` to strictly require: mainhand is 1H melee (`category === 'melee_1h' && !twoHanded`), offhand is 1H melee (`category === 'melee_1h' && !twoHanded`), and `isDualWieldUnlocked()` is true.
+    - Added `isLegitimatelyDualWielding(member)` in `CombatSystem.ts` and guarded all 3 EXP awarding routes: skill damage, offhand strike, and kill.
+    - Sidearms (Bow + Dagger, Throwing Weapons + Dagger, Spear + Throwing Weapons) strictly isolated and gain 0 `dual_wielding` EXP.
+    - Existing save files audited: `data/player.json` initializes at 0 EXP; test saves in `milestone8.test.ts` and `milestone_persistent_saves.test.ts` left untouched.
+  - **Verification**: Verified via `test/verify_dual_wield_leak.mjs` (Valerie gained 0 `dual_wielding` EXP in combat, sidearms rejected, and legitimate dual wielder gained DW EXP only with DW perk unlocked).
+- **Full Regression Verification Passed**:
+  - `downedLeaderSoftlockFix.test.ts`: 100% pass (all 5 softlock scenarios).
+  - `downedPartyTransitionVerification.test.ts`: 100% pass (descent and wipe preserve all party members).
+  - `verify_milestone_third_region_browser.mjs`: 100% pass (full 11-floor continue-chain into Glacial Caverns and return to Outpost).
+  - `milestone_water_terrain.test.ts`: 100% pass (all 7 tests, 500 seeds verified).
+  - `fishing_correction.test.ts`: 100% pass (all 7 tests).
+  - `milestone_thrower.test.ts`: 100% pass (all 9 tests).
+  - `verify_water_terrain_browser.mjs`: 100% pass.
+  - `verify_fishing_browser.mjs`: 100% pass.
+  - `scripts/alpha_checkpoint_harness_v2.mjs`: 100% pass across all stages (cold start boot, build mode placement, tutorial progression, 5-seed deadlock re-test with 0 stalls, 15-trip realistic play loop, research unlock, blacksmith crafting, inventory routing, and return combat).
+  - `npm run build`: Production bundle (`tsc && vite build`) built cleanly in 3.65s with 0 errors.

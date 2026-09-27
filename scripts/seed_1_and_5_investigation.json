@@ -1,0 +1,653 @@
+{
+  "seed1": {
+    "seed": 1,
+    "rockPos": {
+      "x": 29,
+      "y": 13
+    },
+    "initialDistanceToRock": 3.6055512754639896,
+    "adjacentTilesAudit": [
+      {
+        "direction": "E",
+        "pos": {
+          "x": 30,
+          "y": 13
+        },
+        "rawMatrix": 0,
+        "isFloor": true,
+        "isWall": false,
+        "isWater": false,
+        "hasNode": false,
+        "hasUnit": false,
+        "hasEnemy": false,
+        "isWalkable": true
+      },
+      {
+        "direction": "W",
+        "pos": {
+          "x": 28,
+          "y": 13
+        },
+        "rawMatrix": 0,
+        "isFloor": true,
+        "isWall": false,
+        "isWater": false,
+        "hasNode": false,
+        "hasUnit": false,
+        "hasEnemy": false,
+        "isWalkable": true
+      },
+      {
+        "direction": "S",
+        "pos": {
+          "x": 29,
+          "y": 14
+        },
+        "rawMatrix": 0,
+        "isFloor": true,
+        "isWall": false,
+        "isWater": false,
+        "hasNode": false,
+        "hasUnit": false,
+        "hasEnemy": false,
+        "isWalkable": true
+      },
+      {
+        "direction": "N",
+        "pos": {
+          "x": 29,
+          "y": 12
+        },
+        "rawMatrix": 0,
+        "isFloor": true,
+        "isWall": false,
+        "isWater": false,
+        "hasNode": false,
+        "hasUnit": false,
+        "hasEnemy": false,
+        "isWalkable": true
+      },
+      {
+        "direction": "SE",
+        "pos": {
+          "x": 30,
+          "y": 14
+        },
+        "rawMatrix": 0,
+        "isFloor": true,
+        "isWall": false,
+        "isWater": false,
+        "hasNode": false,
+        "hasUnit": false,
+        "hasEnemy": false,
+        "isWalkable": true
+      },
+      {
+        "direction": "SW",
+        "pos": {
+          "x": 28,
+          "y": 14
+        },
+        "rawMatrix": 0,
+        "isFloor": true,
+        "isWall": false,
+        "isWater": false,
+        "hasNode": false,
+        "hasUnit": false,
+        "hasEnemy": false,
+        "isWalkable": true
+      },
+      {
+        "direction": "NE",
+        "pos": {
+          "x": 30,
+          "y": 12
+        },
+        "rawMatrix": 0,
+        "isFloor": true,
+        "isWall": false,
+        "isWater": false,
+        "hasNode": false,
+        "hasUnit": false,
+        "hasEnemy": false,
+        "isWalkable": true
+      },
+      {
+        "direction": "NW",
+        "pos": {
+          "x": 28,
+          "y": 12
+        },
+        "rawMatrix": 2,
+        "isFloor": false,
+        "isWall": false,
+        "isWater": true,
+        "hasNode": false,
+        "hasUnit": false,
+        "hasEnemy": false,
+        "isWalkable": false
+      }
+    ],
+    "walkableAdjacentTilesCount": 7,
+    "walkableAdjacentTiles": [
+      "E (30,13)",
+      "W (28,13)",
+      "S (29,14)",
+      "N (29,12)",
+      "SE (30,14)",
+      "SW (28,14)",
+      "NE (30,12)"
+    ],
+    "channelStarted": true,
+    "channelStartTimestamp": "2026-09-27T18:08:53.808Z",
+    "channelCompleted": true,
+    "channelCompleteTimestamp": "2026-09-27T18:08:56.244Z",
+    "interrupted": false,
+    "stallOver5s": false,
+    "durationSec": 3.2419000000059603,
+    "actorStatesOverTime": [
+      {
+        "timeMs": 201,
+        "leaderPos": {
+          "x": 32,
+          "y": 14
+        },
+        "leaderState": "moving",
+        "claimedDest": {
+          "x": 30,
+          "y": 14
+        },
+        "isChanneling": false
+      },
+      {
+        "timeMs": 403,
+        "leaderPos": {
+          "x": 31,
+          "y": 14
+        },
+        "leaderState": "moving",
+        "claimedDest": {
+          "x": 30,
+          "y": 14
+        },
+        "isChanneling": false
+      },
+      {
+        "timeMs": 604,
+        "leaderPos": {
+          "x": 30,
+          "y": 14
+        },
+        "leaderState": "moving",
+        "claimedDest": {
+          "x": 30,
+          "y": 14
+        },
+        "isChanneling": false
+      },
+      {
+        "timeMs": 806,
+        "leaderPos": {
+          "x": 30,
+          "y": 14
+        },
+        "leaderState": "channeling",
+        "claimedDest": null,
+        "isChanneling": true
+      },
+      {
+        "timeMs": 1008,
+        "leaderPos": {
+          "x": 30,
+          "y": 14
+        },
+        "leaderState": "channeling",
+        "claimedDest": null,
+        "isChanneling": true
+      },
+      {
+        "timeMs": 1210,
+        "leaderPos": {
+          "x": 30,
+          "y": 14
+        },
+        "leaderState": "channeling",
+        "claimedDest": null,
+        "isChanneling": true
+      },
+      {
+        "timeMs": 1411,
+        "leaderPos": {
+          "x": 30,
+          "y": 14
+        },
+        "leaderState": "channeling",
+        "claimedDest": null,
+        "isChanneling": true
+      },
+      {
+        "timeMs": 1613,
+        "leaderPos": {
+          "x": 30,
+          "y": 14
+        },
+        "leaderState": "channeling",
+        "claimedDest": null,
+        "isChanneling": true
+      },
+      {
+        "timeMs": 1830,
+        "leaderPos": {
+          "x": 30,
+          "y": 14
+        },
+        "leaderState": "channeling",
+        "claimedDest": null,
+        "isChanneling": true
+      },
+      {
+        "timeMs": 2030,
+        "leaderPos": {
+          "x": 30,
+          "y": 14
+        },
+        "leaderState": "channeling",
+        "claimedDest": null,
+        "isChanneling": true
+      },
+      {
+        "timeMs": 2233,
+        "leaderPos": {
+          "x": 30,
+          "y": 14
+        },
+        "leaderState": "channeling",
+        "claimedDest": null,
+        "isChanneling": true
+      },
+      {
+        "timeMs": 2435,
+        "leaderPos": {
+          "x": 30,
+          "y": 14
+        },
+        "leaderState": "channeling",
+        "claimedDest": null,
+        "isChanneling": true
+      },
+      {
+        "timeMs": 2636,
+        "leaderPos": {
+          "x": 30,
+          "y": 14
+        },
+        "leaderState": "channeling",
+        "claimedDest": null,
+        "isChanneling": true
+      },
+      {
+        "timeMs": 2838,
+        "leaderPos": {
+          "x": 30,
+          "y": 14
+        },
+        "leaderState": "channeling",
+        "claimedDest": null,
+        "isChanneling": true
+      },
+      {
+        "timeMs": 3040,
+        "leaderPos": {
+          "x": 30,
+          "y": 14
+        },
+        "leaderState": "channeling",
+        "claimedDest": null,
+        "isChanneling": true
+      }
+    ]
+  },
+  "seed5": {
+    "seed": 5,
+    "rockPos": {
+      "x": 13,
+      "y": 41
+    },
+    "initialDistanceToRock": 13.92838827718412,
+    "adjacentTilesAudit": [
+      {
+        "direction": "E",
+        "pos": {
+          "x": 14,
+          "y": 41
+        },
+        "rawMatrix": 2,
+        "isFloor": false,
+        "isWall": false,
+        "isWater": true,
+        "hasNode": false,
+        "hasUnit": false,
+        "hasEnemy": false,
+        "isWalkable": false
+      },
+      {
+        "direction": "W",
+        "pos": {
+          "x": 12,
+          "y": 41
+        },
+        "rawMatrix": 0,
+        "isFloor": true,
+        "isWall": false,
+        "isWater": false,
+        "hasNode": false,
+        "hasUnit": false,
+        "hasEnemy": false,
+        "isWalkable": true
+      },
+      {
+        "direction": "S",
+        "pos": {
+          "x": 13,
+          "y": 42
+        },
+        "rawMatrix": 0,
+        "isFloor": true,
+        "isWall": false,
+        "isWater": false,
+        "hasNode": false,
+        "hasUnit": false,
+        "hasEnemy": false,
+        "isWalkable": true
+      },
+      {
+        "direction": "N",
+        "pos": {
+          "x": 13,
+          "y": 40
+        },
+        "rawMatrix": 0,
+        "isFloor": true,
+        "isWall": false,
+        "isWater": false,
+        "hasNode": false,
+        "hasUnit": false,
+        "hasEnemy": false,
+        "isWalkable": true
+      },
+      {
+        "direction": "SE",
+        "pos": {
+          "x": 14,
+          "y": 42
+        },
+        "rawMatrix": 0,
+        "isFloor": true,
+        "isWall": false,
+        "isWater": false,
+        "hasNode": false,
+        "hasUnit": false,
+        "hasEnemy": false,
+        "isWalkable": true
+      },
+      {
+        "direction": "SW",
+        "pos": {
+          "x": 12,
+          "y": 42
+        },
+        "rawMatrix": 0,
+        "isFloor": true,
+        "isWall": false,
+        "isWater": false,
+        "hasNode": false,
+        "hasUnit": false,
+        "hasEnemy": false,
+        "isWalkable": true
+      },
+      {
+        "direction": "NE",
+        "pos": {
+          "x": 14,
+          "y": 40
+        },
+        "rawMatrix": 2,
+        "isFloor": false,
+        "isWall": false,
+        "isWater": true,
+        "hasNode": false,
+        "hasUnit": false,
+        "hasEnemy": false,
+        "isWalkable": false
+      },
+      {
+        "direction": "NW",
+        "pos": {
+          "x": 12,
+          "y": 40
+        },
+        "rawMatrix": 0,
+        "isFloor": true,
+        "isWall": false,
+        "isWater": false,
+        "hasNode": false,
+        "hasUnit": false,
+        "hasEnemy": false,
+        "isWalkable": true
+      }
+    ],
+    "walkableAdjacentTilesCount": 6,
+    "walkableAdjacentTiles": [
+      "W (12,41)",
+      "S (13,42)",
+      "N (13,40)",
+      "SE (14,42)",
+      "SW (12,42)",
+      "NW (12,40)"
+    ],
+    "channelStarted": true,
+    "channelStartTimestamp": "2026-09-27T18:09:29.921Z",
+    "channelCompleted": true,
+    "channelCompleteTimestamp": "2026-09-27T18:09:32.532Z",
+    "interrupted": false,
+    "stallOver5s": false,
+    "durationSec": 9.43869999998808,
+    "actorStatesOverTime": [
+      {
+        "timeMs": 202,
+        "leaderPos": {
+          "x": 17,
+          "y": 28
+        },
+        "leaderState": "moving",
+        "claimedDest": {
+          "x": 13,
+          "y": 40
+        },
+        "isChanneling": false
+      },
+      {
+        "timeMs": 402,
+        "leaderPos": {
+          "x": 17,
+          "y": 27
+        },
+        "leaderState": "moving",
+        "claimedDest": {
+          "x": 13,
+          "y": 40
+        },
+        "isChanneling": false
+      },
+      {
+        "timeMs": 602,
+        "leaderPos": {
+          "x": 17,
+          "y": 27
+        },
+        "leaderState": "moving",
+        "claimedDest": {
+          "x": 13,
+          "y": 40
+        },
+        "isChanneling": false
+      },
+      {
+        "timeMs": 803,
+        "leaderPos": {
+          "x": 17,
+          "y": 26
+        },
+        "leaderState": "moving",
+        "claimedDest": {
+          "x": 13,
+          "y": 40
+        },
+        "isChanneling": false
+      },
+      {
+        "timeMs": 1005,
+        "leaderPos": {
+          "x": 17,
+          "y": 25
+        },
+        "leaderState": "moving",
+        "claimedDest": {
+          "x": 13,
+          "y": 40
+        },
+        "isChanneling": false
+      },
+      {
+        "timeMs": 1205,
+        "leaderPos": {
+          "x": 16,
+          "y": 25
+        },
+        "leaderState": "moving",
+        "claimedDest": {
+          "x": 13,
+          "y": 40
+        },
+        "isChanneling": false
+      },
+      {
+        "timeMs": 1405,
+        "leaderPos": {
+          "x": 16,
+          "y": 25
+        },
+        "leaderState": "moving",
+        "claimedDest": {
+          "x": 13,
+          "y": 40
+        },
+        "isChanneling": false
+      },
+      {
+        "timeMs": 1606,
+        "leaderPos": {
+          "x": 15,
+          "y": 25
+        },
+        "leaderState": "moving",
+        "claimedDest": {
+          "x": 13,
+          "y": 40
+        },
+        "isChanneling": false
+      },
+      {
+        "timeMs": 1807,
+        "leaderPos": {
+          "x": 15,
+          "y": 26
+        },
+        "leaderState": "moving",
+        "claimedDest": {
+          "x": 13,
+          "y": 40
+        },
+        "isChanneling": false
+      },
+      {
+        "timeMs": 2008,
+        "leaderPos": {
+          "x": 15,
+          "y": 26
+        },
+        "leaderState": "moving",
+        "claimedDest": {
+          "x": 13,
+          "y": 40
+        },
+        "isChanneling": false
+      },
+      {
+        "timeMs": 2209,
+        "leaderPos": {
+          "x": 14,
+          "y": 26
+        },
+        "leaderState": "moving",
+        "claimedDest": {
+          "x": 13,
+          "y": 40
+        },
+        "isChanneling": false
+      },
+      {
+        "timeMs": 2413,
+        "leaderPos": {
+          "x": 13,
+          "y": 26
+        },
+        "leaderState": "moving",
+        "claimedDest": {
+          "x": 13,
+          "y": 40
+        },
+        "isChanneling": false
+      },
+      {
+        "timeMs": 2614,
+        "leaderPos": {
+          "x": 12,
+          "y": 26
+        },
+        "leaderState": "moving",
+        "claimedDest": {
+          "x": 13,
+          "y": 40
+        },
+        "isChanneling": false
+      },
+      {
+        "timeMs": 2814,
+        "leaderPos": {
+          "x": 12,
+          "y": 26
+        },
+        "leaderState": "moving",
+        "claimedDest": {
+          "x": 13,
+          "y": 40
+        },
+        "isChanneling": false
+      },
+      {
+        "timeMs": 3014,
+        "leaderPos": {
+          "x": 12,
+          "y": 27
+        },
+        "leaderState": "moving",
+        "claimedDest": {
+          "x": 13,
+          "y": 40
+        },
+        "isChanneling": false
+      }
+    ]
+  }
+}

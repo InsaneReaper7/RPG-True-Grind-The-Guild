@@ -560,7 +560,23 @@ export class Player extends Entity {
   }
 
   public isDualWielding(): boolean {
-    return this.offhandWeapon !== null && this.offhandWeapon.category !== 'offhand';
+    const mainWeapon = this.equippedWeapon;
+    const offhand = this.offhandWeapon;
+    if (!mainWeapon || !offhand) return false;
+
+    // Both weapons must be one-handed melee weapons (never ranged, two-handed, or shield)
+    const isMain1HMelee = (mainWeapon.category === 'melee_1h' || (mainWeapon.category as string) === 'melee') && !mainWeapon.twoHanded;
+    const isOffhand1HMelee = (offhand.category === 'melee_1h' || (offhand.category as string) === 'melee') && !offhand.twoHanded;
+    if (!isMain1HMelee || !isOffhand1HMelee) return false;
+
+    // Dual Wielding must be unlocked by reaching 30 in any two 1H melee weapon types
+    if (this.progression && typeof this.progression.isDualWieldUnlocked === 'function') {
+      if (!this.progression.isDualWieldUnlocked()) {
+        return false;
+      }
+    }
+
+    return true;
   }
 
   public hasShield(): boolean {

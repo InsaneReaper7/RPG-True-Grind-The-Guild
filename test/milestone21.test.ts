@@ -350,7 +350,8 @@ async function runMilestone21Tests() {
   const originalRandom = Math.random;
   Math.random = () => 0.01; // Always hits, no random misses
   try {
-    // Advance combat timer to trigger auto-attack
+    // Advance combat timer to trigger auto-attack (clear skills to test basic auto-attack dual wield)
+    hero.equippedSkillIds = [];
     combat.update(hero.equippedWeapon.attackIntervalMs + 100);
 
     const postSSExp = heroProg.getProficiencyStat('short_swords').currentExp;

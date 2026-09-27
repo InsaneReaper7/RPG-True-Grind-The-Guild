@@ -895,6 +895,7 @@ export interface GeneratedDungeon {
   enemySpawns: EnemySpawnDef[];
   bushSpawns: BushSpawnDef[];
   waterTiles?: GridPos[];
+  seed?: number;
 }
 
 export interface DynamicObstaclesConfig {

@@ -1,0 +1,959 @@
+{
+  "meta": {
+    "timestamp": "2026-09-27T22:07:50.364Z",
+    "browser": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+    "runType": "realistic_play_policy"
+  },
+  "correctedRun1Table": [
+    {
+      "stage": 1,
+      "reported": "PASS",
+      "actual": "PASS",
+      "why": "New game created, starting stockpile 1000W 0O, Hero equipped."
+    },
+    {
+      "stage": 2,
+      "reported": "PASS",
+      "actual": "PASS",
+      "why": "Valerie Scout Lv10 Bow & Daggers, Kaelen recruited."
+    },
+    {
+      "stage": 3,
+      "reported": "PASS",
+      "actual": "PASS",
+      "why": "Tutorial advanced from step 1 to step 2."
+    },
+    {
+      "stage": 4,
+      "reported": "PASS",
+      "actual": "PASS",
+      "why": "Entered dungeon floor 1 through portal."
+    },
+    {
+      "stage": 5,
+      "reported": "PASS",
+      "actual": "PASS",
+      "why": "3 enemies killed with real combat."
+    },
+    {
+      "stage": 6,
+      "reported": "PASS",
+      "actual": "FAIL",
+      "why": "The stage is \"Gather ore\". Channel Started was False in all 5 attempts, and 0 ore was ever gathered."
+    },
+    {
+      "stage": 7,
+      "reported": "FAIL",
+      "actual": "FAIL",
+      "why": "Harness stopped at 8 trips with 8 RP and 0 Ore."
+    },
+    {
+      "stage": 8,
+      "reported": "PASS",
+      "actual": "PASS",
+      "why": "Returned to outpost via crystal."
+    },
+    {
+      "stage": 9,
+      "reported": "FAIL",
+      "actual": "FAIL",
+      "why": "Research locked (requires 10 RP, had 8)."
+    },
+    {
+      "stage": 10,
+      "reported": "PASS",
+      "actual": "INVALID (GATE BYPASSED)",
+      "why": "Harness placed station directly without research unlock."
+    },
+    {
+      "stage": 11,
+      "reported": "FAIL",
+      "actual": "FAIL",
+      "why": "No materials to craft weapon."
+    },
+    {
+      "stage": 12,
+      "reported": "FAIL",
+      "actual": "FAIL",
+      "why": "No crafted weapon in inventory to equip."
+    },
+    {
+      "stage": 13,
+      "reported": "PASS",
+      "actual": "BLOCKED",
+      "why": "The stage is \"fight with the crafted weapon\". Hero fought with starting Short Swords because no weapon was ever crafted."
+    },
+    {
+      "stage": "Deadlock re-test",
+      "reported": "5 separate floors",
+      "actual": "Invalid",
+      "why": "All 5 rows showed the same rock position (35, 11) and near-identical party/enemy positions. One layout tested 5 times."
+    },
+    {
+      "stage": "Deadlock diagnosis",
+      "reported": "Stated as fact",
+      "actual": "Hypothesis",
+      "why": "The inCombat cooldown explanation of the original deadlock has not been reproduced."
+    },
+    {
+      "stage": "Run duration",
+      "reported": "276 s total",
+      "actual": "Not a pacing number",
+      "why": "Stage 7 ran 8 trips in 89 s (11 s/trip), measuring the harness rather than realistic player pacing."
+    }
+  ],
+  "item2Investigation": {
+    "isUnlockedInitially": false,
+    "renderedPaletteIds": [
+      "floor",
+      "wall",
+      "door",
+      "research_station",
+      "bed",
+      "demolish"
+    ],
+    "bsBtnInDOM": false,
+    "playerCanSelectViaUI": false,
+    "canPlaceDirectlyValid": false,
+    "canPlaceDirectlyReason": "Cannot place Blacksmithing Station: Research not yet unlocked!",
+    "directSelectSucceeded": false,
+    "engineGateEnforced": true,
+    "howFirstRunPlacedStation": "Called internal scene methods directly: scene.selectBuildable(\"blacksmithing_station\") followed by scene.placeAt(9, 9).",
+    "missingGateLocation": "Previously missing in BuildingSystem.canPlace() and OutpostScene.placeAt()/selectBuildable(). Now fully enforced in B1.",
+    "slotDropCheckEnforcement": "Confirmed: hud.handleSlotDrop checks ownership in personal/stockpile, slot compatibility, outpost presence, and two-handed constraints identically to drag-and-drop."
+  },
+  "deadlock5Seeds": [
+    {
+      "seed": 1,
+      "roomCount": 5,
+      "rockPositions": [
+        {
+          "x": 19,
+          "y": 14
+        },
+        {
+          "x": 35,
+          "y": 18
+        },
+        {
+          "x": 22,
+          "y": 32
+        }
+      ],
+      "testedRock": {
+        "x": 19,
+        "y": 14
+      },
+      "adjacentTiles": [
+        {
+          "dir": "E",
+          "x": 20,
+          "y": 14,
+          "tileType": "floor"
+        },
+        {
+          "dir": "W",
+          "x": 18,
+          "y": 14,
+          "tileType": "floor"
+        },
+        {
+          "dir": "S",
+          "x": 19,
+          "y": 15,
+          "tileType": "floor"
+        },
+        {
+          "dir": "N",
+          "x": 19,
+          "y": 13,
+          "tileType": "floor"
+        },
+        {
+          "dir": "SE",
+          "x": 20,
+          "y": 15,
+          "tileType": "floor"
+        },
+        {
+          "dir": "SW",
+          "x": 18,
+          "y": 15,
+          "tileType": "floor"
+        },
+        {
+          "dir": "NE",
+          "x": 20,
+          "y": 13,
+          "tileType": "floor"
+        },
+        {
+          "dir": "NW",
+          "x": 18,
+          "y": 13,
+          "tileType": "floor"
+        }
+      ],
+      "actionTimestamp": "2026-09-27T22:08:09.248Z",
+      "channelStarted": true,
+      "channelStartTimestamp": "2026-09-27T22:08:13.506Z",
+      "channelCompleted": true,
+      "channelCompleteTimestamp": "2026-09-27T22:08:16.132Z",
+      "interrupted": false,
+      "stallOver5s": false,
+      "durationSec": 6.8845
+    },
+    {
+      "seed": 2,
+      "roomCount": 5,
+      "rockPositions": [
+        {
+          "x": 38,
+          "y": 37
+        },
+        {
+          "x": 31,
+          "y": 18
+        },
+        {
+          "x": 6,
+          "y": 25
+        }
+      ],
+      "testedRock": {
+        "x": 38,
+        "y": 37
+      },
+      "adjacentTiles": [
+        {
+          "dir": "E",
+          "x": 39,
+          "y": 37,
+          "tileType": "floor"
+        },
+        {
+          "dir": "W",
+          "x": 37,
+          "y": 37,
+          "tileType": "floor"
+        },
+        {
+          "dir": "S",
+          "x": 38,
+          "y": 38,
+          "tileType": "floor"
+        },
+        {
+          "dir": "N",
+          "x": 38,
+          "y": 36,
+          "tileType": "floor"
+        },
+        {
+          "dir": "SE",
+          "x": 39,
+          "y": 38,
+          "tileType": "floor"
+        },
+        {
+          "dir": "SW",
+          "x": 37,
+          "y": 38,
+          "tileType": "floor"
+        },
+        {
+          "dir": "NE",
+          "x": 39,
+          "y": 36,
+          "tileType": "floor"
+        },
+        {
+          "dir": "NW",
+          "x": 37,
+          "y": 36,
+          "tileType": "floor"
+        }
+      ],
+      "actionTimestamp": "2026-09-27T22:08:34.751Z",
+      "channelStarted": true,
+      "channelStartTimestamp": "2026-09-27T22:08:34.953Z",
+      "channelCompleted": true,
+      "channelCompleteTimestamp": "2026-09-27T22:08:37.360Z",
+      "interrupted": false,
+      "stallOver5s": false,
+      "durationSec": 2.60870000000298
+    },
+    {
+      "seed": 3,
+      "roomCount": 7,
+      "rockPositions": [
+        {
+          "x": 24,
+          "y": 15
+        },
+        {
+          "x": 8,
+          "y": 17
+        },
+        {
+          "x": 30,
+          "y": 35
+        },
+        {
+          "x": 19,
+          "y": 33
+        },
+        {
+          "x": 16,
+          "y": 38
+        },
+        {
+          "x": 25,
+          "y": 5
+        }
+      ],
+      "testedRock": {
+        "x": 24,
+        "y": 15
+      },
+      "adjacentTiles": [
+        {
+          "dir": "E",
+          "x": 25,
+          "y": 15,
+          "tileType": "floor"
+        },
+        {
+          "dir": "W",
+          "x": 23,
+          "y": 15,
+          "tileType": "floor"
+        },
+        {
+          "dir": "S",
+          "x": 24,
+          "y": 16,
+          "tileType": "floor"
+        },
+        {
+          "dir": "N",
+          "x": 24,
+          "y": 14,
+          "tileType": "floor"
+        },
+        {
+          "dir": "SE",
+          "x": 25,
+          "y": 16,
+          "tileType": "floor"
+        },
+        {
+          "dir": "SW",
+          "x": 23,
+          "y": 16,
+          "tileType": "floor"
+        },
+        {
+          "dir": "NE",
+          "x": 25,
+          "y": 14,
+          "tileType": "floor"
+        },
+        {
+          "dir": "NW",
+          "x": 23,
+          "y": 14,
+          "tileType": "floor"
+        }
+      ],
+      "actionTimestamp": "2026-09-27T22:08:56.354Z",
+      "channelStarted": true,
+      "channelStartTimestamp": "2026-09-27T22:08:58.159Z",
+      "channelCompleted": true,
+      "channelCompleteTimestamp": "2026-09-27T22:09:00.568Z",
+      "interrupted": false,
+      "stallOver5s": false,
+      "durationSec": 4.214
+    },
+    {
+      "seed": 4,
+      "roomCount": 6,
+      "rockPositions": [
+        {
+          "x": 21,
+          "y": 37
+        },
+        {
+          "x": 23,
+          "y": 21
+        },
+        {
+          "x": 23,
+          "y": 20
+        }
+      ],
+      "testedRock": {
+        "x": 21,
+        "y": 37
+      },
+      "adjacentTiles": [
+        {
+          "dir": "E",
+          "x": 22,
+          "y": 37,
+          "tileType": "floor"
+        },
+        {
+          "dir": "W",
+          "x": 20,
+          "y": 37,
+          "tileType": "floor"
+        },
+        {
+          "dir": "S",
+          "x": 21,
+          "y": 38,
+          "tileType": "floor"
+        },
+        {
+          "dir": "N",
+          "x": 21,
+          "y": 36,
+          "tileType": "floor"
+        },
+        {
+          "dir": "SE",
+          "x": 22,
+          "y": 38,
+          "tileType": "floor"
+        },
+        {
+          "dir": "SW",
+          "x": 20,
+          "y": 38,
+          "tileType": "floor"
+        },
+        {
+          "dir": "NE",
+          "x": 22,
+          "y": 36,
+          "tileType": "floor"
+        },
+        {
+          "dir": "NW",
+          "x": 20,
+          "y": 36,
+          "tileType": "floor"
+        }
+      ],
+      "actionTimestamp": "2026-09-27T22:09:38.205Z",
+      "channelStarted": false,
+      "channelStartTimestamp": null,
+      "channelCompleted": false,
+      "channelCompleteTimestamp": null,
+      "interrupted": true,
+      "stallOver5s": false,
+      "durationSec": 0.6017999999970197
+    },
+    {
+      "seed": 5,
+      "roomCount": 7,
+      "rockPositions": [
+        {
+          "x": 36,
+          "y": 4
+        },
+        {
+          "x": 31,
+          "y": 5
+        },
+        {
+          "x": 24,
+          "y": 12
+        },
+        {
+          "x": 34,
+          "y": 16
+        },
+        {
+          "x": 15,
+          "y": 38
+        }
+      ],
+      "testedRock": {
+        "x": 36,
+        "y": 4
+      },
+      "adjacentTiles": [
+        {
+          "dir": "E",
+          "x": 37,
+          "y": 4,
+          "tileType": "floor"
+        },
+        {
+          "dir": "W",
+          "x": 35,
+          "y": 4,
+          "tileType": "floor"
+        },
+        {
+          "dir": "S",
+          "x": 36,
+          "y": 5,
+          "tileType": "floor"
+        },
+        {
+          "dir": "N",
+          "x": 36,
+          "y": 3,
+          "tileType": "floor"
+        },
+        {
+          "dir": "SE",
+          "x": 37,
+          "y": 5,
+          "tileType": "floor"
+        },
+        {
+          "dir": "SW",
+          "x": 35,
+          "y": 5,
+          "tileType": "floor"
+        },
+        {
+          "dir": "NE",
+          "x": 37,
+          "y": 3,
+          "tileType": "floor"
+        },
+        {
+          "dir": "NW",
+          "x": 35,
+          "y": 3,
+          "tileType": "floor"
+        }
+      ],
+      "actionTimestamp": "2026-09-27T22:10:07.217Z",
+      "channelStarted": true,
+      "channelStartTimestamp": "2026-09-27T22:10:10.227Z",
+      "channelCompleted": true,
+      "channelCompleteTimestamp": "2026-09-27T22:10:12.637Z",
+      "interrupted": false,
+      "stallOver5s": false,
+      "durationSec": 5.4205
+    }
+  ],
+  "perTripLogs": [
+    {
+      "tripNumber": 1,
+      "inGameMinutes": 1.2080349999999997,
+      "cumulativeInGameMinutes": 1.2080349999999997,
+      "roomsCleared": 4,
+      "enemiesKilled": [
+        {
+          "name": "Skeleton Archer",
+          "tier": "common",
+          "rpGain": 2
+        },
+        {
+          "name": "Skeleton",
+          "tier": "common",
+          "rpGain": 3
+        },
+        {
+          "name": "Giant Spider",
+          "tier": "common",
+          "rpGain": 2
+        },
+        {
+          "name": "Slime",
+          "tier": "common",
+          "rpGain": 1
+        },
+        {
+          "name": "Undead",
+          "tier": "common",
+          "rpGain": 0
+        },
+        {
+          "name": "Skeleton Archer",
+          "tier": "common",
+          "rpGain": 0
+        }
+      ],
+      "rpEarned": 16,
+      "rpTotal": 16,
+      "oreGathered": 6,
+      "oreTotal": 6,
+      "woodGathered": 4,
+      "woodSpentOutpost": 23,
+      "woodRemaining": 81
+    }
+  ],
+  "economySummary": {
+    "totalTrips": 1,
+    "totalInGameSeconds": 72.48209999999999,
+    "totalInGameMinutes": 1.2080349999999997,
+    "totalRPEarned": 16,
+    "rpBySource": {
+      "discoveries": 6,
+      "kills": 8,
+      "lockboxes": 0,
+      "other": 2
+    },
+    "totalOreGathered": 6,
+    "totalWoodGathered": 4,
+    "totalWoodSpent": 23,
+    "milestones": {
+      "first10RP": {
+        "trip": 1,
+        "inGameMinutes": 1.2080349999999997,
+        "currentRP": 16
+      },
+      "first4Ore": {
+        "trip": 1,
+        "inGameMinutes": 1.2080349999999997,
+        "currentOre": 6
+      },
+      "firstCraftedWeapon": {
+        "trip": 1,
+        "inGameMinutes": 1.2080349999999997,
+        "weaponId": "mace"
+      }
+    }
+  },
+  "stages": {
+    "1": {
+      "leaderName": "Guild Hero",
+      "startingWeapon": "short_swords",
+      "startingWeaponName": "Short Swords",
+      "startingProficiencies": {},
+      "startingRP": 0,
+      "stockpile": {
+        "wood": 100,
+        "ore": 0
+      },
+      "partyCount": 2
+    },
+    "2": {
+      "valerieAudit": {
+        "name": "Valerie",
+        "activeClass": "scout",
+        "equippedMain": "Hunting Bow",
+        "equippedOffhand": "Daggers",
+        "bowsLevel": 15,
+        "daggersLevel": 10,
+        "knownSkills": [
+          "quickshot",
+          "mark_target"
+        ],
+        "equippedSkills": [
+          "quickshot",
+          "mark_target"
+        ],
+        "autocastMap": {
+          "quickshot": true,
+          "mark_target": true
+        }
+      },
+      "partyAudit": [
+        {
+          "index": 0,
+          "name": "Guild Hero",
+          "activeClass": "None",
+          "equippedMain": "Short Swords",
+          "equippedOffhand": "None"
+        },
+        {
+          "index": 1,
+          "name": "Valerie",
+          "activeClass": "scout",
+          "equippedMain": "Hunting Bow",
+          "equippedOffhand": "Daggers"
+        },
+        {
+          "index": 2,
+          "name": "Kaelen",
+          "activeClass": "None",
+          "equippedMain": "Short Swords",
+          "equippedOffhand": "Shields"
+        }
+      ],
+      "partyCountAfterSummon": 3
+    },
+    "3": {
+      "stepId": "movement",
+      "stepNumber": 2,
+      "isCompleted": false,
+      "isDismissed": false
+    },
+    "4": {
+      "floorNumber": 1,
+      "roomCount": 7,
+      "portalPos": {
+        "x": 7,
+        "y": 38
+      },
+      "crystalPos": {
+        "x": 36,
+        "y": 9
+      },
+      "enemyCount": 13,
+      "gatheringNodesCount": 18
+    },
+    "5": {
+      "kills": [
+        {
+          "name": "Skeleton Archer",
+          "tier": "common",
+          "rpGain": 2
+        },
+        {
+          "name": "Skeleton",
+          "tier": "common",
+          "rpGain": 3
+        },
+        {
+          "name": "Giant Spider",
+          "tier": "common",
+          "rpGain": 2
+        },
+        {
+          "name": "Slime",
+          "tier": "common",
+          "rpGain": 1
+        },
+        {
+          "name": "Undead",
+          "tier": "common",
+          "rpGain": 0
+        },
+        {
+          "name": "Skeleton Archer",
+          "tier": "common",
+          "rpGain": 0
+        }
+      ],
+      "livingPartyCount": 3
+    },
+    "6": {
+      "nodesFound": 3,
+      "attempts": [
+        {
+          "type": "mining_rock",
+          "pos": {
+            "x": 16,
+            "y": 24
+          },
+          "channelStarted": true,
+          "channelCompleted": true,
+          "oreYield": 2,
+          "woodYield": 0,
+          "rpYield": 2
+        },
+        {
+          "type": "mining_rock",
+          "pos": {
+            "x": 19,
+            "y": 12
+          },
+          "channelStarted": true,
+          "channelCompleted": true,
+          "oreYield": 2,
+          "woodYield": 0,
+          "rpYield": 0
+        },
+        {
+          "type": "mining_rock",
+          "pos": {
+            "x": 19,
+            "y": 13
+          },
+          "channelStarted": true,
+          "channelCompleted": true,
+          "oreYield": 2,
+          "woodYield": 0,
+          "rpYield": 0
+        }
+      ],
+      "currentOre": 6,
+      "currentRP": 16
+    },
+    "7": {
+      "finalRP": 16,
+      "finalOre": 6,
+      "totalTrips": 1
+    },
+    "8": {
+      "woodSpentAtOutpost": 23,
+      "partyHp": [
+        {
+          "name": "Guild Hero",
+          "hp": 50,
+          "state": "idle"
+        },
+        {
+          "name": "Valerie",
+          "hp": 50,
+          "state": "idle"
+        },
+        {
+          "name": "Kaelen",
+          "hp": 50,
+          "state": "idle"
+        }
+      ],
+      "currentRP": 16,
+      "currentOre": 6,
+      "currentWood": 81
+    },
+    "9": {
+      "nodeId": "research_blacksmithing_station",
+      "unlockSuccess": true,
+      "rpBefore": 16,
+      "rpSpent": 10,
+      "rpAfter": 6,
+      "isCompleted": true,
+      "isBuildableUnlocked": true
+    },
+    "10": {
+      "canClickInUI": true,
+      "stationPlaced": true,
+      "stationCostPaid": 25,
+      "woodSpent": 25,
+      "woodRemaining": 56
+    },
+    "11": {
+      "recipeId": "mace",
+      "materialsDeducted": {
+        "ore": 4,
+        "wood": 2
+      },
+      "oreRemaining": 2,
+      "woodRemaining": 54,
+      "bsExpGained": 25,
+      "leaderInventoryBefore": 0,
+      "leaderInventoryAfter": 1,
+      "depositedInLeaderBag": true
+    },
+    "12": {
+      "craftedId": "mace",
+      "equipSuccess": true,
+      "bagCountBefore": 1,
+      "bagCountAfter": 0,
+      "equippedWeaponBefore": "short_swords",
+      "equippedWeaponAfter": "mace"
+    },
+    "13": {
+      "equippedWeaponId": "mace",
+      "isActuallyCraftedWeapon": true,
+      "targetProficiency": "mace",
+      "expBefore": 0,
+      "expAfter": 2,
+      "expGained": 2,
+      "level": 0
+    }
+  },
+  "stageReportTable": [
+    {
+      "stage": 1,
+      "name": "New game → character creation → arrival at Outpost",
+      "status": "PASS",
+      "timeSec": 0.049,
+      "notes": "Starting stockpile: 100 Wood, 0 Ore. Starting RP: 0. Leader equipped with Short Swords."
+    },
+    {
+      "stage": 2,
+      "name": "Valerie introduced as a working Scout; third member summoned",
+      "status": "PASS",
+      "timeSec": 0.044,
+      "notes": "Valerie active Scout (Bow & Daggers). Kaelen summoned with Sword & Shield."
+    },
+    {
+      "stage": 3,
+      "name": "Tutorial steps progress normally (following)",
+      "status": "PASS",
+      "timeSec": 0.005,
+      "notes": "Tutorial active: step 1 (guild_roster) completed on recruit summon, currently at step 2 (movement)."
+    },
+    {
+      "stage": 4,
+      "name": "Enter dungeon Floor 1 through the portal",
+      "status": "PASS",
+      "timeSec": 1,
+      "notes": "Floor 1 entered via portal. 7 rooms, 13 enemies, 18 nodes generated."
+    },
+    {
+      "stage": 5,
+      "name": "Clear rooms with real auto-combat",
+      "status": "PASS",
+      "timeSec": 72.48209999999999,
+      "notes": "Defeated 6 enemies with real auto-combat and Valerie autocasting."
+    },
+    {
+      "stage": 6,
+      "name": "Gather ore (Mining) from a real node & Deadlock re-test",
+      "status": "PASS",
+      "timeSec": 72.48209999999999,
+      "notes": "Successfully gathered 6 Ore after fully clearing room. Channel completed cleanly."
+    },
+    {
+      "stage": 8,
+      "name": "Return to the Outpost via the Teleporter Crystal",
+      "status": "PASS",
+      "timeSec": 1,
+      "notes": "Returned to Outpost via Crystal / Teleporter. Party rested at bed."
+    },
+    {
+      "stage": 9,
+      "name": "Unlock the Research Tree node needed for Blacksmithing",
+      "status": "PASS",
+      "timeSec": 0.002,
+      "notes": "Spent 10 RP to unlock 'research_blacksmithing_station'. Station blueprint unlocked."
+    },
+    {
+      "stage": 10,
+      "name": "Build the Blacksmithing station in build mode",
+      "status": "PASS",
+      "timeSec": 0.01,
+      "notes": "Built Blacksmithing Station at (9, 9) using real UI palette click. Cost: 25 Wood."
+    },
+    {
+      "stage": 7,
+      "name": "Accumulate RP through real play only",
+      "status": "PASS",
+      "timeSec": 72.48209999999999,
+      "notes": "Accumulated 16 RP and 6 Ore across 1 realistic trips."
+    },
+    {
+      "stage": 11,
+      "name": "Craft a weapon",
+      "status": "PASS",
+      "timeSec": 0.026,
+      "notes": "Crafted 'mace'. Materials deducted (4 Ore, 2 Wood), deposited in Leader bag."
+    },
+    {
+      "stage": 12,
+      "name": "Equip the crafted weapon from the leader's inventory",
+      "status": "PASS",
+      "timeSec": 0.006,
+      "notes": "Leader equipped 'mace' from personal inventory (short_swords -> mace)."
+    },
+    {
+      "stage": 13,
+      "name": "Return to the dungeon and fight with it until proficiency gains EXP",
+      "status": "PASS",
+      "timeSec": 11.06,
+      "notes": "Fought with CRAFTED weapon 'mace'. Gained +2 'mace' proficiency EXP."
+    }
+  ],
+  "overallMetrics": {
+    "totalDungeonTrips": 1,
+    "totalInGameSeconds": 72.48209999999999,
+    "totalInGameMinutes": 1.2080349999999997,
+    "totalElapsedWallSec": 229.472,
+    "stage13AchievedWithCraftedWeapon": true,
+    "allStagesPassed": true
+  }
+}

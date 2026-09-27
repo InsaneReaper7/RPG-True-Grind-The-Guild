@@ -11,6 +11,17 @@ import { GameState } from '../systems/GameState.ts';
 
 export class DungeonGenerator {
   /**
+   * Deterministic Linear Congruential Generator (LCG) for seed-based dungeon generation
+   */
+  public static createRng(seed: number): () => number {
+    let cur = seed;
+    return () => {
+      cur = (cur * 9301 + 49297) % 233280;
+      return cur / 233280;
+    };
+  }
+
+  /**
    * Generates a procedural dungeon with rooms, corridors, and populated entities
    * based on the provided configuration.
    * @param config DungeonConfig parameters
