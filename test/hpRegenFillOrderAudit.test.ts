@@ -61,6 +61,7 @@ if (typeof (global as any).window === 'undefined') {
 };
 
 import { ProgressionSystem } from '../src/systems/ProgressionSystem.ts';
+import { HiddenSkillSystem } from '../src/systems/HiddenSkillSystem.ts';
 import { DataLoader } from '../src/utils/DataLoader.ts';
 import { Pathfinder } from '../src/utils/Pathfinder.ts';
 import { GameState } from '../src/systems/GameState.ts';
@@ -377,6 +378,7 @@ async function runTests() {
     // 6B: Regenerate HoT (6 HP/tick)
     injuredAlly.hp = 0;
     injuredAlly.criticalHp = 15; // 10 missing Crit HP
+    injuredAlly.hpRegenPerSecond = 0; // Isolate HoT from passive base HP regen
     mage.energy = 60;
     const regenSuccess = combatSystem.castSkill(mage, 'regenerate', injuredAlly, 2000);
     assert.equal(regenSuccess, true, 'Regenerate cast must succeed');
@@ -462,14 +464,16 @@ async function runTests() {
   {
     const player = createTestPlayer(mockScene, 'Foodie Hero', 0, 0, 50, 25);
     player.hp = 0;
-    player.criticalHp = 20; // 5 missing Crit HP
+    player.criticalHp = 15; // 10 missing Crit HP
+    player.hpRegenPerSecond = 0; // Isolate food buff from base HP regen
     player.wellFedRemainingMs = 10000;
-    player.wellFedHpPerSec = 4;
+    player.wellFedHpPerSec = 2; // Baseline in-combat 2 HP/s -> 4 HP/s out of combat
+    player.inCombat = false;
 
-    // Simulate 1 second update
+    // Simulate 1 second update (out-of-combat: 2 * 2.0 = 4 HP healed)
     player.update(1000, 1000);
 
-    assert.equal(player.criticalHp, 24, 'Well Fed buff tick must heal Critical HP first');
+    assert.equal(player.criticalHp, 19, 'Well Fed buff tick must heal Critical HP first');
     assert.equal(player.hp, 0, 'Main HP must remain 0 when Critical HP is not full');
   }
   console.log('✓ PASS: Well Fed food buff fills Critical HP first.\n');
@@ -502,6 +506,113 @@ async function runTests() {
     assert.ok(allyA.criticalHp > 5, 'Ally A must be selected and healed on Critical HP');
   }
   console.log('✓ PASS: AI healer detects and prioritizes ally with drained Critical HP even with full Main HP.\n');
+
+  // ----------------------------------------------------------------
+  // TEST 11: Base Passive HP Regen Fills Critical HP First
+  // ----------------------------------------------------------------
+  console.log('--- TEST 11: Base Passive HP Regen Fills Critical HP First ---');
+  {
+    const player = createTestPlayer(mockScene, 'Base Regen Hero', 0, 0, 50, 25);
+    player.hp = 0;
+    player.criticalHp = 10; // 15 missing Crit HP
+    player.inCombat = true; // In combat: 0.25 HP/s -> 1 HP every 4 seconds via fractional accumulator
+
+    // 4 seconds in combat: 4 * 0.25 = 1.0 HP
+    player.update(1000, 4000);
+    assert.equal(player.criticalHp, 11, 'In-combat base HP regen must heal Critical HP first');
+    assert.equal(player.hp, 0, 'In-combat base HP regen must leave Main HP at 0');
+
+    // Switch to out-of-combat: 0.25 * 2.0 = 0.5 HP/s -> 2 HP over 4 seconds
+    player.inCombat = false;
+    player.update(5000, 4000);
+    assert.equal(player.criticalHp, 13, 'Out-of-combat base HP regen (2x rate) must heal Critical HP first');
+    assert.equal(player.hp, 0, 'Out-of-combat base HP regen must leave Main HP at 0');
+  }
+  console.log('✓ PASS: Base passive HP regen (in-combat 0.25 HP/s, out-of-combat 0.5 HP/s) fills Critical HP first.\n');
+
+  // ----------------------------------------------------------------
+  // TEST 12: 0.5 HP Skill Proc (Health Regen Lv 1-29) Fills Critical HP First
+  // ----------------------------------------------------------------
+  console.log('--- TEST 12: 0.5 HP Skill Proc Fills Critical HP First ---');
+  {
+    const hero = createTestPlayer(mockScene, 'Proc Hero', 0, 0, 50, 25);
+    hero.progression.setClassLevel('medic', 5);
+    // Lv 1 Health Regen
+    hero.progression.addProficiencyExp('health_regen', 50);
+    assert.equal(hero.progression.getProficiencyLevel('health_regen'), 1);
+
+    const hiddenSystem = HiddenSkillSystem.getInstance();
+    const context = {
+      equippedWeapon: hero.equippedWeapon,
+      inCombat: true, // In combat baseline
+      hasEnergyPotionBuff: false,
+      hasManaPotionBuff: false
+    };
+
+    // Force proc
+    const origRand = Math.random;
+    Math.random = () => 0.01;
+    let regenResult: any;
+    try {
+      regenResult = hiddenSystem.resolvePassiveRegen(context, hero.progression);
+    } finally {
+      Math.random = origRand;
+    }
+
+    assert.equal(regenResult.healthProcced, true, 'Health Regen must proc');
+    assert.equal(regenResult.healthRestored, 0.5, 'In-combat Lv 1 Health Regen restores exactly 0.5 HP');
+
+    // Apply the 0.5 HP to an entity with 0 Main HP and 24.5 Critical HP
+    hero.hp = 0;
+    hero.criticalHp = 24.5;
+    const restored = hero.heal(regenResult.healthRestored);
+    assert.equal(restored, 0.5, '0.5 HP restored');
+    assert.equal(hero.criticalHp, 25, '0.5 HP fills Critical HP to cap (25)');
+    assert.equal(hero.hp, 0, 'Main HP remains at 0');
+
+    // Boundary test: next 0.5 HP proc overflows to Main HP
+    const overflowRestored = hero.heal(0.5);
+    assert.equal(overflowRestored, 0.5, '0.5 HP overflow restored');
+    assert.equal(hero.criticalHp, 25, 'Critical HP remains full at 25');
+    assert.equal(hero.hp, 0.5, 'Overflow 0.5 HP goes to Main HP');
+  }
+  console.log('✓ PASS: 0.5 HP skill proc fills Critical HP first and overflows cleanly.\n');
+
+  // ----------------------------------------------------------------
+  // TEST 13: Well Fed In-Combat and Out-of-Combat Critical HP Fill Order
+  // ----------------------------------------------------------------
+  console.log('--- TEST 13: Well Fed In-Combat vs Out-of-Combat Critical Fill Order ---');
+  {
+    const hero = createTestPlayer(mockScene, 'Food Hero', 0, 0, 50, 25);
+    hero.hpRegenPerSecond = 0; // Isolate food buff
+    hero.hp = 0;
+    hero.criticalHp = 20; // 5 missing Critical HP
+    hero.wellFedRemainingMs = 20000;
+    hero.wellFedHpPerSec = 1; // 1 HP/s in combat, 2 HP/s out of combat
+
+    // 13A: In combat tick (1s tick = 1 HP)
+    hero.inCombat = true;
+    hero.update(1000, 1000);
+    assert.equal(hero.criticalHp, 21, 'In-combat Well Fed heals 1 HP to Critical HP');
+    assert.equal(hero.hp, 0, 'Main HP remains 0');
+
+    // 13B: Out of combat tick (1s tick = 2 HP)
+    hero.inCombat = false;
+    hero.update(2000, 1000);
+    assert.equal(hero.criticalHp, 23, 'Out-of-combat Well Fed heals 2 HP to Critical HP');
+    assert.equal(hero.hp, 0, 'Main HP remains 0');
+
+    // 13C: Out of combat tick with overflow (2 HP heal with 2 missing Critical HP -> 23 -> 25)
+    hero.update(3000, 1000);
+    assert.equal(hero.criticalHp, 25, 'Critical HP is fully topped off at 25');
+    assert.equal(hero.hp, 0, 'Main HP remains 0');
+
+    // 13D: Next tick overflows directly into Main HP
+    hero.update(4000, 1000);
+    assert.equal(hero.criticalHp, 25, 'Critical HP remains at 25');
+    assert.equal(hero.hp, 2, 'Main HP receives full 2 HP overflow');
+  }
+  console.log('✓ PASS: Well Fed in-combat and out-of-combat buffs fill Critical HP first and overflow.\n');
 
   console.log('================================================================');
   console.log('ALL HP REGEN FILL-ORDER AUDIT TESTS PASSED SUCCESSFULLY!');

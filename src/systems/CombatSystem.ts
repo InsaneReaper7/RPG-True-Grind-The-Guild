@@ -1282,7 +1282,7 @@ export class CombatSystem {
         const isDW = member.isDualWielding();
         const dwPenalty = isDW ? member.progression.getDualWieldPenalty() : 0;
         // Milestone 48: Blind status effect penalty on player accuracy
-        const blindPenalty = member.hasStatusEffect('blind') ? (member.activeStatusEffects.get('blind')?.def?.accuracyReduction ?? 0.35) : 0;
+        const blindPenalty = (typeof member.hasStatusEffect === 'function' && member.hasStatusEffect('blind')) ? (member.activeStatusEffects.get('blind')?.def?.accuracyReduction ?? 0.35) : 0;
         const effectiveAccuracy = baseAccuracy + weaponLevel * accuracyBonusPerLevel + moodTier.combatAccuracyBonus - dwPenalty - blindPenalty;
 
         let usedSkill = false;

@@ -102,10 +102,10 @@
       "expPerProc": 1,
       "description": "Passively restores health over time, primarily when out of combat.",
       "tierEffects": [
-        { "level": 1, "description": "Passive health regen out of combat (+1 HP per tick)", "healAmount": 1, "inCombat": false },
-        { "level": 30, "description": "Light health regen in combat (+1 HP per tick)", "healAmount": 1, "inCombat": true },
-        { "level": 60, "description": "Increased regen rate (+2 HP per tick)", "healAmount": 2, "inCombat": true },
-        { "level": 90, "description": "Burst heal chance when at low HP (+10 HP burst)", "healAmount": 3, "inCombat": true, "burstHeal": true }
+        { "level": 1, "description": "Passive health regen (+0.5 HP in-combat, +1 HP out-of-combat per tick)", "healAmount": 0.5 },
+        { "level": 30, "description": "Health regen (+1 HP in-combat, +2 HP out-of-combat per tick)", "healAmount": 1 },
+        { "level": 60, "description": "Increased regen rate (+2 HP in-combat, +4 HP out-of-combat per tick)", "healAmount": 2 },
+        { "level": 90, "description": "Burst heal chance when at low HP (+3 HP in-combat, +6 HP out-of-combat)", "healAmount": 3, "burstHeal": true }
       ]
     },
     {
@@ -120,10 +120,10 @@
       "expPerProc": 1,
       "description": "Accelerates energy and mana recovery for spellcasters.",
       "tierEffects": [
-        { "level": 1, "description": "Passive energy regen out of combat (+4 Energy per tick)", "energyAmount": 4, "inCombat": false },
-        { "level": 30, "description": "Light energy regen in combat (+5 Energy per tick)", "energyAmount": 5, "inCombat": true },
-        { "level": 60, "description": "Increased energy regen rate (+8 Energy per tick)", "energyAmount": 8, "inCombat": true },
-        { "level": 90, "description": "Burst mana chance at low energy (+20 Energy burst)", "energyAmount": 12, "inCombat": true, "burstEnergy": true }
+        { "level": 1, "description": "Passive energy regen (+2 Energy in-combat, +4 Energy out-of-combat per tick)", "energyAmount": 2 },
+        { "level": 30, "description": "Energy regen (+5 Energy in-combat, +10 Energy out-of-combat per tick)", "energyAmount": 5 },
+        { "level": 60, "description": "Increased energy regen rate (+8 Energy in-combat, +16 Energy out-of-combat per tick)", "energyAmount": 8 },
+        { "level": 90, "description": "Burst mana chance at low energy (+12 Energy in-combat, +24 Energy out-of-combat)", "energyAmount": 12, "burstEnergy": true }
       ]
     },
     {
@@ -138,10 +138,10 @@
       "expPerProc": 1,
       "description": "Passively restores energy over time, primarily when out of combat.",
       "tierEffects": [
-        { "level": 1, "description": "Passive energy regen out of combat (+4 Energy per tick)", "energyAmount": 4, "inCombat": false },
-        { "level": 30, "description": "Light energy regen in combat (+5 Energy per tick)", "energyAmount": 5, "inCombat": true },
-        { "level": 60, "description": "Increased energy regen rate (+8 Energy per tick)", "energyAmount": 8, "inCombat": true },
-        { "level": 90, "description": "Burst energy chance at low stamina (+20 Energy burst)", "energyAmount": 12, "inCombat": true, "burstEnergy": true }
+        { "level": 1, "description": "Passive energy regen (+2 Energy in-combat, +4 Energy out-of-combat per tick)", "energyAmount": 2 },
+        { "level": 30, "description": "Energy regen (+5 Energy in-combat, +10 Energy out-of-combat per tick)", "energyAmount": 5 },
+        { "level": 60, "description": "Increased energy regen rate (+8 Energy in-combat, +16 Energy out-of-combat per tick)", "energyAmount": 8 },
+        { "level": 90, "description": "Burst energy chance at low stamina (+12 Energy in-combat, +24 Energy out-of-combat)", "energyAmount": 12, "burstEnergy": true }
       ]
     },
     {

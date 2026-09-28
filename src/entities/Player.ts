@@ -33,6 +33,8 @@ export class Player extends Entity {
   public energy: number;
   public maxEnergy: number;
   public energyRegenPerSecond: number;
+  public hpRegenPerSecond: number = 0.25;
+  public hpFractionalAccumulator: number = 0;
   public lastSkillUseTimes: Map<string, number> = new Map();
 
   public activeClass: string | null = null;
@@ -101,7 +103,8 @@ export class Player extends Entity {
 
     this.energy = playerData.maxEnergy;
     this.maxEnergy = playerData.maxEnergy;
-    this.energyRegenPerSecond = playerData.energyRegenPerSecond;
+    this.energyRegenPerSecond = playerData.energyRegenPerSecond ?? 0.5;
+    this.hpRegenPerSecond = playerData.hpRegenPerSecond ?? 0.25;
 
     this.progression = progression || new ProgressionSystem(DataLoader.getInstance().getClassesData(), this.entityName);
     if (this.progression) {
@@ -1403,26 +1406,36 @@ export class Player extends Entity {
     }
 
     if (this.state !== 'downed' && this.state !== 'dead') {
-      // 1. Passive Energy regeneration over time (strictly out-of-combat)
-      if (!this.inCombat && this.energy < this.maxEnergy) {
+      const dataLoader = DataLoader.getInstance();
+      const oocMultiplier = dataLoader.getOutOfCombatRegenMultiplier();
+      const currentRegenMultiplier = this.inCombat ? 1.0 : oocMultiplier;
+
+      // 1a. Base Passive Energy regeneration over time (in-combat = 1.0x, out-of-combat = 2.0x)
+      if (this.energy < this.maxEnergy) {
         const preEnergy = this.energy;
-        this.energy = Math.min(this.maxEnergy, this.energy + (this.energyRegenPerSecond * delta) / 1000);
+        const effectiveEnergyRate = this.energyRegenPerSecond * currentRegenMultiplier;
+        this.energy = Math.min(this.maxEnergy, this.energy + (effectiveEnergyRate * delta) / 1000);
         if (!this.lastDiagRegenLog || time - this.lastDiagRegenLog >= 2000) {
           this.lastDiagRegenLog = time;
           console.log(
-            `[DIAG:Regen] ${this.entityName} | inCombat: ${this.inCombat} | Energy: ${preEnergy.toFixed(1)} -> ${this.energy.toFixed(1)} (+${(this.energy - preEnergy).toFixed(2)})`
-          );
-        }
-      } else if (this.inCombat && this.energy < this.maxEnergy) {
-        if (!this.lastDiagInCombatLog || time - this.lastDiagInCombatLog >= 3000) {
-          this.lastDiagInCombatLog = time;
-          console.log(
-            `[DIAG:Regen] ${this.entityName} | inCombat: true | Passive regen BLOCKED | Energy: ${this.energy.toFixed(1)}/${this.maxEnergy}`
+            `[DIAG:Regen] ${this.entityName} | inCombat: ${this.inCombat} | Rate: ${effectiveEnergyRate.toFixed(2)} EN/s | Energy: ${preEnergy.toFixed(1)} -> ${this.energy.toFixed(1)} (+${(this.energy - preEnergy).toFixed(2)})`
           );
         }
       }
 
-      const dataLoader = DataLoader.getInstance();
+      // 1b. Base Passive HP regeneration over time (in-combat = 1.0x, out-of-combat = 2.0x, fills Critical HP first via this.heal())
+      if (this.hp < this.maxHp || this.criticalHp < this.maxCriticalHp) {
+        const effectiveHpRate = this.hpRegenPerSecond * currentRegenMultiplier;
+        this.hpFractionalAccumulator += (effectiveHpRate * delta) / 1000;
+        if (this.hpFractionalAccumulator >= 1.0) {
+          const wholeHp = Math.floor(this.hpFractionalAccumulator);
+          this.hpFractionalAccumulator -= wholeHp;
+          this.heal(wholeHp);
+        }
+      } else {
+        this.hpFractionalAccumulator = 0;
+      }
+
       // 2. Hunger Drain over time
       if (dataLoader.isHungerEnabled()) {
         if (this.hunger > 0) {
@@ -1437,14 +1450,16 @@ export class Player extends Entity {
         this.hunger = 100;
       }
 
-      // 4. Well Fed HP Regen Buff Ticking
+      // 4. Well Fed HP Regen Buff Ticking (in-combat = 1.0x, out-of-combat = 2.0x)
       if (this.wellFedRemainingMs > 0) {
         this.wellFedRemainingMs -= delta;
         this.wellFedNextTickMs -= delta;
         if (this.wellFedNextTickMs <= 0) {
           this.wellFedNextTickMs += 1000;
-          if (this.hp < this.maxHp) {
-            const healed = this.heal(this.wellFedHpPerSec);
+          if (this.hp < this.maxHp || this.criticalHp < this.maxCriticalHp) {
+            const foodMultiplier = this.inCombat ? 1.0 : oocMultiplier;
+            const effectiveHeal = this.wellFedHpPerSec * foodMultiplier;
+            const healed = this.heal(effectiveHeal);
             if (healed > 0) {
               console.log(`[Well Fed] Regenerated +${healed} HP from food buff!`);
               this.createFloatingText(`+${healed} HP`, '#22c55e');

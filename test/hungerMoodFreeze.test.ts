@@ -409,15 +409,15 @@ async function runTests() {
   assert.strictEqual(heroEating.hunger, 100, 'Hunger remains at 100');
   assert.strictEqual(heroEating.mood, 50, 'Mood remains at 50');
   assert.strictEqual(heroEating.wellFedRemainingMs, 15000, 'Well Fed buff duration is 15000ms');
-  assert.strictEqual(heroEating.wellFedHpPerSec, 2, 'Well Fed buff grants +2 HP/sec');
+  assert.strictEqual(heroEating.wellFedHpPerSec, 1, 'Well Fed buff baseline in-combat rate is 1 HP/sec');
 
-  // Tick for 5 seconds to observe HP regeneration
+  // Tick for 5 seconds to observe HP regeneration (Well Fed 2 HP/s out-of-combat + Base HP 0.5 HP/s out-of-combat = 12 HP)
   const hpBefore = heroEating.hp;
   for (let s = 1; s <= 5; s++) {
     heroEating.update(liveTime + s * 1000, 1000);
   }
   const hpAfter = heroEating.hp;
-  assert.strictEqual(hpAfter, hpBefore + 10, 'Well Fed buff regenerated 10 HP over 5 seconds (+2 HP/s)');
+  assert.strictEqual(hpAfter, hpBefore + 12, 'Regenerated 12 HP over 5s out-of-combat (10 HP Well Fed + 2 HP Base HP regen)');
   assert.strictEqual(heroEating.hunger, 100, 'Hunger is still 100');
   assert.strictEqual(heroEating.mood, 50, 'Mood is still 50');
   console.log(`  Regenerated HP from ${hpBefore} to ${hpAfter} while Hunger held at ${heroEating.hunger} and Mood held at ${heroEating.mood}`);

@@ -734,3 +734,25 @@ Never ask Antigravity to jump ahead in this list — each milestone assumes the 
     - `test/darkKnightPassiveImbuement.test.ts`: 100% pass (all 8 tests passing).
   - Production Build: `npm run build` compiled cleanly with 0 TypeScript/vite errors.
 
+**Resolved and shipped: Milestone — Regen Refinement (Out of Combat = 2× In Combat) + Critical-HP-First Healing Audit.**
+- **1. Universal Out-of-Combat Multiplier (2× everywhere)**:
+  - Base and passive regen sources recover at exactly 2× out of combat compared to in combat (`out = in × 2.0`), driven by `DataLoader.getOutOfCombatRegenMultiplier()` (configured as `outOfCombatRegenMultiplier: 2.0` in `data/player.json`).
+  - No hardcoded out-of-combat values; all passive sources store their baseline in-combat amount and derive out-of-combat.
+- **2. In-Combat Baseline Numbers (Data-Driven)**:
+  - **Base Energy Regen**: Set to `0.5` EN/s in `data/player.json` (derived out-of-combat: `1.0` EN/s). This deliberately slows passive resting (0 -> 100 Energy takes ~100s instead of ~20s), pushing players toward crafting Energy potions and proper run preparation.
+  - **Base HP Regen**: Added `0.25` HP/s in `data/player.json` (derived out-of-combat: `0.5` HP/s). Handled through a fractional accumulator (`hpFractionalAccumulator`) so fractional rates cleanly deliver whole-point heals (60s in combat yields exactly 15 HP).
+  - **Hidden Skills (`health_regen`, `energy_regen`, `mana_regen`)**:
+    - Stored in `data/hiddenSkills.json` as in-combat amounts: Lv 1-29 gives 0.5 HP / 2 EN / 2 EN per proc. Lv 30+: 1 / 5 / 5; Lv 60+: 2 / 8 / 8; Lv 90+: 3 / 12 / 12.
+    - Derived out-of-combat amounts tick at exactly 2× (Lv 1 gives 1.0 HP / 4 EN / 4 EN).
+    - Removed `inCombat` tier gating flags; all tiers proc in and out of combat.
+  - **Potion Interaction**: Active `energy_regen` / `mana_regen` potion buffs grant the matching hidden skill ticks at the out-of-combat rate (2×) even while engaged in combat, plus +50% bonus EXP.
+  - **Well Fed Buff**: Stored in-combat rate in `data/food.json` (`hpRegenPerSec` halved to 1.0 for Ration/Herb Stew, 0.5 for Veggie Stew, 1.5 for Beast Stew); scales with `currentRegenMultiplier` to provide the original full recovery out-of-combat (2.0 HP/s).
+- **3. Critical-HP-First Healing Sink & Audit**:
+  - `Entity.heal()` (and `Player.heal()`) verified as the single healing sink across all paths (potions, bandages, food Well Fed buff, passive base HP regen, hidden skills, life leech, paladin heals, etc.).
+  - Always fills Critical HP first before overflowing to Main HP.
+  - Downed characters do not passively regenerate HP or Energy.
+- **4. Verification & Caster Dry Test**:
+  - Verified caster dry test with 0 potions: Fire Mage runs dry after 4 casts (5.2s), matching the target 4-5 casts constraint.
+  - Full test suite `test/regenRefinement.test.ts` (100% pass) and audit suite `test/hpRegenFillOrderAudit.test.ts` (100% pass across 13 tests).
+  - Production Build: `npm run build` compiled cleanly with 0 TypeScript/vite errors.
+

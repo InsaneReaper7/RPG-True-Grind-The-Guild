@@ -292,26 +292,22 @@ async function runMilestone19Tests() {
   const manaRegen = dataLoader.getHiddenSkill('mana_regen');
 
   assert.ok(energyRegen && manaRegen, 'energy_regen and mana_regen hidden skills exist');
-  // Tier 1 (Lv 1): +4 ooc
-  assert.equal(energyRegen.tierEffects![0].energyAmount, 4);
-  // Tier 2 (Lv 30): +5 in-combat
+  // Tier 1 (Lv 1): 2 in-combat (4 out-of-combat derived)
+  assert.equal(energyRegen.tierEffects![0].energyAmount, 2);
+  // Tier 2 (Lv 30): 5 in-combat (10 out-of-combat derived)
   assert.equal(energyRegen.tierEffects![1].energyAmount, 5);
-  assert.equal(energyRegen.tierEffects![1].inCombat, true);
-  // Tier 3 (Lv 60): +8 in-combat
+  // Tier 3 (Lv 60): 8 in-combat (16 out-of-combat derived)
   assert.equal(energyRegen.tierEffects![2].energyAmount, 8);
-  assert.equal(energyRegen.tierEffects![2].inCombat, true);
-  // Tier 4 (Lv 90): +12 in-combat, +20 burst
+  // Tier 4 (Lv 90): 12 in-combat (24 out-of-combat derived), +20 burst
   assert.equal(energyRegen.tierEffects![3].energyAmount, 12);
   assert.equal(energyRegen.tierEffects![3].burstEnergy, true);
 
-  assert.equal(manaRegen.tierEffects![0].energyAmount, 4);
+  assert.equal(manaRegen.tierEffects![0].energyAmount, 2);
   assert.equal(manaRegen.tierEffects![1].energyAmount, 5);
-  assert.equal(manaRegen.tierEffects![1].inCombat, true);
   assert.equal(manaRegen.tierEffects![2].energyAmount, 8);
-  assert.equal(manaRegen.tierEffects![2].inCombat, true);
   assert.equal(manaRegen.tierEffects![3].energyAmount, 12);
   assert.equal(manaRegen.tierEffects![3].burstEnergy, true);
-  console.log('✔ Test 3 passed: Regen tiers verified (Lv1 +4 ooc, Lv30 +5, Lv60 +8, Lv90 +12/+20 in-combat).');
+  console.log('✔ Test 3 passed: Regen tiers verified (Lv1 +2, Lv30 +5, Lv60 +8, Lv90 +12/+20 in-combat baseline).');
 
   // ---------------------------------------------------------------------------
   // TEST 4: Alchemy Recipe for Mana Potion Uses Ectoplasm (No slime_gel)

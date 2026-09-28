@@ -236,7 +236,9 @@ export interface PlayerData {
   maxHp: number;
   criticalHpMax: number;
   maxEnergy: number;
+  hpRegenPerSecond?: number;
   energyRegenPerSecond: number;
+  outOfCombatRegenMultiplier?: number;
   moveSpeed: number;
   baseCarryCapacity?: number;
   attackRangeTiles: number;

@@ -351,6 +351,10 @@ export class DataLoader {
     return this.playerData;
   }
 
+  public getOutOfCombatRegenMultiplier(): number {
+    return this.playerData?.outOfCombatRegenMultiplier ?? 2.0;
+  }
+
   public getWeaponsData(): WeaponsData {
     return this.weaponsData;
   }

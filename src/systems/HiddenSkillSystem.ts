@@ -1,5 +1,6 @@
 import type { HiddenSkillDef, HiddenSkillTierEffect, WeaponDef } from '../types/game.ts';
 import type { ProgressionSystem } from './ProgressionSystem.ts';
+import { DataLoader } from '../utils/DataLoader.ts';
 
 export interface CombatContext {
   equippedWeapon?: WeaponDef | null;
@@ -334,45 +335,43 @@ export class HiddenSkillSystem {
     let energyRegenProcced = false;
     let energyRestored = 0;
 
+    const oocMultiplier = DataLoader.getInstance().getOutOfCombatRegenMultiplier();
+
     const hpLevel = progression.getProficiencyLevel('health_regen');
     const hpDef = this.getSkillDef('health_regen');
-    if (hpDef) {
-      const hpTier = this.getTierEffect(hpDef, hpLevel);
-      const isEligibleByCombat = !context.inCombat || (hpTier && hpTier.inCombat);
-      if (isEligibleByCombat) {
-        const hpRes = this.rollProc(hpDef, context, progression);
-        if (hpRes.procced) {
-          healthProcced = true;
-          healthRestored = hpRes.tierEffect?.healAmount ?? (hpLevel >= 1 ? 1 : 0);
-        }
+    if (hpDef && hpLevel >= 1) {
+      const hpRes = this.rollProc(hpDef, context, progression);
+      if (hpRes.procced) {
+        healthProcced = true;
+        const baseAmount = hpRes.tierEffect?.healAmount ?? (hpLevel >= 1 ? 0.5 : 0);
+        const mult = context.inCombat ? 1.0 : oocMultiplier;
+        healthRestored = baseAmount * mult;
       }
     }
 
     const energyLevel = progression.getProficiencyLevel('energy_regen');
     const energyDef = this.getSkillDef('energy_regen');
-    if (energyDef) {
-      const energyTier = this.getTierEffect(energyDef, energyLevel);
-      const isEligibleByCombat = !context.inCombat || (energyTier && energyTier.inCombat) || !!context.hasEnergyPotionBuff;
-      if (isEligibleByCombat) {
-        const energyRes = this.rollProc(energyDef, context, progression);
-        if (energyRes.procced) {
-          energyRegenProcced = true;
-          energyRestored += energyRes.tierEffect?.energyAmount ?? (energyLevel >= 1 ? 4 : 0);
-        }
+    if (energyDef && energyLevel >= 1) {
+      const energyRes = this.rollProc(energyDef, context, progression);
+      if (energyRes.procced) {
+        energyRegenProcced = true;
+        const baseAmount = energyRes.tierEffect?.energyAmount ?? (energyLevel >= 1 ? 2 : 0);
+        const isOocOrPotion = !context.inCombat || !!context.hasEnergyPotionBuff;
+        const mult = isOocOrPotion ? oocMultiplier : 1.0;
+        energyRestored += baseAmount * mult;
       }
     }
 
     const manaLevel = progression.getProficiencyLevel('mana_regen');
     const manaDef = this.getSkillDef('mana_regen');
-    if (manaDef) {
-      const manaTier = this.getTierEffect(manaDef, manaLevel);
-      const isEligibleByCombat = !context.inCombat || (manaTier && manaTier.inCombat) || !!context.hasManaPotionBuff;
-      if (isEligibleByCombat) {
-        const manaRes = this.rollProc(manaDef, context, progression);
-        if (manaRes.procced) {
-          manaProcced = true;
-          energyRestored += manaRes.tierEffect?.energyAmount ?? (manaLevel >= 1 ? 4 : 0);
-        }
+    if (manaDef && manaLevel >= 1) {
+      const manaRes = this.rollProc(manaDef, context, progression);
+      if (manaRes.procced) {
+        manaProcced = true;
+        const baseAmount = manaRes.tierEffect?.energyAmount ?? (manaLevel >= 1 ? 2 : 0);
+        const isOocOrPotion = !context.inCombat || !!context.hasManaPotionBuff;
+        const mult = isOocOrPotion ? oocMultiplier : 1.0;
+        energyRestored += baseAmount * mult;
       }
     }
 
