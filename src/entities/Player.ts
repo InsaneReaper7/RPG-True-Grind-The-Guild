@@ -47,8 +47,10 @@ export class Player extends Entity {
   public hungerDrainPerSecond: number = 0.5; // ~30 hunger per minute
   public autoEatThreshold: number = 25;
 
-  public mood: number = 80;
+  public mood: number = 50;
   public maxMood: number = 100;
+  public savedHunger?: number;
+  public savedMood?: number;
 
   public wellFedRemainingMs: number = 0;
   public wellFedNextTickMs: number = 0;
@@ -124,6 +126,16 @@ export class Player extends Entity {
 
     this.checkSkillUnlocks();
     this.updateEncumbrance();
+
+    const dl = DataLoader.getInstance();
+    if (dl && dl.isMoodEnabled()) {
+      this.mood = 80;
+    } else {
+      this.mood = 50;
+    }
+    if (dl && !dl.isHungerEnabled()) {
+      this.hunger = 100;
+    }
   }
 
   public setActiveClass(classId: string | null): boolean {
@@ -1092,8 +1104,8 @@ export class Player extends Entity {
       unlockedClasses: progData.unlockedClasses,
       activityCounts: progData.activityCounts,
       bookLearnedSkills: Array.from(this.bookLearnedSkills),
-      hunger: this.hunger,
-      mood: this.mood,
+      hunger: (!dataLoader.isHungerEnabled() && this.savedHunger !== undefined) ? this.savedHunger : this.hunger,
+      mood: (!dataLoader.isMoodEnabled() && this.savedMood !== undefined) ? this.savedMood : this.mood,
       state: currentState
     };
   }
@@ -1186,10 +1198,16 @@ export class Player extends Entity {
       this.bookLearnedSkills = new Set(snapshot.bookLearnedSkills);
     }
     if (snapshot.hunger !== undefined) {
-      this.hunger = snapshot.hunger;
+      this.savedHunger = snapshot.hunger;
+      this.hunger = dataLoader.isHungerEnabled() ? snapshot.hunger : 100;
+    } else {
+      this.hunger = 100;
     }
     if (snapshot.mood !== undefined) {
-      this.mood = snapshot.mood;
+      this.savedMood = snapshot.mood;
+      this.mood = dataLoader.isMoodEnabled() ? snapshot.mood : 50;
+    } else {
+      this.mood = dataLoader.isMoodEnabled() ? 80 : 50;
     }
     this.activeClass = snapshot.activeClass ?? null;
 
@@ -1404,14 +1422,19 @@ export class Player extends Entity {
         }
       }
 
+      const dataLoader = DataLoader.getInstance();
       // 2. Hunger Drain over time
-      if (this.hunger > 0) {
-        this.hunger = Math.max(0, this.hunger - (this.hungerDrainPerSecond * delta) / 1000);
-      }
+      if (dataLoader.isHungerEnabled()) {
+        if (this.hunger > 0) {
+          this.hunger = Math.max(0, this.hunger - (this.hungerDrainPerSecond * delta) / 1000);
+        }
 
-      // 3. Auto-Eat when crossing low threshold
-      if (this.hunger <= this.autoEatThreshold) {
-        this.eatFood();
+        // 3. Auto-Eat when crossing low threshold
+        if (this.hunger <= this.autoEatThreshold) {
+          this.eatFood();
+        }
+      } else {
+        this.hunger = 100;
       }
 
       // 4. Well Fed HP Regen Buff Ticking
@@ -1445,24 +1468,30 @@ export class Player extends Entity {
       }
 
       // 5. Dynamic Mood System (Asymmetric Rest vs Dungeon Crawl & Hunger Inputs)
-      const isSafeZone = GameState.getInstance().getIsSafeZone();
-      let moodDeltaPerSec = 0;
+      if (dataLoader.isMoodEnabled()) {
+        const isSafeZone = GameState.getInstance().getIsSafeZone();
+        let moodDeltaPerSec = 0;
 
-      // Rest Input: Safe Outpost vs Dungeon Crawl Fatigue
-      if (isSafeZone) {
-        moodDeltaPerSec += 0.35; // Outpost recovery (+21/min)
+        // Rest Input: Safe Outpost vs Dungeon Crawl Fatigue
+        if (isSafeZone) {
+          moodDeltaPerSec += 0.35; // Outpost recovery (+21/min)
+        } else {
+          moodDeltaPerSec -= 0.50; // Dungeon crawling stress (-30/min)
+        }
+
+        // Hunger Input: Pure Mood drain when hungry
+        if (dataLoader.isHungerEnabled()) {
+          if (this.hunger < 20) {
+            moodDeltaPerSec -= 0.80; // Starvation severe drain
+          } else if (this.hunger < 50) {
+            moodDeltaPerSec -= 0.30; // Mild hunger drain
+          }
+        }
+
+        this.mood = Math.max(0, Math.min(this.maxMood, this.mood + (moodDeltaPerSec * delta) / 1000));
       } else {
-        moodDeltaPerSec -= 0.50; // Dungeon crawling stress (-30/min)
+        this.mood = 50;
       }
-
-      // Hunger Input: Pure Mood drain when hungry
-      if (this.hunger < 20) {
-        moodDeltaPerSec -= 0.80; // Starvation severe drain
-      } else if (this.hunger < 50) {
-        moodDeltaPerSec -= 0.30; // Mild hunger drain
-      }
-
-      this.mood = Math.max(0, Math.min(this.maxMood, this.mood + (moodDeltaPerSec * delta) / 1000));
 
       // 6. Milestone 51: Iron Back Hidden Skill proc check during encumbered movement
       if (this.isMoving() && this.isEncumbered) {

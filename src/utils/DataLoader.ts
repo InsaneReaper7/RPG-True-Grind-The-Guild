@@ -825,6 +825,30 @@ export class DataLoader {
     return this.moodEffectsData;
   }
 
+  public isHungerEnabled(): boolean {
+    return this.moodEffectsData?.hungerEnabled ?? true;
+  }
+
+  public isMoodEnabled(): boolean {
+    return this.moodEffectsData?.moodEnabled ?? true;
+  }
+
+  public setHungerEnabled(enabled: boolean): void {
+    if (!this.moodEffectsData) {
+      this.moodEffectsData = { hungerEnabled: enabled, moodEnabled: true, moodTiers: [] };
+    } else {
+      this.moodEffectsData.hungerEnabled = enabled;
+    }
+  }
+
+  public setMoodEnabled(enabled: boolean): void {
+    if (!this.moodEffectsData) {
+      this.moodEffectsData = { hungerEnabled: true, moodEnabled: enabled, moodTiers: [] };
+    } else {
+      this.moodEffectsData.moodEnabled = enabled;
+    }
+  }
+
   public getMoodTiers(): MoodTierDef[] {
     return this.moodEffectsData?.moodTiers ?? [];
   }

@@ -168,7 +168,7 @@ export class GameState {
       resources: { ...this.resources },
       placedBuildables: [],
       hunger: 100,
-      mood: 80,
+      mood: DataLoader.getInstance().isMoodEnabled() ? 80 : 50,
       currentGameDay: 1,
       foodItems: [],
       equippedWeaponId: initialMainWeapon,
@@ -208,7 +208,7 @@ export class GameState {
       activeClass: null,
       bookLearnedSkills: [],
       hunger: 100,
-      mood: 80,
+      mood: DataLoader.getInstance().isMoodEnabled() ? 80 : 50,
       state: 'idle'
     };
 
@@ -243,7 +243,7 @@ export class GameState {
       activeClass: 'scout',
       bookLearnedSkills: [],
       hunger: 100,
-      mood: 80,
+      mood: DataLoader.getInstance().isMoodEnabled() ? 80 : 50,
       state: 'idle'
     };
 
@@ -302,7 +302,7 @@ export class GameState {
       activeClass: null,
       bookLearnedSkills: [],
       hunger: 100,
-      mood: 80,
+      mood: DataLoader.getInstance().isMoodEnabled() ? 80 : 50,
       state: 'idle'
     };
     return recruitSnapshot;
@@ -1418,8 +1418,8 @@ export class GameState {
       completedResearchIds: Array.from(this.completedResearchIds),
       inventory: Object.fromEntries(this.inventory),
       bookLearnedSkills: Array.from(player.bookLearnedSkills),
-      hunger: player.hunger,
-      mood: player.mood,
+      hunger: (!dataLoader.isHungerEnabled() && player.savedHunger !== undefined) ? player.savedHunger : player.hunger,
+      mood: (!dataLoader.isMoodEnabled() && player.savedMood !== undefined) ? player.savedMood : player.mood,
       currentGameDay: this.currentGameDay,
       dayProgressMs: this.dayProgressMs,
       foodItems: [...this.foodItems],
@@ -1508,10 +1508,16 @@ export class GameState {
       player.bookLearnedSkills = new Set(snap.bookLearnedSkills);
     }
     if (snap.hunger !== undefined) {
-      player.hunger = snap.hunger;
+      player.savedHunger = snap.hunger;
+      player.hunger = DataLoader.getInstance().isHungerEnabled() ? snap.hunger : 100;
+    } else {
+      player.hunger = 100;
     }
     if (snap.mood !== undefined) {
-      player.mood = snap.mood;
+      player.savedMood = snap.mood;
+      player.mood = DataLoader.getInstance().isMoodEnabled() ? snap.mood : 50;
+    } else {
+      player.mood = DataLoader.getInstance().isMoodEnabled() ? 80 : 50;
     }
     if (snap.currentGameDay !== undefined) {
       this.currentGameDay = snap.currentGameDay;

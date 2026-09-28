@@ -2710,25 +2710,35 @@ export class HUD {
     }
 
     if (this.playerHungerTextEl) {
-      this.playerHungerTextEl.innerText = `${Math.ceil(player.hunger)} / ${player.maxHunger}`;
-      if (player.hunger > 50) {
-        this.playerHungerTextEl.style.color = '#22c55e';
-      } else if (player.hunger > 25) {
-        this.playerHungerTextEl.style.color = '#f59e0b';
+      if (!DataLoader.getInstance().isHungerEnabled()) {
+        this.playerHungerTextEl.innerText = `${Math.ceil(player.hunger)} / ${player.maxHunger} (paused)`;
+        this.playerHungerTextEl.style.color = '#9ca3af';
       } else {
-        this.playerHungerTextEl.style.color = '#ef4444';
+        this.playerHungerTextEl.innerText = `${Math.ceil(player.hunger)} / ${player.maxHunger}`;
+        if (player.hunger > 50) {
+          this.playerHungerTextEl.style.color = '#22c55e';
+        } else if (player.hunger > 25) {
+          this.playerHungerTextEl.style.color = '#f59e0b';
+        } else {
+          this.playerHungerTextEl.style.color = '#ef4444';
+        }
       }
     }
 
     if (this.playerMoodTextEl) {
       const moodTier = DataLoader.getInstance().getMoodTier(player.mood);
-      this.playerMoodTextEl.innerText = `${Math.ceil(player.mood)} / ${player.maxMood} (${moodTier.name})`;
-      if (moodTier.tier === 'high') {
-        this.playerMoodTextEl.style.color = '#22c55e';
-      } else if (moodTier.tier === 'content') {
-        this.playerMoodTextEl.style.color = '#38bdf8';
+      if (!DataLoader.getInstance().isMoodEnabled()) {
+        this.playerMoodTextEl.innerText = `${Math.ceil(player.mood)} / ${player.maxMood} (${moodTier.name}) (paused)`;
+        this.playerMoodTextEl.style.color = '#9ca3af';
       } else {
-        this.playerMoodTextEl.style.color = '#ef4444';
+        this.playerMoodTextEl.innerText = `${Math.ceil(player.mood)} / ${player.maxMood} (${moodTier.name})`;
+        if (moodTier.tier === 'high') {
+          this.playerMoodTextEl.style.color = '#22c55e';
+        } else if (moodTier.tier === 'content') {
+          this.playerMoodTextEl.style.color = '#38bdf8';
+        } else {
+          this.playerMoodTextEl.style.color = '#ef4444';
+        }
       }
     }
 
@@ -3114,13 +3124,21 @@ export class HUD {
       // 4. Hunger
       const hungerEl = this.partyOverviewRosterEl.querySelector<HTMLElement>(`[data-party-hunger="${i}"]`);
       if (hungerEl) {
-        this.setElementTextIfChanged(hungerEl, `${Math.floor(member.hunger)} / ${member.maxHunger}`);
+        const hungerSuffix = !DataLoader.getInstance().isHungerEnabled() ? ' (paused)' : '';
+        this.setElementTextIfChanged(hungerEl, `${Math.floor(member.hunger)} / ${member.maxHunger}${hungerSuffix}`);
+        if (!DataLoader.getInstance().isHungerEnabled()) {
+          hungerEl.style.color = '#9ca3af';
+        }
       }
 
       // 5. Mood
       const moodEl = this.partyOverviewRosterEl.querySelector<HTMLElement>(`[data-party-mood="${i}"]`);
       if (moodEl) {
-        this.setElementTextIfChanged(moodEl, `${Math.floor(member.mood)} / ${member.maxMood}`);
+        const moodSuffix = !DataLoader.getInstance().isMoodEnabled() ? ' (paused)' : '';
+        this.setElementTextIfChanged(moodEl, `${Math.floor(member.mood)} / ${member.maxMood}${moodSuffix}`);
+        if (!DataLoader.getInstance().isMoodEnabled()) {
+          moodEl.style.color = '#9ca3af';
+        }
       }
 
       // 5b. Carry Weight & Encumbrance (Milestone 51)
@@ -3581,11 +3599,11 @@ export class HUD {
             </div>
             <div class="party-stat-row">
               <span>Hunger:</span>
-              <span class="party-stat-val" data-party-hunger="${i}" style="color: #fb923c;">${Math.floor(member.hunger)} / ${member.maxHunger}</span>
+              <span class="party-stat-val" data-party-hunger="${i}" style="color: ${DataLoader.getInstance().isHungerEnabled() ? '#fb923c' : '#9ca3af'};">${Math.floor(member.hunger)} / ${member.maxHunger}${DataLoader.getInstance().isHungerEnabled() ? '' : ' (paused)'}</span>
             </div>
             <div class="party-stat-row">
               <span>Mood:</span>
-              <span class="party-stat-val" data-party-mood="${i}" style="color: #34d399;">${Math.floor(member.mood)} / ${member.maxMood}</span>
+              <span class="party-stat-val" data-party-mood="${i}" style="color: ${DataLoader.getInstance().isMoodEnabled() ? '#34d399' : '#9ca3af'};">${Math.floor(member.mood)} / ${member.maxMood}${DataLoader.getInstance().isMoodEnabled() ? '' : ' (paused)'}</span>
             </div>
             <div class="party-stat-row party-weight-box" style="margin-top: 4px; padding-top: 4px; border-top: 1px solid rgba(255,255,255,0.08); display: flex; flex-direction: column; gap: 3px;">
               <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
@@ -5141,7 +5159,8 @@ export class HUD {
     const moodMultiplier = 1 + moodTier.alchemyYieldBonus;
 
     if (this.alchemyMoodValueEl && this.alchemyMoodEffectEl) {
-      this.alchemyMoodValueEl.innerText = `${moodTier.name} (${Math.ceil(player.mood)}/100)`;
+      const pausedSuffix = !dataLoader.isMoodEnabled() ? ' (paused)' : '';
+      this.alchemyMoodValueEl.innerText = `${moodTier.name} (${Math.ceil(player.mood)}/100)${pausedSuffix}`;
       if (moodTier.alchemyYieldBonus > 0) {
         this.alchemyMoodEffectEl.innerText = `+${moodTier.alchemyYieldBonus * 100}% Crafting Yield (${moodMultiplier}x per craft!)`;
         this.alchemyMoodEffectEl.style.color = '#fef08a';

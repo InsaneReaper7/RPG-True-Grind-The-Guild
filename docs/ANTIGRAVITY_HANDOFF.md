@@ -700,3 +700,37 @@ Never ask Antigravity to jump ahead in this list — each milestone assumes the 
   - `test/wipeAndReviveAudit.test.ts`: 100% pass (all 4 tests passing).
   - `npm run build`: Production bundle (`tsc && vite build`) compiled cleanly with 0 errors.
 
+**Resolved and shipped: Milestone — Freeze Hunger & Mood at Neutral (Until Food Content Milestone).**
+- **1. Data-Driven Feature Switches**:
+  - Configured in `data/moodEffects.json`: `"hungerEnabled": false` and `"moodEnabled": false`.
+  - Added schema support in `src/types/game.ts` (`MoodEffectsData`) and helper methods in `src/utils/DataLoader.ts` (`isHungerEnabled()`, `isMoodEnabled()`, `setHungerEnabled(bool)`, `setMoodEnabled(bool)`).
+- **2. Fixed Neutral State & Combat/Crafting Normalization**:
+  - While switches are disabled, character Hunger is held at 100 (never drains or triggers auto-eat) and Mood is held at 50 in the Content tier.
+  - At Mood 50, combat damage multiplier is strictly ×1.0, combat accuracy bonus is +0, and alchemy yield bonus is 0. Party fights at neutral baseline without penalties.
+- **3. Save State Preservation & Overrides**:
+  - Existing saves load into neutral state (`hunger: 100`, `mood: 50`) while switches are off without deleting historical saved values (`savedHunger`, `savedMood`).
+  - Snapshots taken while switches are off preserve original saved values. Turning switches back to `true` restores original values faithfully.
+- **4. Food Consumption & Spoilage Continuity**:
+  - `Player.eatFood()` continues to work normally: eating food consumes the item, refreshes the Well Fed HP regen buff (+2 HP/s), while keeping hunger at 100 and mood at 50.
+  - Food shelf life and spoilage checks on game day advance remain fully active.
+- **5. HUD Presentation**:
+  - Top HUD bar displays `${hunger} / ${maxHunger} (paused)` and `${mood} / ${maxMood} (${moodTier.name}) (paused)` in neutral grey `#9ca3af`.
+  - Party Overview roster displays `(paused)` suffix with `#9ca3af` text for both meters.
+  - Alchemy crafting modal indicates `(paused)` status on the mood banner.
+  - Re-enabling the switches automatically restores original tier colors and eliminates paused indicators.
+- **Verification Evidence**:
+  - `test/hungerMoodFreeze.test.ts`: Dedicated test suite verifying:
+    1. Data switches in `data/moodEffects.json` default to `false`.
+    2. Simulated 10 minutes in dungeon with switches OFF keeps Hunger at 100 and Mood at 50 with combat damage ×1.0 and accuracy +0.
+    3. Simulated 10 minutes in dungeon with switches ON reproduces exact drain rates: hunger empties in 200s (3.3 min), mood drains to 0, combat damage ×0.85 (-15%) and accuracy -0.10 (-10%).
+    4. Eating stew while frozen applies Well Fed buff and heals 10 HP over 5s while meters hold at 100 and 50.
+    5. Food spoilage check remains active on day advance while meters are frozen.
+    6. Existing saves load into neutral state without deleting saved values; switches ON restores original values.
+    7. HUD displays `(paused)` and grey `#9ca3af` style when frozen, normal colors when active.
+  - Regressions:
+    - `test/milestone_revive_economy.test.ts`: 100% pass (all 6 tests passing).
+    - `test/item_flow_unification.test.ts`: 100% pass (all 6 tests passing).
+    - `test/engageCombatHold.test.ts`: 100% pass (all 4 tests passing).
+    - `test/darkKnightPassiveImbuement.test.ts`: 100% pass (all 8 tests passing).
+  - Production Build: `npm run build` compiled cleanly with 0 TypeScript/vite errors.
+

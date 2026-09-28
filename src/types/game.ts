@@ -721,6 +721,8 @@ export interface MoodTierDef {
 }
 
 export interface MoodEffectsData {
+  hungerEnabled?: boolean;
+  moodEnabled?: boolean;
   moodTiers: MoodTierDef[];
 }
 

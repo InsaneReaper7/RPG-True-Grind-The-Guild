@@ -1234,7 +1234,7 @@ export class OutpostScene extends Phaser.Scene {
         activeClass: 'scout',
         bookLearnedSkills: [],
         hunger: 100,
-        mood: 80,
+        mood: DataLoader.getInstance().isMoodEnabled() ? 80 : 50,
         state: 'idle'
       };
     } else {
