@@ -341,7 +341,7 @@ async function runTestSuite() {
       }
     }
 
-    console.log(`  [1000 Kills] ${info.name.padEnd(16)} -> Drops: ${singleDropCount} (${(singleDropCount / 10).toFixed(1)}%), Zero: ${zeroDropCount}, Bones: ${boneDropCount}`);
+    console.log(`  [1000 Kills] ${info.name.padEnd(16)} | 0 Drops: ${zeroDropCount.toString().padStart(4)} (${(zeroDropCount / 10).toFixed(1)}%) | 1 Drop: ${singleDropCount.toString().padStart(4)} (${(singleDropCount / 10).toFixed(1)}%) | 2+ Drops: ${multiDropCount.toString().padStart(2)} | Bones: ${boneDropCount.toString().padStart(4)}`);
 
     // Verify 40% drop distribution (roughly 35%-45% over 1000 rolls)
     assert.ok(singleDropCount > 300 && singleDropCount < 500, `${info.name} drop rate aligns with 40%`);
