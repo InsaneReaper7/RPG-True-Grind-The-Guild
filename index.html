@@ -1426,7 +1426,7 @@
     }
     /* Equipment Inventory Panel (Milestone 35) */
     .party-equipment-inventory {
-      width: 310px;
+      width: 380px;
       flex-shrink: 0;
       background: rgba(17, 24, 39, 0.7);
       border: 1px solid rgba(255, 255, 255, 0.1);
@@ -3058,12 +3058,17 @@
             <div class="inventory-panel-header">
               <div class="inventory-panel-title">🎒 Equipment Stash</div>
               <div class="inventory-panel-subtitle">Drag & drop onto matching paperdoll slots</div>
-              <div class="inventory-filter-tabs">
-                <button class="inv-filter-btn active" data-filter="all" type="button">All</button>
-                <button class="inv-filter-btn" data-filter="weapons" type="button">Weapons</button>
-                <button class="inv-filter-btn" data-filter="armor" type="button">Armor</button>
-                <button class="inv-filter-btn" data-filter="jewelry" type="button">Jewelry</button>
-                <button class="inv-filter-btn" data-filter="items" type="button">Items</button>
+              <div class="inventory-filter-tabs" style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; gap: 4px;">
+                  <button class="inv-filter-btn active" data-filter="all" type="button">All</button>
+                  <button class="inv-filter-btn" data-filter="weapons" type="button">Weapons</button>
+                  <button class="inv-filter-btn" data-filter="armor" type="button">Armor</button>
+                  <button class="inv-filter-btn" data-filter="jewelry" type="button">Jewelry</button>
+                  <button class="inv-filter-btn" data-filter="items" type="button">Items</button>
+                </div>
+                <button id="stash-toggle-filter-btn" class="stockpile-toggle-btn crafting-toggle-btn" type="button" title="Toggle between showing owned gear vs all gear" style="border-color: #2dd4bf; background: rgba(13, 148, 136, 0.3); color: #2dd4bf; margin-left: 8px;">
+                  <span id="stash-toggle-filter-indicator">✅</span> <span id="stash-toggle-filter-label">Showing: Owned Only</span>
+                </button>
               </div>
             </div>
             <div id="party-inventory-item-list" class="inventory-item-list">

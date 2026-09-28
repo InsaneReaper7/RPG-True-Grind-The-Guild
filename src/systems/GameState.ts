@@ -1844,4 +1844,114 @@ export class GameState {
       this.initFromPlayerData(data, startingKitId);
     }
   }
+
+  /**
+   * Non-destructive diagnostic audit of saved gear duplicates and stockpile consumables in localStorage.
+   * Reports per-item counts across party personal bags, equipped slots, and shared stockpile.
+   * Never mutates or strips items from the save.
+   */
+  public static auditSavedDuplicateGear(): {
+    hasSave: boolean;
+    duplicateGear: Array<{ itemId: string; name: string; type: 'weapon' | 'armor'; totalCount: number; locations: Record<string, number> }>;
+    stockpileConsumables: Array<{ itemId: string; count: number }>;
+    reportText: string;
+  } {
+    const storage = typeof window !== 'undefined' ? window.localStorage : (globalThis as any).localStorage;
+    if (!storage) {
+      return { hasSave: false, duplicateGear: [], stockpileConsumables: [], reportText: 'Storage unavailable.' };
+    }
+    const raw = storage.getItem(GameState.SAVE_STORAGE_KEY);
+    if (!raw) {
+      const msg = 'No save file found in storage (RPG_TRUE_GRIND_SAVE_V1 is empty).';
+      console.log(`[Save Audit] ${msg}`);
+      return { hasSave: false, duplicateGear: [], stockpileConsumables: [], reportText: msg };
+    }
+
+    try {
+      const saveFile = JSON.parse(raw) as GameSaveFile;
+      const snapshot = saveFile?.snapshot;
+      if (!snapshot) {
+        return { hasSave: false, duplicateGear: [], stockpileConsumables: [], reportText: 'Save file is missing snapshot.' };
+      }
+
+      const dataLoader = DataLoader.getInstance();
+      const allWeapons = dataLoader.getAllWeapons();
+      const allArmors = dataLoader.getAllArmors();
+      const gearMap = new Map<string, { name: string; type: 'weapon' | 'armor' }>();
+      for (const w of allWeapons) gearMap.set(w.id, { name: w.name, type: 'weapon' });
+      for (const a of allArmors) gearMap.set(a.id, { name: a.name, type: 'armor' });
+
+      const duplicateGear: Array<{ itemId: string; name: string; type: 'weapon' | 'armor'; totalCount: number; locations: Record<string, number> }> = [];
+
+      for (const [id, def] of gearMap.entries()) {
+        const locations: Record<string, number> = {};
+        let total = 0;
+
+        // Stockpile
+        const inStockpile = snapshot.inventory?.[id] || 0;
+        if (inStockpile > 0) {
+          locations['Stockpile'] = inStockpile;
+          total += inStockpile;
+        }
+
+        // Party members
+        if (Array.isArray(snapshot.party)) {
+          for (const m of snapshot.party) {
+            const memberName = m.name || m.id;
+            const inBag = m.inventory?.[id] || 0;
+            if (inBag > 0) {
+              locations[`${memberName} (Bag)`] = (locations[`${memberName} (Bag)`] || 0) + inBag;
+              total += inBag;
+            }
+            let eqCount = 0;
+            if (m.equippedWeaponId === id) eqCount++;
+            if (m.offhandWeaponId === id) eqCount++;
+            if (m.equippedHelmetId === id) eqCount++;
+            if (m.equippedBodyArmorId === id) eqCount++;
+            if (m.equippedNecklaceId === id) eqCount++;
+            if (m.equippedRingId === id) eqCount++;
+            if (m.equippedAccessoryId === id) eqCount++;
+            if (eqCount > 0) {
+              locations[`${memberName} (Equipped)`] = eqCount;
+              total += eqCount;
+            }
+          }
+        }
+
+        if (total > 1) {
+          duplicateGear.push({ itemId: id, name: def.name, type: def.type, totalCount: total, locations });
+        }
+      }
+
+      // Stockpile consumables audit (Alchemy stackables)
+      const consumableIds = ['bandage', 'antidote', 'energy_potion', 'mana_potion', 'bone_meal', 'revive_potion', 'escape_stone'];
+      const stockpileConsumables: Array<{ itemId: string; count: number }> = [];
+      for (const cid of consumableIds) {
+        const count = snapshot.inventory?.[cid] || 0;
+        if (count > 0) {
+          stockpileConsumables.push({ itemId: cid, count });
+        }
+      }
+
+      let reportText = `=== Save Duplicate Gear & Stockpile Consumables Audit ===\n`;
+      reportText += `Saved at: ${new Date(saveFile.savedAt).toISOString()} | Day: ${snapshot.currentGameDay}\n`;
+      reportText += `Duplicate Gear items detected: ${duplicateGear.length}\n`;
+      for (const g of duplicateGear) {
+        reportText += `  - ${g.name} (${g.itemId}): Total ${g.totalCount} copies [${Object.entries(g.locations).map(([loc, cnt]) => `${loc}: ${cnt}`).join(', ')}]\n`;
+      }
+      reportText += `Stockpile Alchemy Consumables:\n`;
+      for (const c of stockpileConsumables) {
+        reportText += `  - ${c.itemId}: ${c.count} in stockpile\n`;
+      }
+      console.log(reportText);
+
+      return { hasSave: true, duplicateGear, stockpileConsumables, reportText };
+    } catch (err: any) {
+      return { hasSave: false, duplicateGear: [], stockpileConsumables: [], reportText: `Error parsing save: ${err?.message}` };
+    }
+  }
+}
+
+if (typeof window !== 'undefined') {
+  (window as any).__auditSavedDuplicateGear = () => GameState.auditSavedDuplicateGear();
 }

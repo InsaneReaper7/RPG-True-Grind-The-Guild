@@ -579,3 +579,52 @@ Never ask Antigravity to jump ahead in this list — each milestone assumes the 
   - `scripts/alpha_checkpoint_harness_v2.mjs`: 100% pass across all 13 stages (browser headless crawl, combat, loot, crafting, returning).
   - `npm run build`: Production bundle (`tsc && vite build`) compiled cleanly in 3.24s with 0 errors.
 
+**Resolved and shipped: Bugfix + Small Feature — Duplicate Crafted Gear & Equipment Stash Owned-Only Toggle.**
+- **Duplicate Crafted Gear Bugfix**:
+  - **Root Cause**: In `src/ui/HUD.ts`, crafting completion handlers across Blacksmithing, Armorsmithing, Bowyer, and Alchemy were calling both `activeLeader.addItem(...)` **and** `gameState.addItem(...)`, creating one copy in the leader's bag and an extra duplicate copy in the central stockpile. Cooking experimentation and recipe cooking also duplicated prepared dishes into `gameState.foodItems`.
+  - **Fix**: Removed duplicate `gameState.addItem` / `gameState.addFoodItem` calls from all 5 crafting stations. All crafted outputs route strictly to the active leader's inventory (`leader.addItem`), with zero additions to the central stockpile.
+  - **Single Copy Invariant for Gear**: Enforced strict condition: weapons, shields, armor, and accessories **always craft exactly 1 copy**, regardless of character mood level. The mood bonus multiplier (e.g. +100% on Euphoric mood) remains exclusive to stackable consumables (potions, bone meal, food dishes) and craftable reagents.
+  - **Equip Lockout**: When 1 copy of gear is crafted and equipped by the leader, companion equip attempts are strictly rejected (`canEquip` / `handleSlotDrop` returns false).
+- **Codebase Add-Item Audit (Single-Destination Routing)**:
+  - Full codebase audit completed for all item deposit pathways:
+    | Source / Pathway | Destination Store | Status |
+    |---|---|---|
+    | Blacksmithing (`forgeRecipe`) | Leader personal bag (`player.addItem`) | Fixed (stockpile duplicate removed; gear locked to 1x) |
+    | Armorsmithing (`craftArmorRecipe`) | Leader personal bag (`player.addItem`) | Fixed (stockpile duplicate removed; gear locked to 1x) |
+    | Bowyer (`craftBowRecipe`) | Leader personal bag (`player.addItem`) | Fixed (stockpile duplicate removed; gear locked to 1x) |
+    | Alchemy (`craftRecipe`) | Leader personal bag (`player.addItem`) | Fixed (stockpile duplicate removed; mood multiplier applies) |
+    | Cooking (`cookRecipe` & Experimentation) | Leader personal bag (`player.addFoodItem`) | Fixed (stockpile duplicate removed) |
+    | Combat kill drops (`rollCommonEnemyDrop`, Elite, Boss) | Central stockpile (`gameState.addItem`) | Verified correct (1 destination) |
+    | Dungeon gathering nodes (Foraging, Mining, Woodcutting) | Gatherer personal bag (`character.addItem`) | Verified correct (1 destination) |
+    | Corpse harvesting (Skinning, Butchering) | Harvester personal bag (`player.addItem`) | Verified correct (1 destination) |
+    | Lockbox rewards (`handleLockpickBox`) | Opener personal bag (`player.addItem`) | Verified correct (1 destination) |
+    | Outpost Gardening & Seed Maker | Central stockpile (`gameState.addItem`) | Verified correct (1 destination) |
+- **Equipment Stash "Owned Only" Toggle Feature**:
+  - Added `#stash-toggle-filter-btn` in the Equipment Stash header inside `.party-equipment-inventory .inventory-filter-tabs` next to the category tabs (All, Weapons, Armor, Jewelry, Items).
+  - Styled using the Outpost station toggle pattern (`.stockpile-toggle-btn.crafting-toggle-btn`).
+  - **Default State**: ON (`stashFilterOwnedOnly = true`). Displays `✅ Showing: Owned Only` with teal border/background. Only items currently owned across personal bags or central stockpile are shown. Unowned catalog items and "Craft Required" badges are hidden.
+  - **Catalog State**: OFF (`stashFilterOwnedOnly = false`). Displays `👁️ Showing: All Gear`. Displays the complete equipment catalog with "Craft Required" badges on unowned items and `draggable="false"`.
+  - **Empty State**: When Owned Only is ON and no gear is owned, renders empty-state notice: `"No gear owned yet — craft some at the Outpost stations."`.
+  - Category tabs filter correctly in both Owned Only and Full Catalog modes.
+  - `openPartyOverviewModal()` now calls `renderPartyOverviewModal(true)` to guarantee a fresh rebuild and accurate stash count rendering upon opening.
+- **Non-Destructive Save Audit Helper**:
+  - Implemented `GameState.auditSavedDuplicateGear()` and window binding `(window as any).__auditSavedDuplicateGear()`.
+  - Non-destructively inspects `localStorage` for `RPG_TRUE_GRIND_SAVE_V1` and reports:
+    - Total duplicate gear copies and specific locations (member personal bags, equipped slots, and stockpile).
+    - Stockpiled alchemy consumables (e.g. `bone_meal`, `revive_potion`).
+  - Guarantees zero mutation or stripping of player save data.
+- **Verification Evidence**:
+  - `test/duplicate_gear_and_stash_toggle.test.ts`: Dedicated test suite verifying:
+    1. Station × Mood yield table across all stations and mood tiers (Lowest/Depressed 0%, Normal 0%, Euphoric +100%) -> gear strictly 1x, consumables receive mood multiplier.
+    2. Single-copy equip lockout strictly enforced across party members.
+    3. Stash Owned-Only toggle filtering, category tab switching, and empty state notice.
+    4. Non-destructive save audit helper execution without mutating save data.
+  - `test/verify_stash_toggle_browser.mjs`: Puppeteer headless Chrome browser test verifying DOM elements, dynamic toggling, save audit helper, and capturing clean screenshots:
+    - `stash_toggle_on.png`: Equipment Stash in default Owned Only mode with empty notice and active toggle button.
+    - `stash_toggle_off.png`: Equipment Stash in All Gear mode showing catalog items with "Craft Required" badges.
+  - `test/craftingInventoryRouting.test.ts`: 100% pass (all 7 tests passing).
+  - `test/craftingStationRecipeFilter.test.ts`: 100% pass (all 9 tests passing).
+  - `test/milestone35.test.ts`: 100% pass (all 10 tests passing).
+  - `test/milestone_revive_economy.test.ts`: 100% pass (all 6 tests passing).
+  - `npm run build`: Production bundle (`tsc && vite build`) compiled cleanly in 3.29s with 0 errors.
+

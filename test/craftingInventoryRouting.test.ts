@@ -897,8 +897,25 @@ async function runTests() {
     gameState.addItem('monster_meat', 20);
     gameState.discoverCookingRecipe('herb_stew');
 
+    const getTotalCountAcrossAllStores = (itemId: string): number => {
+      let total = gameState.getItemCount(itemId);
+      for (const m of party) {
+        total += m.getItemCount(itemId);
+        if (m.equippedWeapon?.id === itemId) total++;
+        if (m.offhandWeapon?.id === itemId) total++;
+        if (m.equippedHelmet?.id === itemId) total++;
+        if (m.equippedBodyArmor?.id === itemId) total++;
+        if (m.equippedNecklace?.id === itemId) total++;
+        if (m.equippedRing?.id === itemId) total++;
+        if (m.equippedAccessory?.id === itemId) total++;
+      }
+      return total;
+    };
+
     // 1. Blacksmithing: Forge Iron Shortsword
     const preOre = gameState.getItemCount('ore');
+    const preStockpileSwords = gameState.getItemCount('short_swords');
+    const preTotalSwords = getTotalCountAcrossAllStores('short_swords');
     hud.openBlacksmithingModal(leader, leader.progression);
     const bsContainer = getOrCreateElement('blacksmithing-recipes-container');
     const swordBtn = bsContainer.querySelector('[data-forge-recipe="short_sword"]') as MockElement;
@@ -906,9 +923,13 @@ async function runTests() {
     swordBtn.onclick();
     assert.strictEqual(gameState.getItemCount('ore'), preOre - 3, 'Ore deducted from stockpile');
     assert.strictEqual(leader.getItemCount('short_swords'), 1, 'Shortsword landed in empty-handed leader inventory');
+    assert.strictEqual(gameState.getItemCount('short_swords'), preStockpileSwords, 'Stockpile gained exactly 0 short_swords from craft');
+    assert.strictEqual(getTotalCountAcrossAllStores('short_swords'), preTotalSwords + 1, 'Total short_swords across all stores rose by exactly 1');
 
     // 2. Armorsmithing: Craft Leather Armor
     const prePelts = gameState.getItemCount('wolf_pelt');
+    const preStockpileArmor = gameState.getItemCount('leather_armor');
+    const preTotalArmor = getTotalCountAcrossAllStores('leather_armor');
     hud.openArmorsmithingModal(leader, leader.progression);
     const asContainer = getOrCreateElement('armorsmithing-recipes-container');
     const armorBtn = asContainer.querySelector('[data-armor-recipe="leather_armor"]') as MockElement;
@@ -916,9 +937,13 @@ async function runTests() {
     armorBtn.onclick();
     assert.strictEqual(gameState.getItemCount('wolf_pelt'), prePelts - 4, 'Wolf Pelt deducted from stockpile');
     assert.strictEqual(leader.getItemCount('leather_armor'), 1, 'Leather Armor landed in leader inventory');
+    assert.strictEqual(gameState.getItemCount('leather_armor'), preStockpileArmor, 'Stockpile gained exactly 0 leather_armor from craft');
+    assert.strictEqual(getTotalCountAcrossAllStores('leather_armor'), preTotalArmor + 1, 'Total leather_armor across all stores rose by exactly 1');
 
     // 3. Bowyer: Craft Hunting Bow
     const preWood = gameState.getItemCount('wood');
+    const preStockpileBows = gameState.getItemCount('bows');
+    const preTotalBows = getTotalCountAcrossAllStores('bows');
     hud.openBowyerModal(leader, leader.progression);
     const bwContainer = getOrCreateElement('bowyer-recipes-container');
     const bowBtn = bwContainer.querySelector('[data-bow-recipe="hunting_bow"]') as MockElement;
@@ -926,9 +951,13 @@ async function runTests() {
     bowBtn.onclick();
     assert.strictEqual(gameState.getItemCount('wood'), preWood - 4, 'Wood deducted from stockpile');
     assert.strictEqual(leader.getItemCount('bows'), 1, 'Hunting bow landed in leader inventory');
+    assert.strictEqual(gameState.getItemCount('bows'), preStockpileBows, 'Stockpile gained exactly 0 bows from craft');
+    assert.strictEqual(getTotalCountAcrossAllStores('bows'), preTotalBows + 1, 'Total bows across all stores rose by exactly 1');
 
     // 4. Alchemy: Craft Antidote
     const preHerbs = gameState.getItemCount('wild_herbs');
+    const preStockpileAntidote = gameState.getItemCount('antidote');
+    const preTotalAntidote = getTotalCountAcrossAllStores('antidote');
     hud.openAlchemyModal(leader, leader.progression);
     const alContainer = getOrCreateElement('alchemy-recipes-container');
     const antiBtn = alContainer.querySelector('[data-craft-recipe="antidote"]') as MockElement;
@@ -937,10 +966,14 @@ async function runTests() {
     assert.strictEqual(gameState.getItemCount('wild_herbs'), preHerbs - 1, 'Wild Herbs deducted from stockpile');
     const expectedAntidotes = 1 + dataLoader.getMoodTier(leader.mood).alchemyYieldBonus;
     assert.strictEqual(leader.getItemCount('antidote'), expectedAntidotes, 'Antidote landed in leader inventory');
+    assert.strictEqual(gameState.getItemCount('antidote'), preStockpileAntidote, 'Stockpile gained exactly 0 antidote from craft');
+    assert.strictEqual(getTotalCountAcrossAllStores('antidote'), preTotalAntidote + expectedAntidotes, `Total antidote across all stores rose by exactly ${expectedAntidotes}`);
 
     // 5. Cooking: Cook Herb Stew
     const preStewHerbs = gameState.getItemCount('wild_herbs');
     const preStewMeat = gameState.getItemCount('monster_meat');
+    const preStockpileStew = gameState.getItemCount('herb_stew');
+    const preTotalStew = getTotalCountAcrossAllStores('herb_stew');
     hud.openCookingModal(leader, leader.progression);
     const ckContainer = getOrCreateElement('cooking-recipes-container');
     const stewBtn = ckContainer.querySelector('[data-cook-recipe="herb_stew"]') as MockElement;
@@ -949,10 +982,12 @@ async function runTests() {
     assert.strictEqual(gameState.getItemCount('wild_herbs'), preStewHerbs - 1, 'Wild Herbs deducted from stockpile for stew');
     assert.strictEqual(gameState.getItemCount('monster_meat'), preStewMeat - 1, 'Monster Meat deducted from stockpile for stew');
     assert.strictEqual(leader.getItemCount('herb_stew'), 1, 'Herb stew landed in leader inventory');
+    assert.strictEqual(gameState.getItemCount('herb_stew'), preStockpileStew, 'Stockpile gained exactly 0 herb_stew from craft');
+    assert.strictEqual(getTotalCountAcrossAllStores('herb_stew'), preTotalStew + 1, 'Total herb_stew across all stores rose by exactly 1');
 
     console.log('✓ All 5 stations successfully crafted with an empty-handed promoted leader.');
-    console.log('✓ Verified: materials deducted from stockpile; output items deposited into leader personal inventory.');
-    console.log('\n✓ Test 5 Passed: Crafting input source rule confirmed and verified.\n');
+    console.log('✓ Verified: materials deducted from stockpile; output items deposited into leader personal inventory; 0 added to stockpile; total conserved.');
+    console.log('\n✓ Test 5 Passed: Crafting input source and exact output conservation verified.\n');
   }
 
   // -------------------------------------------------------------
@@ -1016,8 +1051,16 @@ async function runTests() {
     hud.openPartyOverviewModal();
     hud.renderPartyInventoryPanel();
 
-    const stashList = getOrCreateElement('party-inventory-item-list');
-    const katanaCard = stashList.querySelector('[data-item-id="katana"]') as MockElement;
+    // Under default Owned-Only filter (true), unowned Katana is not rendered
+    assert.strictEqual(hud.isStashFilterActive(), true, 'Stash filter defaults to Owned Only');
+    let stashList = getOrCreateElement('party-inventory-item-list');
+    let katanaCard = stashList.querySelector('[data-item-id="katana"]') as MockElement;
+    assert.strictEqual(katanaCard, null, 'Unowned Katana must not appear in Owned-Only stash filter');
+
+    // Switch to Catalog mode (show all gear)
+    hud.setStashFilterActive(false);
+    stashList = getOrCreateElement('party-inventory-item-list');
+    katanaCard = stashList.querySelector('[data-item-id="katana"]') as MockElement;
     assert.ok(katanaCard, 'Katana card rendered in stash catalog');
     assert.strictEqual(katanaCard.getAttribute('draggable'), 'false', 'Unowned Katana must not be draggable');
 
@@ -1025,9 +1068,12 @@ async function runTests() {
     assert.strictEqual(dropUnowned, false, 'Dropping unowned Katana must be strictly rejected');
     assert.strictEqual(hero.equippedWeapon.id, 'short_swords', 'Hero weapon must remain short_swords');
 
+    // Switch back to Owned-Only and grant Katana
+    hud.setStashFilterActive(true);
     hero.addItem('katana', 1);
     hud.renderPartyInventoryPanel();
     const updatedKatanaCard = stashList.querySelector('[data-item-id="katana"]') as MockElement;
+    assert.ok(updatedKatanaCard, 'Owned Katana renders in Owned-Only filter');
     assert.strictEqual(updatedKatanaCard.getAttribute('draggable'), 'true', 'Owned Katana is now draggable');
 
     const dropOwned = hud.handleSlotDrop('main', { itemId: 'katana', itemType: 'weapon', itemSlot: 'main' }, hero);
@@ -1036,7 +1082,7 @@ async function runTests() {
     assert.strictEqual(hero.getItemCount('katana'), 0, '1 Katana was consumed from personal inventory on equip');
     assert.strictEqual(hero.getItemCount('short_swords'), 1, 'Previous weapon (short_swords) returned to personal inventory');
 
-    console.log('✓ Test 7 Passed: Unowned items non-draggable; drops strictly validated.\n');
+    console.log('✓ Test 7 Passed: Unowned items non-draggable; drops strictly validated; Stash toggle respected.\n');
   }
 
   console.log('================================================================');

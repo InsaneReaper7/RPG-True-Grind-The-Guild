@@ -179,6 +179,7 @@ export class HUD {
   private partyOverviewInventoryEl: HTMLElement | null;
   private partyInventoryItemListEl: HTMLElement | null;
   private partyInventoryFilter: 'all' | 'weapons' | 'armor' | 'jewelry' | 'items' = 'all';
+  public stashFilterOwnedOnly: boolean = true;
   public activeDragPayload: { itemId: string; itemType: 'weapon' | 'armor'; itemSlot: string; sourceSlot?: string; sourceMemberIdx?: number } | null = null;
 
   // Milestone 8 Debug Buttons
@@ -2839,7 +2840,7 @@ export class HUD {
   }
 
   public openPartyOverviewModal(): void {
-    this.renderPartyOverviewModal(false);
+    this.renderPartyOverviewModal(true);
     if (this.partyOverviewModalEl) {
       this.partyOverviewModalEl.classList.add('active');
     }
@@ -3651,6 +3652,55 @@ export class HUD {
         this.renderPartyInventoryPanel();
       };
     });
+
+    const toggleBtn = document.getElementById('stash-toggle-filter-btn');
+    if (toggleBtn) {
+      toggleBtn.onclick = () => {
+        this.toggleStashFilter();
+      };
+    }
+    this.updateStashFilterToggleUI();
+  }
+
+  // --- EQUIPMENT STASH OWNED-ONLY FILTER SYSTEM ---
+
+  public isStashFilterActive(): boolean {
+    return this.stashFilterOwnedOnly;
+  }
+
+  public setStashFilterActive(active: boolean): void {
+    this.stashFilterOwnedOnly = active;
+    this.updateStashFilterToggleUI();
+    this.renderPartyInventoryPanel();
+  }
+
+  public toggleStashFilter(): void {
+    this.setStashFilterActive(!this.isStashFilterActive());
+  }
+
+  public updateStashFilterToggleUI(): void {
+    const isOwnedOnly = this.isStashFilterActive();
+    const btn = document.getElementById('stash-toggle-filter-btn');
+    const label = document.getElementById('stash-toggle-filter-label');
+    const indicator = document.getElementById('stash-toggle-filter-indicator');
+
+    if (label) {
+      label.innerText = isOwnedOnly ? 'Showing: Owned Only' : 'Showing: All Gear';
+    }
+    if (indicator) {
+      indicator.innerText = isOwnedOnly ? '✅' : '👁️';
+    }
+    if (btn) {
+      if (isOwnedOnly) {
+        btn.style.borderColor = '#2dd4bf';
+        btn.style.background = 'rgba(13, 148, 136, 0.3)';
+        btn.style.color = '#2dd4bf';
+      } else {
+        btn.style.borderColor = 'rgba(148, 163, 184, 0.3)';
+        btn.style.background = 'rgba(30, 41, 59, 0.8)';
+        btn.style.color = '#e2e8f0';
+      }
+    }
   }
 
   public renderPartyInventoryPanel(): void {
@@ -3757,7 +3807,7 @@ export class HUD {
     }
 
     if (this.partyInventoryFilter === 'all' || this.partyInventoryFilter === 'items') {
-      const lockpickCount = gameState.getItemCount('lockpick');
+      const lockpickCount = getAvailableCount('lockpick');
       if (lockpickCount > 0 || this.partyInventoryFilter === 'items') {
         items.push({
           id: 'lockpick',
@@ -3771,7 +3821,7 @@ export class HUD {
         } as any);
       }
 
-      const brokenCount = gameState.getItemCount('broken_lockbox');
+      const brokenCount = getAvailableCount('broken_lockbox');
       if (brokenCount > 0 || this.partyInventoryFilter === 'items') {
         items.push({
           id: 'broken_lockbox',
@@ -3785,7 +3835,7 @@ export class HUD {
         } as any);
       }
 
-      const boxCount = gameState.getItemCount('locked_box');
+      const boxCount = getAvailableCount('locked_box');
       if (boxCount > 0 || this.partyInventoryFilter === 'items') {
         items.push({
           id: 'locked_box',
@@ -3801,9 +3851,25 @@ export class HUD {
       }
     }
 
-    let html = '';
+    this.updateStashFilterToggleUI();
+
     const debugBypass = typeof window !== 'undefined' && Boolean((window as any).__debugBypassEquipCheck);
-    for (const item of items) {
+    const isOwnedOnly = this.isStashFilterActive();
+    const filteredItems = isOwnedOnly
+      ? items.filter(item => item.count > 0 || debugBypass)
+      : items;
+
+    if (filteredItems.length === 0) {
+      listEl.innerHTML = `
+        <div class="empty-stash-notice party-inventory-empty" style="font-size: 11px; color: #9ca3af; font-style: italic; background: rgba(31, 41, 55, 0.4); padding: 16px; border-radius: 6px; text-align: center; margin-top: 10px;">
+          No gear owned yet — craft some at the Outpost stations.
+        </div>
+      `;
+      return;
+    }
+
+    let html = '';
+    for (const item of filteredItems) {
       const isOwned = item.count > 0;
       const canDrag = isOwned || debugBypass;
       const countBadge = isOwned
@@ -5184,7 +5250,6 @@ export class HUD {
               if (!wasEncumbered && player.isEncumbered) {
                 this.showToast(`⚠️ ${player.entityName} is ENCUMBERED (-80% Movement Speed)!`, 'warn', 3000);
               }
-              gameState.addItem(resultId, recipeYield);
               progression.addProficiencyExp('alchemy', recipe.expGranted);
               const bonusText = (moodTier.alchemyYieldBonus > 0) ? ` (${moodTier.name} Bonus!)` : '';
               this.showToast(`⚗️ Crafted ${recipeYield}x ${recipe.name}!${bonusText} (+${recipe.expGranted} Alchemy EXP)`, 'success', 2500);
@@ -5878,7 +5943,6 @@ export class HUD {
             this.showToast(`⚠️ ${this.currentPlayer.entityName} is ENCUMBERED (-80% Movement Speed)!`, 'warn', 3000);
           }
         }
-        gameState.addFoodItem(matchedRecipe.resultFoodId, 1, quality);
         this.currentProgression.addProficiencyExp('cooking', matchedRecipe.expGranted);
 
         const qualityBadge = quality.toUpperCase();
@@ -5902,7 +5966,6 @@ export class HUD {
               this.showToast(`⚠️ ${this.currentPlayer.entityName} is ENCUMBERED (-80% Movement Speed)!`, 'warn', 3000);
             }
           }
-          gameState.addFoodItem(matchedRecipe.resultFoodId, 1, quality);
           // Discovery bonus EXP
           const exp = matchedRecipe.expGranted + 20;
           this.currentProgression.addProficiencyExp('cooking', exp);
@@ -6044,7 +6107,6 @@ export class HUD {
             if (!wasEnc && player.isEncumbered) {
               this.showToast(`⚠️ ${player.entityName} is ENCUMBERED (-80% Movement Speed)!`, 'warn', 3000);
             }
-            gameState.addFoodItem(recipe.resultFoodId, 1, quality);
             progression.addProficiencyExp('cooking', recipe.expGranted);
 
             const qBadge = quality.toUpperCase();
@@ -6258,13 +6320,14 @@ export class HUD {
             }
             // Add forged weapon or crafted item to inventory
             const resultId = recipe.resultItemId || recipe.resultWeaponId || recipe.id;
-            const resultQty = recipe.resultCount ?? 1;
+            const isGear = Boolean(dataLoader.getWeapon(resultId) || dataLoader.getArmor(resultId));
+            // Director decision: Gear (weapons, shields, armor, jewelry) ALWAYS crafts exactly 1
+            const resultQty = isGear ? 1 : (recipe.resultCount ?? 1);
             const wasEnc = player.isEncumbered;
             player.addItem(resultId, resultQty);
             if (!wasEnc && player.isEncumbered) {
               this.showToast(`⚠️ ${player.entityName} is ENCUMBERED (-80% Movement Speed)!`, 'warn', 3000);
             }
-            gameState.addItem(resultId, resultQty);
             // Award Blacksmithing EXP
             progression.addProficiencyExp('blacksmithing', recipe.expGranted);
 
@@ -6416,7 +6479,6 @@ export class HUD {
             if (!wasEnc && player.isEncumbered) {
               this.showToast(`⚠️ ${player.entityName} is ENCUMBERED (-80% Movement Speed)!`, 'warn', 3000);
             }
-            gameState.addItem(recipe.resultArmorId, 1);
             // Award Armorsmithing EXP
             progression.addProficiencyExp('armorsmithing', recipe.expGranted);
 
@@ -6562,7 +6624,6 @@ export class HUD {
             if (!wasEnc && player.isEncumbered) {
               this.showToast(`⚠️ ${player.entityName} is ENCUMBERED (-80% Movement Speed)!`, 'warn', 3000);
             }
-            gameState.addItem(recipe.resultWeaponId, 1);
             // Award Bowyer EXP
             progression.addProficiencyExp('bowyer', recipe.expGranted);
 
