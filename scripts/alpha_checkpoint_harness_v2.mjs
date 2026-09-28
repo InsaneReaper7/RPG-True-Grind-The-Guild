@@ -784,8 +784,8 @@ async function runCheckpointV2() {
             if (living.length === 0 || scene.isTransitioning || scene.isWiping) break;
             if (node.isHarvested) continue;
 
-            const oreB = gs.getOre();
-            const woodB = gs.getWood();
+            const oreB = party.reduce((sum, m) => sum + (m.getItemCount ? m.getItemCount('ore') : 0), 0);
+            const woodB = party.reduce((sum, m) => sum + (m.getItemCount ? m.getItemCount('wood') : 0), 0);
             const rpB = gs.getResearchPoints();
 
             scene.interactWithGatheringNode(node, living);
@@ -808,13 +808,16 @@ async function runCheckpointV2() {
               completed = true;
             }
 
+            const oreAfter = party.reduce((sum, m) => sum + (m.getItemCount ? m.getItemCount('ore') : 0), 0);
+            const woodAfter = party.reduce((sum, m) => sum + (m.getItemCount ? m.getItemCount('wood') : 0), 0);
+
             gatheredNodes.push({
               type: node.nodeDef.id,
               pos: { x: node.x, y: node.y },
               channelStarted: started,
               channelCompleted: completed,
-              oreYield: gs.getOre() - oreB,
-              woodYield: gs.getWood() - woodB,
+              oreYield: oreAfter - oreB,
+              woodYield: woodAfter - woodB,
               rpYield: gs.getResearchPoints() - rpB
             });
           }
@@ -844,8 +847,11 @@ async function runCheckpointV2() {
           killedEnemies,
           gatheredNodesCount: gatheredNodes.length,
           gatheredNodes,
-          oreGathered: gs.getOre() - initialOre,
-          woodGathered: gs.getWood() - initialWood,
+          initialOre,
+          initialWood,
+          initialRP,
+          oreGathered: 0,
+          woodGathered: 0,
           rpGain: gs.getResearchPoints() - initialRP,
           finalRP: gs.getResearchPoints(),
           finalOre: gs.getOre(),
@@ -892,6 +898,12 @@ async function runCheckpointV2() {
           currentWood: gs.getWood()
         };
       });
+
+      // Milestone: Item Flow Unification - Trip Yield measures materials auto-deposited upon Outpost return
+      const oreDepositedOnReturn = Math.max(0, outpostRestData.currentOre - tripResult.initialOre);
+      const woodDepositedOnReturn = Math.max(0, (outpostRestData.currentWood + outpostRestData.woodSpentAtOutpost) - tripResult.initialWood);
+      tripResult.oreGathered = oreDepositedOnReturn;
+      tripResult.woodGathered = woodDepositedOnReturn;
 
       totalInGameSeconds += tripResult.inGameSeconds;
       totalRPEarned += tripResult.rpGain;

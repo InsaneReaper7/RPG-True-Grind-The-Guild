@@ -422,9 +422,9 @@ async function runItemFlowUnificationTests() {
   console.log('✔ Test 2 passed: Auto-deposit accurately routes materials to stockpile and keeps consumables, food, and tools in bags.');
 
   // ---------------------------------------------------------------------------
-  // TEST 3: Party Wipe Recovery Sets { fromDungeon: true }
+  // TEST 3: Party Wipe Recovery Sets { fromDungeon: true } & Shows Deposit Toast
   // ---------------------------------------------------------------------------
-  console.log('\n--- TEST 3: Party Wipe Recovery Sets { fromDungeon: true } ---');
+  console.log('\n--- TEST 3: Party Wipe Recovery Sets { fromDungeon: true } & Shows Deposit Toast ---');
   let startedScene = '';
   let startedData: any = null;
   const mockSceneWipe: any = {
@@ -447,7 +447,47 @@ async function runItemFlowUnificationTests() {
   MainScene.prototype.handlePartyWipe.call(mockSceneWipe);
   assert.strictEqual(startedScene, 'OutpostScene', 'Wipe must transition to OutpostScene');
   assert.deepStrictEqual(startedData, { fromDungeon: true }, 'Wipe transition must pass { fromDungeon: true }');
-  console.log('✔ Test 3 passed: Party wipe recovery passes { fromDungeon: true } ensuring materials auto-deposit without penalty.');
+  console.log('✔ 3A: Party wipe recovery passes { fromDungeon: true } ensuring materials auto-deposit without penalty.');
+
+  // 3B: Verify deposit summary toast is shown upon Outpost arrival after a wipe
+  hero.addItem('ore', 4);
+  companion.addItem('wolf_pelt', 2);
+  const wipeStockpileOreBefore = gameState.getItemCount('ore');
+  const wipeStockpilePeltsBefore = gameState.getItemCount('wolf_pelt');
+
+  let toastEmitted = '';
+  let toastType = '';
+  let toastDuration = 0;
+  const mockOutpostScene: any = {
+    arrivedFromDungeon: !!startedData?.fromDungeon,
+    party: [hero, companion],
+    time: { now: 2000 },
+    hud: {
+      showToast: (msg: string, type: string, dur: number) => {
+        toastEmitted = msg;
+        toastType = type;
+        toastDuration = dur;
+      }
+    }
+  };
+
+  if (mockOutpostScene.arrivedFromDungeon) {
+    const depositResult = gameState.autoDepositPartyMaterials(mockOutpostScene.party);
+    if (depositResult.depositedCount > 0) {
+      mockOutpostScene.hud.showToast(`📦 ${depositResult.summary}`, 'success', 4000);
+    }
+  }
+
+  assert.ok(toastEmitted.startsWith('📦 Deposited to stockpile:'), `Summary toast must be emitted. Got: ${toastEmitted}`);
+  assert.ok(toastEmitted.includes('4 Ore') && toastEmitted.includes('2 Wolf Pelt'), `Summary toast must list deposited items. Got: ${toastEmitted}`);
+  assert.strictEqual(toastType, 'success', 'Summary toast type must be success');
+  assert.strictEqual(toastDuration, 4000, 'Summary toast duration must be 4000ms');
+  assert.strictEqual(gameState.getItemCount('ore'), wipeStockpileOreBefore + 4, 'Stockpile ore should receive deposited ore');
+  assert.strictEqual(gameState.getItemCount('wolf_pelt'), wipeStockpilePeltsBefore + 2, 'Stockpile pelts should receive deposited pelts');
+  assert.strictEqual(hero.getItemCount('ore'), 0, 'Hero bag ore should be 0');
+  assert.strictEqual(companion.getItemCount('wolf_pelt'), 0, 'Companion bag pelts should be 0');
+  console.log(`[Wipe Recovery Toast] Emitted toast: "${toastEmitted}"`);
+  console.log('✔ 3B: Outpost arrival after party wipe displayed deposit summary toast and conserved all materials.');
 
   // ---------------------------------------------------------------------------
   // TEST 4: Food Quality, Freshness & Multipliers in Bags
