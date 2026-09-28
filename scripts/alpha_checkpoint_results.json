@@ -1,6 +1,6 @@
 {
   "meta": {
-    "timestamp": "2026-09-28T02:33:02.754Z",
+    "timestamp": "2026-09-28T19:33:46.377Z",
     "browser": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
     "runType": "realistic_play_policy"
   },
@@ -125,547 +125,488 @@
   "deadlock5Seeds": [
     {
       "seed": 1,
-      "roomCount": 5,
+      "roomCount": 7,
       "rockPositions": [
         {
-          "x": 31,
-          "y": 38
+          "x": 7,
+          "y": 7
         },
         {
-          "x": 27,
-          "y": 10
-        },
-        {
-          "x": 37,
-          "y": 18
-        },
-        {
-          "x": 27,
-          "y": 26
+          "x": 10,
+          "y": 33
         }
       ],
       "testedRock": {
-        "x": 31,
-        "y": 38
+        "x": 7,
+        "y": 7
       },
       "adjacentTiles": [
         {
           "dir": "E",
-          "x": 32,
-          "y": 38,
+          "x": 8,
+          "y": 7,
           "tileType": "floor"
         },
         {
           "dir": "W",
-          "x": 30,
-          "y": 38,
+          "x": 6,
+          "y": 7,
           "tileType": "floor"
         },
         {
           "dir": "S",
-          "x": 31,
-          "y": 39,
+          "x": 7,
+          "y": 8,
           "tileType": "floor"
         },
         {
           "dir": "N",
-          "x": 31,
-          "y": 37,
+          "x": 7,
+          "y": 6,
           "tileType": "floor"
         },
         {
           "dir": "SE",
-          "x": 32,
-          "y": 39,
+          "x": 8,
+          "y": 8,
           "tileType": "floor"
         },
         {
           "dir": "SW",
-          "x": 30,
-          "y": 39,
+          "x": 6,
+          "y": 8,
           "tileType": "floor"
         },
         {
           "dir": "NE",
-          "x": 32,
-          "y": 37,
+          "x": 8,
+          "y": 6,
           "tileType": "floor"
         },
         {
           "dir": "NW",
-          "x": 30,
-          "y": 37,
+          "x": 6,
+          "y": 6,
           "tileType": "floor"
         }
       ],
-      "actionTimestamp": "2026-09-28T02:33:31.177Z",
+      "actionTimestamp": "2026-09-28T19:34:12.437Z",
       "channelStarted": false,
       "channelStartTimestamp": null,
       "channelCompleted": false,
       "channelCompleteTimestamp": null,
       "interrupted": false,
       "stallOver5s": true,
-      "durationSec": 15.060400000005961
+      "durationSec": 15.074
     },
     {
       "seed": 2,
-      "roomCount": 7,
+      "roomCount": 6,
       "rockPositions": [
         {
-          "x": 21,
-          "y": 42
+          "x": 41,
+          "y": 13
         },
         {
-          "x": 7,
-          "y": 8
+          "x": 15,
+          "y": 25
         },
         {
-          "x": 3,
-          "y": 27
+          "x": 27,
+          "y": 12
         },
         {
-          "x": 25,
-          "y": 7
+          "x": 39,
+          "y": 23
         }
       ],
       "testedRock": {
-        "x": 21,
-        "y": 42
+        "x": 41,
+        "y": 13
       },
       "adjacentTiles": [
         {
           "dir": "E",
-          "x": 22,
-          "y": 42,
+          "x": 42,
+          "y": 13,
           "tileType": "floor"
         },
         {
           "dir": "W",
-          "x": 20,
-          "y": 42,
+          "x": 40,
+          "y": 13,
           "tileType": "floor"
         },
         {
           "dir": "S",
-          "x": 21,
-          "y": 43,
+          "x": 41,
+          "y": 14,
           "tileType": "floor"
         },
         {
           "dir": "N",
-          "x": 21,
-          "y": 41,
+          "x": 41,
+          "y": 12,
           "tileType": "floor"
         },
         {
           "dir": "SE",
-          "x": 22,
-          "y": 43,
+          "x": 42,
+          "y": 14,
           "tileType": "floor"
         },
         {
           "dir": "SW",
-          "x": 20,
-          "y": 43,
+          "x": 40,
+          "y": 14,
           "tileType": "floor"
         },
         {
           "dir": "NE",
-          "x": 22,
-          "y": 41,
+          "x": 42,
+          "y": 12,
           "tileType": "floor"
         },
         {
           "dir": "NW",
-          "x": 20,
-          "y": 41,
+          "x": 40,
+          "y": 12,
           "tileType": "floor"
         }
       ],
-      "actionTimestamp": "2026-09-28T02:34:20.088Z",
+      "actionTimestamp": "2026-09-28T19:34:42.058Z",
       "channelStarted": true,
-      "channelStartTimestamp": "2026-09-28T02:34:23.098Z",
+      "channelStartTimestamp": "2026-09-28T19:34:44.463Z",
       "channelCompleted": true,
-      "channelCompleteTimestamp": "2026-09-28T02:34:25.504Z",
+      "channelCompleteTimestamp": "2026-09-28T19:34:46.871Z",
       "interrupted": false,
       "stallOver5s": false,
-      "durationSec": 5.41590000000596
+      "durationSec": 4.813800000011921
     },
     {
       "seed": 3,
-      "roomCount": 5,
+      "roomCount": 7,
       "rockPositions": [
         {
-          "x": 8,
-          "y": 34
+          "x": 20,
+          "y": 8
         },
         {
-          "x": 28,
-          "y": 17
+          "x": 20,
+          "y": 21
         },
         {
-          "x": 27,
+          "x": 21,
+          "y": 18
+        },
+        {
+          "x": 31,
+          "y": 7
+        }
+      ],
+      "testedRock": {
+        "x": 20,
+        "y": 8
+      },
+      "adjacentTiles": [
+        {
+          "dir": "E",
+          "x": 21,
+          "y": 8,
+          "tileType": "floor"
+        },
+        {
+          "dir": "W",
+          "x": 19,
+          "y": 8,
+          "tileType": "floor"
+        },
+        {
+          "dir": "S",
+          "x": 20,
+          "y": 9,
+          "tileType": "floor"
+        },
+        {
+          "dir": "N",
+          "x": 20,
+          "y": 7,
+          "tileType": "floor"
+        },
+        {
+          "dir": "SE",
+          "x": 21,
+          "y": 9,
+          "tileType": "floor"
+        },
+        {
+          "dir": "SW",
+          "x": 19,
+          "y": 9,
+          "tileType": "floor"
+        },
+        {
+          "dir": "NE",
+          "x": 21,
+          "y": 7,
+          "tileType": "floor"
+        },
+        {
+          "dir": "NW",
+          "x": 19,
+          "y": 7,
+          "tileType": "floor"
+        }
+      ],
+      "actionTimestamp": "2026-09-28T19:35:16.077Z",
+      "channelStarted": false,
+      "channelStartTimestamp": null,
+      "channelCompleted": false,
+      "channelCompleteTimestamp": null,
+      "interrupted": false,
+      "stallOver5s": true,
+      "durationSec": 15.04659999999404
+    },
+    {
+      "seed": 4,
+      "roomCount": 7,
+      "rockPositions": [
+        {
+          "x": 20,
+          "y": 39
+        },
+        {
+          "x": 35,
+          "y": 8
+        },
+        {
+          "x": 30,
+          "y": 26
+        },
+        {
+          "x": 41,
           "y": 25
         }
       ],
       "testedRock": {
-        "x": 8,
+        "x": 20,
+        "y": 39
+      },
+      "adjacentTiles": [
+        {
+          "dir": "E",
+          "x": 21,
+          "y": 39,
+          "tileType": "floor"
+        },
+        {
+          "dir": "W",
+          "x": 19,
+          "y": 39,
+          "tileType": "floor"
+        },
+        {
+          "dir": "S",
+          "x": 20,
+          "y": 40,
+          "tileType": "floor"
+        },
+        {
+          "dir": "N",
+          "x": 20,
+          "y": 38,
+          "tileType": "floor"
+        },
+        {
+          "dir": "SE",
+          "x": 21,
+          "y": 40,
+          "tileType": "floor"
+        },
+        {
+          "dir": "SW",
+          "x": 19,
+          "y": 40,
+          "tileType": "floor"
+        },
+        {
+          "dir": "NE",
+          "x": 21,
+          "y": 38,
+          "tileType": "floor"
+        },
+        {
+          "dir": "NW",
+          "x": 19,
+          "y": 38,
+          "tileType": "floor"
+        }
+      ],
+      "actionTimestamp": "2026-09-28T19:36:11.155Z",
+      "channelStarted": true,
+      "channelStartTimestamp": "2026-09-28T19:36:13.162Z",
+      "channelCompleted": true,
+      "channelCompleteTimestamp": "2026-09-28T19:36:15.572Z",
+      "interrupted": false,
+      "stallOver5s": false,
+      "durationSec": 4.41709999999404
+    },
+    {
+      "seed": 5,
+      "roomCount": 7,
+      "rockPositions": [
+        {
+          "x": 14,
+          "y": 34
+        },
+        {
+          "x": 35,
+          "y": 21
+        },
+        {
+          "x": 32,
+          "y": 39
+        }
+      ],
+      "testedRock": {
+        "x": 14,
         "y": 34
       },
       "adjacentTiles": [
         {
           "dir": "E",
-          "x": 9,
+          "x": 15,
           "y": 34,
           "tileType": "floor"
         },
         {
           "dir": "W",
-          "x": 7,
-          "y": 34,
-          "tileType": "floor"
-        },
-        {
-          "dir": "S",
-          "x": 8,
-          "y": 35,
-          "tileType": "floor"
-        },
-        {
-          "dir": "N",
-          "x": 8,
-          "y": 33,
-          "tileType": "floor"
-        },
-        {
-          "dir": "SE",
-          "x": 9,
-          "y": 35,
-          "tileType": "floor"
-        },
-        {
-          "dir": "SW",
-          "x": 7,
-          "y": 35,
-          "tileType": "floor"
-        },
-        {
-          "dir": "NE",
-          "x": 9,
-          "y": 33,
-          "tileType": "floor"
-        },
-        {
-          "dir": "NW",
-          "x": 7,
-          "y": 33,
-          "tileType": "floor"
-        }
-      ],
-      "actionTimestamp": "2026-09-28T02:34:43.072Z",
-      "channelStarted": true,
-      "channelStartTimestamp": "2026-09-28T02:34:43.473Z",
-      "channelCompleted": true,
-      "channelCompleteTimestamp": "2026-09-28T02:34:45.883Z",
-      "interrupted": false,
-      "stallOver5s": false,
-      "durationSec": 2.8110999999940396
-    },
-    {
-      "seed": 4,
-      "roomCount": 6,
-      "rockPositions": [
-        {
-          "x": 20,
-          "y": 20
-        },
-        {
-          "x": 36,
-          "y": 23
-        },
-        {
-          "x": 25,
-          "y": 42
-        }
-      ],
-      "testedRock": {
-        "x": 20,
-        "y": 20
-      },
-      "adjacentTiles": [
-        {
-          "dir": "E",
-          "x": 21,
-          "y": 20,
-          "tileType": "floor"
-        },
-        {
-          "dir": "W",
-          "x": 19,
-          "y": 20,
-          "tileType": "floor"
-        },
-        {
-          "dir": "S",
-          "x": 20,
-          "y": 21,
-          "tileType": "floor"
-        },
-        {
-          "dir": "N",
-          "x": 20,
-          "y": 19,
-          "tileType": "floor"
-        },
-        {
-          "dir": "SE",
-          "x": 21,
-          "y": 21,
-          "tileType": "floor"
-        },
-        {
-          "dir": "SW",
-          "x": 19,
-          "y": 21,
-          "tileType": "water"
-        },
-        {
-          "dir": "NE",
-          "x": 21,
-          "y": 19,
-          "tileType": "floor"
-        },
-        {
-          "dir": "NW",
-          "x": 19,
-          "y": 19,
-          "tileType": "floor"
-        }
-      ],
-      "actionTimestamp": "2026-09-28T02:35:06.251Z",
-      "channelStarted": false,
-      "channelStartTimestamp": null,
-      "channelCompleted": false,
-      "channelCompleteTimestamp": null,
-      "interrupted": false,
-      "stallOver5s": true,
-      "durationSec": 15.048599999994039
-    },
-    {
-      "seed": 5,
-      "roomCount": 5,
-      "rockPositions": [
-        {
-          "x": 37,
-          "y": 30
-        },
-        {
-          "x": 37,
-          "y": 32
-        },
-        {
           "x": 13,
-          "y": 20
-        },
-        {
-          "x": 11,
-          "y": 39
-        }
-      ],
-      "testedRock": {
-        "x": 37,
-        "y": 30
-      },
-      "adjacentTiles": [
-        {
-          "dir": "E",
-          "x": 38,
-          "y": 30,
-          "tileType": "floor"
-        },
-        {
-          "dir": "W",
-          "x": 36,
-          "y": 30,
+          "y": 34,
           "tileType": "floor"
         },
         {
           "dir": "S",
-          "x": 37,
-          "y": 31,
+          "x": 14,
+          "y": 35,
           "tileType": "floor"
         },
         {
           "dir": "N",
-          "x": 37,
-          "y": 29,
+          "x": 14,
+          "y": 33,
           "tileType": "floor"
         },
         {
           "dir": "SE",
-          "x": 38,
-          "y": 31,
+          "x": 15,
+          "y": 35,
           "tileType": "floor"
         },
         {
           "dir": "SW",
-          "x": 36,
-          "y": 31,
+          "x": 13,
+          "y": 35,
           "tileType": "floor"
         },
         {
           "dir": "NE",
-          "x": 38,
-          "y": 29,
+          "x": 15,
+          "y": 33,
           "tileType": "floor"
         },
         {
           "dir": "NW",
-          "x": 36,
-          "y": 29,
+          "x": 13,
+          "y": 33,
           "tileType": "floor"
         }
       ],
-      "actionTimestamp": "2026-09-28T02:35:42.463Z",
+      "actionTimestamp": "2026-09-28T19:36:45.582Z",
       "channelStarted": true,
-      "channelStartTimestamp": "2026-09-28T02:35:43.065Z",
+      "channelStartTimestamp": "2026-09-28T19:36:45.783Z",
       "channelCompleted": true,
-      "channelCompleteTimestamp": "2026-09-28T02:35:45.472Z",
+      "channelCompleteTimestamp": "2026-09-28T19:36:48.191Z",
       "interrupted": false,
       "stallOver5s": false,
-      "durationSec": 3.0087000000178814
+      "durationSec": 2.6094000000059605
     }
   ],
   "perTripLogs": [
     {
       "tripNumber": 1,
-      "inGameMinutes": 1.6616333333333333,
-      "cumulativeInGameMinutes": 1.6616333333333333,
-      "roomsCleared": 5,
+      "inGameMinutes": 1.66591,
+      "cumulativeInGameMinutes": 1.66591,
+      "roomsCleared": 7,
       "enemiesKilled": [
         {
-          "name": "Skeleton Archer",
+          "name": "Skeleton",
           "tier": "common",
           "rpGain": 2
         },
         {
-          "name": "Giant Spider",
-          "tier": "common",
-          "rpGain": 3
-        },
-        {
-          "name": "Slime",
+          "name": "Wolf",
           "tier": "common",
           "rpGain": 1
         },
         {
-          "name": "Skeleton",
+          "name": "Skeleton Archer",
           "tier": "common",
           "rpGain": 1
         },
         {
-          "name": "Skeleton",
+          "name": "Skeleton Archer",
           "tier": "common",
           "rpGain": 0
-        }
-      ],
-      "rpEarned": 13,
-      "rpTotal": 13,
-      "oreGathered": 2,
-      "oreTotal": 2,
-      "woodGathered": 8,
-      "woodSpentOutpost": 23,
-      "woodRemaining": 85
-    },
-    {
-      "tripNumber": 2,
-      "inGameMinutes": 2.4699549999999997,
-      "cumulativeInGameMinutes": 4.131588333333332,
-      "roomsCleared": 5,
-      "enemiesKilled": [
+        },
+        {
+          "name": "Undead",
+          "tier": "common",
+          "rpGain": 1
+        },
         {
           "name": "Goblin",
           "tier": "common",
           "rpGain": 1
-        },
-        {
-          "name": "Skeleton Archer",
-          "tier": "common",
-          "rpGain": 0
-        },
-        {
-          "name": "Giant Spider",
-          "tier": "common",
-          "rpGain": 1
-        },
-        {
-          "name": "Giant Spider",
-          "tier": "common",
-          "rpGain": 0
-        },
-        {
-          "name": "Giant Spider",
-          "tier": "common",
-          "rpGain": 0
-        },
-        {
-          "name": "Goblin Archer",
-          "tier": "common",
-          "rpGain": 0
-        },
-        {
-          "name": "Slime",
-          "tier": "common",
-          "rpGain": 0
-        },
-        {
-          "name": "Giant Spider",
-          "tier": "common",
-          "rpGain": 0
-        },
-        {
-          "name": "Skeleton Archer",
-          "tier": "common",
-          "rpGain": 0
         }
       ],
-      "rpEarned": 4,
-      "rpTotal": 7,
-      "oreGathered": 6,
-      "oreTotal": 8,
-      "woodGathered": 16,
-      "woodSpentOutpost": 0,
-      "woodRemaining": 76
+      "rpEarned": 14,
+      "rpTotal": 14,
+      "oreGathered": 0,
+      "oreTotal": 4,
+      "woodGathered": 0,
+      "woodSpentOutpost": 23,
+      "woodRemaining": 83
     }
   ],
   "economySummary": {
-    "totalTrips": 2,
-    "totalInGameSeconds": 247.89529999999996,
-    "totalInGameMinutes": 4.131588333333332,
-    "totalRPEarned": 17,
+    "totalTrips": 1,
+    "totalInGameSeconds": 99.9546,
+    "totalInGameMinutes": 1.66591,
+    "totalRPEarned": 14,
     "rpBySource": {
       "discoveries": 8,
-      "kills": 9,
+      "kills": 6,
       "lockboxes": 0,
       "other": 0
     },
-    "totalOreGathered": 8,
-    "totalWoodGathered": 24,
+    "totalOreGathered": 0,
+    "totalWoodGathered": 0,
     "totalWoodSpent": 23,
     "milestones": {
       "first10RP": {
         "trip": 1,
-        "inGameMinutes": 1.6616333333333333,
-        "currentRP": 13
+        "inGameMinutes": 1.66591,
+        "currentRP": 14
       },
       "first4Ore": {
-        "trip": 2,
-        "inGameMinutes": 4.131588333333332,
-        "currentOre": 8
+        "trip": 1,
+        "inGameMinutes": 1.66591,
+        "currentOre": 4
       },
       "firstCraftedWeapon": {
-        "trip": 2,
-        "inGameMinutes": 4.131588333333332,
+        "trip": 1,
+        "inGameMinutes": 1.66591,
         "weaponId": "mace"
       }
     }
@@ -737,71 +678,76 @@
     },
     "4": {
       "floorNumber": 1,
-      "roomCount": 5,
+      "roomCount": 7,
       "portalPos": {
-        "x": 12,
+        "x": 15,
         "y": 35
       },
       "crystalPos": {
-        "x": 39,
-        "y": 12
+        "x": 37,
+        "y": 13
       },
-      "enemyCount": 5,
-      "gatheringNodesCount": 9
+      "enemyCount": 6,
+      "gatheringNodesCount": 13
     },
     "5": {
       "kills": [
         {
-          "name": "Skeleton Archer",
+          "name": "Skeleton",
           "tier": "common",
           "rpGain": 2
         },
         {
-          "name": "Giant Spider",
-          "tier": "common",
-          "rpGain": 3
-        },
-        {
-          "name": "Slime",
+          "name": "Wolf",
           "tier": "common",
           "rpGain": 1
         },
         {
-          "name": "Skeleton",
+          "name": "Skeleton Archer",
           "tier": "common",
           "rpGain": 1
         },
         {
-          "name": "Skeleton",
+          "name": "Skeleton Archer",
           "tier": "common",
           "rpGain": 0
+        },
+        {
+          "name": "Undead",
+          "tier": "common",
+          "rpGain": 1
+        },
+        {
+          "name": "Goblin",
+          "tier": "common",
+          "rpGain": 1
         }
       ],
       "livingPartyCount": 3
     },
     "6": {
-      "nodesFound": 3,
+      "nodesFound": 4,
       "attempts": [
         {
           "type": "mining_rock",
           "pos": {
-            "x": 13,
-            "y": 17
+            "x": 16,
+            "y": 14
           },
-          "channelStarted": false,
-          "channelCompleted": false,
+          "channelStarted": true,
+          "channelCompleted": true,
           "oreYield": 0,
           "woodYield": 0,
-          "rpYield": 0
+          "rpYield": 2
         },
         {
           "type": "mining_rock",
           "pos": {
-            "x": 39,
-            "y": 25
+            "x": 38,
+            "y": 8
           },
-          "channelStarted": false,
-          "channelCompleted": false,
+          "channelStarted": true,
+          "channelCompleted": true,
           "oreYield": 0,
           "woodYield": 0,
           "rpYield": 0
@@ -810,17 +756,34 @@
           "type": "mining_rock",
           "pos": {
             "x": 23,
-            "y": 35
+            "y": 33
           },
           "channelStarted": true,
           "channelCompleted": true,
-          "oreYield": 2,
+          "oreYield": 0,
           "woodYield": 0,
-          "rpYield": 2
+          "rpYield": 0
+        },
+        {
+          "type": "mining_rock",
+          "pos": {
+            "x": 7,
+            "y": 19
+          },
+          "channelStarted": true,
+          "channelCompleted": true,
+          "oreYield": 0,
+          "woodYield": 0,
+          "rpYield": 0
         }
       ],
-      "currentOre": 2,
-      "currentRP": 13
+      "currentOre": 4,
+      "currentRP": 14
+    },
+    "7": {
+      "finalRP": 14,
+      "finalOre": 4,
+      "totalTrips": 1
     },
     "8": {
       "woodSpentAtOutpost": 23,
@@ -841,16 +804,16 @@
           "state": "idle"
         }
       ],
-      "currentRP": 13,
-      "currentOre": 2,
-      "currentWood": 85
+      "currentRP": 14,
+      "currentOre": 4,
+      "currentWood": 83
     },
     "9": {
       "nodeId": "research_blacksmithing_station",
       "unlockSuccess": true,
-      "rpBefore": 13,
+      "rpBefore": 14,
       "rpSpent": 10,
-      "rpAfter": 3,
+      "rpAfter": 4,
       "isCompleted": true,
       "isBuildableUnlocked": true
     },
@@ -859,7 +822,7 @@
       "stationPlaced": true,
       "stationCostPaid": 25,
       "woodSpent": 25,
-      "woodRemaining": 60
+      "woodRemaining": 58
     },
     "11": {
       "recipeId": "mace",
@@ -867,8 +830,8 @@
         "ore": 4,
         "wood": 2
       },
-      "oreRemaining": 4,
-      "woodRemaining": 74,
+      "oreRemaining": 0,
+      "woodRemaining": 56,
       "bsExpGained": 25,
       "leaderInventoryBefore": 0,
       "leaderInventoryAfter": 1,
@@ -897,14 +860,14 @@
       "stage": 1,
       "name": "New game → character creation → arrival at Outpost",
       "status": "PASS",
-      "timeSec": 0.05,
+      "timeSec": 0.041,
       "notes": "Starting stockpile: 100 Wood, 0 Ore. Starting RP: 0. Leader equipped with Short Swords."
     },
     {
       "stage": 2,
       "name": "Valerie introduced as a working Scout; third member summoned",
       "status": "PASS",
-      "timeSec": 0.043,
+      "timeSec": 0.04,
       "notes": "Valerie active Scout (Bow & Daggers). Kaelen summoned with Sword & Shield."
     },
     {
@@ -919,21 +882,21 @@
       "name": "Enter dungeon Floor 1 through the portal",
       "status": "PASS",
       "timeSec": 1,
-      "notes": "Floor 1 entered via portal. 5 rooms, 5 enemies, 9 nodes generated."
+      "notes": "Floor 1 entered via portal. 7 rooms, 6 enemies, 13 nodes generated."
     },
     {
       "stage": 5,
       "name": "Clear rooms with real auto-combat",
       "status": "PASS",
-      "timeSec": 99.698,
-      "notes": "Defeated 5 enemies with real auto-combat and Valerie autocasting."
+      "timeSec": 99.9546,
+      "notes": "Defeated 6 enemies with real auto-combat and Valerie autocasting."
     },
     {
       "stage": 6,
       "name": "Gather ore (Mining) from a real node & Deadlock re-test",
       "status": "PASS",
-      "timeSec": 99.698,
-      "notes": "Successfully gathered 2 Ore after fully clearing room. Channel completed cleanly."
+      "timeSec": 99.9546,
+      "notes": "Successfully gathered 0 Ore after fully clearing room. Channel completed cleanly."
     },
     {
       "stage": 8,
@@ -946,51 +909,51 @@
       "stage": 9,
       "name": "Unlock the Research Tree node needed for Blacksmithing",
       "status": "PASS",
-      "timeSec": 0.001,
+      "timeSec": 0.002,
       "notes": "Spent 10 RP to unlock 'research_blacksmithing_station'. Station blueprint unlocked."
     },
     {
       "stage": 10,
       "name": "Build the Blacksmithing station in build mode",
       "status": "PASS",
-      "timeSec": 0.007,
+      "timeSec": 0.006,
       "notes": "Built Blacksmithing Station at (9, 9) using real UI palette click. Cost: 25 Wood."
+    },
+    {
+      "stage": 7,
+      "name": "Accumulate RP through real play only",
+      "status": "PASS",
+      "timeSec": 99.9546,
+      "notes": "Accumulated 14 RP and 4 Ore across 1 realistic trips."
     },
     {
       "stage": 11,
       "name": "Craft a weapon",
       "status": "PASS",
-      "timeSec": 0.02,
+      "timeSec": 0.019,
       "notes": "Crafted 'mace'. Materials deducted (4 Ore, 2 Wood), deposited in Leader bag."
     },
     {
       "stage": 12,
       "name": "Equip the crafted weapon from the leader's inventory",
       "status": "PASS",
-      "timeSec": 0.006,
+      "timeSec": 0.005,
       "notes": "Leader equipped 'mace' from personal inventory (short_swords -> mace)."
     },
     {
       "stage": 13,
       "name": "Return to the dungeon and fight with it until proficiency gains EXP",
       "status": "PASS",
-      "timeSec": 5.658,
+      "timeSec": 3.626,
       "notes": "Fought with CRAFTED weapon 'mace'. Gained +2 'mace' proficiency EXP."
-    },
-    {
-      "stage": 7,
-      "name": "Accumulate RP through real play only",
-      "status": "FAIL",
-      "timeSec": 247.89529999999996,
-      "notes": "Completed 2 trips."
     }
   ],
   "overallMetrics": {
-    "totalDungeonTrips": 2,
-    "totalInGameSeconds": 247.89529999999996,
-    "totalInGameMinutes": 4.131588333333332,
-    "totalElapsedWallSec": 421.801,
+    "totalDungeonTrips": 1,
+    "totalInGameSeconds": 99.9546,
+    "totalInGameMinutes": 1.66591,
+    "totalElapsedWallSec": 288.889,
     "stage13AchievedWithCraftedWeapon": true,
-    "allStagesPassed": false
+    "allStagesPassed": true
   }
 }

@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { Entity } from './Entity.ts';
-import type { PlayerData, WeaponDef, CharacterSnapshot, ArmorDef, ArmorSlot, ArmorWeightClass, FoodQuality } from '../types/game.ts';
+import type { PlayerData, WeaponDef, CharacterSnapshot, ArmorDef, ArmorSlot, ArmorWeightClass, FoodQuality, FoodItemInstance } from '../types/game.ts';
 import { getArmorHpSplit, getArmorProficiencyId } from '../types/game.ts';
 import { GameState } from '../systems/GameState.ts';
 import { DataLoader } from '../utils/DataLoader.ts';
@@ -26,6 +26,7 @@ export class Player extends Entity {
   public attackRangeTiles: number = 1;
   public avatarTextureKey: string;
   public inventory: Map<string, number> = new Map();
+  public foodItems: FoodItemInstance[] = [];
   public baseCarryCapacity: number = 45.0;
   private encumberedMoveTimeMs: number = 0;
 
@@ -257,6 +258,11 @@ export class Player extends Entity {
 
   public addItem(itemId: string, count: number = 1): void {
     if (count <= 0) return;
+    const dataLoader = DataLoader.getInstance();
+    if (dataLoader.getFood(itemId)) {
+      this.addFoodItem(itemId, count);
+      return;
+    }
     const current = this.inventory.get(itemId) || 0;
     this.inventory.set(itemId, current + count);
     this.updateEncumbrance();
@@ -264,6 +270,19 @@ export class Player extends Entity {
 
   public removeItem(itemId: string, count: number = 1): boolean {
     if (count <= 0) return false;
+    const dataLoader = DataLoader.getInstance();
+    if (dataLoader.getFood(itemId)) {
+      const currentCount = this.getFoodItemCount(itemId);
+      if (currentCount < count) return false;
+      for (let i = 0; i < count; i++) {
+        const idx = this.foodItems.findIndex((f) => f.id === itemId);
+        if (idx !== -1) {
+          this.foodItems.splice(idx, 1);
+        }
+      }
+      this.syncFoodInventory();
+      return true;
+    }
     const current = this.inventory.get(itemId) || 0;
     if (current >= count) {
       const remaining = current - count;
@@ -278,6 +297,90 @@ export class Player extends Entity {
     return false;
   }
 
+  public syncFoodInventory(): void {
+    const dataLoader = DataLoader.getInstance();
+    const counts: Record<string, number> = {};
+    for (const item of this.foodItems) {
+      counts[item.id] = (counts[item.id] || 0) + 1;
+    }
+    for (const food of dataLoader.getFoods()) {
+      const c = counts[food.id] || 0;
+      if (c > 0) {
+        this.inventory.set(food.id, c);
+      } else {
+        this.inventory.delete(food.id);
+      }
+    }
+    this.updateEncumbrance();
+  }
+
+  public addFoodItem(foodId: string, count: number = 1, quality?: FoodQuality, acquiredDay?: number): void {
+    if (count <= 0) return;
+    const day = acquiredDay !== undefined ? acquiredDay : GameState.getInstance().getCurrentGameDay();
+    for (let i = 0; i < count; i++) {
+      this.foodItems.push({
+        id: foodId,
+        acquiredDay: day,
+        instanceId: `${foodId}_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
+        quality: quality ?? 'common'
+      });
+    }
+    this.syncFoodInventory();
+  }
+
+  public addFoodInstance(instance: FoodItemInstance): void {
+    this.foodItems.push({ ...instance });
+    this.syncFoodInventory();
+  }
+
+  public consumeOldestFood(foodId?: string): FoodItemInstance | null {
+    if (this.foodItems.length === 0) return null;
+    let idx = -1;
+    if (foodId) {
+      idx = this.foodItems.findIndex((f) => f.id === foodId);
+    } else {
+      idx = 0;
+    }
+    if (idx !== -1) {
+      const consumed = this.foodItems.splice(idx, 1)[0];
+      this.syncFoodInventory();
+      return consumed;
+    }
+    return null;
+  }
+
+  public getFoodItems(): FoodItemInstance[] {
+    return [...this.foodItems];
+  }
+
+  public getFoodItemCount(foodId: string): number {
+    return this.foodItems.filter((f) => f.id === foodId).length;
+  }
+
+  public checkFoodSpoilage(currentDay: number): number {
+    const dataLoader = DataLoader.getInstance();
+    const fresh: FoodItemInstance[] = [];
+    let spoiledCount = 0;
+    for (const item of this.foodItems) {
+      const foodDef = dataLoader.getFood(item.id);
+      const threshold = foodDef ? foodDef.spoilageDays : 7;
+      if (currentDay >= item.acquiredDay + threshold) {
+        spoiledCount++;
+        console.log(
+          `%c[Spoilage] 🪰 1x ${foodDef?.name || item.id} (acquired Day ${item.acquiredDay}) in ${this.entityName}'s bag exceeded ${threshold}-day shelf life on Day ${currentDay} and spoiled.`,
+          'color: #ef4444; font-weight: bold;'
+        );
+      } else {
+        fresh.push(item);
+      }
+    }
+    if (spoiledCount > 0) {
+      this.foodItems = fresh;
+      this.syncFoodInventory();
+    }
+    return spoiledCount;
+  }
+
   public getItemCount(itemId: string): number {
     return this.inventory.get(itemId) || 0;
   }
@@ -288,6 +391,7 @@ export class Player extends Entity {
 
   public clearInventory(): void {
     this.inventory.clear();
+    this.foodItems = [];
     this.updateEncumbrance();
   }
 
@@ -976,6 +1080,7 @@ export class Player extends Entity {
       equippedAccessoryId: this.equippedAccessory?.id ?? null,
       baseCarryCapacity: this.baseCarryCapacity,
       inventory: Object.fromEntries(this.inventory),
+      foodItems: this.foodItems.map((f) => ({ ...f })),
       knownSkillIds: [...this.knownSkillIds],
       equippedSkillIds: [...this.equippedSkillIds],
       autocastMap: autocastObj,
@@ -1124,11 +1229,37 @@ export class Player extends Entity {
       this.baseCarryCapacity = snapshot.baseCarryCapacity;
     }
     this.inventory.clear();
+    this.foodItems = [];
+    if (snapshot.foodItems && snapshot.foodItems.length > 0) {
+      this.foodItems = snapshot.foodItems.map((f) => ({ ...f }));
+    }
     if (snapshot.inventory) {
       for (const [k, v] of Object.entries(snapshot.inventory)) {
         if (v > 0) this.inventory.set(k, v);
       }
     }
+
+    // Save migration: food in existing saves stored as plain bag counts becomes instances
+    const currentDay = GameState.getInstance().getCurrentGameDay();
+    for (const food of dataLoader.getFoods()) {
+      const invCount = this.inventory.get(food.id) || 0;
+      const instCount = this.foodItems.filter((f) => f.id === food.id).length;
+      if (invCount > instCount) {
+        const missing = invCount - instCount;
+        for (let i = 0; i < missing; i++) {
+          this.foodItems.push({
+            id: food.id,
+            acquiredDay: currentDay,
+            instanceId: `${food.id}_migrated_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
+            quality: 'common'
+          });
+        }
+        console.log(
+          `[Save Migration] Migrated ${missing}x '${food.id}' in ${this.entityName}'s bag to FoodItemInstances (Day ${currentDay}, quality: common)`
+        );
+      }
+    }
+    this.syncFoodInventory();
     this.updateEncumbrance();
 
     this.drawHpBar();
@@ -1139,74 +1270,49 @@ export class Player extends Entity {
     const gameState = GameState.getInstance();
     const atOutpost = this.isAtOutpost();
 
-    let targetFoodId = foodId;
-    let consumedQuality: FoodQuality = 'common';
+    let consumedInstance: FoodItemInstance | null = null;
 
-    if (targetFoodId) {
-      if (this.getItemCount(targetFoodId) > 0) {
-        this.removeItem(targetFoodId, 1);
-      } else {
-        let foundInParty = false;
-        const members = this.getPartyMembers();
-        for (const m of members) {
-          if (m !== this && m.getItemCount(targetFoodId) > 0) {
-            m.removeItem(targetFoodId, 1);
-            foundInParty = true;
-            break;
-          }
-        }
-        if (!foundInParty) {
-          if (atOutpost) {
-            const consumed = gameState.consumeOldestFood(targetFoodId);
-            if (!consumed) return false;
-            consumedQuality = consumed.quality || 'common';
-          } else {
-            return false;
-          }
-        }
-      }
-    } else {
-      // Auto-pick: actor bag first, then party members, then stockpile (Outpost only)
-      let pickedId: string | null = null;
-      for (const [id, count] of this.inventory.entries()) {
-        if (count > 0 && dataLoader.getFood(id)) {
-          pickedId = id;
-          this.removeItem(id, 1);
-          break;
-        }
-      }
-      if (!pickedId) {
+    if (foodId) {
+      // 1. Check acting character's own bag
+      consumedInstance = this.consumeOldestFood(foodId);
+      // 2. Check other party members' bags in order
+      if (!consumedInstance) {
         const members = this.getPartyMembers();
         for (const m of members) {
           if (m !== this) {
-            for (const [id, count] of m.inventory.entries()) {
-              if (count > 0 && dataLoader.getFood(id)) {
-                pickedId = id;
-                m.removeItem(id, 1);
-                break;
-              }
-            }
-            if (pickedId) break;
+            consumedInstance = m.consumeOldestFood(foodId);
+            if (consumedInstance) break;
           }
         }
       }
-      if (!pickedId) {
-        if (atOutpost) {
-          const foodItems = gameState.getFoodItems();
-          if (foodItems.length > 0) {
-            pickedId = foodItems[0].id;
-            const consumed = gameState.consumeOldestFood(pickedId);
-            if (!consumed) return false;
-            consumedQuality = consumed.quality || 'common';
-          } else {
-            return false;
+      // 3. Check stockpile (Outpost only)
+      if (!consumedInstance && atOutpost) {
+        consumedInstance = gameState.consumeOldestFood(foodId);
+      }
+    } else {
+      // Auto-eat: oldest instance in actor's bag -> party bags -> stockpile (Outpost only)
+      consumedInstance = this.consumeOldestFood();
+      if (!consumedInstance) {
+        const members = this.getPartyMembers();
+        for (const m of members) {
+          if (m !== this) {
+            consumedInstance = m.consumeOldestFood();
+            if (consumedInstance) break;
           }
-        } else {
-          return false;
         }
       }
-      targetFoodId = pickedId;
+      if (!consumedInstance && atOutpost) {
+        const foodItems = gameState.getFoodItems();
+        if (foodItems.length > 0) {
+          consumedInstance = gameState.consumeOldestFood(foodItems[0].id);
+        }
+      }
     }
+
+    if (!consumedInstance) return false;
+
+    const targetFoodId = consumedInstance.id;
+    const consumedQuality: FoodQuality = consumedInstance.quality || 'common';
 
     if (!targetFoodId) return false;
     const foodDef = dataLoader.getFood(targetFoodId);

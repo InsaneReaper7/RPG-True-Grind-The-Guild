@@ -2443,10 +2443,19 @@ export class CombatSystem {
                  !['wolf_pelt', 'spider_silk', 'wolf_meat', 'monster_meat'].includes(h.item)
         );
 
+        let recipient: Player = killer;
+        if (!recipient || recipient.state === 'downed' || recipient.state === 'dead' || (recipient.hp <= 0 && recipient.criticalHp <= 0)) {
+          recipient = (this.party && this.party[0]) ? this.party[0] : killer;
+        }
+
         if (target.enemyData.tier === 'common') {
           const chosen = CombatSystem.rollCommonEnemyDrop(target.enemyData);
           if (chosen) {
-            gameState.addItem(chosen.item, 1);
+            if (recipient) {
+              recipient.addItem(chosen.item, 1);
+            } else {
+              gameState.addItem(chosen.item, 1);
+            }
             const itemName = chosen.item.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
             const isRare = chosen.method === 'rare_drop';
             const floatColor = isRare ? '#f59e0b' : '#34d399';
@@ -2459,7 +2468,11 @@ export class CombatSystem {
             const roll = Math.random();
             const rareThreshold = isBoss ? 0.60 : 0.35;
             if (!isRare || roll < rareThreshold) {
-              gameState.addItem(h.item, 1);
+              if (recipient) {
+                recipient.addItem(h.item, 1);
+              } else {
+                gameState.addItem(h.item, 1);
+              }
               const itemName = h.item.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
               const floatColor = isBoss ? '#ef4444' : target.enemyData.tier === 'epic' && isRare ? '#c084fc' : isRare ? '#f59e0b' : '#34d399';
               this.createFloatingText(target.x, target.y - 35, `+1 ${itemName}`, floatColor);

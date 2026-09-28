@@ -269,6 +269,7 @@ export interface CharacterSnapshot {
   equippedRingId?: string | null;
   equippedAccessoryId?: string | null;
   inventory?: Record<string, number>;
+  foodItems?: FoodItemInstance[];
   knownSkillIds: string[];
   equippedSkillIds: string[];
   autocastMap: Record<string, boolean>;
@@ -693,6 +694,7 @@ export interface ItemDef {
   category?: string;
   icon?: string;
   description?: string;
+  keepOnReturn?: boolean;
 }
 
 export interface ItemsData {

@@ -678,18 +678,19 @@ export class GameState {
    * A food item spoils and is completely deleted when:
    * currentGameDay >= acquiredDay + threshold
    */
-  public checkFoodSpoilage(): number {
+  public checkFoodSpoilage(activeParty?: any[]): number {
     const dataLoader = DataLoader.getInstance();
     const fresh: FoodItemInstance[] = [];
     let spoiledCount = 0;
 
+    // 1. Stockpile spoilage check
     for (const item of this.foodItems) {
       const foodDef = dataLoader.getFood(item.id);
       const threshold = foodDef ? foodDef.spoilageDays : 7;
       if (this.currentGameDay >= item.acquiredDay + threshold) {
         spoiledCount++;
         console.log(
-          `%c[Spoilage] 🪰 1x ${foodDef?.name || item.id} (acquired Day ${item.acquiredDay}) exceeded ${threshold}-day shelf life on Day ${this.currentGameDay} and was deleted.`,
+          `%c[Spoilage] 🪰 1x ${foodDef?.name || item.id} (acquired Day ${item.acquiredDay}) in stockpile exceeded ${threshold}-day shelf life on Day ${this.currentGameDay} and was deleted.`,
           'color: #ef4444; font-weight: bold;'
         );
       } else {
@@ -697,9 +698,49 @@ export class GameState {
       }
     }
 
-    if (spoiledCount > 0) {
+    if (this.foodItems.length !== fresh.length) {
       this.foodItems = fresh;
       this.syncFoodInventory();
+    }
+
+    // 2. Active party bags spoilage check
+    const party = activeParty || (globalThis as any).window?.activeHUD?.currentParty || (globalThis as any).window?.game?.scene?.getScene('MainScene')?.party || (globalThis as any).window?.game?.scene?.getScene('OutpostScene')?.party;
+    if (Array.isArray(party)) {
+      for (const member of party) {
+        if (typeof member?.checkFoodSpoilage === 'function') {
+          spoiledCount += member.checkFoodSpoilage(this.currentGameDay);
+        }
+      }
+    }
+
+    // 3. Update party snapshots if active party was not present
+    for (const snap of this.partySnapshots) {
+      if (snap.foodItems && snap.foodItems.length > 0) {
+        const freshSnap: FoodItemInstance[] = [];
+        for (const item of snap.foodItems) {
+          const foodDef = dataLoader.getFood(item.id);
+          const threshold = foodDef ? foodDef.spoilageDays : 7;
+          if (this.currentGameDay >= item.acquiredDay + threshold) {
+            if (!party) spoiledCount++;
+          } else {
+            freshSnap.push(item);
+          }
+        }
+        snap.foodItems = freshSnap;
+        if (snap.inventory) {
+          for (const food of dataLoader.getFoods()) {
+            const count = freshSnap.filter((f) => f.id === food.id).length;
+            if (count > 0) {
+              snap.inventory[food.id] = count;
+            } else {
+              delete snap.inventory[food.id];
+            }
+          }
+        }
+      }
+    }
+
+    if (spoiledCount > 0) {
       this.onSpoilageCallback?.(spoiledCount);
     }
     return spoiledCount;
@@ -719,6 +760,14 @@ export class GameState {
       this.snapshot.foodItems = [...this.foodItems];
     }
     console.log(`[Food] Added ${count}x '${foodId}' (${quality ?? 'common'}) on Day ${this.currentGameDay}. Total: ${this.getFoodItemCount(foodId)}`);
+  }
+
+  public addFoodInstance(instance: FoodItemInstance): void {
+    this.foodItems.push({ ...instance });
+    this.syncFoodInventory();
+    if (this.snapshot) {
+      this.snapshot.foodItems = [...this.foodItems];
+    }
   }
 
   // --- Recipe Discovery (Cooking System - Milestone 10) ---
@@ -1015,6 +1064,16 @@ export class GameState {
   public transferItem(fromPlayer: Player, toPlayer: Player, itemId: string, count: number = 1): boolean {
     if (fromPlayer === toPlayer || count <= 0) return false;
     if (fromPlayer.getItemCount(itemId) < count) return false;
+    const dataLoader = DataLoader.getInstance();
+    if (dataLoader.getFood(itemId)) {
+      for (let i = 0; i < count; i++) {
+        const inst = fromPlayer.consumeOldestFood(itemId);
+        if (inst) {
+          toPlayer.addFoodInstance(inst);
+        }
+      }
+      return true;
+    }
     const removed = fromPlayer.removeItem(itemId, count);
     if (removed) {
       toPlayer.addItem(itemId, count);
@@ -1031,12 +1090,126 @@ export class GameState {
   public depositItem(player: Player, itemId: string, count: number = 1): boolean {
     if (count <= 0) return false;
     if (player.getItemCount(itemId) < count) return false;
+    const dataLoader = DataLoader.getInstance();
+    if (dataLoader.getFood(itemId)) {
+      for (let i = 0; i < count; i++) {
+        const inst = player.consumeOldestFood(itemId);
+        if (inst) {
+          this.addFoodInstance(inst);
+        }
+      }
+      return true;
+    }
     const removed = player.removeItem(itemId, count);
     if (removed) {
       this.addItem(itemId, count);
       return true;
     }
     return false;
+  }
+
+  public withdrawItem(player: Player, itemId: string, count: number = 1): boolean {
+    if (count <= 0) return false;
+    if (this.getItemCount(itemId) < count) return false;
+    const dataLoader = DataLoader.getInstance();
+    if (dataLoader.getFood(itemId)) {
+      for (let i = 0; i < count; i++) {
+        const inst = this.consumeOldestFood(itemId);
+        if (inst) {
+          player.addFoodInstance(inst);
+        }
+      }
+      return true;
+    }
+    const removed = this.consumeItem(itemId, count);
+    if (removed) {
+      player.addItem(itemId, count);
+      return true;
+    }
+    return false;
+  }
+
+  public static isDepositedMaterial(itemId: string): boolean {
+    const dataLoader = DataLoader.getInstance();
+    // Gear never deposits
+    if (dataLoader.getWeapon(itemId) || dataLoader.getArmor(itemId)) {
+      return false;
+    }
+    // Food never deposits
+    if (dataLoader.getFood(itemId)) {
+      return false;
+    }
+    const itemDef = dataLoader.getItem(itemId);
+    if (!itemDef) {
+      // Direct raw resource fallback
+      if (itemId === 'wood' || itemId === 'ore') return true;
+      return false;
+    }
+    // Explicit keep flag
+    if (itemDef.keepOnReturn) {
+      return false;
+    }
+    // Categories to keep in bags
+    if (itemDef.category === 'tool' || itemDef.category === 'consumables' || itemDef.category === 'equipment') {
+      return false;
+    }
+    // Categories to deposit to stockpile
+    if (itemDef.category === 'gathering' || itemDef.category === 'reagents') {
+      return true;
+    }
+    if (itemId === 'wood' || itemId === 'ore') {
+      return true;
+    }
+    return false;
+  }
+
+  public autoDepositPartyMaterials(party: Player[]): { depositedCount: number; summary: string } {
+    if (!party || party.length === 0) {
+      return { depositedCount: 0, summary: '' };
+    }
+
+    const dataLoader = DataLoader.getInstance();
+    const depositedCounts: Record<string, number> = {};
+    let totalDeposited = 0;
+
+    for (const member of party) {
+      const itemsToDeposit: { id: string; count: number }[] = [];
+      for (const [itemId, count] of member.inventory.entries()) {
+        if (count > 0 && GameState.isDepositedMaterial(itemId)) {
+          itemsToDeposit.push({ id: itemId, count });
+        }
+      }
+
+      for (const { id, count } of itemsToDeposit) {
+        member.removeItem(id, count);
+        this.addItem(id, count);
+        depositedCounts[id] = (depositedCounts[id] || 0) + count;
+        totalDeposited += count;
+      }
+
+      member.updateEncumbrance();
+    }
+
+    if (totalDeposited === 0) {
+      return { depositedCount: 0, summary: '' };
+    }
+
+    const parts: string[] = [];
+    for (const [id, count] of Object.entries(depositedCounts)) {
+      const itemDef = dataLoader.getItem(id);
+      const name = itemDef?.name || id.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+      parts.push(`${count} ${name}`);
+    }
+
+    const summary = `Deposited to stockpile: ${parts.join(', ')}`;
+    console.log(`%c[Auto-Deposit] 📦 ${summary}`, 'color: #38bdf8; font-weight: bold;');
+
+    if (this.snapshot) {
+      this.snapshot.inventory = Object.fromEntries(this.inventory);
+      this.snapshot.resources = { ...this.resources };
+    }
+
+    return { depositedCount: totalDeposited, summary };
   }
 
   // --- Lockpicking System (Milestone 38) ---

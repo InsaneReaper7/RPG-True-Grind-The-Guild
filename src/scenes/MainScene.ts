@@ -1832,7 +1832,7 @@ export class MainScene extends Phaser.Scene {
     this.isWiping = false;
 
     // Switch active scene to OutpostScene
-    this.scene.start('OutpostScene');
+    this.scene.start('OutpostScene', { fromDungeon: true });
   }
 
   public handlePartyWipe(): void {
@@ -1878,7 +1878,7 @@ export class MainScene extends Phaser.Scene {
 
       // Transition back to Guild Outpost safe zone
       if (this.scene && typeof this.scene.start === 'function') {
-        this.scene.start('OutpostScene');
+        this.scene.start('OutpostScene', { fromDungeon: true });
       }
     };
 
@@ -3143,21 +3143,12 @@ export class MainScene extends Phaser.Scene {
       awardedCount = selected.count ?? (selected.yieldCount ?? yieldCount);
     }
 
-    // Grant resources to character personal inventory (Milestone 51) and GameState economy
+    // Grant resources exclusively to character personal inventory during runs (Milestone Item Flow Unification)
     if (awardedResourceId && awardedResourceId !== '') {
       const wasEncumbered = character.isEncumbered;
       character.addItem(awardedResourceId, awardedCount);
       if (!wasEncumbered && character.isEncumbered) {
         this.hud?.showToast(`⚠️ ${character.entityName} is ENCUMBERED (-80% Movement Speed)!`, 'warn', 3000);
-      }
-      if (awardedResourceId === 'wood') {
-        GameState.getInstance().addWood(awardedCount);
-        GameState.getInstance().addItem('wood', awardedCount);
-      } else if (awardedResourceId === 'ore') {
-        GameState.getInstance().addOre(awardedCount);
-        GameState.getInstance().addItem('ore', awardedCount);
-      } else {
-        GameState.getInstance().addItem(awardedResourceId, awardedCount);
       }
 
       if (TutorialSystem.getInstance().getCurrentStep()?.id === 'safe_gathering') {
@@ -3177,7 +3168,6 @@ export class MainScene extends Phaser.Scene {
         if (seedRoll < 0.5) {
           bonusSeeds = 1;
           character.addItem('seeds', 1);
-          GameState.getInstance().addItem('seeds', 1);
         }
       }
     }

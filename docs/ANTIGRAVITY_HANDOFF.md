@@ -628,3 +628,55 @@ Never ask Antigravity to jump ahead in this list — each milestone assumes the 
   - `test/milestone_revive_economy.test.ts`: 100% pass (all 6 tests passing).
   - `npm run build`: Production bundle (`tsc && vite build`) compiled cleanly in 3.29s with 0 errors.
 
+**Resolved and shipped: Milestone — Item Flow Unification (Bags During the Run, Auto-Deposit at Home) + Food in Bags.**
+- **Core Item Flow Architecture**:
+  1. **Dungeon Run Pickups (Carried Bags Only, Encumbrance Applies, Stockpile Delta = 0)**:
+     - Gathering nodes (Foraging, Mining, Woodcutting): items add exclusively to gatherer's personal bag (`character.addItem`).
+     - Corpse harvests (Skinning, Butchering): items add exclusively to harvester's personal bag (`character.addItem`).
+     - Combat enemy drops (Common, Elite, Epic, Boss): kill drops route to killer's personal bag; if killer is downed or dead, drops route to Party Leader (`party[0]`).
+     - Dungeon lockboxes: opened rewards route to opener's bag; if opener is downed or dead, rewards route to Party Leader (`party[0]`).
+     - Stockpile delta during dungeon exploration is strictly 0.
+  2. **Auto-Deposit on Arrival at Outpost**:
+     - Arriving at the Outpost from the dungeon (Portal, Teleporter Crystal, Escape Stone, or Party Wipe recovery) moves all crafting materials and reagents from party members' bags into the central stockpile (`GameState.autoDepositPartyMaterials(this.party)`).
+     - Consumables, food, gear, and tools (`lockpick`, `fishing_rod` flagged with `keepOnReturn: true`) stay in the personal bags.
+     - Single summary toast notification displayed: e.g. `📦 Deposited to stockpile: 10 Wood, 5 Ore, 2 Wolf Pelt`.
+     - Party snapshot saved immediately with updated personal bags.
+  3. **Explicit Transition Flag (`{ fromDungeon: true }`)**:
+     - Transitions from `MainScene` (`executeTransitionToOutpost()` and `finishWipe()`) pass `{ fromDungeon: true }` in `scene.start('OutpostScene', { fromDungeon: true })`.
+     - `OutpostScene.init(data)` and `create(data)` capture `fromDungeon`. Fresh game starts, new games, and save loads pass no flag and deposit 0 items.
+  4. **Food Holding Freshness & Quality in Personal Bags**:
+     - Character personal bags store `foodItems: FoodItemInstance[]` (`id`, `name`, `acquiredDay`, `quality`).
+     - Cooking dishes (recipes and experimentation) creates dish instances directly into the cook's bag with rolled quality.
+     - Spoilage check (`GameState.checkFoodSpoilage(activeParty)`) checks both party personal bags and stockpile on day advance.
+     - `Player.eatFood()` consumes the oldest instance first across actor bag -> party bags -> stockpile (Outpost only), preserving rolled `quality` and applying quality multipliers (hunger restored, buff duration, HP regen rate).
+     - Save migration automatically detects legacy plain food counts in snapshots and converts them to `FoodItemInstance`s with `acquiredDay = currentGameDay` and `quality = 'common'`, logging each migration to the console.
+  5. **Tools in Bags**:
+     - `lockpick` and `fishing_rod` are configured with `keepOnReturn: true`.
+     - Retained in personal bags across auto-deposits, enabling carried interactions without depletion or auto-stash.
+  6. **Locked Box Dual-Context Opening**:
+     - Opening lockbox in dungeon: all rewards route to opener personal bag.
+     - Opening lockbox at Outpost: material rewards immediately deposit to central stockpile, non-materials stay in bag.
+  7. **Duplicate Item IDs Audit (Reported Only, Zero Deletion/Merge)**:
+     - `ore` vs `iron_ore`: `ore` is the live, active ID across all mining nodes, blacksmith recipes, and HUD stockpile. `iron_ore` is dead data.
+     - `wild_herbs` vs `herbs`: `wild_herbs` is the live, active ID across nodes, alchemy/cooking recipes, and HUD. `herbs` is dead data.
+  8. **Skill Books Flow**:
+     - Research Tree currency is Research Points (RP), not physical skill books. Skill books are consumed directly by characters (`ResearchSystem.consumeSkillBook`), hence they correctly **KEEP** in personal bags.
+- **Verification Evidence**:
+  - `test/item_flow_unification.test.ts`: Dedicated test suite verifying:
+    1. Conservation per source: gathering, corpse harvests, combat drops, and dungeon lockbox rewards route to personal bags with stockpile delta = 0.
+    2. Round-trip auto-deposit on Outpost return with `{ fromDungeon: true }`; fresh boot/save load deposits 0.
+    3. Wipe recovery sets `{ fromDungeon: true }` and triggers identical auto-deposit without item loss.
+    4. Food quality, oldest-eaten consumption, quality multipliers (1.5x hunger, 25s buff, 3 HP/s), bag spoilage, and legacy save migration.
+    5. Tools (`lockpick`, `fishing_rod`) retained in bag with functional interactions.
+    6. Outpost locked box opens and deposits material rewards immediately to stockpile while non-materials stay in bag.
+  - `scripts/alpha_checkpoint_harness_v2.mjs`: Ran end-to-end full cold-start loop with headless browser; completed all 13 stages successfully with Trip #1 dungeon return, auto-deposit to stockpile, blacksmith station crafting mace, equipping mace, and dungeon combat.
+  - Regression Suites Passing:
+    - `test/craftingInventoryRouting.test.ts` (100% pass)
+    - `test/fishing_correction.test.ts` (100% pass)
+    - `test/milestone38.test.ts` (100% pass)
+    - `test/milestone_revive_economy.test.ts` (100% pass)
+    - `test/milestone26.test.ts` (100% pass)
+    - `test/milestone32.test.ts` (100% pass)
+    - `test/tutorialOnboarding.test.ts` (100% pass)
+  - `npm run build`: Production bundle (`tsc && vite build`) compiled cleanly with 0 errors.
+

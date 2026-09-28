@@ -210,8 +210,54 @@ async function run() {
     await page.screenshot({ path: stashOffPath });
     console.log(`📸 Captured screenshot: ${stashOffPath}`);
 
-    // 3. Test non-destructive save audit in live browser
-    console.log('\n--- Step 3: Run __auditSavedDuplicateGear() in Browser ---');
+    // 3. Add owned gear (Katana and Leather Armor), toggle Owned-Only back ON, and capture screenshot with owned items
+    console.log('\n--- Step 3: Toggle Stash Filter back ON with Owned Gear ---');
+    await page.evaluate(() => {
+      const scene = window.game.scene.getScene('OutpostScene');
+      const hero = scene.player;
+      hero.addItem('katana', 1);
+      hero.addItem('leather_armor', 1);
+      
+      const hud = scene.hud;
+      hud.setStashFilterActive(true);
+    });
+    await sleep(600);
+
+    const ownedState = await page.evaluate(() => {
+      const hud = window.game.scene.getScene('OutpostScene').hud;
+      const label = document.getElementById('stash-toggle-filter-label');
+      const indicator = document.getElementById('stash-toggle-filter-indicator');
+      const list = document.getElementById('party-inventory-item-list');
+      const craftRequiredBadges = list ? Array.from(list.querySelectorAll('*')).filter(el => el.textContent && el.textContent.includes('Craft Required')).length : 0;
+      const katanaCard = list ? list.querySelector('[data-item-id="katana"]') : null;
+      const armorCard = list ? list.querySelector('[data-item-id="leather_armor"]') : null;
+
+      return {
+        isActive: hud.isStashFilterActive(),
+        labelText: label ? label.innerText : '',
+        indicatorText: indicator ? indicator.innerText : '',
+        craftRequiredCount: craftRequiredBadges,
+        katanaCardFound: !!katanaCard,
+        katanaDraggable: katanaCard ? katanaCard.getAttribute('draggable') : null,
+        armorCardFound: !!armorCard,
+        armorDraggable: armorCard ? armorCard.getAttribute('draggable') : null
+      };
+    });
+
+    console.log('Owned State with Gear:', ownedState);
+    assert.strictEqual(ownedState.isActive, true, 'Stash filter is ON (Owned Only = true)');
+    assert.strictEqual(ownedState.katanaCardFound, true, 'Owned Katana visible in Owned Only mode');
+    assert.strictEqual(ownedState.katanaDraggable, 'true', 'Owned Katana is draggable');
+    assert.strictEqual(ownedState.armorCardFound, true, 'Owned Leather Armor visible in Owned Only mode');
+    assert.strictEqual(ownedState.armorDraggable, 'true', 'Owned Leather Armor is draggable');
+    assert.strictEqual(ownedState.craftRequiredCount, 0, 'Zero "Craft Required" badges in Owned Only mode with gear');
+
+    const stashOnOwnedPath = path.join(ARTIFACT_DIR, 'stash_toggle_on_owned.png');
+    await page.screenshot({ path: stashOnOwnedPath });
+    console.log(`📸 Captured screenshot: ${stashOnOwnedPath}`);
+
+    // 4. Test non-destructive save audit in live browser
+    console.log('\n--- Step 4: Run __auditSavedDuplicateGear() in Browser ---');
     const auditRes = await page.evaluate(() => {
       return typeof window.__auditSavedDuplicateGear === 'function'
         ? window.__auditSavedDuplicateGear()

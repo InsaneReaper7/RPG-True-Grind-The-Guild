@@ -70,16 +70,20 @@ export class OutpostScene extends Phaser.Scene {
   private moveHighlightTimer: Phaser.Time.TimerEvent | null = null;
   private warnedAboutRecruit: boolean = false;
 
+  public arrivedFromDungeon: boolean = false;
+
   constructor() {
     super({ key: 'OutpostScene' });
   }
 
-  public init(): void {
+  public init(data?: { fromDungeon?: boolean }): void {
     this.resetPerVisitState();
+    this.arrivedFromDungeon = !!data?.fromDungeon;
   }
 
   public resetPerVisitState(): void {
     this.isTransitioning = false;
+    this.arrivedFromDungeon = false;
     this.isCameraLocked = true;
     this.isBuildMode = false;
     this.selectedBuildableId = 'floor';
@@ -112,8 +116,10 @@ export class OutpostScene extends Phaser.Scene {
     TextureGenerator.generatePlaceholderTextures(this, this.tileSize);
   }
 
-  public create(): void {
+  public create(data?: { fromDungeon?: boolean }): void {
+    const fromDungeon = (data && data.fromDungeon !== undefined) ? !!data.fromDungeon : this.arrivedFromDungeon;
     this.resetPerVisitState();
+    this.arrivedFromDungeon = fromDungeon;
     this.buildingSystem = new BuildingSystem(this.mapWidth, this.mapHeight);
 
     // Disable browser right-click context menu so right-click demolish works smoothly
@@ -269,6 +275,17 @@ export class OutpostScene extends Phaser.Scene {
         member.restoreFromSnapshot(snap, this.time.now);
         this.party.push(member);
       }
+    }
+
+    // Milestone: Item Flow Unification - Auto-deposit crafting materials on arrival from dungeon
+    if (this.arrivedFromDungeon) {
+      const depositResult = GameState.getInstance().autoDepositPartyMaterials(this.party);
+      if (depositResult.depositedCount > 0) {
+        if (this.hud && typeof this.hud.showToast === 'function') {
+          this.hud.showToast(`📦 ${depositResult.summary}`, 'success', 4000);
+        }
+      }
+      GameState.getInstance().savePartySnapshot(this.party, this.time.now);
     }
 
     // Initial room classification scan (runs after party members are instantiated and placed)

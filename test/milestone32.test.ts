@@ -463,15 +463,15 @@ async function runTests() {
   assert.equal(attemptRes.reason, 'Must skin corpse before butchering');
 
   // Perform Skinning on Wolf
-  const initialPelts = gameState.getItemCount('wolf_pelt');
-  const initialMeat = gameState.getItemCount('wolf_meat');
   const hero = new Player(mockScene, 10, 10, 'hero', mockPlayerData);
+  const initialPelts = hero.getItemCount('wolf_pelt');
+  const initialMeat = hero.getItemCount('wolf_meat');
 
   mockScene.harvestGatheringNode(nodeAfter, hero);
 
   // Confirm pelt granted, meat NOT granted
-  assert.equal(gameState.getItemCount('wolf_pelt'), initialPelts + 1, 'Skinning granted exactly 1 Wolf Pelt');
-  assert.equal(gameState.getItemCount('wolf_meat'), initialMeat, 'Skinning did NOT grant meat');
+  assert.equal(hero.getItemCount('wolf_pelt'), initialPelts + 1, 'Skinning granted exactly 1 Wolf Pelt');
+  assert.equal(hero.getItemCount('wolf_meat'), initialMeat, 'Skinning did NOT grant meat');
   assert.equal(hero.progression.getProficiencyStat('skinning').currentExp, 15, 'Skinning awarded 15 Skinning EXP');
   assert.equal(nodeAfter.isSkinned, true);
   assert.equal(nodeAfter.isHarvested, false, 'Corpse is NOT spent because Butchering is now available!');
@@ -487,7 +487,7 @@ async function runTests() {
   mockScene.harvestGatheringNode(nodeAfter, hero);
 
   // Confirm meat granted, corpse now spent
-  assert.equal(gameState.getItemCount('wolf_meat'), initialMeat + 1, 'Butchering granted exactly 1 Wolf Meat');
+  assert.equal(hero.getItemCount('wolf_meat'), initialMeat + 1, 'Butchering granted exactly 1 Wolf Meat');
   assert.equal(hero.progression.getProficiencyStat('butchering').currentExp, 15, 'Butchering awarded 15 Butchering EXP');
   assert.equal(nodeAfter.isButchered, true);
   assert.equal(nodeAfter.isHarvested, true, 'Corpse is now fully spent after both actions complete');
@@ -502,16 +502,16 @@ async function runTests() {
   // TEST 6: Spider Silk Skinning & Goblin Meat Butchering
   // -------------------------------------------------------------
   console.log('\n--- TEST 6: Spider Silk Skinning & Goblin Meat Butchering ---');
-  const initialSilk = gameState.getItemCount('spider_silk');
+  const initialSilk = hero.getItemCount('spider_silk');
   const spiderNode = mockScene.spawnCorpseGatheringNode(spiderEnemy, 'skinning');
   mockScene.harvestGatheringNode(spiderNode, hero);
-  assert.equal(gameState.getItemCount('spider_silk'), initialSilk + 1, 'Spider skinning awarded Spider Silk');
+  assert.equal(hero.getItemCount('spider_silk'), initialSilk + 1, 'Spider skinning awarded Spider Silk');
   assert.equal(spiderNode.isHarvested, true, 'Spider corpse spent after skinning (no meat yield)');
 
-  const initialMonsterMeat = gameState.getItemCount('monster_meat');
+  const initialMonsterMeat = hero.getItemCount('monster_meat');
   const goblinNode = mockScene.spawnCorpseGatheringNode(goblinEnemy, 'butchering');
   mockScene.harvestGatheringNode(goblinNode, hero);
-  assert.equal(gameState.getItemCount('monster_meat'), initialMonsterMeat + 1, 'Goblin butchering awarded Monster Meat');
+  assert.equal(hero.getItemCount('monster_meat'), initialMonsterMeat + 1, 'Goblin butchering awarded Monster Meat');
   assert.equal(goblinNode.isHarvested, true, 'Goblin corpse spent after butchering');
 
   console.log('✔ Test 6 passed: Spider silk and Goblin meat yields verified.');

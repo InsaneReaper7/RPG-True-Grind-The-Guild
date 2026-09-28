@@ -5720,21 +5720,27 @@ export class HUD {
 
   public handleLockpickBox(memberIndex?: number): void {
     const gameState = GameState.getInstance();
-    if (gameState.getItemCount('locked_box') <= 0) {
-      this.showToast('⚠️ No Locked Box in inventory to pick!', 'error');
-      return;
-    }
-
-    if (gameState.getItemCount('lockpick') <= 0) {
-      this.showToast('⚠️ No Lockpicks in inventory! Craft Lockpicks at the Blacksmithing Bench (1 Steel Scrap).', 'warn');
-      return;
-    }
-
     const activeMember = (memberIndex !== undefined && this.currentParty[memberIndex])
       ? this.currentParty[memberIndex]
       : (this.currentParty[0] || this.currentPlayer);
 
     if (!activeMember) return;
+
+    const carriedBoxes = typeof activeMember.getPartyCarriedItemCount === 'function'
+      ? activeMember.getPartyCarriedItemCount('locked_box')
+      : activeMember.getItemCount('locked_box');
+    if (gameState.getItemCount('locked_box') + carriedBoxes <= 0) {
+      this.showToast('⚠️ No Locked Box in inventory to pick!', 'error');
+      return;
+    }
+
+    const carriedPicks = typeof activeMember.getPartyCarriedItemCount === 'function'
+      ? activeMember.getPartyCarriedItemCount('lockpick')
+      : activeMember.getItemCount('lockpick');
+    if (gameState.getItemCount('lockpick') + carriedPicks <= 0) {
+      this.showToast('⚠️ No Lockpicks in inventory! Craft Lockpicks at the Blacksmithing Bench (1 Steel Scrap).', 'warn');
+      return;
+    }
 
     const memberName = activeMember.name || 'Guild Hero';
     const result = gameState.attemptLockpick(activeMember.progression, memberName, Math.random, activeMember);
@@ -5938,7 +5944,7 @@ export class HUD {
         const quality = HUD.calculateDishQuality(cookingLevel, matchedRecipe.maxQuality);
         if (this.currentPlayer) {
           const wasEnc = this.currentPlayer.isEncumbered;
-          this.currentPlayer.addItem(matchedRecipe.resultFoodId, 1);
+          this.currentPlayer.addFoodItem(matchedRecipe.resultFoodId, 1, quality);
           if (!wasEnc && this.currentPlayer.isEncumbered) {
             this.showToast(`⚠️ ${this.currentPlayer.entityName} is ENCUMBERED (-80% Movement Speed)!`, 'warn', 3000);
           }
@@ -5961,7 +5967,7 @@ export class HUD {
           const quality = HUD.calculateDishQuality(cookingLevel, matchedRecipe.maxQuality);
           if (this.currentPlayer) {
             const wasEnc = this.currentPlayer.isEncumbered;
-            this.currentPlayer.addItem(matchedRecipe.resultFoodId, 1);
+            this.currentPlayer.addFoodItem(matchedRecipe.resultFoodId, 1, quality);
             if (!wasEnc && this.currentPlayer.isEncumbered) {
               this.showToast(`⚠️ ${this.currentPlayer.entityName} is ENCUMBERED (-80% Movement Speed)!`, 'warn', 3000);
             }
@@ -6103,7 +6109,7 @@ export class HUD {
             }
             const quality = HUD.calculateDishQuality(cookingStat.level, recipe.maxQuality);
             const wasEnc = player.isEncumbered;
-            player.addItem(recipe.resultFoodId, 1);
+            player.addFoodItem(recipe.resultFoodId, 1, quality);
             if (!wasEnc && player.isEncumbered) {
               this.showToast(`⚠️ ${player.entityName} is ENCUMBERED (-80% Movement Speed)!`, 'warn', 3000);
             }

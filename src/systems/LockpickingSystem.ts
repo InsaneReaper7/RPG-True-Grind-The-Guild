@@ -197,7 +197,10 @@ export class LockpickingSystem {
   ): LockpickAttemptResult {
     const gameState = GameState.getInstance();
 
-    if (gameState.getItemCount('locked_box') <= 0) {
+    const carriedBoxes = (playerEntity && typeof playerEntity.getPartyCarriedItemCount === 'function')
+      ? playerEntity.getPartyCarriedItemCount('locked_box')
+      : 0;
+    if (gameState.getItemCount('locked_box') + carriedBoxes <= 0) {
       return {
         success: false,
         expGained: 0,
@@ -234,6 +237,13 @@ export class LockpickingSystem {
     let totalExpGained = 0;
     let leveledUp = false;
 
+    let recipient: any = playerEntity ?? null;
+    if (recipient && (recipient.state === 'downed' || recipient.state === 'dead')) {
+      const members = typeof recipient.getPartyMembers === 'function' ? recipient.getPartyMembers() : [];
+      recipient = members[0] || recipient;
+    }
+    const atOutpost = recipient && typeof recipient.isAtOutpost === 'function' ? recipient.isAtOutpost() : false;
+
     for (let rollIndex = 1; rollIndex <= maxRolls; rollIndex++) {
       rollsAttempted = rollIndex;
       const currentLevel = memberProgression.getProficiencyLevel('lockpicking');
@@ -242,8 +252,13 @@ export class LockpickingSystem {
 
       if (roll < successRate) {
         // SUCCESS! Winning lockpick survives (is not consumed).
-        // Consume 1 Locked Box
-        gameState.consumeItem('locked_box', 1);
+        // Consume 1 Locked Box from carried bag if available, else stockpile
+        const consumedFromBag = playerEntity && typeof playerEntity.consumeCarriedConsumable === 'function'
+          ? playerEntity.consumeCarriedConsumable('locked_box', 1)
+          : false;
+        if (!consumedFromBag) {
+          gameState.consumeItem('locked_box', 1);
+        }
 
         // Award Success EXP (+35)
         const expResult = memberProgression.addProficiencyExp('lockpicking', LockpickingSystem.SUCCESS_EXP);
@@ -259,18 +274,34 @@ export class LockpickingSystem {
           if (reward.type === 'research_points') {
             gameState.addResearchPoints(reward.count);
           } else if (reward.type === 'resource') {
-            if (reward.id === 'ore') {
-              gameState.addOre(reward.count);
-            } else if (reward.id === 'wood') {
-              gameState.addWood(reward.count);
+            if (recipient) {
+              if (atOutpost) {
+                if (reward.id === 'ore') gameState.addOre(reward.count);
+                else if (reward.id === 'wood') gameState.addWood(reward.count);
+                else gameState.addItem(reward.id, reward.count);
+              } else {
+                recipient.addItem(reward.id, reward.count);
+              }
+            } else {
+              if (reward.id === 'ore') gameState.addOre(reward.count);
+              else if (reward.id === 'wood') gameState.addWood(reward.count);
+              else gameState.addItem(reward.id, reward.count);
             }
           } else if (reward.type === 'item') {
             if (reward.id.startsWith('book_') && playerEntity) {
               const bookDef = dataLoader.getSkillBook(reward.id);
               if (bookDef) {
                 researchSystem.consumeSkillBook(bookDef, playerEntity);
+              } else if (recipient) {
+                recipient.addItem(reward.id, reward.count);
               } else {
                 gameState.addItem(reward.id, reward.count);
+              }
+            } else if (recipient) {
+              if (atOutpost && GameState.isDepositedMaterial(reward.id)) {
+                gameState.addItem(reward.id, reward.count);
+              } else {
+                recipient.addItem(reward.id, reward.count);
               }
             } else {
               gameState.addItem(reward.id, reward.count);
@@ -318,8 +349,21 @@ export class LockpickingSystem {
     // All committed rolls in this attempt failed
     if (maxRolls === 3) {
       // Full 3-strike committed attempt failed: Box breaks!
-      gameState.consumeItem('locked_box', 1);
-      gameState.addItem('broken_lockbox', 1);
+      const consumedFromBag = playerEntity && typeof playerEntity.consumeCarriedConsumable === 'function'
+        ? playerEntity.consumeCarriedConsumable('locked_box', 1)
+        : false;
+      if (!consumedFromBag) {
+        gameState.consumeItem('locked_box', 1);
+      }
+      if (recipient) {
+        if (atOutpost) {
+          gameState.addItem('broken_lockbox', 1);
+        } else {
+          recipient.addItem('broken_lockbox', 1);
+        }
+      } else {
+        gameState.addItem('broken_lockbox', 1);
+      }
 
       // Doubled bonus for full box-break gamble: total EXP for this attempt is 30.
       // 15 EXP (3 * 5) was already awarded during the 3 rolls, so award the remaining 15 bonus EXP to reach 30.
