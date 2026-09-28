@@ -53,26 +53,41 @@
       "description": "An infused distillation of ethereal ectoplasm and wild herbs. Instantly restores 35 Energy/Mana, grants +2 Energy/s for 15s, and accelerates Mana Regen skill growth."
     },
     {
+      "id": "bone_meal",
+      "name": "Bone Meal",
+      "resultItemId": "bone_meal",
+      "resultCount": 2,
+      "requiredLevel": 0,
+      "ingredients": {
+        "bone": 1
+      },
+      "expGranted": 20,
+      "description": "Finely crushed monster bones. Used as a vital chemical reagent in potent restoratives and agricultural compounds."
+    },
+    {
       "id": "revive_potion",
       "name": "Revive Potion",
       "resultItemId": "revive_potion",
+      "resultCount": 1,
+      "requiredLevel": 0,
       "ingredients": {
-        "wild_herbs": 3,
-        "ectoplasm": 1
+        "bone_meal": 2,
+        "wild_herbs": 1
       },
       "expGranted": 40,
-      "description": "A potent revitalizing elixir brewed from ectoplasm and wild herbs. Channel for 3 seconds to revive a fallen ally to 50% HP."
+      "description": "A potent revitalizing elixir brewed from bone meal and wild herbs. Channel for 3 seconds to revive a fallen ally to 50% HP."
     },
     {
       "id": "escape_stone",
       "name": "Escape Stone",
       "resultItemId": "escape_stone",
+      "requiredLevel": 0,
       "ingredients": {
         "wood": 1
       },
       "expGranted": 20,
-      "_comment": "PLACEHOLDER COST - Alpha Balancing Required: During active development, cost is kept at 1 wood for test convenience. Real alpha balancing will require expensive ingredients (e.g. rare dungeon essence/ingot) so as not to undermine one-way portal risk.",
-      "description": "[PLACEHOLDER COST - Alpha Balancing Required] A resonating dimensional stone. Teleports the entire party back to the Outpost when out of combat, ending the dungeon run safely with all loot preserved."
+      "description": "[PLACEHOLDER COST - Alpha Balancing Required] A resonating dimensional stone. Teleports the entire party back to the Outpost when out of combat, ending the dungeon run safely with all loot preserved.",
+      "_comment": "PLACEHOLDER COST - Alpha Balancing Required: During active development, cost is kept at 1 wood for test convenience. Real alpha balancing will require expensive ingredients (e.g. rare dungeon essence/ingot) so as not to undermine one-way portal risk."
     }
   ]
 }

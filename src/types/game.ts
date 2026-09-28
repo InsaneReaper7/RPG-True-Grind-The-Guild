@@ -125,6 +125,7 @@ export interface ClassesData {
 export interface HarvestItem {
   method: string;
   item: string;
+  weight?: number;
   tags: string[];
   note?: string;
 }
@@ -154,6 +155,7 @@ export interface EnemyDef {
   attackIntervalMs: number;
   moveSpeed: number;
   attackRangeTiles?: number;
+  dropChance?: number;
   harvest: HarvestItem[];
   corpseHarvest?: CorpseHarvestDef;
   poisonChance?: number;
@@ -390,6 +392,7 @@ export interface AlchemyRecipeDef {
   id: string;
   name: string;
   resultItemId?: string;
+  resultCount?: number;
   cures?: string[];
   ingredients: Record<string, number>;
   expGranted: number;

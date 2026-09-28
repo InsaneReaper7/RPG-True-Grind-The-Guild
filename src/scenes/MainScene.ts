@@ -1902,9 +1902,9 @@ export class MainScene extends Phaser.Scene {
 
   public useEscapeStone(): boolean {
     if (this.isTransitioning) return false;
-    const gameState = GameState.getInstance();
-    if (gameState.getItemCount('escape_stone') < 1) {
-      this.hud.showToast('No Escape Stone in inventory/stockpile! Craft one at the Alchemy Station.', 'warn', 3000);
+    const hasCarriedStone = this.party.some((m) => m.getItemCount('escape_stone') > 0);
+    if (!hasCarriedStone) {
+      this.hud.showToast('No Escape Stone carried by party! Craft one at the Alchemy Station.', 'warn', 3000);
       return false;
     }
 
@@ -1916,7 +1916,11 @@ export class MainScene extends Phaser.Scene {
       return false;
     }
 
-    gameState.consumeItem('escape_stone', 1);
+    const consumed = this.player.consumeCarriedConsumable('escape_stone', 1);
+    if (!consumed) {
+      this.hud.showToast('No Escape Stone carried by party! Craft one at the Alchemy Station.', 'warn', 3000);
+      return false;
+    }
     this.hud.showToast('🌀 Using Escape Stone! Teleporting party to Outpost...', 'success', 3000);
     this.executeTransitionToOutpost();
     return true;
@@ -3400,10 +3404,10 @@ export class MainScene extends Phaser.Scene {
       return false;
     }
 
-    const gameState = GameState.getInstance();
-    if (gameState.getItemCount('revive_potion') < 1) {
+    const hasCarriedRevive = this.party.some((m) => m.getItemCount('revive_potion') > 0);
+    if (!hasCarriedRevive) {
       this.createFloatingText(downedAlly.x, downedAlly.y - 12, 'NEED REVIVE POTION!', '#f59e0b');
-      this.hud?.showToast('⚠️ Requires a Revive Potion! Craft one at the Alchemy Station.', 'warn', 2500);
+      this.hud?.showToast('⚠️ No Revive Potion carried! Carry one from base or craft at Alchemy Station.', 'warn', 2500);
       return false;
     }
 
@@ -3496,9 +3500,10 @@ export class MainScene extends Phaser.Scene {
       return false;
     }
 
-    if (GameState.getInstance().getItemCount('revive_potion') < 1) {
+    const hasCarriedRevive = character.getItemCount('revive_potion') > 0 || this.party.some((m) => m.getItemCount('revive_potion') > 0);
+    if (!hasCarriedRevive) {
       this.createFloatingText(targetAlly.x, targetAlly.y - 12, 'NEED REVIVE POTION!', '#f59e0b');
-      this.hud?.showToast('⚠️ Requires a Revive Potion! Craft one at the Alchemy Station.', 'warn', 2500);
+      this.hud?.showToast('⚠️ No Revive Potion carried! Carry one from base or craft at Alchemy Station.', 'warn', 2500);
       return false;
     }
 
@@ -3570,15 +3575,12 @@ export class MainScene extends Phaser.Scene {
       return;
     }
 
-    const gameState = GameState.getInstance();
-    if (gameState.getItemCount('revive_potion') < 1) {
-      console.warn('[Revive] No Revive Potion in inventory at completion time!');
-      this.hud?.showToast('⚠️ Revive failed: No Revive Potion in inventory!', 'error');
+    const consumed = character.consumeCarriedConsumable('revive_potion', 1);
+    if (!consumed) {
+      console.warn('[Revive] No Revive Potion carried in party at completion time!');
+      this.hud?.showToast('⚠️ Revive failed: No Revive Potion carried!', 'error');
       return;
     }
-
-    // 1. Consume 1 Revive Potion
-    gameState.consumeItem('revive_potion', 1);
 
     // 2. Revive target ally (increments 'Ally Revived' activity count on character)
     channel.targetAlly.revive(character);

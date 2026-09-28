@@ -2353,10 +2353,10 @@ export class OutpostScene extends Phaser.Scene {
   public interactReviveAlly(downedAlly: Player): boolean {
     if (downedAlly.state !== 'downed') return false;
 
-    const gameState = GameState.getInstance();
-    if (gameState.getItemCount('revive_potion') < 1) {
+    const hasCarriedRevive = this.party.some((m) => m.getItemCount('revive_potion') > 0);
+    if (!hasCarriedRevive) {
       this.createFloatingText(downedAlly.x, downedAlly.y - 12, 'NEED REVIVE POTION!', '#f59e0b');
-      this.hud?.showToast('⚠️ Requires a Revive Potion! Craft one at the Alchemy Station.', 'warn', 2500);
+      this.hud?.showToast('⚠️ No Revive Potion carried! Carry one from base or craft at Alchemy Station.', 'warn', 2500);
       return false;
     }
 
@@ -2421,9 +2421,10 @@ export class OutpostScene extends Phaser.Scene {
       return false;
     }
 
-    if (GameState.getInstance().getItemCount('revive_potion') < 1) {
+    const hasCarriedRevive = character.getItemCount('revive_potion') > 0 || this.party.some((m) => m.getItemCount('revive_potion') > 0);
+    if (!hasCarriedRevive) {
       this.createFloatingText(targetAlly.x, targetAlly.y - 12, 'NEED REVIVE POTION!', '#f59e0b');
-      this.hud?.showToast('⚠️ Requires a Revive Potion! Craft one at the Alchemy Station.', 'warn', 2500);
+      this.hud?.showToast('⚠️ No Revive Potion carried! Carry one from base or craft at Alchemy Station.', 'warn', 2500);
       return false;
     }
 
@@ -2490,13 +2491,11 @@ export class OutpostScene extends Phaser.Scene {
       return;
     }
 
-    const gameState = GameState.getInstance();
-    if (gameState.getItemCount('revive_potion') < 1) {
-      this.hud?.showToast('⚠️ Revive failed: No Revive Potion in inventory!', 'error');
+    const consumed = character.consumeCarriedConsumable('revive_potion', 1);
+    if (!consumed) {
+      this.hud?.showToast('⚠️ Revive failed: No Revive Potion carried!', 'error');
       return;
     }
-
-    gameState.consumeItem('revive_potion', 1);
     channel.targetAlly.revive(character);
 
     if (character.progression) {

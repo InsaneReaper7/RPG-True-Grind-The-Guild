@@ -654,7 +654,10 @@ async function runTests() {
   assert.strictEqual(alLabel.innerText, 'Showing: Unlocked Only');
   assert.ok(alContainer.innerHTML.includes('Bandage'), 'Bandage must be shown');
   assert.ok(alContainer.innerHTML.includes('Energy Potion'), 'Energy Potion must be shown');
+  assert.ok(alContainer.innerHTML.includes('Bone Meal'), 'Bone Meal must be shown at Lv 0');
+  assert.ok(alContainer.innerHTML.includes('Revive Potion'), 'Revive Potion must be shown at Lv 0');
   const alCountFiltered = alContainer.children.length;
+  assert.strictEqual(alCountFiltered, 7, 'All 7 Alchemy recipes must be unlocked and shown at Lv 0');
 
   // Toggle to Show All
   alBtn.onclick?.();
@@ -662,6 +665,7 @@ async function runTests() {
   assert.strictEqual(alIndicator.innerText, '👁️');
   assert.strictEqual(alLabel.innerText, 'Showing: All Recipes');
   const alCountAll = alContainer.children.length;
+  assert.strictEqual(alCountAll, 7, 'All 7 Alchemy recipes must be shown in Show All');
   console.log(`  Per-Station Count: Alchemy -> Unlocked Only = ${alCountFiltered}, Show All = ${alCountAll}`);
 
   // Toggle back
@@ -669,7 +673,7 @@ async function runTests() {
   assert.strictEqual(hud.isCraftingFilterActive('alchemy'), true);
   assert.strictEqual(alIndicator.innerText, '✅');
   assert.strictEqual(alLabel.innerText, 'Showing: Unlocked Only');
-  console.log('✓ Test 7 Passed: Alchemy filter toggle functions consistently.\n');
+  console.log('✓ Test 7 Passed: Alchemy filter toggle functions consistently with 7 recipes.\n');
 
   // --- TEST 8: Live Level-Up Dynamic Recipe Unlocking ---
   console.log('--- Test 8: Live Proficiency Level-Up Unlocks Recipe While Filter Remains Active ---');

@@ -525,3 +525,57 @@ Never ask Antigravity to jump ahead in this list — each milestone assumes the 
   - `test/fishing_correction.test.ts`: 100% pass across all 7 tests (seed determinism and scene invariance).
   - `test/milestone32.test.ts`: 100% pass across all 7 tests.
   - `npm run build`: Production bundle (`tsc && vite build`) compiled cleanly in 3.23s with 0 errors.
+
+**Resolved and shipped: Milestone — Revive Economy: Starting Revives, Bones, and Bone Meal.**
+- **Expanded Starting Consumable Kit (New Games Only)**:
+  - In `src/systems/GameState.ts`, new game initialization seeds Guild Hero and Valerie with personal consumable kits:
+    - 5x Revive Potion (2.5 kg)
+    - 5x Bandage (0.5 kg)
+    - 5x Antidote (1.0 kg)
+    - 5x Energy Potion (1.5 kg)
+    - Total: 20 items, 5.5 kg carried.
+  - Summoned recruits (e.g. Kaelen via `createBlankRecruitSnapshot`) receive 0 starting consumables (`inventory: {}`).
+  - Stockpile begins with 0 consumable items.
+  - Carry weight verified: Guild Hero carried weight is 8.5 kg / 45.0 kg (3.0 kg short_swords + 5.5 kg kit); Valerie carried weight is 8.5 kg / 45.0 kg (2.0 kg bows + 1.0 kg daggers + 5.5 kg kit). Both characters remain well under the 45.0 kg encumbrance threshold (18.9% capacity, 36.5 kg spare capacity).
+  - Existing saves loaded via `loadFromDisk` are preserved untouched.
+- **Bones & Enemy Loot Rebalance**:
+  - Reused existing `bone` item (`data/items.json`).
+  - Common enemy drops consolidated to a single 40% any-drop roll (`dropChance: 0.40`), picking at most 1 item from weighted loot table via `CombatSystem.rollCommonEnemyDrop`.
+  - All skeletal/vertebrate common enemies drop bones (Wolf weight 3, Goblin weight 3, Goblin Archer weight 2, Skeleton weight 2, Skeleton Archer weight 2, Undead weight 2).
+  - Non-skeletal enemies (Slime, Giant Spider) drop 0 bones across all kills.
+  - Elite/Epic/Boss retain independent tiered rolls; added `bone` as `rare_drop` (35%) to Orc Warrior and Void Knight. Abyssal Colossus and Glacial Sovereign drop 0 bones.
+  - Ectoplasm preserved at approved baseline weight 1 on Skeleton and Undead (~0.46 drops/cleared Floor 1).
+- **Bone Meal & Revive Potion Rebalance**:
+  - Added `bone_meal` item to `data/items.json` (weight 0.1 kg, reagents category, icon 🥣).
+  - Added Alchemy recipe: 1 Bone $\rightarrow$ 2 Bone Meal (requiredLevel: 0, 20 EXP).
+  - Rebalanced Revive Potion recipe: 2 Bone Meal + 1 Wild Herb $\rightarrow$ 1 Revive Potion (requiredLevel: 0, 40 EXP).
+  - Both recipes explicitly declare `requiredLevel: 0` and `resultCount`.
+  - Scaled by player mood multiplier uniformly in `src/ui/HUD.ts`: $\text{Craft Yield} = \text{recipe.resultCount} \times (1 + \text{moodTier.alchemyYieldBonus})$. Standard mood yields 2 Bone Meal and 1 Revive Potion; Euphoric mood (+100%) yields 4 Bone Meal and 2 Revive Potions.
+- **Carried-Only Consumable Consumption Rule**:
+  - All consumable use draws **strictly from carried bags** (acting character's personal bag first, then party members' bags in order):
+    - Revive Potion (`MainScene`, `OutpostScene`, `Player.consumeCarriedConsumable`): Stockpile fallback removed; channel consumes from carried bags.
+    - Bandages (`Player.applyBandage`, `HUD.applyBandage`): Only consumed from carried bags.
+    - Antidotes (`Player.applyAntidote`, `HUD.applyAntidote`): Only consumed from carried bags.
+    - Energy & Mana Potions (`Player.drinkPotion`): Only consumed from carried bags.
+    - Escape Stones (`MainScene.useEscapeStone`): Only consumed from carried bags.
+    - Lockpicks (`LockpickingSystem`, `HUD.handleLockpickBox`): Consumed from carried bags when player entity is provided.
+  - **The Single Food Exception (Owner Decision)**:
+    - At the Outpost (`Player.isAtOutpost() === true`): Auto-eat and manual eating check actor's bag, then party members, and may fall back to the central stockpile (`consumeOldestFood`).
+    - In the Dungeon (`Player.isAtOutpost() === false`): Food comes strictly from carried bags; zero stockpile fallback.
+- **HUD Counters**:
+  - `src/ui/HUD.ts` rows for Bandages, Energy Potions, Mana Potions, Revive Potions, and Escape Stones updated to display total party-carried counts ($\sum_{\text{member} \in \text{party}} \text{member.getItemCount(itemId)}$) instead of stockpile totals.
+- **Verification Evidence**:
+  - `test/milestone_revive_economy.test.ts`: 100% pass across all 6 test suites:
+    1. Starting inventory (Hero 5/5/5/5, Valerie 5/5/5/5, Kaelen 0, Stockpile 0) and carry weight (8.5 kg / 45.0 kg, encumbered = false).
+    2. Common enemy drop simulation (1000 kills each): 40% drop rate verified, 0 multi-drops, correct skeletal bone drops, 0 bones for Slime and Spider, bone rare_drops on Orc Warrior and Void Knight, 0 bones on Bosses.
+    3. Crafting chain: 1 Bone $\rightarrow$ 2 Bone Meal $\rightarrow$ 1 Revive Potion, stockpile deduction, leader personal inventory deposit, EXP awards, and Euphoric mood yield scaling.
+    4. Carried-only consumption: stockpile-only fails for Revive, Bandage, Antidote, Energy Potion; carried items succeed from actor or party bags.
+    5. Food Outpost exception: hungry character with empty bag eats from stockpile at Outpost, strictly fails to eat from stockpile in Dungeon.
+    6. Live dungeon revive: Downed ally revived to 50% HP using carried potion.
+  - `test/craftingStationRecipeFilter.test.ts`: 100% pass (Test 7 updated to assert 7 Unlocked / 7 All at Lv 0 with Bone Meal and Revive Potion).
+  - `test/craftingInventoryRouting.test.ts`: 100% pass (all 7 tests).
+  - `test/milestone32.test.ts`: 100% pass (Butchering bones intact).
+  - `test/research_points.test.ts`: 100% pass (Kill RP intact).
+  - `scripts/alpha_checkpoint_harness_v2.mjs`: 100% pass across all 13 stages (browser headless crawl, combat, loot, crafting, returning).
+  - `npm run build`: Production bundle (`tsc && vite build`) compiled cleanly in 3.24s with 0 errors.
+

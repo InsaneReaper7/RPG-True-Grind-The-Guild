@@ -180,6 +180,13 @@ export class GameState {
       discoveredGatheringNodes: Array.from(this.discoveredGatheringNodes)
     };
 
+    const startingConsumableKit: Record<string, number> = {
+      revive_potion: 5,
+      bandage: 5,
+      antidote: 5,
+      energy_potion: 5
+    };
+
     const heroSnapshot: CharacterSnapshot = {
       id: playerData.id || 'hero',
       name: playerData.name,
@@ -189,6 +196,7 @@ export class GameState {
       energy: playerData.maxEnergy,
       equippedWeaponId: initialMainWeapon,
       offhandWeaponId: initialOffhandWeapon,
+      inventory: { ...startingConsumableKit },
       knownSkillIds: known,
       equippedSkillIds: equipped,
       autocastMap: autocastObj,
@@ -223,6 +231,7 @@ export class GameState {
       energy: 100,
       equippedWeaponId: 'bows',
       offhandWeaponId: 'daggers',
+      inventory: { ...startingConsumableKit },
       knownSkillIds: ['quickshot', 'mark_target'],
       equippedSkillIds: ['quickshot', 'mark_target'],
       autocastMap: { quickshot: true, mark_target: true },

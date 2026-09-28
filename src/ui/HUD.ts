@@ -2482,9 +2482,13 @@ export class HUD {
       }
     }
 
-    // 4b3. Bandage Stockpile
+    const getCarried = (id: string) => (player && typeof player.getPartyCarriedItemCount === 'function')
+      ? player.getPartyCarriedItemCount(id)
+      : GameState.getInstance().getItemCount(id);
+
+    // 4b3. Bandage Party Carried Count
     if (this.hudBandageRowEl && this.playerBandageTextEl) {
-      const bandageCount = GameState.getInstance().getItemCount('bandage');
+      const bandageCount = getCarried('bandage');
       const isAlchemyUnlocked = GameState.getInstance().isBuildableUnlocked('alchemy_station');
       if (bandageCount > 0) {
         this.hasSeenBandages = true;
@@ -2497,9 +2501,9 @@ export class HUD {
       }
     }
 
-    // 4b4. Energy Potion Stockpile
+    // 4b4. Energy Potion Party Carried Count
     if (this.hudEnergyPotionRowEl && this.playerEnergyPotionTextEl) {
-      const energyPotCount = GameState.getInstance().getItemCount('energy_potion');
+      const energyPotCount = getCarried('energy_potion');
       const isAlchemyUnlocked = GameState.getInstance().isBuildableUnlocked('alchemy_station');
       if (energyPotCount > 0 || isAlchemyUnlocked) {
         this.hudEnergyPotionRowEl.style.display = 'flex';
@@ -2509,9 +2513,9 @@ export class HUD {
       }
     }
 
-    // 4b5. Mana Potion Stockpile
+    // 4b5. Mana Potion Party Carried Count
     if (this.hudManaPotionRowEl && this.playerManaPotionTextEl) {
-      const manaPotCount = GameState.getInstance().getItemCount('mana_potion');
+      const manaPotCount = getCarried('mana_potion');
       const isAlchemyUnlocked = GameState.getInstance().isBuildableUnlocked('alchemy_station');
       if (manaPotCount > 0 || isAlchemyUnlocked) {
         this.hudManaPotionRowEl.style.display = 'flex';
@@ -2521,9 +2525,9 @@ export class HUD {
       }
     }
 
-    // 4b6. Revive Potion Stockpile
+    // 4b6. Revive Potion Party Carried Count
     if (this.hudRevivePotionRowEl && this.playerRevivePotionTextEl) {
-      const revivePotCount = GameState.getInstance().getItemCount('revive_potion');
+      const revivePotCount = getCarried('revive_potion');
       const isAlchemyUnlocked = GameState.getInstance().isBuildableUnlocked('alchemy_station');
       if (revivePotCount > 0 || isAlchemyUnlocked) {
         this.hudRevivePotionRowEl.style.display = 'flex';
@@ -2533,9 +2537,9 @@ export class HUD {
       }
     }
 
-    // 4b7. Escape Stone Stockpile (Milestone 40)
+    // 4b7. Escape Stone Party Carried Count (Milestone 40)
     if (this.hudEscapeStoneRowEl && this.playerEscapeStoneTextEl) {
-      const escapeStoneCount = GameState.getInstance().getItemCount('escape_stone');
+      const escapeStoneCount = getCarried('escape_stone');
       const isAlchemyUnlocked = GameState.getInstance().isBuildableUnlocked('alchemy_station');
       if (escapeStoneCount > 0 || isAlchemyUnlocked) {
         this.hudEscapeStoneRowEl.style.display = 'flex';
@@ -5043,33 +5047,37 @@ export class HUD {
     if (this.alchemyModalWoodEl) {
       this.alchemyModalWoodEl.innerText = `🪵 ${gameState.getWood()}`;
     }
+    const getCarried = (id: string) => (player && typeof player.getPartyCarriedItemCount === 'function')
+      ? player.getPartyCarriedItemCount(id)
+      : gameState.getItemCount(id);
+
     if (this.alchemyModalBandagesEl) {
-      this.alchemyModalBandagesEl.innerText = `🩹 ${gameState.getItemCount('bandage')}`;
+      this.alchemyModalBandagesEl.innerText = `🩹 ${getCarried('bandage')}`;
     }
     if (this.alchemyModalEnergyPotionsEl) {
-      this.alchemyModalEnergyPotionsEl.innerText = `⚡ ${gameState.getItemCount('energy_potion')}`;
+      this.alchemyModalEnergyPotionsEl.innerText = `⚡ ${getCarried('energy_potion')}`;
     }
     if (this.alchemyModalManaPotionsEl) {
-      this.alchemyModalManaPotionsEl.innerText = `✨ ${gameState.getItemCount('mana_potion')}`;
+      this.alchemyModalManaPotionsEl.innerText = `✨ ${getCarried('mana_potion')}`;
     }
     if (this.alchemyModalRevivePotionsEl) {
-      this.alchemyModalRevivePotionsEl.innerText = `💛 ${gameState.getItemCount('revive_potion')}`;
+      this.alchemyModalRevivePotionsEl.innerText = `💛 ${getCarried('revive_potion')}`;
     }
     if (this.alchemyModalEscapeStonesEl) {
-      this.alchemyModalEscapeStonesEl.innerText = `🌀 ${gameState.getItemCount('escape_stone')}`;
+      this.alchemyModalEscapeStonesEl.innerText = `🌀 ${getCarried('escape_stone')}`;
     }
     if (this.alchemyModalAntidotesEl) {
-      this.alchemyModalAntidotesEl.innerText = `🧪 ${gameState.getItemCount('antidote')}`;
+      this.alchemyModalAntidotesEl.innerText = `🧪 ${getCarried('antidote')}`;
     }
 
     // 2b. Mood Modifier Banner
     const moodTier = dataLoader.getMoodTier(player.mood);
-    const yieldQuantity = 1 + moodTier.alchemyYieldBonus;
+    const moodMultiplier = 1 + moodTier.alchemyYieldBonus;
 
     if (this.alchemyMoodValueEl && this.alchemyMoodEffectEl) {
       this.alchemyMoodValueEl.innerText = `${moodTier.name} (${Math.ceil(player.mood)}/100)`;
       if (moodTier.alchemyYieldBonus > 0) {
-        this.alchemyMoodEffectEl.innerText = `+${moodTier.alchemyYieldBonus * 100}% Crafting Yield (${yieldQuantity}x per craft!)`;
+        this.alchemyMoodEffectEl.innerText = `+${moodTier.alchemyYieldBonus * 100}% Crafting Yield (${moodMultiplier}x per craft!)`;
         this.alchemyMoodEffectEl.style.color = '#fef08a';
       } else {
         this.alchemyMoodEffectEl.innerText = `Standard Yield (1x per craft)`;
@@ -5083,6 +5091,8 @@ export class HUD {
         case 'wood': return `🪵 ${count} Wood`;
         case 'wild_herbs': return `🌿 ${count} Wild Herbs`;
         case 'ectoplasm': return `👻 ${count} Ectoplasm`;
+        case 'bone': return `🦴 ${count} Bone`;
+        case 'bone_meal': return `🥣 ${count} Bone Meal`;
         default: return `${count} ${ingId}`;
       }
     };
@@ -5118,13 +5128,16 @@ export class HUD {
         // Check affordability across all ingredients
         const canAffordAll = ingredientEntries.every(([ingId, cost]) => hasIngredient(ingId, cost));
 
+        const baseResultCount = recipe.resultCount ?? 1;
+        const recipeYield = baseResultCount * moodMultiplier;
+
         const costLabelParts = ingredientEntries.map(([ingId, cost]) => getIngredientLabel(ingId, cost));
         const costLabel = `Cost: ${costLabelParts.join(' + ')}`;
 
         const card = document.createElement('div');
         card.style.cssText = `background: rgba(31, 41, 55, ${isLevelUnlocked ? '0.85' : '0.4'}); border: 1px solid ${isLevelUnlocked ? 'rgba(255, 255, 255, 0.15)' : 'rgba(239, 68, 68, 0.3)'}; border-radius: 8px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; gap: 12px;`;
 
-        const craftLabel = yieldQuantity > 1 ? `⚗️ Craft ${yieldQuantity}x (+${recipe.expGranted} EXP)` : `⚗️ Craft (+${recipe.expGranted} EXP)`;
+        const craftLabel = recipeYield > 1 ? `⚗️ Craft ${recipeYield}x (+${recipe.expGranted} EXP)` : `⚗️ Craft (+${recipe.expGranted} EXP)`;
         const missingIng = ingredientEntries.find(([ingId, cost]) => !hasIngredient(ingId, cost));
         const missingLabel = missingIng ? `Needs ${getIngredientLabel(missingIng[0], missingIng[1])}` : 'Missing items';
 
@@ -5137,7 +5150,7 @@ export class HUD {
           btnHtml = `<button type="button" disabled style="background: #374151; color: #9ca3af; border: 1px solid #4b5563; border-radius: 6px; font-size: 12px; padding: 6px 14px; cursor: not-allowed;">${missingLabel}</button>`;
         }
 
-        const yieldNotice = yieldQuantity > 1 ? `<span style="font-size: 11px; color: #34d399; font-weight: bold;">Yield: ${yieldQuantity}x</span>` : `<span style="font-size: 11px; color: #9ca3af;">Yield: 1x</span>`;
+        const yieldNotice = recipeYield > 1 ? `<span style="font-size: 11px; color: #34d399; font-weight: bold;">Yield: ${recipeYield}x</span>` : `<span style="font-size: 11px; color: #9ca3af;">Yield: 1x</span>`;
 
         card.innerHTML = `
           <div style="flex: 1;">
@@ -5167,14 +5180,14 @@ export class HUD {
               }
               const wasEncumbered = player.isEncumbered;
               const resultId = recipe.resultItemId || recipe.id;
-              player.addItem(resultId, yieldQuantity);
+              player.addItem(resultId, recipeYield);
               if (!wasEncumbered && player.isEncumbered) {
                 this.showToast(`⚠️ ${player.entityName} is ENCUMBERED (-80% Movement Speed)!`, 'warn', 3000);
               }
-              gameState.addItem(resultId, yieldQuantity);
+              gameState.addItem(resultId, recipeYield);
               progression.addProficiencyExp('alchemy', recipe.expGranted);
-              const bonusText = yieldQuantity > 1 ? ` (${moodTier.name} ${yieldQuantity}x Bonus!)` : '';
-              this.showToast(`⚗️ Crafted ${yieldQuantity}x ${recipe.name}!${bonusText} (+${recipe.expGranted} Alchemy EXP)`, 'success', 2500);
+              const bonusText = (moodTier.alchemyYieldBonus > 0) ? ` (${moodTier.name} Bonus!)` : '';
+              this.showToast(`⚗️ Crafted ${recipeYield}x ${recipe.name}!${bonusText} (+${recipe.expGranted} Alchemy EXP)`, 'success', 2500);
               this.renderAlchemyModal(player, progression);
               this.update(player, progression, 0);
             } else {
@@ -5198,8 +5211,8 @@ export class HUD {
     // 4. Patient treatment section
     const isBleeding = player.activeStatusEffects.has('bleed');
     const isPoisoned = player.activeStatusEffects.has('poison');
-    const bandageCount = gameState.getItemCount('bandage');
-    const antidoteCount = gameState.getItemCount('antidote');
+    const bandageCount = getCarried('bandage');
+    const antidoteCount = getCarried('antidote');
 
     if (this.alchemyPlayerStatusEl) {
       if (isBleeding && isPoisoned) {
@@ -5227,7 +5240,7 @@ export class HUD {
         (this.alchemyApplyBandageBtn as HTMLButtonElement).disabled = true;
         this.alchemyApplyBandageBtn.style.opacity = '0.5';
         this.alchemyApplyBandageBtn.style.cursor = 'not-allowed';
-        this.alchemyApplyBandageBtn.innerText = `🩹 No Bandages Crafted`;
+        this.alchemyApplyBandageBtn.innerText = `🩹 No Bandages Carried`;
       } else {
         (this.alchemyApplyBandageBtn as HTMLButtonElement).disabled = false;
         this.alchemyApplyBandageBtn.style.opacity = '0.75';
@@ -5246,7 +5259,7 @@ export class HUD {
         (this.alchemyApplyAntidoteBtn as HTMLButtonElement).disabled = true;
         this.alchemyApplyAntidoteBtn.style.opacity = '0.5';
         this.alchemyApplyAntidoteBtn.style.cursor = 'not-allowed';
-        this.alchemyApplyAntidoteBtn.innerText = `🧪 No Antidotes Crafted`;
+        this.alchemyApplyAntidoteBtn.innerText = `🧪 No Antidotes Carried`;
       } else {
         (this.alchemyApplyAntidoteBtn as HTMLButtonElement).disabled = false;
         this.alchemyApplyAntidoteBtn.style.opacity = '0.75';
@@ -5266,10 +5279,12 @@ export class HUD {
     this.lastBandageApplyTime = now;
 
     const gameState = GameState.getInstance();
-    const bandages = gameState.getItemCount('bandage');
+    const bandages = this.currentPlayer && typeof this.currentPlayer.getPartyCarriedItemCount === 'function'
+      ? this.currentPlayer.getPartyCarriedItemCount('bandage')
+      : gameState.getItemCount('bandage');
 
     if (bandages <= 0) {
-      this.showToast('No Bandages available in stockpile! Craft one at the Alchemy Station.', 'warn', 3000);
+      this.showToast('No Bandages carried by party!', 'warn', 3000);
       return false;
     }
 
@@ -5293,7 +5308,7 @@ export class HUD {
       }
       return true;
     } else {
-      this.showToast('No Bandages available in stockpile! Craft one at the Alchemy Station.', 'warn', 3000);
+      this.showToast('No Bandages carried by party!', 'warn', 3000);
       return false;
     }
   }
@@ -5308,10 +5323,12 @@ export class HUD {
     this.lastAntidoteApplyTime = now;
 
     const gameState = GameState.getInstance();
-    const antidotes = gameState.getItemCount('antidote');
+    const antidotes = this.currentPlayer && typeof this.currentPlayer.getPartyCarriedItemCount === 'function'
+      ? this.currentPlayer.getPartyCarriedItemCount('antidote')
+      : gameState.getItemCount('antidote');
 
     if (antidotes <= 0) {
-      this.showToast('No Antidotes available in stockpile! Craft one at the Alchemy Station.', 'warn', 3000);
+      this.showToast('No Antidotes carried by party!', 'warn', 3000);
       return false;
     }
 
@@ -5335,7 +5352,7 @@ export class HUD {
       }
       return true;
     } else {
-      this.showToast('No Antidotes available in stockpile! Craft one at the Alchemy Station.', 'warn', 3000);
+      this.showToast('No Antidotes carried by party!', 'warn', 3000);
       return false;
     }
   }

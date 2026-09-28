@@ -14,6 +14,7 @@
     { "id": "spider_silk", "name": "Spider Silk", "weight": 0.05, "category": "reagents", "icon": "🕸️" },
     { "id": "spider_venom", "name": "Spider Venom", "weight": 0.1, "category": "reagents", "icon": "🧪" },
     { "id": "bone", "name": "Monster Bone", "weight": 0.2, "category": "reagents", "icon": "🦴" },
+    { "id": "bone_meal", "name": "Bone Meal", "weight": 0.1, "category": "reagents", "icon": "🥣" },
     { "id": "ectoplasm", "name": "Ectoplasm", "weight": 0.1, "category": "reagents", "icon": "👻" },
     { "id": "slime_gel", "name": "Slime Gel", "weight": 0.2, "category": "reagents", "icon": "🧪" },
     { "id": "goblin_ear", "name": "Goblin Ear", "weight": 0.1, "category": "reagents", "icon": "👂" },

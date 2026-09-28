@@ -11,8 +11,10 @@
       "aggroRadius": 5,
       "attackIntervalMs": 1200,
       "moveSpeed": 90,
+      "dropChance": 0.40,
       "harvest": [
-        { "method": "rare_drop", "item": "wolf_claw", "tags": ["blacksmithing", "bowyer", "jewelcrafting"] }
+        { "method": "rare_drop", "item": "wolf_claw", "weight": 1, "tags": ["blacksmithing", "bowyer", "jewelcrafting"] },
+        { "method": "salvage", "item": "bone", "weight": 1, "tags": ["bowyer", "blacksmithing"] }
       ],
       "corpseHarvest": {
         "skinning": { "item": "wolf_pelt", "name": "Wolf Pelt", "count": 1, "exp": 15, "tags": ["armorsmithing"] },
@@ -29,8 +31,9 @@
       "aggroRadius": 4,
       "attackIntervalMs": 1500,
       "moveSpeed": 60,
+      "dropChance": 0.40,
       "harvest": [
-        { "method": "collect", "item": "slime_gel", "tags": ["cooking", "alchemy"] }
+        { "method": "collect", "item": "slime_gel", "weight": 1, "tags": ["cooking", "alchemy"] }
       ]
     },
     {
@@ -43,8 +46,10 @@
       "aggroRadius": 6,
       "attackIntervalMs": 950,
       "moveSpeed": 105,
+      "dropChance": 0.40,
       "harvest": [
-        { "method": "rare_drop", "item": "goblin_ear", "tags": ["alchemy"] }
+        { "method": "rare_drop", "item": "goblin_ear", "weight": 1, "tags": ["alchemy"] },
+        { "method": "salvage", "item": "bone", "weight": 1, "tags": ["bowyer", "blacksmithing"] }
       ],
       "corpseHarvest": {
         "butchering": { "item": "monster_meat", "name": "Monster Meat", "count": 1, "exp": 15, "tags": ["cooking"], "note": "lower Chef dish-quality ceiling than wolf_meat" }
@@ -61,9 +66,11 @@
       "attackIntervalMs": 1100,
       "moveSpeed": 95,
       "attackRangeTiles": 4,
+      "dropChance": 0.40,
       "harvest": [
-        { "method": "salvage", "item": "bowstring", "tags": ["bowyer"] },
-        { "method": "rare_drop", "item": "feather", "tags": ["bowyer", "fletching"] }
+        { "method": "salvage", "item": "bowstring", "weight": 1, "tags": ["bowyer"] },
+        { "method": "rare_drop", "item": "feather", "weight": 1, "tags": ["bowyer", "fletching"] },
+        { "method": "salvage", "item": "bone", "weight": 1, "tags": ["bowyer", "blacksmithing"] }
       ],
       "corpseHarvest": {
         "butchering": { "item": "monster_meat", "name": "Monster Meat", "count": 1, "exp": 15, "tags": ["cooking"] }
@@ -79,9 +86,10 @@
       "aggroRadius": 5,
       "attackIntervalMs": 1350,
       "moveSpeed": 80,
+      "dropChance": 0.40,
       "harvest": [
-        { "method": "salvage", "item": "bone", "tags": ["bowyer", "blacksmithing"] },
-        { "method": "rare_drop", "item": "ectoplasm", "tags": ["enchanting", "alchemy"] }
+        { "method": "salvage", "item": "bone", "weight": 2, "tags": ["bowyer", "blacksmithing"] },
+        { "method": "rare_drop", "item": "ectoplasm", "weight": 1, "tags": ["enchanting", "alchemy"] }
       ]
     },
     {
@@ -95,10 +103,11 @@
       "attackIntervalMs": 1300,
       "moveSpeed": 85,
       "attackRangeTiles": 5,
+      "dropChance": 0.40,
       "harvest": [
-        { "method": "salvage", "item": "bone", "tags": ["bowyer", "blacksmithing"] },
-        { "method": "salvage", "item": "bowstring", "tags": ["bowyer"] },
-        { "method": "rare_drop", "item": "ectoplasm", "tags": ["enchanting", "alchemy"] }
+        { "method": "salvage", "item": "bone", "weight": 2, "tags": ["bowyer", "blacksmithing"] },
+        { "method": "salvage", "item": "bowstring", "weight": 1, "tags": ["bowyer"] },
+        { "method": "rare_drop", "item": "ectoplasm", "weight": 1, "tags": ["enchanting", "alchemy"] }
       ]
     },
     {
@@ -111,9 +120,10 @@
       "aggroRadius": 4,
       "attackIntervalMs": 1600,
       "moveSpeed": 65,
+      "dropChance": 0.40,
       "harvest": [
-        { "method": "salvage", "item": "bone", "tags": ["bowyer", "blacksmithing"] },
-        { "method": "rare_drop", "item": "ectoplasm", "tags": ["enchanting", "alchemy"] }
+        { "method": "salvage", "item": "bone", "weight": 2, "tags": ["bowyer", "blacksmithing"] },
+        { "method": "rare_drop", "item": "ectoplasm", "weight": 1, "tags": ["enchanting", "alchemy"] }
       ]
     },
     {
@@ -127,8 +137,9 @@
       "attackIntervalMs": 950,
       "moveSpeed": 110,
       "poisonChance": 0.35,
+      "dropChance": 0.40,
       "harvest": [
-        { "method": "rare_drop", "item": "spider_venom", "tags": ["alchemy"] }
+        { "method": "rare_drop", "item": "spider_venom", "weight": 1, "tags": ["alchemy"] }
       ],
       "corpseHarvest": {
         "skinning": { "item": "spider_silk", "name": "Spider Silk", "count": 1, "exp": 15, "tags": ["armorsmithing", "tailoring", "bowyer"] }
@@ -148,7 +159,8 @@
       "harvest": [
         { "method": "salvage", "item": "orc_heavy_hide", "tags": ["armorsmithing"] },
         { "method": "salvage", "item": "steel_scrap", "tags": ["blacksmithing"] },
-        { "method": "rare_drop", "item": "orc_emblem", "tags": ["enchanting", "blacksmithing"] }
+        { "method": "rare_drop", "item": "orc_emblem", "tags": ["enchanting", "blacksmithing"] },
+        { "method": "rare_drop", "item": "bone", "tags": ["bowyer", "blacksmithing"] }
       ]
     },
     {
@@ -165,7 +177,8 @@
       "harvest": [
         { "method": "salvage", "item": "void_plate", "tags": ["armorsmithing", "blacksmithing"] },
         { "method": "salvage", "item": "void_essence", "tags": ["enchanting", "alchemy"] },
-        { "method": "rare_drop", "item": "void_core", "tags": ["enchanting", "jewelcrafting", "blacksmithing"], "note": "Pulsing epic core radiating concentrated planar void energy" }
+        { "method": "rare_drop", "item": "void_core", "tags": ["enchanting", "jewelcrafting", "blacksmithing"], "note": "Pulsing epic core radiating concentrated planar void energy" },
+        { "method": "rare_drop", "item": "bone", "tags": ["bowyer", "blacksmithing"] }
       ]
     },
     {

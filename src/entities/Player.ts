@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { Entity } from './Entity.ts';
-import type { PlayerData, WeaponDef, CharacterSnapshot, ArmorDef, ArmorSlot, ArmorWeightClass } from '../types/game.ts';
+import type { PlayerData, WeaponDef, CharacterSnapshot, ArmorDef, ArmorSlot, ArmorWeightClass, FoodQuality } from '../types/game.ts';
 import { getArmorHpSplit, getArmorProficiencyId } from '../types/game.ts';
 import { GameState } from '../systems/GameState.ts';
 import { DataLoader } from '../utils/DataLoader.ts';
@@ -660,15 +660,60 @@ export class Player extends Entity {
     return this.bookLearnedSkills.has(skillId);
   }
 
+  public getPartyMembers(): Player[] {
+    if (this.scene && Array.isArray((this.scene as any).party) && (this.scene as any).party.length > 0) {
+      return (this.scene as any).party;
+    }
+    return [this];
+  }
+
+  public getPartyCarriedItemCount(itemId: string): number {
+    const members = this.getPartyMembers();
+    let total = 0;
+    for (const m of members) {
+      total += m.getItemCount(itemId);
+    }
+    return total;
+  }
+
+  public consumeCarriedConsumable(itemId: string, count: number = 1): boolean {
+    if (count <= 0) return false;
+    // 1. Check acting character's own bag first
+    if (this.getItemCount(itemId) >= count) {
+      return this.removeItem(itemId, count);
+    }
+    // 2. Then check other party members' bags in order
+    const members = this.getPartyMembers();
+    for (const m of members) {
+      if (m !== this && m.getItemCount(itemId) >= count) {
+        return m.removeItem(itemId, count);
+      }
+    }
+    // Consumables NEVER draw from stockpile!
+    return false;
+  }
+
+  public isAtOutpost(): boolean {
+    if (this.scene) {
+      if ((this.scene as any).isOutpost !== undefined) {
+        return !!(this.scene as any).isOutpost;
+      }
+      if (this.scene.scene?.key) {
+        return this.scene.scene.key === 'OutpostScene';
+      }
+    }
+    const hud = (globalThis as any).window?.activeHUD || (this.scene as any)?.hud;
+    if (hud && hud.isOutpost !== undefined) {
+      return !!hud.isOutpost;
+    }
+    return false;
+  }
+
   public applyBandage(): boolean {
     if (!this.activeStatusEffects.has('bleed')) {
       return false;
     }
-    const gameState = GameState.getInstance();
-    if (gameState.getItemCount('bandage') <= 0) {
-      return false;
-    }
-    const consumed = gameState.consumeItem('bandage', 1);
+    const consumed = this.consumeCarriedConsumable('bandage', 1);
     if (!consumed) {
       return false;
     }
@@ -680,11 +725,7 @@ export class Player extends Entity {
     if (!this.activeStatusEffects.has('poison')) {
       return false;
     }
-    const gameState = GameState.getInstance();
-    if (gameState.getItemCount('antidote') <= 0) {
-      return false;
-    }
-    const consumed = gameState.consumeItem('antidote', 1);
+    const consumed = this.consumeCarriedConsumable('antidote', 1);
     if (!consumed) {
       return false;
     }
@@ -696,15 +737,11 @@ export class Player extends Entity {
     if (potionId !== 'energy_potion' && potionId !== 'mana_potion') {
       return false;
     }
-    const gameState = GameState.getInstance();
-    if (gameState.getItemCount(potionId) <= 0) {
-      return false;
-    }
     const dataLoader = DataLoader.getInstance();
     const recipe = dataLoader.getAlchemyRecipe(potionId);
     if (!recipe) return false;
 
-    const consumed = gameState.consumeItem(potionId, 1);
+    const consumed = this.consumeCarriedConsumable(potionId, 1);
     if (!consumed) return false;
 
     const energyRestored = recipe.energyRestored ?? 35;
@@ -1097,22 +1134,88 @@ export class Player extends Entity {
     this.drawHpBar();
   }
 
-  public eatFood(foodId: string = 'ration'): boolean {
+  public eatFood(foodId?: string): boolean {
     const dataLoader = DataLoader.getInstance();
-    const foodDef = dataLoader.getFood(foodId);
-    if (!foodDef) {
-      console.warn(`[Player] Unknown food item: ${foodId}`);
-      return false;
-    }
-
     const gameState = GameState.getInstance();
-    const consumed = gameState.consumeOldestFood(foodId);
-    if (!consumed) {
+    const atOutpost = this.isAtOutpost();
+
+    let targetFoodId = foodId;
+    let consumedQuality: FoodQuality = 'common';
+
+    if (targetFoodId) {
+      if (this.getItemCount(targetFoodId) > 0) {
+        this.removeItem(targetFoodId, 1);
+      } else {
+        let foundInParty = false;
+        const members = this.getPartyMembers();
+        for (const m of members) {
+          if (m !== this && m.getItemCount(targetFoodId) > 0) {
+            m.removeItem(targetFoodId, 1);
+            foundInParty = true;
+            break;
+          }
+        }
+        if (!foundInParty) {
+          if (atOutpost) {
+            const consumed = gameState.consumeOldestFood(targetFoodId);
+            if (!consumed) return false;
+            consumedQuality = consumed.quality || 'common';
+          } else {
+            return false;
+          }
+        }
+      }
+    } else {
+      // Auto-pick: actor bag first, then party members, then stockpile (Outpost only)
+      let pickedId: string | null = null;
+      for (const [id, count] of this.inventory.entries()) {
+        if (count > 0 && dataLoader.getFood(id)) {
+          pickedId = id;
+          this.removeItem(id, 1);
+          break;
+        }
+      }
+      if (!pickedId) {
+        const members = this.getPartyMembers();
+        for (const m of members) {
+          if (m !== this) {
+            for (const [id, count] of m.inventory.entries()) {
+              if (count > 0 && dataLoader.getFood(id)) {
+                pickedId = id;
+                m.removeItem(id, 1);
+                break;
+              }
+            }
+            if (pickedId) break;
+          }
+        }
+      }
+      if (!pickedId) {
+        if (atOutpost) {
+          const foodItems = gameState.getFoodItems();
+          if (foodItems.length > 0) {
+            pickedId = foodItems[0].id;
+            const consumed = gameState.consumeOldestFood(pickedId);
+            if (!consumed) return false;
+            consumedQuality = consumed.quality || 'common';
+          } else {
+            return false;
+          }
+        } else {
+          return false;
+        }
+      }
+      targetFoodId = pickedId;
+    }
+
+    if (!targetFoodId) return false;
+    const foodDef = dataLoader.getFood(targetFoodId);
+    if (!foodDef) {
+      console.warn(`[Player] Unknown food item: ${targetFoodId}`);
       return false;
     }
 
-    const quality = consumed.quality || 'common';
-    const qualityDef = foodDef.qualities?.[quality];
+    const qualityDef = foodDef.qualities?.[consumedQuality];
     const baseHunger = foodDef.hungerRestored;
     const hungerRestored = qualityDef ? Math.round(baseHunger * qualityDef.hungerMultiplier) : baseHunger;
 
@@ -1128,7 +1231,7 @@ export class Player extends Entity {
     this.wellFedRemainingMs = buffDuration;
     this.wellFedNextTickMs = 1000;
 
-    const qualityLabel = quality !== 'common' ? ` [${quality.charAt(0).toUpperCase() + quality.slice(1)}]` : '';
+    const qualityLabel = consumedQuality !== 'common' ? ` [${consumedQuality.charAt(0).toUpperCase() + consumedQuality.slice(1)}]` : '';
     console.log(
       `%c[Player] 🍖 Ate ${foodDef.name}${qualityLabel}! Restored +${restored.toFixed(1)} Hunger (Now: ${this.hunger.toFixed(1)}/100). Well Fed buff refreshed (${(buffDuration / 1000).toFixed(0)}s @ +${this.wellFedHpPerSec} HP/s).`,
       'color: #10b981; font-weight: bold;'
@@ -1202,16 +1305,7 @@ export class Player extends Entity {
 
       // 3. Auto-Eat when crossing low threshold
       if (this.hunger <= this.autoEatThreshold) {
-        const gameState = GameState.getInstance();
-        const foodItems = gameState.getFoodItems();
-        if (foodItems.length > 0) {
-          const foodToEat = foodItems[0].id;
-          console.log(
-            `%c[Auto-Eat] 🥣 Hunger dropped to ${this.hunger.toFixed(1)} <= ${this.autoEatThreshold}. Auto-eating ${foodToEat} from inventory...`,
-            'color: #34d399; font-weight: bold;'
-          );
-          this.eatFood(foodToEat);
-        }
+        this.eatFood();
       }
 
       // 4. Well Fed HP Regen Buff Ticking

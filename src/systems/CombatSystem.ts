@@ -126,6 +126,29 @@ export class CombatSystem {
     return 0;
   }
 
+  public static rollCommonEnemyDrop(enemyDef: EnemyDef, rng: () => number = Math.random): { item: string; method?: string } | null {
+    if (!enemyDef.harvest || enemyDef.harvest.length === 0) return null;
+    const validHarvest = enemyDef.harvest.filter(
+      (h) => h.method !== 'skinning' &&
+             h.method !== 'butchering' &&
+             !['wolf_pelt', 'spider_silk', 'wolf_meat', 'monster_meat'].includes(h.item)
+    );
+    if (validHarvest.length === 0) return null;
+    const dropChance = enemyDef.dropChance ?? 0.40;
+    if (rng() >= dropChance) return null;
+
+    const totalWeight = validHarvest.reduce((sum, h) => sum + (h.weight ?? 1), 0);
+    let r = rng() * totalWeight;
+    for (const h of validHarvest) {
+      const w = h.weight ?? 1;
+      if (r < w) {
+        return h;
+      }
+      r -= w;
+    }
+    return validHarvest[0];
+  }
+
   public static recordBestiaryEncounter(enemy: Enemy, scene?: Phaser.Scene): void {
     if (!enemy || !enemy.enemyData) return;
     const isFirst = GameState.getInstance().recordEnemyEncountered(enemy.enemyData.id);
@@ -2414,17 +2437,33 @@ export class CombatSystem {
 
       // Roll and award harvest drops (excluding Skinning and Butchering items moved to manual corpse interaction)
       if (target.enemyData.harvest && target.enemyData.harvest.length > 0) {
-        for (const h of target.enemyData.harvest) {
-          if (h.method === 'skinning' || h.method === 'butchering') continue;
-          if (['wolf_pelt', 'spider_silk', 'wolf_meat', 'monster_meat'].includes(h.item)) continue;
-          const isRare = h.method === 'rare_drop';
-          const roll = Math.random();
-          const rareThreshold = isBoss ? 0.60 : 0.35;
-          if (!isRare || roll < rareThreshold) {
-            gameState.addItem(h.item, 1);
-            const itemName = h.item.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-            const floatColor = isBoss ? '#ef4444' : target.enemyData.tier === 'epic' && isRare ? '#c084fc' : isRare ? '#f59e0b' : '#34d399';
+        const validHarvest = target.enemyData.harvest.filter(
+          (h) => h.method !== 'skinning' &&
+                 h.method !== 'butchering' &&
+                 !['wolf_pelt', 'spider_silk', 'wolf_meat', 'monster_meat'].includes(h.item)
+        );
+
+        if (target.enemyData.tier === 'common') {
+          const chosen = CombatSystem.rollCommonEnemyDrop(target.enemyData);
+          if (chosen) {
+            gameState.addItem(chosen.item, 1);
+            const itemName = chosen.item.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+            const isRare = chosen.method === 'rare_drop';
+            const floatColor = isRare ? '#f59e0b' : '#34d399';
             this.createFloatingText(target.x, target.y - 35, `+1 ${itemName}`, floatColor);
+          }
+        } else {
+          // Elite, Epic and Boss keep their existing tiered reward structure
+          for (const h of validHarvest) {
+            const isRare = h.method === 'rare_drop';
+            const roll = Math.random();
+            const rareThreshold = isBoss ? 0.60 : 0.35;
+            if (!isRare || roll < rareThreshold) {
+              gameState.addItem(h.item, 1);
+              const itemName = h.item.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+              const floatColor = isBoss ? '#ef4444' : target.enemyData.tier === 'epic' && isRare ? '#c084fc' : isRare ? '#f59e0b' : '#34d399';
+              this.createFloatingText(target.x, target.y - 35, `+1 ${itemName}`, floatColor);
+            }
           }
         }
       }

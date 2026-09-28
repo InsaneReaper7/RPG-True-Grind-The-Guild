@@ -211,7 +211,9 @@ export class LockpickingSystem {
       };
     }
 
-    const availableLockpicks = gameState.getItemCount('lockpick');
+    const availableLockpicks = (playerEntity && typeof playerEntity.getPartyCarriedItemCount === 'function')
+      ? playerEntity.getPartyCarriedItemCount('lockpick')
+      : gameState.getItemCount('lockpick');
     if (availableLockpicks <= 0) {
       return {
         success: false,
@@ -299,7 +301,11 @@ export class LockpickingSystem {
         };
       } else {
         // Failed roll: consume 1 lockpick immediately
-        gameState.consumeItem('lockpick', 1);
+        if (playerEntity && typeof playerEntity.consumeCarriedConsumable === 'function') {
+          playerEntity.consumeCarriedConsumable('lockpick', 1);
+        } else {
+          gameState.consumeItem('lockpick', 1);
+        }
         lockpicksConsumed++;
 
         // Award standard token fail EXP (+5)
