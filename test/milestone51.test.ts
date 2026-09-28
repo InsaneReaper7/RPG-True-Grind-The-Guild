@@ -422,8 +422,6 @@ async function runTests() {
       wood: 0.2,
       stone: 0.5,
       ore: 0.5,
-      iron_ore: 0.5,
-      herbs: 0.05,
       wild_herbs: 0.05,
       dirt: 0.2,
       clay: 0.3,
@@ -510,17 +508,17 @@ async function runTests() {
     assert.strictEqual(hero.getEffectiveCarryCapacity(), 45.0, 'Hero carry capacity must be 45.0kg');
     assert.strictEqual(companion.getEffectiveCarryCapacity(), 45.0, 'Companion carry capacity must be 45.0kg');
 
-    // Add 50 wood (10kg) and 20 iron_ore (10kg) to Hero only
+    // Add 50 wood (10kg) and 20 ore (10kg) to Hero only
     hero.addItem('wood', 50);
-    hero.addItem('iron_ore', 20);
+    hero.addItem('ore', 20);
 
     assert.strictEqual(hero.getItemCount('wood'), 50, 'Hero has 50 wood');
-    assert.strictEqual(hero.getItemCount('iron_ore'), 20, 'Hero has 20 iron_ore');
+    assert.strictEqual(hero.getItemCount('ore'), 20, 'Hero has 20 ore');
     assert.strictEqual(hero.getInventoryWeight(), 20.0, 'Hero inventory weight must be 20.0kg');
 
     // Companion must have 0 items and 0 weight (ZERO spillover, no shared pool)
     assert.strictEqual(companion.getItemCount('wood'), 0, 'Companion must have 0 wood');
-    assert.strictEqual(companion.getItemCount('iron_ore'), 0, 'Companion must have 0 iron_ore');
+    assert.strictEqual(companion.getItemCount('ore'), 0, 'Companion must have 0 ore');
     assert.strictEqual(companion.getInventoryWeight(), 0, 'Companion inventory weight must remain 0kg');
     assert.strictEqual(companion.getTotalWeight(), companion.getEquippedWeight(), 'Companion total weight unchanged');
 
@@ -746,7 +744,7 @@ async function runTests() {
       nodeDef: {
         id: 'iron_vein_2',
         name: 'Iron Vein',
-        resourceId: 'iron_ore',
+        resourceId: 'ore',
         channelDurationMs: 1000,
         actionVerb: 'Mining',
         color: '#f59e0b'
@@ -782,7 +780,7 @@ async function runTests() {
         char.addItem('stone', 70);
       } else if (channel.node === node2) {
         // Yield 20 iron ore (10.0kg)
-        char.addItem('iron_ore', 20);
+        char.addItem('ore', 20);
       }
 
       workerAssignments.delete(char);
@@ -944,7 +942,7 @@ async function runTests() {
     // Personal bag contents verified
     assert.strictEqual(worker.getItemCount('wood'), 50, 'Retains initial 50 wood');
     assert.strictEqual(worker.getItemCount('stone'), 70, 'Received 70 stone from node 1');
-    assert.strictEqual(worker.getItemCount('iron_ore'), 20, 'Received 20 iron ore from node 2');
+    assert.strictEqual(worker.getItemCount('ore'), 20, 'Received 20 iron ore from node 2');
     assert.strictEqual(worker.getTotalWeight(), 60.0, 'Worker final total weight is 60.0kg');
 
     console.log('✓ Encumbered worker successfully completed multi-node queue at 20% speed without stalling or timing out.');
@@ -1010,13 +1008,13 @@ async function runTests() {
 
     hero.addItem('wood', 25);
     hero.addItem('stone', 10);
-    hero.addItem('iron_ore', 5);
+    hero.addItem('ore', 5);
 
     const snapshot = hero.getSnapshot(1000);
     assert.ok(snapshot.inventory, 'Snapshot must include inventory object');
     assert.strictEqual(snapshot.inventory['wood'], 25);
     assert.strictEqual(snapshot.inventory['stone'], 10);
-    assert.strictEqual(snapshot.inventory['iron_ore'], 5);
+    assert.strictEqual(snapshot.inventory['ore'], 5);
 
     // Restore into fresh player
     const freshPlayer = new Player(mockScene as any, 0, 0, basePlayerData as any, new ProgressionSystem());
@@ -1024,7 +1022,7 @@ async function runTests() {
 
     assert.strictEqual(freshPlayer.getItemCount('wood'), 25);
     assert.strictEqual(freshPlayer.getItemCount('stone'), 10);
-    assert.strictEqual(freshPlayer.getItemCount('iron_ore'), 5);
+    assert.strictEqual(freshPlayer.getItemCount('ore'), 5);
     assert.strictEqual(freshPlayer.getInventoryWeight(), hero.getInventoryWeight());
     assert.strictEqual(freshPlayer.getTotalWeight(), hero.getTotalWeight());
 

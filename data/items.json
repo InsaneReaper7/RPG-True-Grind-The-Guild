@@ -49,8 +49,6 @@
     { "id": "beast_stew", "name": "Hearty Beast Stew", "weight": 0.6, "category": "consumables", "icon": "🍲" },
     { "id": "skill_book", "name": "Skill Book", "weight": 0.5, "category": "equipment", "icon": "📖" },
     { "id": "stone", "name": "Stone", "weight": 0.5, "category": "gathering", "icon": "🪨" },
-    { "id": "iron_ore", "name": "Iron Ore", "weight": 0.5, "category": "gathering", "icon": "⛏️" },
-    { "id": "herbs", "name": "Herbs", "weight": 0.05, "category": "gathering", "icon": "🌿" },
     { "id": "raw_meat", "name": "Raw Meat", "weight": 0.3, "category": "reagents", "icon": "🥩" },
     { "id": "slime_jelly", "name": "Slime Jelly", "weight": 0.2, "category": "reagents", "icon": "🧪" },
     { "id": "raw_fish", "name": "Raw Fish", "weight": 0.3, "category": "gathering", "icon": "🐟" },

@@ -457,7 +457,7 @@ async function runWipeAndReviveAuditTests() {
     gameState.addWood(150);
     gameState.addOre(75);
     gameState.addItem('raw_meat', 5);
-    gameState.addItem('iron_ore', 10);
+    gameState.addItem('wild_herbs', 10);
     gameState.addItem('revive_potion', 2);
     gameState.addResearchPoints(40);
     gameState.incrementDungeonFloorCount();
@@ -467,7 +467,7 @@ async function runWipeAndReviveAuditTests() {
     const preWood = gameState.getWood();
     const preOre = gameState.getOre();
     const preMeat = gameState.getItemCount('raw_meat');
-    const preIron = gameState.getItemCount('iron_ore');
+    const preHerbs = gameState.getItemCount('wild_herbs');
     const preRevive = gameState.getItemCount('revive_potion');
     const preRP = gameState.getResearchPoints();
 
@@ -532,7 +532,7 @@ async function runWipeAndReviveAuditTests() {
     assert.equal(gameState.getWood(), preWood, 'Wood stockpile must NOT be penalized on wipe');
     assert.equal(gameState.getOre(), preOre, 'Ore stockpile must NOT be penalized on wipe');
     assert.equal(gameState.getItemCount('raw_meat'), preMeat, 'Inventory raw_meat must NOT be lost');
-    assert.equal(gameState.getItemCount('iron_ore'), preIron, 'Inventory iron_ore must NOT be lost');
+    assert.equal(gameState.getItemCount('wild_herbs'), preHerbs, 'Inventory wild_herbs must NOT be lost');
     assert.equal(gameState.getItemCount('revive_potion'), preRevive, 'Inventory revive_potion must NOT be lost');
     assert.equal(gameState.getResearchPoints(), preRP, 'Research points must NOT be penalized');
 

@@ -226,15 +226,15 @@ async function run() {
       hero.clearInventory();
       companion.clearInventory();
 
-      // Hero: 25 wood (5.0kg) + 10 iron_ore (5.0kg) = 10.0kg inventory. Equipped short_swords (3.0kg).
+      // Hero: 25 wood (5.0kg) + 10 ore (5.0kg) = 10.0kg inventory. Equipped short_swords (3.0kg).
       // Total: 13.0kg <= 45.0kg capacity -> UNENCUMBERED
       hero.addItem('wood', 25);
-      hero.addItem('iron_ore', 10);
+      hero.addItem('ore', 10);
 
-      // Companion: 90 stone (45.0kg) + 10 iron_ore (5.0kg) = 50.0kg inventory. Equipped daggers (1.0kg).
+      // Companion: 90 stone (45.0kg) + 10 ore (5.0kg) = 50.0kg inventory. Equipped daggers (1.0kg).
       // Total: 51.0kg > 45.0kg capacity -> ENCUMBERED
       companion.addItem('stone', 90);
-      companion.addItem('iron_ore', 10);
+      companion.addItem('ore', 10);
 
       scene.hud.update(hero, scene.progressionSystem, 0, scene.party);
 
@@ -242,7 +242,7 @@ async function run() {
         hero: {
           name: hero.entityName,
           wood: hero.getItemCount('wood'),
-          ironOre: hero.getItemCount('iron_ore'),
+          ore: hero.getItemCount('ore'),
           invWeight: hero.getInventoryWeight(),
           totalWeight: hero.getTotalWeight(),
           isEncumbered: hero.isEncumbered,
@@ -251,7 +251,7 @@ async function run() {
         companion: {
           name: companion.entityName,
           stone: companion.getItemCount('stone'),
-          ironOre: companion.getItemCount('iron_ore'),
+          ore: companion.getItemCount('ore'),
           invWeight: companion.getInventoryWeight(),
           totalWeight: companion.getTotalWeight(),
           isEncumbered: companion.isEncumbered,
@@ -316,7 +316,7 @@ async function run() {
         hero: {
           name: hero.entityName,
           wood: hero.getItemCount('wood'),
-          ironOre: hero.getItemCount('iron_ore'),
+          ore: hero.getItemCount('ore'),
           invWeight: hero.getInventoryWeight(),
           totalWeight: hero.getTotalWeight(),
           isEncumbered: hero.isEncumbered,
@@ -326,7 +326,7 @@ async function run() {
         companion: {
           name: companion?.entityName,
           stone: companion?.getItemCount('stone'),
-          ironOre: companion?.getItemCount('iron_ore'),
+          ore: companion?.getItemCount('ore'),
           invWeight: companion?.getInventoryWeight(),
           totalWeight: companion?.getTotalWeight(),
           isEncumbered: companion?.isEncumbered,

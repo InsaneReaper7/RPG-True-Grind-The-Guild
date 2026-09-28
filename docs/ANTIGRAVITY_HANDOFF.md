@@ -680,3 +680,23 @@ Never ask Antigravity to jump ahead in this list — each milestone assumes the 
     - `test/tutorialOnboarding.test.ts` (100% pass)
   - `npm run build`: Production bundle (`tsc && vite build`) compiled cleanly with 0 errors.
 
+**Resolved and shipped: Milestone — Small Polish & Audit Pass.**
+- **1. Tutorial Step 6 (`return_outpost`) Rewording**:
+  - Reworded Step 6 instruction and Valerie mentor quote to point the player directly to the Teleporter Crystal as the primary way home from the dungeon, noting Escape Stones only as a later craftable item.
+  - Step ID (`return_outpost`), position (Step 6/10), and completion triggers were strictly preserved.
+  - Verified completion trigger fires on crystal return: `MainScene.executeContinueDescent` / crystal modal calls `executeTransitionToOutpost()` which executes `TutorialSystem.getInstance().completeStepId('return_outpost')` (line 1828), and `OutpostScene.create()` also advances `return_outpost` upon scene arrival (lines 578-580).
+- **2. Dead Item Data Removal (`iron_ore`, `herbs`)**:
+  - Repo-wide search confirmed neither `iron_ore` nor `herbs` was referenced in any live drop tables, recipes, gathering nodes, HUD elements, or save persistence paths. (The live IDs are `ore` and `wild_herbs`).
+  - Removed dead definitions from `data/items.json`.
+  - Updated synthetic tests in `test/milestone51.test.ts`, `test/verify_milestone51_live.mjs`, and `test/wipeAndReviveAudit.test.ts` to utilize the live IDs (`ore`, `wild_herbs`).
+- **3. Hunger and Mood System Audit (Report Only)**:
+  - Documented precise drain rates, mood effects across combat and alchemy crafting yield, starvation penalties, and mood recovery mechanics with exact file and line references.
+- **Verification Evidence**:
+  - `tutorial_step6_return_outpost.png`: Browser screenshot verifying new Step 6 text rendered in the Guild Guide HUD widget.
+  - `test/tutorialOnboarding.test.ts`: 100% pass (all 4 test blocks passing).
+  - `test/item_flow_unification.test.ts`: 100% pass (all 6 tests passing).
+  - `test/craftingInventoryRouting.test.ts`: 100% pass (all 7 tests passing).
+  - `test/milestone51.test.ts`: 100% pass (all 9 tests passing).
+  - `test/wipeAndReviveAudit.test.ts`: 100% pass (all 4 tests passing).
+  - `npm run build`: Production bundle (`tsc && vite build`) compiled cleanly with 0 errors.
+

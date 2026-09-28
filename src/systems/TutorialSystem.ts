@@ -68,8 +68,8 @@ export const TUTORIAL_STEPS: TutorialStepDef[] = [
     totalSteps: 10,
     title: 'Return to Outpost',
     objective: 'Return to base with gathered Ore and Research Points',
-    instruction: 'Use the dungeon portal, teleporter crystal, or Escape Stone [T] to return to the Outpost with your materials and RP.',
-    valerieQuote: 'Great harvest! Monster kills and discoveries earn Research Points (RP), while nodes yield crafting materials. When you are ready, use the portal or Escape Stone [T] to return to base.',
+    instruction: 'Interact with the Teleporter Crystal to return to the Outpost with your materials and RP (or use an Escape Stone [T], once you can craft one).',
+    valerieQuote: 'Great harvest! Monster kills and discoveries earn Research Points (RP), while nodes yield crafting materials. When you are ready, interact with the Teleporter Crystal to return to base — or an Escape Stone, once you can craft one.',
     location: 'any'
   },
   {
