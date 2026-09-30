@@ -893,6 +893,7 @@ async function runTests() {
     gameState.addItem('wood', 20);
     gameState.addItem('wolf_pelt', 20);
     gameState.addItem('spider_silk', 20);
+    gameState.addItem('bowstring', 20);
     gameState.addItem('wild_herbs', 20);
     gameState.addItem('monster_meat', 20);
     gameState.discoverCookingRecipe('herb_stew');

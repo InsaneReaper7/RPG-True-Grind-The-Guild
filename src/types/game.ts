@@ -805,6 +805,12 @@ export interface DungeonConfig {
   water?: DungeonWaterConfig;
 }
 
+export interface RegionEnemyPoolEntry {
+  enemyId: string;
+  weight: number;
+  type?: 'core' | 'carry_over';
+}
+
 export interface DungeonRegionDef {
   id: string;
   name: string;
@@ -816,6 +822,11 @@ export interface DungeonRegionDef {
   accentColor: string;
   tagline?: string;
   bossEnemyId?: string;
+  eliteEnemyId?: string | null;
+  epicEnemyId?: string | null;
+  corePercentage?: number;
+  carryOverPercentage?: number;
+  enemyPool?: RegionEnemyPoolEntry[];
 }
 
 export interface DepthScalingConfig {

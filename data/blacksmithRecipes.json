@@ -129,10 +129,10 @@
       "resultCount": 1,
       "requiredLevel": 0,
       "ingredients": {
-        "steel_scrap": 1
+        "ore": 1
       },
       "expGranted": 10,
-      "description": "A slender steel pick forged from scrap metal. Essential tool required to pick Locked Boxes."
+      "description": "A slender pick fashioned from malleable iron ore wire. Essential tool required to pick Locked Boxes."
     },
     {
       "id": "fishing_rod",
@@ -142,10 +142,10 @@
       "requiredLevel": 0,
       "ingredients": {
         "wood": 3,
-        "spider_silk": 2
+        "bowstring": 1
       },
       "expGranted": 20,
-      "description": "A flexible rod shaped from seasoned timber and strung with fine spider silk. Essential tool required for fishing in subterranean waters."
+      "description": "A flexible rod shaped from seasoned timber and strung with a salvaged bowstring. Essential tool required for fishing in subterranean waters."
     },
     {
       "id": "smelt_broken_lockbox",
@@ -190,10 +190,11 @@
       "requiredLevel": 0,
       "ingredients": {
         "ore": 8,
-        "wood": 3
+        "wood": 3,
+        "steel_scrap": 2
       },
       "expGranted": 35,
-      "description": "A massive two-handed greatsword forged from heavy iron and seasoned timber, capable of crushing blows."
+      "description": "A massive two-handed greatsword forged from heavy iron, seasoned timber, and reinforced with salvaged steel scrap for devastating crushing blows."
     },
     {
       "id": "daggers",

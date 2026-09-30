@@ -493,6 +493,7 @@ async function runTests() {
         gameState.addItem('steel_scrap', 100);
         gameState.addItem('wolf_pelt', 100);
         gameState.addItem('spider_silk', 100);
+        gameState.addItem('bowstring', 100);
         gameState.addItem('bone', 100);
         if (testCase.recipeId !== 'bone_meal') {
           gameState.addItem('bone_meal', 100);

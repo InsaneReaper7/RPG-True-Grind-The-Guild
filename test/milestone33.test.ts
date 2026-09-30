@@ -214,7 +214,7 @@ async function runMilestone33Tests() {
 
   assert.ok(neckRecipe, 'Recipe for bone_necklace must exist');
   assert.equal(neckRecipe.ingredients.bone, 3, 'Bone necklace requires 3 bone');
-  assert.equal(neckRecipe.ingredients.spider_silk, 1, 'Bone necklace requires 1 spider silk');
+  assert.equal(neckRecipe.ingredients.bowstring ?? neckRecipe.ingredients.spider_silk, 1, 'Bone necklace requires 1 bowstring');
 
   assert.ok(ringRecipe, 'Recipe for wolf_claw_ring must exist');
   assert.equal(ringRecipe.ingredients.wolf_claw, 2, 'Wolf ring requires 2 wolf claw');

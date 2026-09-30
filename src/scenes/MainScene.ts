@@ -2255,19 +2255,42 @@ export class MainScene extends Phaser.Scene {
     const randCount = Math.floor(Math.random() * (maxE - minE + 1)) + minE;
     const enemyCount = Math.min(interiorTiles.length, randCount);
 
-    const enemyPool = dungeonConfig.enemyPool && dungeonConfig.enemyPool.length > 0
+    const currentFloor = GameState.getInstance().getDungeonFloorCount();
+    const currentRegion = dataLoader.getRegionForFloor(currentFloor);
+
+    const regionEnemyPool = currentRegion?.enemyPool && currentRegion.enemyPool.length > 0
+      ? currentRegion.enemyPool
+      : null;
+    const fallbackEnemyPool = dungeonConfig.enemyPool && dungeonConfig.enemyPool.length > 0
       ? dungeonConfig.enemyPool
       : ['wolf', 'goblin', 'skeleton', 'undead'];
+
+    const pickRegularEnemy = (): string => {
+      if (regionEnemyPool) {
+        const totalWeight = regionEnemyPool.reduce((sum, e) => sum + (e.weight || 1), 0);
+        let roll = Math.random() * totalWeight;
+        for (const entry of regionEnemyPool) {
+          const w = entry.weight || 1;
+          if (roll < w) return entry.enemyId;
+          roll -= w;
+        }
+        return regionEnemyPool[0].enemyId;
+      }
+      return fallbackEnemyPool[Math.floor(Math.random() * fallbackEnemyPool.length)];
+    };
 
     // In Heavy Combat rooms, evaluate rare Epic or Elite champion roll (NEVER Boss)
     let specialEnemyId: string | null = null;
     if (targetRoom.type === 'heavy_combat') {
+      const regionEpicId = currentRegion !== undefined ? currentRegion.epicEnemyId : dungeonConfig.epicEnemyId;
+      const regionEliteId = currentRegion !== undefined ? currentRegion.eliteEnemyId : dungeonConfig.eliteEnemyId;
+
       const epicChance = dungeonConfig.epicChance ?? 0.05;
       const eliteChance = dungeonConfig.eliteChance ?? 0.12;
-      if (Math.random() < epicChance) {
-        specialEnemyId = dungeonConfig.epicEnemyId || 'void_knight';
-      } else if (Math.random() < eliteChance) {
-        specialEnemyId = dungeonConfig.eliteEnemyId || 'orc_warrior';
+      if (regionEpicId && Math.random() < epicChance) {
+        specialEnemyId = regionEpicId;
+      } else if (regionEliteId && Math.random() < eliteChance) {
+        specialEnemyId = regionEliteId;
       }
     }
 
@@ -2275,7 +2298,7 @@ export class MainScene extends Phaser.Scene {
     for (let i = 0; i < enemyCount; i++) {
       const enemyId = (i === 0 && specialEnemyId)
         ? specialEnemyId
-        : enemyPool[Math.floor(Math.random() * enemyPool.length)];
+        : pickRegularEnemy();
       const enemyDef = dataLoader.getEnemy(enemyId);
       if (enemyDef) {
         const texKey = `${enemyDef.id}-avatar`;

@@ -54,10 +54,10 @@
       "requiredLevel": 1,
       "ingredients": {
         "bone": 3,
-        "spider_silk": 1
+        "bowstring": 1
       },
       "expGranted": 35,
-      "description": "Strung monster bones threaded with resilient spider silk into a protective talisman."
+      "description": "Strung monster bones threaded with a resilient bowstring into a protective talisman."
     },
     {
       "id": "wolf_claw_ring",

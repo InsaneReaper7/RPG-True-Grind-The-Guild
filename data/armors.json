@@ -48,7 +48,7 @@
       "weight": 0.5,
       "hpBonus": 20,
       "splitRatio": "50/50",
-      "description": "A protective talisman strung with carved monster bones and silk. Increases Max HP by 10 and Critical HP by 10."
+      "description": "A protective talisman strung with carved monster bones and durable cord. Increases Max HP by 10 and Critical HP by 10."
     },
     {
       "id": "wolf_claw_ring",

@@ -285,7 +285,7 @@ async function runFishingCorrectionTests() {
     assert.strictEqual(rodRecipe.requiredLevel, 0);
     assert.strictEqual(rodRecipe.expGranted, 20);
     assert.strictEqual(rodRecipe.ingredients.wood, 3);
-    assert.strictEqual(rodRecipe.ingredients.spider_silk, 2);
+    assert.strictEqual(rodRecipe.ingredients.bowstring ?? rodRecipe.ingredients.spider_silk, 1);
 
     // Gathering Node: requiredToolItemId
     const gatheringNodesRaw = JSON.parse(fs.readFileSync('data/gatheringNodes.json', 'utf8'));
@@ -313,30 +313,32 @@ async function runFishingCorrectionTests() {
     leader.clearInventory();
     scene.party = [leader];
 
-    // 2. Stockpile setup: deposit 3 Wood and 2 Spider Silk into party stockpile
-    const initialWood = gameState.getItemCount('wood');
-    const initialSilk = gameState.getItemCount('spider_silk');
-
-    gameState.addItem('wood', 3);
-    gameState.addItem('spider_silk', 2);
-
-    const preStockpileWood = gameState.getItemCount('wood');
-    const preStockpileSilk = gameState.getItemCount('spider_silk');
-    const preLeaderRod = leader.getItemCount('fishing_rod');
-    const preBsExp = leader.progression.getProficiencyStat('blacksmithing')?.currentExp || 0;
-
-    assert.strictEqual(preStockpileWood, initialWood + 3, 'Stockpile must have added 3 wood');
-    assert.strictEqual(preStockpileSilk, initialSilk + 2, 'Stockpile must have added 2 spider silk');
-    assert.strictEqual(preLeaderRod, 0, 'Leader must start with 0 fishing rods');
-    assert.strictEqual(preBsExp, 0, 'Leader must start with 0 blacksmithing exp');
-
-    console.log(`[Blacksmith Crafting] Initial Stockpile: wood=${preStockpileWood}, spider_silk=${preStockpileSilk}`);
-    console.log(`[Blacksmith Crafting] Initial Leader Inventory: fishing_rod=${preLeaderRod}, Blacksmithing EXP=${preBsExp}`);
-
     // Retrieve fishing_rod recipe
     const blacksmithRaw = JSON.parse(fs.readFileSync('data/blacksmithRecipes.json', 'utf8'));
     const rodRecipe = blacksmithRaw.recipes?.find((r: any) => r.id === 'fishing_rod');
     assert.ok(rodRecipe, 'fishing_rod recipe must exist');
+
+    // 2. Stockpile setup: deposit recipe ingredients into party stockpile
+    const initialWood = gameState.getItemCount('wood');
+    const initialCordItem = rodRecipe.ingredients.bowstring !== undefined ? 'bowstring' : 'spider_silk';
+    const cordQty = rodRecipe.ingredients[initialCordItem];
+    const initialCord = gameState.getItemCount(initialCordItem);
+
+    gameState.addItem('wood', 3);
+    gameState.addItem(initialCordItem, cordQty);
+
+    const preStockpileWood = gameState.getItemCount('wood');
+    const preStockpileCord = gameState.getItemCount(initialCordItem);
+    const preLeaderRod = leader.getItemCount('fishing_rod');
+    const preBsExp = leader.progression.getProficiencyStat('blacksmithing')?.currentExp || 0;
+
+    assert.strictEqual(preStockpileWood, initialWood + 3, 'Stockpile must have added 3 wood');
+    assert.strictEqual(preStockpileCord, initialCord + cordQty, `Stockpile must have added ${cordQty} ${initialCordItem}`);
+    assert.strictEqual(preLeaderRod, 0, 'Leader must start with 0 fishing rods');
+    assert.strictEqual(preBsExp, 0, 'Leader must start with 0 blacksmithing exp');
+
+    console.log(`[Blacksmith Crafting] Initial Stockpile: wood=${preStockpileWood}, ${initialCordItem}=${preStockpileCord}`);
+    console.log(`[Blacksmith Crafting] Initial Leader Inventory: fishing_rod=${preLeaderRod}, Blacksmithing EXP=${preBsExp}`);
 
     // Execute craft per crafting routing rule (as executed in HUD.ts line 6238):
     // A. Consume materials from central stockpile
@@ -352,16 +354,16 @@ async function runFishingCorrectionTests() {
 
     // Verify post-craft state
     const postStockpileWood = gameState.getItemCount('wood');
-    const postStockpileSilk = gameState.getItemCount('spider_silk');
+    const postStockpileCord = gameState.getItemCount(initialCordItem);
     const postLeaderRod = leader.getItemCount('fishing_rod');
     const postBsExp = leader.progression.getProficiencyStat('blacksmithing')?.currentExp || 0;
 
-    console.log(`[Blacksmith Crafting] Material Deduction: wood ${preStockpileWood} -> ${postStockpileWood} (-3), spider_silk ${preStockpileSilk} -> ${postStockpileSilk} (-2)`);
+    console.log(`[Blacksmith Crafting] Material Deduction: wood ${preStockpileWood} -> ${postStockpileWood} (-3), ${initialCordItem} ${preStockpileCord} -> ${postStockpileCord} (-${cordQty})`);
     console.log(`[Blacksmith Crafting] EXP Awarded: +${rodRecipe.expGranted} Blacksmithing EXP to Party Leader (Total: ${postBsExp})`);
     console.log(`[Blacksmith Crafting] Output Item Routing: ${resultQty}x '${resultId}' deposited into Leader's personal inventory (Count: ${postLeaderRod})`);
 
     assert.strictEqual(postStockpileWood, initialWood, 'Stockpile wood must be reduced by 3');
-    assert.strictEqual(postStockpileSilk, initialSilk, 'Stockpile spider_silk must be reduced by 2');
+    assert.strictEqual(postStockpileCord, initialCord, `Stockpile ${initialCordItem} must be reduced by ${cordQty}`);
     assert.strictEqual(postLeaderRod, 1, 'Leader personal inventory must contain exactly 1 fishing_rod');
     assert.strictEqual(postBsExp, 20, 'Leader must receive +20 Blacksmithing EXP');
 

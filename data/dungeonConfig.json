@@ -88,7 +88,19 @@
       "obstacleTexture": "tile-obstacle",
       "waterTexture": "tile-water",
       "accentColor": "#a78bfa",
-      "tagline": "The Upper Stone Chambers"
+      "tagline": "The Upper Stone Chambers",
+      "corePercentage": 100,
+      "carryOverPercentage": 0,
+      "eliteEnemyId": null,
+      "epicEnemyId": null,
+      "bossEnemyId": null,
+      "enemyPool": [
+        { "enemyId": "wolf", "weight": 25, "type": "core" },
+        { "enemyId": "skeleton", "weight": 25, "type": "core" },
+        { "enemyId": "goblin", "weight": 20, "type": "core" },
+        { "enemyId": "goblin_archer", "weight": 15, "type": "core" },
+        { "enemyId": "slime", "weight": 15, "type": "core" }
+      ]
     },
     {
       "id": "abyssal_depths",
@@ -100,7 +112,18 @@
       "waterTexture": "tile-abyssal-water",
       "accentColor": "#c084fc",
       "tagline": "The Deep Void Stratum",
-      "bossEnemyId": "abyssal_colossus"
+      "bossEnemyId": "abyssal_colossus",
+      "corePercentage": 70,
+      "carryOverPercentage": 30,
+      "eliteEnemyId": "orc_warrior",
+      "epicEnemyId": null,
+      "enemyPool": [
+        { "enemyId": "spider", "weight": 40, "type": "core" },
+        { "enemyId": "undead", "weight": 30, "type": "core" },
+        { "enemyId": "skeleton", "weight": 10, "type": "carry_over" },
+        { "enemyId": "goblin_archer", "weight": 10, "type": "carry_over" },
+        { "enemyId": "wolf", "weight": 10, "type": "carry_over" }
+      ]
     },
     {
       "id": "infernal_caldera",
@@ -112,7 +135,17 @@
       "waterTexture": "tile-caldera-water",
       "accentColor": "#f97316",
       "tagline": "The Scorched Subterranean Core",
-      "bossEnemyId": "abyssal_colossus"
+      "bossEnemyId": "abyssal_colossus",
+      "corePercentage": 70,
+      "carryOverPercentage": 30,
+      "eliteEnemyId": "orc_warrior",
+      "epicEnemyId": "void_knight",
+      "enemyPool": [
+        { "enemyId": "skeleton_archer", "weight": 40, "type": "core" },
+        { "enemyId": "spider", "weight": 30, "type": "core" },
+        { "enemyId": "undead", "weight": 15, "type": "carry_over" },
+        { "enemyId": "goblin_archer", "weight": 15, "type": "carry_over" }
+      ]
     },
     {
       "id": "glacial_caverns",
@@ -123,7 +156,17 @@
       "waterTexture": "tile-glacial-water",
       "accentColor": "#06b6d4",
       "tagline": "The Sub-Zero Crystalline Depths",
-      "bossEnemyId": "glacial_sovereign"
+      "bossEnemyId": "glacial_sovereign",
+      "corePercentage": 70,
+      "carryOverPercentage": 30,
+      "eliteEnemyId": "orc_warrior",
+      "epicEnemyId": "void_knight",
+      "enemyPool": [
+        { "enemyId": "undead", "weight": 35, "type": "core" },
+        { "enemyId": "skeleton_archer", "weight": 35, "type": "core" },
+        { "enemyId": "spider", "weight": 15, "type": "carry_over" },
+        { "enemyId": "skeleton", "weight": 15, "type": "carry_over" }
+      ]
     }
   ]
 }

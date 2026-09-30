@@ -351,7 +351,15 @@ export class DungeonGenerator {
         const effectiveBossRandom = Math.min(maxBossRandom, baseBossRandom + depthOffset * bossRandomPerFloor);
 
         const isRandomBoss = rng() < effectiveBossRandom;
-        shouldSpawnBossRoom = (isMilestone || isRandomBoss) && (config.bossRoom ?? true);
+
+        const currentRegion = config.regions?.find((r) => {
+          const min = r.minFloor ?? 1;
+          const max = r.maxFloor ?? Infinity;
+          return floorNumber >= min && floorNumber <= max;
+        });
+        const allowsBoss = currentRegion ? currentRegion.bossEnemyId !== null : true;
+
+        shouldSpawnBossRoom = (isMilestone || isRandomBoss) && (config.bossRoom ?? true) && allowsBoss;
       }
     }
 
@@ -765,9 +773,33 @@ export class DungeonGenerator {
     // 6. Populate Rooms with Enemies and Bushes
     const enemySpawns: EnemySpawnDef[] = [];
     const bushSpawns: BushSpawnDef[] = [];
-    const enemyPool = config.enemyPool && config.enemyPool.length > 0
+
+    const currentRegion = config.regions?.find((r) => {
+      const min = r.minFloor ?? 1;
+      const max = r.maxFloor ?? Infinity;
+      return floorNumber >= min && floorNumber <= max;
+    });
+
+    const regionEnemyPool = currentRegion?.enemyPool && currentRegion.enemyPool.length > 0
+      ? currentRegion.enemyPool
+      : null;
+    const fallbackEnemyPool = config.enemyPool && config.enemyPool.length > 0
       ? config.enemyPool
       : ['wolf', 'goblin', 'skeleton', 'undead'];
+
+    const pickRegularEnemy = (): string => {
+      if (regionEnemyPool) {
+        const totalWeight = regionEnemyPool.reduce((sum, e) => sum + (e.weight || 1), 0);
+        let roll = rng() * totalWeight;
+        for (const entry of regionEnemyPool) {
+          const w = entry.weight || 1;
+          if (roll < w) return entry.enemyId;
+          roll -= w;
+        }
+        return regionEnemyPool[0].enemyId;
+      }
+      return fallbackEnemyPool[Math.floor(rng() * fallbackEnemyPool.length)];
+    };
 
     for (let rIdx = 0; rIdx < rooms.length; rIdx++) {
       const room = rooms[rIdx];
@@ -804,12 +836,6 @@ export class DungeonGenerator {
 
       if (room.type === 'boss') {
         // Milestone 34 & Second Boss Enemy: Dedicated Boss Encounter Room - Spawn exactly 1 Boss at room center
-        const currentRegion = config.regions?.find((r) => {
-          const min = r.minFloor ?? 1;
-          const max = r.maxFloor ?? Infinity;
-          return floorNumber >= min && floorNumber <= max;
-        });
-
         let bossId = options?.forceBossEnemyId;
         if (!bossId) {
           if (currentRegion?.bossEnemyId) {
@@ -841,6 +867,9 @@ export class DungeonGenerator {
         // Rarity Correction & Milestone 40 Depth Scaling: In Heavy Combat rooms, roll for rare Epic or Elite champions
         let specialEnemyId: string | null = null;
         if (room.type === 'heavy_combat') {
+          const regionEpicId = currentRegion !== undefined ? currentRegion.epicEnemyId : config.epicEnemyId;
+          const regionEliteId = currentRegion !== undefined ? currentRegion.eliteEnemyId : config.eliteEnemyId;
+
           const baseEpicChance = config.epicChance ?? 0.05;
           const epicPerFloor = config.depthScaling?.epicChancePerFloor ?? 0;
           const maxEpic = config.depthScaling?.maxEpicChance ?? 0.20;
@@ -851,17 +880,17 @@ export class DungeonGenerator {
           const maxElite = config.depthScaling?.maxEliteChance ?? 0.35;
           const effectiveEliteChance = Math.min(maxElite, baseEliteChance + depthOffset * elitePerFloor);
 
-          if (rng() < effectiveEpicChance) {
-            specialEnemyId = config.epicEnemyId || 'void_knight';
-          } else if (rng() < effectiveEliteChance) {
-            specialEnemyId = config.eliteEnemyId || 'orc_warrior';
+          if (regionEpicId && rng() < effectiveEpicChance) {
+            specialEnemyId = regionEpicId;
+          } else if (regionEliteId && rng() < effectiveEliteChance) {
+            specialEnemyId = regionEliteId;
           }
         }
 
         for (let i = 0; i < enemyCount; i++) {
           const enemyId = (i === 0 && specialEnemyId)
             ? specialEnemyId
-            : enemyPool[Math.floor(rng() * enemyPool.length)];
+            : pickRegularEnemy();
           enemySpawns.push({
             enemyId,
             x: interiorTiles[tileIdx].x,
