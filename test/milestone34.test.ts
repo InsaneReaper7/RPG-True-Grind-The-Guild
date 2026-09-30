@@ -549,11 +549,6 @@ async function runMilestone34Tests() {
   // TEST 6: Harvest Loot Table & Tier-Scaled Class EXP
   // =========================================================================
   console.log('\n--- TEST 6: Harvest Loot Table & Tier-Scaled Class EXP (+250) ---');
-  const gameState = GameState.getInstance();
-  const preCore = gameState.getItemCount('colossus_core');
-  const preIngot = gameState.getItemCount('abyssal_ingot');
-  const preEssence = gameState.getItemCount('dread_essence');
-  const preHeart = gameState.getItemCount('heart_of_the_colossus');
 
   const heroProg = new ProgressionSystem(dataLoader.getClassesData(), 'Valerie');
   const heroPlayer = new Player(mockScene, 10, 10, heroData, swordDef, 32, 'player-avatar', heroProg);
@@ -587,16 +582,21 @@ async function runMilestone34Tests() {
   const logBoss = ProgressionSystem.getExpLog().filter(tx => tx.id === 'class_guardian');
   assert.equal(logBoss[logBoss.length - 1].amount, 250, 'Boss enemy kill must award +250 Class EXP (10x common kill)');
 
+  const preCore = heroPlayer.getItemCount('colossus_core');
+  const preIngot = heroPlayer.getItemCount('abyssal_ingot');
+  const preEssence = heroPlayer.getItemCount('dread_essence');
+  const preHeart = heroPlayer.getItemCount('heart_of_the_colossus');
+
   // 2. Harvest loot awards
   for (let i = 0; i < 4; i++) {
     const extraBoss = new Enemy(mockScene, 10, 11, abyssalColossus, 'abyssal_colossus-avatar', 32);
     (testCombat as any).handleTargetDefeated(heroPlayer, extraBoss, 'short_swords');
   }
 
-  const postCore = gameState.getItemCount('colossus_core');
-  const postIngot = gameState.getItemCount('abyssal_ingot');
-  const postEssence = gameState.getItemCount('dread_essence');
-  const postHeart = gameState.getItemCount('heart_of_the_colossus');
+  const postCore = heroPlayer.getItemCount('colossus_core');
+  const postIngot = heroPlayer.getItemCount('abyssal_ingot');
+  const postEssence = heroPlayer.getItemCount('dread_essence');
+  const postHeart = heroPlayer.getItemCount('heart_of_the_colossus');
 
   console.log(`  Boss Harvest Results: Colossus Core: ${postCore - preCore}, Abyssal Ingot: ${postIngot - preIngot}, Dread Essence: ${postEssence - preEssence}, Heart of Colossus: ${postHeart - preHeart}`);
   assert.ok(postCore > preCore, 'Must have harvested colossus_core (salvage)');

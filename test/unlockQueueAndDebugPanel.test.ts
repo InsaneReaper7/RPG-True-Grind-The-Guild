@@ -123,7 +123,9 @@ function getOrCreateMockElement(id: string, tagName: string = 'div'): MockDOMEle
 
 (global as any).document = {
   getElementById: (id: string) => getOrCreateMockElement(id),
-  createElement: (tag: string) => new MockDOMElement(tag)
+  createElement: (tag: string) => new MockDOMElement(tag),
+  querySelectorAll: (_selector: string) => [],
+  querySelector: (_selector: string) => null
 };
 (global as any).window = {
   addEventListener: () => {},

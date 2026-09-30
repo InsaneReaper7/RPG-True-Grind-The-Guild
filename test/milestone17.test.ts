@@ -115,17 +115,15 @@ async function runTests() {
 
   // Simulate completing harvest on woodcutting_tree
   const woodYield = woodcuttingDef.yieldCount;
-  gameState.addWood(woodYield);
   gameState.addItem('wood', woodYield);
   assert.equal(gameState.getWood(), initialWood + woodYield, 'Woodcutting must directly add Wood to Construction economy');
-  assert.equal(gameState.getItemCount('wood'), woodYield, 'Woodcutting must track Wood in inventory items');
+  assert.equal(gameState.getItemCount('wood'), initialWood + woodYield, 'Woodcutting must track Wood in inventory items');
 
   // Simulate completing harvest on mining_rock
   const oreYield = miningDef.yieldCount;
-  gameState.addOre(oreYield);
   gameState.addItem('ore', oreYield);
   assert.equal(gameState.getOre(), initialOre + oreYield, 'Mining must directly add Ore to Ore economy');
-  assert.equal(gameState.getItemCount('ore'), oreYield, 'Mining must track Ore in inventory items');
+  assert.equal(gameState.getItemCount('ore'), initialOre + oreYield, 'Mining must track Ore in inventory items');
 
   // Simulate completing harvest on foraging_bush
   const herbYield = foragingDef.yieldCount;

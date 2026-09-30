@@ -661,12 +661,13 @@ async function runTests() {
   // -------------------------------------------------------------
   console.log('\n--- TEST 12: Random Magic Staff Starting Kit Resolution ---');
   const offensiveSchools = dataLoader.getOffensiveMagicSchools();
-  assert.equal(offensiveSchools.length, 1, 'Currently exactly 1 offensive magic school exists in pool');
-  assert.equal(offensiveSchools[0].id, 'fire_magic', 'Offensive school is fire_magic');
+  assert.ok(offensiveSchools.length >= 1, 'At least 1 offensive magic school exists in pool');
+  assert.ok(offensiveSchools.some(s => s.id === 'fire_magic'), 'Offensive pool includes fire_magic');
 
   const gameState = GameState.getInstance();
+  const validConduits = new Set(offensiveSchools.map(s => dataLoader.getConduitForSpell(s).id));
   const resolved = gameState.resolveStartingKit('random_magic_staff');
-  assert.equal(resolved.mainWeaponId, 'fire_magic', 'random_magic_staff resolves cleanly to fire_magic');
+  assert.ok(validConduits.has(resolved.mainWeaponId), 'random_magic_staff resolves cleanly to an offensive conduit');
   assert.equal(resolved.offhandWeaponId, null, 'No offhand weapon for 2H magic staff');
 
   // Verify full GameState boot initialization with random_magic_staff
@@ -693,10 +694,10 @@ async function runTests() {
   freshGameState.initFromPlayerData(mockPlayerData, 'random_magic_staff');
 
   const snap = freshGameState.getSnapshot();
-  assert.equal(snap.equippedWeaponId, 'fire_magic', 'Character initialized with Fire Magic equipped as main weapon');
+  assert.ok(validConduits.has(snap.equippedWeaponId), 'Character initialized with an offensive conduit equipped as main weapon');
   assert.equal(snap.offhandWeaponId, null, 'No offhand equipped');
-  assert.ok(snap.proficiencies['fire_magic'], 'fire_magic seeded in character proficiencies');
-  assert.equal(snap.proficiencies['fire_magic'].level, 0, 'fire_magic starts at Level 0');
+  assert.ok(snap.proficiencies[snap.equippedWeaponId], 'Conduit weapon seeded in character proficiencies');
+  assert.equal(snap.proficiencies[snap.equippedWeaponId].level, 0, 'Conduit weapon starts at Level 0');
 
   // Verify other starting kits still resolve properly
   const swKit = gameState.resolveStartingKit('sword_and_shield');

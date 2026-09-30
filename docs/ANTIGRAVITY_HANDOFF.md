@@ -756,3 +756,29 @@ Never ask Antigravity to jump ahead in this list — each milestone assumes the 
   - Full test suite `test/regenRefinement.test.ts` (100% pass) and audit suite `test/hpRegenFillOrderAudit.test.ts` (100% pass across 13 tests).
   - Production Build: `npm run build` compiled cleanly with 0 TypeScript/vite errors.
 
+**Resolved and shipped: Milestone — Test-Suite Hygiene + Ore Pacing Check.**
+- **1. Test-Suite Hygiene (Fix Tests Only, Zero Game Code Changes)**:
+  - Fixed stale assertions in `test/milestone15.test.ts` (Healing Magic cost read dynamically from `skills.json` instead of pre-M19 15), `test/milestone11.test.ts` (First Aid cost read dynamically from `skills.json` instead of pre-M19 20), and `test/item_flow_unification.test.ts` (Well Fed HP rate asserts stored in-combat rate 1.5 HP/s and derived out-of-combat rate 3.0 HP/s).
+  - Swept through test suites with stale hardcoded values from earlier milestones and updated them to data-driven checks or correct modern values (`milestone14.test.ts`, `milestone17.test.ts`, `milestone18.test.ts`, `milestone20.test.ts`, `milestone23.test.ts`, `milestone25.test.ts`, `milestone27.test.ts`, `milestone29.test.ts`, `milestone31.test.ts`, `milestone34.test.ts`, `milestone36.test.ts`, `milestone37.test.ts`, `milestone42.test.ts`, `milestone45.test.ts`, `milestone52.test.ts`, `classLevel100Audit.test.ts`, `downedTransitionTwoBar.test.ts`, `lockedContentAndExpAudit.test.ts`, `milestone_persistent_saves.test.ts`, `partyOverviewLiveDropdown.test.ts`, `research_points.test.ts`, `reviveIconLifecycleVerification.test.ts`, `universalHiddenSkills.test.ts`, `unlockQueueAndDebugPanel.test.ts`).
+  - Added test runner infrastructure:
+    - `"test": "node scripts/run_all_tests.mjs"` in `package.json`: sequentially runs all 96 unit test files with per-file PASS/FAIL execution times and non-zero exit on failure.
+    - `"test:e2e": "node scripts/run_e2e_tests.mjs"` in `package.json`: separates browser Puppeteer E2E tests (`test/dungeonAutocast.test.ts`, `test/e2e_blacksmith_crafting.test.ts`, `test/e2e_pacing_audit.test.ts`, `test/combatRetaliationLoop.test.ts`).
+  - Result: **96 / 96 suites PASS (100% green, 0 failures, ~140s total runtime)**.
+- **2. Ore Pacing Check (Report Only, Zero Tuning Changes)**:
+  - **Zero-Minute Trips Root Cause**: Harness bug in `scripts/test_3_seeds_pacing.mjs`. In Outpost, calling `m.rest()` reset character HP/Energy in memory but never updated the persistent party snapshot via `GameState.savePartySnapshot(op.party, op.time.now)`. Furthermore, re-entering the dungeon bypassed the snapshot gate, leaving party snapshots marked as downed from previous wipes. Upon dungeon loading, `MainScene` reconstructed downed entities and broke immediately at room 0 (`party.every(m => m.state === 'dead' || m.state === 'downed')`). Additionally, `elapsedSec` was read from `scene.time.now` after `executeTransitionToOutpost()` stopped the scene clock, recording `0.00m`. Fixed in harness; re-runs completely eliminated zero-minute trips across all seeds.
+  - **Comparative Pacing (`c8b87eb^` vs `c8b87eb`)**:
+    - Seed 1: `c8b87eb^` crafted mace in 3 trips (5.17 min); `c8b87eb` crafted mace in 4 trips (5.38 min) due to tighter in-combat sustain causing an early retreat on Trip 2 (0.58 min vs 1.72 min).
+    - Seed 2: `c8b87eb^` crafted mace in 2 trips (2.29 min); `c8b87eb` crafted mace in 3 trips (3.92 min).
+    - Seed 3: `c8b87eb` crafted mace in 2 trips (2.88 min).
+  - **Ore Supply Per Floor (20 Seeds Generated)**:
+    - Rock veins count: exactly 100 veins across 20 seeds = **5.00 rock veins / floor average**.
+    - Ore yield per vein: **100% drop chance**, exactly **1 Ore per vein** (`data/gatheringNodes.json:38-53` and `src/scenes/MainScene.ts:3122-3149`).
+    - Average ore per fully cleared floor: **5.00 Ore**.
+    - Pre-digging fix (`73db085^`): identical 5.00 veins/floor; digging nodes are additive and separate.
+  - **Harness & Outpost Behavior**:
+    - Party ends trips at full HP/Energy due to out-of-combat regeneration (3.5 HP/s, 1.0 EN/s) and Valerie's out-of-combat heals during the ~15-20s walk to the return crystal. Outpost resting further tops off stats. Harness clears all rooms sequentially before crystal return.
+  - **First Weapon Crafting Costs**:
+    - Mace: 4 Ore, 2 Wood (requires Blacksmithing Lv 0, `data/blacksmithRecipes.json:3-14`).
+    - Comparison: Daggers (2 Ore, 1 Wood), Short Sword (3 Ore, 1 Wood), Throwing Weapons (3 Ore, 1 Wood), Longsword 1H (4 Ore, 2 Wood), Iron Shield (4 Ore, 2 Wood), Spear (4 Ore, 3 Wood), Katana (5 Ore, 2 Wood), Crossbow (5 Ore, 3 Wood), Longsword 2H (7 Ore, 3 Wood), Greatsword (8 Ore, 3 Wood), Hunting Bow (0 Ore, 4 Wood, 2 Silk).
+
+

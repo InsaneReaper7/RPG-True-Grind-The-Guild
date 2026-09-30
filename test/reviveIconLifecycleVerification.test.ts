@@ -374,7 +374,7 @@ async function runReviveIconLifecycleTests() {
   assert.ok(potionValerie.reviveIconSprite, 'Revive icon present on arrival');
 
   // Add revive potion to inventory and start channel
-  gameState.addItem('revive_potion', 1);
+  potionHero.addItem('revive_potion', 1);
   const channelStarted = outpostPotionScene.startReviveChannel(potionHero, potionValerie);
   assert.strictEqual(channelStarted, true, 'Revive channel started');
 

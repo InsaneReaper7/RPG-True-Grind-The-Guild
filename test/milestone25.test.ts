@@ -57,6 +57,15 @@ if (typeof (global as any).window === 'undefined') {
         listeners.get(evt)!.push(fn);
       },
       dispatchEvent: (evt: { type: string; shiftKey?: boolean; stopPropagation?: Function }) => {
+        const handler = (el as any)[`on${evt.type}`];
+        if (typeof handler === 'function') {
+          handler({
+            ...evt,
+            target: el,
+            stopPropagation: evt.stopPropagation || noop,
+            preventDefault: noop
+          });
+        }
         const fns = listeners.get(evt.type) || [];
         for (const fn of fns) {
           fn({
@@ -103,6 +112,8 @@ if (typeof (global as any).window === 'undefined') {
   (global as any).document = {
     getElementById: (id: string) => domElements.get(id) || createMockElement(id),
     createElement: (tag: string) => createMockElement(),
+    querySelectorAll: (_selector: string) => [],
+    querySelector: (_selector: string) => null,
     addEventListener: noop,
     removeEventListener: noop,
     documentElement: {},

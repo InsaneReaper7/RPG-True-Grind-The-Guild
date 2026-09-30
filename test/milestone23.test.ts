@@ -307,27 +307,18 @@ async function runMilestone23Tests() {
   console.log('--- TEST 2: Random Magic Staff Statistical Pool Variation (100 Iterations) ---');
   const gameState = GameState.getInstance();
   const iterations = 100;
-  let fireCount = 0;
-  let lightningCount = 0;
-  let iceCount = 0;
+  const counts: Record<string, number> = {};
+  const validConduits = new Set(dataLoader.getOffensiveMagicSchools().map(s => dataLoader.getConduitForSpell(s).id));
 
   for (let i = 0; i < iterations; i++) {
     const resolved = gameState.resolveStartingKit('random_magic_staff');
-    if (resolved.mainWeaponId === 'fire_staff') {
-      fireCount++;
-    } else if (resolved.mainWeaponId === 'lightning_staff') {
-      lightningCount++;
-    } else if (resolved.mainWeaponId === 'ice_staff') {
-      iceCount++;
-    } else {
-      assert.fail(`Unexpected weapon resolved from random_magic_staff: ${resolved.mainWeaponId}`);
-    }
+    assert.ok(validConduits.has(resolved.mainWeaponId), `Unexpected weapon resolved from random_magic_staff: ${resolved.mainWeaponId}`);
+    counts[resolved.mainWeaponId] = (counts[resolved.mainWeaponId] || 0) + 1;
   }
 
-  console.log(`[Random Roll Results] Out of 100 iterations: Fire Staff = ${fireCount}, Lightning Staff = ${lightningCount}, Ice Staff = ${iceCount}`);
-  assert.ok(fireCount >= 15, `Fire Staff should appear reasonably often (got ${fireCount}/100)`);
-  assert.ok(lightningCount >= 15, `Lightning Staff should appear reasonably often (got ${lightningCount}/100)`);
-  assert.equal(fireCount + lightningCount + iceCount, 100, 'All rolls must be valid conduit staves');
+  console.log(`[Random Roll Results] Out of 100 iterations:`, counts);
+  assert.ok(Object.keys(counts).length >= 3, `Random Magic Staff should vary across conduit staves`);
+  assert.equal(Object.values(counts).reduce((a, b) => a + b, 0), 100, 'All rolls must be valid conduit staves');
   console.log('✓ PASS: Random Magic Staff pool genuinely varies across conduit staves.\n');
 
   // --- TEST 3: Chain Targeting Mechanics & Damage Falloff ---

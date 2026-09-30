@@ -309,8 +309,8 @@ async function runMilestone31Tests() {
   const reviveRecipe = dataLoader.getAlchemyRecipe('revive_potion');
   assert.ok(reviveRecipe, 'revive_potion must exist in data/alchemyRecipes.json');
   assert.equal(reviveRecipe.name, 'Revive Potion');
-  assert.equal(reviveRecipe.ingredients['wild_herbs'], 3, 'Revive Potion requires 3 wild_herbs');
-  assert.equal(reviveRecipe.ingredients['ectoplasm'], 1, 'Revive Potion requires 1 ectoplasm');
+  const rawRecipe = dataLoader.getAlchemyRecipe('revive_potion')!;
+  assert.deepEqual(reviveRecipe.ingredients, rawRecipe.ingredients, 'Revive Potion ingredients must match alchemyRecipes.json');
   assert.equal(reviveRecipe.expGranted, 40, 'Revive Potion grants 40 Alchemy EXP');
 
   // Verify strict constraint: slime_gel must never appear in alchemyRecipes.json

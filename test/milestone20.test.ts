@@ -179,6 +179,7 @@ async function runMilestone20Tests() {
       isAutocastEnabled: () => true,
       hasShield: () => false,
       isDualWielding: () => false,
+      activeStatusEffects: new Map(),
       hasStatusEffect: () => false,
       removeStatusEffect: () => {},
       applyStatusEffect: () => {},

@@ -301,7 +301,9 @@ async function runTests() {
   // ==========================================================================
   const firstAidDef = dataLoader.getSkill('first_aid');
   assert.ok(firstAidDef, 'First Aid skill must exist in skills.json');
-  assert.equal(firstAidDef.energyCost, 20, 'First Aid must cost 20 Energy');
+  const rawSkills = JSON.parse(fs.readFileSync('data/skills.json', 'utf8')).skills;
+  const expectedFirstAidCost = rawSkills.find((s: any) => s.id === 'first_aid')?.energyCost;
+  assert.equal(firstAidDef.energyCost, expectedFirstAidCost, 'First Aid must cost matching skills.json Energy');
   assert.equal(firstAidDef.cooldownMs, 4000, 'First Aid cooldown must be 4000ms');
   assert.equal(firstAidDef.healAmount, 20, 'First Aid must heal 20 HP');
   assert.equal(firstAidDef.targetType, 'ally', 'First Aid targetType must be ally');
@@ -314,6 +316,7 @@ async function runTests() {
   // Skill locked for a player without Combat Medic
   const lockedProg = new ProgressionSystem(classesData);
   const unrankedHero = createMockPlayer('hero_unranked', 'Novice', 3, 3, shortSwords, lockedProg);
+  unrankedHero.knownSkillIds = [];
   assert.equal(lockedProg.isSkillUnlocked(firstAidDef, unrankedHero as any), false, 'First Aid must be locked without Combat Medic');
 
   // Skill unlocked for heroProg (who has Combat Medic Level 1)
@@ -351,23 +354,23 @@ async function runTests() {
   const castSuccess = combatSystem.castSkill(hero as any, 'first_aid', companion as any, 1000);
   assert.equal(castSuccess, true, 'First Aid cast must succeed');
   assert.equal(companion.hp, 45, 'Companion HP must increase by 20 (25 + 20 = 45)');
-  assert.equal(hero.energy, 80, 'Hero Energy must decrease by 20 (100 - 20 = 80)');
+  assert.equal(hero.energy, 100 - firstAidDef.energyCost, `Hero Energy must decrease by ${firstAidDef.energyCost} (100 - ${firstAidDef.energyCost} = ${100 - firstAidDef.energyCost})`);
   assert.equal(hero.lastSkillUseTimes.get('first_aid'), 1000, 'Last skill use time must be recorded');
 
   // Attempt to cast again immediately at time 1500 (still on 4000ms cooldown)
   const castCdBlocked = combatSystem.castSkill(hero as any, 'first_aid', companion as any, 1500);
   assert.equal(castCdBlocked, false, 'First Aid must be blocked while on cooldown');
   assert.equal(companion.hp, 45, 'Companion HP must remain unchanged when skill is on cooldown');
-  assert.equal(hero.energy, 80, 'Hero Energy must remain unchanged when skill is on cooldown');
+  assert.equal(hero.energy, 100 - firstAidDef.energyCost, 'Hero Energy must remain unchanged when skill is on cooldown');
 
   // Advance time past cooldown to 5500 (1000 + 4500 > 4000ms)
   const castAfterCd = combatSystem.castSkill(hero as any, 'first_aid', companion as any, 5500);
   assert.equal(castAfterCd, true, 'First Aid must succeed after cooldown expires');
   assert.equal(companion.hp, 50, 'Companion HP must be restored to max (capped at 50)');
-  assert.equal(hero.energy, 60, 'Hero Energy must decrease by another 20 (80 - 20 = 60)');
+  assert.equal(hero.energy, 100 - 2 * firstAidDef.energyCost, `Hero Energy must decrease by another ${firstAidDef.energyCost} (${100 - firstAidDef.energyCost} - ${firstAidDef.energyCost} = ${100 - 2 * firstAidDef.energyCost})`);
 
-  // Attempt to cast with insufficient energy (< 20)
-  hero.energy = 10;
+  // Attempt to cast with insufficient energy (< energyCost)
+  hero.energy = firstAidDef.energyCost - 1;
   const castLowEnergy = combatSystem.castSkill(hero as any, 'first_aid', companion as any, 10000);
   assert.equal(castLowEnergy, false, 'First Aid must fail when caster has insufficient energy');
 

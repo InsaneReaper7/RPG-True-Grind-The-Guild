@@ -395,10 +395,6 @@ async function runMilestone29Tests() {
   // TEST 6: Harvest Loot Table & Elevated Drops
   // =========================================================================
   console.log('\n--- TEST 6: Harvest Loot Table & Elevated Drops ---');
-  const gameState = GameState.getInstance();
-  const prePlate = gameState.getItemCount('void_plate');
-  const preEssence = gameState.getItemCount('void_essence');
-  const preCore = gameState.getItemCount('void_core');
 
   const prog = new ProgressionSystem(dataLoader.getClassesData(), 'Guild Hero');
   const swordDef = dataLoader.getWeapon('short_swords')!;
@@ -416,15 +412,19 @@ async function runMilestone29Tests() {
 
   const combat = new CombatSystem(mockScene, [testHero], [epicEnemy], mockScene.pathfinder);
 
+  const prePlate = testHero.getItemCount('void_plate');
+  const preEssence = testHero.getItemCount('void_essence');
+  const preCore = testHero.getItemCount('void_core');
+
   // Trigger defeat on Epic enemy multiple times to test loot drops
   for (let i = 0; i < 5; i++) {
     const deadEpic = new Enemy(mockScene, 10, 11, voidKnight, 'void_knight-avatar', 32);
     (combat as any).handleTargetDefeated(testHero, deadEpic, 'short_swords');
   }
 
-  const postPlate = gameState.getItemCount('void_plate');
-  const postEssence = gameState.getItemCount('void_essence');
-  const postCore = gameState.getItemCount('void_core');
+  const postPlate = testHero.getItemCount('void_plate');
+  const postEssence = testHero.getItemCount('void_essence');
+  const postCore = testHero.getItemCount('void_core');
 
   console.log(`  Harvest Results from 5 defeats: Void Plate: ${postPlate - prePlate}, Void Essence: ${postEssence - preEssence}, Void Core: ${postCore - preCore}`);
   assert.ok(postPlate > prePlate, 'Must have harvested void_plate (common salvage)');

@@ -515,14 +515,18 @@ async function runItemFlowUnificationTests() {
   assert.strictEqual(remainingStew!.acquiredDay, 2, 'Oldest Day 1 stew consumed; Day 2 stew remained');
   assert.strictEqual(remainingStew!.quality, 'excellent', 'Day 2 excellent quality preserved');
 
-  // 4C: Quality Multipliers: eating 'excellent' food provides +50% hunger, 25s buff duration, 3 HP/sec
+  // 4C: Quality Multipliers: eating 'excellent' food provides +50% hunger, 25s buff duration, 1.5 HP/s in-combat (3.0 HP/s out-of-combat)
   hero.setHunger(40);
   const ateExcellent = hero.eatFood('herb_stew');
   assert.ok(ateExcellent, 'Hero should eat excellent herb_stew');
   // Base herb_stew gives 35 hunger * 1.5 = 52.5 -> 53
   assert.strictEqual(hero.hunger, 93, 'Excellent quality restores 1.5x hunger (40 + 53 = 93)');
   assert.strictEqual(hero.wellFedRemainingMs, 25000, 'Excellent quality grants 25000ms duration');
-  assert.strictEqual(hero.wellFedHpPerSec, 3, 'Excellent quality grants 3 HP/sec');
+  const herbStewDef = dataLoader.getFood('herb_stew');
+  const excellentQuality = (herbStewDef as any)?.qualities?.excellent;
+  const oocMultiplier = dataLoader.getOutOfCombatRegenMultiplier();
+  assert.strictEqual(hero.wellFedHpPerSec, excellentQuality?.hpRegenPerSec ?? 1.5, 'Stored in-combat rate is 1.5 HP/sec');
+  assert.strictEqual(hero.wellFedHpPerSec * oocMultiplier, 3.0, 'Effective out-of-combat rate is 3.0 HP/sec');
 
   // 4D: Spoilage check across bags and stockpile
   hero.clearInventory();

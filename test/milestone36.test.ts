@@ -394,11 +394,13 @@ assert.equal(huntingRecipe.ingredients.spider_silk, 2);
 
 // Simulate crafting workflow
 
+const preWood = gameState.getItemCount('wood');
+const preSilk = gameState.getItemCount('spider_silk');
 gameState.addItem('wood', 10);
 gameState.addItem('spider_silk', 5);
 
-assert.ok(gameState.getItemCount('wood') >= huntingRecipe.ingredients.wood);
-assert.ok(gameState.getItemCount('spider_silk') >= huntingRecipe.ingredients.spider_silk);
+assert.ok(gameState.getItemCount('wood') >= (huntingRecipe.ingredients.wood || 0));
+assert.ok(gameState.getItemCount('spider_silk') >= (huntingRecipe.ingredients.spider_silk || 0));
 
 // Consume mats and grant crafted weapon
 for (const [mat, qty] of Object.entries(huntingRecipe.ingredients)) {
@@ -408,8 +410,8 @@ gameState.addItem(huntingRecipe.resultWeaponId, 1);
 const pBowyer = new ProgressionSystem(classesData, 'Craftsman');
 pBowyer.addProficiencyExp('bowyer', huntingRecipe.expGranted);
 
-assert.equal(gameState.getItemCount('wood'), 6);
-assert.equal(gameState.getItemCount('spider_silk'), 3);
+assert.equal(gameState.getItemCount('wood'), preWood + 10 - (huntingRecipe.ingredients.wood || 0));
+assert.equal(gameState.getItemCount('spider_silk'), preSilk + 5 - (huntingRecipe.ingredients.spider_silk || 0));
 assert.equal(gameState.getItemCount('bows'), 1, 'Crafted Hunting Bow must be in inventory');
 assert.equal(pBowyer.getProficiencyStat('bowyer').currentExp, 25, 'Bowyer EXP must be awarded');
 

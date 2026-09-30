@@ -367,18 +367,18 @@ async function runMilestone42Tests() {
     assert.equal(hero.hasStatusEffect('burn'), true);
     assert.equal(hero.hasStatusEffect('slow'), true);
 
-    // Without antidote in stockpile, applying fails
-    gameState.consumeItem('antidote', gameState.getItemCount('antidote')); // clear inventory
-    assert.equal(hero.applyAntidote(), false, 'applyAntidote fails with 0 stockpile');
+    // Without antidote in bag, applying fails
+    hero.removeItem('antidote', hero.getItemCount('antidote'));
+    assert.equal(hero.applyAntidote(), false, 'applyAntidote fails with 0 in bag');
 
-    // Add 1 Antidote to stockpile
-    gameState.addItem('antidote', 1);
-    assert.equal(gameState.getItemCount('antidote'), 1);
+    // Add 1 Antidote to bag
+    hero.addItem('antidote', 1);
+    assert.equal(hero.getItemCount('antidote'), 1);
 
     // Apply Antidote
     const cured = hero.applyAntidote();
-    assert.equal(cured, true, 'applyAntidote succeeds with antidote in stockpile');
-    assert.equal(gameState.getItemCount('antidote'), 0, '1 Antidote consumed');
+    assert.equal(cured, true, 'applyAntidote succeeds with antidote in bag');
+    assert.equal(hero.getItemCount('antidote'), 0, '1 Antidote consumed');
 
     // CRITICAL: Poison must be cured, BUT Bleed, Burn, and Slow must remain intact!
     assert.equal(hero.hasStatusEffect('poison'), false, 'Poison MUST be removed by Antidote');

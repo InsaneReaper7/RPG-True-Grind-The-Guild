@@ -91,6 +91,7 @@ async function runMilestone45Tests() {
 
   const gameState = GameState.getInstance();
   gameState.initFromPlayerData(playerData);
+  (gameState as any).partySnapshots = [(gameState as any).partySnapshots[0]];
 
   // --- TEST 1: Initial State & Hero as Default Leader ---
   console.log('--- TEST 1: Initial Party Setup & Leader Invariants ---');

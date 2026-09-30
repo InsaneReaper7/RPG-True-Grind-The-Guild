@@ -1,4 +1,4 @@
-﻿import assert from 'node:assert/strict';
+import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import Module from 'node:module';
 import { ProgressionSystem } from '../src/systems/ProgressionSystem.ts';
@@ -460,7 +460,8 @@ async function runTests() {
 
     const castSuccess = combat.castSkill(player as any, 'shield_bash', enemy as any);
     assert.equal(castSuccess, true, 'Shield Bash cast successfully in melee range');
-    assert.equal(player.energy, 85, 'Shield Bash consumed 15 Energy');
+    const shieldBashCost = dataLoader.getSkill('shield_bash')?.energyCost ?? 18;
+    assert.equal(player.energy, 100 - shieldBashCost, `Shield Bash consumed ${shieldBashCost} Energy`);
 
     assert.ok(enemy.hasStatusEffect('stun'), 'Enemy has stun status effect applied');
     const stunEffect = enemy.getStatusEffect('stun');
@@ -533,6 +534,8 @@ async function runTests() {
 
     const progCompanion = new ProgressionSystem(classesData, 'Companion');
     const companion = createMockPlayer('companion', 'Companion', 12, 10, shortSwords, progCompanion);
+    companion.equippedSkillIds = [];
+    companion.autocastMap.clear();
 
     const enemy = createMockEnemy('wolf_1', 'Wolf', 11, 10);
 

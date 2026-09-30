@@ -221,6 +221,7 @@ async function runResearchPointsEarnabilityTests() {
     entityName: 'Hero',
     x: 100,
     y: 100,
+    addItem: () => true,
     progression: {
       addProficiencyExp: () => ({ leveledUp: false }),
       getProficiencyLevel: () => 1,

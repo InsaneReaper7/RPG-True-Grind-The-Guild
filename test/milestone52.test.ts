@@ -770,8 +770,12 @@ async function runMilestone52Tests() {
     assert.equal(prog.getProficiencyLevel('katana'), 0, 'Katana starts at Level 0');
     assert.equal(prog.getProficiencyStat('katana').currentExp, 0, 'Katana starts with 0 EXP');
 
-    // Perform standard weapon attack via executePlayerBasicAttack
-    combat.executePlayerBasicAttack(hero, enemy, 1000);
+    // Perform standard weapon attack via executePlayerBasicAttack until a hit lands
+    let attempts = 0;
+    while (prog.getProficiencyStat('katana').currentExp === 0 && attempts < 10) {
+      combat.executePlayerBasicAttack(hero, enemy, 1000 + attempts * 2000);
+      attempts++;
+    }
 
     assert.ok(prog.getProficiencyStat('katana').currentExp > 0, 'Katana attack granted katana proficiency EXP');
     console.log(`✓ Katana attack granted EXP! Current Katana EXP: ${prog.getProficiencyStat('katana').currentExp}`);

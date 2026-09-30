@@ -1,4 +1,4 @@
-﻿import assert from 'node:assert/strict';
+import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { GameState } from '../src/systems/GameState.ts';
 import { DataLoader } from '../src/utils/DataLoader.ts';
@@ -48,7 +48,8 @@ const dagger = dataLoader.getWeapon('daggers')!;
       setAngle: (deg: number) => { spriteAngle = deg; },
       setAlpha: (alpha: number) => { spriteAlpha = alpha; }
     },
-    drawHpBar: () => { hpBarDrawn = true; }
+    drawHpBar: () => { hpBarDrawn = true; },
+    recalculateMaxHp: () => {}
   };
 
   const mockProgression = new ProgressionSystem(classesData);
@@ -131,7 +132,8 @@ const dagger = dataLoader.getWeapon('daggers')!;
       setAngle: (deg: number) => { spriteAngle = deg; },
       setAlpha: (alpha: number) => { spriteAlpha = alpha; }
     },
-    drawHpBar: () => {}
+    drawHpBar: () => {},
+    recalculateMaxHp: () => {}
   };
 
   const mockProgression = new ProgressionSystem(classesData);

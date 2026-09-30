@@ -401,7 +401,7 @@ async function runTestSuite() {
 
     // Confirm in-memory state is wiped
     assert.equal(gameState.getCurrentGameDay(), 1);
-    assert.equal(gameState.getWood(), 1000);
+    assert.equal(gameState.getWood(), dataLoader.getPlayer().startingResources?.wood ?? 100);
     assert.equal(gameState.getResearchPoints(), 0);
     assert.equal(gameState.getPartySnapshots().length, 2);
 
