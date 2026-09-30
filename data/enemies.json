@@ -68,7 +68,7 @@
       "attackRangeTiles": 4,
       "dropChance": 0.40,
       "harvest": [
-        { "method": "salvage", "item": "bowstring", "weight": 1, "tags": ["bowyer"] },
+        { "method": "salvage", "item": "bowstring", "weight": 3, "tags": ["bowyer"] },
         { "method": "rare_drop", "item": "feather", "weight": 1, "tags": ["bowyer", "fletching"] },
         { "method": "salvage", "item": "bone", "weight": 1, "tags": ["bowyer", "blacksmithing"] }
       ],
@@ -88,7 +88,7 @@
       "moveSpeed": 80,
       "dropChance": 0.40,
       "harvest": [
-        { "method": "salvage", "item": "bone", "weight": 2, "tags": ["bowyer", "blacksmithing"] },
+        { "method": "salvage", "item": "bone", "weight": 1, "tags": ["bowyer", "blacksmithing"] },
         { "method": "rare_drop", "item": "ectoplasm", "weight": 1, "tags": ["enchanting", "alchemy"] }
       ]
     },
@@ -123,7 +123,8 @@
       "dropChance": 0.40,
       "harvest": [
         { "method": "salvage", "item": "bone", "weight": 2, "tags": ["bowyer", "blacksmithing"] },
-        { "method": "rare_drop", "item": "ectoplasm", "weight": 1, "tags": ["enchanting", "alchemy"] }
+        { "method": "rare_drop", "item": "ectoplasm", "weight": 1, "tags": ["enchanting", "alchemy"] },
+        { "method": "salvage", "item": "steel_scrap", "weight": 1, "tags": ["blacksmithing"], "note": "rusted armor scrap" }
       ]
     },
     {
@@ -158,7 +159,7 @@
       "researchPoints": { "min": 3, "max": 6 },
       "harvest": [
         { "method": "salvage", "item": "orc_heavy_hide", "tags": ["armorsmithing"] },
-        { "method": "salvage", "item": "steel_scrap", "tags": ["blacksmithing"] },
+        { "method": "salvage", "item": "steel_scrap", "amount": [2, 3], "count": [2, 3], "tags": ["blacksmithing"] },
         { "method": "rare_drop", "item": "orc_emblem", "tags": ["enchanting", "blacksmithing"] },
         { "method": "rare_drop", "item": "bone", "tags": ["bowyer", "blacksmithing"] }
       ]

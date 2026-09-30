@@ -126,6 +126,8 @@ export interface HarvestItem {
   method: string;
   item: string;
   weight?: number;
+  amount?: [number, number] | number;
+  count?: number | [number, number];
   tags: string[];
   note?: string;
 }

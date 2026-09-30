@@ -2468,14 +2468,23 @@ export class CombatSystem {
             const roll = Math.random();
             const rareThreshold = isBoss ? 0.60 : 0.35;
             if (!isRare || roll < rareThreshold) {
+              const harvestCount = Array.isArray(h.amount)
+                ? Math.floor(Math.random() * (h.amount[1] - h.amount[0] + 1)) + h.amount[0]
+                : typeof h.amount === 'number'
+                ? h.amount
+                : Array.isArray(h.count)
+                ? Math.floor(Math.random() * (h.count[1] - h.count[0] + 1)) + h.count[0]
+                : typeof h.count === 'number'
+                ? h.count
+                : 1;
               if (recipient) {
-                recipient.addItem(h.item, 1);
+                recipient.addItem(h.item, harvestCount);
               } else {
-                gameState.addItem(h.item, 1);
+                gameState.addItem(h.item, harvestCount);
               }
               const itemName = h.item.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
               const floatColor = isBoss ? '#ef4444' : target.enemyData.tier === 'epic' && isRare ? '#c084fc' : isRare ? '#f59e0b' : '#34d399';
-              this.createFloatingText(target.x, target.y - 35, `+1 ${itemName}`, floatColor);
+              this.createFloatingText(target.x, target.y - 35, `+${harvestCount} ${itemName}`, floatColor);
             }
           }
         }

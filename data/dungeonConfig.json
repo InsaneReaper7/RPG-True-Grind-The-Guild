@@ -98,8 +98,8 @@
         { "enemyId": "wolf", "weight": 25, "type": "core" },
         { "enemyId": "skeleton", "weight": 25, "type": "core" },
         { "enemyId": "goblin", "weight": 20, "type": "core" },
-        { "enemyId": "goblin_archer", "weight": 15, "type": "core" },
-        { "enemyId": "slime", "weight": 15, "type": "core" }
+        { "enemyId": "goblin_archer", "weight": 20, "type": "core" },
+        { "enemyId": "slime", "weight": 10, "type": "core" }
       ]
     },
     {

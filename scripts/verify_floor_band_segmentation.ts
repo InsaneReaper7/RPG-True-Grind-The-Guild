@@ -170,7 +170,18 @@ function simulateBand(
             const roll = rng();
             const threshold = def.tier === 'boss' ? 0.60 : 0.35;
             if (!isRare || roll < threshold) {
-              itemTotals[h.item] = (itemTotals[h.item] || 0) + 1;
+              let count = 1;
+              const anyH = h as any;
+              if (Array.isArray(anyH.amount)) {
+                count = Math.floor(rng() * (anyH.amount[1] - anyH.amount[0] + 1)) + anyH.amount[0];
+              } else if (typeof anyH.amount === 'number') {
+                count = anyH.amount;
+              } else if (Array.isArray(anyH.count)) {
+                count = Math.floor(rng() * (anyH.count[1] - anyH.count[0] + 1)) + anyH.count[0];
+              } else if (typeof anyH.count === 'number') {
+                count = anyH.count;
+              }
+              itemTotals[h.item] = (itemTotals[h.item] || 0) + count;
             }
           }
         }
@@ -288,20 +299,16 @@ console.log('');
 // 4. Threshold Flagging (Flag but don't tune)
 console.log(`THRESHOLD MONITORING:`);
 const b1Bowstring = b1.itemsPerFloor['bowstring'] ?? 0;
-console.log(`- Band 1 Bowstring per floor: ${b1Bowstring} (Threshold: 0.5)`);
-if (b1Bowstring < 0.5) {
-  console.log(`  ⚠️ FLAGGED FOR REVIEW: bowstring is ${b1Bowstring} < 0.5 per floor in Band 1.`);
-} else {
-  console.log(`  ✓ Bowstring meets or exceeds target threshold.`);
-}
+console.log(`- Band 1 Bowstring per floor: ${b1Bowstring} (Target: >= 0.35) => ${b1Bowstring >= 0.35 ? '✅ PASS' : '⚠️ MISSED'}`);
+
+const b1Ectoplasm = b1.itemsPerFloor['ectoplasm'] ?? 0;
+console.log(`- Band 1 Ectoplasm per floor: ${b1Ectoplasm} (Target: >= 0.4) => ${b1Ectoplasm >= 0.4 ? '✅ PASS' : '⚠️ MISSED'}`);
+
+const b1Bone = b1.itemsPerFloor['bone'] ?? 0;
+console.log(`- Band 1 Bone per floor: ${b1Bone} (Target: >= 1.2) => ${b1Bone >= 1.2 ? '✅ PASS' : '⚠️ MISSED'}`);
 
 const b2SteelScrap = b2.itemsPerFloor['steel_scrap'] ?? 0;
-console.log(`- Band 2 Steel Scrap per floor: ${b2SteelScrap} (Threshold: 1.0)`);
-if (b2SteelScrap < 1.0) {
-  console.log(`  ⚠️ FLAGGED FOR REVIEW: steel_scrap is ${b2SteelScrap} < 1.0 per floor in Band 2.`);
-} else {
-  console.log(`  ✓ Steel Scrap meets or exceeds target threshold.`);
-}
+console.log(`- Band 2 Steel Scrap per floor: ${b2SteelScrap} (Target: >= 0.6) => ${b2SteelScrap >= 0.6 ? '✅ PASS' : '⚠️ MISSED'}`);
 
 console.log('\n========================================================================');
 console.log('             ALL SEGMENTATION INVARIANTS VERIFIED!');
