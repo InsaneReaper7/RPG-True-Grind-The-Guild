@@ -150,6 +150,7 @@
       "id": "apprentice_armorer",
       "name": "Apprentice Armorer",
       "tier": "novice",
+      "category": "crafting",
       "requirements": [
         { "type": "proficiency", "target": "armorsmithing", "value": 10 }
       ],
@@ -157,6 +158,26 @@
       "hiddenSkillBonuses": {
         "resilience": 0.05
       }
+    },
+    {
+      "id": "apprentice_smith",
+      "name": "Apprentice Smith",
+      "tier": "novice",
+      "category": "crafting",
+      "requirements": [
+        { "type": "proficiency", "target": "blacksmithing", "value": 10 }
+      ],
+      "fantasy": "Pounding raw iron and salvaged alloys into balanced instruments of war"
+    },
+    {
+      "id": "apprentice_alchemist",
+      "name": "Apprentice Alchemist",
+      "tier": "novice",
+      "category": "crafting",
+      "requirements": [
+        { "type": "proficiency", "target": "alchemy", "value": 10 }
+      ],
+      "fantasy": "Distilling essences, herbs, and bone dust into restorative elixirs"
     },
     {
       "id": "excavator",
@@ -183,6 +204,7 @@
       "id": "apprentice_bowyer",
       "name": "Apprentice Bowyer",
       "tier": "novice",
+      "category": "crafting",
       "requirements": [
         { "type": "proficiency", "target": "bowyer", "value": 10 }
       ],

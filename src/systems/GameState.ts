@@ -12,10 +12,12 @@ import type {
   PlantingPlotData,
   SeedMakerData,
   SaveMetadata,
-  GameSaveFile
+  GameSaveFile,
+  GearItemInstance
 } from '../types/game.ts';
 import { DataLoader } from '../utils/DataLoader.ts';
 import { LockpickingSystem } from './LockpickingSystem.ts';
+import { isCraftingClass, getBaseItemId } from '../utils/gearResolver.ts';
 
 export class GameState {
   public static readonly SAVE_STORAGE_KEY = 'RPG_TRUE_GRIND_SAVE_V1';
@@ -57,6 +59,29 @@ export class GameState {
   private tutorialStep: number = 0;
   private tutorialCompleted: boolean = false;
   private tutorialDismissed: boolean = false;
+
+  // Milestone: Crafting Mastery, Apprentice Rank — Gear Instance Registry
+  private gearInstances: Map<string, GearItemInstance> = new Map();
+
+  public registerGearInstance(instance: GearItemInstance): void {
+    this.gearInstances.set(instance.instanceId, { ...instance });
+    if (this.snapshot) {
+      this.snapshot.gearInstances = Object.fromEntries(this.gearInstances);
+    }
+  }
+
+  public getGearInstance(instanceId: string): GearItemInstance | undefined {
+    return this.gearInstances.get(instanceId);
+  }
+
+  public getAllGearInstances(): Map<string, GearItemInstance> {
+    return new Map(this.gearInstances);
+  }
+
+  public getBaseItemId(idOrInstanceId: string): string {
+    const inst = this.gearInstances.get(idOrInstanceId);
+    return inst ? inst.baseItemId : idOrInstanceId;
+  }
 
   private constructor() {}
 
@@ -969,7 +994,13 @@ export class GameState {
     if (dataLoader.getFood(itemId)) {
       return this.getFoodItemCount(itemId);
     }
-    return this.inventory.get(itemId) || 0;
+    let total = this.inventory.get(itemId) || 0;
+    for (const [key, count] of this.inventory.entries()) {
+      if (key !== itemId && this.getBaseItemId(key) === itemId) {
+        total += count;
+      }
+    }
+    return total;
   }
 
   public addItem(itemId: string, count: number): void {
@@ -1016,14 +1047,35 @@ export class GameState {
       }
       return true;
     }
-    const current = this.getItemCount(itemId);
-    if (current >= count) {
-      const remaining = current - count;
+    const directQty = this.inventory.get(itemId) || 0;
+    if (directQty >= count) {
+      const remaining = directQty - count;
       if (remaining <= 0) {
         this.inventory.delete(itemId);
       } else {
         this.inventory.set(itemId, remaining);
       }
+      if (this.snapshot) {
+        this.snapshot.inventory = Object.fromEntries(this.inventory);
+      }
+      return true;
+    }
+
+    let remainingToConsume = count;
+    for (const [key, qty] of Array.from(this.inventory.entries())) {
+      if (getBaseItemId(key) === itemId) {
+        const take = Math.min(remainingToConsume, qty);
+        const rem = qty - take;
+        if (rem <= 0) {
+          this.inventory.delete(key);
+        } else {
+          this.inventory.set(key, rem);
+        }
+        remainingToConsume -= take;
+        if (remainingToConsume <= 0) break;
+      }
+    }
+    if (remainingToConsume <= 0) {
       if (this.snapshot) {
         this.snapshot.inventory = Object.fromEntries(this.inventory);
       }
@@ -1350,7 +1402,8 @@ export class GameState {
         encounteredEnemies: Array.from(this.encounteredEnemies),
         discoveredProficiencies: Array.from(this.discoveredProficiencies),
         discoveredStatusEffects: Array.from(this.discoveredStatusEffects),
-        discoveredGatheringNodes: Array.from(this.discoveredGatheringNodes)
+        discoveredGatheringNodes: Array.from(this.discoveredGatheringNodes),
+        gearInstances: Object.fromEntries(this.gearInstances)
       };
     }
     console.log(
@@ -1438,7 +1491,8 @@ export class GameState {
       encounteredEnemies: Array.from(this.encounteredEnemies),
       discoveredProficiencies: Array.from(this.discoveredProficiencies),
       discoveredStatusEffects: Array.from(this.discoveredStatusEffects),
-      discoveredGatheringNodes: Array.from(this.discoveredGatheringNodes)
+      discoveredGatheringNodes: Array.from(this.discoveredGatheringNodes),
+      gearInstances: Object.fromEntries(this.gearInstances)
     };
 
     console.log(
@@ -1567,8 +1621,19 @@ export class GameState {
       classStats: snap.classStats
     });
 
+    if (snap.gearInstances) {
+      for (const [k, v] of Object.entries(snap.gearInstances)) {
+        this.gearInstances.set(k, { ...v });
+      }
+    }
+
     if (snap.activeClass !== undefined) {
-      player.activeClass = snap.activeClass;
+      if (snap.activeClass && isCraftingClass(snap.activeClass)) {
+        console.log(`[SaveMigration] Cleared crafting class '${snap.activeClass}' from activeClass for ${player.entityName}`);
+        player.activeClass = null;
+      } else {
+        player.activeClass = snap.activeClass;
+      }
     }
 
     // Re-anchor remaining cooldowns in the new scene's relative clock
@@ -1942,6 +2007,24 @@ export class GameState {
     }
 
     this.inventory.clear();
+    this.gearInstances.clear();
+    if (snap.gearInstances) {
+      for (const [k, v] of Object.entries(snap.gearInstances)) {
+        this.gearInstances.set(k, { ...v });
+      }
+    }
+    if (snap.activeClass && isCraftingClass(snap.activeClass)) {
+      console.log(`[SaveMigration] Cleared crafting class '${snap.activeClass}' from leader activeClass`);
+      snap.activeClass = null;
+    }
+    if (snap.party && Array.isArray(snap.party)) {
+      for (const companion of snap.party) {
+        if (companion.activeClass && isCraftingClass(companion.activeClass)) {
+          console.log(`[SaveMigration] Cleared crafting class '${companion.activeClass}' from companion '${companion.name || companion.id}' activeClass`);
+          companion.activeClass = null;
+        }
+      }
+    }
     if (snap.inventory) {
       for (const [k, v] of Object.entries(snap.inventory)) {
         this.inventory.set(k, v);
@@ -2001,6 +2084,7 @@ export class GameState {
     this.unlockedBuildables = new Set(['floor', 'wall', 'door', 'bed', 'research_station']);
     this.completedResearchIds = new Set();
     this.inventory.clear();
+    this.gearInstances.clear();
     this.bookLearnedSkills = new Set();
     this.discoveredCookingRecipes = new Set();
     this.discoveredAlchemyRecipes = new Set(['bandage', 'antidote', 'energy_potion', 'escape_stone']);

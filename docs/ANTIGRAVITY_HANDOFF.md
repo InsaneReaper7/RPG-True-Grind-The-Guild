@@ -781,4 +781,45 @@ Never ask Antigravity to jump ahead in this list — each milestone assumes the 
     - Mace: 4 Ore, 2 Wood (requires Blacksmithing Lv 0, `data/blacksmithRecipes.json:3-14`).
     - Comparison: Daggers (2 Ore, 1 Wood), Short Sword (3 Ore, 1 Wood), Throwing Weapons (3 Ore, 1 Wood), Longsword 1H (4 Ore, 2 Wood), Iron Shield (4 Ore, 2 Wood), Spear (4 Ore, 3 Wood), Katana (5 Ore, 2 Wood), Crossbow (5 Ore, 3 Wood), Longsword 2H (7 Ore, 3 Wood), Greatsword (8 Ore, 3 Wood), Hunting Bow (0 Ore, 4 Wood, 2 Silk).
 
+**Resolved and shipped: Milestone — Crafting Mastery, Apprentice Rank.**
+- **1. Crafting Mastery Decoupling & Classes**:
+  - Implemented 4 Apprentice classes from `class_system.md`: `apprentice_smith`, `apprentice_armorer`, `apprentice_bowyer`, and `apprentice_alchemist` in `data/classes.json`. (Cooking deferred per owner decision; Construction deferred per note).
+  - Categorized with `category: "crafting"` and governed by a centralized `isCraftingClass(id)` helper.
+  - Decoupled from combat: Crafting classes are passive, unlock automatically at proficiency 10, never replace or occupy `activeClass`, never appear in the Loadout shelf combat class swapper, and never receive combat kill EXP.
+  - Save migration: Any character with a crafting class in `activeClass` has it automatically migrated back to `null` with a logged notice.
+- **2. Shared Crafting Architecture**:
+  - Pure crafting logic extracted from UI into `CraftingSystem.applyCraft(crafter, recipe, professionId)`.
+  - Class EXP awarded per craft equals the recipe's profession EXP (`expGranted`) and progresses on standard curve (`50 + level * 4`).
+  - Stackables Perk: +1% bonus yield chance per Apprentice class level (capped at 15%), proccing +1 extra item. Applied after existing mood multiplier.
+  - Gear Perk: +1% primary stats per class level (capped at 15%). Weapon: `baseDamage`; Shield: `baseBlock`; Armor/Jewelry: `hpBonus`.
+  - Duplicate gear rule strictly enforced: Gear always crafts exactly 1 copy (bonus yield never applies to gear).
+- **3. Persistent Gear Instances (`GearItemInstance`)**:
+  - Only gear crafted with `bonusPercent > 0` generates an instance ID (`gear_<baseItemId>_<timestamp>_<rand>`). Non-bonus crafts produce the standard base ID, preventing save bloat.
+  - Stored centrally in `GameState.gearInstances` and saved with the game save file.
+  - Routed through `getBaseItemId(id)` and `resolveGearStats(id)`.
+  - Fully compatible with equip/unequip, weapon proficiency checks, drag-and-drop paperdoll, stockpile inventory, Equipment Stash Owned-Only toggle, and non-destructive `auditSavedDuplicateGear`.
+- **4. UI & Tooltips**:
+  - Station headers display crafter's rank and current perk bonus (e.g. `🔨 Apprentice Smith Lv 8: +8% gear stats`).
+  - Tooltips and paperdoll display crafted badge and provenance (e.g. `Crafted by Aria, +8%`).
+  - Party Overview displays crafting class & level alongside combat class (e.g. `⚔️ [Combat] · 🔨 [Crafting]`).
+- **5. Design Decisions & Documentation Recorded**:
+  - Recipe-Tier Decision: Existing recipes (levels 0–10) are the starter band and remain intact (Mace at level 0). All future recipe tiers will use 30 / 60 / 90.
+  - Git Log Citation: `apprentice_armorer` originated in commit `ac2687d` (Milestone 28); `apprentice_bowyer` originated in commit `9ab2690` (Milestone 36-37).
+  - Deferred Features: Section 9 of `docs/deferred_features.md` updated—`Apprentice Alchemist` is implemented, and `Alchemical Bomber` is deferred waiting on `Journeyman Alchemist`.
+  - Cheapest EXP-per-Material Table:
+    - Blacksmithing: `lockpick` (1 Ore -> 10 EXP = 10.0 EXP/mat)
+    - Armorsmithing: `leather_cap` (2 Wolf Pelts -> 25 EXP = 12.5 EXP/mat)
+    - Bowyer: `hunting_bow` (4 Wood, 1 Bowstring -> 25 EXP = 5.0 EXP/mat)
+    - Alchemy: `antidote` (1 Wild Herbs -> 25 EXP = 25.0 EXP/mat)
+- **6. Verification**:
+  - `test/crafting_mastery_apprentice.test.ts` (7/7 tests pass):
+    - Recipe levels adhere to starter band (0-10) with Alchemy at 0.
+    - Decoupled classes unlock at proficiency 10 without displacing combat class.
+    - Class EXP awarded per craft equals profession EXP.
+    - Monte Carlo simulation (1,000 runs) confirms ~5% yield at Lv 5 and ~15% yield at Lv 20 (capped).
+    - Crafted Mace at Apprentice Lv 8 scales baseDamage (+8%: 7 -> 7.56); 0% for non-apprentice.
+    - GearItemInstance survives save/load round-trip with full fidelity.
+    - Systems integration verifies stash count, auto-deposit, duplicate audit, and activeClass migration.
+  - Regression suites all pass cleanly (`duplicate_gear_and_stash_toggle.test.ts`, `milestone_persistent_saves.test.ts`, `craftingInventoryRouting.test.ts`, `craftingStationRecipeFilter.test.ts`).
+
 

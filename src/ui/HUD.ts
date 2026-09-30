@@ -8,6 +8,8 @@ import { BuildingSystem } from '../systems/BuildingSystem.ts';
 import { LevelingSystem } from '../systems/LevelingSystem.ts';
 import { ResearchSystem } from '../systems/ResearchSystem.ts';
 import { TutorialSystem, type TutorialStepDef } from '../systems/TutorialSystem.ts';
+import { CraftingSystem } from '../systems/CraftingSystem.ts';
+import { isCraftingClass, getBaseItemId } from '../utils/gearResolver.ts';
 
 export interface AnnouncementItem {
   type: 'class' | 'skill';
@@ -2177,6 +2179,7 @@ export class HUD {
       this.activeClassContainerEl.innerHTML = '';
       const classes = dataLoader.getClasses();
       for (const cls of classes) {
+        if (isCraftingClass(cls.id)) continue;
         const isUnlocked = progression.isClassUnlocked(cls.id);
         // Hidden-Until-Earned: locked classes DO NOT render at all (zero cards, zero placeholders)
         if (!isUnlocked) continue;
@@ -3280,6 +3283,19 @@ export class HUD {
       const isDwActive = typeof member.isDualWielding === 'function' ? member.isDualWielding() : false;
       const isShieldEquipped = typeof member.hasShield === 'function' ? member.hasShield() : false;
 
+      const getCraftText = (item: any): string => {
+        if (item?.crafterName && item?.bonusPercent) {
+          return ` (Crafted by ${item.crafterName}, +${item.bonusPercent}%)`;
+        }
+        return '';
+      };
+      const getBonusBadge = (item: any): string => {
+        if (item?.crafterName && item?.bonusPercent) {
+          return ` <span style="color: #facc15; font-weight: bold;">(+${item.bonusPercent}%)</span>`;
+        }
+        return '';
+      };
+
       // 1. Helmet
       const helmet = member.equippedHelmet;
       const helmetHtml = `
@@ -3291,8 +3307,8 @@ export class HUD {
           <div class="slot-item-info">
             <span class="slot-item-icon">🪖</span>
             <div>
-              <div class="slot-item-text" title="${helmet?.name || 'Empty'}">${helmet ? helmet.name : '<span class="slot-empty-text">Empty Helmet</span>'}</div>
-              ${helmet ? `<div class="slot-item-stat">+${helmet.hpBonus} HP · ${helmet.weight ?? 1.0}kg</div>` : ''}
+              <div class="slot-item-text" title="${helmet ? (helmet.name + getCraftText(helmet)) : 'Empty'}">${helmet ? helmet.name : '<span class="slot-empty-text">Empty Helmet</span>'}</div>
+              ${helmet ? `<div class="slot-item-stat">+${helmet.hpBonus} HP${getBonusBadge(helmet)} · ${helmet.weight ?? 1.0}kg</div>` : ''}
             </div>
           </div>
           ${helmet ? `<button class="slot-unequip-btn" data-slot="helmet" data-member-idx="${i}" type="button" title="Unequip Helmet">&times;</button>` : ''}
@@ -3313,8 +3329,8 @@ export class HUD {
           <div class="slot-item-info">
             <span class="slot-item-icon">${mainIcon}</span>
             <div>
-              <div class="slot-item-text" title="${mainName}">${mainName}</div>
-              <div class="slot-item-stat">${mainWpn?.twoHanded ? '2H' : '1H'} - Dmg: ${mainWpn?.baseDamage ?? 4} · ${mainWpn?.weight ?? 0}kg</div>
+              <div class="slot-item-text" title="${mainName}${getCraftText(mainWpn)}">${mainName}</div>
+              <div class="slot-item-stat">${mainWpn?.twoHanded ? '2H' : '1H'} - Dmg: ${mainWpn?.baseDamage ?? 4}${getBonusBadge(mainWpn)} · ${mainWpn?.weight ?? 0}kg</div>
             </div>
           </div>
           ${!isBarehanded ? `<button class="slot-unequip-btn" data-slot="main" data-member-idx="${i}" type="button" title="Unequip Weapon (Fight Barehanded)">&times;</button>` : ''}
@@ -3332,8 +3348,8 @@ export class HUD {
           <div class="slot-item-info">
             <span class="slot-item-icon">📿</span>
             <div>
-              <div class="slot-item-text" title="${necklace?.name || 'Empty'}">${necklace ? necklace.name : '<span class="slot-empty-text">Empty Necklace</span>'}</div>
-              ${necklace ? `<div class="slot-item-stat">+${necklace.hpBonus} HP · ${necklace.weight ?? 0.3}kg</div>` : ''}
+              <div class="slot-item-text" title="${necklace ? (necklace.name + getCraftText(necklace)) : 'Empty'}">${necklace ? necklace.name : '<span class="slot-empty-text">Empty Necklace</span>'}</div>
+              ${necklace ? `<div class="slot-item-stat">+${necklace.hpBonus} HP${getBonusBadge(necklace)} · ${necklace.weight ?? 0.3}kg</div>` : ''}
             </div>
           </div>
           ${necklace ? `<button class="slot-unequip-btn" data-slot="necklace" data-member-idx="${i}" type="button" title="Unequip Necklace">&times;</button>` : ''}
@@ -3367,8 +3383,8 @@ export class HUD {
             <div class="slot-item-info">
               <span class="slot-item-icon">${isShieldEquipped ? '🛡️' : (offWpn ? '⚔️' : '🛡️')}</span>
               <div>
-                <div class="slot-item-text" title="${offWpn?.name || 'Empty'}">${offWpn ? offWpn.name : '<span class="slot-empty-text">Empty Off-Hand</span>'}</div>
-                ${offWpn ? `<div class="slot-item-stat">${isShieldEquipped ? 'Shield Block' : `Dmg: ${offWpn.baseDamage}`} · ${offWpn.weight ?? 0}kg</div>` : ''}
+                <div class="slot-item-text" title="${offWpn ? (offWpn.name + getCraftText(offWpn)) : 'Empty'}">${offWpn ? offWpn.name : '<span class="slot-empty-text">Empty Off-Hand</span>'}</div>
+                ${offWpn ? `<div class="slot-item-stat">${isShieldEquipped ? 'Shield Block' : `Dmg: ${offWpn.baseDamage}`}${getBonusBadge(offWpn)} · ${offWpn.weight ?? 0}kg</div>` : ''}
               </div>
             </div>
             ${offWpn ? `<button class="slot-unequip-btn" data-slot="offhand" data-member-idx="${i}" type="button" title="Unequip Off-Hand">&times;</button>` : ''}
@@ -3387,8 +3403,8 @@ export class HUD {
           <div class="slot-item-info">
             <span class="slot-item-icon">💍</span>
             <div>
-              <div class="slot-item-text" title="${ring?.name || 'Empty'}">${ring ? ring.name : '<span class="slot-empty-text">Empty Ring</span>'}</div>
-              ${ring ? `<div class="slot-item-stat">+${ring.hpBonus} HP · ${ring.weight ?? 0.2}kg</div>` : ''}
+              <div class="slot-item-text" title="${ring ? (ring.name + getCraftText(ring)) : 'Empty'}">${ring ? ring.name : '<span class="slot-empty-text">Empty Ring</span>'}</div>
+              ${ring ? `<div class="slot-item-stat">+${ring.hpBonus} HP${getBonusBadge(ring)} · ${ring.weight ?? 0.2}kg</div>` : ''}
             </div>
           </div>
           ${ring ? `<button class="slot-unequip-btn" data-slot="ring" data-member-idx="${i}" type="button" title="Unequip Ring">&times;</button>` : ''}
@@ -3404,10 +3420,12 @@ export class HUD {
             ${!isOutpost ? '<span style="font-size: 8px; color: #f59e0b;">🔒 Outpost</span>' : ''}
           </div>
           <div class="slot-item-info">
-            <span class="slot-item-icon">🛡️</span>
+            <span class="slot-item-info">
+              <span class="slot-item-icon">🛡️</span>
+            </span>
             <div>
-              <div class="slot-item-text" title="${bodyArmor?.name || 'Empty'}">${bodyArmor ? bodyArmor.name : '<span class="slot-empty-text">Empty Body</span>'}</div>
-              ${bodyArmor ? `<div class="slot-item-stat">+${bodyArmor.hpBonus} HP · ${bodyArmor.weight ?? 4.0}kg</div>` : ''}
+              <div class="slot-item-text" title="${bodyArmor ? (bodyArmor.name + getCraftText(bodyArmor)) : 'Empty'}">${bodyArmor ? bodyArmor.name : '<span class="slot-empty-text">Empty Body</span>'}</div>
+              ${bodyArmor ? `<div class="slot-item-stat">+${bodyArmor.hpBonus} HP${getBonusBadge(bodyArmor)} · ${bodyArmor.weight ?? 4.0}kg</div>` : ''}
             </div>
           </div>
           ${bodyArmor ? `<button class="slot-unequip-btn" data-slot="body" data-member-idx="${i}" type="button" title="Unequip Body Armor">&times;</button>` : ''}
@@ -3425,8 +3443,8 @@ export class HUD {
           <div class="slot-item-info">
             <span class="slot-item-icon">🔮</span>
             <div>
-              <div class="slot-item-text" title="${accessory?.name || 'Empty'}">${accessory ? accessory.name : '<span class="slot-empty-text">Empty Accessory</span>'}</div>
-              ${accessory ? `<div class="slot-item-stat">+${accessory.hpBonus} HP · ${accessory.weight ?? 0.5}kg</div>` : ''}
+              <div class="slot-item-text" title="${accessory ? (accessory.name + getCraftText(accessory)) : 'Empty'}">${accessory ? accessory.name : '<span class="slot-empty-text">Empty Accessory</span>'}</div>
+              ${accessory ? `<div class="slot-item-stat">+${accessory.hpBonus} HP${getBonusBadge(accessory)} · ${accessory.weight ?? 0.5}kg</div>` : ''}
             </div>
           </div>
           ${accessory ? `<button class="slot-unequip-btn" data-slot="accessory" data-member-idx="${i}" type="button" title="Unequip Accessory">&times;</button>` : ''}
@@ -3530,7 +3548,9 @@ export class HUD {
         personalItemCount += count;
         const itemWeight = dataLoader.getItemWeight(itemId);
         const itemDef = dataLoader.getItem(itemId) || dataLoader.getWeapon(itemId) || dataLoader.getArmor(itemId) || dataLoader.getFood(itemId);
-        const itemName = itemDef?.name || itemId;
+        const hasBonus = Boolean((itemDef as any)?.bonusPercent);
+        const itemName = hasBonus ? `${itemDef!.name} (+${(itemDef as any).bonusPercent}%)` : (itemDef?.name || itemId);
+        const itemTitle = hasBonus ? `${itemDef!.name} (Crafted by ${(itemDef as any).crafterName}, +${(itemDef as any).bonusPercent}%)` : (itemDef?.name || itemId);
         const itemIcon = (itemDef as any)?.icon || '📦';
 
         let transferOptionsHtml = '';
@@ -3551,7 +3571,7 @@ export class HUD {
           <div class="personal-inv-row" style="display: flex; justify-content: space-between; align-items: center; background: rgba(17, 24, 39, 0.6); padding: 3px 6px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.05); font-size: 10px;">
             <div style="display: flex; align-items: center; gap: 5px; min-width: 0; flex: 1;">
               <span>${itemIcon}</span>
-              <span style="color: #f3f4f6; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 80px;" title="${itemName}">${itemName}</span>
+              <span style="color: ${hasBonus ? '#fde047' : '#f3f4f6'}; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 80px;" title="${itemTitle}">${itemName}</span>
               <span style="color: #a78bfa; font-weight: bold;">x${count}</span>
               <span style="color: #9ca3af; font-size: 9px;">(${(itemWeight * count).toFixed(1)} kg)</span>
             </div>
@@ -3563,6 +3583,21 @@ export class HUD {
         `;
       }
 
+      const combatClsText = member.activeClass
+        ? `${dataLoader.getClass(member.activeClass)?.name ?? member.activeClass} Lv ${member.progression.getClassLevel(member.activeClass)}`
+        : 'Unranked';
+      const craftingClassesUnlocked: string[] = [];
+      const allClasses = dataLoader.getClasses();
+      for (const cls of allClasses) {
+        if (isCraftingClass(cls.id) && member.progression.isClassUnlocked(cls.id)) {
+          const cLvl = member.progression.getClassLevel(cls.id);
+          craftingClassesUnlocked.push(`${cls.name} Lv ${cLvl}`);
+        }
+      }
+      const classesSubtext = craftingClassesUnlocked.length > 0
+        ? `⚔️ ${combatClsText} · 🔨 ${craftingClassesUnlocked.join(', ')}`
+        : `⚔️ ${combatClsText}`;
+
       html += `
         <div class="party-card ${isDowned ? 'downed' : ''}" data-party-card-idx="${i}">
           <div class="party-card-header">
@@ -3572,7 +3607,7 @@ export class HUD {
                 <span>${member.entityName}</span>
                 ${isLeader ? `<span class="party-leader-badge" style="background: #fbbf24; color: #78350f; font-size: 9px; font-weight: bold; padding: 1px 5px; border-radius: 4px; display: inline-flex; align-items: center; gap: 2px;">👑 LEADER</span>` : ''}
               </div>
-              <div style="font-size: 10px; color: #9ca3af;">ID: ${member.id}</div>
+              <div style="font-size: 10px; color: #93c5fd; font-weight: 500; margin-top: 1px;">${classesSubtext}</div>
             </div>
             <div style="display: flex; align-items: center; gap: 6px;">
               ${canSetLeader ? `<button class="btn-action party-set-leader-btn" data-leader-idx="${i}" type="button" style="padding: 2px 8px; font-size: 10px; white-space: nowrap; background: #0284c7; border: 1px solid #38bdf8; border-radius: 4px; color: white; cursor: pointer;">👑 Make Leader</button>` : ''}
@@ -4023,13 +4058,32 @@ export class HUD {
       return false;
     }
 
+    // Resolve specific item/instance ID (prefer personal bag instance, then stockpile instance, then base ID)
+    let equipItemId = payload.itemId;
+    if ((member.inventory.get(equipItemId) || 0) === 0) {
+      for (const [key, qty] of member.inventory.entries()) {
+        if (qty > 0 && getBaseItemId(key) === payload.itemId) {
+          equipItemId = key;
+          break;
+        }
+      }
+    }
+    if ((member.inventory.get(equipItemId) || 0) === 0 && gameState.getItemCount(equipItemId) === 0) {
+      for (const [key, qty] of gameState.getInventoryMap().entries()) {
+        if (qty > 0 && getBaseItemId(key) === payload.itemId) {
+          equipItemId = key;
+          break;
+        }
+      }
+    }
+
     // 1. Incompatible slot assignment
     if (['helmet', 'body', 'necklace', 'ring', 'accessory'].includes(targetSlot)) {
       if (payload.itemType !== 'armor') {
         this.showToast(`❌ Incompatible slot! Only armor can be equipped in ${targetSlot}.`, 'error');
         return false;
       }
-      const armor = dataLoader.getArmor(payload.itemId);
+      const armor = dataLoader.getArmor(equipItemId) || dataLoader.getArmor(payload.itemId);
       if (!armor || armor.slot !== targetSlot) {
         this.showToast(`❌ Incompatible slot! Cannot equip ${armor?.name || payload.itemId} in ${targetSlot} slot.`, 'error');
         return false;
@@ -4051,8 +4105,8 @@ export class HUD {
       const success = member.equipArmorSlot(targetSlot as ArmorSlot, armor, this.isOutpost);
       if (success) {
         if (!debugBypass) {
-          if (!member.removeItem(payload.itemId, 1)) {
-            gameState.consumeItem(payload.itemId, 1);
+          if (!member.removeItem(equipItemId, 1)) {
+            gameState.consumeItem(equipItemId, 1);
           }
           if (prevArmor) {
             member.addItem(prevArmor.id, 1);
@@ -4072,8 +4126,8 @@ export class HUD {
         this.showToast(`❌ Incompatible slot! Only weapons can be equipped in Main Hand.`, 'error');
         return false;
       }
-      const weapon = dataLoader.getWeapon(payload.itemId);
-      if (!weapon || weapon.category === 'offhand' || weapon.id === 'shields') {
+      const weapon = dataLoader.getWeapon(equipItemId) || dataLoader.getWeapon(payload.itemId);
+      if (!weapon || weapon.category === 'offhand' || weapon.id === 'shields' || getBaseItemId(weapon.id) === 'shields') {
         this.showToast(`❌ Shields must be equipped in the Off-Hand!`, 'error');
         return false;
       }
@@ -4088,8 +4142,8 @@ export class HUD {
       const success = member.equipWeapon(weapon, this.isOutpost);
       if (success) {
         if (!debugBypass) {
-          if (!member.removeItem(payload.itemId, 1)) {
-            gameState.consumeItem(payload.itemId, 1);
+          if (!member.removeItem(equipItemId, 1)) {
+            gameState.consumeItem(equipItemId, 1);
           }
           if (prevWeapon) {
             member.addItem(prevWeapon.id, 1);
@@ -4112,7 +4166,7 @@ export class HUD {
         this.showToast(`❌ Incompatible slot! Only shields and offhand weapons can be equipped in Off-Hand.`, 'error');
         return false;
       }
-      const weapon = dataLoader.getWeapon(payload.itemId);
+      const weapon = dataLoader.getWeapon(equipItemId) || dataLoader.getWeapon(payload.itemId);
       if (!weapon) return false;
 
       if (!this.isOutpost) {
@@ -4125,7 +4179,7 @@ export class HUD {
         return false;
       }
 
-      const isShield = weapon.category === 'offhand' || weapon.id === 'shields';
+      const isShield = weapon.category === 'offhand' || weapon.id === 'shields' || getBaseItemId(weapon.id) === 'shields';
       if (!isShield && !member.progression.isDualWieldUnlocked()) {
         this.showToast('🔒 Dual Wielding locked! Requires two 1H melee weapon proficiencies Lv 30+.', 'warn');
         return false;
@@ -4135,8 +4189,8 @@ export class HUD {
       const success = member.equipOffhandWeapon(weapon, this.isOutpost);
       if (success) {
         if (!debugBypass) {
-          if (!member.removeItem(payload.itemId, 1)) {
-            gameState.consumeItem(payload.itemId, 1);
+          if (!member.removeItem(equipItemId, 1)) {
+            gameState.consumeItem(equipItemId, 1);
           }
           if (prevOffhand) {
             member.addItem(prevOffhand.id, 1);
@@ -5119,11 +5173,13 @@ export class HUD {
     // 1. Alchemy proficiency header
     const alchemyStat = progression.getProficiencyStat('alchemy');
     if (this.alchemyModalProfEl) {
+      const perks = CraftingSystem.getCrafterPerks(player, 'alchemy');
+      const perkText = perks.perkDescription ? ` — ${perks.perkDescription}` : '';
       if (alchemyStat.level >= 1) {
         const nextExp = LevelingSystem.expForNextLevel(alchemyStat.level);
-        this.alchemyModalProfEl.innerText = `Level ${alchemyStat.level} (${alchemyStat.currentExp}/${nextExp} EXP)`;
+        this.alchemyModalProfEl.innerText = `Level ${alchemyStat.level} (${alchemyStat.currentExp}/${nextExp} EXP)${perkText}`;
       } else {
-        this.alchemyModalProfEl.innerText = 'Untrained';
+        this.alchemyModalProfEl.innerText = `Untrained${perkText}`;
       }
     }
 
@@ -5253,29 +5309,26 @@ export class HUD {
         const craftBtn = card.querySelector<HTMLButtonElement>(`[data-craft-recipe="${recipe.id}"]`);
         if (craftBtn) {
           craftBtn.onclick = () => {
-            // Re-verify all ingredients before consuming
-            const stillAffordable = ingredientEntries.every(([ingId, cost]) => hasIngredient(ingId, cost));
-            if (stillAffordable) {
-              for (const [ingId, cost] of ingredientEntries) {
-                if (ingId === 'wood') {
-                  gameState.consumeWood(cost);
-                } else {
-                  gameState.consumeItem(ingId, cost);
-                }
-              }
-              const wasEncumbered = player.isEncumbered;
-              const resultId = recipe.resultItemId || recipe.id;
-              player.addItem(resultId, recipeYield);
+            const wasEncumbered = player.isEncumbered;
+            const craftRes = CraftingSystem.applyCraft(player, recipe, 'alchemy');
+            if (craftRes.success) {
               if (!wasEncumbered && player.isEncumbered) {
                 this.showToast(`⚠️ ${player.entityName} is ENCUMBERED (-80% Movement Speed)!`, 'warn', 3000);
               }
-              progression.addProficiencyExp('alchemy', recipe.expGranted);
               const bonusText = (moodTier.alchemyYieldBonus > 0) ? ` (${moodTier.name} Bonus!)` : '';
-              this.showToast(`⚗️ Crafted ${recipeYield}x ${recipe.name}!${bonusText} (+${recipe.expGranted} Alchemy EXP)`, 'success', 2500);
+              let toastMsg = `⚗️ Crafted ${craftRes.quantity}x ${recipe.name}!${bonusText} (+${recipe.expGranted} Alchemy EXP`;
+              if (craftRes.classExpGranted > 0) {
+                toastMsg += `, +${craftRes.classExpGranted} Class EXP`;
+              }
+              toastMsg += ')';
+              if (craftRes.bonusProc) {
+                toastMsg += ' ✨ Bonus Yield!';
+              }
+              this.showToast(toastMsg, 'success', 2500);
               this.renderAlchemyModal(player, progression);
               this.update(player, progression, 0);
             } else {
-              this.showToast(`Not enough ingredients to craft ${recipe.name}!`, 'error');
+              this.showToast(craftRes.message, 'error');
             }
           };
         }
@@ -6250,7 +6303,9 @@ export class HUD {
     const bsStat = progression.getProficiencyStat('blacksmithing');
     if (this.blacksmithingModalProfEl) {
       const nextExp = LevelingSystem.expForNextLevel(bsStat.level);
-      this.blacksmithingModalProfEl.innerText = `Level ${bsStat.level} (${bsStat.currentExp}/${nextExp} EXP)`;
+      const perks = CraftingSystem.getCrafterPerks(player, 'blacksmithing');
+      const perkText = perks.perkDescription ? ` — ${perks.perkDescription}` : '';
+      this.blacksmithingModalProfEl.innerText = `Level ${bsStat.level} (${bsStat.currentExp}/${nextExp} EXP)${perkText}`;
     }
 
     if (this.blacksmithingStockpileOreEl) {
@@ -6339,28 +6394,31 @@ export class HUD {
         const btn = card.querySelector<HTMLButtonElement>(`[data-forge-recipe="${recipe.id}"]`);
         if (btn) {
           btn.onclick = () => {
-            // Consume materials
-            for (const [item, qty] of Object.entries(recipe.ingredients)) {
-              gameState.consumeItem(item, qty);
-            }
-            // Add forged weapon or crafted item to inventory
-            const resultId = recipe.resultItemId || recipe.resultWeaponId || recipe.id;
-            const isGear = Boolean(dataLoader.getWeapon(resultId) || dataLoader.getArmor(resultId));
-            // Director decision: Gear (weapons, shields, armor, jewelry) ALWAYS crafts exactly 1
-            const resultQty = isGear ? 1 : (recipe.resultCount ?? 1);
             const wasEnc = player.isEncumbered;
-            player.addItem(resultId, resultQty);
-            if (!wasEnc && player.isEncumbered) {
-              this.showToast(`⚠️ ${player.entityName} is ENCUMBERED (-80% Movement Speed)!`, 'warn', 3000);
+            const craftRes = CraftingSystem.applyCraft(player, recipe, 'blacksmithing');
+            if (craftRes.success) {
+              if (!wasEnc && player.isEncumbered) {
+                this.showToast(`⚠️ ${player.entityName} is ENCUMBERED (-80% Movement Speed)!`, 'warn', 3000);
+              }
+              const actionVerb = recipe.id === 'smelt_broken_lockbox' ? 'Smelted' : (weaponDef ? 'Forged' : 'Crafted');
+              let toastMsg = `🔨 ${actionVerb} ${craftRes.quantity}x ${recipe.name}! (+${recipe.expGranted} Blacksmithing EXP`;
+              if (craftRes.classExpGranted > 0) {
+                toastMsg += `, +${craftRes.classExpGranted} Class EXP`;
+              }
+              toastMsg += ')';
+              if (craftRes.bonusProc) {
+                toastMsg += ' ✨ Bonus Yield!';
+              }
+              if (craftRes.bonusPercent > 0) {
+                toastMsg += ` (+${craftRes.bonusPercent}% Stats)`;
+              }
+              this.showToast(toastMsg, 'success', 2500);
+              TutorialSystem.getInstance().completeStepId('forge_upgrade');
+              this.renderBlacksmithingModal(player, progression);
+              this.update(player, progression, 0);
+            } else {
+              this.showToast(craftRes.message, 'error');
             }
-            // Award Blacksmithing EXP
-            progression.addProficiencyExp('blacksmithing', recipe.expGranted);
-
-            const actionVerb = recipe.id === 'smelt_broken_lockbox' ? 'Smelted' : (weaponDef ? 'Forged' : 'Crafted');
-            this.showToast(`🔨 ${actionVerb} ${resultQty}x ${recipe.name}! (+${recipe.expGranted} Blacksmithing EXP)`, 'success', 2500);
-            TutorialSystem.getInstance().completeStepId('forge_upgrade');
-            this.renderBlacksmithingModal(player, progression);
-            this.update(player, progression, 0);
           };
         }
 
@@ -6411,7 +6469,9 @@ export class HUD {
     const asStat = progression.getProficiencyStat('armorsmithing');
     if (this.armorsmithingModalProfEl) {
       const nextExp = LevelingSystem.expForNextLevel(asStat.level);
-      this.armorsmithingModalProfEl.innerText = `Level ${asStat.level} (${asStat.currentExp}/${nextExp} EXP)`;
+      const perks = CraftingSystem.getCrafterPerks(player, 'armorsmithing');
+      const perkText = perks.perkDescription ? ` — ${perks.perkDescription}` : '';
+      this.armorsmithingModalProfEl.innerText = `Level ${asStat.level} (${asStat.currentExp}/${nextExp} EXP)${perkText}`;
     }
 
     if (this.armorsmithingStockpileWolfPeltEl) {
@@ -6494,22 +6554,26 @@ export class HUD {
         const btn = card.querySelector<HTMLButtonElement>(`[data-armor-recipe="${recipe.id}"]`);
         if (btn) {
           btn.onclick = () => {
-            // Consume materials
-            for (const [item, qty] of Object.entries(recipe.ingredients)) {
-              gameState.consumeItem(item, qty);
-            }
-            // Add crafted armor to inventory
             const wasEnc = player.isEncumbered;
-            player.addItem(recipe.resultArmorId, 1);
-            if (!wasEnc && player.isEncumbered) {
-              this.showToast(`⚠️ ${player.entityName} is ENCUMBERED (-80% Movement Speed)!`, 'warn', 3000);
+            const craftRes = CraftingSystem.applyCraft(player, recipe, 'armorsmithing');
+            if (craftRes.success) {
+              if (!wasEnc && player.isEncumbered) {
+                this.showToast(`⚠️ ${player.entityName} is ENCUMBERED (-80% Movement Speed)!`, 'warn', 3000);
+              }
+              let toastMsg = `🛡️ Crafted 1x ${recipe.name}! (+${recipe.expGranted} Armorsmithing EXP`;
+              if (craftRes.classExpGranted > 0) {
+                toastMsg += `, +${craftRes.classExpGranted} Class EXP`;
+              }
+              toastMsg += ')';
+              if (craftRes.bonusPercent > 0) {
+                toastMsg += ` (+${craftRes.bonusPercent}% Stats)`;
+              }
+              this.showToast(toastMsg, 'success', 2500);
+              this.renderArmorsmithingModal(player, progression);
+              this.update(player, progression, 0);
+            } else {
+              this.showToast(craftRes.message, 'error');
             }
-            // Award Armorsmithing EXP
-            progression.addProficiencyExp('armorsmithing', recipe.expGranted);
-
-            this.showToast(`🛡️ Crafted 1x ${recipe.name}! (+${recipe.expGranted} Armorsmithing EXP)`, 'success', 2500);
-            this.renderArmorsmithingModal(player, progression);
-            this.update(player, progression, 0);
           };
         }
 
@@ -6560,7 +6624,9 @@ export class HUD {
     const byStat = progression.getProficiencyStat('bowyer');
     if (this.bowyerModalProfEl) {
       const nextExp = LevelingSystem.expForNextLevel(byStat.level);
-      this.bowyerModalProfEl.innerText = `Level ${byStat.level} (${byStat.currentExp}/${nextExp} EXP)`;
+      const perks = CraftingSystem.getCrafterPerks(player, 'bowyer');
+      const perkText = perks.perkDescription ? ` — ${perks.perkDescription}` : '';
+      this.bowyerModalProfEl.innerText = `Level ${byStat.level} (${byStat.currentExp}/${nextExp} EXP)${perkText}`;
     }
 
     if (this.bowyerStockpileWoodEl) {
@@ -6639,22 +6705,26 @@ export class HUD {
         const btn = card.querySelector<HTMLButtonElement>(`[data-bow-recipe="${recipe.id}"]`);
         if (btn) {
           btn.onclick = () => {
-            // Consume materials
-            for (const [item, qty] of Object.entries(recipe.ingredients)) {
-              gameState.consumeItem(item, qty);
-            }
-            // Add crafted bow to inventory
             const wasEnc = player.isEncumbered;
-            player.addItem(recipe.resultWeaponId, 1);
-            if (!wasEnc && player.isEncumbered) {
-              this.showToast(`⚠️ ${player.entityName} is ENCUMBERED (-80% Movement Speed)!`, 'warn', 3000);
+            const craftRes = CraftingSystem.applyCraft(player, recipe, 'bowyer');
+            if (craftRes.success) {
+              if (!wasEnc && player.isEncumbered) {
+                this.showToast(`⚠️ ${player.entityName} is ENCUMBERED (-80% Movement Speed)!`, 'warn', 3000);
+              }
+              let toastMsg = `🏹 Crafted 1x ${recipe.name}! (+${recipe.expGranted} Bowyer EXP`;
+              if (craftRes.classExpGranted > 0) {
+                toastMsg += `, +${craftRes.classExpGranted} Class EXP`;
+              }
+              toastMsg += ')';
+              if (craftRes.bonusPercent > 0) {
+                toastMsg += ` (+${craftRes.bonusPercent}% Stats)`;
+              }
+              this.showToast(toastMsg, 'success', 2500);
+              this.renderBowyerModal(player, progression);
+              this.update(player, progression, 0);
+            } else {
+              this.showToast(craftRes.message, 'error');
             }
-            // Award Bowyer EXP
-            progression.addProficiencyExp('bowyer', recipe.expGranted);
-
-            this.showToast(`🏹 Crafted 1x ${recipe.name}! (+${recipe.expGranted} Bowyer EXP)`, 'success', 2500);
-            this.renderBowyerModal(player, progression);
-            this.update(player, progression, 0);
           };
         }
 

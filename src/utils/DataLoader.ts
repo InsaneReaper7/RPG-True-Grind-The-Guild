@@ -45,6 +45,9 @@ import type {
   ItemsData
 } from '../types/game.ts';
 import { HiddenSkillSystem } from '../systems/HiddenSkillSystem.ts';
+import { resolveGearStats, getBaseItemId, isCraftingClass } from './gearResolver.ts';
+
+export { resolveGearStats, getBaseItemId, isCraftingClass };
 
 export class DataLoader {
   private static instance: DataLoader;
@@ -359,7 +362,7 @@ export class DataLoader {
     return this.weaponsData;
   }
 
-  public getWeapon(id: string): WeaponDef | undefined {
+  public getRawWeapon(id: string): WeaponDef | undefined {
     const found = this.weaponsData?.weapons?.find((w) => w.id === id);
     if (found) return found;
     // Backward-compatibility fallback for legacy references to 'longswords'
@@ -373,6 +376,12 @@ export class DataLoader {
       return this.weaponsData?.weapons?.find((w) => w.id === 'spears_2h');
     }
     return undefined;
+  }
+
+  public getWeapon(id: string): WeaponDef | undefined {
+    const resolved = resolveGearStats(id);
+    if (resolved.weapon) return resolved.weapon;
+    return this.getRawWeapon(id);
   }
 
   public getAllWeapons(): WeaponDef[] {
@@ -793,8 +802,14 @@ export class DataLoader {
     return this.armorsData?.armors ?? [];
   }
 
-  public getArmor(id: string): ArmorDef | undefined {
+  public getRawArmor(id: string): ArmorDef | undefined {
     return this.armorsData?.armors.find((a) => a.id === id);
+  }
+
+  public getArmor(id: string): ArmorDef | undefined {
+    const resolved = resolveGearStats(id);
+    if (resolved.armor) return resolved.armor;
+    return this.getRawArmor(id);
   }
 
   public getArmorsBySlot(slot: ArmorSlot): ArmorDef[] {
@@ -959,13 +974,14 @@ export class DataLoader {
 
   public getItemWeight(id: string): number {
     if (id === 'research_points') return 0;
-    const item = this.getItem(id);
+    const baseId = getBaseItemId(id);
+    const item = this.getItem(baseId);
     if (item && item.weight !== undefined) return item.weight;
-    const weapon = this.getWeapon(id);
+    const weapon = this.getWeapon(baseId);
     if (weapon && weapon.weight !== undefined) return weapon.weight;
-    const armor = this.getArmor(id);
+    const armor = this.getArmor(baseId);
     if (armor && armor.weight !== undefined) return armor.weight;
-    const food = this.getFood(id);
+    const food = this.getFood(baseId);
     if (food && food.weight !== undefined) return food.weight;
     return 0.5; // sensible fallback default for unlisted items
   }

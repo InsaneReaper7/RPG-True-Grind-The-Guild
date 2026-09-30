@@ -195,8 +195,9 @@ The deeper tiers and hybrid branch are explicitly cited and preserved, but defer
   - Because `Journeyman Alchemist` does not exist as an actual class, a character cannot level it to Lv 15.
 - **Explicit Deferral Decision**:
   - Following the established discipline of the project (matching how `Dragoon` was deferred due to missing Heavy Armor equipment, and how `Javelin` was deferred until Throwing Weapons existed):
-  - **Alchemical Bomber is explicitly deferred to a future dedicated Crafting Mastery & Alchemy Expansion milestone**.
-  - It will **not** be built around an invented shortcut or fake stand-in requirement. When Crafting Mastery classes (Apprentice Alchemist → Journeyman Alchemist) are properly designed and shipped, Alchemical Bomber can be unlocked and built authentically.
+  - `Apprentice Alchemist` is now implemented in the *Crafting Mastery, Apprentice Rank* milestone (unlocked at Alchemy 10).
+  - `Journeyman Alchemist` (required at Alchemy 30 + Apprentice Alchemist Lv 10) is slated for the upcoming *Crafting Mastery, Journeyman Rank* milestone.
+  - **Alchemical Bomber remains explicitly deferred**, now awaiting the arrival of the **Journeyman** rank milestone and its associated Alchemy 30 recipes. It will not be built around an invented shortcut or fake stand-in requirement.
 
 ---
 

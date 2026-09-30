@@ -25,6 +25,14 @@ export interface WeaponLevelBonus {
   manaSiphonPerLevel?: number;
 }
 
+export interface GearItemInstance {
+  instanceId: string;
+  baseItemId: string;
+  crafterName: string;
+  bonusPercent: number;
+  craftedAt?: number;
+}
+
 export interface WeaponDef {
   id: string;
   name: string;
@@ -56,6 +64,10 @@ export interface WeaponDef {
   conduitWeaponId?: string;
   spellWeaponId?: string;
   levelBonus?: WeaponLevelBonus;
+  instanceId?: string;
+  crafterName?: string;
+  bonusPercent?: number;
+  baseItemId?: string;
 }
 
 export interface StartingKitDef {
@@ -112,6 +124,7 @@ export interface ClassDef {
   id: string;
   name: string;
   tier: string;
+  category?: string;
   requirements: Requirement[];
   fantasy: string;
   hiddenSkillBonuses?: Record<string, number>;
@@ -339,6 +352,7 @@ export interface PlayerSnapshot {
   tutorialStep?: number;
   tutorialCompleted?: boolean;
   tutorialDismissed?: boolean;
+  gearInstances?: Record<string, GearItemInstance>;
 }
 
 export interface SaveMetadata {
@@ -478,6 +492,10 @@ export interface ArmorDef {
   splitRatio?: string | [number, number];
   hpSplitRatio?: string | [number, number];
   description: string;
+  instanceId?: string;
+  crafterName?: string;
+  bonusPercent?: number;
+  baseItemId?: string;
 }
 
 export function getArmorHpSplit(armor: ArmorDef): { mainHpBonus: number; criticalHpBonus: number } {

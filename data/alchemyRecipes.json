@@ -5,6 +5,7 @@
       "name": "Bandage",
       "resultItemId": "bandage",
       "cures": ["bleed"],
+      "requiredLevel": 0,
       "ingredients": {
         "wood": 5
       },
@@ -16,6 +17,7 @@
       "name": "Antidote",
       "resultItemId": "antidote",
       "cures": ["poison"],
+      "requiredLevel": 0,
       "ingredients": {
         "wild_herbs": 1
       },
@@ -26,6 +28,7 @@
       "id": "energy_potion",
       "name": "Energy Potion",
       "resultItemId": "energy_potion",
+      "requiredLevel": 0,
       "ingredients": {
         "wild_herbs": 2,
         "wood": 2
@@ -41,6 +44,7 @@
       "id": "mana_potion",
       "name": "Mana Potion",
       "resultItemId": "mana_potion",
+      "requiredLevel": 0,
       "ingredients": {
         "wild_herbs": 2,
         "ectoplasm": 1

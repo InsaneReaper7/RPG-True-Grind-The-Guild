@@ -6,6 +6,7 @@ import { GameState } from '../systems/GameState.ts';
 import { DataLoader } from '../utils/DataLoader.ts';
 import { ProgressionSystem } from '../systems/ProgressionSystem.ts';
 import type { ClassifiedRoom } from '../systems/RoomClassifier.ts';
+import { isCraftingClass, getBaseItemId } from '../utils/gearResolver.ts';
 
 export class Player extends Entity {
   public id: string;
@@ -120,8 +121,8 @@ export class Player extends Entity {
     this.baseCarryCapacity = playerData.baseCarryCapacity ?? 45.0;
 
     this.progression.onClassUnlocked((event) => {
-      // First-unlock auto-equip: if currently unranked/null, equip first unlocked class
-      if (!this.activeClass) {
+      // First-unlock auto-equip: if currently unranked/null, equip first unlocked class (combat only)
+      if (!this.activeClass && !isCraftingClass(event.classDef.id)) {
         this.setActiveClass(event.classDef.id);
       }
       this.checkSkillUnlocks();
@@ -146,6 +147,10 @@ export class Player extends Entity {
       this.activeClass = null;
       console.log(`[Player:${this.entityName}] Cleared active class (Unranked).`);
       return true;
+    }
+    if (isCraftingClass(classId)) {
+      console.warn(`[Player:${this.entityName}] Cannot set active class to '${classId}': crafting classes are passive masteries.`);
+      return false;
     }
     if (this.progression.isClassUnlocked(classId)) {
       this.activeClass = classId;
@@ -199,8 +204,8 @@ export class Player extends Entity {
     this.attackRangeTiles = resolvedWeapon.attackRangeTiles ?? ((resolvedWeapon.category === 'magic' && resolvedWeapon.baseDamage > 0) || resolvedWeapon.category === 'ranged' ? 4 : 1);
     if (resolvedWeapon.twoHanded && this.offhandWeapon) {
       const isScout = this.activeClass === 'scout' || (this.progression && this.progression.getClassLevel('scout') > 0);
-      const isBow = resolvedWeapon.category === 'ranged' || resolvedWeapon.proficiencyId === 'bows' || resolvedWeapon.id === 'bows';
-      const isDagger = this.offhandWeapon.id === 'daggers' || this.offhandWeapon.proficiencyId === 'daggers';
+      const isBow = resolvedWeapon.category === 'ranged' || resolvedWeapon.proficiencyId === 'bows' || getBaseItemId(resolvedWeapon.id) === 'bows';
+      const isDagger = getBaseItemId(this.offhandWeapon.id) === 'daggers' || this.offhandWeapon.proficiencyId === 'daggers';
       if (!(isScout && isBow && isDagger)) {
         console.log(`[Player:${this.entityName}] Unequipped offhand because ${resolvedWeapon.name} is two-handed`);
         this.offhandWeapon = null;
@@ -223,20 +228,22 @@ export class Player extends Entity {
       return true;
     }
     const isScout = this.activeClass === 'scout' || (this.progression && this.progression.getClassLevel('scout') > 0);
-    const isBow = this.equippedWeapon?.category === 'ranged' || this.equippedWeapon?.proficiencyId === 'bows' || this.equippedWeapon?.id === 'bows';
-    const isDagger = weapon.id === 'daggers' || weapon.proficiencyId === 'daggers';
+    const isBow = this.equippedWeapon?.category === 'ranged' || this.equippedWeapon?.proficiencyId === 'bows' || (this.equippedWeapon && getBaseItemId(this.equippedWeapon.id) === 'bows');
+    const isDagger = getBaseItemId(weapon.id) === 'daggers' || weapon.proficiencyId === 'daggers';
     const isBowSidearmDagger = isScout && isBow && isDagger;
 
     const isJavelin = this.activeClass === 'javelin' || (this.progression && this.progression.getClassLevel('javelin') > 0);
-    const isMainSpear = this.equippedWeapon?.proficiencyId === 'spears' || this.equippedWeapon?.id === 'spears' || this.equippedWeapon?.id === 'spears_2h';
-    const isOffhandThrowing = weapon.id === 'throwing_weapons' || weapon.proficiencyId === 'throwing_weapons';
-    const isMainThrowing = this.equippedWeapon?.id === 'throwing_weapons' || this.equippedWeapon?.proficiencyId === 'throwing_weapons';
-    const isOffhand1HSpear = (weapon.id === 'spears' || weapon.proficiencyId === 'spears') && !weapon.twoHanded;
+    const mainBaseId = this.equippedWeapon ? getBaseItemId(this.equippedWeapon.id) : '';
+    const offBaseId = getBaseItemId(weapon.id);
+    const isMainSpear = this.equippedWeapon?.proficiencyId === 'spears' || mainBaseId === 'spears' || mainBaseId === 'spears_2h';
+    const isOffhandThrowing = offBaseId === 'throwing_weapons' || weapon.proficiencyId === 'throwing_weapons';
+    const isMainThrowing = mainBaseId === 'throwing_weapons' || this.equippedWeapon?.proficiencyId === 'throwing_weapons';
+    const isOffhand1HSpear = (offBaseId === 'spears' || weapon.proficiencyId === 'spears') && !weapon.twoHanded;
     const isJavelinSidearm = isJavelin && ((isMainSpear && isOffhandThrowing) || (isMainThrowing && isOffhand1HSpear));
 
     const isThrower = this.activeClass === 'thrower' || (this.progression && this.progression.getClassLevel('thrower') > 0);
-    const isOffhandDagger = weapon.id === 'daggers' || weapon.proficiencyId === 'daggers';
-    const isMainDagger = this.equippedWeapon?.id === 'daggers' || this.equippedWeapon?.proficiencyId === 'daggers';
+    const isOffhandDagger = offBaseId === 'daggers' || weapon.proficiencyId === 'daggers';
+    const isMainDagger = mainBaseId === 'daggers' || this.equippedWeapon?.proficiencyId === 'daggers';
     const isThrowerSidearm = isThrower && ((isMainThrowing && isOffhandDagger) || (isMainDagger && isOffhandThrowing));
 
     const isAllowedSidearm = isBowSidearmDagger || isJavelinSidearm || isThrowerSidearm;
@@ -306,6 +313,25 @@ export class Player extends Entity {
       } else {
         this.inventory.set(itemId, remaining);
       }
+      this.updateEncumbrance();
+      return true;
+    }
+    // If exact key insufficient, check for matching gear instances by baseItemId
+    let remainingToConsume = count;
+    for (const [key, qty] of Array.from(this.inventory.entries())) {
+      if (getBaseItemId(key) === itemId) {
+        const take = Math.min(remainingToConsume, qty);
+        const rem = qty - take;
+        if (rem <= 0) {
+          this.inventory.delete(key);
+        } else {
+          this.inventory.set(key, rem);
+        }
+        remainingToConsume -= take;
+        if (remainingToConsume <= 0) break;
+      }
+    }
+    if (remainingToConsume <= 0) {
       this.updateEncumbrance();
       return true;
     }
@@ -397,7 +423,13 @@ export class Player extends Entity {
   }
 
   public getItemCount(itemId: string): number {
-    return this.inventory.get(itemId) || 0;
+    let count = this.inventory.get(itemId) || 0;
+    for (const [key, qty] of this.inventory.entries()) {
+      if (key !== itemId && getBaseItemId(key) === itemId) {
+        count += qty;
+      }
+    }
+    return count;
   }
 
   public getInventoryMap(): Map<string, number> {
@@ -1213,6 +1245,10 @@ export class Player extends Entity {
       this.mood = dataLoader.isMoodEnabled() ? 80 : 50;
     }
     this.activeClass = snapshot.activeClass ?? null;
+    if (this.activeClass && isCraftingClass(this.activeClass)) {
+      console.warn(`[Player:${this.entityName}] Migrating activeClass from crafting class '${this.activeClass}' to null.`);
+      this.activeClass = null;
+    }
 
     this.progression.loadSnapshotData({
       proficiencies: snapshot.proficiencies,
