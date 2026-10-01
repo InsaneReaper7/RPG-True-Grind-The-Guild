@@ -63,6 +63,29 @@ export class GameState {
   // Milestone: Crafting Mastery, Apprentice Rank — Gear Instance Registry
   private gearInstances: Map<string, GearItemInstance> = new Map();
 
+  // Milestone: Use Buttons + 4-Slot Consumable Quick Bar
+  private quickSlots: (string | null)[] = ['revive_potion', 'bandage', 'energy_potion', 'antidote'];
+
+  public getQuickSlots(): (string | null)[] {
+    return [...this.quickSlots];
+  }
+
+  public setQuickSlot(index: number, itemId: string | null): void {
+    if (index >= 0 && index < 4) {
+      this.quickSlots[index] = itemId;
+      if (this.snapshot) {
+        this.snapshot.quickSlots = [...this.quickSlots];
+      }
+    }
+  }
+
+  public initializeNewGameSlots(): void {
+    this.quickSlots = ['revive_potion', 'bandage', 'energy_potion', 'antidote'];
+    if (this.snapshot) {
+      this.snapshot.quickSlots = [...this.quickSlots];
+    }
+  }
+
   public registerGearInstance(instance: GearItemInstance): void {
     this.gearInstances.set(instance.instanceId, { ...instance });
     if (this.snapshot) {
@@ -210,7 +233,8 @@ export class GameState {
       encounteredEnemies: Array.from(this.encounteredEnemies),
       discoveredProficiencies: Array.from(this.discoveredProficiencies),
       discoveredStatusEffects: Array.from(this.discoveredStatusEffects),
-      discoveredGatheringNodes: Array.from(this.discoveredGatheringNodes)
+      discoveredGatheringNodes: Array.from(this.discoveredGatheringNodes),
+      quickSlots: ['revive_potion', 'bandage', 'energy_potion', 'antidote']
     };
 
     const startingConsumableKit: Record<string, number> = {
@@ -1906,6 +1930,7 @@ export class GameState {
       this.snapshot.tutorialStep = this.tutorialStep;
       this.snapshot.tutorialCompleted = this.tutorialCompleted;
       this.snapshot.tutorialDismissed = this.tutorialDismissed;
+      this.snapshot.quickSlots = [...this.quickSlots];
 
       const leader = this.partySnapshots[0];
       const metadata: SaveMetadata = {
@@ -2063,6 +2088,14 @@ export class GameState {
     this.dungeonFloorCount = snap.dungeonFloorCount ?? 0;
     this.lifetimeDungeonFloorCount = snap.lifetimeDungeonFloorCount ?? 0;
 
+    if (snap.quickSlots !== undefined) {
+      this.quickSlots = snap.quickSlots ? [...snap.quickSlots] : [null, null, null, null];
+      while (this.quickSlots.length < 4) this.quickSlots.push(null);
+    } else {
+      // Existing saves start empty
+      this.quickSlots = [null, null, null, null];
+    }
+
     this.syncFoodInventory();
     this.isInitialized = true;
   }
@@ -2106,6 +2139,7 @@ export class GameState {
     this.currentGameDay = 1;
     this.dayProgressMs = 0;
     this.foodItems = [];
+    this.quickSlots = ['revive_potion', 'bandage', 'energy_potion', 'antidote'];
     this.dungeonFloorCount = 0;
     this.lifetimeDungeonFloorCount = 0;
     this.lastSaveError = null;

@@ -251,7 +251,7 @@ async function runMilestone25Tests() {
   assert.ok(!p2?.classList.contains('selected'), 'Kaelen portrait must NOT have .selected class');
   assert.ok(!p3?.classList.contains('selected'), 'Barris portrait must NOT have .selected class');
   assert.equal(document.getElementById('party-portrait-status-1')?.innerText, '✓ ACTIVE');
-  assert.equal(document.getElementById('party-portrait-status-0')?.innerText, '[1]');
+  assert.equal(document.getElementById('party-portrait-status-0')?.innerText, '[F1]');
   console.log('✓ PASS: Single portrait click isolates control to individual character.');
 
   // --------------------------------------------------------------------------

@@ -120,7 +120,8 @@ export class MainScene extends Phaser.Scene {
   private cKey!: Phaser.Input.Keyboard.Key;
   private hKey!: Phaser.Input.Keyboard.Key;
   private gKey!: Phaser.Input.Keyboard.Key;
-  private numKeys: Phaser.Input.Keyboard.Key[] = [];
+  private fKeys: Phaser.Input.Keyboard.Key[] = [];
+  private quickSlotKeys: Phaser.Input.Keyboard.Key[] = [];
   public selectedMembers: Set<Player> = new Set();
   private selectionReticleGraphics!: Phaser.GameObjects.Graphics;
 
@@ -583,7 +584,13 @@ export class MainScene extends Phaser.Scene {
         this.hud.applyBandage();
       });
       this.gKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.G);
-      this.numKeys = [
+      this.fKeys = [
+        this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.F1),
+        this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.F2),
+        this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.F3),
+        this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.F4)
+      ];
+      this.quickSlotKeys = [
         this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ONE),
         this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.TWO),
         this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.THREE),
@@ -1988,12 +1995,20 @@ export class MainScene extends Phaser.Scene {
     }
 
 
-    // Milestone 25: Number Keys [1]..[4]
-    for (let i = 0; i < this.numKeys.length; i++) {
-      const key = this.numKeys[i];
+    // Milestone: Party Selection Keys [F1]..[F4]
+    for (let i = 0; i < this.fKeys.length; i++) {
+      const key = this.fKeys[i];
       if (key && Phaser.Input.Keyboard.JustDown(key)) {
         const isShift = this.input.keyboard?.checkDown(this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT), 0) ?? false;
         this.selectMemberByIndex(i, isShift);
+      }
+    }
+
+    // Milestone: Consumable Quick Bar Keys [1]..[4]
+    for (let i = 0; i < this.quickSlotKeys.length; i++) {
+      const key = this.quickSlotKeys[i];
+      if (key && Phaser.Input.Keyboard.JustDown(key)) {
+        this.hud?.triggerQuickSlot(i);
       }
     }
 

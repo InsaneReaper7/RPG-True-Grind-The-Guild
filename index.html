@@ -216,7 +216,7 @@
     /* Party Portraits Dock (Milestone 25) */
     #party-portraits-hud {
       position: absolute;
-      bottom: 16px;
+      bottom: 74px;
       left: 50%;
       transform: translateX(-50%);
       display: flex;
@@ -226,6 +226,109 @@
       pointer-events: auto;
       z-index: 110;
       user-select: none;
+    }
+    /* Consumable Quick Bar (Milestone: 4-Slot Consumable Quick Bar) */
+    #quick-bar-hud {
+      position: absolute;
+      bottom: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      border-radius: 8px;
+      padding: 6px 10px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
+      pointer-events: auto;
+      z-index: 120;
+      user-select: none;
+    }
+    .quick-slot {
+      position: relative;
+      width: 44px;
+      height: 44px;
+      background: rgba(30, 41, 59, 0.85);
+      border: 1.5px solid rgba(148, 163, 184, 0.35);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      overflow: hidden;
+    }
+    .quick-slot:hover {
+      border-color: #38bdf8;
+      background: rgba(51, 65, 85, 0.95);
+      transform: translateY(-1px);
+    }
+    .quick-slot.slot-empty {
+      background: rgba(15, 23, 42, 0.6);
+      border-style: dashed;
+      border-color: rgba(100, 116, 139, 0.3);
+    }
+    .quick-slot.slot-empty:hover {
+      border-color: #38bdf8;
+    }
+    .quick-slot-key {
+      position: absolute;
+      top: 2px;
+      left: 3px;
+      font-size: 10px;
+      font-weight: 800;
+      color: #94a3b8;
+      line-height: 1;
+      pointer-events: none;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+    }
+    .quick-slot-icon {
+      font-size: 20px;
+      line-height: 1;
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .quick-slot-count {
+      position: absolute;
+      bottom: 2px;
+      right: 3px;
+      font-size: 10px;
+      font-weight: 700;
+      color: #f1f5f9;
+      line-height: 1;
+      pointer-events: none;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
+      background: rgba(15, 23, 42, 0.7);
+      padding: 1px 3px;
+      border-radius: 3px;
+    }
+    .quick-slot-count.zero-count {
+      color: #64748b;
+      opacity: 0.6;
+    }
+    .quick-slot.zero-carried .quick-slot-icon {
+      filter: grayscale(100%) opacity(40%);
+    }
+    .quick-slot-cd-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      color: #fde047;
+      font-size: 11px;
+      font-weight: bold;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+    }
+    .quick-slot-cd-overlay.active {
+      display: flex;
     }
     .party-portraits-header {
       display: flex;
@@ -2612,13 +2715,13 @@
           </div>
         </div>
         <div id="party-portraits-list" class="party-portraits-grid">
-          <div id="party-portrait-0" class="hud-portrait-card selected" data-member-index="0" title="Click: Select Hero [1] | Shift+Click: Multi-select">
+          <div id="party-portrait-0" class="hud-portrait-card selected" data-member-index="0" title="Click: Select Hero [F1] | Shift+Click: Multi-select">
             <div class="portrait-top-row">
               <div id="party-portrait-avatar-0" class="portrait-avatar-box">🛡️</div>
               <div class="portrait-info">
                 <span id="party-portrait-name-0" class="portrait-name">Hero</span>
               </div>
-              <span id="party-portrait-hotkey-0" class="portrait-hotkey-badge">[1]</span>
+              <span id="party-portrait-hotkey-0" class="portrait-hotkey-badge">[F1]</span>
             </div>
             <div class="portrait-bars">
               <div class="portrait-bar-wrap" title="Main HP"><div id="party-portrait-hp-bar-0" class="portrait-bar-fill fill-hp" style="width: 100%;"></div></div>
@@ -2627,13 +2730,13 @@
             </div>
             <div id="party-portrait-status-0" class="portrait-status-tag">✓ ACTIVE</div>
           </div>
-          <div id="party-portrait-1" class="hud-portrait-card" data-member-index="1" title="Click: Select Companion 1 [2] | Shift+Click: Multi-select">
+          <div id="party-portrait-1" class="hud-portrait-card" data-member-index="1" title="Click: Select Companion 1 [F2] | Shift+Click: Multi-select">
             <div class="portrait-top-row">
               <div id="party-portrait-avatar-1" class="portrait-avatar-box">🗡️</div>
               <div class="portrait-info">
                 <span id="party-portrait-name-1" class="portrait-name">Valerie</span>
               </div>
-              <span id="party-portrait-hotkey-1" class="portrait-hotkey-badge">[2]</span>
+              <span id="party-portrait-hotkey-1" class="portrait-hotkey-badge">[F2]</span>
             </div>
             <div class="portrait-bars">
               <div class="portrait-bar-wrap" title="Main HP"><div id="party-portrait-hp-bar-1" class="portrait-bar-fill fill-hp" style="width: 100%;"></div></div>
@@ -2642,13 +2745,13 @@
             </div>
             <div id="party-portrait-status-1" class="portrait-status-tag">✓ ACTIVE</div>
           </div>
-          <div id="party-portrait-2" class="hud-portrait-card empty" data-member-index="2" title="Click: Select Companion 2 [3] | Shift+Click: Multi-select">
+          <div id="party-portrait-2" class="hud-portrait-card empty" data-member-index="2" title="Click: Select Companion 2 [F3] | Shift+Click: Multi-select">
             <div class="portrait-top-row">
               <div id="party-portrait-avatar-2" class="portrait-avatar-box">⚔️</div>
               <div class="portrait-info">
                 <span id="party-portrait-name-2" class="portrait-name">Kaelen</span>
               </div>
-              <span id="party-portrait-hotkey-2" class="portrait-hotkey-badge">[3]</span>
+              <span id="party-portrait-hotkey-2" class="portrait-hotkey-badge">[F3]</span>
             </div>
             <div class="portrait-bars">
               <div class="portrait-bar-wrap" title="Main HP"><div id="party-portrait-hp-bar-2" class="portrait-bar-fill fill-hp" style="width: 100%;"></div></div>
@@ -2657,13 +2760,13 @@
             </div>
             <div id="party-portrait-status-2" class="portrait-status-tag">EMPTY</div>
           </div>
-          <div id="party-portrait-3" class="hud-portrait-card empty" data-member-index="3" title="Click: Select Companion 3 [4] | Shift+Click: Multi-select">
+          <div id="party-portrait-3" class="hud-portrait-card empty" data-member-index="3" title="Click: Select Companion 3 [F4] | Shift+Click: Multi-select">
             <div class="portrait-top-row">
               <div id="party-portrait-avatar-3" class="portrait-avatar-box">🔨</div>
               <div class="portrait-info">
                 <span id="party-portrait-name-3" class="portrait-name">Barris</span>
               </div>
-              <span id="party-portrait-hotkey-3" class="portrait-hotkey-badge">[4]</span>
+              <span id="party-portrait-hotkey-3" class="portrait-hotkey-badge">[F4]</span>
             </div>
             <div class="portrait-bars">
               <div class="portrait-bar-wrap" title="Main HP"><div id="party-portrait-hp-bar-3" class="portrait-bar-fill fill-hp" style="width: 100%;"></div></div>
@@ -2672,6 +2775,34 @@
             </div>
             <div id="party-portrait-status-3" class="portrait-status-tag">EMPTY</div>
           </div>
+        </div>
+      </div>
+
+      <!-- Consumable Quick Bar (Milestone: 4-Slot Consumable Quick Bar) -->
+      <div id="quick-bar-hud" class="quick-bar-hud">
+        <div id="quick-slot-0" class="quick-slot" data-slot-index="0" title="Slot 1 [1] — Right-click to clear">
+          <span class="quick-slot-key">1</span>
+          <span class="quick-slot-icon" id="quick-slot-icon-0"></span>
+          <span class="quick-slot-count" id="quick-slot-count-0"></span>
+          <div class="quick-slot-cd-overlay" id="quick-slot-cd-0"></div>
+        </div>
+        <div id="quick-slot-1" class="quick-slot" data-slot-index="1" title="Slot 2 [2] — Right-click to clear">
+          <span class="quick-slot-key">2</span>
+          <span class="quick-slot-icon" id="quick-slot-icon-1"></span>
+          <span class="quick-slot-count" id="quick-slot-count-1"></span>
+          <div class="quick-slot-cd-overlay" id="quick-slot-cd-1"></div>
+        </div>
+        <div id="quick-slot-2" class="quick-slot" data-slot-index="2" title="Slot 3 [3] — Right-click to clear">
+          <span class="quick-slot-key">3</span>
+          <span class="quick-slot-icon" id="quick-slot-icon-2"></span>
+          <span class="quick-slot-count" id="quick-slot-count-2"></span>
+          <div class="quick-slot-cd-overlay" id="quick-slot-cd-2"></div>
+        </div>
+        <div id="quick-slot-3" class="quick-slot" data-slot-index="3" title="Slot 4 [4] — Right-click to clear">
+          <span class="quick-slot-key">4</span>
+          <span class="quick-slot-icon" id="quick-slot-icon-3"></span>
+          <span class="quick-slot-count" id="quick-slot-count-3"></span>
+          <div class="quick-slot-cd-overlay" id="quick-slot-cd-3"></div>
         </div>
       </div>
 

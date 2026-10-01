@@ -353,6 +353,7 @@ export interface PlayerSnapshot {
   tutorialCompleted?: boolean;
   tutorialDismissed?: boolean;
   gearInstances?: Record<string, GearItemInstance>;
+  quickSlots?: (string | null)[];
 }
 
 export interface SaveMetadata {

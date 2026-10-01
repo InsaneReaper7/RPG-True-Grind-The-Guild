@@ -866,5 +866,60 @@ Never ask Antigravity to jump ahead in this list — each milestone assumes the 
   - Full suite: `npm test -- --quiet` passes **98/98 test suites (0 failures)**.
   - Build passed: `npm run build` succeeds with zero errors.
 
+---
+
+### Milestone: Use Buttons + 4-Slot Consumable Quick Bar (Completed)
+
+- **1. Pre-Check (Item 0 Raw Script Output)**:
+  - All consumable item IDs in data:
+    - `bandage`: cures bleed (MainScene.applyBandage / Player.consumeCarriedConsumable); hotkey: [H]
+    - `antidote`: cures poison (MainScene.applyAntidote / Player.consumeCarriedConsumable); hotkey: [J]
+    - `energy_potion`: restores +35 energy, buffs energy regen +2/s for 15s (Player.drinkPotion); hotkey: none
+    - `mana_potion` / `potion_mana`: restores +35 energy/mana, buffs regen (HUD KeyP handler / Player.drinkPotion); hotkey: [P]
+    - `revive_potion`: revives downed ally (MainScene.interactReviveAlly / OutpostScene.interactReviveAlly); hotkey: none (formerly [R] removed)
+    - `escape_stone`: teleports party to Outpost (MainScene.useEscapeStone); hotkey: [T]
+    - `health_potion`: future item (restores +50 HP, 10s cooldown); hotkey: none
+    - `ration`, `vegetable`, `herb_stew`, `beast_stew`: food items (Player.eatFood); hotkey: none (ration had HUD Eat button)
+  - Keybind audit on `1`–`4` and `F1`–`F4`:
+    - `1`–`4`: previously selected party members in MainScene.ts:587-590 and HUD.ts:1727.
+    - `F1`–`F4`: completely unbound across codebase.
+  - Reviving mechanism: reviver requires adjacency (distance <= 1.5 tiles) and a 3000ms channel via `MainScene.interactReviveAlly` or `OutpostScene.interactReviveAlly`. Quick-slot revive initiates this exact revive flow.
+  - Stop conditions checked: `F1`–`F4` were free; all consumables have callable system functions.
+- **2. Core Architecture & Smart Targeting**:
+  - Centralized in `src/systems/ConsumableSystem.ts`:
+    - `useConsumable(itemId, options)` and `canUseConsumable(itemId, options)` with zero targeting logic in HUD.
+    - Targeting table rules enforced:
+      - Revive Potion: selected member if downed; otherwise closest downed ally to leader. Initiates existing revive flow. Non-consumption if no downed ally.
+      - Bandage: selected member if bleeding; otherwise any bleeding member. Non-consumption if not bleeding.
+      - Antidote: selected member if poisoned; otherwise any poisoned member. Non-consumption if not poisoned.
+      - Energy / Mana Potion: selected member; leader if none or multiple. Non-consumption if energy full.
+      - Health Potion: selected member if injured; otherwise member with lowest HP%. 10s cooldown. Non-consumption if HP full.
+      - Food: selected member or leader. Blocked in combat. Non-consumption if hunger full.
+      - Escape Stone: party-wide. Blocked in combat or at Outpost.
+    - Carried-only priority: item is consumed from the target's bag first, then other party members' bags in order. Stockpile items cannot be used except food at the Outpost.
+- **3. UI & HUD Integration**:
+  - Consumable `Use` buttons added across party member bags (Party Overview modal and Stockpile modal carried rows) with dynamic disabled state and informative tooltips explaining why an item cannot be used.
+  - Outpost Stockpile food cards include an `Eat` button (with disabled state if party is full). Stockpile cards for other items have no Use button.
+  - Consumable Quick Bar HUD added: 4 slots (`1, 2, 3, 4`) docked party-wide at bottom of screen (below portrait dock).
+  - Slots display item icon, party carried count (greyed out when 0), and a live cooldown overlay for items with cooldowns (e.g. Health Potion).
+  - Drag-and-drop from personal bag rows onto quick slots, "Assign to Slot 1–4" dropdown on bag rows, and right-click to clear a slot.
+  - Quick slot assignments persisted in GameState snapshot with new game defaults (`1: Revive Potion, 2: Bandage, 3: Energy Potion, 4: Antidote`), while legacy saves start empty `[null, null, null, null]`.
+- **4. Keybind Move**:
+  - Party selection moved from `1`–`4` to `F1`–`F4` with `preventDefault()` to prevent default browser F1 (help) / F3 (find) actions.
+  - Quick slots `1`–`4` bound to keys `1`–`4` (`Digit1`–`Digit4`).
+  - Hotkeys `[H]` (Bandage), `[J]` (Antidote), `[T]` (Escape Stone), and `[P]` (Mana Potion) preserved as they were.
+  - Updated portrait status badges to `[F1]`–`[F4]`, portrait tooltips, and tests (`milestone25.test.ts`, `keyBindingAudit.test.ts`).
+- **5. Verification**:
+  - `test/consumableQuickBar.test.ts` (9/9 tests pass):
+    - Default slots for new game and empty slots for legacy saves across save/load.
+    - Smart targeting for Bandage, Antidote, Energy Potion, Revive Potion, Health Potion, Escape Stone, and Food.
+    - Zero consumption and warn toast when item cannot apply.
+    - Carried-only enforcement: target bag first, then party bags; stockpile items rejected, except food at Outpost.
+    - Hotkeys `1`–`4` trigger quick slots and `F1`–`F4` select party members with `preventDefault()`.
+  - Regression suites passed: `test/keyBindingAudit.test.ts`, `test/milestone_revive_economy.test.ts`, `test/milestone25.test.ts`.
+  - Full suite: `npm test -- --quiet` passes **99/99 test suites (0 failures)**.
+  - Production build: `npm run build` succeeds with zero errors.
+
+
 
 

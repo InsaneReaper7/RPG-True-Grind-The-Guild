@@ -9,6 +9,7 @@ import { LevelingSystem } from '../systems/LevelingSystem.ts';
 import { ResearchSystem } from '../systems/ResearchSystem.ts';
 import { TutorialSystem, type TutorialStepDef } from '../systems/TutorialSystem.ts';
 import { CraftingSystem } from '../systems/CraftingSystem.ts';
+import { ConsumableSystem } from '../systems/ConsumableSystem.ts';
 import { isCraftingClass, getBaseItemId } from '../utils/gearResolver.ts';
 
 export interface AnnouncementItem {
@@ -365,6 +366,14 @@ export class HUD {
   private lastBandageApplyTime: number = 0;
   private hasSeenBandages: boolean = false;
 
+  // Milestone: 4-Slot Consumable Quick Bar
+  private quickBarHudEl: HTMLElement | null = null;
+  private quickSlotEls: (HTMLElement | null)[] = [];
+  private quickSlotIconEls: (HTMLElement | null)[] = [];
+  private quickSlotCountEls: (HTMLElement | null)[] = [];
+  private quickSlotCdEls: (HTMLElement | null)[] = [];
+  private lastQuickSlotTriggerTime: number = 0;
+
   constructor() {
     this.renderedPartyRosterKey = HUD.lastRenderedPartyRosterKey;
     this.renderedStockpileStructureKey = HUD.lastRenderedStockpileStructureKey;
@@ -446,6 +455,50 @@ export class HUD {
         card.onclick = (e: MouseEvent) => {
           e.stopPropagation();
           this.selectMemberByIndex(i, e.shiftKey);
+        };
+      }
+    }
+
+    // Milestone: 4-Slot Consumable Quick Bar
+    this.quickBarHudEl = document.getElementById('quick-bar-hud');
+    this.quickSlotEls = [];
+    this.quickSlotIconEls = [];
+    this.quickSlotCountEls = [];
+    this.quickSlotCdEls = [];
+
+    for (let i = 0; i < 4; i++) {
+      const slotEl = document.getElementById(`quick-slot-${i}`);
+      this.quickSlotEls.push(slotEl);
+      this.quickSlotIconEls.push(document.getElementById(`quick-slot-icon-${i}`));
+      this.quickSlotCountEls.push(document.getElementById(`quick-slot-count-${i}`));
+      this.quickSlotCdEls.push(document.getElementById(`quick-slot-cd-${i}`));
+
+      if (slotEl) {
+        slotEl.onclick = (e: MouseEvent) => {
+          e.stopPropagation();
+          this.triggerQuickSlot(i);
+        };
+        slotEl.oncontextmenu = (e: MouseEvent) => {
+          e.preventDefault();
+          e.stopPropagation();
+          ConsumableSystem.getInstance().clearQuickSlot(i);
+          this.renderQuickBar();
+          this.showToast(`Cleared quick slot ${i + 1}`, 'info', 1500);
+        };
+        slotEl.ondragover = (e: DragEvent) => {
+          e.preventDefault();
+        };
+        slotEl.ondrop = (e: DragEvent) => {
+          e.preventDefault();
+          const itemId = e.dataTransfer?.getData('text/plain');
+          if (itemId && ConsumableSystem.getInstance().isConsumable(itemId)) {
+            ConsumableSystem.getInstance().setQuickSlot(i, itemId);
+            this.renderQuickBar();
+            const dataLoader = DataLoader.getInstance();
+            const itemDef = dataLoader.getItem(itemId) || dataLoader.getFood(itemId);
+            const name = itemDef?.name || itemId;
+            this.showToast(`Assigned ${name} to slot ${i + 1}`, 'success', 2000);
+          }
         };
       }
     }
@@ -736,6 +789,41 @@ export class HUD {
       // DataLoader may not be initialized yet in test harnesses
     }
 
+    if (this.stockpileItemsContainerEl) {
+      this.stockpileItemsContainerEl.onclick = (e) => {
+        const target = e.target as HTMLElement;
+        if (target.classList.contains('stockpile-eat-btn') || target.closest('.stockpile-eat-btn')) {
+          const btn = (target.classList.contains('stockpile-eat-btn') ? target : target.closest('.stockpile-eat-btn')) as HTMLButtonElement;
+          const foodId = btn.dataset.foodId;
+          if (foodId) {
+            const res = ConsumableSystem.getInstance().useConsumable(foodId, { fromStockpile: true, scene: (this as any).scene });
+            if (res.success) {
+              this.showToast(res.message, 'success');
+              this.renderStockpileModal(true);
+              this.renderQuickBar();
+            } else {
+              this.showToast(res.message, 'warn');
+            }
+          }
+        } else if (target.classList.contains('party-item-use-btn') || target.closest('.party-item-use-btn')) {
+          const btn = (target.classList.contains('party-item-use-btn') ? target : target.closest('.party-item-use-btn')) as HTMLButtonElement;
+          const memberIdx = parseInt(btn.dataset.memberIdx || '-1', 10);
+          const itemId = btn.dataset.itemId || '';
+          if (memberIdx >= 0 && memberIdx < this.currentParty.length && itemId) {
+            const member = this.currentParty[memberIdx];
+            const res = ConsumableSystem.getInstance().useConsumable(itemId, { preferredTarget: member, fromMember: member, scene: (this as any).scene });
+            if (res.success) {
+              this.showToast(res.message, 'success');
+              this.renderStockpileModal(true);
+              this.renderQuickBar();
+            } else {
+              this.showToast(res.message, 'warn');
+            }
+          }
+        }
+      };
+    }
+
     if (this.openStockpileBtn) {
       this.openStockpileBtn.onclick = () => {
         HUD.activeInstance?.toggleStockpileModal();
@@ -937,7 +1025,14 @@ export class HUD {
       HUD.activeInstance.destroy();
     }
     HUD.activeInstance = this;
+    if (typeof window !== 'undefined') {
+      (window as any).activeHUD = this;
+    }
     this.setupListeners();
+  }
+
+  public static getActiveInstance(): HUD | null {
+    return HUD.activeInstance;
   }
 
   private setupListeners(): void {
@@ -1724,11 +1819,21 @@ export class HUD {
           if (targetTag !== 'input' && targetTag !== 'textarea' && targetTag !== 'select') {
             active.triggerGatheringModeToggle();
           }
+        } else if (e.key === 'F1' || e.key === 'F2' || e.key === 'F3' || e.key === 'F4' || e.code === 'F1' || e.code === 'F2' || e.code === 'F3' || e.code === 'F4') {
+          e.preventDefault(); // Prevent browser F1 (help) and F3 (find)
+          const targetTag = (e.target as HTMLElement)?.tagName?.toLowerCase();
+          if (targetTag !== 'input' && targetTag !== 'textarea' && targetTag !== 'select') {
+            let idx = 0;
+            if (e.key === 'F2' || e.code === 'F2') idx = 1;
+            else if (e.key === 'F3' || e.code === 'F3') idx = 2;
+            else if (e.key === 'F4' || e.code === 'F4') idx = 3;
+            active.selectMemberByIndex(idx, e.shiftKey);
+          }
         } else if (e.key >= '1' && e.key <= '4') {
           const targetTag = (e.target as HTMLElement)?.tagName?.toLowerCase();
           if (targetTag !== 'input' && targetTag !== 'textarea' && targetTag !== 'select') {
-            const idx = parseInt(e.key, 10) - 1;
-            active.selectMemberByIndex(idx, e.shiftKey);
+            const slotIdx = parseInt(e.key, 10) - 1;
+            active.triggerQuickSlot(slotIdx);
           }
         } else if (e.key === 't' || e.key === 'T' || e.code === 'KeyT') {
           const targetTag = (e.target as HTMLElement)?.tagName?.toLowerCase();
@@ -2418,6 +2523,9 @@ export class HUD {
     // Milestone 25: Update party portrait dock
     this.updatePartyPortraits(this.currentParty);
 
+    // Milestone: Update consumable quick bar
+    this.renderQuickBar();
+
     // 1. Main HP
     if (this.playerHpEl) {
       this.playerHpEl.innerText = `${Math.ceil(player.hp)} / ${player.maxHp}`;
@@ -2797,6 +2905,9 @@ export class HUD {
       }
     }
 
+    // 8c. Milestone: Update Consumable Quick Bar
+    this.renderQuickBar();
+
     // 9. Live All-Skills Debug Overview Panel (Backtick toggle)
     const targetMember = (this.currentParty && this.currentParty[this.selectedDebugMemberIndex]) || player;
     this.updateDebugSkillsPanel(targetMember.progression, targetMember.entityName);
@@ -2910,6 +3021,10 @@ export class HUD {
     return new Set(this.selectedMemberIndices);
   }
 
+  public getCurrentParty(): Player[] {
+    return this.currentParty;
+  }
+
   public triggerGroupReselect(): void {
     this.selectedMemberIndices.clear();
     const count = Math.max(1, this.currentParty.length);
@@ -2971,7 +3086,7 @@ export class HUD {
       } else {
         card.classList.remove('selected');
         if (statusEl) {
-          statusEl.innerText = isDowned ? 'DOWNED' : (member.isEncumbered ? '⚠️ ENC' : `[${i + 1}]`);
+          statusEl.innerText = isDowned ? 'DOWNED' : (member.isEncumbered ? '⚠️ ENC' : `[F${i + 1}]`);
         }
       }
     }
@@ -3022,7 +3137,8 @@ export class HUD {
           avatarEl.innerText = roleIcon;
         }
 
-        if (hotkeyEl) hotkeyEl.innerText = `[${i + 1}]`;
+        if (hotkeyEl) hotkeyEl.innerText = `[F${i + 1}]`;
+        card.title = `Click: Select ${member.entityName} [F${i + 1}] | Shift+Click: Multi-select`;
 
         const maxHp = Math.max(1, member.maxHp);
         const hpPct = Math.max(0, Math.min(100, (member.hp / maxHp) * 100));
@@ -3048,7 +3164,7 @@ export class HUD {
           if (statusEl) statusEl.innerText = isDowned ? 'DOWNED' : (member.isEncumbered ? '⚠️ ENC' : '✓ ACTIVE');
         } else {
           card.classList.remove('selected');
-          if (statusEl) statusEl.innerText = isDowned ? 'DOWNED' : (member.isEncumbered ? '⚠️ ENC' : `[${i + 1}]`);
+          if (statusEl) statusEl.innerText = isDowned ? 'DOWNED' : (member.isEncumbered ? '⚠️ ENC' : `[F${i + 1}]`);
         }
       } else {
         // Unoccupied slot
@@ -3056,12 +3172,109 @@ export class HUD {
         card.classList.add('empty');
         if (nameEl) nameEl.innerText = '(Empty)';
         if (avatarEl) avatarEl.innerText = '👤';
-        if (hotkeyEl) hotkeyEl.innerText = `[${i + 1}]`;
+        if (hotkeyEl) hotkeyEl.innerText = `[F${i + 1}]`;
+        card.title = `Slot ${i + 1} (Empty)`;
         if (hpBarEl) hpBarEl.style.width = '0%';
         if (critBarEl) critBarEl.style.width = '0%';
         if (energyBarEl) energyBarEl.style.width = '0%';
         if (statusEl) statusEl.innerText = 'EMPTY';
       }
+    }
+  }
+
+  public renderQuickBar(): void {
+    if (!this.quickBarHudEl) return;
+    const consumableSystem = ConsumableSystem.getInstance();
+    const dataLoader = DataLoader.getInstance();
+    const quickSlots = consumableSystem.getQuickSlots();
+
+    for (let i = 0; i < 4; i++) {
+      const slotEl = this.quickSlotEls[i];
+      const iconEl = this.quickSlotIconEls[i];
+      const countEl = this.quickSlotCountEls[i];
+      const cdEl = this.quickSlotCdEls[i];
+
+      if (!slotEl) continue;
+
+      const itemId = quickSlots[i];
+      if (!itemId) {
+        slotEl.classList.add('empty');
+        slotEl.classList.remove('zero-count');
+        if (iconEl) iconEl.innerText = '➕';
+        if (countEl) countEl.innerText = '';
+        if (cdEl) cdEl.style.height = '0%';
+        slotEl.title = `Slot ${i + 1}: Empty (drag consumable here or right-click to clear)`;
+        continue;
+      }
+
+      slotEl.classList.remove('empty');
+      const itemDef = dataLoader.getItem(itemId) || dataLoader.getFood(itemId);
+      const name = itemDef?.name || itemId.replace(/_/g, ' ');
+      const icon = (itemDef as any)?.icon || (consumableSystem.isFoodItem(itemId) ? '🍲' : '🧪');
+      if (iconEl) iconEl.innerText = icon;
+
+      const carriedCount = consumableSystem.getPartyCarriedCount(itemId);
+      if (countEl) countEl.innerText = `${carriedCount}`;
+
+      if (carriedCount === 0) {
+        slotEl.classList.add('zero-count');
+      } else {
+        slotEl.classList.remove('zero-count');
+      }
+
+      const cdRemainingMs = consumableSystem.getCooldownRemainingMs(itemId);
+      if (cdEl) {
+        if (cdRemainingMs > 0) {
+          const totalCdMs = 10000;
+          const pct = Math.min(100, Math.max(0, Math.ceil((cdRemainingMs / totalCdMs) * 100)));
+          cdEl.style.height = `${pct}%`;
+        } else {
+          cdEl.style.height = '0%';
+        }
+      }
+
+      slotEl.title = `[Key ${i + 1}] ${name} (${carriedCount} carried) | Right-click to clear`;
+    }
+  }
+
+  public triggerQuickSlot(slotIndex: number): boolean {
+    if (slotIndex < 0 || slotIndex >= 4) return false;
+    const now = Date.now();
+    if (now - this.lastQuickSlotTriggerTime < 150) return false;
+    this.lastQuickSlotTriggerTime = now;
+
+    const consumableSystem = ConsumableSystem.getInstance();
+    const quickSlots = consumableSystem.getQuickSlots();
+    const itemId = quickSlots[slotIndex];
+
+    if (!itemId) {
+      this.showToast(`Quick slot ${slotIndex + 1} is empty! Drag a consumable here.`, 'info', 1800);
+      return false;
+    }
+
+    let preferredTarget: Player | undefined;
+    if (this.selectedMemberIndices.size > 0 && this.currentParty.length > 0) {
+      const firstIdx = Array.from(this.selectedMemberIndices)[0];
+      preferredTarget = this.currentParty[firstIdx];
+    } else if (this.currentPlayer) {
+      preferredTarget = this.currentPlayer;
+    }
+
+    const result = consumableSystem.useConsumable(itemId, {
+      preferredTarget,
+      scene: (this as any).scene
+    });
+
+    if (result.success) {
+      this.showToast(result.message, 'success', 2000);
+      this.renderQuickBar();
+      if (this.isPartyOverviewModalOpen()) {
+        this.renderPartyOverviewModal(true);
+      }
+      return true;
+    } else {
+      this.showToast(result.message, 'warn', 2500);
+      return false;
     }
   }
 
@@ -3573,8 +3786,31 @@ export class HUD {
           `;
         }
 
+        const isConsumable = ConsumableSystem.getInstance().isConsumable(itemId);
+        let useBtnHtml = '';
+        let quickSlotAssignHtml = '';
+        if (isConsumable) {
+          const check = ConsumableSystem.getInstance().canUseConsumable(itemId, { preferredTarget: member, fromMember: member });
+          const disabledAttr = check.canUse ? '' : 'disabled';
+          const btnTitle = check.canUse ? `Use ${itemName}` : (check.reason || 'Cannot use');
+          const btnStyle = check.canUse
+            ? 'padding: 1px 6px; font-size: 9px; background: rgba(59, 130, 246, 0.4); border: 1px solid #3b82f6; color: #ffffff; border-radius: 3px; cursor: pointer;'
+            : 'padding: 1px 6px; font-size: 9px; background: rgba(75, 85, 99, 0.3); border: 1px solid rgba(75, 85, 99, 0.5); color: #9ca3af; border-radius: 3px; cursor: not-allowed; opacity: 0.6;';
+          useBtnHtml = `<button class="party-item-use-btn btn-action" ${disabledAttr} data-member-idx="${i}" data-item-id="${itemId}" type="button" title="${btnTitle}" style="${btnStyle}">Use</button>`;
+
+          quickSlotAssignHtml = `
+            <select class="quickslot-assign-select" data-item-id="${itemId}" title="Assign to Quick Bar slot 1–4" style="background: rgba(30, 41, 59, 0.8); color: #e2e8f0; border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 3px; font-size: 9px; padding: 1px 2px; max-width: 65px;">
+              <option value="" disabled selected>Slot ➡️</option>
+              <option value="0">Slot 1</option>
+              <option value="1">Slot 2</option>
+              <option value="2">Slot 3</option>
+              <option value="3">Slot 4</option>
+            </select>
+          `;
+        }
+
         personalItemsHtml += `
-          <div class="personal-inv-row" style="display: flex; justify-content: space-between; align-items: center; background: rgba(17, 24, 39, 0.6); padding: 3px 6px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.05); font-size: 10px;">
+          <div class="personal-inv-row" draggable="${isConsumable ? 'true' : 'false'}" data-drag-item="${itemId}" style="display: flex; justify-content: space-between; align-items: center; background: rgba(17, 24, 39, 0.6); padding: 3px 6px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.05); font-size: 10px; cursor: ${isConsumable ? 'grab' : 'default'};">
             <div style="display: flex; align-items: center; gap: 5px; min-width: 0; flex: 1;">
               <span>${itemIcon}</span>
               <span style="color: ${hasBonus ? '#fde047' : '#f3f4f6'}; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 80px;" title="${itemTitle}">${itemName}</span>
@@ -3582,6 +3818,8 @@ export class HUD {
               <span style="color: #9ca3af; font-size: 9px;">(${(itemWeight * count).toFixed(1)} kg)</span>
             </div>
             <div style="display: flex; align-items: center; gap: 3px;">
+              ${useBtnHtml}
+              ${quickSlotAssignHtml}
               ${transferOptionsHtml}
               <button class="party-item-discard-btn btn-action" data-member-idx="${i}" data-item-id="${itemId}" type="button" title="Discard 1 item to shed weight" style="padding: 1px 5px; font-size: 9px; background: rgba(239, 68, 68, 0.2); border: 1px solid rgba(239, 68, 68, 0.4); color: #f87171; border-radius: 3px; cursor: pointer;">Drop</button>
             </div>
@@ -4418,9 +4656,31 @@ export class HUD {
           }
         }
       }
+
+      // Milestone: Consumable Use button in Personal Bag
+      if (target.classList.contains('party-item-use-btn') || target.closest('.party-item-use-btn')) {
+        const btn = (target.classList.contains('party-item-use-btn') ? target : target.closest('.party-item-use-btn')) as HTMLButtonElement;
+        const memberIdx = parseInt(btn.dataset.memberIdx || '-1', 10);
+        const itemId = btn.dataset.itemId || '';
+        if (memberIdx >= 0 && memberIdx < this.currentParty.length && itemId) {
+          const member = this.currentParty[memberIdx];
+          const result = ConsumableSystem.getInstance().useConsumable(itemId, {
+            preferredTarget: member,
+            fromMember: member,
+            scene: (this as any).scene
+          });
+          if (result.success) {
+            this.showToast(result.message, 'success');
+            this.renderPartyOverviewModal(true);
+            this.renderQuickBar();
+          } else {
+            this.showToast(result.message, 'warn');
+          }
+        }
+      }
     };
 
-    // Milestone 51: Transfer personal item select
+    // Milestone 51: Transfer personal item select & Milestone: Quickslot assign select
     this.partyOverviewRosterEl.onchange = (e) => {
       const target = e.target as HTMLElement;
       if (target.classList.contains('party-item-transfer-select')) {
@@ -4438,6 +4698,32 @@ export class HUD {
             this.showToast(`Transferred 1 ${itemDef?.name || itemId} to ${toMember.entityName}`, 'success');
             this.renderPartyOverviewModal(true);
           }
+        }
+      }
+
+      if (target.classList.contains('quickslot-assign-select')) {
+        const sel = target as HTMLSelectElement;
+        const itemId = sel.dataset.itemId || '';
+        const slotIdx = parseInt(sel.value, 10);
+        if (itemId && slotIdx >= 0 && slotIdx <= 3) {
+          ConsumableSystem.getInstance().setQuickSlot(slotIdx, itemId);
+          this.renderQuickBar();
+          const dataLoader = DataLoader.getInstance();
+          const itemDef = dataLoader.getItem(itemId) || dataLoader.getFood(itemId);
+          this.showToast(`Assigned ${itemDef?.name || itemId} to slot ${slotIdx + 1}`, 'success');
+        }
+        sel.value = '';
+      }
+    };
+
+    // Milestone: Drag consumable row to quick slot
+    this.partyOverviewRosterEl.ondragstart = (e: DragEvent) => {
+      const row = (e.target as HTMLElement)?.closest?.('.personal-inv-row') as HTMLElement | null;
+      if (row && row.dataset.dragItem) {
+        const itemId = row.dataset.dragItem;
+        if (ConsumableSystem.getInstance().isConsumable(itemId)) {
+          e.dataTransfer?.setData('text/plain', itemId);
+          if (e.dataTransfer) e.dataTransfer.effectAllowed = 'copy';
         }
       }
     };
@@ -7375,6 +7661,51 @@ export class HUD {
         if ((counts[it.id] || 0) > 0) categoryTotalHeld++;
       }
 
+      if (catDef.id === 'consumables' && this.currentParty && this.currentParty.length > 0) {
+        let carriedHtml = '';
+        for (let mIdx = 0; mIdx < this.currentParty.length; mIdx++) {
+          const member = this.currentParty[mIdx];
+          if (member.inventory) {
+            for (const [cId, qty] of member.inventory.entries()) {
+              if (qty > 0 && ConsumableSystem.getInstance().isConsumable(cId)) {
+                const dataLoader = DataLoader.getInstance();
+                const itemDef = dataLoader.getItem(cId) || dataLoader.getFood(cId);
+                const name = itemDef?.name || cId;
+                const check = ConsumableSystem.getInstance().canUseConsumable(cId, { preferredTarget: member, fromMember: member });
+                const disabledAttr = check.canUse ? '' : 'disabled';
+                const btnTitle = check.canUse ? `Use ${name}` : (check.reason || 'Cannot use');
+                const btnStyle = check.canUse
+                  ? 'padding: 2px 6px; font-size: 9px; background: rgba(59, 130, 246, 0.4); border: 1px solid #3b82f6; color: #ffffff; border-radius: 3px; cursor: pointer;'
+                  : 'padding: 2px 6px; font-size: 9px; background: rgba(75, 85, 99, 0.3); border: 1px solid rgba(75, 85, 99, 0.5); color: #9ca3af; border-radius: 3px; cursor: not-allowed; opacity: 0.6;';
+                carriedHtml += `
+                  <div class="stockpile-carried-row" style="display: flex; justify-content: space-between; align-items: center; background: rgba(17, 24, 39, 0.7); padding: 4px 8px; border-radius: 4px; border: 1px solid rgba(56, 189, 248, 0.2); font-size: 11px;">
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                      <span style="font-weight: 600; color: #38bdf8;">[${member.entityName}]</span>
+                      <span>${(itemDef as any)?.icon || '🧪'}</span>
+                      <span style="color: #f3f4f6;">${name}</span>
+                      <span style="color: #a78bfa; font-weight: bold;">x${qty}</span>
+                    </div>
+                    <button class="party-item-use-btn btn-action" ${disabledAttr} data-member-idx="${mIdx}" data-item-id="${cId}" type="button" title="${btnTitle}" style="${btnStyle}">Use</button>
+                  </div>
+                `;
+              }
+            }
+          }
+        }
+        if (carriedHtml) {
+          html += `
+            <div class="stockpile-category-section" style="margin-bottom: 12px;">
+              <div class="stockpile-category-header">
+                <span>🎒 Party Carried Consumables</span>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 4px; padding: 4px 8px;">
+                ${carriedHtml}
+              </div>
+            </div>
+          `;
+        }
+      }
+
       html += `
         <div class="stockpile-category-section">
           <div class="stockpile-category-header">
@@ -7389,6 +7720,18 @@ export class HUD {
         const isHeld = count > 0;
         const countStr = count.toLocaleString();
 
+        const isFood = ConsumableSystem.getInstance().isFoodItem(item.id);
+        let eatBtnHtml = '';
+        if (isFood && this.isOutpost && isHeld) {
+          const check = ConsumableSystem.getInstance().canUseConsumable(item.id, { fromStockpile: true });
+          const disabledAttr = check.canUse ? '' : 'disabled';
+          const btnTitle = check.canUse ? 'Eat from Outpost stockpile' : (check.reason || 'Cannot eat');
+          const btnStyle = check.canUse
+            ? 'padding: 2px 6px; font-size: 9px; background: #15803d; border: 1px solid #22c55e; color: #fff; border-radius: 3px; cursor: pointer;'
+            : 'padding: 2px 6px; font-size: 9px; background: rgba(75, 85, 99, 0.3); border: 1px solid rgba(75, 85, 99, 0.5); color: #9ca3af; border-radius: 3px; cursor: not-allowed; opacity: 0.6;';
+          eatBtnHtml = `<button class="stockpile-eat-btn btn-action" ${disabledAttr} data-food-id="${item.id}" type="button" title="${btnTitle}" style="${btnStyle}">Eat</button>`;
+        }
+
         html += `
           <div class="stockpile-card ${isHeld ? 'card-held' : 'card-empty'}" data-stockpile-card="${item.id}">
             <div class="stockpile-card-left">
@@ -7398,9 +7741,12 @@ export class HUD {
                 <span class="stockpile-card-cat">${item.id}</span>
               </div>
             </div>
-            <span class="stockpile-card-count ${isHeld ? 'count-positive' : 'count-zero'}" data-stockpile-count-id="${item.id}">
-              ${countStr}
-            </span>
+            <div style="display: flex; align-items: center; gap: 6px;">
+              ${eatBtnHtml}
+              <span class="stockpile-card-count ${isHeld ? 'count-positive' : 'count-zero'}" data-stockpile-count-id="${item.id}">
+                ${countStr}
+              </span>
+            </div>
           </div>
         `;
       }
