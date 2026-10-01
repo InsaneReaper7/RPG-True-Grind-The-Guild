@@ -647,6 +647,7 @@ async function runMilestone46Tests() {
     const scoutProg = new ProgressionSystem(classesData, 'Guild Hero');
     scoutProg.setClassLevel('scout', 1);
     const playerInstance = new Player(scene, 10, 10, dummyPlayerData, bows, 32, 'hero', scoutProg);
+    playerInstance.setActiveClass('scout');
 
     playerInstance.equipWeapon(bows);
     assert.equal(playerInstance.equippedWeapon?.id, 'bows', 'Main weapon equipped with bows');

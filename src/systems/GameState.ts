@@ -20,6 +20,13 @@ import { DataLoader } from '../utils/DataLoader.ts';
 import { LockpickingSystem } from './LockpickingSystem.ts';
 import { isCraftingClass, getBaseItemId } from '../utils/gearResolver.ts';
 
+export function validateCharacterName(name: string | null | undefined, defaultName: string): string {
+  if (typeof name !== 'string') return defaultName;
+  const trimmed = name.trim();
+  if (!trimmed) return defaultName;
+  return trimmed.slice(0, 16);
+}
+
 export class GameState {
   public static readonly SAVE_STORAGE_KEY = 'RPG_TRUE_GRIND_SAVE_V1';
   public static readonly SAVE_VERSION = 1;
@@ -129,6 +136,10 @@ export class GameState {
     return GameState.instance;
   }
 
+  public static validateCharacterName(name: string | null | undefined, defaultName: string = 'Guild Hero'): string {
+    return validateCharacterName(name, defaultName);
+  }
+
   public resolveStartingKit(
     kitId: string,
     rng: () => number = Math.random
@@ -161,12 +172,13 @@ export class GameState {
    * One-time boot initialization from player.json data.
    * Never called again after initial game start.
    */
-  public initFromPlayerData(playerData: PlayerData, startingKitId?: string): void {
+  public initFromPlayerData(playerData: PlayerData, startingKitId?: string, heroName?: string): void {
     if (this.isInitialized) return;
 
     const resolvedKit = startingKitId ? this.resolveStartingKit(startingKitId) : null;
     const initialMainWeapon = resolvedKit ? resolvedKit.mainWeaponId : playerData.startingWeaponId;
     const initialOffhandWeapon = resolvedKit ? resolvedKit.offhandWeaponId : null;
+    const finalHeroName = validateCharacterName(heroName, playerData.name || 'Guild Hero');
 
     const known = playerData.knownSkillIds ? [...playerData.knownSkillIds] : [];
     const equipped = playerData.equippedSkillIds ? [...playerData.equippedSkillIds] : [];
@@ -249,7 +261,7 @@ export class GameState {
 
     const heroSnapshot: CharacterSnapshot = {
       id: playerData.id || 'hero',
-      name: playerData.name,
+      name: finalHeroName,
       avatarKey: 'player-avatar',
       hp: playerData.maxHp,
       criticalHp: playerData.criticalHpMax,
@@ -325,6 +337,7 @@ export class GameState {
     startingKitId: string = 'sword_and_shield',
     rng: () => number = Math.random
   ): CharacterSnapshot {
+    const validatedName = validateCharacterName(name, 'Kaelen');
     const resolvedKit = this.resolveStartingKit(startingKitId, rng);
     const seedProficiencies: Record<string, TrainableStat> = {
       [resolvedKit.mainWeaponId]: { level: 0, currentExp: 0 },
@@ -343,7 +356,7 @@ export class GameState {
 
     const recruitSnapshot: CharacterSnapshot = {
       id,
-      name,
+      name: validatedName,
       avatarKey: 'companion-avatar',
       avatarTextureKey: 'companion-avatar',
       hp: 50,
@@ -1944,11 +1957,14 @@ export class GameState {
     };
   }
 
-  public createFourthMemberRecruitSnapshot(recruitDef?: RecruitDef): CharacterSnapshot {
+  public createFourthMemberRecruitSnapshot(recruitDef?: RecruitDef, name?: string): CharacterSnapshot {
     const dataLoader = DataLoader.getInstance();
-    const def = recruitDef || dataLoader.getFourthMemberRecruitDef();
-    const recruitName = def.name || 'Barris';
-    const weaponId = def.equippedWeaponId || 'healing_staff';
+    const def = (recruitDef && typeof recruitDef === 'object' && 'name' in recruitDef)
+      ? recruitDef
+      : dataLoader.getFourthMemberRecruitDef();
+    const defaultRecruitName = def?.name || 'Barris';
+    const recruitName = typeof name === 'string' ? validateCharacterName(name, defaultRecruitName) : defaultRecruitName;
+    const weaponId = def?.equippedWeaponId || 'healing_staff';
 
     const seedProficiencies: Record<string, TrainableStat> = {
       staff: { level: 0, currentExp: 0 },
@@ -2211,7 +2227,7 @@ export class GameState {
     }
   }
 
-  public resetToDefault(playerData?: PlayerData, startingKitId?: string): void {
+  public resetToDefault(playerData?: PlayerData, startingKitId?: string, heroName?: string): void {
     this.snapshot = null;
     this.partySnapshots = [];
     this.isInitialized = false;
@@ -2244,7 +2260,7 @@ export class GameState {
 
     const data = playerData || DataLoader.getInstance().getPlayer();
     if (data) {
-      this.initFromPlayerData(data, startingKitId);
+      this.initFromPlayerData(data, startingKitId, heroName);
     }
   }
 

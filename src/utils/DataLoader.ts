@@ -44,7 +44,9 @@ import type {
   ItemDef,
   ItemsData,
   RecruitDef,
-  RecruitsData
+  RecruitsData,
+  CraftingConfigData,
+  IntroNarrativeData
 } from '../types/game.ts';
 import { HiddenSkillSystem } from '../systems/HiddenSkillSystem.ts';
 import { resolveGearStats, getBaseItemId, isCraftingClass } from './gearResolver.ts';
@@ -76,6 +78,8 @@ export class DataLoader {
   private gatheringNodesConfig!: GatheringNodesConfig;
   private itemsData!: ItemsData;
   private recruitsData!: RecruitsData;
+  private craftingConfigData?: CraftingConfigData;
+  private introNarrativeData?: IntroNarrativeData;
 
   private constructor() {}
 
@@ -87,7 +91,7 @@ export class DataLoader {
   }
 
   public async loadAll(): Promise<void> {
-    const [player, weapons, classes, enemies, skills, statusEffects, buildables, rooms, hiddenSkills, skillBooks, researchTree, alchemyRecipes, cookingRecipes, blacksmithRecipes, bowyerRecipes, armors, armorsmithRecipes, foods, moodEffects, dungeon, gathering, items, recruits] = await Promise.all([
+    const [player, weapons, classes, enemies, skills, statusEffects, buildables, rooms, hiddenSkills, skillBooks, researchTree, alchemyRecipes, cookingRecipes, blacksmithRecipes, bowyerRecipes, armors, armorsmithRecipes, foods, moodEffects, dungeon, gathering, items, recruits, craftingConfig, introNarrative] = await Promise.all([
       fetch('/data/player.json').then((res) => res.json()),
       fetch('/data/weapons.json').then((res) => res.json()),
       fetch('/data/classes.json').then((res) => res.json()),
@@ -110,7 +114,9 @@ export class DataLoader {
       fetch('/data/dungeonConfig.json').then((res) => res.json()).catch(() => null),
       fetch('/data/gatheringNodes.json').then((res) => res.json()).catch(() => null),
       fetch('/data/items.json').then((res) => res.json()).catch(() => null),
-      fetch('/data/recruits.json').then((res) => res.json()).catch(() => null)
+      fetch('/data/recruits.json').then((res) => res.json()).catch(() => null),
+      fetch('/data/craftingConfig.json').then((res) => res.json()).catch(() => null),
+      fetch('/data/introNarrative.json').then((res) => res.json()).catch(() => null)
     ]);
 
     this.playerData = player as PlayerData;
@@ -143,6 +149,12 @@ export class DataLoader {
         quote: 'Barris has arrived from Guild HQ equipped with a Healing Staff. Our four-member expedition is complete!'
       }
     };
+    if (craftingConfig) {
+      this.craftingConfigData = craftingConfig as CraftingConfigData;
+    }
+    if (introNarrative) {
+      this.introNarrativeData = introNarrative as IntroNarrativeData;
+    }
     if (dungeon) {
       this.dungeonConfig = dungeon as DungeonConfig;
     }
@@ -843,11 +855,25 @@ export class DataLoader {
   }
 
   public getSalvageRefundRate(): number {
-    return this.blacksmithRecipesData?.salvageRefundRate ?? 0.5;
+    return this.craftingConfigData?.salvageRefundRate ?? this.blacksmithRecipesData?.salvageRefundRate ?? 0.5;
   }
 
   public getSalvageExpRate(): number {
-    return this.blacksmithRecipesData?.salvageExpRate ?? 0.5;
+    return this.craftingConfigData?.salvageExpRate ?? this.blacksmithRecipesData?.salvageExpRate ?? 0.5;
+  }
+
+  public getIntroNarrative(): IntroNarrativeData {
+    return this.introNarrativeData || {
+      title: 'Welcome to the Frontier Outpost',
+      speaker: 'Valerie',
+      lines: [
+        '"Welcome to the edge of the uncharted territory. I was the first settler to establish this outpost—honed as a Scout, bow and daggers in hand."',
+        '"You\'re our newest recruit: a clean slate with no skills, no class, and everything to prove. Here in the Guild, you learn by doing."',
+        '"Choose your starting weapon kit and tell me your name. We have an expedition to prepare."'
+      ],
+      defaultHeroName: 'Guild Hero',
+      tabHint: 'Tip: Press [Tab] anytime to hide or show the HUD info panel.'
+    };
   }
 
   public getFoodsData(): FoodsData {

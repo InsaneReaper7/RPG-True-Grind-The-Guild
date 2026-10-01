@@ -199,7 +199,10 @@ async function run() {
     assert.equal(unlockedClassName.innerText, 'Valerie unlocked Combat Medic!', 'Announcement must explicitly attribute Valerie');
 
     // 2. Wait for auto-dismiss timer of Modal 1 (100ms) + transition delay (200ms)
-    await sleep(350);
+    const startM2 = Date.now();
+    while (hud.getActiveAnnouncement()?.data.name !== 'Parry' && Date.now() - startM2 < 1500) {
+      await sleep(10);
+    }
 
     // 3. Modal 2 must now be displayed automatically (No AFK stall)
     assert.equal(hud.isAnnouncementShowing(), true, 'Second announcement must be active');
@@ -213,7 +216,10 @@ async function run() {
     assert.equal(discoveredSkillName.innerText, 'Valerie discovered Parry!', 'Announcement must explicitly attribute Valerie for Parry');
 
     // 4. Wait for auto-dismiss timer of Modal 2 (100ms) + transition delay (200ms)
-    await sleep(350);
+    const startM3 = Date.now();
+    while (hud.getActiveAnnouncement()?.data.name !== 'Dual Wielding' && Date.now() - startM3 < 1500) {
+      await sleep(10);
+    }
 
     // 5. Modal 3 must now be displayed automatically for Kaelen
     assert.equal(hud.isAnnouncementShowing(), true, 'Third announcement must be active');
@@ -223,7 +229,10 @@ async function run() {
     assert.equal(discoveredSkillName.innerText, 'Kaelen discovered Dual Wielding!', 'Announcement must explicitly attribute Kaelen');
 
     // 6. Wait for Modal 3 auto-dismiss (100ms) + transition (200ms)
-    await sleep(350);
+    const startEnd = Date.now();
+    while (hud.isAnnouncementShowing() && Date.now() - startEnd < 1500) {
+      await sleep(10);
+    }
 
     assert.equal(hud.isAnnouncementShowing(), false, 'All announcements finished');
     assert.equal(unlockModal.classList.contains('active'), false);
@@ -461,14 +470,20 @@ async function run() {
     assert.equal(hud.getActiveAnnouncement()?.memberName, 'Valerie');
 
     // Wait for auto-dismiss (100ms) + transition (200ms)
-    await sleep(350);
+    const startSS = Date.now();
+    while (hud.getActiveAnnouncement()?.data.name !== 'Short Swords' && Date.now() - startSS < 1500) {
+      await sleep(10);
+    }
 
     // Second modal is Short Swords
     assert.equal(hud.getActiveAnnouncement()?.data.name, 'Short Swords');
     assert.equal(hud.getActiveAnnouncement()?.memberName, 'Valerie');
 
     // Wait for auto-dismiss (100ms) + transition (200ms)
-    await sleep(350);
+    const startEnd5 = Date.now();
+    while (hud.isAnnouncementShowing() && Date.now() - startEnd5 < 1500) {
+      await sleep(10);
+    }
     assert.equal(hud.isAnnouncementShowing(), false, 'Both announcements fully shown in sequence');
 
     hud.destroy();

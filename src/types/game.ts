@@ -457,6 +457,19 @@ export interface BlacksmithRecipeDef {
   description: string;
 }
 
+export interface CraftingConfigData {
+  salvageRefundRate?: number;
+  salvageExpRate?: number;
+}
+
+export interface IntroNarrativeData {
+  title: string;
+  speaker: string;
+  lines: string[];
+  defaultHeroName: string;
+  tabHint?: string;
+}
+
 export interface BlacksmithRecipesData {
   salvageRefundRate?: number;
   salvageExpRate?: number;

@@ -409,24 +409,25 @@ async function runTutorialExpansionTests() {
     tutorial.reset();
 
     const steps = TUTORIAL_STEPS;
-    assert.equal(steps.length, 13, 'Tutorial must contain exactly 13 steps');
-    assert.equal(steps[9].id, 'alchemy_station', 'Step 10 must be alchemy_station');
-    assert.equal(steps[10].id, 'alchemy_crafting', 'Step 11 must be alchemy_crafting');
-    assert.equal(steps[11].id, 'knowledge_base', 'Step 12 must be knowledge_base');
-    assert.equal(steps[12].id, 'summon_fourth_member', 'Step 13 must be summon_fourth_member');
+    assert.equal(steps.length, 14, 'Tutorial must contain exactly 14 steps');
+    assert.equal(steps[9].id, 'equip_gear', 'Step 10 must be equip_gear');
+    assert.equal(steps[10].id, 'alchemy_station', 'Step 11 must be alchemy_station');
+    assert.equal(steps[11].id, 'alchemy_crafting', 'Step 12 must be alchemy_crafting');
+    assert.equal(steps[12].id, 'knowledge_base', 'Step 13 must be knowledge_base');
+    assert.equal(steps[13].id, 'summon_fourth_member', 'Step 14 must be summon_fourth_member');
 
-    // Verify sub-objectives of step 10
-    (tutorial as any).currentStepIndex = 9;
-    let step10 = tutorial.getCurrentStep();
-    assert.ok(step10?.objective.includes('5 RP'), 'Step 10 includes 5 RP research');
-    assert.ok(step10?.objective.includes('Place it in the Outpost'), 'Step 10 includes Outpost placement');
-
-    // Verify sub-objectives of step 11
+    // Verify sub-objectives of step 11 (alchemy_station)
     (tutorial as any).currentStepIndex = 10;
     let step11 = tutorial.getCurrentStep();
-    assert.ok(step11?.objective.includes('Health Potion'), 'Step 11 includes Health Potion sub-objective');
-    assert.ok(step11?.objective.includes('Mana Potion'), 'Step 11 includes Mana Potion sub-objective');
-    assert.ok(step11?.objective.includes('Revive Potion'), 'Step 11 includes Revive Potion sub-objective');
+    assert.ok(step11?.objective.includes('5 RP'), 'Step 11 includes 5 RP research');
+    assert.ok(step11?.objective.includes('Place it in the Outpost'), 'Step 11 includes Outpost placement');
+
+    // Verify sub-objectives of step 12 (alchemy_crafting)
+    (tutorial as any).currentStepIndex = 11;
+    let step12 = tutorial.getCurrentStep();
+    assert.ok(step12?.objective.includes('Health Potion'), 'Step 12 includes Health Potion sub-objective');
+    assert.ok(step12?.objective.includes('Mana Potion'), 'Step 12 includes Mana Potion sub-objective');
+    assert.ok(step12?.objective.includes('Revive Potion'), 'Step 12 includes Revive Potion sub-objective');
 
     // Migration test 1: Mid-tutorial save with stable ID
     tutorial.loadFromState({
@@ -447,7 +448,7 @@ async function runTutorialExpansionTests() {
       isCompleted: false,
       isDismissed: false
     });
-    assert.equal(tutorial.getCurrentStepIndex(), 11, 'Old knowledge_base migrates to new index 11');
+    assert.equal(tutorial.getCurrentStepIndex(), 12, 'Old knowledge_base migrates to new index 12');
     assert.equal(tutorial.getCurrentStep()?.id, 'knowledge_base');
 
     // Migration test 3: Completed tutorial save
@@ -470,7 +471,7 @@ async function runTutorialExpansionTests() {
     });
     assert.equal(tutorial.isTutorialDismissed(), true, 'Dismissed tutorial status preserved');
 
-    console.log('✔ Test 5 passed: 13-step progression, dynamic sub-objectives, and save migrations verified.');
+    console.log('✔ Test 5 passed: 14-step progression, dynamic sub-objectives, and save migrations verified.');
   }
 
   // ---------------------------------------------------------------------------
@@ -497,14 +498,14 @@ async function runTutorialExpansionTests() {
     // With 3 members, tutorial active at step 6: 4th member summon is GATED!
     const canSummonMidTutorial = (tutorial.getCurrentStep()?.id === 'summon_fourth_member') ||
       tutorial.isTutorialCompleted() || tutorial.isTutorialDismissed();
-    assert.equal(canSummonMidTutorial, false, 'Cannot summon 4th member before Step 13 while tutorial is active');
+    assert.equal(canSummonMidTutorial, false, 'Cannot summon 4th member before Step 14 while tutorial is active');
 
-    // Advance to Step 13 (summon_fourth_member):
-    (tutorial as any).currentStepIndex = 12; // Step 13
+    // Advance to Step 14 (summon_fourth_member):
+    (tutorial as any).currentStepIndex = 13; // Step 14
     assert.equal(tutorial.getCurrentStep()?.id, 'summon_fourth_member');
-    const canSummonAtStep13 = (tutorial.getCurrentStep()?.id === 'summon_fourth_member') ||
+    const canSummonAtStep14 = (tutorial.getCurrentStep()?.id === 'summon_fourth_member') ||
       tutorial.isTutorialCompleted() || tutorial.isTutorialDismissed();
-    assert.equal(canSummonAtStep13, true, 'Can summon 4th member when Step 13 is reached');
+    assert.equal(canSummonAtStep14, true, 'Can summon 4th member when Step 14 is reached');
 
     // Create 4th recruit snapshot:
     const recruitSnapshot = gameState.createFourthMemberRecruitSnapshot(4, 5);

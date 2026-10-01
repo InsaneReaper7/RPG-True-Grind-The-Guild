@@ -1,12 +1,15 @@
 import Phaser from 'phaser';
 import { Entity } from './Entity.ts';
 import type { PlayerData, WeaponDef, CharacterSnapshot, ArmorDef, ArmorSlot, ArmorWeightClass, FoodQuality, FoodItemInstance } from '../types/game.ts';
+import type { ClassifiedRoom } from '../systems/RoomClassifier.ts';
 import { getArmorHpSplit, getArmorProficiencyId } from '../types/game.ts';
 import { GameState } from '../systems/GameState.ts';
 import { DataLoader } from '../utils/DataLoader.ts';
 import { ProgressionSystem } from '../systems/ProgressionSystem.ts';
-import type { ClassifiedRoom } from '../systems/RoomClassifier.ts';
-import { isCraftingClass, getBaseItemId } from '../utils/gearResolver.ts';
+import { isCraftingClass, getBaseItemId, canEquipBowDaggerSidearm } from '../utils/gearResolver.ts';
+import { TutorialSystem } from '../systems/TutorialSystem.ts';
+
+export { canEquipBowDaggerSidearm };
 
 export class Player extends Entity {
   public id: string;
@@ -143,10 +146,40 @@ export class Player extends Entity {
     }
   }
 
+  private static equipEventListeners: Array<(item: any, member: Player, slot: string) => void> = [];
+  private equipListeners: Array<(item: any, slot: string) => void> = [];
+
+  public static onAnyGearEquipped(listener: (item: any, member: Player, slot: string) => void): () => void {
+    Player.equipEventListeners.push(listener);
+    return () => {
+      Player.equipEventListeners = Player.equipEventListeners.filter(l => l !== listener);
+    };
+  }
+
+  public onGearEquipped(listener: (item: any, slot: string) => void): () => void {
+    this.equipListeners.push(listener);
+    return () => {
+      this.equipListeners = this.equipListeners.filter(l => l !== listener);
+    };
+  }
+
+  public emitGearEquipped(item: any, slot: string): void {
+    if (!item) return;
+    for (const listener of this.equipListeners) {
+      listener(item, slot);
+    }
+    for (const listener of Player.equipEventListeners) {
+      listener(item, this, slot);
+    }
+    TutorialSystem.getInstance().notifyGearEquipped(item, this, slot);
+  }
+
   public setActiveClass(classId: string | null): boolean {
+    const prevClass = this.activeClass;
     if (classId === null) {
       this.activeClass = null;
       console.log(`[Player:${this.entityName}] Cleared active class (Unranked).`);
+      this.handleClassChangeOffhandCheck(prevClass);
       return true;
     }
     if (isCraftingClass(classId)) {
@@ -156,11 +189,28 @@ export class Player extends Entity {
     if (this.progression.isClassUnlocked(classId)) {
       this.activeClass = classId;
       console.log(`[Player:${this.entityName}] Active class set to: ${classId}`);
+      this.handleClassChangeOffhandCheck(prevClass);
       this.checkSkillUnlocks();
       return true;
     }
     console.warn(`[Player:${this.entityName}] Cannot set active class to '${classId}': not unlocked.`);
     return false;
+  }
+
+  private handleClassChangeOffhandCheck(prevClass: string | null): void {
+    if (prevClass === 'scout' && this.activeClass !== 'scout') {
+      const isBow = this.equippedWeapon?.category === 'ranged' || this.equippedWeapon?.proficiencyId === 'bows' || (this.equippedWeapon && getBaseItemId(this.equippedWeapon.id) === 'bows');
+      const isDagger = this.offhandWeapon && (getBaseItemId(this.offhandWeapon.id) === 'daggers' || this.offhandWeapon.proficiencyId === 'daggers');
+      if (isBow && isDagger && this.offhandWeapon) {
+        const removed = this.offhandWeapon;
+        this.offhandWeapon = null;
+        this.addItem(removed.id, 1);
+        this.updateEncumbrance();
+        console.log(`[Player:${this.entityName}] Off-hand Dagger unequipped (Scout class required)`);
+        const hud = (globalThis as any).window?.activeHUD || (this.scene as any)?.hud;
+        hud?.showToast('Off-hand Dagger unequipped (Scout class required)', 'warn', 3000);
+      }
+    }
   }
 
   public checkSkillUnlocks(): string[] {
@@ -204,16 +254,19 @@ export class Player extends Entity {
     this.equippedWeapon = resolvedWeapon;
     this.attackRangeTiles = resolvedWeapon.attackRangeTiles ?? ((resolvedWeapon.category === 'magic' && resolvedWeapon.baseDamage > 0) || resolvedWeapon.category === 'ranged' ? 4 : 1);
     if (resolvedWeapon.twoHanded && this.offhandWeapon) {
-      const isScout = this.activeClass === 'scout' || (this.progression && this.progression.getClassLevel('scout') > 0);
       const isBow = resolvedWeapon.category === 'ranged' || resolvedWeapon.proficiencyId === 'bows' || getBaseItemId(resolvedWeapon.id) === 'bows';
       const isDagger = getBaseItemId(this.offhandWeapon.id) === 'daggers' || this.offhandWeapon.proficiencyId === 'daggers';
-      if (!(isScout && isBow && isDagger)) {
+      const isScoutSidearm = (this.activeClass === 'scout') && isBow && isDagger;
+      if (!isScoutSidearm) {
         console.log(`[Player:${this.entityName}] Unequipped offhand because ${resolvedWeapon.name} is two-handed`);
         this.offhandWeapon = null;
       }
     }
     this.updateEncumbrance();
     console.log(`[Player:${this.entityName}] Equipped main weapon: ${resolvedWeapon.name} (Range: ${this.attackRangeTiles} tiles)`);
+    if (weapon !== null && resolvedWeapon.id !== 'fist') {
+      this.emitGearEquipped(resolvedWeapon, 'main');
+    }
     return true;
   }
 
@@ -228,10 +281,7 @@ export class Player extends Entity {
       console.log(`[Player:${this.entityName}] Unequipped offhand weapon`);
       return true;
     }
-    const isScout = this.activeClass === 'scout' || (this.progression && this.progression.getClassLevel('scout') > 0);
-    const isBow = this.equippedWeapon?.category === 'ranged' || this.equippedWeapon?.proficiencyId === 'bows' || (this.equippedWeapon && getBaseItemId(this.equippedWeapon.id) === 'bows');
-    const isDagger = getBaseItemId(weapon.id) === 'daggers' || weapon.proficiencyId === 'daggers';
-    const isBowSidearmDagger = isScout && isBow && isDagger;
+    const isBowSidearmDagger = canEquipBowDaggerSidearm(this, weapon);
 
     const isJavelin = this.activeClass === 'javelin' || (this.progression && this.progression.getClassLevel('javelin') > 0);
     const mainBaseId = this.equippedWeapon ? getBaseItemId(this.equippedWeapon.id) : '';
@@ -260,6 +310,7 @@ export class Player extends Entity {
       this.offhandWeapon = weapon;
       this.updateEncumbrance();
       console.log(`[Player:${this.entityName}] Equipped ${isAllowedSidearm ? 'sidearm weapon' : 'shield'} in offhand: ${weapon.name}`);
+      this.emitGearEquipped(weapon, 'offhand');
       return true;
     }
     // Second one-handed weapon requires Dual Wielding unlocked
@@ -274,6 +325,7 @@ export class Player extends Entity {
     this.offhandWeapon = weapon;
     this.updateEncumbrance();
     console.log(`[Player:${this.entityName}] Equipped offhand weapon: ${weapon.name}`);
+    this.emitGearEquipped(weapon, 'offhand');
     return true;
   }
 
@@ -592,6 +644,9 @@ export class Player extends Entity {
     this.drawHpBar();
     this.updateEncumbrance();
     console.log(`[Player:${this.entityName}] ${armor ? `Equipped ${slot}: ${armor.name} (+${armor.hpBonus} HP)` : `Unequipped ${slot}`}. Current HP: ${this.hp}/${this.maxHp}, Crit HP: ${this.criticalHp}/${this.maxCriticalHp}`);
+    if (armor) {
+      this.emitGearEquipped(armor, slot);
+    }
     return true;
   }
 

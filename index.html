@@ -912,8 +912,7 @@
     #party-overview-modal.active {
       display: flex;
     }
-    /* Summon Recruit Modal Styles */
-    #summon-recruit-modal {
+    #summon-recruit-modal, #new-game-modal, #summon-fourth-modal, #salvage-confirm-modal {
       position: absolute;
       top: 50%;
       left: 50%;
@@ -931,7 +930,7 @@
       pointer-events: auto;
       z-index: 120;
     }
-    #summon-recruit-modal.active {
+    #summon-recruit-modal.active, #new-game-modal.active, #summon-fourth-modal.active, #salvage-confirm-modal.active {
       display: flex;
     }
     /* Stockpile Overview Modal Styles */
@@ -2369,7 +2368,10 @@
   <div id="game-container">
     <div id="hud-overlay">
       <div class="hud-card" id="hud-card">
-        <div id="location-badge" style="font-size: 11px; color: #a78bfa; font-weight: bold; margin-bottom: 2px;">DUNGEON FLOOR 1</div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+          <div id="location-badge" style="font-size: 11px; color: #a78bfa; font-weight: bold;">DUNGEON FLOOR 1</div>
+          <span id="hud-tab-hint" style="font-size: 10px; color: #9ca3af; font-family: monospace; background: rgba(255, 255, 255, 0.08); padding: 1px 5px; border-radius: 3px; cursor: default;" title="Press [Tab] anytime to hide or show this panel">[Tab] Hide panel</span>
+        </div>
         <div id="day-clock-badge" style="font-size: 11px; color: #fbbf24; font-weight: bold; margin-bottom: 2px;">🌅 Day 1 (0%)</div>
         <div id="room-badge" style="font-size: 11px; color: #60a5fa; font-weight: 600; margin-bottom: 4px; display: none;">🏠 Room: None</div>
         <div id="floor-timer-badge" style="font-size: 11px; color: #f87171; font-weight: bold; margin-bottom: 4px; display: none;">⏳ Floor Respawn: 5:00</div>
@@ -3240,6 +3242,10 @@
         <p style="font-size: 13px; color: #94a3b8; margin: 10px 0 16px; line-height: 1.45;">
           Select a starting weapon kit for recruit <strong>Kaelen</strong>. As a newly arrived guild member, Kaelen begins as a genuine blank slate: <strong style="color: #e2e8f0;">Level 0 in every proficiency, no class, and no skills</strong>.
         </p>
+        <div style="margin-bottom: 12px;">
+          <label for="recruit-name-input" style="display: block; font-size: 12px; font-weight: 600; color: #cbd5e1; margin-bottom: 4px;">Recruit Name (1–16 chars):</label>
+          <input type="text" id="recruit-name-input" maxlength="16" value="Kaelen" placeholder="Kaelen" style="width: 100%; box-sizing: border-box; padding: 8px 12px; background: rgba(15, 23, 42, 0.9); border: 1px solid #475569; border-radius: 6px; color: #f1f5f9; font-size: 13px;" />
+        </div>
         <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px;">
           <label style="display: flex; align-items: center; gap: 12px; background: rgba(30, 41, 59, 0.85); padding: 10px 14px; border-radius: 8px; cursor: pointer; border: 1px solid #475569;">
             <input type="radio" name="recruit-weapon-kit" value="sword_and_shield" checked style="accent-color: #a855f7;" />
@@ -3272,7 +3278,113 @@
         </div>
         <div style="display: flex; justify-content: flex-end; gap: 10px;">
           <button id="confirm-summon-recruit-btn" class="btn-action" style="background: #7c3aed; border-color: #a855f7; padding: 8px 18px; font-size: 13px; font-weight: bold; color: #fff; border-radius: 6px; cursor: pointer;" type="button">
-            Summon Kaelen to Party
+            Summon to Party
+          </button>
+        </div>
+      </div>
+      <!-- Summon Fourth Member Modal -->
+      <div id="summon-fourth-modal" class="custom-modal">
+        <div class="modal-header">
+          <div>
+            <div class="modal-title" style="color: #38bdf8; display: flex; align-items: center; gap: 8px;">
+              <span>👥</span> <span>Summon Fourth Recruit — Barris</span>
+            </div>
+            <div class="modal-subtitle">Contact Guild HQ to summon your fourth party member to complete the expedition party.</div>
+          </div>
+          <button id="close-summon-fourth-btn" class="modal-close-btn" type="button">✕</button>
+        </div>
+        <div style="margin: 12px 0 16px;">
+          <label for="fourth-name-input" style="display: block; font-size: 12px; font-weight: 600; color: #cbd5e1; margin-bottom: 4px;">Recruit Name (1–16 chars):</label>
+          <input type="text" id="fourth-name-input" maxlength="16" value="Barris" placeholder="Barris" style="width: 100%; box-sizing: border-box; padding: 8px 12px; background: rgba(15, 23, 42, 0.9); border: 1px solid #475569; border-radius: 6px; color: #f1f5f9; font-size: 13px;" />
+        </div>
+        <div style="background: rgba(30, 41, 59, 0.85); padding: 12px 14px; border-radius: 8px; border: 1px solid #475569; margin-bottom: 20px;">
+          <div style="font-weight: bold; color: #38bdf8; font-size: 13px;">✨ Fixed Starting Kit: Healing Staff</div>
+          <div style="font-size: 11px; color: #94a3b8; margin-top: 4px; line-height: 1.4;">Equipped with a Healing Staff and the Minor Heal skill to sustain the party through difficult dungeon expeditions.</div>
+        </div>
+        <div style="display: flex; justify-content: flex-end; gap: 10px;">
+          <button id="confirm-summon-fourth-btn" class="btn-action" style="background: #0284c7; border-color: #38bdf8; padding: 8px 18px; font-size: 13px; font-weight: bold; color: #fff; border-radius: 6px; cursor: pointer;" type="button">
+            Summon to Party
+          </button>
+        </div>
+      </div>
+      <!-- New Game Setup Modal -->
+      <div id="new-game-modal" class="custom-modal" style="width: 560px; border-color: #3b82f6; box-shadow: 0 0 35px rgba(59, 130, 246, 0.4);">
+        <div class="modal-header">
+          <div>
+            <div class="modal-title" style="color: #60a5fa; display: flex; align-items: center; gap: 8px;">
+              <span>⚔️</span> <span id="new-game-title">Welcome to the Frontier Outpost</span>
+            </div>
+            <div class="modal-subtitle" id="new-game-speaker">Valerie, Outpost Founder</div>
+          </div>
+          <button id="close-new-game-btn" class="modal-close-btn" type="button">✕</button>
+        </div>
+        <div id="new-game-intro-text" style="background: rgba(15, 23, 42, 0.7); border-left: 3px solid #3b82f6; padding: 10px 14px; margin: 10px 0 14px; border-radius: 0 8px 8px 0; font-size: 12px; color: #cbd5e1; line-height: 1.5; font-style: italic;">
+          <!-- Populated from DataLoader.getIntroNarrative() -->
+        </div>
+        <div id="new-game-tab-hint" style="font-size: 11px; color: #94a3b8; margin-bottom: 12px; background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.25); border-radius: 6px; padding: 6px 10px;">
+          💡 Tip: Press [Tab] anytime to hide or show the HUD info panel.
+        </div>
+        <div style="margin-bottom: 14px;">
+          <label for="new-game-hero-name" style="display: block; font-size: 12px; font-weight: 600; color: #cbd5e1; margin-bottom: 4px;">Guild Hero Name (1–16 chars):</label>
+          <input type="text" id="new-game-hero-name" maxlength="16" value="Guild Hero" placeholder="Guild Hero" style="width: 100%; box-sizing: border-box; padding: 8px 12px; background: rgba(15, 23, 42, 0.9); border: 1px solid #475569; border-radius: 6px; color: #f1f5f9; font-size: 13px;" />
+        </div>
+        <div style="font-size: 12px; font-weight: 600; color: #cbd5e1; margin-bottom: 8px;">Starting Weapon Kit:</div>
+        <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px;">
+          <label style="display: flex; align-items: center; gap: 12px; background: rgba(30, 41, 59, 0.85); padding: 10px 14px; border-radius: 8px; cursor: pointer; border: 1px solid #475569;">
+            <input type="radio" name="hero-weapon-kit" value="sword_and_shield" checked style="accent-color: #3b82f6;" />
+            <div>
+              <div style="font-weight: bold; color: #f1f5f9; font-size: 13px;">⚔️ Sword and Shield</div>
+              <div style="font-size: 11px; color: #94a3b8;">Short Swords + Shield (balanced melee defense & offense)</div>
+            </div>
+          </label>
+          <label style="display: flex; align-items: center; gap: 12px; background: rgba(30, 41, 59, 0.85); padding: 10px 14px; border-radius: 8px; cursor: pointer; border: 1px solid #475569;">
+            <input type="radio" name="hero-weapon-kit" value="2h_longsword" style="accent-color: #3b82f6;" />
+            <div>
+              <div style="font-weight: bold; color: #f1f5f9; font-size: 13px;">🗡️ Two-Handed Longsword</div>
+              <div style="font-size: 11px; color: #94a3b8;">Two-Handed Longsword (heavy damage two-handed melee)</div>
+            </div>
+          </label>
+          <label style="display: flex; align-items: center; gap: 12px; background: rgba(30, 41, 59, 0.85); padding: 10px 14px; border-radius: 8px; cursor: pointer; border: 1px solid #475569;">
+            <input type="radio" name="hero-weapon-kit" value="bow_and_dagger" style="accent-color: #3b82f6;" />
+            <div>
+              <div style="font-weight: bold; color: #f1f5f9; font-size: 13px;">🏹 Bow and Dagger</div>
+              <div style="font-size: 11px; color: #94a3b8;">Hunting Bow + Daggers sidearm (ranged skirmisher)</div>
+            </div>
+          </label>
+          <label style="display: flex; align-items: center; gap: 12px; background: rgba(30, 41, 59, 0.85); padding: 10px 14px; border-radius: 8px; cursor: pointer; border: 1px solid #475569;">
+            <input type="radio" name="hero-weapon-kit" value="random_magic_staff" style="accent-color: #3b82f6;" />
+            <div>
+              <div style="font-weight: bold; color: #f1f5f9; font-size: 13px;">🔮 Magic Staff</div>
+              <div style="font-size: 11px; color: #94a3b8;">Staff conduit channeling random elemental offensive magic</div>
+            </div>
+          </label>
+        </div>
+        <div style="display: flex; justify-content: flex-end; gap: 10px;">
+          <button id="confirm-new-game-btn" class="btn-action" style="background: #2563eb; border-color: #60a5fa; padding: 8px 20px; font-size: 13px; font-weight: bold; color: #fff; border-radius: 6px; cursor: pointer;" type="button">
+            Begin Expedition
+          </button>
+        </div>
+      </div>
+      <!-- In-Game Salvage Confirmation Modal -->
+      <div id="salvage-confirm-modal" class="custom-modal" style="width: 440px; border-color: #f59e0b; box-shadow: 0 0 30px rgba(245, 158, 11, 0.35);">
+        <div class="modal-header">
+          <div>
+            <div class="modal-title" style="color: #fbbf24; display: flex; align-items: center; gap: 8px;">
+              <span>⚠️</span> <span id="salvage-modal-title">Confirm Salvage</span>
+            </div>
+            <div class="modal-subtitle">Dismantling crafted equipment</div>
+          </div>
+          <button id="close-salvage-confirm-btn" class="modal-close-btn" type="button">✕</button>
+        </div>
+        <p id="salvage-confirm-msg" style="font-size: 13px; color: #e2e8f0; margin: 14px 0 20px; line-height: 1.5;">
+          This crafted bonus gear will be dismantled for materials and EXP. Are you sure?
+        </p>
+        <div style="display: flex; justify-content: flex-end; gap: 10px;">
+          <button id="cancel-salvage-btn" class="btn-action" style="background: #475569; border-color: #64748b; padding: 7px 16px; font-size: 12px; font-weight: bold; color: #e2e8f0; border-radius: 6px; cursor: pointer;" type="button">
+            Cancel
+          </button>
+          <button id="confirm-salvage-action-btn" class="btn-action" style="background: #dc2626; border-color: #f87171; padding: 7px 16px; font-size: 12px; font-weight: bold; color: #fff; border-radius: 6px; cursor: pointer;" type="button">
+            Confirm Salvage
           </button>
         </div>
       </div>

@@ -45,11 +45,17 @@ async function bootstrap() {
       GameState.getInstance().loadFromDisk();
     }
   };
-  (window as any).startNewGame = (confirmed: boolean = true) => {
-    if ((HUD as any).activeInstance) {
+  (window as any).startNewGame = (confirmed: boolean = true, kitId?: string, heroName?: string) => {
+    if (kitId && heroName) {
+      if ((HUD as any).activeInstance) {
+        (HUD as any).activeInstance.startNewGameWithConfig(heroName, kitId);
+      } else {
+        GameState.getInstance().resetToDefault(dataLoader.getPlayer(), kitId, heroName);
+      }
+    } else if ((HUD as any).activeInstance) {
       (HUD as any).activeInstance.handleTitleNewGame(confirmed);
     } else {
-      GameState.getInstance().resetToDefault(dataLoader.getPlayer());
+      GameState.getInstance().resetToDefault(dataLoader.getPlayer(), kitId, heroName);
     }
   };
   (window as any).resetSave = () => {

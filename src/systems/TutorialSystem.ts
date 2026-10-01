@@ -15,7 +15,7 @@ export const TUTORIAL_STEPS: TutorialStepDef[] = [
   {
     id: 'guild_roster',
     stepNumber: 1,
-    totalSteps: 13,
+    totalSteps: 14,
     title: 'Guild Roster',
     objective: 'Summon recruit Kaelen from Guild HQ',
     instruction: 'Select a starting weapon kit for Kaelen and confirm to expand your starting party to 3.',
@@ -25,17 +25,17 @@ export const TUTORIAL_STEPS: TutorialStepDef[] = [
   {
     id: 'movement',
     stepNumber: 2,
-    totalSteps: 13,
+    totalSteps: 14,
     title: 'Movement & Formation',
     objective: 'Left-Click ground to move party',
-    instruction: 'Left-click anywhere to move. Notice our rigid 2×2 block formation! Pan camera with WASD/mouse drag; zoom with scroll wheel.',
+    instruction: 'Left-click anywhere to move. Notice our rigid 2×2 block formation! Pan camera with WASD/mouse drag; zoom with scroll wheel. (Tip: Press [Tab] anytime to hide or show the HUD info panel).',
     valerieQuote: 'Kaelen has joined us. Notice our tight 2×2 block formation! Move by clicking anywhere on the ground. Pan camera with WASD and zoom with the scroll wheel.',
     location: 'outpost'
   },
   {
     id: 'first_expedition',
     stepNumber: 3,
-    totalSteps: 13,
+    totalSteps: 14,
     title: 'First Expedition',
     objective: 'Enter the Dungeon Portal',
     instruction: 'Walk onto the glowing portal crystal in the center of the Outpost to plunge into Dungeon Floor 1.',
@@ -45,7 +45,7 @@ export const TUTORIAL_STEPS: TutorialStepDef[] = [
   {
     id: 'basic_combat',
     stepNumber: 4,
-    totalSteps: 13,
+    totalSteps: 14,
     title: 'Basic Combat & Autocast',
     objective: 'Left-Click an enemy to engage & defeat it',
     instruction: 'Left-click an enemy to attack. Skills autocast on cooldown. (Tip: Downed allies carry no penalty — standard difficulty wipes safely return home with all loot).',
@@ -55,17 +55,17 @@ export const TUTORIAL_STEPS: TutorialStepDef[] = [
   {
     id: 'safe_gathering',
     stepNumber: 5,
-    totalSteps: 13,
-    title: 'Safe Gathering',
-    objective: 'Left-Click an Ore vein or Tree to channel and harvest',
-    instruction: 'Approach a resource node and left-click to harvest. Taking damage interrupts channeling, but genuinely cleared rooms are completely safe.',
-    valerieQuote: 'Room clear! Genuinely cleared rooms are completely safe from ambushes. Approach a resource node and left-click to channel. Taking damage interrupts the harvest, but here we are safe.',
+    totalSteps: 14,
+    title: 'Gathering Mode',
+    objective: 'Press [F] and drag a box over a node to gather it',
+    instruction: 'Press [F] to enter Gathering Mode and drag a marquee box over a resource node to queue your party to gather it. Single-click harvesting also works anytime.',
+    valerieQuote: 'Room clear! Single-click gathering works, but Gathering Mode is far more efficient. Press [F] and drag a box over a node to queue the party to harvest it!',
     location: 'dungeon'
   },
   {
     id: 'return_outpost',
     stepNumber: 6,
-    totalSteps: 13,
+    totalSteps: 14,
     title: 'Return to Outpost',
     objective: 'Return to base with gathered Ore and Research Points',
     instruction: 'Interact with the Teleporter Crystal to return to the Outpost with your materials and RP (or use an Escape Stone [T], once you can craft one).',
@@ -75,7 +75,7 @@ export const TUTORIAL_STEPS: TutorialStepDef[] = [
   {
     id: 'research_station',
     stepNumber: 7,
-    totalSteps: 13,
+    totalSteps: 14,
     title: 'Outpost Loop: Research',
     objective: 'Unlock the Blacksmithing Station in Research Tree',
     instruction: 'Open the Research Tree (click "Research Tree" in Outpost controls or click the Research Station) and unlock Blacksmithing Station for 5 RP.',
@@ -85,7 +85,7 @@ export const TUTORIAL_STEPS: TutorialStepDef[] = [
   {
     id: 'construct_station',
     stepNumber: 8,
-    totalSteps: 13,
+    totalSteps: 14,
     title: 'Outpost Loop: Build Mode',
     objective: 'Press [B] and place the Blacksmithing Station',
     instruction: 'Press [B] or click "Build Mode", select the Blacksmithing Station from the palette, and click a valid floor tile to build it with Wood.',
@@ -95,7 +95,7 @@ export const TUTORIAL_STEPS: TutorialStepDef[] = [
   {
     id: 'forge_upgrade',
     stepNumber: 9,
-    totalSteps: 13,
+    totalSteps: 14,
     title: 'Outpost Loop: Forge Upgrade',
     objective: 'Interact with Blacksmithing Station & forge an upgrade',
     instruction: 'Exit Build Mode [B], click your Blacksmithing Station, and forge an upgrade (like Iron Shortsword or Shield) using gathered Ore.',
@@ -103,9 +103,19 @@ export const TUTORIAL_STEPS: TutorialStepDef[] = [
     location: 'outpost'
   },
   {
-    id: 'alchemy_station',
+    id: 'equip_gear',
     stepNumber: 10,
-    totalSteps: 13,
+    totalSteps: 14,
+    title: 'Equip Crafted Gear',
+    objective: 'Open Party Overview [O] and equip your new gear',
+    instruction: 'Open Party Overview [O] and drag your newly forged weapon or armor from the inventory into the matching paperdoll slot to equip it.',
+    valerieQuote: 'Gear crafted! Open Party Overview [O] and drag your new equipment into the matching paperdoll slot on your character to equip it.',
+    location: 'outpost'
+  },
+  {
+    id: 'alchemy_station',
+    stepNumber: 11,
+    totalSteps: 14,
     title: 'Outpost Loop: Alchemy Station',
     objective: 'Research Alchemy Station (5 RP) ☐ / Place it in the Outpost ☐',
     instruction: 'Unlock the Alchemy Station in the Research Tree for 5 RP, then enter Build Mode [B] and place it in an enclosed room.',
@@ -114,8 +124,8 @@ export const TUTORIAL_STEPS: TutorialStepDef[] = [
   },
   {
     id: 'alchemy_crafting',
-    stepNumber: 11,
-    totalSteps: 13,
+    stepNumber: 12,
+    totalSteps: 14,
     title: 'Alchemy: Brewing Potions',
     objective: 'Health Potion ☐ / Mana Potion ☐ / Revive Potion ☐',
     instruction: 'Open the Alchemy Station to brew 1 Health Potion, 1 Mana Potion, and 1 Revive Potion (craft Bone Meal first).',
@@ -124,8 +134,8 @@ export const TUTORIAL_STEPS: TutorialStepDef[] = [
   },
   {
     id: 'knowledge_base',
-    stepNumber: 12,
-    totalSteps: 13,
+    stepNumber: 13,
+    totalSteps: 14,
     title: 'Codex & Knowledge Base',
     objective: 'Press [K] to consult the Guild Knowledge Base',
     instruction: 'You have mastered the core game loop! For deep references on all classes, weapons, proficiencies, recipes, and bestiary records, open the Knowledge Base with [K].',
@@ -134,8 +144,8 @@ export const TUTORIAL_STEPS: TutorialStepDef[] = [
   },
   {
     id: 'summon_fourth_member',
-    stepNumber: 13,
-    totalSteps: 13,
+    stepNumber: 14,
+    totalSteps: 14,
     title: 'Guild Roster: Final Member',
     objective: 'Summon your fourth party member from Guild HQ',
     instruction: 'Open Party Overview [O] and click "+ Summon Recruit" to summon our fourth party member equipped with a Healing Staff.',
@@ -239,6 +249,13 @@ export class TutorialSystem {
   public notifyResearchUnlocked(nodeId: string): void {
     if (nodeId === 'research_alchemy_station' || nodeId === 'alchemy_station') {
       this.checkAlchemyStationProgress();
+    }
+  }
+
+  public notifyGearEquipped(_itemDef: any, _member?: any, _slot?: string): void {
+    const current = this.getCurrentStep();
+    if (current && current.id === 'equip_gear') {
+      this.advanceStep();
     }
   }
 
@@ -408,12 +425,9 @@ export class TutorialSystem {
       if (actualStep < 9) {
         // Steps 0..8 map to the same IDs: guild_roster .. forge_upgrade
         this.currentStepIndex = Math.max(0, Math.min(actualStep, TUTORIAL_STEPS.length - 1));
-      } else if (actualStep === 9) {
-        // Old step 9 was 'knowledge_base', which is now step index 11 (Step 12)
-        const kbIdx = TUTORIAL_STEPS.findIndex(s => s.id === 'knowledge_base');
-        this.currentStepIndex = kbIdx !== -1 ? kbIdx : 11;
       } else {
-        this.currentStepIndex = Math.max(0, Math.min(actualStep, TUTORIAL_STEPS.length - 1));
+        // Old step 9+ was past forge_upgrade; shift by 1 to skip equip_gear
+        this.currentStepIndex = Math.max(0, Math.min(actualStep + 1, TUTORIAL_STEPS.length - 1));
       }
     } else {
       this.currentStepIndex = 0;

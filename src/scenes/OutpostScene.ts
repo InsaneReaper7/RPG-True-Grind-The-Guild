@@ -492,11 +492,14 @@ export class OutpostScene extends Phaser.Scene {
         console.log(`[Debug] Set Vanguard to Level ${level} and active on ${targetMember.entityName}`);
       }
     };
-    (window as any).__spawnTestCompanion = (startingKitId?: string) => {
-      return this.spawnTestCompanion(startingKitId);
+    (window as any).__spawnTestCompanion = (startingKitId?: string, customName?: string) => {
+      return this.spawnTestCompanion(startingKitId, customName);
     };
-    (window as any).__summonThirdPartyMember = (startingKitId?: string) => {
-      return this.summonThirdPartyMember(startingKitId);
+    (window as any).__summonThirdPartyMember = (startingKitId?: string, companionName?: string) => {
+      return this.summonThirdPartyMember(startingKitId, companionName);
+    };
+    (window as any).__summonFourthPartyMember = (companionName?: string) => {
+      return this.summonFourthPartyMember(companionName);
     };
     (window as any).__setPartyLeader = (idxOrName: number | string) => {
       let idx = -1;
@@ -1166,15 +1169,15 @@ export class OutpostScene extends Phaser.Scene {
     this.hud?.openRecruitModal();
   }
 
-  public summonThirdPartyMember(startingKitId: string = 'sword_and_shield'): boolean {
+  public summonThirdPartyMember(startingKitId: string = 'sword_and_shield', companionName?: string): boolean {
     if (this.party.length >= 3) {
       this.hud?.showToast('Third party member is already in the guild party.', 'info', 2500);
       return false;
     }
-    return this.spawnTestCompanion(startingKitId);
+    return this.spawnTestCompanion(startingKitId, companionName);
   }
 
-  public summonFourthPartyMember(): boolean {
+  public summonFourthPartyMember(fourthMemberName?: string): boolean {
     if (this.party.length >= 4) {
       this.hud?.showToast('Party is full (maximum 4 members)', 'warn', 3000);
       return false;
@@ -1183,7 +1186,7 @@ export class OutpostScene extends Phaser.Scene {
       this.hud?.showToast('Must have 3 party members before summoning fourth member.', 'warn', 3000);
       return false;
     }
-    const success = this.spawnTestCompanion();
+    const success = this.spawnTestCompanion(undefined, fourthMemberName);
     if (success) {
       const recruitDef = DataLoader.getInstance().getFourthMemberRecruitDef();
       const quote = recruitDef.quote || 'Our four-member expedition is complete!';
@@ -1193,7 +1196,7 @@ export class OutpostScene extends Phaser.Scene {
     return success;
   }
 
-  public spawnTestCompanion(startingKitId?: string): boolean {
+  public spawnTestCompanion(startingKitId?: string, customName?: string): boolean {
     if (this.party.length >= 4) {
       this.hud.showToast('Party is full (maximum 4 members)', 'warn', 3000);
       return false;
@@ -1204,7 +1207,8 @@ export class OutpostScene extends Phaser.Scene {
     const companionIndex = this.party.length;
     const companionId = `companion_${companionIndex}`;
     const recruitDef = dataLoader.getFourthMemberRecruitDef();
-    const companionName = companionIndex === 1 ? 'Valerie' : companionIndex === 2 ? 'Kaelen' : (recruitDef?.name || 'Recruit');
+    const defaultName = companionIndex === 1 ? 'Valerie' : companionIndex === 2 ? 'Kaelen' : (recruitDef?.name || 'Barris');
+    const companionName = GameState.validateCharacterName(customName || defaultName, defaultName);
 
     // Find adjacent walkable unoccupied tile near leader in 2x2 formation
     const offsets = [
@@ -1258,7 +1262,7 @@ export class OutpostScene extends Phaser.Scene {
         state: 'idle'
       };
     } else if (companionIndex === 3) {
-      snap = GameState.getInstance().createFourthMemberRecruitSnapshot(recruitDef);
+      snap = GameState.getInstance().createFourthMemberRecruitSnapshot(recruitDef, companionName);
     } else {
       const kit = startingKitId || (companionIndex === 2 ? 'sword_and_shield' : 'mace');
       snap = GameState.getInstance().createBlankRecruitSnapshot(companionName, companionId, kit);
@@ -1287,11 +1291,11 @@ export class OutpostScene extends Phaser.Scene {
     this.updatePlayerRoomLookup(true);
     this.hud.update(this.player, this.progressionSystem, this.time.now, this.party);
     this.hud.showToast(`👥 ${companionName} joined the party!`, 'success', 3000);
-    if (companionName === 'Kaelen' || this.party.length >= 3) {
+    if (companionIndex === 2 || this.party.length >= 3) {
       if (TutorialSystem.getInstance().getCurrentStep()?.id === 'guild_roster') {
         TutorialSystem.getInstance().completeStepId('guild_roster');
         this.time.delayedCall(1200, () => {
-          this.hud?.showToast('🏹 Valerie: "Kaelen has joined us. Notice our tight 2×2 block formation! Move by clicking anywhere on the ground. Pan camera with WASD and zoom with the scroll wheel."', 'info', 7000);
+          this.hud?.showToast(`🏹 Valerie: "${companionName} has joined us. Notice our tight 2×2 block formation! Move by clicking anywhere on the ground. Pan camera with WASD and zoom with the scroll wheel."`, 'info', 7000);
         });
       }
     }

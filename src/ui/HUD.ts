@@ -10,7 +10,7 @@ import { ResearchSystem } from '../systems/ResearchSystem.ts';
 import { TutorialSystem, type TutorialStepDef } from '../systems/TutorialSystem.ts';
 import { CraftingSystem } from '../systems/CraftingSystem.ts';
 import { ConsumableSystem } from '../systems/ConsumableSystem.ts';
-import { isCraftingClass, getBaseItemId } from '../utils/gearResolver.ts';
+import { isCraftingClass, getBaseItemId, canEquipBowDaggerSidearm } from '../utils/gearResolver.ts';
 
 export interface AnnouncementItem {
   type: 'class' | 'skill';
@@ -323,6 +323,14 @@ export class HUD {
   private summonRecruitModalEl: HTMLElement | null = null;
   private closeSummonRecruitBtn: HTMLElement | null = null;
   private confirmSummonRecruitBtn: HTMLElement | null = null;
+
+  // Milestone: Playtest Round 1 (Salvage, New Game, Fourth Recruit Modals)
+  private salvageConfirmModalEl: HTMLElement | null = null;
+  private salvageModalTitleEl: HTMLElement | null = null;
+  private salvageConfirmMsgEl: HTMLElement | null = null;
+  private confirmSalvageActionBtn: HTMLButtonElement | null = null;
+  private cancelSalvageBtn: HTMLButtonElement | null = null;
+  private closeSalvageConfirmBtn: HTMLButtonElement | null = null;
 
   // Milestone: Tutorial & Onboarding Guide Elements
   private guildGuideWidgetEl: HTMLElement | null = null;
@@ -1264,14 +1272,7 @@ export class HUD {
           const step = tut.getCurrentStep();
           const canSummonFourth = tut.getIsCompleted() || tut.getIsDismissed() || (step?.id === 'summon_fourth_member');
           if (canSummonFourth) {
-            const game = (window as any).game;
-            const outpost = game?.scene?.getScene('OutpostScene');
-            if (outpost && typeof outpost.summonFourthPartyMember === 'function') {
-              outpost.summonFourthPartyMember();
-            } else if (typeof (window as any).__summonFourthPartyMember === 'function') {
-              (window as any).__summonFourthPartyMember();
-            }
-            HUD.activeInstance?.renderPartyOverviewModal();
+            HUD.activeInstance?.openSummonFourthModal();
           } else {
             this.showToast('Locked: Progress further in guild onboarding before recruiting our fourth member.', 'warn', 3000);
           }
@@ -1289,20 +1290,79 @@ export class HUD {
       this.confirmSummonRecruitBtn.onclick = () => {
         const checked = document.querySelector('input[name="recruit-weapon-kit"]:checked') as HTMLInputElement;
         const kitId = checked?.value || 'sword_and_shield';
+        const nameInput = document.getElementById('recruit-name-input') as HTMLInputElement | null;
+        const recruitName = nameInput?.value?.trim() || 'Kaelen';
         const game = (window as any).game;
         const outpost = game?.scene?.getScene('OutpostScene');
         if (outpost && typeof outpost.summonThirdPartyMember === 'function') {
-          outpost.summonThirdPartyMember(kitId);
+          outpost.summonThirdPartyMember(kitId, recruitName);
         } else if (typeof (window as any).__summonThirdPartyMember === 'function') {
-          (window as any).__summonThirdPartyMember(kitId);
+          (window as any).__summonThirdPartyMember(kitId, recruitName);
         } else if (typeof (window as any).__spawnTestCompanion === 'function') {
-          (window as any).__spawnTestCompanion(kitId);
+          (window as any).__spawnTestCompanion(kitId, recruitName);
         }
         this.closeRecruitModal();
         if (this.isPartyOverviewModalOpen()) {
           this.renderPartyOverviewModal();
         }
       };
+    }
+
+    // Fourth Member Modal Wiring
+    const closeSummonFourthBtn = document.getElementById('close-summon-fourth-btn') as HTMLButtonElement | null;
+    const confirmSummonFourthBtn = document.getElementById('confirm-summon-fourth-btn') as HTMLButtonElement | null;
+    if (closeSummonFourthBtn) {
+      closeSummonFourthBtn.onclick = () => this.closeSummonFourthModal();
+    }
+    if (confirmSummonFourthBtn) {
+      confirmSummonFourthBtn.onclick = () => {
+        const nameInput = document.getElementById('fourth-name-input') as HTMLInputElement | null;
+        const fourthName = nameInput?.value?.trim() || 'Barris';
+        const game = (window as any).game;
+        const outpost = game?.scene?.getScene('OutpostScene');
+        if (outpost && typeof outpost.summonFourthPartyMember === 'function') {
+          outpost.summonFourthPartyMember(fourthName);
+        } else if (typeof (window as any).__summonFourthPartyMember === 'function') {
+          (window as any).__summonFourthPartyMember(fourthName);
+        }
+        this.closeSummonFourthModal();
+        if (this.isPartyOverviewModalOpen()) {
+          this.renderPartyOverviewModal();
+        }
+      };
+    }
+
+    // New Game Setup Modal Wiring
+    const closeNewGameBtn = document.getElementById('close-new-game-btn') as HTMLButtonElement | null;
+    const confirmNewGameBtn = document.getElementById('confirm-new-game-btn') as HTMLButtonElement | null;
+    if (closeNewGameBtn) {
+      closeNewGameBtn.onclick = () => {
+        this.closeNewGameModal();
+        this.initTitleScreen();
+      };
+    }
+    if (confirmNewGameBtn) {
+      confirmNewGameBtn.onclick = () => {
+        const nameInput = document.getElementById('new-game-hero-name') as HTMLInputElement | null;
+        const heroName = nameInput?.value?.trim() || 'Guild Hero';
+        const checked = document.querySelector('input[name="hero-weapon-kit"]:checked') as HTMLInputElement | null;
+        const kitId = checked?.value || 'sword_and_shield';
+        this.startNewGameWithConfig(heroName, kitId);
+      };
+    }
+
+    // Salvage Confirmation Modal Wiring
+    this.salvageConfirmModalEl = document.getElementById('salvage-confirm-modal');
+    this.salvageModalTitleEl = document.getElementById('salvage-modal-title');
+    this.salvageConfirmMsgEl = document.getElementById('salvage-confirm-msg');
+    this.confirmSalvageActionBtn = document.getElementById('confirm-salvage-action-btn') as HTMLButtonElement | null;
+    this.cancelSalvageBtn = document.getElementById('cancel-salvage-btn') as HTMLButtonElement | null;
+    this.closeSalvageConfirmBtn = document.getElementById('close-salvage-confirm-btn') as HTMLButtonElement | null;
+    if (this.cancelSalvageBtn) {
+      this.cancelSalvageBtn.onclick = () => this.closeSalvageConfirmModal();
+    }
+    if (this.closeSalvageConfirmBtn) {
+      this.closeSalvageConfirmBtn.onclick = () => this.closeSalvageConfirmModal();
     }
 
     if (this.debugBtnSpawnCompanion) {
@@ -1775,6 +1835,10 @@ export class HUD {
         if (!active) return;
 
         if (e.key === 'Tab') {
+          const targetTag = (e.target as HTMLElement)?.tagName?.toLowerCase();
+          if (targetTag === 'input' || targetTag === 'textarea' || targetTag === 'select') {
+            return;
+          }
           e.preventDefault(); // Prevent default focus navigation
           active.toggleHudCard();
         } else if (e.key === '`' || e.code === 'Backquote' || e.key === '~') {
@@ -3197,6 +3261,95 @@ export class HUD {
     }
   }
 
+  public formatConsumableTooltip(itemId: string | null, slotIndex?: number): string {
+    if (!itemId) {
+      return "Empty slot: drag a consumable here, or use 'Slot ➡️' on an item.";
+    }
+
+    const dataLoader = DataLoader.getInstance();
+    const consumableSystem = ConsumableSystem.getInstance();
+    const itemDef = dataLoader.getItem(itemId) || dataLoader.getFood(itemId);
+    const itemName = itemDef?.name || itemId.replace(/_/g, ' ');
+    const desc = itemDef?.description || (itemDef as any)?.desc || '';
+
+    // What it does, read from item data / system config
+    let effect = '';
+    if (itemId === 'health_potion') {
+      const heal = (itemDef as any)?.healAmount ?? 30;
+      const cd = ((itemDef as any)?.cooldownMs ?? 10000) / 1000;
+      effect = `Restores ${heal} HP, Critical first. ${cd} s cooldown`;
+    } else if (itemId === 'mana_potion' || itemId === 'potion_mana') {
+      const recipe = dataLoader.getAlchemyRecipe?.('mana_potion');
+      const energy = recipe?.energyRestored ?? 35;
+      const regen = recipe?.buffRegenPerSec ?? 2;
+      const dur = (recipe?.buffDurationMs ?? 15000) / 1000;
+      effect = `Restores ${energy} Energy, +${regen}/s for ${dur} s`;
+    } else if (itemId === 'energy_potion') {
+      const recipe = dataLoader.getAlchemyRecipe?.('energy_potion');
+      const energy = recipe?.energyRestored ?? 35;
+      const regen = recipe?.buffRegenPerSec ?? 2;
+      const dur = (recipe?.buffDurationMs ?? 15000) / 1000;
+      effect = `Restores ${energy} Energy, +${regen}/s for ${dur} s`;
+    } else if (itemId === 'bandage') {
+      effect = 'Cures Bleed status effect';
+    } else if (itemId === 'antidote') {
+      effect = 'Cures Poison status effect';
+    } else if (itemId === 'revive_potion') {
+      effect = 'Revives a downed ally at 20% HP (3 s revive channel)';
+    } else if (itemId === 'escape_stone') {
+      effect = 'Teleports party out of dungeon to Outpost (non-combat only)';
+    } else if (consumableSystem.isFoodItem(itemId)) {
+      const food = dataLoader.getFood(itemId);
+      if (food) {
+        const hpRegen = food.buff?.hpRegenPerSec ?? 1;
+        const durSec = (food.buff?.durationMs ?? 30000) / 1000;
+        effect = `Restores ${food.hungerRestored} Hunger and grants Well Fed (+${hpRegen} HP/s for ${durSec} s)`;
+      } else {
+        effect = 'Restores Hunger and grants Well Fed health regeneration';
+      }
+    } else {
+      effect = desc || 'Consumable item';
+    }
+
+    // Who it targets, one line from the smart-targeting rule
+    let target = '';
+    if (itemId === 'health_potion') {
+      target = 'Selected member if injured, else the lowest HP%';
+    } else if (itemId === 'mana_potion' || itemId === 'potion_mana' || itemId === 'energy_potion') {
+      target = 'Selected member, else party leader';
+    } else if (itemId === 'bandage') {
+      target = 'Selected member if bleeding, else any bleeding member';
+    } else if (itemId === 'antidote') {
+      target = 'Selected member if poisoned, else any poisoned member';
+    } else if (itemId === 'revive_potion') {
+      target = 'Nearest downed member';
+    } else if (itemId === 'escape_stone') {
+      target = 'Entire party';
+    } else if (consumableSystem.isFoodItem(itemId)) {
+      target = 'Selected member, else party leader';
+    } else {
+      target = 'Selected member';
+    }
+
+    const carried = consumableSystem.getPartyCarriedCount(itemId);
+
+    const lines: string[] = [];
+    if (slotIndex !== undefined) {
+      lines.push(`[Key ${slotIndex + 1}] ${itemName}`);
+    } else {
+      lines.push(itemName);
+    }
+    if (desc) lines.push(desc);
+    if (effect && effect !== desc) lines.push(`Effect: ${effect}`);
+    lines.push(`Targets: ${target}`);
+    lines.push(`Party carried: ${carried}`);
+    if (slotIndex !== undefined) {
+      lines.push('Right-click to clear');
+    }
+
+    return lines.join('\n');
+  }
+
   public renderQuickBar(): void {
     if (!this.quickBarHudEl) return;
     const consumableSystem = ConsumableSystem.getInstance();
@@ -3218,13 +3371,12 @@ export class HUD {
         if (iconEl) iconEl.innerText = '➕';
         if (countEl) countEl.innerText = '';
         if (cdEl) cdEl.style.height = '0%';
-        slotEl.title = `Slot ${i + 1}: Empty (drag consumable here or right-click to clear)`;
+        slotEl.title = this.formatConsumableTooltip(null, i);
         continue;
       }
 
       slotEl.classList.remove('empty');
       const itemDef = dataLoader.getItem(itemId) || dataLoader.getFood(itemId);
-      const name = itemDef?.name || itemId.replace(/_/g, ' ');
       const icon = (itemDef as any)?.icon || (consumableSystem.isFoodItem(itemId) ? '🍲' : '🧪');
       if (iconEl) iconEl.innerText = icon;
 
@@ -3248,7 +3400,7 @@ export class HUD {
         }
       }
 
-      slotEl.title = `[Key ${i + 1}] ${name} (${carriedCount} carried) | Right-click to clear`;
+      slotEl.title = this.formatConsumableTooltip(itemId, i);
     }
   }
 
@@ -3619,7 +3771,8 @@ export class HUD {
       // 4. Off-hand
       const offWpn = member.offhandWeapon;
       let offhandHtml = '';
-      if (isTwoHandedMain) {
+      const isBowWithScout = member.equippedWeapon?.id === 'bows' && member.activeClass === 'scout';
+      if (isTwoHandedMain && !isBowWithScout) {
         offhandHtml = `
           <div class="equip-slot-box locked" data-slot="offhand" data-member-idx="${i}" style="grid-column: 3; grid-row: 2;">
             <div class="slot-label">
@@ -3712,7 +3865,13 @@ export class HUD {
       `;
 
       let offhandStatusHtml = '';
-      if (isDwActive) {
+      if (member.equippedWeapon?.id === 'bows' && offWpn?.id === 'daggers' && member.activeClass === 'scout') {
+        offhandStatusHtml = `
+          <div style="font-size: 10px; color: #a78bfa; margin-top: 3px;">
+            🏹 Scout Sidearm: Daggers Active (Trains Daggers)
+          </div>
+        `;
+      } else if (isDwActive) {
         offhandStatusHtml = `
           <div data-party-dw-penalty="${i}" style="font-size: 10px; color: ${dwPenaltyPct === 0 ? '#4ade80' : '#fbbf24'}; margin-top: 3px;">
             Dual Wield Penalty: -${dwPenaltyPct}% Hit Rate (DW Lv ${dwStat.level})
@@ -3850,11 +4009,13 @@ export class HUD {
           `;
         }
 
+        const rowTitle = isConsumable ? this.formatConsumableTooltip(itemId) : itemTitle;
+
         personalItemsHtml += `
-          <div class="personal-inv-row" draggable="${isConsumable ? 'true' : 'false'}" data-drag-item="${itemId}" style="display: flex; justify-content: space-between; align-items: center; background: rgba(17, 24, 39, 0.6); padding: 3px 6px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.05); font-size: 10px; cursor: ${isConsumable ? 'grab' : 'default'};">
+          <div class="personal-inv-row" draggable="${isConsumable ? 'true' : 'false'}" data-drag-item="${itemId}" title="${rowTitle}" style="display: flex; justify-content: space-between; align-items: center; background: rgba(17, 24, 39, 0.6); padding: 3px 6px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.05); font-size: 10px; cursor: ${isConsumable ? 'grab' : 'default'};">
             <div style="display: flex; align-items: center; gap: 5px; min-width: 0; flex: 1;">
               <span>${itemIcon}</span>
-              <span style="color: ${hasBonus ? '#fde047' : '#f3f4f6'}; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 80px;" title="${itemTitle}">${itemName}</span>
+              <span style="color: ${hasBonus ? '#fde047' : '#f3f4f6'}; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 80px;" title="${rowTitle}">${itemName}</span>
               <span style="color: #a78bfa; font-weight: bold;">x${count}</span>
               <span style="color: #9ca3af; font-size: 9px;">(${(itemWeight * count).toFixed(1)} kg)</span>
             </div>
@@ -4316,7 +4477,9 @@ export class HUD {
       }
 
       if (targetSlot === 'offhand') {
-        if (member.equippedWeapon?.twoHanded) return false;
+        if (member.equippedWeapon?.twoHanded) {
+          return canEquipBowDaggerSidearm(member, weapon);
+        }
         if (weapon.category === 'offhand' || weapon.id === 'shields') return true;
         if (weapon.category === 'melee_1h' && !weapon.twoHanded && member.progression.isDualWieldUnlocked()) return true;
         return false;
@@ -4460,12 +4623,15 @@ export class HUD {
       }
 
       if (member.equippedWeapon?.twoHanded) {
-        this.showToast('⚠️ Cannot equip offhand while wielding a two-handed weapon!', 'warn');
-        return false;
+        if (!canEquipBowDaggerSidearm(member, weapon)) {
+          this.showToast('⚠️ Cannot equip offhand while wielding a two-handed weapon!', 'warn');
+          return false;
+        }
       }
 
       const isShield = weapon.category === 'offhand' || weapon.id === 'shields' || getBaseItemId(weapon.id) === 'shields';
-      if (!isShield && !member.progression.isDualWieldUnlocked()) {
+      const isSidearm = canEquipBowDaggerSidearm(member, weapon);
+      if (!isShield && !isSidearm && !member.progression.isDualWieldUnlocked()) {
         this.showToast('🔒 Dual Wielding locked! Requires two 1H melee weapon proficiencies Lv 30+.', 'warn');
         return false;
       }
@@ -7272,26 +7438,32 @@ export class HUD {
 
       if (row.canSalvage) {
         const handleSalvage = (salvageQty: number) => {
+          const doSalvage = () => {
+            const result = CraftingSystem.applySalvage(player, row.id, {
+              count: salvageQty,
+              source: row.source,
+              station,
+              party
+            });
+            if (result.success) {
+              this.showToast(result.message, 'success', 3000);
+              if (station === 'blacksmithing') this.renderBlacksmithingModal(player, progression);
+              else if (station === 'armorsmithing') this.renderArmorsmithingModal(player, progression);
+              else if (station === 'bowyer') this.renderBowyerModal(player, progression);
+              this.update(player, progression, 0);
+            } else {
+              this.showToast(result.message, 'error', 3000);
+            }
+          };
+
           if (row.isBonusGear) {
-            const confirmed = typeof window !== 'undefined' && typeof window.confirm === 'function'
-              ? window.confirm(`Salvage ${row.name} (${row.bonusText})?\nThis crafted bonus gear will be dismantled for materials and EXP.`)
-              : true;
-            if (!confirmed) return;
-          }
-          const result = CraftingSystem.applySalvage(player, row.id, {
-            count: salvageQty,
-            source: row.source,
-            station,
-            party
-          });
-          if (result.success) {
-            this.showToast(result.message, 'success', 3000);
-            if (station === 'blacksmithing') this.renderBlacksmithingModal(player, progression);
-            else if (station === 'armorsmithing') this.renderArmorsmithingModal(player, progression);
-            else if (station === 'bowyer') this.renderBowyerModal(player, progression);
-            this.update(player, progression, 0);
+            this.openSalvageConfirmModal(
+              'Confirm Salvage',
+              `Salvage ${row.name} (${row.bonusText})?\nThis crafted bonus gear will be dismantled for materials and EXP.`,
+              doSalvage
+            );
           } else {
-            this.showToast(result.message, 'error', 3000);
+            doSalvage();
           }
         };
 
@@ -7711,12 +7883,13 @@ export class HUD {
                 const btnStyle = check.canUse
                   ? 'padding: 2px 6px; font-size: 9px; background: rgba(59, 130, 246, 0.4); border: 1px solid #3b82f6; color: #ffffff; border-radius: 3px; cursor: pointer;'
                   : 'padding: 2px 6px; font-size: 9px; background: rgba(75, 85, 99, 0.3); border: 1px solid rgba(75, 85, 99, 0.5); color: #9ca3af; border-radius: 3px; cursor: not-allowed; opacity: 0.6;';
+                const carriedTooltip = this.formatConsumableTooltip(cId);
                 carriedHtml += `
-                  <div class="stockpile-carried-row" style="display: flex; justify-content: space-between; align-items: center; background: rgba(17, 24, 39, 0.7); padding: 4px 8px; border-radius: 4px; border: 1px solid rgba(56, 189, 248, 0.2); font-size: 11px;">
+                  <div class="stockpile-carried-row" title="${carriedTooltip}" style="display: flex; justify-content: space-between; align-items: center; background: rgba(17, 24, 39, 0.7); padding: 4px 8px; border-radius: 4px; border: 1px solid rgba(56, 189, 248, 0.2); font-size: 11px;">
                     <div style="display: flex; align-items: center; gap: 6px;">
                       <span style="font-weight: 600; color: #38bdf8;">[${member.entityName}]</span>
                       <span>${(itemDef as any)?.icon || '🧪'}</span>
-                      <span style="color: #f3f4f6;">${name}</span>
+                      <span style="color: #f3f4f6;" title="${carriedTooltip}">${name}</span>
                       <span style="color: #a78bfa; font-weight: bold;">x${qty}</span>
                     </div>
                     <button class="party-item-use-btn btn-action" ${disabledAttr} data-member-idx="${mIdx}" data-item-id="${cId}" type="button" title="${btnTitle}" style="${btnStyle}">Use</button>
@@ -7766,12 +7939,15 @@ export class HUD {
           eatBtnHtml = `<button class="stockpile-eat-btn btn-action" ${disabledAttr} data-food-id="${item.id}" type="button" title="${btnTitle}" style="${btnStyle}">Eat</button>`;
         }
 
+        const isConsumable = catDef.id === 'consumables' || ConsumableSystem.getInstance().isConsumable(item.id);
+        const cardTitle = isConsumable ? this.formatConsumableTooltip(item.id) : item.name;
+
         html += `
-          <div class="stockpile-card ${isHeld ? 'card-held' : 'card-empty'}" data-stockpile-card="${item.id}">
+          <div class="stockpile-card ${isHeld ? 'card-held' : 'card-empty'}" data-stockpile-card="${item.id}" title="${cardTitle}">
             <div class="stockpile-card-left">
               <span class="stockpile-card-icon">${item.icon}</span>
               <div class="stockpile-card-info">
-                <span class="stockpile-card-name" title="${item.name}">${item.name}</span>
+                <span class="stockpile-card-name" title="${cardTitle}">${item.name}</span>
                 <span class="stockpile-card-cat">${item.id}</span>
               </div>
             </div>
@@ -8619,16 +8795,58 @@ export class HUD {
       return;
     }
 
-    // Starting new game
-    gameState.clearSave();
+    if (this.titleOverwriteConfirmEl) {
+      this.titleOverwriteConfirmEl.style.display = 'none';
+    }
+
+    this.closeTitleScreen();
+    this.openNewGameModal();
+  }
+
+  public openNewGameModal(): void {
+    const modal = document.getElementById('new-game-modal');
+    if (!modal) return;
+    const dl = DataLoader.getInstance();
+    const narrative = dl.getIntroNarrative();
+    const introEl = document.getElementById('new-game-intro-text');
+    if (introEl && narrative?.lines) {
+      introEl.innerHTML = narrative.lines.map((l: string) => `<p style="margin: 4px 0;">${l}</p>`).join('');
+    }
+    const titleEl = document.getElementById('new-game-title');
+    if (titleEl && narrative?.title) titleEl.innerText = narrative.title;
+    const speakerEl = document.getElementById('new-game-speaker');
+    if (speakerEl && narrative?.speaker) speakerEl.innerText = `${narrative.speaker}, Outpost Founder`;
+    const hintEl = document.getElementById('new-game-tab-hint');
+    if (hintEl && narrative?.tabHint) hintEl.innerText = `💡 ${narrative.tabHint}`;
+
+    const nameInput = document.getElementById('new-game-hero-name') as HTMLInputElement | null;
+    if (nameInput) {
+      nameInput.value = narrative?.defaultHeroName || 'Guild Hero';
+    }
+
+    modal.classList.add('active');
+  }
+
+  public closeNewGameModal(): void {
+    const modal = document.getElementById('new-game-modal');
+    if (modal) {
+      modal.classList.remove('active');
+    }
+  }
+
+  public startNewGameWithConfig(heroName: string, kitId: string): void {
+    const gameState = GameState.getInstance();
     const dataLoader = DataLoader.getInstance();
     const playerData = dataLoader.getPlayer();
+
+    gameState.clearSave();
     if (playerData) {
-      gameState.resetToDefault(playerData);
+      gameState.resetToDefault(playerData, kitId, heroName);
     }
     TutorialSystem.getInstance().reset();
     this.renderGuildGuide(TutorialSystem.getInstance().getCurrentStep());
 
+    this.closeNewGameModal();
     this.closeTitleScreen();
 
     if (typeof window !== 'undefined' && (window as any).game) {
@@ -8639,7 +8857,41 @@ export class HUD {
         outpostScene.scene.restart();
       }
     }
-    this.showToast('⚔️ Started a New Game! Guild Outpost ready.', 'success', 3500);
+    this.showToast(`⚔️ Welcome ${heroName}! Guild Outpost ready.`, 'success', 3500);
+  }
+
+  public openSummonFourthModal(): void {
+    const modal = document.getElementById('summon-fourth-modal');
+    if (modal) {
+      modal.classList.add('active');
+    }
+  }
+
+  public closeSummonFourthModal(): void {
+    const modal = document.getElementById('summon-fourth-modal');
+    if (modal) {
+      modal.classList.remove('active');
+    }
+  }
+
+  public openSalvageConfirmModal(title: string, message: string, onConfirm: () => void): void {
+    if (this.salvageModalTitleEl) this.salvageModalTitleEl.innerText = title;
+    if (this.salvageConfirmMsgEl) this.salvageConfirmMsgEl.innerText = message;
+    if (this.confirmSalvageActionBtn) {
+      this.confirmSalvageActionBtn.onclick = () => {
+        this.closeSalvageConfirmModal();
+        onConfirm();
+      };
+    }
+    if (this.salvageConfirmModalEl) {
+      this.salvageConfirmModalEl.classList.add('active');
+    }
+  }
+
+  public closeSalvageConfirmModal(): void {
+    if (this.salvageConfirmModalEl) {
+      this.salvageConfirmModalEl.classList.remove('active');
+    }
   }
 
   public handleResetSave(): void {

@@ -1518,7 +1518,7 @@ export class MainScene extends Phaser.Scene {
     return targetPos;
   }
 
-  public spawnTestCompanion(startingKitId?: string): boolean {
+  public spawnTestCompanion(startingKitId?: string, customName?: string): boolean {
     if (this.party.length >= 4) {
       this.hud.showToast('Party is full (maximum 4 members)', 'warn', 3000);
       return false;
@@ -1528,7 +1528,9 @@ export class MainScene extends Phaser.Scene {
     const classesData = dataLoader.getClassesData();
     const companionIndex = this.party.length;
     const companionId = `companion_${companionIndex}`;
-    const companionName = companionIndex === 1 ? 'Valerie' : companionIndex === 2 ? 'Kaelen' : 'Barris';
+    const recruitDef = dataLoader.getFourthMemberRecruitDef();
+    const defaultName = companionIndex === 1 ? 'Valerie' : companionIndex === 2 ? 'Kaelen' : (recruitDef?.name || 'Barris');
+    const companionName = GameState.validateCharacterName(customName || defaultName, defaultName);
 
     // Find adjacent walkable unoccupied tile near leader in 2x2 formation
     const offsets = [
@@ -1581,6 +1583,8 @@ export class MainScene extends Phaser.Scene {
         mood: DataLoader.getInstance().isMoodEnabled() ? 80 : 50,
         state: 'idle'
       };
+    } else if (companionIndex === 3) {
+      snap = GameState.getInstance().createFourthMemberRecruitSnapshot(recruitDef, companionName);
     } else {
       const kit = startingKitId || (companionIndex === 2 ? 'sword_and_shield' : 'mace');
       snap = GameState.getInstance().createBlankRecruitSnapshot(companionName, companionId, kit);
@@ -3127,7 +3131,8 @@ export class MainScene extends Phaser.Scene {
       return;
     }
 
-    this.harvestGatheringNode(channel.node, character);
+    const isFromQueue = this.gatheringWorkerNodeAssignments.has(character);
+    this.harvestGatheringNode(channel.node, character, undefined, isFromQueue);
 
     // Milestone 26: Advance Gathering Queue
     if (this.gatheringWorkerNodeAssignments.has(character)) {
@@ -3149,7 +3154,7 @@ export class MainScene extends Phaser.Scene {
     }
   }
 
-  public harvestGatheringNode(node: GatheringNode, character: Player = this.player, lootRollFn?: () => number): void {
+  public harvestGatheringNode(node: GatheringNode, character: Player = this.player, lootRollFn?: () => number, isFromQueue: boolean = false): void {
     if (node.isHarvested) return;
 
     node.isHarvested = true;
@@ -3189,7 +3194,7 @@ export class MainScene extends Phaser.Scene {
         this.hud?.showToast(`⚠️ ${character.entityName} is ENCUMBERED (-80% Movement Speed)!`, 'warn', 3000);
       }
 
-      if (TutorialSystem.getInstance().getCurrentStep()?.id === 'safe_gathering') {
+      if (isFromQueue && TutorialSystem.getInstance().getCurrentStep()?.id === 'safe_gathering') {
         TutorialSystem.getInstance().completeStepId('safe_gathering');
         this.time.delayedCall(1000, () => {
           this.hud?.showToast('🏹 Valerie: "Great harvest! Monster kills and discoveries earn Research Points (RP), while nodes yield crafting materials. When you are ready, use the portal or Escape Stone [T] to return to base."', 'info', 7500);

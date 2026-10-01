@@ -78,3 +78,15 @@ export function resolveGearStats(idOrInstanceId: string): {
   const rawItem = dataLoader.getItem(baseId);
   return { item: rawItem, instance, baseItemId: baseId };
 }
+
+export function canEquipBowDaggerSidearm(
+  character: { activeClass?: string | null; equippedWeapon?: WeaponDef | null },
+  offhandWeapon?: WeaponDef | null
+): boolean {
+  if (character.activeClass !== 'scout') return false;
+  const isBow = character.equippedWeapon?.category === 'ranged' || character.equippedWeapon?.proficiencyId === 'bows' || (character.equippedWeapon && getBaseItemId(character.equippedWeapon.id) === 'bows');
+  if (!isBow) return false;
+  if (!offhandWeapon) return true;
+  const isDagger = getBaseItemId(offhandWeapon.id) === 'daggers' || offhandWeapon.proficiencyId === 'daggers';
+  return isDagger;
+}
