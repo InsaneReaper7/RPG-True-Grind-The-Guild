@@ -829,15 +829,11 @@ export class DataLoader {
   }
 
   public getSalvageRefundRate(): number {
-    return this.blacksmithRecipesData?.salvageRefundRate ??
-      this.armorsmithRecipesData?.salvageRefundRate ??
-      this.bowyerRecipesData?.salvageRefundRate ?? 0.5;
+    return this.blacksmithRecipesData?.salvageRefundRate ?? 0.5;
   }
 
   public getSalvageExpRate(): number {
-    return this.blacksmithRecipesData?.salvageExpRate ??
-      this.armorsmithRecipesData?.salvageExpRate ??
-      this.bowyerRecipesData?.salvageExpRate ?? 0.5;
+    return this.blacksmithRecipesData?.salvageExpRate ?? 0.5;
   }
 
   public getFoodsData(): FoodsData {

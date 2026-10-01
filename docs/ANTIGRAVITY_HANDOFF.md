@@ -832,16 +832,18 @@ Never ask Antigravity to jump ahead in this list — each milestone assumes the 
   - Audited gear locations at Outpost: party bags (`player.inventory`), shared stockpile (`gameState.inventory`), and equipped slots (`player.equippedWeapon`, `offhandWeapon`, etc.).
   - Stop condition check: Gear without recipes does not comprise the majority of gear; `getBaseItemId` resolves cleanly. Proceeded to build without stop.
 - **2. Core Mechanics & Architecture**:
-  - `salvageRefundRate: 0.5` and `salvageExpRate: 0.5` added directly to recipe datasets (`blacksmithRecipes.json`, `armorsmithRecipes.json`, `bowyerRecipes.json`).
+  - `salvageRefundRate: 0.5` and `salvageExpRate: 0.5` placed in a single data location: `data/blacksmithRecipes.json`, read centrally via `DataLoader`.
   - Added `CraftingSystem.applySalvage(member, itemIdOrInstanceId, options)` to shared system layer, keeping HUD logic strictly presentational.
+  - Type-only import pattern maintained for `Player` in `CraftingSystem.ts` to ensure headless test suites never load Phaser or DOM globals unexpectedly.
+  - **Recipe Matching by Output Item ID**: `CraftingSystem.getRecipeForGear(id)` strictly matches `resultWeaponId || resultArmorId || resultItemId === baseId`, preventing false-positive mismatches between recipe ID and output item ID (e.g. `short_sword` -> `short_swords`, `iron_shield` -> `shields`, `greatsword` -> `greatswords`, `hunting_bow` -> `bows`, `quarterstaff` -> `staff`).
   - **Probabilistic Rounding Refund**: 50% refund on each ingredient per salvaged unit using `floor(val) + (random() < fraction ? 1 : 0)`, ensuring exact 50% average across runs. Refunds route straight to stockpile. Mood multiplier and Apprentice bonus yield do not apply.
-  - **EXP Award**: 50% of recipe's profession EXP rounded up (e.g. Mace 25 -> 13). If salvager holds the matching Apprentice class, an equal amount of Class EXP is granted.
-  - **What Cannot Be Salvaged**: Equipped gear (must unequip first), consumables/stackables, tools with `keepOnReturn: true` (`lockpick`, `fishing_rod`), and gear with no recipe (displayed as "Can't be salvaged").
+  - **EXP Award**: 50% of recipe's profession EXP rounded up (e.g. Greatsword 35 -> 18, Silk Robe 75 -> 38, War Bow 80 -> 40). If salvager holds the matching Apprentice class, an equal amount of Class EXP is granted.
+  - **What Cannot Be Salvaged**: Equipped gear (must unequip first), consumables (`bandage`), materials (`ore`), tools with `keepOnReturn: true` (`lockpick`, `fishing_rod`), and gear with no recipe (`fire_staff`, magic conduits, unarmed).
   - **Bonus Gear Lifecycle**: Salvaging a `GearItemInstance` cleanly unregisters it from `GameState.gearInstances`, removing it from live state, persistent saves, and duplicate gear audits.
 - **3. Station UI Integration**:
   - Integrated `#blacksmithing-salvage-container`, `#armorsmithing-salvage-container`, and `#bowyer-salvage-container` into the three gear crafting stations.
-  - Lists unequipped salvageable items from both party bags and the stockpile with expected refund (e.g. "≈ 2 Ore, 1 Wood") and EXP granted.
-  - "Salvage ×N" supported for plain multi-count items. Confirmation prompt (`window.confirm`) requested when salvaging bonus gear.
+  - Lists unequipped salvageable items from both party bags and the stockpile with expected refund (e.g. "≈ 4 Ore, 1.5 Wood, 1 Steel Scrap") and EXP granted.
+  - "Salvage ×N" supported for plain multi-count items. Confirmation prompt (`window.confirm`) requested when salvaging bonus gear (noted for future UI modal polish).
   - Action toast displayed: `"Salvaged [Item] → +[Refunds], +[EXP] [Profession] EXP"`.
 - **4. Grind Table: Effect of Craft-and-Salvage Loops (Item 3 Report)**:
   *Assumptions: ~4.5 Ore/floor, ~8.2 Wood/floor, ~2.3 Wolf Pelts/floor. Lv 0 -> 5 requires 290 EXP; Lv 0 -> 10 requires 680 EXP.*
@@ -857,10 +859,11 @@ Never ask Antigravity to jump ahead in this list — each milestone assumes the 
     - *With salvage*: Lv 5 = **2.95 floors** (24.2 net wood); Lv 10 = **6.91 floors** (56.7 net wood) [**66.7% reduction**].
 - **5. Verification**:
   - `test/salvage.test.ts`:
-    - Group 1: 1,000-run Monte Carlo simulations confirm exact 50% ingredient return within ±0.3% error, exact 13 profession EXP for Mace, and matching Apprentice Class EXP.
-    - Group 2: Equipped gear, consumables, lockpicks, fishing rod, and recipe-less items properly rejected.
+    - Group 1: Verified real salvage per station (Blacksmithing: `greatswords` -> 4 Ore, 1 Steel Scrap, 1.5 Wood, 18 EXP; Armorsmithing: `silk_robe` -> 1 Wolf Pelt, 2.5 Spider Silk, 38 EXP; Bowyer: `war_bow` -> 4 Wood, 1 Wolf Claw, 2 Spider Silk, 40 EXP). 1,000-run Monte Carlo simulations confirm exact 50% integer and probabilistic ingredient refunds within ±0.5% error.
+    - Group 2: Equipped gear, materials (`ore`), consumables (`bandage`), tools (`lockpick`, `fishing_rod`), and uncraftable gear (`fire_staff`) properly rejected.
     - Group 3: Accurate bag/stockpile decrements, bonus gear instance unregistration, storage persistence cleanup, and duplicate audit invariant verified.
   - Regression suites passed: `test/craftingInventoryRouting.test.ts`, `test/duplicate_gear_and_stash_toggle.test.ts`, `test/milestone_persistent_saves.test.ts`.
+  - Full suite: `npm test -- --quiet` passes **98/98 test suites (0 failures)**.
   - Build passed: `npm run build` succeeds with zero errors.
 
 

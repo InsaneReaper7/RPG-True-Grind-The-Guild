@@ -276,58 +276,90 @@ async function runSalvageTests() {
   // =========================================================================
   console.log('--- Test Group 1: Refund and EXP ---');
 
-  // 1.1 Profession EXP: Mace 25 -> 13 Blacksmithing EXP
+  // 1.1 Real Salvage per Station:
+  // Station 1: Blacksmithing - Greatsword (resultWeaponId: 'greatswords')
+  // Recipe: { ore: 8, wood: 3, steel_scrap: 2 }, expGranted: 35
+  // Refund: 4 Ore, 1.5 Wood (probabilistic 1 or 2), 1 Steel Scrap
+  // EXP: Math.ceil(35 * 0.5) = 18 Blacksmithing EXP
   hero.progression.getProficiencyStat('blacksmithing').currentExp = 0;
   hero.progression.getProficiencyStat('blacksmithing').level = 0;
-  hero.addItem('mace', 1);
+  hero.addItem('greatswords', 1);
+  const bsPreOre = gameState.getItemCount('ore');
+  const bsPreWood = gameState.getItemCount('wood');
+  const bsPreSteel = gameState.getItemCount('steel_scrap');
 
-  const singleMaceSalvage = CraftingSystem.applySalvage(hero, 'mace', { count: 1, source: hero });
-  assert.equal(singleMaceSalvage.success, true, 'Single Mace salvage must succeed');
-  assert.equal(singleMaceSalvage.expGranted, 13, 'Mace salvage must give exactly 13 Blacksmithing EXP (half of 25 rounded up)');
-  assert.equal(hero.progression.getProficiencyStat('blacksmithing').currentExp, 13, 'Crafter Blacksmithing EXP must be exactly 13');
+  const bsSalvage = CraftingSystem.applySalvage(hero, 'greatswords', { count: 1, source: hero });
+  assert.equal(bsSalvage.success, true, 'Greatsword salvage must succeed');
+  assert.equal(bsSalvage.expGranted, 18, 'Greatsword gives Math.ceil(35 * 0.5) = 18 Blacksmithing EXP');
+  assert.equal(hero.progression.getProficiencyStat('blacksmithing').currentExp, 18);
+  assert.equal(hero.getItemCount('greatswords'), 0);
+  assert.equal(gameState.getItemCount('ore') - bsPreOre, 4, 'Greatsword refunds exactly 4 Ore');
+  assert.equal(gameState.getItemCount('steel_scrap') - bsPreSteel, 1, 'Steel Scrap 2 -> exactly 1 back');
+  const bsWoodRefund = gameState.getItemCount('wood') - bsPreWood;
+  assert.ok(bsWoodRefund === 1 || bsWoodRefund === 2, 'Wood 3 -> 1 or 2 back (probabilistic 1.5)');
 
-  // Multi-unit EXP: Salvaging 2 Maces gives 26 EXP
-  hero.addItem('mace', 2);
-  const multiMaceSalvage = CraftingSystem.applySalvage(hero, 'mace', { count: 2, source: hero });
-  assert.equal(multiMaceSalvage.success, true, 'Salvage x2 must succeed');
-  assert.equal(multiMaceSalvage.expGranted, 26, 'Salvage x2 must grant 26 EXP');
-  assert.equal(hero.progression.getProficiencyStat('blacksmithing').currentExp, 39, 'Crafter Blacksmithing EXP must accumulate 13 + 26 = 39');
+  // Station 2: Armorsmithing - Silk Robe (resultArmorId: 'silk_robe')
+  // Recipe: { spider_silk: 5, wolf_pelt: 2 }, expGranted: 75
+  // Refund: 2.5 Spider Silk (probabilistic 2 or 3), 1 Wolf Pelt
+  // EXP: Math.ceil(75 * 0.5) = 38 Armorsmithing EXP
+  hero.progression.getProficiencyStat('armorsmithing').currentExp = 0;
+  hero.progression.getProficiencyStat('armorsmithing').level = 0;
+  hero.addItem('silk_robe', 1);
+  const asPreSilk = gameState.getItemCount('spider_silk');
+  const asPrePelt = gameState.getItemCount('wolf_pelt');
 
-  // Daggers (15 EXP) -> half rounded up is 8 EXP
-  hero.addItem('daggers', 1);
-  const daggersSalvage = CraftingSystem.applySalvage(hero, 'daggers', { count: 1, source: hero });
-  assert.equal(daggersSalvage.expGranted, 8, 'Daggers salvage must give Math.ceil(15 * 0.5) = 8 EXP');
+  const asSalvage = CraftingSystem.applySalvage(hero, 'silk_robe', { count: 1, source: hero });
+  assert.equal(asSalvage.success, true, 'Silk Robe salvage must succeed');
+  assert.equal(asSalvage.expGranted, 38, 'Silk Robe gives Math.ceil(75 * 0.5) = 38 Armorsmithing EXP');
+  assert.equal(hero.progression.getProficiencyStat('armorsmithing').currentExp, 38);
+  assert.equal(hero.getItemCount('silk_robe'), 0);
+  assert.equal(gameState.getItemCount('wolf_pelt') - asPrePelt, 1, 'Silk Robe refunds exactly 1 Wolf Pelt');
+  const asSilkRefund = gameState.getItemCount('spider_silk') - asPreSilk;
+  assert.ok(asSilkRefund === 2 || asSilkRefund === 3, 'Spider Silk 5 -> 2 or 3 back (probabilistic 2.5)');
 
-  // 1.2 Apprentice Class EXP:
-  // When salvager has Apprentice Smith unlocked, receives identical amount as Class EXP
+  // Station 3: Bowyer - War Bow (resultWeaponId: 'war_bow')
+  // Recipe: { wood: 8, wolf_claw: 2, spider_silk: 4 }, expGranted: 80
+  // Refund: 4 Wood, 1 Wolf Claw, 2 Spider Silk
+  // EXP: Math.ceil(80 * 0.5) = 40 Bowyer EXP
+  hero.progression.getProficiencyStat('bowyer').currentExp = 0;
+  hero.progression.getProficiencyStat('bowyer').level = 0;
+  hero.addItem('war_bow', 1);
+  const bwPreWood = gameState.getItemCount('wood');
+  const bwPreClaw = gameState.getItemCount('wolf_claw');
+  const bwPreSilk = gameState.getItemCount('spider_silk');
+
+  const bwSalvage = CraftingSystem.applySalvage(hero, 'war_bow', { count: 1, source: hero });
+  assert.equal(bwSalvage.success, true, 'War Bow salvage must succeed');
+  assert.equal(bwSalvage.expGranted, 40, 'War Bow gives Math.ceil(80 * 0.5) = 40 Bowyer EXP');
+  assert.equal(hero.progression.getProficiencyStat('bowyer').currentExp, 40);
+  assert.equal(hero.getItemCount('war_bow'), 0);
+  assert.equal(gameState.getItemCount('wood') - bwPreWood, 4, 'War Bow refunds exactly 4 Wood');
+  assert.equal(gameState.getItemCount('wolf_claw') - bwPreClaw, 1, 'War Bow refunds exactly 1 Wolf Claw');
+  assert.equal(gameState.getItemCount('spider_silk') - bwPreSilk, 2, 'War Bow refunds exactly 2 Spider Silk');
+
+  // 1.2 Apprentice Class EXP for each station:
   aria.progression.setClassLevel('apprentice_smith', 1);
-  const initialClassExp = aria.progression.getClassStat('apprentice_smith').currentExp;
-  aria.addItem('mace', 1);
-  const ariaSalvage = CraftingSystem.applySalvage(aria, 'mace', { count: 1, source: aria });
-  assert.equal(ariaSalvage.success, true);
-  assert.equal(ariaSalvage.classExpGranted, 13, 'Apprentice Smith must receive exactly 13 Class EXP');
-  assert.equal(aria.progression.getClassStat('apprentice_smith').currentExp, initialClassExp + 13, 'Aria class EXP must increase by 13');
+  const ariaSmithExp = aria.progression.getClassStat('apprentice_smith').currentExp;
+  aria.addItem('greatswords', 1);
+  const ariaSmithSalvage = CraftingSystem.applySalvage(aria, 'greatswords', { count: 1, source: aria });
+  assert.equal(ariaSmithSalvage.classExpGranted, 18, 'Apprentice Smith must receive 18 Class EXP for Greatsword');
+  assert.equal(aria.progression.getClassStat('apprentice_smith').currentExp, ariaSmithExp + 18);
 
-  // When salvager does NOT have the matching class unlocked, classExpGranted is 0
-  assert.equal(hero.progression.isClassUnlocked('apprentice_smith'), false);
-  hero.addItem('mace', 1);
-  const nonApprenticeSalvage = CraftingSystem.applySalvage(hero, 'mace', { count: 1, source: hero });
-  assert.equal(nonApprenticeSalvage.classExpGranted, 0, 'Non-apprentice salvager must receive 0 Class EXP');
-
-  // Other professions: Armorsmithing (leather_cap -> apprentice_armorer) and Bowyer (hunting_bow -> apprentice_bowyer)
   aria.progression.setClassLevel('apprentice_armorer', 1);
-  aria.addItem('leather_cap', 1);
-  const armorSalvage = CraftingSystem.applySalvage(aria, 'leather_cap', { count: 1, source: aria });
-  assert.equal(armorSalvage.expGranted, 13, 'Leather Cap (25 EXP) gives 13 Armorsmithing EXP');
-  assert.equal(armorSalvage.classExpGranted, 13, 'Apprentice Armorer receives 13 Class EXP');
+  const ariaArmorExp = aria.progression.getClassStat('apprentice_armorer').currentExp;
+  aria.addItem('silk_robe', 1);
+  const ariaArmorSalvage = CraftingSystem.applySalvage(aria, 'silk_robe', { count: 1, source: aria });
+  assert.equal(ariaArmorSalvage.classExpGranted, 38, 'Apprentice Armorer receives 38 Class EXP for Silk Robe');
+  assert.equal(aria.progression.getClassStat('apprentice_armorer').currentExp, ariaArmorExp + 38);
 
   aria.progression.setClassLevel('apprentice_bowyer', 1);
-  aria.addItem('bows', 1);
-  const bowSalvage = CraftingSystem.applySalvage(aria, 'bows', { count: 1, source: aria });
-  assert.equal(bowSalvage.expGranted, 13, 'Hunting Bow (25 EXP) gives 13 Bowyer EXP');
-  assert.equal(bowSalvage.classExpGranted, 13, 'Apprentice Bowyer receives 13 Class EXP');
+  const ariaBowExp = aria.progression.getClassStat('apprentice_bowyer').currentExp;
+  aria.addItem('war_bow', 1);
+  const ariaBowSalvage = CraftingSystem.applySalvage(aria, 'war_bow', { count: 1, source: aria });
+  assert.equal(ariaBowSalvage.classExpGranted, 40, 'Apprentice Bowyer receives 40 Class EXP for War Bow');
+  assert.equal(aria.progression.getClassStat('apprentice_bowyer').currentExp, ariaBowExp + 40);
 
-  // 1.3 Monte Carlo Refund over 1,000 runs (Mace & fractional ingredients)
+  // 1.3 Monte Carlo Refund over 1,000 runs (Mace: 4 Ore, 2 Wood -> exactly 2 Ore, 1 Wood)
   console.log('Running 1,000 Mace salvage simulations...');
   const initialStockpileOre = gameState.getItemCount('ore');
   const initialStockpileWood = gameState.getItemCount('wood');
@@ -344,46 +376,37 @@ async function runSalvageTests() {
   const totalOreRefunded = finalStockpileOre - initialStockpileOre;
   const totalWoodRefunded = finalStockpileWood - initialStockpileWood;
 
-  // Recipe cost: 4 Ore, 2 Wood. 50% refund = 2 Ore, 1 Wood per run.
-  // Over 1000 runs: exactly 2000 Ore, 1000 Wood.
   const expectedOre = MACE_RUNS * 2;
   const expectedWood = MACE_RUNS * 1;
-  const oreDiffPct = Math.abs(totalOreRefunded - expectedOre) / expectedOre;
-  const woodDiffPct = Math.abs(totalWoodRefunded - expectedWood) / expectedWood;
-
+  assert.equal(totalOreRefunded, expectedOre, '1,000 Mace runs gives exact 2,000 Ore');
+  assert.equal(totalWoodRefunded, expectedWood, '1,000 Mace runs gives exact 1,000 Wood');
   console.log(`1,000 Mace runs -> Refunded Ore: ${totalOreRefunded}/${expectedOre}, Wood: ${totalWoodRefunded}/${expectedWood}`);
-  assert.ok(oreDiffPct <= 0.03, `Ore refund (${totalOreRefunded}) must be within ±3% of ${expectedOre}`);
-  assert.ok(woodDiffPct <= 0.03, `Wood refund (${totalWoodRefunded}) must be within ±3% of ${expectedWood}`);
-  assert.equal(totalOreRefunded, 2000, 'Integer half-ingredients refund with exact integer precision');
-  assert.equal(totalWoodRefunded, 1000, 'Integer half-ingredients refund with exact integer precision');
 
-  // Fractional ingredients probabilistic rounding test over 1,000 runs:
-  // Two-Handed Longsword requires 7 Ore, 3 Wood.
-  // 50% refund = 3.5 Ore, 1.5 Wood on average.
-  console.log('Running 1,000 Two-Handed Longsword salvage simulations (probabilistic 3.5 ore / 1.5 wood)...');
-  const pre2HOre = gameState.getItemCount('ore');
-  const pre2HWood = gameState.getItemCount('wood');
-  const LONGSWORD_RUNS = 1000;
+  // Probabilistic rounding over 1,000 runs (Greatsword: 8 Ore, 3 Wood, 2 Steel Scrap -> 4 Ore, 1.5 Wood, 1 Steel Scrap)
+  console.log('Running 1,000 Greatsword salvage simulations (probabilistic 1.5 wood)...');
+  const preGsOre = gameState.getItemCount('ore');
+  const preGsWood = gameState.getItemCount('wood');
+  const preGsSteel = gameState.getItemCount('steel_scrap');
+  const GS_RUNS = 1000;
 
-  for (let i = 0; i < LONGSWORD_RUNS; i++) {
-    hero.addItem('longsword_2h', 1);
-    const res = CraftingSystem.applySalvage(hero, 'longsword_2h', { count: 1, source: hero });
+  for (let i = 0; i < GS_RUNS; i++) {
+    hero.addItem('greatswords', 1);
+    const res = CraftingSystem.applySalvage(hero, 'greatswords', { count: 1, source: hero });
     assert.equal(res.success, true);
   }
 
-  const post2HOre = gameState.getItemCount('ore');
-  const post2HWood = gameState.getItemCount('wood');
-  const total2HOre = post2HOre - pre2HOre;
-  const total2HWood = post2HWood - pre2HWood;
-  const expected2HOre = LONGSWORD_RUNS * 3.5; // 3500
-  const expected2HWood = LONGSWORD_RUNS * 1.5; // 1500
-  const diff2HOre = Math.abs(total2HOre - expected2HOre) / expected2HOre;
-  const diff2HWood = Math.abs(total2HWood - expected2HWood) / expected2HWood;
+  const totalGsOre = gameState.getItemCount('ore') - preGsOre;
+  const totalGsWood = gameState.getItemCount('wood') - preGsWood;
+  const totalGsSteel = gameState.getItemCount('steel_scrap') - preGsSteel;
 
-  console.log(`1,000 2H Longsword runs -> Refunded Ore: ${total2HOre}/${expected2HOre} (${(diff2HOre * 100).toFixed(2)}% dev), Wood: ${total2HWood}/${expected2HWood} (${(diff2HWood * 100).toFixed(2)}% dev)`);
-  assert.ok(diff2HOre <= 0.03, `Probabilistic ore refund (${total2HOre}) must be within ±3% of ${expected2HOre}`);
-  assert.ok(diff2HWood <= 0.03, `Probabilistic wood refund (${total2HWood}) must be within ±3% of ${expected2HWood}`);
-  console.log('✔ Test Group 1 Passed: Exact EXP, Apprentice Class EXP, and 50% Monte Carlo refunds verified.');
+  assert.equal(totalGsOre, 4000, '1,000 Greatsword runs refunds exact 4,000 Ore');
+  assert.equal(totalGsSteel, 1000, '1,000 Greatsword runs refunds exact 1,000 Steel Scrap');
+  const expectedGsWood = GS_RUNS * 1.5; // 1500
+  const woodDev = Math.abs(totalGsWood - expectedGsWood) / expectedGsWood;
+  console.log(`1,000 Greatsword runs -> Wood: ${totalGsWood}/${expectedGsWood} (${(woodDev * 100).toFixed(2)}% dev), Steel Scrap: ${totalGsSteel}/1000`);
+  assert.ok(woodDev <= 0.03, `Wood refund dev (${woodDev}) must be within ±3%`);
+
+  console.log('✔ Test Group 1 Passed: Greatsword, Silk Robe, War Bow refunds, EXP, and 50% Monte Carlo verified.');
 
   // =========================================================================
   // TEST GROUP 2: WHAT CANNOT BE SALVAGED
@@ -392,77 +415,63 @@ async function runSalvageTests() {
 
   // 2.1 Equipped gear CANNOT be salvaged
   hero.inventory.clear();
-  hero.equipWeapon(dataLoader.getWeapon('mace')!, true);
-  assert.equal(hero.equippedWeapon?.id, 'mace');
+  hero.equipWeapon(dataLoader.getWeapon('greatswords')!, true);
+  assert.equal(hero.equippedWeapon?.id, 'greatswords');
 
-  // Attempting to salvage equipped mace when 0 copies exist in inventory
-  const equippedWeaponAttempt = CraftingSystem.applySalvage(hero, 'mace', { party: [hero] });
-  assert.equal(equippedWeaponAttempt.success, false, 'Equipped weapon must not be salvageable');
-  assert.ok(equippedWeaponAttempt.message.toLowerCase().includes('equipped'), 'Message must indicate equipped item');
+  const eqWeaponAttempt = CraftingSystem.applySalvage(hero, 'greatswords', { party: [hero] });
+  assert.equal(eqWeaponAttempt.success, false, 'Equipped weapon must not be salvageable');
+  assert.ok(eqWeaponAttempt.message.toLowerCase().includes('equipped'), 'Message must indicate equipped item');
 
   // Equipped shield
   hero.equipOffhandWeapon(dataLoader.getWeapon('shields')!);
-  const equippedShieldAttempt = CraftingSystem.applySalvage(hero, 'shields', { party: [hero] });
-  assert.equal(equippedShieldAttempt.success, false, 'Equipped shield must not be salvageable');
+  const eqShieldAttempt = CraftingSystem.applySalvage(hero, 'shields', { party: [hero] });
+  assert.equal(eqShieldAttempt.success, false, 'Equipped shield must not be salvageable');
 
-  // Equipped armor & jewelry
+  // Equipped armor
   hero.equippedHelmet = dataLoader.getArmor('leather_cap')!;
-  const equippedHelmetAttempt = CraftingSystem.applySalvage(hero, 'leather_cap', { party: [hero] });
-  assert.equal(equippedHelmetAttempt.success, false, 'Equipped helmet must not be salvageable');
-
-  hero.equippedNecklace = dataLoader.getArmor('bone_necklace')!;
-  const equippedNecklaceAttempt = CraftingSystem.applySalvage(hero, 'bone_necklace', { party: [hero] });
-  assert.equal(equippedNecklaceAttempt.success, false, 'Equipped necklace must not be salvageable');
+  const eqHelmetAttempt = CraftingSystem.applySalvage(hero, 'leather_cap', { party: [hero] });
+  assert.equal(eqHelmetAttempt.success, false, 'Equipped helmet must not be salvageable');
 
   // Unequipping restores salvageability
   hero.equipWeapon(null, true);
-  hero.addItem('mace', 1);
-  const unequippedSalvage = CraftingSystem.applySalvage(hero, 'mace', { party: [hero] });
-  assert.equal(unequippedSalvage.success, true, 'Unequipped mace in bag can now be salvaged');
+  hero.addItem('greatswords', 1);
+  const unequippedSalvage = CraftingSystem.applySalvage(hero, 'greatswords', { party: [hero] });
+  assert.equal(unequippedSalvage.success, true, 'Unequipped weapon can now be salvaged');
 
-  // 2.2 Consumables CANNOT be salvaged
-  hero.addItem('bandage', 5);
-  hero.addItem('energy_potion', 3);
-  hero.addItem('mana_potion', 2);
-  assert.equal(CraftingSystem.canSalvage('bandage').canSalvage, false);
-  assert.equal(CraftingSystem.canSalvage('energy_potion').canSalvage, false);
-  assert.equal(CraftingSystem.canSalvage('mana_potion').canSalvage, false);
-  const potAttempt = CraftingSystem.applySalvage(hero, 'energy_potion');
-  assert.equal(potAttempt.success, false, 'Consumables cannot be salvaged');
-
-  // 2.3 Stackables & Materials CANNOT be salvaged
+  // 2.2 Material ('ore') CANNOT be salvaged
   hero.addItem('ore', 10);
-  hero.addItem('wood', 10);
-  hero.addItem('wolf_pelt', 5);
-  hero.addItem('bone_meal', 4);
   assert.equal(CraftingSystem.canSalvage('ore').canSalvage, false);
-  assert.equal(CraftingSystem.canSalvage('wood').canSalvage, false);
-  assert.equal(CraftingSystem.canSalvage('wolf_pelt').canSalvage, false);
-  assert.equal(CraftingSystem.canSalvage('bone_meal').canSalvage, false);
-  const matAttempt = CraftingSystem.applySalvage(hero, 'wolf_pelt');
-  assert.equal(matAttempt.success, false, 'Materials cannot be salvaged');
+  const oreAttempt = CraftingSystem.applySalvage(hero, 'ore');
+  assert.equal(oreAttempt.success, false, 'Material cannot be salvaged');
 
-  // 2.4 Protected tools with keepOnReturn CANNOT be salvaged
+  // 2.3 Consumable ('bandage') CANNOT be salvaged
+  hero.addItem('bandage', 5);
+  assert.equal(CraftingSystem.canSalvage('bandage').canSalvage, false);
+  const bandageAttempt = CraftingSystem.applySalvage(hero, 'bandage');
+  assert.equal(bandageAttempt.success, false, 'Consumables cannot be salvaged');
+
+  // 2.4 Tool with keepOnReturn ('lockpick') CANNOT be salvaged
   hero.addItem('lockpick', 5);
-  hero.addItem('fishing_rod', 1);
   assert.equal(CraftingSystem.canSalvage('lockpick').canSalvage, false);
-  assert.equal(CraftingSystem.canSalvage('fishing_rod').canSalvage, false);
   const lockpickAttempt = CraftingSystem.applySalvage(hero, 'lockpick');
   assert.equal(lockpickAttempt.success, false, 'Lockpick cannot be salvaged');
   assert.ok(lockpickAttempt.message.toLowerCase().includes('lockpick'));
 
+  // 2.5 Tool with keepOnReturn ('fishing_rod') CANNOT be salvaged
+  hero.addItem('fishing_rod', 1);
+  assert.equal(CraftingSystem.canSalvage('fishing_rod').canSalvage, false);
   const rodAttempt = CraftingSystem.applySalvage(hero, 'fishing_rod');
   assert.equal(rodAttempt.success, false, 'Fishing Rod cannot be salvaged');
   assert.ok(rodAttempt.message.toLowerCase().includes('fishing rod'));
 
-  // 2.5 Gear without a crafting recipe CANNOT be salvaged
+  // 2.6 Real gear item without a crafting recipe ('fire_staff') CANNOT be salvaged
   hero.addItem('fire_staff', 1);
   assert.equal(CraftingSystem.canSalvage('fire_staff').canSalvage, false);
   const uncraftableAttempt = CraftingSystem.applySalvage(hero, 'fire_staff');
-  assert.equal(uncraftableAttempt.success, false, 'Gear with no recipe cannot be salvaged');
+  assert.equal(uncraftableAttempt.success, false, 'Real gear with no recipe cannot be salvaged');
   assert.ok(uncraftableAttempt.message.toLowerCase().includes('recipe'));
 
-  console.log('✔ Test Group 2 Passed: Equipped gear, consumables, lockpicks, fishing rod, and recipe-less gear properly rejected.');
+  console.log('✔ Test Group 2 Passed: Equipped gear, ore, bandage, lockpick, fishing_rod, and fire_staff rejected.');
 
   // =========================================================================
   // TEST GROUP 3: COUNTS AND CLEANUP

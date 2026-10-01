@@ -1,7 +1,5 @@
 {
   "_comment": "Bowyer Station recipes. Consumes wood, spider silk, bone, and wolf claws to craft bows and grant Bowyer exp.",
-  "salvageRefundRate": 0.5,
-  "salvageExpRate": 0.5,
   "recipes": [
     {
       "id": "hunting_bow",

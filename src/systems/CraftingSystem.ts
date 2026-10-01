@@ -6,7 +6,7 @@ import type {
   CookingRecipeDef,
   GearItemInstance
 } from '../types/game.ts';
-import { Player } from '../entities/Player.ts';
+import type { Player } from '../entities/Player.ts';
 import { GameState } from './GameState.ts';
 import { DataLoader } from '../utils/DataLoader.ts';
 import { getBaseItemId } from '../utils/gearResolver.ts';
@@ -268,9 +268,9 @@ export class CraftingSystem {
     // 1. Blacksmithing
     const bsRecipes = dataLoader.getBlacksmithRecipes() || [];
     for (const r of bsRecipes) {
-      const result = (r as any).resultWeaponId || (r as any).resultItemId || (r as any).resultArmorId || r.id;
-      if (result === baseId) {
-        if (result === 'lockpick' || result === 'fishing_rod' || result === 'steel_scrap') return null;
+      const outputItemId = (r as any).resultWeaponId || (r as any).resultArmorId || (r as any).resultItemId;
+      if (outputItemId === baseId) {
+        if (outputItemId === 'lockpick' || outputItemId === 'fishing_rod' || outputItemId === 'steel_scrap') return null;
         return { recipe: r, station: 'blacksmithing' };
       }
     }
@@ -278,8 +278,8 @@ export class CraftingSystem {
     // 2. Armorsmithing
     const asRecipes = dataLoader.getArmorsmithRecipes() || [];
     for (const r of asRecipes) {
-      const result = (r as any).resultArmorId || (r as any).resultItemId || (r as any).resultWeaponId || r.id;
-      if (result === baseId) {
+      const outputItemId = (r as any).resultArmorId || (r as any).resultWeaponId || (r as any).resultItemId;
+      if (outputItemId === baseId) {
         return { recipe: r, station: 'armorsmithing' };
       }
     }
@@ -287,8 +287,8 @@ export class CraftingSystem {
     // 3. Bowyer
     const bwRecipes = dataLoader.getBowyerRecipes() || [];
     for (const r of bwRecipes) {
-      const result = (r as any).resultWeaponId || (r as any).resultItemId || (r as any).resultArmorId || r.id;
-      if (result === baseId) {
+      const outputItemId = (r as any).resultWeaponId || (r as any).resultArmorId || (r as any).resultItemId;
+      if (outputItemId === baseId) {
         return { recipe: r, station: 'bowyer' };
       }
     }
@@ -530,7 +530,7 @@ export class CraftingSystem {
       if (inStock >= qtyToSalvage) {
         actualSource = 'stockpile';
       }
-    } else if (options?.source instanceof Player) {
+    } else if (options?.source && typeof options.source !== 'string') {
       const inBag = options.source.inventory.get(itemIdOrInstanceId) || 0;
       if (inBag >= qtyToSalvage) {
         actualSource = options.source;

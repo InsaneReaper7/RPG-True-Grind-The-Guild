@@ -1,7 +1,5 @@
 {
   "_comment": "Armorsmithing Bench recipes. Tier-unlocked recipes consuming Wolf Pelt, Spider Silk, and other crafting materials.",
-  "salvageRefundRate": 0.5,
-  "salvageExpRate": 0.5,
   "recipes": [
     {
       "id": "leather_cap",
