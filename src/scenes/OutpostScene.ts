@@ -999,8 +999,8 @@ export class OutpostScene extends Phaser.Scene {
     return units;
   }
 
-  public getDynamicObstacles(excludeEntity?: Entity): GridPos[] {
-    return this.getLivingUnits(excludeEntity).map((u) => u.gridPos);
+  public getDynamicObstacles(_excludeEntity?: Entity): GridPos[] {
+    return []; // Outpost has no enemies; allies are never obstacles in pathfinding
   }
 
   public isTileOccupied(x: number, y: number, excludeEntity?: Entity): boolean {

@@ -157,47 +157,50 @@ export function initKeyboardGuards(phaserLib?: any): void {
   }
 
   // 2. Window focus/blur tracking for text fields (capture phase)
-  window.addEventListener(
-    'focusin',
-    (e) => {
-      if (isTypingInTextField(e)) {
-        disableGameKeyboard();
-      }
-    },
-    true
-  );
-
-  window.addEventListener(
-    'focusout',
-    () => {
-      setTimeout(() => {
-        if (!isTypingInTextField()) {
-          enableGameKeyboard();
+  if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+    window.addEventListener(
+      'focusin',
+      (e) => {
+        if (isTypingInTextField(e)) {
+          disableGameKeyboard();
         }
-      }, 0);
-    },
-    true
-  );
+      },
+      true
+    );
 
-  // 3. Window keydown capture to ensure Phaser is disabled before it can process
-  window.addEventListener(
-    'keydown',
-    (e) => {
-      if (isTypingInTextField(e)) {
-        disableGameKeyboard();
-      }
-    },
-    true
-  );
+    window.addEventListener(
+      'focusout',
+      () => {
+        setTimeout(() => {
+          if (!isTypingInTextField()) {
+            enableGameKeyboard();
+          }
+        }, 0);
+      },
+      true
+    );
+
+    // 3. Window keydown capture to ensure Phaser is disabled before it can process
+    window.addEventListener(
+      'keydown',
+      (e) => {
+        if (isTypingInTextField(e)) {
+          disableGameKeyboard();
+        }
+      },
+      true
+    );
+  }
 
   // 4. Modal Name Fields & Text Input Enter / Escape handling (capture phase)
   // Enter confirms modal; Escape cancels or closes modal. Neither reaches the game.
-  document.addEventListener(
-    'keydown',
-    (e: KeyboardEvent) => {
-      if (!isTypingInTextField(e)) return;
-      const target = (e.target as HTMLElement) || (document.activeElement as HTMLElement);
-      if (!target) return;
+  if (typeof document !== 'undefined' && typeof document.addEventListener === 'function') {
+    document.addEventListener(
+      'keydown',
+      (e: KeyboardEvent) => {
+        if (!isTypingInTextField(e)) return;
+        const target = (e.target as HTMLElement) || (document.activeElement as HTMLElement);
+        if (!target) return;
 
       if (e.key === 'Enter') {
         if (target.id === 'new-game-hero-name') {
@@ -269,4 +272,5 @@ export function initKeyboardGuards(phaserLib?: any): void {
     },
     true
   );
+  }
 }

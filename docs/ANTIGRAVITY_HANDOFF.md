@@ -1012,3 +1012,29 @@ Never ask Antigravity to jump ahead in this list — each milestone assumes the 
     - `test/keyBindingAudit.test.ts`: Passed (4/4 tests).
     - `test/playtestRound1.test.ts`: Passed (10/10 tests).
   - Production build: `npm run build` succeeds cleanly.
+
+---
+
+### Milestone 59 (2026-10-01) - Bugfix: Party Pass-Through & Input Guard Headless Compatibility
+
+**Resolved and shipped: Party Pass-Through (Allies Never Block Like Walls in Transit) & Name-Field Hardening.**
+- **1. Pathfinder Ally-Free Routing**:
+  - Completely removed ally point costs (`setAdditionalPointCost(x, y, 4)` abandoned). Pathfinding strictly ignores allies in both `findPath` and `find2x2Path`.
+  - In open rooms, member A pathfinding straight through ally B's tile generates the exact same straight line and step length as an empty grid with zero detours or sidestepping.
+  - Engaging an enemy standing directly behind an ally generates a direct, unbent path straight through the ally.
+- **2. Entity Movement & Anti-Stacking Rules**:
+  - In transit (`path.length > 1`), friendly party members pass through each other smoothly with zero yields and zero 400ms timeouts.
+  - At final destination (`path.length === 1`), anti-stacking is strictly preserved:
+    - If an ally is stationary on the destination tile, the unit concludes its arrival on the current tile so two units never occupy the same resting tile.
+    - If an ally is vacating towards a different destination, the unit advances in lockstep without stalling.
+  - 2x2 formations stream through 1-tile bottlenecks via 1x1 compression fallback and reform at destination with zero stacked units.
+  - Living enemies remain hard, impassable obstacles under all conditions; Swarm-Trap invariant is strictly preserved.
+- **3. Bundled Name-Field & Hotkey Guard Fixes**:
+  - Restored `maxlength="16"` and `(1–16 chars)` on all three name inputs in `index.html` (`#new-game-hero-name`, `#recruit-name-input`, `#fourth-name-input`).
+  - Added explicit `input?.blur()` on modal close in `src/ui/HUD.ts` (`closeNewGameModal`, `closeRecruitModal`, `closeSummonFourthModal`).
+  - Browser verification test (`test/verify_name_fields_hotkey_guard.mjs`) tests 16-character string (`BFHJKNOPRTWASD12`), modal Escape cancellation, input blurring, and verifies pressing `B` after Escape opens Build Mode.
+  - Protected `src/utils/inputGuard.ts` with checks (`typeof window !== 'undefined'`, `typeof document !== 'undefined' && typeof document.addEventListener === 'function'`) preventing headless Node test runners from throwing `TypeError: document.addEventListener is not a function`.
+  - **Handoff Note for Future Maintainers**: `src/utils/inputGuard.ts` monkey-patches Phaser prototypes (`KeyboardPlugin.prototype.isActive`, `KeyboardManager.prototype.startListeners`, and `Key.prototype.onDown`). When upgrading Phaser in `package.json`, re-audit these prototype monkey-patches to ensure compatibility with updated Phaser internal input pipeline APIs.
+- **4. Test Suite & Build Verification**:
+  - All 102 test suites passing (100% green, 0 failures) via `npm test -- --quiet`.
+  - Production bundle verified with `npm run build`.

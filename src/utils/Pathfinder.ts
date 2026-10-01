@@ -177,22 +177,21 @@ export class Pathfinder {
         return;
       }
 
-      let softList: GridPos[] = [];
       let hardList: GridPos[] = [];
 
       if (Array.isArray(dynamicObstacles)) {
-        softList = dynamicObstacles;
         if (hardObstacles) {
           hardList = hardObstacles;
+        } else {
+          hardList = dynamicObstacles;
         }
       } else if (dynamicObstacles && typeof dynamicObstacles === 'object') {
-        softList = dynamicObstacles.soft || [];
         hardList = dynamicObstacles.hard || [];
       } else if (hardObstacles) {
         hardList = hardObstacles;
       }
 
-      const applyObstacleList = (obstacles: GridPos[]) => {
+      const applyHardObstacles = (obstacles: GridPos[]) => {
         for (const obs of obstacles) {
           // Do not mark start or destination tile as dynamic obstacle
           if ((obs.x !== start.x || obs.y !== start.y) && (obs.x !== end.x || obs.y !== end.y)) {
@@ -201,9 +200,8 @@ export class Pathfinder {
         }
       };
 
-      // 1. Primary Pass: avoid both hard (enemies) and soft (friendly units) obstacles
-      if (hardList.length > 0) applyObstacleList(hardList);
-      if (softList.length > 0) applyObstacleList(softList);
+      // Paths ignore allies entirely. Only hard obstacles (living enemies) are avoided.
+      if (hardList.length > 0) applyHardObstacles(hardList);
 
       let returnedPath: GridPos[] = [];
       this.easystar.findPath(start.x, start.y, end.x, end.y, (path) => {
@@ -213,31 +211,7 @@ export class Pathfinder {
       });
       this.easystar.calculate();
 
-      // Clear all avoided points before deciding if bottleneck fallback is eligible
-      this.easystar.stopAvoidingAllAdditionalPoints();
-
-      // 2. Corridor Bottleneck Fallback:
-      // If path was blocked by intermediate obstacles in a corridor/doorway,
-      // and there were soft (friendly) obstacles, recalculate toward the exact same destination
-      // with soft obstacles relaxed, BUT with hard obstacles (living enemies) STILL STRICTLY AVOIDED!
-      // This preserves party members queueing/streaming through doorways when blocked by allies,
-      // while strictly enforcing the Swarm-Trap: hostile living enemies are NEVER bypassed.
-      if (returnedPath.length === 0 && softList.length > 0) {
-        if (hardList.length > 0) {
-          applyObstacleList(hardList);
-        }
-
-        this.easystar.findPath(start.x, start.y, end.x, end.y, (path) => {
-          if (path !== null) {
-            returnedPath = path.map((p) => ({ x: p.x, y: p.y }));
-          }
-        });
-        this.easystar.calculate();
-
-        if (hardList.length > 0) {
-          this.easystar.stopAvoidingAllAdditionalPoints();
-        }
-      }
+      if (hardList.length > 0) this.easystar.stopAvoidingAllAdditionalPoints();
 
       resolve(returnedPath);
     });
@@ -265,16 +239,15 @@ export class Pathfinder {
         return;
       }
 
-      let softList: GridPos[] = [];
       let hardList: GridPos[] = [];
 
       if (Array.isArray(dynamicObstacles)) {
-        softList = dynamicObstacles;
         if (hardObstacles) {
           hardList = hardObstacles;
+        } else {
+          hardList = dynamicObstacles;
         }
       } else if (dynamicObstacles && typeof dynamicObstacles === 'object') {
-        softList = dynamicObstacles.soft || [];
         hardList = dynamicObstacles.hard || [];
       } else if (hardObstacles) {
         hardList = hardObstacles;
@@ -306,9 +279,8 @@ export class Pathfinder {
       };
 
       const hardAnchors = get2x2AvoidAnchors(hardList);
-      const softAnchors = get2x2AvoidAnchors(softList);
 
-      const apply2x2ObstacleList = (anchors: GridPos[]) => {
+      const apply2x2HardObstacles = (anchors: GridPos[]) => {
         for (const a of anchors) {
           // Do not mark start or destination anchor as avoided point
           if ((a.x !== start.x || a.y !== start.y) && (a.x !== end.x || a.y !== end.y)) {
@@ -317,9 +289,8 @@ export class Pathfinder {
         }
       };
 
-      // 1. Primary Pass: avoid both hard (enemies) and soft (friendly units) obstacles
-      if (hardAnchors.length > 0) apply2x2ObstacleList(hardAnchors);
-      if (softAnchors.length > 0) apply2x2ObstacleList(softAnchors);
+      // Paths ignore allies entirely. Only hard obstacles (living enemies) are avoided.
+      if (hardAnchors.length > 0) apply2x2HardObstacles(hardAnchors);
 
       let returnedPath: GridPos[] = [];
       this.easystar2x2.findPath(start.x, start.y, end.x, end.y, (path) => {
@@ -329,27 +300,7 @@ export class Pathfinder {
       });
       this.easystar2x2.calculate();
 
-      this.easystar2x2.stopAvoidingAllAdditionalPoints();
-
-      // 2. Corridor Bottleneck Fallback:
-      // If path was blocked and there were soft obstacles, recalculate with soft obstacles relaxed,
-      // BUT with hard obstacles (living enemies) STILL STRICTLY AVOIDED!
-      if (returnedPath.length === 0 && softAnchors.length > 0) {
-        if (hardAnchors.length > 0) {
-          apply2x2ObstacleList(hardAnchors);
-        }
-
-        this.easystar2x2.findPath(start.x, start.y, end.x, end.y, (path) => {
-          if (path !== null) {
-            returnedPath = path.map((p) => ({ x: p.x, y: p.y }));
-          }
-        });
-        this.easystar2x2.calculate();
-
-        if (hardAnchors.length > 0) {
-          this.easystar2x2.stopAvoidingAllAdditionalPoints();
-        }
-      }
+      if (hardAnchors.length > 0) this.easystar2x2.stopAvoidingAllAdditionalPoints();
 
       resolve(returnedPath);
     });

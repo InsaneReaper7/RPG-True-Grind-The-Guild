@@ -9,6 +9,9 @@ declare module 'easystarjs' {
     avoidAdditionalPoint(x: number, y: number): void;
     stopAvoidingAdditionalPoint(x: number, y: number): void;
     stopAvoidingAllAdditionalPoints(): void;
+    setAdditionalPointCost(x: number, y: number, cost: number): void;
+    removeAdditionalPointCost(x: number, y: number): void;
+    removeAllAdditionalPointCosts(): void;
     findPath(
       startX: number,
       startY: number,

@@ -3078,6 +3078,8 @@ export class HUD {
   }
 
   public closeRecruitModal(): void {
+    const input = document.getElementById('recruit-name-input') as HTMLInputElement | null;
+    input?.blur();
     if (this.summonRecruitModalEl) {
       this.summonRecruitModalEl.classList.remove('active');
     }
@@ -8844,6 +8846,8 @@ export class HUD {
   }
 
   public closeNewGameModal(): void {
+    const input = document.getElementById('new-game-hero-name') as HTMLInputElement | null;
+    input?.blur();
     const modal = document.getElementById('new-game-modal');
     if (modal) {
       modal.classList.remove('active');
@@ -8890,6 +8894,8 @@ export class HUD {
   }
 
   public closeSummonFourthModal(): void {
+    const input = document.getElementById('fourth-name-input') as HTMLInputElement | null;
+    input?.blur();
     const modal = document.getElementById('summon-fourth-modal');
     if (modal) {
       modal.classList.remove('active');

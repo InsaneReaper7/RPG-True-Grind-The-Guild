@@ -242,14 +242,32 @@ class Simulated2x2PartyScene {
       const blocking = this.getUnitAtTile(nextTile.x, nextTile.y, u);
 
       if (blocking) {
-        const isAlliedBlockMove = u.isPartyMember &&
-          blocking.isPartyMember &&
-          blocking.state === 'moving' &&
-          (blocking.claimedDestination === null ||
-            blocking.claimedDestination.x !== u.claimedDestination?.x ||
-            blocking.claimedDestination.y !== u.claimedDestination?.y);
+        const isAlly = u.isPartyMember && blocking.isPartyMember;
 
-        if (!isAlliedBlockMove) {
+        if (isAlly) {
+          const isAlliedLockstepMove = blocking.state === 'moving' &&
+            (!blocking.claimedDestination || !u.claimedDestination ||
+              blocking.claimedDestination.x !== u.claimedDestination.x ||
+              blocking.claimedDestination.y !== u.claimedDestination.y);
+
+          if (u.path.length > 1 || isAlliedLockstepMove) {
+            // In transit or lockstep: pass through smoothly without yielding or timing out
+            u.blockedWaitMs = 0;
+          } else {
+            // Final destination tile (u.path.length === 1)
+            if (blocking.state === 'moving') {
+              u.blockedWaitMs = 0;
+              continue;
+            } else {
+              u.path = [];
+              u.claimedDestination = null;
+              u.state = 'idle';
+              u.blockedWaitMs = 0;
+              continue;
+            }
+          }
+        } else {
+          // Blocking unit is an ENEMY: strictly enforce hard barrier (Swarm-Trap invariant)
           u.blockedWaitMs += 100;
           if (u.blockedWaitMs > 400) {
             u.path = [];

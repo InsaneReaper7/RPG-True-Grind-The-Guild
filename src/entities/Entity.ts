@@ -191,22 +191,42 @@ export class Entity extends Phaser.GameObjects.Container {
 
     const nextTile = this.path[0];
     const scene = this.scene as any;
-    // Dynamic anti-stack check: Never enter a tile occupied by enemies, stationary units, or units claiming the same tile
+    // Dynamic anti-stack & party pass-through check:
+    // Friendly teammates in transit (path.length > 1) pass through smoothly without blocking each other like walls.
+    // Destination tiles (path.length === 1) preserve anti-stacking so two units never rest on the same tile.
+    // Enemies remain strictly impassable (Swarm-Trap).
     if (scene && typeof scene.isTileOccupied === 'function' && scene.isTileOccupied(nextTile.x, nextTile.y, this)) {
       const blockingUnit = (typeof scene.getUnitAtTile === 'function')
         ? scene.getUnitAtTile(nextTile.x, nextTile.y, this)
         : undefined;
 
-      const isMovingAlly = blockingUnit &&
-        this.isPartyMember &&
-        blockingUnit.isPartyMember &&
-        blockingUnit.isMoving() &&
-        (blockingUnit.claimedDestination === null ||
-          blockingUnit.claimedDestination.x !== this.claimedDestination?.x ||
-          blockingUnit.claimedDestination.y !== this.claimedDestination?.y);
+      const isAlly = blockingUnit && this.isPartyMember && blockingUnit.isPartyMember;
 
-      if (!isMovingAlly) {
-        // Tile occupied by obstacle or stationary entity: yield this tick
+      if (isAlly) {
+        if (this.path.length > 1) {
+          // Teammate in transit: pass through smoothly without yielding or timing out
+        } else {
+          // Final destination tile (path.length === 1):
+          if (blockingUnit.isMoving()) {
+            // Teammate is vacating tile: yield until tile clears (do not time out)
+            return;
+          } else {
+            // Teammate is stationary/settled on target: finish at current tile to prevent permanent stacking
+            this.path = [];
+            this.targetWorldPos = null;
+            this.claimedDestination = null;
+            this.state = 'idle';
+            this.blockedWaitMs = 0;
+            if (this.onPathCompleteCallback) {
+              const cb = this.onPathCompleteCallback;
+              this.onPathCompleteCallback = undefined;
+              cb();
+            }
+            return;
+          }
+        }
+      } else {
+        // Blocked by enemy or obstacle: yield this tick (strictly enforced for Swarm-Trap)
         return;
       }
     }
@@ -685,19 +705,17 @@ export class Entity extends Phaser.GameObjects.Container {
           ? scene.getUnitAtTile(nextTile.x, nextTile.y, this)
           : undefined;
 
-        // If yielding behind an actively moving party ally in convoy, do not time out
-        const isBlockedByMovingAlly = blockingUnit &&
-          this.isPartyMember && blockingUnit.isPartyMember &&
-          blockingUnit.isMoving();
+        // Friendly party allies never trigger a blocked timeout
+        const isAlly = blockingUnit && this.isPartyMember && blockingUnit.isPartyMember;
 
-        if (isBlockedByMovingAlly) {
+        if (isAlly) {
           this.blockedWaitMs = 0;
         } else {
           this.blockedWaitMs += delta;
         }
 
         if (this.blockedWaitMs > 400) {
-          // Blocked too long by stationary unit or obstacle: stop movement
+          // Blocked too long by enemy or impassable obstacle: stop movement (Swarm-Trap)
           this.path = [];
           this.claimedDestination = null;
           this.state = 'idle';

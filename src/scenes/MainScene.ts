@@ -1149,7 +1149,7 @@ export class MainScene extends Phaser.Scene {
       this.showMoveDestinationHighlights([leaderDest], [leader]);
 
       const unitObs = {
-        soft: this.party.filter(m => m !== leader && m.state !== 'dead' && m.state !== 'downed').map(m => m.gridPos),
+        soft: [],
         hard: this.getEnemyObstacles()
       };
       this.pathfinder.findPath(leader.gridPos, leaderDest, unitObs).then((path) => {
@@ -1181,12 +1181,9 @@ export class MainScene extends Phaser.Scene {
     // Destination highlights match actual final positions EXACTLY
     this.showMoveDestinationHighlights(destTiles, activeSelected);
 
-    // 2. Obstacles for 2x2 movement:
-    const friendlyObstacles = this.party
-      .filter(m => !activeSelected.includes(m) && m.state !== 'dead' && m.state !== 'downed')
-      .map(m => m.gridPos);
+    // 2. Obstacles for 2x2 movement (paths ignore allies entirely, only avoid enemies):
     const unitObs = {
-      soft: friendlyObstacles,
+      soft: [],
       hard: this.getEnemyObstacles()
     };
 
@@ -1247,10 +1244,7 @@ export class MainScene extends Phaser.Scene {
         } else {
           // Out of formation (split party / rejoin): route through authentic tile-by-tile pathfinder
           const outOfFormationObs = {
-            soft: [
-              ...unitObs.soft,
-              ...destTiles.filter((_, idx) => idx !== i)
-            ],
+            soft: [],
             hard: unitObs.hard
           };
           this.pathfinder.findPath(unit.gridPos, destTiles[i], outOfFormationObs).then((uPath) => {
@@ -1316,9 +1310,9 @@ export class MainScene extends Phaser.Scene {
     return positions;
   }
 
-  public getPartyUnitObstacles(unit: Entity): { soft: GridPos[]; hard: GridPos[] } {
+  public getPartyUnitObstacles(_unit: Entity): { soft: GridPos[]; hard: GridPos[] } {
     return {
-      soft: this.getFriendlyObstacles(unit),
+      soft: [],
       hard: this.getEnemyObstacles()
     };
   }

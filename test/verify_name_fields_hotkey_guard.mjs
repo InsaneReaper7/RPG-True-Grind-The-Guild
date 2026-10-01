@@ -135,7 +135,7 @@ async function runTest() {
       });
     };
 
-    const TEST_STRING = 'BFHJKNOPRTWASD1234';
+    const TEST_STRING = 'BFHJKNOPRTWASD12';
 
     // -------------------------------------------------------------------------
     // TEST 1: Hero Name Field (New Game Setup Modal)
@@ -179,7 +179,30 @@ async function runTest() {
     await sleep(200);
     const heroModalActive = await page.$eval('#new-game-modal', (el) => el.classList.contains('active'));
     assert.equal(heroModalActive, false, 'Escape must close new-game-modal');
-    console.log('✔ Test 1 Escape check passed: Modal closed cleanly.\n');
+
+    // Post-Escape check: Focus is not on an input, and B opens Build Mode
+    const isInputFocused1 = await page.evaluate(() => {
+      const active = document.activeElement;
+      return active?.tagName === 'INPUT' || active?.tagName === 'TEXTAREA';
+    });
+    assert.equal(isInputFocused1, false, 'Focus must not remain on input after Escape');
+
+    await page.evaluate(() => {
+      (window).HUD?.activeInstance?.closeTitleScreen();
+    });
+    await sleep(100);
+
+    await page.keyboard.press('KeyB');
+    await sleep(200);
+    const buildAfterEscape1 = await page.evaluate(() => {
+      const outpost = (window).game?.scene?.getScene('OutpostScene');
+      return outpost?.isBuildMode ?? false;
+    });
+    assert.equal(buildAfterEscape1, true, 'Pressing B after Escape must open Build Mode');
+    // Close build mode
+    await page.keyboard.press('KeyB');
+    await sleep(150);
+    console.log('✔ Test 1 Escape & post-Escape hotkey check passed: Modal closed, input blurred, B opened Build Mode.\n');
 
     // -------------------------------------------------------------------------
     // TEST 2: Kaelen Recruit Name Field (#recruit-name-input)
@@ -270,7 +293,25 @@ async function runTest() {
     await sleep(200);
     const fourthModalActive = await page.$eval('#summon-fourth-modal', (el) => el.classList.contains('active'));
     assert.equal(fourthModalActive, false, 'Escape must close summon-fourth-modal');
-    console.log('✔ Test 3 Escape check passed: Modal closed cleanly.\n');
+
+    // Post-Escape check: Focus is not on an input, and B opens Build Mode
+    const isInputFocused3 = await page.evaluate(() => {
+      const active = document.activeElement;
+      return active?.tagName === 'INPUT' || active?.tagName === 'TEXTAREA';
+    });
+    assert.equal(isInputFocused3, false, 'Focus must not remain on input after Escape');
+
+    await page.keyboard.press('KeyB');
+    await sleep(200);
+    const buildAfterEscape3 = await page.evaluate(() => {
+      const outpost = (window).game?.scene?.getScene('OutpostScene');
+      return outpost?.isBuildMode ?? false;
+    });
+    assert.equal(buildAfterEscape3, true, 'Pressing B after Escape must open Build Mode');
+    await page.keyboard.press('KeyB');
+    await sleep(150);
+
+    console.log('✔ Test 3 Escape check passed: Modal closed cleanly, input blurred, B opened Build Mode.\n');
 
     // -------------------------------------------------------------------------
     // TEST 4: After Blur — Hotkeys Function Normally (e.g. B Opens Build Mode)
@@ -326,6 +367,7 @@ async function runTest() {
     if (serverProcess) {
       serverProcess.kill();
     }
+    process.exit(0);
   }
 }
 

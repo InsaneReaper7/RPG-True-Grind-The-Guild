@@ -18,6 +18,7 @@ console.log(`=======================================================\n`);
 
 const results = [];
 const startTime = Date.now();
+const isQuiet = process.argv.includes('--quiet');
 
 const npxCmd = process.platform === 'win32' ? 'npx.cmd' : 'npx';
 
@@ -25,7 +26,9 @@ for (let i = 0; i < testFiles.length; i++) {
   const file = testFiles[i];
   const relativePath = `test/${file}`;
 
-  process.stdout.write(`[${String(i + 1).padStart(2, ' ')}/${testFiles.length}] ${file.padEnd(45, ' ')} `);
+  if (!isQuiet) {
+    process.stdout.write(`[${String(i + 1).padStart(2, ' ')}/${testFiles.length}] ${file.padEnd(45, ' ')} `);
+  }
   const fileStart = Date.now();
 
   const child = spawnSync(npxCmd, ['tsx', `"${relativePath}"`], {
@@ -40,10 +43,15 @@ for (let i = 0; i < testFiles.length; i++) {
   const passed = child.status === 0;
 
   if (passed) {
-    process.stdout.write(`PASS (${durationSec}s)\n`);
+    if (!isQuiet) {
+      process.stdout.write(`PASS (${durationSec}s)\n`);
+    } else {
+      process.stdout.write('.');
+    }
     results.push({ file, passed: true, durationSec });
   } else {
-    process.stdout.write(`FAIL (${durationSec}s)\n`);
+    if (isQuiet) process.stdout.write('\n');
+    process.stdout.write(`FAIL (${durationSec}s): ${file}\n`);
     const combinedOutput = (child.stdout || '') + '\n' + (child.stderr || '');
     let firstError = 'Unknown error';
     const lines = combinedOutput.split('\n');

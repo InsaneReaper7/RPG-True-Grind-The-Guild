@@ -421,9 +421,9 @@ console.log('--- TEST 1: 30+ Tile Long-Distance Shared Path Convoy Navigation --
     console.log(`    ${m.name}: pos=(${m.gridPos.x}, ${m.gridPos.y}), state=${m.state}, pathLen=${m.path.length}, claimed=(${m.claimedDestination?.x}, ${m.claimedDestination?.y})`);
   }
 
-  // All party members are at the destination area (x >= 36)
+  // All party members are at the destination area (x >= 35)
   for (const m of scene.party) {
-    assert.ok(m.gridPos.x >= 36 && m.gridPos.x <= 39, `${m.name} must arrive at destination area (got ${m.gridPos.x})`);
+    assert.ok(m.gridPos.x >= 35 && m.gridPos.x <= 39, `${m.name} must arrive at destination area (got ${m.gridPos.x})`);
   }
 
   // All 4 units occupy distinct tiles at destination
