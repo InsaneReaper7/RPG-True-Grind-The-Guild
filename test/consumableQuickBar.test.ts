@@ -149,6 +149,22 @@ function createMockPlayer(id: string, name: string, overrides: Partial<any> = {}
       player.hunger = Math.min(player.maxHunger, player.hunger + 30);
       return true;
     },
+    heal: (amount: number) => {
+      let remaining = amount;
+      if (player.criticalHp < player.maxCriticalHp) {
+        const needed = player.maxCriticalHp - player.criticalHp;
+        const add = Math.min(needed, remaining);
+        player.criticalHp += add;
+        remaining -= add;
+      }
+      if (remaining > 0 && player.hp < player.maxHp) {
+        const needed = player.maxHp - player.hp;
+        const add = Math.min(needed, remaining);
+        player.hp += add;
+        remaining -= add;
+      }
+      return amount - remaining;
+    },
     getPartyMembers: () => player._party || [player],
     setParty: (partyList: any[]) => { player._party = partyList; },
     ...overrides
@@ -376,10 +392,11 @@ async function runConsumableQuickBarTests() {
   // ---------------------------------------------------------------------------
   console.log('\n--- TEST 6: Smart Targeting - Health Potion ---');
   {
-    const hero = createMockPlayer('hero', 'Guild Hero', { hp: 80, maxHp: 100 }); // 80% HP
+    const hero = createMockPlayer('hero', 'Guild Hero', { hp: 50, maxHp: 100 }); // 50% HP
     const valerie = createMockPlayer('valerie', 'Valerie', { hp: 30, maxHp: 100 }); // 30% HP
     const party = [hero, valerie];
     hero.setParty(party);
+    valerie.setParty(party);
 
     hero.addItem('health_potion', 2);
 
@@ -395,16 +412,17 @@ async function runConsumableQuickBarTests() {
 
     const res = consumableSystem.useConsumable('health_potion', { party, preferredTarget: hero });
     assert.equal(res.success, true);
-    assert.equal(hero.hp, 100, 'Healed 50 HP up to max');
+    assert.equal(hero.hp, 80, 'Healed 30 HP from 50 to 80');
     assert.equal(hero.getItemCount('health_potion'), 1);
 
-    // 1. Immediately after use, item is on cooldown
-    let cdCheck = consumableSystem.canUseConsumable('health_potion', { party });
+    // 1. Immediately after use, hero is on cooldown
+    let cdCheck = consumableSystem.canUseConsumable('health_potion', { party, preferredTarget: hero });
     assert.equal(cdCheck.canUse, false);
-    assert.ok(cdCheck.reason?.includes('cooldown'), 'Should report item on cooldown');
+    assert.ok(cdCheck.reason?.includes('cooldown'), 'Should report hero on cooldown');
 
     // 2. Clear cooldown and test when all at full HP
     consumableSystem.setCooldown('health_potion', 0);
+    hero.hp = 100;
     valerie.hp = 100;
     check = consumableSystem.canUseConsumable('health_potion', { party });
     assert.equal(check.canUse, false);

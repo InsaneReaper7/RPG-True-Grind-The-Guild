@@ -46,21 +46,54 @@ export class ConsumableSystem {
     GameState.getInstance().setQuickSlot(index, null);
   }
 
-  public getCooldownRemainingMs(itemId: string): number {
+  public getCooldownRemainingMs(itemId: string, member?: Player): number {
+    if (itemId === 'health_potion') {
+      if (member) {
+        return Math.max(0, member.healthPotionCooldownRemainingMs || 0);
+      }
+      const party = this.resolveParty();
+      const selected = this.getSelectedMembers(party);
+      const target = selected.length === 1 ? selected[0] : (party[0] || null);
+      if (target && target.healthPotionCooldownRemainingMs !== undefined) {
+        return Math.max(0, target.healthPotionCooldownRemainingMs);
+      }
+    }
     return Math.max(0, this.cooldowns.get(itemId) || 0);
   }
 
-  public setCooldown(itemId: string, durationMs: number): void {
-    this.cooldowns.set(itemId, durationMs);
+  public setCooldown(itemId: string, durationMs: number, member?: Player): void {
+    if (itemId !== 'health_potion') {
+      if (durationMs <= 0) {
+        this.cooldowns.delete(itemId);
+      } else {
+        this.cooldowns.set(itemId, durationMs);
+      }
+    }
+    if (itemId === 'health_potion') {
+      if (member) {
+        member.healthPotionCooldownRemainingMs = Math.max(0, durationMs);
+      } else if (durationMs <= 0) {
+        const party = this.resolveParty();
+        for (const m of party) {
+          m.healthPotionCooldownRemainingMs = 0;
+        }
+      }
+    }
   }
 
-  public update(deltaMs: number): void {
+  public update(deltaMs: number, party?: Player[]): void {
     for (const [id, remaining] of this.cooldowns.entries()) {
       const next = remaining - deltaMs;
       if (next <= 0) {
         this.cooldowns.delete(id);
       } else {
         this.cooldowns.set(id, next);
+      }
+    }
+    const resolvedParty = party || this.resolveParty();
+    for (const m of resolvedParty) {
+      if (m.healthPotionCooldownRemainingMs && m.healthPotionCooldownRemainingMs > 0) {
+        m.healthPotionCooldownRemainingMs = Math.max(0, m.healthPotionCooldownRemainingMs - deltaMs);
       }
     }
   }
@@ -172,10 +205,12 @@ export class ConsumableSystem {
     // Normalize mana_potion alias
     const normalizedId = itemId === 'potion_mana' ? 'mana_potion' : itemId;
 
-    // Check item cooldown
-    const cd = this.getCooldownRemainingMs(normalizedId);
-    if (cd > 0) {
-      return { canUse: false, reason: `On cooldown (${(cd / 1000).toFixed(1)}s)` };
+    // Check item cooldown (per-character cooldowns like health_potion are checked per target)
+    if (normalizedId !== 'health_potion') {
+      const cd = this.getCooldownRemainingMs(normalizedId);
+      if (cd > 0) {
+        return { canUse: false, reason: `On cooldown (${(cd / 1000).toFixed(1)}s)` };
+      }
     }
 
     // Availability check: is it carried, or food at Outpost?
@@ -295,19 +330,29 @@ export class ConsumableSystem {
 
       case 'health_potion': {
         // The selected member, if injured. Otherwise the injured member with the lowest HP%.
+        let target: Player | undefined;
         if (options?.preferredTarget && options.preferredTarget.hp < options.preferredTarget.maxHp && options.preferredTarget.state !== 'dead') {
-          return { canUse: true, target: options.preferredTarget };
+          target = options.preferredTarget;
+        } else {
+          const selectedInjured = selectedMembers.find((m) => m.hp < m.maxHp && m.state !== 'dead');
+          if (selectedInjured) {
+            target = selectedInjured;
+          } else {
+            const injuredList = party.filter((m) => m.hp < m.maxHp && m.state !== 'dead');
+            if (injuredList.length === 0) {
+              return { canUse: false, reason: 'No one is injured' };
+            }
+            injuredList.sort((a, b) => a.hp / Math.max(1, a.maxHp) - b.hp / Math.max(1, b.maxHp));
+            target = injuredList[0];
+          }
         }
-        const selectedInjured = selectedMembers.find((m) => m.hp < m.maxHp && m.state !== 'dead');
-        if (selectedInjured) {
-          return { canUse: true, target: selectedInjured };
-        }
-        const injuredList = party.filter((m) => m.hp < m.maxHp && m.state !== 'dead');
-        if (injuredList.length === 0) {
+        if (!target) {
           return { canUse: false, reason: 'No one is injured' };
         }
-        injuredList.sort((a, b) => a.hp / Math.max(1, a.maxHp) - b.hp / Math.max(1, b.maxHp));
-        return { canUse: true, target: injuredList[0] };
+        if ((target.healthPotionCooldownRemainingMs || 0) > 0) {
+          return { canUse: false, reason: 'Health Potion on cooldown', target };
+        }
+        return { canUse: true, target };
       }
 
       case 'escape_stone': {
@@ -342,8 +387,12 @@ export class ConsumableSystem {
             return { canUse: false, reason: 'No valid target' };
           }
 
-          if (target.hunger >= target.maxHunger) {
-            return { canUse: false, reason: 'Hunger full', target };
+          const hungerEnabled = DataLoader.getInstance().isHungerEnabled();
+          const hasWellFed = (target.wellFedRemainingMs ?? 0) > 0 || (target.activeStatusEffects?.has('well_fed') ?? false);
+          if (hungerEnabled) {
+            if (target.hunger >= target.maxHunger && hasWellFed) {
+              return { canUse: false, reason: 'Hunger full and already Well Fed', target };
+            }
           }
 
           return { canUse: true, target };
@@ -548,18 +597,24 @@ export class ConsumableSystem {
           this.showToast(msg, 'warn');
           return { success: false, message: msg };
         }
+        if ((target.healthPotionCooldownRemainingMs || 0) > 0) {
+          const msg = `${target.entityName}'s Health Potion is on cooldown!`;
+          this.showToast(msg, 'warn');
+          return { success: false, message: msg };
+        }
         const consumed = this.consumeItemFromParty('health_potion', target, party, options?.fromMember);
         if (!consumed) {
           const msg = 'No Health Potions carried by party!';
           this.showToast(msg, 'warn');
           return { success: false, message: msg };
         }
-        const healAmt = 50;
-        const oldHp = target.hp;
-        target.hp = Math.min(target.maxHp, target.hp + healAmt);
-        const healed = Math.round(target.hp - oldHp);
+        const itemDef = DataLoader.getInstance().getItem('health_potion');
+        const healAmt = itemDef?.healAmount ?? 30;
+        const cooldownMs = itemDef?.cooldownMs ?? 10000;
+        const healed = target.heal(healAmt);
+        target.healthPotionCooldownRemainingMs = cooldownMs;
+        this.setCooldown('health_potion', cooldownMs, target);
         target.createFloatingText?.(`+${healed} HP`, '#4ade80');
-        this.setCooldown('health_potion', 10000);
         const msg = `💖 ${target.entityName} restored +${healed} HP!`;
         this.showToast(msg, 'success');
         return { success: true, message: msg };
@@ -588,8 +643,10 @@ export class ConsumableSystem {
 
       default: {
         if (this.isFoodItem(normalizedId)) {
-          if (target.hunger >= target.maxHunger) {
-            const msg = 'Hunger full';
+          const hungerEnabled = DataLoader.getInstance().isHungerEnabled();
+          const hasWellFed = (target.wellFedRemainingMs ?? 0) > 0 || (target.activeStatusEffects?.has('well_fed') ?? false);
+          if (hungerEnabled && target.hunger >= target.maxHunger && hasWellFed) {
+            const msg = 'Hunger full and already Well Fed';
             this.showToast(msg, 'warn');
             return { success: false, message: msg };
           }

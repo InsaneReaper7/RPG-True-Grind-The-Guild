@@ -1259,9 +1259,24 @@ export class HUD {
       this.partySpawnCompanionBtn.onclick = () => {
         if (this.currentParty.length === 2) {
           HUD.activeInstance?.openRecruitModal();
+        } else if (this.currentParty.length === 3) {
+          const tut = TutorialSystem.getInstance();
+          const step = tut.getCurrentStep();
+          const canSummonFourth = tut.getIsCompleted() || tut.getIsDismissed() || (step?.id === 'summon_fourth_member');
+          if (canSummonFourth) {
+            const game = (window as any).game;
+            const outpost = game?.scene?.getScene('OutpostScene');
+            if (outpost && typeof outpost.summonFourthPartyMember === 'function') {
+              outpost.summonFourthPartyMember();
+            } else if (typeof (window as any).__summonFourthPartyMember === 'function') {
+              (window as any).__summonFourthPartyMember();
+            }
+            HUD.activeInstance?.renderPartyOverviewModal();
+          } else {
+            this.showToast('Locked: Progress further in guild onboarding before recruiting our fourth member.', 'warn', 3000);
+          }
         } else {
-          (window as any).__spawnTestCompanion?.();
-          HUD.activeInstance?.renderPartyOverviewModal();
+          this.showToast('Party is full (maximum 4 members)', 'warn', 3000);
         }
       };
     }
@@ -3133,7 +3148,7 @@ export class HUD {
         if (nameEl) nameEl.innerText = member.entityName || (i === 0 ? 'Leader' : `Comp ${i}`);
 
         if (avatarEl) {
-          const roleIcon = i === 0 ? '👑' : i === 1 ? '🗡️' : i === 2 ? '⚔️' : '🔨';
+          const roleIcon = i === 0 ? '👑' : i === 1 ? '🗡️' : i === 2 ? '⚔️' : (DataLoader.getInstance().getFourthMemberRecruitDef()?.avatarIcon || '🪄');
           avatarEl.innerText = roleIcon;
         }
 
@@ -3314,9 +3329,22 @@ export class HUD {
 
     if (this.partySpawnCompanionBtn) {
       const isFull = this.currentParty.length >= 4;
-      (this.partySpawnCompanionBtn as HTMLButtonElement).disabled = isFull;
-      this.partySpawnCompanionBtn.style.opacity = isFull ? '0.5' : '1';
-      this.partySpawnCompanionBtn.style.cursor = isFull ? 'not-allowed' : 'pointer';
+      const tut = TutorialSystem.getInstance();
+      const step = tut.getCurrentStep();
+      const canSummonFourth = tut.getIsCompleted() || tut.getIsDismissed() || (step?.id === 'summon_fourth_member');
+      const isGated = this.currentParty.length === 3 && !canSummonFourth;
+      const isDisabled = isFull || isGated;
+
+      (this.partySpawnCompanionBtn as HTMLButtonElement).disabled = isDisabled;
+      this.partySpawnCompanionBtn.style.opacity = isDisabled ? '0.5' : '1';
+      this.partySpawnCompanionBtn.style.cursor = isDisabled ? 'not-allowed' : 'pointer';
+      if (isFull) {
+        this.partySpawnCompanionBtn.title = 'Party is full (maximum 4 members)';
+      } else if (isGated) {
+        this.partySpawnCompanionBtn.title = 'Locked: Complete earlier tutorial steps first';
+      } else {
+        this.partySpawnCompanionBtn.title = '+ Summon Recruit';
+      }
     }
 
     for (let i = 0; i < this.currentParty.length; i++) {
@@ -3452,9 +3480,22 @@ export class HUD {
 
     if (this.partySpawnCompanionBtn) {
       const isFull = this.currentParty.length >= 4;
-      (this.partySpawnCompanionBtn as HTMLButtonElement).disabled = isFull;
-      this.partySpawnCompanionBtn.style.opacity = isFull ? '0.5' : '1';
-      this.partySpawnCompanionBtn.style.cursor = isFull ? 'not-allowed' : 'pointer';
+      const tut = TutorialSystem.getInstance();
+      const step = tut.getCurrentStep();
+      const canSummonFourth = tut.getIsCompleted() || tut.getIsDismissed() || (step?.id === 'summon_fourth_member');
+      const isGated = this.currentParty.length === 3 && !canSummonFourth;
+      const isDisabled = isFull || isGated;
+
+      (this.partySpawnCompanionBtn as HTMLButtonElement).disabled = isDisabled;
+      this.partySpawnCompanionBtn.style.opacity = isDisabled ? '0.5' : '1';
+      this.partySpawnCompanionBtn.style.cursor = isDisabled ? 'not-allowed' : 'pointer';
+      if (isFull) {
+        this.partySpawnCompanionBtn.title = 'Party is full (maximum 4 members)';
+      } else if (isGated) {
+        this.partySpawnCompanionBtn.title = 'Locked: Complete earlier tutorial steps first';
+      } else {
+        this.partySpawnCompanionBtn.title = '+ Summon Recruit';
+      }
     }
 
     const dataLoader = DataLoader.getInstance();
@@ -5218,6 +5259,8 @@ export class HUD {
               }
               if (node.id === 'research_blacksmithing_station' || node.targetBuildableId === 'blacksmithing_station') {
                 TutorialSystem.getInstance().completeStepId('research_station');
+              } else if (node.id === 'research_alchemy_station' || node.targetBuildableId === 'alchemy_station') {
+                TutorialSystem.getInstance().notifyResearchUnlocked('research_alchemy_station');
               }
               this.renderResearchTreeModal();
               if (this.currentProgression) {
@@ -5534,7 +5577,9 @@ export class HUD {
       if (ingId === 'wood') {
         return gameState.getWood() >= count;
       }
-      return gameState.getItemCount(ingId) >= count;
+      const stockpileCount = gameState.getItemCount(ingId);
+      const carriedCount = (player && typeof player.getItemCount === 'function') ? player.getItemCount(ingId) : 0;
+      return (stockpileCount + carriedCount) >= count;
     };
 
     this.currentPlayer = player;

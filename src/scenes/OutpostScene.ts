@@ -1174,6 +1174,25 @@ export class OutpostScene extends Phaser.Scene {
     return this.spawnTestCompanion(startingKitId);
   }
 
+  public summonFourthPartyMember(): boolean {
+    if (this.party.length >= 4) {
+      this.hud?.showToast('Party is full (maximum 4 members)', 'warn', 3000);
+      return false;
+    }
+    if (this.party.length !== 3) {
+      this.hud?.showToast('Must have 3 party members before summoning fourth member.', 'warn', 3000);
+      return false;
+    }
+    const success = this.spawnTestCompanion();
+    if (success) {
+      const recruitDef = DataLoader.getInstance().getFourthMemberRecruitDef();
+      const quote = recruitDef.quote || 'Our four-member expedition is complete!';
+      this.hud?.showToast(`🏹 Valerie: "${quote}"`, 'info', 7000);
+      TutorialSystem.getInstance().completeStepId('summon_fourth_member');
+    }
+    return success;
+  }
+
   public spawnTestCompanion(startingKitId?: string): boolean {
     if (this.party.length >= 4) {
       this.hud.showToast('Party is full (maximum 4 members)', 'warn', 3000);
@@ -1184,7 +1203,8 @@ export class OutpostScene extends Phaser.Scene {
     const classesData = dataLoader.getClassesData();
     const companionIndex = this.party.length;
     const companionId = `companion_${companionIndex}`;
-    const companionName = companionIndex === 1 ? 'Valerie' : companionIndex === 2 ? 'Kaelen' : 'Barris';
+    const recruitDef = dataLoader.getFourthMemberRecruitDef();
+    const companionName = companionIndex === 1 ? 'Valerie' : companionIndex === 2 ? 'Kaelen' : (recruitDef?.name || 'Recruit');
 
     // Find adjacent walkable unoccupied tile near leader in 2x2 formation
     const offsets = [
@@ -1237,6 +1257,8 @@ export class OutpostScene extends Phaser.Scene {
         mood: DataLoader.getInstance().isMoodEnabled() ? 80 : 50,
         state: 'idle'
       };
+    } else if (companionIndex === 3) {
+      snap = GameState.getInstance().createFourthMemberRecruitSnapshot(recruitDef);
     } else {
       const kit = startingKitId || (companionIndex === 2 ? 'sword_and_shield' : 'mace');
       snap = GameState.getInstance().createBlankRecruitSnapshot(companionName, companionId, kit);
@@ -1662,6 +1684,8 @@ export class OutpostScene extends Phaser.Scene {
       this.time.delayedCall(1200, () => {
         this.hud?.showToast('🏹 Valerie: "Station placed! Exit Build Mode [B], walk over and click the Blacksmithing Station to forge an equipment upgrade."', 'success', 6500);
       });
+    } else if (blueprint.id === 'alchemy_station') {
+      TutorialSystem.getInstance().notifyBuildablePlaced('alchemy_station');
     }
   }
 

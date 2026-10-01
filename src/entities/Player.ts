@@ -65,6 +65,7 @@ export class Player extends Entity {
   public energyPotionRegenPerSec: number = 0;
   public manaPotionRemainingMs: number = 0;
   public manaPotionRegenPerSec: number = 0;
+  public healthPotionCooldownRemainingMs: number = 0;
   public lastDiagRegenLog?: number;
   public lastDiagInCombatLog?: number;
 
@@ -1435,6 +1436,10 @@ export class Player extends Entity {
 
   public override update(time: number, delta: number): void {
     super.update(time, delta);
+
+    if (this.healthPotionCooldownRemainingMs > 0) {
+      this.healthPotionCooldownRemainingMs = Math.max(0, this.healthPotionCooldownRemainingMs - delta);
+    }
 
     // Invariant: Living/conscious characters must never have a lingering revive icon
     if (this.state !== 'downed' && this.reviveIconSprite) {

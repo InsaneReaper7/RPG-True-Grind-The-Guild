@@ -920,6 +920,47 @@ Never ask Antigravity to jump ahead in this list — each milestone assumes the 
   - Full suite: `npm test -- --quiet` passes **99/99 test suites (0 failures)**.
   - Production build: `npm run build` succeeds with zero errors.
 
+**Resolved and shipped: Milestone — Tutorial Expansion (Alchemy Step + 4th Party Member) + New Health Potion.**
+- **0. Pre-Fixes & Data-Driven Cleanup**:
+  - **Bug A (Food eating while Hunger is frozen)**: In `ConsumableSystem.ts`, eating is no longer blocked when `hungerEnabled === false` even if hunger is at 100. When hunger is enabled, food is gated only if target is at full hunger *and* already has the `well_fed` buff.
+  - **Bug B (Health Potion Data Invariants)**: Health Potion heal amount and cooldown live strictly in `data/items.json` (`healAmount: 30`, `cooldownMs: 10000`, `weight: 0.3`, `category: "consumables"`). Nothing hardcoded in `ConsumableSystem`. Recipe in `data/alchemyRecipes.json` references `health_potion` requiring 2 Wild Herbs, Lv 0, 25 EXP without duplicating heal/cooldown numbers.
+- **1. Research Balance & Station Costs (Owner Decision)**:
+  - Both `research_blacksmithing_station` and `research_alchemy_station` reduced from 10 RP to 5 RP each in `data/researchTree.json`.
+  - Cold-start viability: a first dungeon run yields ~10–12 RP, cleanly affording both Blacksmithing (5) and Alchemy (5).
+  - Step 7 objective and instruction updated to 5 RP.
+  - Step 10 is `alchemy_station` with sub-objectives: "Research Alchemy Station (5 RP) ☐ / Place it in the Outpost ☐". If < 5 RP, hint directs player: "Earn more Research Points in the dungeon."
+- **2. Health Potion Consumption & Mechanics**:
+  - Carried-only priority, target bag first, then party bags; rejects stockpile-only potions.
+  - Heals instantly through `Entity.heal()`, filling Critical HP first, then Main HP.
+  - Per-character 10s cooldown tracked via `Player.healthPotionCooldownRemainingMs` and ticked down in `Player.update()`. Quick bar slot displays live cooldown overlay.
+  - Smart targeting: selected member if injured, otherwise member with lowest HP%. Uninjured targets are protected from potion consumption. AI party members do not auto-drink. Not in starting kit.
+- **3. Alchemy Step & Guild Supply Crate**:
+  - Tutorial expanded from 10 to 13 steps: Steps 1..9 stable, Step 10 (`alchemy_station`), Step 11 (`alchemy_crafting`), Step 12 (`knowledge_base`), Step 13 (`summon_fourth_member`).
+  - Step 11 sub-objectives: Health Potion ☐ / Mana Potion ☐ / Revive Potion ☐.
+  - One-time Guild Supply Crate: upon entering Step 11, checks stockpile against needed reagents (5 herbs, 1 ectoplasm, 1 bone, counting existing `bone_meal / 2`). Exactly tops up missing amount once per save, setting persistent `hasReceivedTutorialSupplyCrate = true` and displaying toast: `📦 Guild Supply Crate received! Missing alchemy reagents delivered to Outpost stockpile.`.
+  - Intermediate crafted reagents: `CraftingSystem.canAfford`, `applyCraft`, and `HUD.openAlchemyModal` support consuming ingredients from crafter's carried bag in addition to stockpile, allowing newly brewed Bone Meal in bag to craft Revive Potion immediately.
+  - In-progress save migration: preserved cleanly by stable step ID or migrated index.
+- **4. Fourth Party Member Summon & Gating**:
+  - Fourth recruit definition moved into data (`data/recruits.json`): name placeholder "Barris", role avatar "🪄", quote, introLine, equipped with `healing_staff`. Hardcoded "Barris" and hammer icon removed from `index.html` template.
+  - Gated generic "+ Summon Recruit" button:
+    - 2 members: opens Kaelen kit selection modal.
+    - 3 members: disabled while tutorial is active until Step 13 (`summon_fourth_member`). If tutorial is completed or dismissed, button becomes unlocked.
+    - Summoned 4th recruit: Level 0 across all proficiencies, no class, no skills, empty bag, equipped with `healing_staff`. Healing Staff auto-casts and trains Healing Magic EXP at Lv 0.
+    - 4 members: disabled ("Party is full (maximum 4 members)"). Prevents 5th member summon or duplicate companions.
+- **5. Verification**:
+  - Headless unit & integration test: `test/tutorialExpansion.test.ts` (7/7 tests passed):
+    - Health Potion data invariants, Critical HP priority fill, 10s per-character cooldown, lowest HP% targeting, full HP prevention, carried-only requirement.
+    - Bug A food eating with frozen hunger vs enabled.
+    - Both crafting stations 5 RP and 10 RP unlocks both.
+    - Guild Supply Crate math, delivery, and persistence.
+    - 13-step progression, dynamic sub-objectives, and save migrations.
+    - 4th party member summon gating, recruit data, and 4-member party cap.
+    - Healing Staff Lv 0 healing and healing_magic EXP progression.
+  - Updated existing tests: `test/consumableQuickBar.test.ts`, `test/milestone6.test.ts`, `test/research_points.test.ts`, `test/craftingStationRecipeFilter.test.ts`, `test/craftingInventoryRouting.test.ts`.
+  - Browser verification: `scripts/verify_tutorial_flow_browser.mjs` executed cleanly from Step 1 through Step 13, verifying crate delivery and 4th recruit summon with minimal output.
+  - Full suite: `npm test -- --quiet` passes all test suites.
+  - Production build: `npm run build` completes cleanly with zero errors.
+
 
 
 

@@ -332,7 +332,7 @@ async function runResearchPointsEarnabilityTests() {
   assert.ok(diggingNode, 'research_digging node must exist');
   assert.ok(blacksmithNode, 'research_blacksmithing_station node must exist');
   assert.strictEqual(diggingNode.cost, 10, 'Digging node cost must be 10 RP');
-  assert.strictEqual(blacksmithNode.cost, 10, 'Blacksmith node cost must be 10 RP');
+  assert.strictEqual(blacksmithNode.cost, 5, 'Blacksmith node cost must be 5 RP');
 
   // Scenario 5A: Discovery ALONE (Zero Elites, unlucky RNG)
   // Even if player encounters 0 Elites in their first dungeon session,

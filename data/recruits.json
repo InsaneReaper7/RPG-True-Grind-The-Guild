@@ -1,0 +1,10 @@
+{
+  "fourth_member": {
+    "name": "Barris",
+    "avatarKey": "companion-avatar",
+    "avatarIcon": "🪄",
+    "equippedWeaponId": "healing_staff",
+    "introLine": "Too invested in research to be useful at HQ, but eager to study the dungeon frontline.",
+    "quote": "Barris has arrived from Guild HQ equipped with a Healing Staff. Our four-member expedition is complete!"
+  }
+}

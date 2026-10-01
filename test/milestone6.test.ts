@@ -44,7 +44,7 @@ const skillsData = JSON.parse(fs.readFileSync(path.join(rootDir, 'data', 'skills
   const alchemyNode = researchTreeData.nodes.find((n: ResearchNodeDef) => n.id === 'research_alchemy_station');
   assert.ok(alchemyNode, 'research_alchemy_station must exist in researchTree.json');
   assert.equal(alchemyNode.targetBuildableId, 'alchemy_station');
-  assert.equal(alchemyNode.cost, 10, 'research_alchemy_station must cost 10 research points');
+  assert.equal(alchemyNode.cost, 5, 'research_alchemy_station must cost 5 research points');
 
   // 3. Alchemy Recipes Data
   assert.ok(Array.isArray(alchemyRecipesData.recipes), 'alchemyRecipes.json must have recipes array');
@@ -181,28 +181,28 @@ const mockClassesData: ClassesData = {
   // Check 3a: Cannot unlock with 0 RP
   const checkFail = researchSystem.canUnlockNode(alchemyNode);
   assert.equal(checkFail.canUnlock, false);
-  assert.match(checkFail.reason || '', /Requires 10 Research Points/);
+  assert.match(checkFail.reason || '', /Requires 5 Research Points/);
 
   const unlockFail = researchSystem.unlockNode(alchemyNode);
   assert.equal(unlockFail.success, false);
   assert.equal(gameState.isBuildableUnlocked('alchemy_station'), false, 'alchemy_station must remain locked');
 
-  // Add exactly 10 RP (the unlock cost)
-  gameState.addResearchPoints(10);
-  assert.equal(gameState.getResearchPoints(), 10);
+  // Add exactly 5 RP (the unlock cost)
+  gameState.addResearchPoints(5);
+  assert.equal(gameState.getResearchPoints(), 5);
 
-  // Check 3b: Unlock succeeds with exact 10 RP
+  // Check 3b: Unlock succeeds with exact 5 RP
   const checkPass = researchSystem.canUnlockNode(alchemyNode);
   assert.equal(checkPass.canUnlock, true);
 
   const unlockSuccess = researchSystem.unlockNode(alchemyNode);
   assert.equal(unlockSuccess.success, true);
   assert.equal(unlockSuccess.buildableId, 'alchemy_station');
-  assert.equal(gameState.getResearchPoints(), 0, '10 RP deducted, 0 RP remaining');
+  assert.equal(gameState.getResearchPoints(), 0, '5 RP deducted, 0 RP remaining');
   assert.equal(gameState.isBuildableUnlocked('alchemy_station'), true, 'alchemy_station is now unlocked in GameState');
 
   // Check 3c: Cannot unlock again (idempotent / already unlocked)
-  gameState.addResearchPoints(10);
+  gameState.addResearchPoints(5);
   const checkDuplicate = researchSystem.canUnlockNode(alchemyNode);
   assert.equal(checkDuplicate.canUnlock, false);
   assert.equal(checkDuplicate.reason, 'Already unlocked');

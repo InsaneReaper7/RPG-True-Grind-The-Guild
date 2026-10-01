@@ -41,6 +41,17 @@
       "description": "A potent herbal tonic. Instantly restores 35 Energy, grants +2 Energy/s for 15s, and accelerates Energy Regen skill growth."
     },
     {
+      "id": "health_potion",
+      "name": "Health Potion",
+      "resultItemId": "health_potion",
+      "requiredLevel": 0,
+      "ingredients": {
+        "wild_herbs": 2
+      },
+      "expGranted": 25,
+      "description": "A restorative herbal draft brewed from wild herbs. Instantly restores health, filling Critical HP before Main HP."
+    },
+    {
       "id": "mana_potion",
       "name": "Mana Potion",
       "resultItemId": "mana_potion",

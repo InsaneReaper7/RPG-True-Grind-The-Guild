@@ -41,6 +41,7 @@
     { "id": "antidote", "name": "Antidote", "weight": 0.2, "category": "consumables", "icon": "🧪" },
     { "id": "energy_potion", "name": "Energy Potion", "weight": 0.3, "category": "consumables", "icon": "⚡" },
     { "id": "mana_potion", "name": "Mana Potion", "weight": 0.3, "category": "consumables", "icon": "✨" },
+    { "id": "health_potion", "name": "Health Potion", "weight": 0.3, "category": "consumables", "icon": "❤️", "healAmount": 30, "cooldownMs": 10000, "description": "Restores 30 HP instantly, filling Critical HP first. 10 s cooldown per character." },
     { "id": "revive_potion", "name": "Revive Potion", "weight": 0.5, "category": "consumables", "icon": "💛" },
     { "id": "escape_stone", "name": "Escape Stone", "weight": 0.2, "category": "consumables", "icon": "🌀" },
     { "id": "ration", "name": "Field Ration", "weight": 0.5, "category": "consumables", "icon": "🍖" },

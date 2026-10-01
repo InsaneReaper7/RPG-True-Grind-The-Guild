@@ -75,7 +75,7 @@ async function runTutorialOnboardingTests() {
   console.log('--- TEST 1: Initial Tutorial Setup & Step Structure ---');
   tutorial.reset();
 
-  assert.equal(TUTORIAL_STEPS.length, 10, 'Tutorial must define exactly 10 concise orientation steps');
+  assert.equal(TUTORIAL_STEPS.length, 13, 'Tutorial must define exactly 13 concise orientation steps');
   assert.equal(tutorial.getCurrentStepIndex(), 0, 'Clean boot begins at step index 0');
   assert.equal(tutorial.getIsCompleted(), false, 'Tutorial starts uncompleted');
   assert.equal(tutorial.getIsDismissed(), false, 'Tutorial starts undismissed');
@@ -85,10 +85,10 @@ async function runTutorialOnboardingTests() {
   assert.ok(step0, 'Step 0 definition must exist');
   assert.equal(step0?.id, 'guild_roster', 'First step is guild_roster');
   assert.equal(step0?.stepNumber, 1, 'First step displays as Step 1');
-  assert.equal(step0?.totalSteps, 10);
+  assert.equal(step0?.totalSteps, 13);
   assert.ok(step0?.valerieQuote.includes('Summon our third recruit'), 'Valerie prompts Kaelen recruitment');
 
-  console.log('✓ PASS: Tutorial structure initialized with 10 orientation steps starting with Guild Roster.\n');
+  console.log('✓ PASS: Tutorial structure initialized with 13 orientation steps starting with Guild Roster.\n');
 
   // ---------------------------------------------------------------------------
   // TEST 2: Step-by-Step Flow Through Full Cold-Start Loop
@@ -164,22 +164,42 @@ async function runTutorialOnboardingTests() {
   assert.equal(step8?.id, 'forge_upgrade');
   assert.ok(step8?.objective.includes('forge an upgrade'), 'Forge step teaches weapon upgrade');
 
-  // Step 9 -> 10: Orientation Complete & Knowledge Base
+  // Step 9 -> 10: Alchemy Station
   advanced = tutorial.completeStepId('forge_upgrade');
   assert.equal(advanced, true);
   assert.equal(tutorial.getCurrentStepIndex(), 9);
   const step9 = tutorial.getCurrentStep();
-  assert.equal(step9?.id, 'knowledge_base');
-  assert.ok(step9?.instruction.includes('[K]'), 'Final step points to Knowledge Base with [K]');
-  assert.ok(step9?.valerieQuote.includes('Guild Knowledge Base anytime with [K]'), 'Valerie recommends Knowledge Base');
+  assert.equal(step9?.id, 'alchemy_station');
+
+  // Step 10 -> 11: Alchemy Crafting
+  advanced = tutorial.completeStepId('alchemy_station');
+  assert.equal(advanced, true);
+  assert.equal(tutorial.getCurrentStepIndex(), 10);
+  const step10 = tutorial.getCurrentStep();
+  assert.equal(step10?.id, 'alchemy_crafting');
+
+  // Step 11 -> 12: Knowledge Base
+  advanced = tutorial.completeStepId('alchemy_crafting');
+  assert.equal(advanced, true);
+  assert.equal(tutorial.getCurrentStepIndex(), 11);
+  const step11 = tutorial.getCurrentStep();
+  assert.equal(step11?.id, 'knowledge_base');
+  assert.ok(step11?.instruction.includes('[K]'), 'Knowledge base step points to [K]');
+
+  // Step 12 -> 13: Summon Fourth Member
+  advanced = tutorial.completeStepId('knowledge_base');
+  assert.equal(advanced, true);
+  assert.equal(tutorial.getCurrentStepIndex(), 12);
+  const step12 = tutorial.getCurrentStep();
+  assert.equal(step12?.id, 'summon_fourth_member');
 
   // Complete final step
-  advanced = tutorial.completeStepId('knowledge_base');
+  advanced = tutorial.completeStepId('summon_fourth_member');
   assert.equal(advanced, true);
   assert.equal(tutorial.getIsCompleted(), true, 'Completing final step marks tutorial complete');
   assert.equal(tutorial.getCurrentStep(), null, 'No active step remains after completion');
 
-  console.log('✓ PASS: All 10 steps sequentially advance and enforce the exact scope of the verified cold-start loop.\n');
+  console.log('✓ PASS: All 13 steps sequentially advance and enforce the exact scope of the verified cold-start loop.\n');
 
   // ---------------------------------------------------------------------------
   // TEST 3: Minimizing and Dismissing

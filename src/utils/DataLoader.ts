@@ -42,7 +42,9 @@ import type {
   StartingKitDef,
   DungeonRegionDef,
   ItemDef,
-  ItemsData
+  ItemsData,
+  RecruitDef,
+  RecruitsData
 } from '../types/game.ts';
 import { HiddenSkillSystem } from '../systems/HiddenSkillSystem.ts';
 import { resolveGearStats, getBaseItemId, isCraftingClass } from './gearResolver.ts';
@@ -73,6 +75,7 @@ export class DataLoader {
   private dungeonConfig!: DungeonConfig;
   private gatheringNodesConfig!: GatheringNodesConfig;
   private itemsData!: ItemsData;
+  private recruitsData!: RecruitsData;
 
   private constructor() {}
 
@@ -84,7 +87,7 @@ export class DataLoader {
   }
 
   public async loadAll(): Promise<void> {
-    const [player, weapons, classes, enemies, skills, statusEffects, buildables, rooms, hiddenSkills, skillBooks, researchTree, alchemyRecipes, cookingRecipes, blacksmithRecipes, bowyerRecipes, armors, armorsmithRecipes, foods, moodEffects, dungeon, gathering, items] = await Promise.all([
+    const [player, weapons, classes, enemies, skills, statusEffects, buildables, rooms, hiddenSkills, skillBooks, researchTree, alchemyRecipes, cookingRecipes, blacksmithRecipes, bowyerRecipes, armors, armorsmithRecipes, foods, moodEffects, dungeon, gathering, items, recruits] = await Promise.all([
       fetch('/data/player.json').then((res) => res.json()),
       fetch('/data/weapons.json').then((res) => res.json()),
       fetch('/data/classes.json').then((res) => res.json()),
@@ -106,7 +109,8 @@ export class DataLoader {
       fetch('/data/moodEffects.json').then((res) => res.json()),
       fetch('/data/dungeonConfig.json').then((res) => res.json()).catch(() => null),
       fetch('/data/gatheringNodes.json').then((res) => res.json()).catch(() => null),
-      fetch('/data/items.json').then((res) => res.json()).catch(() => null)
+      fetch('/data/items.json').then((res) => res.json()).catch(() => null),
+      fetch('/data/recruits.json').then((res) => res.json()).catch(() => null)
     ]);
 
     this.playerData = player as PlayerData;
@@ -129,6 +133,16 @@ export class DataLoader {
     this.foodsData = foods as FoodsData;
     this.moodEffectsData = moodEffects as MoodEffectsData;
     this.itemsData = (items as ItemsData) || { items: [] };
+    this.recruitsData = (recruits as RecruitsData) || {
+      fourth_member: {
+        name: 'Barris',
+        avatarKey: 'companion-avatar',
+        avatarIcon: '🪄',
+        equippedWeaponId: 'healing_staff',
+        introLine: 'Too invested in research to be useful at HQ, but eager to study the dungeon frontline.',
+        quote: 'Barris has arrived from Guild HQ equipped with a Healing Staff. Our four-member expedition is complete!'
+      }
+    };
     if (dungeon) {
       this.dungeonConfig = dungeon as DungeonConfig;
     }
@@ -992,6 +1006,17 @@ export class DataLoader {
     const food = this.getFood(baseId);
     if (food && food.weight !== undefined) return food.weight;
     return 0.5; // sensible fallback default for unlisted items
+  }
+
+  public getFourthMemberRecruitDef(): RecruitDef {
+    return this.recruitsData?.fourth_member || {
+      name: 'Barris',
+      avatarKey: 'companion-avatar',
+      avatarIcon: '🪄',
+      equippedWeaponId: 'healing_staff',
+      introLine: 'Too invested in research to be useful at HQ, but eager to study the dungeon frontline.',
+      quote: 'Barris has arrived from Guild HQ equipped with a Healing Staff. Our four-member expedition is complete!'
+    };
   }
 }
 

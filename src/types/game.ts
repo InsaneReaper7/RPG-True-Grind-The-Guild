@@ -350,8 +350,10 @@ export interface PlayerSnapshot {
   discoveredStatusEffects?: string[];
   discoveredGatheringNodes?: string[];
   tutorialStep?: number;
+  tutorialStepId?: string;
   tutorialCompleted?: boolean;
   tutorialDismissed?: boolean;
+  hasReceivedTutorialSupplyCrate?: boolean;
   gearInstances?: Record<string, GearItemInstance>;
   quickSlots?: (string | null)[];
 }
@@ -724,10 +726,25 @@ export interface ItemDef {
   icon?: string;
   description?: string;
   keepOnReturn?: boolean;
+  healAmount?: number;
+  cooldownMs?: number;
 }
 
 export interface ItemsData {
   items: ItemDef[];
+}
+
+export interface RecruitDef {
+  name: string;
+  avatarKey?: string;
+  avatarIcon?: string;
+  equippedWeaponId: string;
+  introLine?: string;
+  quote?: string;
+}
+
+export interface RecruitsData {
+  fourth_member: RecruitDef;
 }
 
 export interface FoodItemInstance {

@@ -10,6 +10,7 @@ import type { Player } from '../entities/Player.ts';
 import { GameState } from './GameState.ts';
 import { DataLoader } from '../utils/DataLoader.ts';
 import { getBaseItemId } from '../utils/gearResolver.ts';
+import { TutorialSystem } from './TutorialSystem.ts';
 
 export type AnyRecipeDef =
   | BlacksmithRecipeDef
@@ -119,10 +120,12 @@ export class CraftingSystem {
     };
   }
 
-  public static canAfford(recipe: AnyRecipeDef): boolean {
+  public static canAfford(recipe: AnyRecipeDef, crafter?: Player): boolean {
     const gameState = GameState.getInstance();
     for (const [item, qty] of Object.entries(recipe.ingredients)) {
-      if (gameState.getItemCount(item) < qty) {
+      const stockpileCount = item === 'wood' ? gameState.getWood() : gameState.getItemCount(item);
+      const carriedCount = (crafter && typeof crafter.getItemCount === 'function') ? crafter.getItemCount(item) : 0;
+      if (stockpileCount + carriedCount < qty) {
         return false;
       }
     }
@@ -138,7 +141,7 @@ export class CraftingSystem {
     const dataLoader = DataLoader.getInstance();
 
     // 1. Validate materials
-    if (!CraftingSystem.canAfford(recipe)) {
+    if (!CraftingSystem.canAfford(recipe, crafter)) {
       return {
         success: false,
         recipeId: recipe.id,
@@ -153,9 +156,24 @@ export class CraftingSystem {
       };
     }
 
-    // 2. Consume materials
+    // 2. Consume materials (carried first, then stockpile)
     for (const [item, qty] of Object.entries(recipe.ingredients)) {
-      gameState.consumeItem(item, qty);
+      let remaining = qty;
+      if (crafter && typeof crafter.getItemCount === 'function' && typeof crafter.removeItem === 'function') {
+        const carried = crafter.getItemCount(item);
+        if (carried > 0) {
+          const fromCarried = Math.min(carried, remaining);
+          crafter.removeItem(item, fromCarried);
+          remaining -= fromCarried;
+        }
+      }
+      if (remaining > 0) {
+        if (item === 'wood') {
+          gameState.addWood(-remaining);
+        } else {
+          gameState.consumeItem(item, remaining);
+        }
+      }
     }
 
     // 3. Determine result ID and whether it is gear
@@ -218,6 +236,7 @@ export class CraftingSystem {
       }
       quantity = totalYield;
       crafter.addItem(resultId, totalYield);
+      TutorialSystem.getInstance().onItemCrafted(resultId, totalYield, crafter);
     }
 
     // 5. Award profession proficiency EXP

@@ -113,6 +113,9 @@ export class ResearchSystem {
     if (node.id === 'research_blacksmithing_station' || node.targetBuildableId === 'blacksmithing_station') {
       TutorialSystem.getInstance().completeStepId('research_station');
     }
+    if (node.id === 'research_alchemy_station' || node.targetBuildableId === 'alchemy_station') {
+      TutorialSystem.getInstance().notifyResearchUnlocked('research_alchemy_station');
+    }
     console.log(`[ResearchSystem] ✨ Unlocked ${node.name} (${node.id}) for ${node.cost} Research Points!`);
 
     return {

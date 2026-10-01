@@ -13,7 +13,8 @@ import type {
   SeedMakerData,
   SaveMetadata,
   GameSaveFile,
-  GearItemInstance
+  GearItemInstance,
+  RecruitDef
 } from '../types/game.ts';
 import { DataLoader } from '../utils/DataLoader.ts';
 import { LockpickingSystem } from './LockpickingSystem.ts';
@@ -57,8 +58,10 @@ export class GameState {
 
   // Milestone: Tutorial & Onboarding
   private tutorialStep: number = 0;
+  private tutorialStepId?: string;
   private tutorialCompleted: boolean = false;
   private tutorialDismissed: boolean = false;
+  private hasReceivedTutorialSupplyCrate: boolean = false;
 
   // Milestone: Crafting Mastery, Apprentice Rank — Gear Instance Registry
   private gearInstances: Map<string, GearItemInstance> = new Map();
@@ -1332,6 +1335,10 @@ export class GameState {
     return [...this.placedBuildables];
   }
 
+  public hasPlacedBuildable(buildableId: string): boolean {
+    return this.placedBuildables.some((b) => b.id === buildableId);
+  }
+
   public addPlacedBuildable(item: PlacedBuildable): void {
     // Replace any existing buildable on the exact same tile (e.g. wall replacing floor) or append
     this.removePlacedBuildable(item.x, item.y);
@@ -1881,18 +1888,103 @@ export class GameState {
     }
   }
 
-  public getTutorialState(): { step: number; completed: boolean; dismissed: boolean } {
+  public getTutorialState(): { step: number; stepId?: string; completed: boolean; dismissed: boolean; hasReceivedTutorialSupplyCrate: boolean } {
     return {
       step: this.tutorialStep,
+      stepId: this.tutorialStepId,
       completed: this.tutorialCompleted,
-      dismissed: this.tutorialDismissed
+      dismissed: this.tutorialDismissed,
+      hasReceivedTutorialSupplyCrate: this.hasReceivedTutorialSupplyCrate
     };
   }
 
-  public setTutorialState(state: { step?: number; completed?: boolean; dismissed?: boolean }): void {
+  public setTutorialState(state: { step?: number; stepId?: string; completed?: boolean; dismissed?: boolean; hasReceivedTutorialSupplyCrate?: boolean }): void {
     if (typeof state.step === 'number') this.tutorialStep = state.step;
+    if (state.stepId !== undefined) this.tutorialStepId = state.stepId;
     if (typeof state.completed === 'boolean') this.tutorialCompleted = state.completed;
     if (typeof state.dismissed === 'boolean') this.tutorialDismissed = state.dismissed;
+    if (typeof state.hasReceivedTutorialSupplyCrate === 'boolean') this.hasReceivedTutorialSupplyCrate = state.hasReceivedTutorialSupplyCrate;
+  }
+
+  public checkAndGrantTutorialSupplyCrate(): { granted: boolean; added: { wild_herbs: number; ectoplasm: number; bone: number } } {
+    if (this.hasReceivedTutorialSupplyCrate) {
+      return { granted: false, added: { wild_herbs: 0, ectoplasm: 0, bone: 0 } };
+    }
+    const currentHerbs = this.getItemCount('wild_herbs');
+    const currentEcto = this.getItemCount('ectoplasm');
+    const currentBone = this.getItemCount('bone');
+    const currentBoneMeal = this.getItemCount('bone_meal');
+    const effectiveBones = currentBone + Math.floor(currentBoneMeal / 2);
+
+    const neededHerbs = Math.max(0, 5 - currentHerbs);
+    const neededEcto = Math.max(0, 1 - currentEcto);
+    const neededBone = Math.max(0, 1 - effectiveBones);
+
+    this.hasReceivedTutorialSupplyCrate = true;
+
+    if (neededHerbs > 0) this.addItem('wild_herbs', neededHerbs);
+    if (neededEcto > 0) this.addItem('ectoplasm', neededEcto);
+    if (neededBone > 0) this.addItem('bone', neededBone);
+
+    if (this.snapshot) {
+      this.snapshot.hasReceivedTutorialSupplyCrate = true;
+      try {
+        this.saveToDisk();
+      } catch (err) {
+        // Ignored in non-disk environments
+      }
+    }
+    return {
+      granted: true,
+      added: {
+        wild_herbs: neededHerbs,
+        ectoplasm: neededEcto,
+        bone: neededBone
+      }
+    };
+  }
+
+  public createFourthMemberRecruitSnapshot(recruitDef?: RecruitDef): CharacterSnapshot {
+    const dataLoader = DataLoader.getInstance();
+    const def = recruitDef || dataLoader.getFourthMemberRecruitDef();
+    const recruitName = def.name || 'Barris';
+    const weaponId = def.equippedWeaponId || 'healing_staff';
+
+    const seedProficiencies: Record<string, TrainableStat> = {
+      staff: { level: 0, currentExp: 0 },
+      healing_magic: { level: 0, currentExp: 0 },
+      construction: { level: 0, currentExp: 0 },
+      fist: { level: 0, currentExp: 0 }
+    };
+    this.discoveredProficiencies.add('staff');
+    this.discoveredProficiencies.add('healing_magic');
+
+    const recruitSnapshot: CharacterSnapshot = {
+      id: 'companion_3',
+      name: recruitName,
+      avatarKey: def.avatarKey || 'companion-avatar',
+      avatarTextureKey: def.avatarKey || 'companion-avatar',
+      hp: 50,
+      criticalHp: 25,
+      energy: 100,
+      equippedWeaponId: weaponId,
+      offhandWeaponId: null,
+      knownSkillIds: [],
+      equippedSkillIds: [],
+      autocastMap: {},
+      skillCooldownsRemainingMs: {},
+      proficiencies: seedProficiencies,
+      classLevels: {},
+      classStats: {},
+      unlockedClasses: [],
+      activeClass: null,
+      bookLearnedSkills: [],
+      inventory: {},
+      hunger: 100,
+      mood: dataLoader.isMoodEnabled() ? 80 : 50,
+      state: 'idle'
+    };
+    return recruitSnapshot;
   }
 
   public saveToDisk(): boolean {
@@ -1928,8 +2020,10 @@ export class GameState {
       this.snapshot.discoveredStatusEffects = Array.from(this.discoveredStatusEffects);
       this.snapshot.discoveredGatheringNodes = Array.from(this.discoveredGatheringNodes);
       this.snapshot.tutorialStep = this.tutorialStep;
+      this.snapshot.tutorialStepId = this.tutorialStepId;
       this.snapshot.tutorialCompleted = this.tutorialCompleted;
       this.snapshot.tutorialDismissed = this.tutorialDismissed;
+      this.snapshot.hasReceivedTutorialSupplyCrate = this.hasReceivedTutorialSupplyCrate;
       this.snapshot.quickSlots = [...this.quickSlots];
 
       const leader = this.partySnapshots[0];
@@ -2079,8 +2173,10 @@ export class GameState {
     this.discoveredGatheringNodes = new Set(snap.discoveredGatheringNodes ?? []);
 
     this.tutorialStep = snap.tutorialStep ?? 0;
+    this.tutorialStepId = snap.tutorialStepId;
     this.tutorialCompleted = snap.tutorialCompleted ?? false;
     this.tutorialDismissed = snap.tutorialDismissed ?? false;
+    this.hasReceivedTutorialSupplyCrate = snap.hasReceivedTutorialSupplyCrate ?? false;
 
     this.currentGameDay = snap.currentGameDay ?? 1;
     this.dayProgressMs = snap.dayProgressMs ?? 0;
@@ -2134,8 +2230,10 @@ export class GameState {
     this.discoveredStatusEffects = new Set();
     this.discoveredGatheringNodes = new Set();
     this.tutorialStep = 0;
+    this.tutorialStepId = undefined;
     this.tutorialCompleted = false;
     this.tutorialDismissed = false;
+    this.hasReceivedTutorialSupplyCrate = false;
     this.currentGameDay = 1;
     this.dayProgressMs = 0;
     this.foodItems = [];

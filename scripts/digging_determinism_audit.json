@@ -32,8 +32,8 @@
     "crystalMatch": true,
     "enemiesMatch": true,
     "nonDigNodesMatch": true,
-    "nonDigCountLocked": 11,
-    "nonDigCountUnlocked": 11,
+    "nonDigCountLocked": 13,
+    "nonDigCountUnlocked": 13,
     "isIdentical": true,
     "firstMismatch": null
   },
@@ -70,8 +70,8 @@
     "crystalMatch": true,
     "enemiesMatch": true,
     "nonDigNodesMatch": true,
-    "nonDigCountLocked": 9,
-    "nonDigCountUnlocked": 9,
+    "nonDigCountLocked": 14,
+    "nonDigCountUnlocked": 14,
     "isIdentical": true,
     "firstMismatch": null
   },
@@ -81,7 +81,7 @@
     "digNodesUnlocked": 3,
     "digSpotCoords": [
       {
-        "x": 18,
+        "x": 20,
         "y": 41,
         "roomIndex": 4,
         "roomType": "heavy_combat",
@@ -108,8 +108,8 @@
     "crystalMatch": true,
     "enemiesMatch": true,
     "nonDigNodesMatch": true,
-    "nonDigCountLocked": 11,
-    "nonDigCountUnlocked": 11,
+    "nonDigCountLocked": 10,
+    "nonDigCountUnlocked": 10,
     "isIdentical": true,
     "firstMismatch": null
   },
@@ -119,7 +119,7 @@
     "digNodesUnlocked": 3,
     "digSpotCoords": [
       {
-        "x": 37,
+        "x": 38,
         "y": 28,
         "roomIndex": 5,
         "roomType": "gathering",
@@ -184,8 +184,8 @@
     "crystalMatch": true,
     "enemiesMatch": true,
     "nonDigNodesMatch": true,
-    "nonDigCountLocked": 11,
-    "nonDigCountUnlocked": 11,
+    "nonDigCountLocked": 13,
+    "nonDigCountUnlocked": 13,
     "isIdentical": true,
     "firstMismatch": null
   },
@@ -222,8 +222,8 @@
     "crystalMatch": true,
     "enemiesMatch": true,
     "nonDigNodesMatch": true,
-    "nonDigCountLocked": 18,
-    "nonDigCountUnlocked": 18,
+    "nonDigCountLocked": 17,
+    "nonDigCountUnlocked": 17,
     "isIdentical": true,
     "firstMismatch": null
   },
@@ -240,14 +240,14 @@
         "roomBounds": "[37,5 7x12]"
       },
       {
-        "x": 28,
+        "x": 30,
         "y": 37,
         "roomIndex": 5,
         "roomType": "gathering",
         "roomBounds": "[24,33 9x11]"
       },
       {
-        "x": 26,
+        "x": 29,
         "y": 9,
         "roomIndex": 3,
         "roomType": "heavy_combat",
@@ -260,8 +260,8 @@
     "crystalMatch": true,
     "enemiesMatch": true,
     "nonDigNodesMatch": true,
-    "nonDigCountLocked": 20,
-    "nonDigCountUnlocked": 20,
+    "nonDigCountLocked": 15,
+    "nonDigCountUnlocked": 15,
     "isIdentical": true,
     "firstMismatch": null
   },
@@ -271,7 +271,7 @@
     "digNodesUnlocked": 2,
     "digSpotCoords": [
       {
-        "x": 18,
+        "x": 19,
         "y": 38,
         "roomIndex": 3,
         "roomType": "gathering",
@@ -291,8 +291,8 @@
     "crystalMatch": true,
     "enemiesMatch": true,
     "nonDigNodesMatch": true,
-    "nonDigCountLocked": 18,
-    "nonDigCountUnlocked": 18,
+    "nonDigCountLocked": 16,
+    "nonDigCountUnlocked": 16,
     "isIdentical": true,
     "firstMismatch": null
   }
