@@ -32,6 +32,37 @@ export interface CraftResult {
   message: string;
 }
 
+export interface SalvageResult {
+  success: boolean;
+  itemIdOrInstanceId: string;
+  baseItemId: string;
+  recipeId?: string;
+  recipeName?: string;
+  station?: string;
+  quantity: number;
+  refunds: Record<string, number>;
+  expGranted: number;
+  classExpGranted: number;
+  message: string;
+}
+
+export interface SalvageItemInfo {
+  id: string;
+  baseItemId: string;
+  name: string;
+  isBonusGear: boolean;
+  bonusPercent: number;
+  bonusText?: string;
+  crafterName?: string;
+  recipe?: AnyRecipeDef;
+  station?: string;
+  canSalvage: boolean;
+  reason?: string;
+  expectedRefund: Record<string, number>;
+  expectedRefundFormatted: string;
+  expGranted: number;
+}
+
 export class CraftingSystem {
   public static getMatchingClassId(professionId: string): string | null {
     switch (professionId) {
@@ -212,6 +243,411 @@ export class CraftingSystem {
       expGranted,
       classExpGranted,
       message: `Crafted ${quantity}x ${recipe.name}!`
+    };
+  }
+
+  // --- Gear Salvage Methods (Milestone: Gear Salvage) ---
+
+  public static getRecipeForGear(itemIdOrInstanceId: string): { recipe: AnyRecipeDef; station: string } | null {
+    const baseId = getBaseItemId(itemIdOrInstanceId);
+    const dataLoader = DataLoader.getInstance();
+
+    // Must be weapon/shield or armor/accessory
+    const rawWeapon = dataLoader.getRawWeapon?.(baseId) || dataLoader.getWeapon?.(baseId);
+    const rawArmor = dataLoader.getRawArmor?.(baseId) || dataLoader.getArmor?.(baseId);
+    if (!rawWeapon && !rawArmor) {
+      return null;
+    }
+
+    // Exclude protected tools / non-gear
+    const itemDef = dataLoader.getItem(baseId);
+    if (itemDef?.keepOnReturn) {
+      return null;
+    }
+
+    // 1. Blacksmithing
+    const bsRecipes = dataLoader.getBlacksmithRecipes() || [];
+    for (const r of bsRecipes) {
+      const result = (r as any).resultWeaponId || (r as any).resultItemId || (r as any).resultArmorId || r.id;
+      if (result === baseId) {
+        if (result === 'lockpick' || result === 'fishing_rod' || result === 'steel_scrap') return null;
+        return { recipe: r, station: 'blacksmithing' };
+      }
+    }
+
+    // 2. Armorsmithing
+    const asRecipes = dataLoader.getArmorsmithRecipes() || [];
+    for (const r of asRecipes) {
+      const result = (r as any).resultArmorId || (r as any).resultItemId || (r as any).resultWeaponId || r.id;
+      if (result === baseId) {
+        return { recipe: r, station: 'armorsmithing' };
+      }
+    }
+
+    // 3. Bowyer
+    const bwRecipes = dataLoader.getBowyerRecipes() || [];
+    for (const r of bwRecipes) {
+      const result = (r as any).resultWeaponId || (r as any).resultItemId || (r as any).resultArmorId || r.id;
+      if (result === baseId) {
+        return { recipe: r, station: 'bowyer' };
+      }
+    }
+
+    return null;
+  }
+
+  public static isItemEquipped(
+    itemIdOrInstanceId: string,
+    party?: Player[]
+  ): { isEquipped: boolean; memberName?: string } {
+    let partyMembers = party;
+    if (!partyMembers || partyMembers.length === 0) {
+      const gs = GameState.getInstance();
+      const snap = gs.getSnapshot();
+      if (snap?.party && snap.party.length > 0) {
+        for (const m of snap.party) {
+          if (
+            m.equippedWeaponId === itemIdOrInstanceId ||
+            m.offhandWeaponId === itemIdOrInstanceId ||
+            m.equippedHelmetId === itemIdOrInstanceId ||
+            m.equippedBodyArmorId === itemIdOrInstanceId ||
+            m.equippedNecklaceId === itemIdOrInstanceId ||
+            m.equippedRingId === itemIdOrInstanceId ||
+            m.equippedAccessoryId === itemIdOrInstanceId
+          ) {
+            return { isEquipped: true, memberName: m.name || m.id };
+          }
+        }
+      }
+    }
+    if (partyMembers && partyMembers.length > 0) {
+      for (const m of partyMembers) {
+        if (
+          (m.equippedWeapon && m.equippedWeapon.id === itemIdOrInstanceId && m.equippedWeapon.id !== 'fist') ||
+          (m.offhandWeapon && m.offhandWeapon.id === itemIdOrInstanceId) ||
+          (m.equippedHelmet && m.equippedHelmet.id === itemIdOrInstanceId) ||
+          (m.equippedBodyArmor && m.equippedBodyArmor.id === itemIdOrInstanceId) ||
+          (m.equippedNecklace && m.equippedNecklace.id === itemIdOrInstanceId) ||
+          (m.equippedRing && m.equippedRing.id === itemIdOrInstanceId) ||
+          (m.equippedAccessory && m.equippedAccessory.id === itemIdOrInstanceId)
+        ) {
+          return { isEquipped: true, memberName: m.entityName };
+        }
+      }
+    }
+    return { isEquipped: false };
+  }
+
+  public static canSalvage(
+    itemIdOrInstanceId: string,
+    options?: { station?: string; party?: Player[]; crafter?: Player }
+  ): { canSalvage: boolean; reason?: string; recipe?: AnyRecipeDef; station?: string } {
+    const dataLoader = DataLoader.getInstance();
+    const gameState = GameState.getInstance();
+    const baseId = getBaseItemId(itemIdOrInstanceId);
+
+    // 1. Check if tool with keepOnReturn
+    const itemDef = dataLoader.getItem(baseId);
+    if (itemDef?.keepOnReturn) {
+      if (baseId === 'lockpick') {
+        return { canSalvage: false, reason: 'Lockpicks cannot be salvaged.' };
+      }
+      if (baseId === 'fishing_rod') {
+        return { canSalvage: false, reason: 'The Fishing Rod cannot be salvaged.' };
+      }
+      return { canSalvage: false, reason: 'Tools cannot be salvaged.' };
+    }
+
+    // 2. Check if consumable, stackable, reagent (potions, bone meal, materials)
+    const rawWeapon = dataLoader.getRawWeapon?.(baseId) || dataLoader.getWeapon?.(baseId);
+    const rawArmor = dataLoader.getRawArmor?.(baseId) || dataLoader.getArmor?.(baseId);
+    if (!rawWeapon && !rawArmor) {
+      if (itemDef?.category === 'consumables') {
+        return { canSalvage: false, reason: 'Consumables cannot be salvaged.' };
+      }
+      return { canSalvage: false, reason: 'Materials and stackables cannot be salvaged.' };
+    }
+
+    // 3. Check if crafting recipe exists
+    const recipeInfo = CraftingSystem.getRecipeForGear(itemIdOrInstanceId);
+    if (!recipeInfo) {
+      return { canSalvage: false, reason: 'Gear has no crafting recipe and cannot be salvaged.' };
+    }
+
+    // 4. Check station match if station specified
+    if (options?.station && options.station !== recipeInfo.station) {
+      return { canSalvage: false, reason: `Must be salvaged at the ${recipeInfo.station} station.` };
+    }
+
+    // 5. Check if equipped
+    const party = options?.party || (options?.crafter?.getPartyMembers ? options.crafter.getPartyMembers() : undefined);
+    const eqCheck = CraftingSystem.isItemEquipped(itemIdOrInstanceId, party);
+    if (eqCheck.isEquipped) {
+      const isInstance = Boolean(gameState.getGearInstance(itemIdOrInstanceId));
+      if (isInstance) {
+        return { canSalvage: false, reason: 'Equipped gear cannot be salvaged; unequip first.' };
+      }
+      let availableUnequipped = gameState.getItemCount(baseId);
+      if (party) {
+        for (const p of party) {
+          availableUnequipped += p.inventory.get(baseId) || 0;
+        }
+      }
+      if (availableUnequipped <= 0) {
+        return { canSalvage: false, reason: 'Equipped gear cannot be salvaged; unequip first.' };
+      }
+    }
+
+    return {
+      canSalvage: true,
+      recipe: recipeInfo.recipe,
+      station: recipeInfo.station
+    };
+  }
+
+  public static getSalvageInfo(
+    itemIdOrInstanceId: string,
+    options?: { station?: string; party?: Player[]; crafter?: Player }
+  ): SalvageItemInfo {
+    const dataLoader = DataLoader.getInstance();
+    const gameState = GameState.getInstance();
+    const baseId = getBaseItemId(itemIdOrInstanceId);
+    const instance = gameState.getGearInstance(itemIdOrInstanceId);
+
+    const rawWeapon = dataLoader.getWeapon(baseId);
+    const rawArmor = dataLoader.getArmor(baseId);
+    const baseName = rawWeapon?.name || rawArmor?.name || dataLoader.getItem(baseId)?.name || baseId;
+
+    let isBonusGear = false;
+    let bonusPercent = 0;
+    let bonusText: string | undefined = undefined;
+    let crafterName: string | undefined = undefined;
+
+    if (instance && instance.bonusPercent > 0) {
+      isBonusGear = true;
+      bonusPercent = instance.bonusPercent;
+      crafterName = instance.crafterName;
+      bonusText = `Crafted by ${instance.crafterName}, +${instance.bonusPercent}%`;
+    }
+
+    const check = CraftingSystem.canSalvage(itemIdOrInstanceId, options);
+    const expectedRefund: Record<string, number> = {};
+    let expectedRefundFormatted = 'No refund';
+    let expGranted = 0;
+
+    if (check.canSalvage && check.recipe) {
+      const refundRate = dataLoader.getSalvageRefundRate();
+      const expRate = dataLoader.getSalvageExpRate();
+      const parts: string[] = [];
+
+      for (const [ing, qty] of Object.entries(check.recipe.ingredients)) {
+        const expQty = qty * refundRate;
+        expectedRefund[ing] = expQty;
+        const ingName = dataLoader.getItem(ing)?.name || ing.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+        parts.push(`${expQty} ${ingName}`);
+      }
+      expectedRefundFormatted = `≈ ${parts.join(', ')}`;
+      expGranted = Math.ceil(check.recipe.expGranted * expRate);
+    }
+
+    return {
+      id: itemIdOrInstanceId,
+      baseItemId: baseId,
+      name: isBonusGear ? `${baseName} (+${bonusPercent}%)` : baseName,
+      isBonusGear,
+      bonusPercent,
+      bonusText,
+      crafterName,
+      recipe: check.recipe,
+      station: check.station,
+      canSalvage: check.canSalvage,
+      reason: check.reason,
+      expectedRefund,
+      expectedRefundFormatted,
+      expGranted
+    };
+  }
+
+  public static applySalvage(
+    member: Player,
+    itemIdOrInstanceId: string,
+    options?: {
+      count?: number;
+      source?: Player | 'stockpile';
+      rng?: () => number;
+      station?: string;
+      party?: Player[];
+      isOutpost?: boolean;
+    }
+  ): SalvageResult {
+    const dataLoader = DataLoader.getInstance();
+    const gameState = GameState.getInstance();
+    const baseId = getBaseItemId(itemIdOrInstanceId);
+    const rng = options?.rng || Math.random;
+
+    if (options?.isOutpost !== undefined && !options.isOutpost) {
+      return {
+        success: false,
+        itemIdOrInstanceId,
+        baseItemId: baseId,
+        quantity: 0,
+        refunds: {},
+        expGranted: 0,
+        classExpGranted: 0,
+        message: 'Salvaging can only be performed at the Outpost!'
+      };
+    }
+
+    // Validate canSalvage
+    const check = CraftingSystem.canSalvage(itemIdOrInstanceId, {
+      station: options?.station,
+      party: options?.party || (member.getPartyMembers ? member.getPartyMembers() : [member]),
+      crafter: member
+    });
+
+    if (!check.canSalvage || !check.recipe || !check.station) {
+      return {
+        success: false,
+        itemIdOrInstanceId,
+        baseItemId: baseId,
+        quantity: 0,
+        refunds: {},
+        expGranted: 0,
+        classExpGranted: 0,
+        message: check.reason || 'Item cannot be salvaged.'
+      };
+    }
+
+    const recipe = check.recipe;
+    const station = check.station;
+    const instance = gameState.getGearInstance(itemIdOrInstanceId);
+    const qtyToSalvage = instance ? 1 : Math.max(1, options?.count ?? 1);
+
+    // Locate source
+    let actualSource: Player | 'stockpile' | null = null;
+    if (options?.source === 'stockpile') {
+      const inStock = gameState.getItemCount(itemIdOrInstanceId);
+      if (inStock >= qtyToSalvage) {
+        actualSource = 'stockpile';
+      }
+    } else if (options?.source instanceof Player) {
+      const inBag = options.source.inventory.get(itemIdOrInstanceId) || 0;
+      if (inBag >= qtyToSalvage) {
+        actualSource = options.source;
+      }
+    } else {
+      // Auto-detect source: member bag -> other party bags -> stockpile
+      if ((member.inventory.get(itemIdOrInstanceId) || 0) >= qtyToSalvage) {
+        actualSource = member;
+      } else {
+        const party = options?.party || (member.getPartyMembers ? member.getPartyMembers() : [member]);
+        for (const p of party) {
+          if ((p.inventory.get(itemIdOrInstanceId) || 0) >= qtyToSalvage) {
+            actualSource = p;
+            break;
+          }
+        }
+        if (!actualSource && gameState.getItemCount(itemIdOrInstanceId) >= qtyToSalvage) {
+          actualSource = 'stockpile';
+        }
+      }
+    }
+
+    if (!actualSource) {
+      return {
+        success: false,
+        itemIdOrInstanceId,
+        baseItemId: baseId,
+        quantity: 0,
+        refunds: {},
+        expGranted: 0,
+        classExpGranted: 0,
+        message: 'Item not found in bags or stockpile!'
+      };
+    }
+
+    // Remove item from source
+    if (actualSource === 'stockpile') {
+      gameState.consumeItem(itemIdOrInstanceId, qtyToSalvage);
+    } else {
+      actualSource.removeItem(itemIdOrInstanceId, qtyToSalvage);
+    }
+
+    // If it was a registered gear instance, remove from registry
+    if (instance) {
+      gameState.unregisterGearInstance(itemIdOrInstanceId);
+    }
+
+    // Calculate probabilistic refunds: 50% of each recipe ingredient
+    const refundRate = dataLoader.getSalvageRefundRate(); // 0.5
+    const refunds: Record<string, number> = {};
+
+    for (const [ing, ingQty] of Object.entries(recipe.ingredients)) {
+      const exactPerUnit = ingQty * refundRate;
+      const floorPerUnit = Math.floor(exactPerUnit);
+      const fraction = exactPerUnit - floorPerUnit;
+      let totalIngRefund = 0;
+
+      for (let i = 0; i < qtyToSalvage; i++) {
+        let unitRefund = floorPerUnit;
+        if (fraction > 0 && rng() < fraction) {
+          unitRefund += 1;
+        }
+        totalIngRefund += unitRefund;
+      }
+      refunds[ing] = totalIngRefund;
+      if (totalIngRefund > 0) {
+        gameState.addItem(ing, totalIngRefund);
+      }
+    }
+
+    // Calculate EXP: half of recipe's profession EXP rounded up
+    const expRate = dataLoader.getSalvageExpRate(); // 0.5
+    const expPerUnit = Math.ceil(recipe.expGranted * expRate);
+    const expGranted = expPerUnit * qtyToSalvage;
+
+    member.progression.addProficiencyExp(station, expGranted);
+
+    // Apprentice class EXP
+    let classExpGranted = 0;
+    const classId = CraftingSystem.getMatchingClassId(station);
+    if (classId && member.progression.isClassUnlocked(classId)) {
+      classExpGranted = expGranted;
+      member.progression.addClassExp(classId, classExpGranted);
+    }
+
+    // Construct toast message
+    const weaponDef = dataLoader.getWeapon(baseId);
+    const armorDef = dataLoader.getArmor(baseId);
+    const displayName = weaponDef?.name || armorDef?.name || recipe.name;
+
+    const refundParts = Object.entries(refunds)
+      .map(([ing, q]) => {
+        const itemObj = dataLoader.getItem(ing);
+        const name = itemObj?.name || ing.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+        return `+${q} ${name}`;
+      })
+      .join(', ');
+
+    const stationLabel = station === 'blacksmithing'
+      ? 'Blacksmithing'
+      : (station === 'armorsmithing' ? 'Armorsmithing' : 'Bowyer');
+
+    const prefix = qtyToSalvage > 1 ? `${qtyToSalvage}x ` : '';
+    const message = `Salvaged ${prefix}${displayName} → ${refundParts}, +${expGranted} ${stationLabel} EXP`;
+
+    return {
+      success: true,
+      itemIdOrInstanceId,
+      baseItemId: baseId,
+      recipeId: recipe.id,
+      recipeName: recipe.name,
+      station,
+      quantity: qtyToSalvage,
+      refunds,
+      expGranted,
+      classExpGranted,
+      message
     };
   }
 }

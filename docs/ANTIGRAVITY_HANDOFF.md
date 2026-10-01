@@ -822,4 +822,46 @@ Never ask Antigravity to jump ahead in this list — each milestone assumes the 
     - Systems integration verifies stash count, auto-deposit, duplicate audit, and activeClass migration.
   - Regression suites all pass cleanly (`duplicate_gear_and_stash_toggle.test.ts`, `milestone_persistent_saves.test.ts`, `craftingInventoryRouting.test.ts`, `craftingStationRecipeFilter.test.ts`).
 
+---
+
+### Milestone: Gear Salvage (Completed)
+
+- **1. Pre-Check (Item 0)**:
+  - Cataloged all 25 craftable weapons, shields, armor, and accessories across Blacksmithing (14), Armorsmithing (7), and Bowyer (4).
+  - Identified uncraftable gear: magic spell conduits/pseudo-weapons, element staves (`fire_staff` from starting kit), and `fist`.
+  - Audited gear locations at Outpost: party bags (`player.inventory`), shared stockpile (`gameState.inventory`), and equipped slots (`player.equippedWeapon`, `offhandWeapon`, etc.).
+  - Stop condition check: Gear without recipes does not comprise the majority of gear; `getBaseItemId` resolves cleanly. Proceeded to build without stop.
+- **2. Core Mechanics & Architecture**:
+  - `salvageRefundRate: 0.5` and `salvageExpRate: 0.5` added directly to recipe datasets (`blacksmithRecipes.json`, `armorsmithRecipes.json`, `bowyerRecipes.json`).
+  - Added `CraftingSystem.applySalvage(member, itemIdOrInstanceId, options)` to shared system layer, keeping HUD logic strictly presentational.
+  - **Probabilistic Rounding Refund**: 50% refund on each ingredient per salvaged unit using `floor(val) + (random() < fraction ? 1 : 0)`, ensuring exact 50% average across runs. Refunds route straight to stockpile. Mood multiplier and Apprentice bonus yield do not apply.
+  - **EXP Award**: 50% of recipe's profession EXP rounded up (e.g. Mace 25 -> 13). If salvager holds the matching Apprentice class, an equal amount of Class EXP is granted.
+  - **What Cannot Be Salvaged**: Equipped gear (must unequip first), consumables/stackables, tools with `keepOnReturn: true` (`lockpick`, `fishing_rod`), and gear with no recipe (displayed as "Can't be salvaged").
+  - **Bonus Gear Lifecycle**: Salvaging a `GearItemInstance` cleanly unregisters it from `GameState.gearInstances`, removing it from live state, persistent saves, and duplicate gear audits.
+- **3. Station UI Integration**:
+  - Integrated `#blacksmithing-salvage-container`, `#armorsmithing-salvage-container`, and `#bowyer-salvage-container` into the three gear crafting stations.
+  - Lists unequipped salvageable items from both party bags and the stockpile with expected refund (e.g. "≈ 2 Ore, 1 Wood") and EXP granted.
+  - "Salvage ×N" supported for plain multi-count items. Confirmation prompt (`window.confirm`) requested when salvaging bonus gear.
+  - Action toast displayed: `"Salvaged [Item] → +[Refunds], +[EXP] [Profession] EXP"`.
+- **4. Grind Table: Effect of Craft-and-Salvage Loops (Item 3 Report)**:
+  *Assumptions: ~4.5 Ore/floor, ~8.2 Wood/floor, ~2.3 Wolf Pelts/floor. Lv 0 -> 5 requires 290 EXP; Lv 0 -> 10 requires 680 EXP.*
+  - **Blacksmithing (`daggers` - 2 Ore, 1 Wood -> 15 EXP | Salvage: +1 Ore, +0.5 Wood, +8 EXP | Net: 1 Ore, 0.5 Wood for 23 EXP)**:
+    - *Without salvage*: Lv 5 = 8.59 floors; Lv 10 = 20.15 floors (7.5 EXP/ore).
+    - *With salvage*: Lv 5 = **2.80 floors** (12.6 net ore); Lv 10 = **6.57 floors** (29.6 net ore) [**67.4% reduction**].
+    - *(With `mace`)*: Lv 5 = **3.39 floors** (15.3 net ore); Lv 10 = **7.95 floors** (35.8 net ore) [**67.1% reduction**].
+  - **Armorsmithing (`leather_cap` - 2 Wolf Pelts -> 25 EXP | Salvage: +1 Wolf Pelt, +13 EXP | Net: 1 Wolf Pelt for 38 EXP)**:
+    - *Without salvage*: Lv 5 = 10.09 floors; Lv 10 = 23.65 floors (12.5 EXP/pelt).
+    - *With salvage*: Lv 5 = **3.32 floors** (7.6 net pelts); Lv 10 = **7.78 floors** (17.9 net pelts) [**67.1% reduction**].
+  - **Bowyer (`quarterstaff` - 5 Wood -> 20 EXP | Salvage: +2.5 Wood, +10 EXP | Net: 2.5 Wood for 30 EXP)**:
+    - *Without salvage*: Lv 5 = 8.84 floors; Lv 10 = 20.73 floors (4.0 EXP/wood).
+    - *With salvage*: Lv 5 = **2.95 floors** (24.2 net wood); Lv 10 = **6.91 floors** (56.7 net wood) [**66.7% reduction**].
+- **5. Verification**:
+  - `test/salvage.test.ts`:
+    - Group 1: 1,000-run Monte Carlo simulations confirm exact 50% ingredient return within ±0.3% error, exact 13 profession EXP for Mace, and matching Apprentice Class EXP.
+    - Group 2: Equipped gear, consumables, lockpicks, fishing rod, and recipe-less items properly rejected.
+    - Group 3: Accurate bag/stockpile decrements, bonus gear instance unregistration, storage persistence cleanup, and duplicate audit invariant verified.
+  - Regression suites passed: `test/craftingInventoryRouting.test.ts`, `test/duplicate_gear_and_stash_toggle.test.ts`, `test/milestone_persistent_saves.test.ts`.
+  - Build passed: `npm run build` succeeds with zero errors.
+
+
 

@@ -224,6 +224,7 @@ export class HUD {
   private blacksmithingStockpileSteelScrapEl: HTMLElement | null;
   private blacksmithingStockpileOrcHeavyHideEl: HTMLElement | null;
   private blacksmithingRecipesContainerEl: HTMLElement | null;
+  private blacksmithingSalvageContainerEl: HTMLElement | null;
   private blacksmithingStatusMsgEl: HTMLElement | null;
 
   // Milestone 28 Modal Elements (Armorsmithing Bench)
@@ -233,6 +234,7 @@ export class HUD {
   private armorsmithingStockpileWolfPeltEl: HTMLElement | null;
   private armorsmithingStockpileSpiderSilkEl: HTMLElement | null;
   private armorsmithingRecipesContainerEl: HTMLElement | null;
+  private armorsmithingSalvageContainerEl: HTMLElement | null;
   private armorsmithingStatusMsgEl: HTMLElement | null;
 
   // Milestone 36 Elements (Bowyer Station)
@@ -243,6 +245,7 @@ export class HUD {
   private bowyerStockpileSpiderSilkEl: HTMLElement | null;
   private bowyerStockpileBoneClawEl: HTMLElement | null;
   private bowyerRecipesContainerEl: HTMLElement | null;
+  private bowyerSalvageContainerEl: HTMLElement | null;
   private bowyerStatusMsgEl: HTMLElement | null;
 
   // Milestone 16 Elements (Floor Timer & Respawn Debug)
@@ -639,6 +642,7 @@ export class HUD {
     this.blacksmithingStockpileSteelScrapEl = document.getElementById('blacksmithing-stockpile-steel-scrap');
     this.blacksmithingStockpileOrcHeavyHideEl = document.getElementById('blacksmithing-stockpile-orc-heavy-hide');
     this.blacksmithingRecipesContainerEl = document.getElementById('blacksmithing-recipes-container');
+    this.blacksmithingSalvageContainerEl = document.getElementById('blacksmithing-salvage-container');
     this.blacksmithingStatusMsgEl = document.getElementById('blacksmithing-status-msg');
 
     if (this.closeBlacksmithingBtn) {
@@ -654,6 +658,7 @@ export class HUD {
     this.armorsmithingStockpileWolfPeltEl = document.getElementById('armorsmithing-stockpile-wolf-pelt');
     this.armorsmithingStockpileSpiderSilkEl = document.getElementById('armorsmithing-stockpile-spider-silk');
     this.armorsmithingRecipesContainerEl = document.getElementById('armorsmithing-recipes-container');
+    this.armorsmithingSalvageContainerEl = document.getElementById('armorsmithing-salvage-container');
     this.armorsmithingStatusMsgEl = document.getElementById('armorsmithing-status-msg');
 
     if (this.closeArmorsmithingBtn) {
@@ -670,6 +675,7 @@ export class HUD {
     this.bowyerStockpileSpiderSilkEl = document.getElementById('bowyer-stockpile-spider-silk');
     this.bowyerStockpileBoneClawEl = document.getElementById('bowyer-stockpile-bone-claw');
     this.bowyerRecipesContainerEl = document.getElementById('bowyer-recipes-container');
+    this.bowyerSalvageContainerEl = document.getElementById('bowyer-salvage-container');
     this.bowyerStatusMsgEl = document.getElementById('bowyer-status-msg');
 
     if (this.closeBowyerBtn) {
@@ -6433,6 +6439,8 @@ export class HUD {
         `;
       }
     }
+
+    this.renderSalvageSection('blacksmithing', player, progression, this.blacksmithingSalvageContainerEl);
   }
 
   // --- ARMORSMITHING BENCH & ARMOR CRAFTING (Milestone 28) ---
@@ -6588,6 +6596,8 @@ export class HUD {
         `;
       }
     }
+
+    this.renderSalvageSection('armorsmithing', player, progression, this.armorsmithingSalvageContainerEl);
   }
 
   // --- BOWYER STATION & BOW CRAFTING (Milestone 36) ---
@@ -6738,6 +6748,244 @@ export class HUD {
           </div>
         `;
       }
+    }
+
+    this.renderSalvageSection('bowyer', player, progression, this.bowyerSalvageContainerEl);
+  }
+
+  // --- GEAR SALVAGE UI (Milestone: Gear Salvage) ---
+
+  public renderSalvageSection(
+    station: 'blacksmithing' | 'armorsmithing' | 'bowyer',
+    player: Player,
+    progression: ProgressionSystem,
+    containerEl: HTMLElement | null
+  ): void {
+    let targetEl = containerEl;
+    if (!targetEl) {
+      targetEl = document.getElementById(`${station}-salvage-container`);
+    }
+    if (!targetEl) return;
+    targetEl.innerHTML = '';
+
+    const gameState = GameState.getInstance();
+    const dataLoader = DataLoader.getInstance();
+    const party = this.currentParty && this.currentParty.length > 0
+      ? this.currentParty
+      : (this.currentPlayer ? [this.currentPlayer] : [player]);
+
+    interface SalvageRowItem {
+      id: string;
+      baseItemId: string;
+      name: string;
+      location: string;
+      source: Player | 'stockpile';
+      count: number;
+      expectedRefund: string;
+      exp: number;
+      canSalvage: boolean;
+      reason?: string;
+      isBonusGear: boolean;
+      bonusText?: string;
+    }
+
+    const rows: SalvageRowItem[] = [];
+
+    const isDomainRelevant = (baseId: string): boolean => {
+      const isBowOrStaff = baseId === 'bows' || baseId.endsWith('_bow') || baseId === 'staff' || baseId.endsWith('_staff');
+      const rawWeapon = dataLoader.getRawWeapon?.(baseId) || dataLoader.getWeapon?.(baseId);
+      const rawArmor = dataLoader.getRawArmor?.(baseId) || dataLoader.getArmor?.(baseId);
+      if (station === 'armorsmithing') return Boolean(rawArmor);
+      if (station === 'bowyer') return Boolean(isBowOrStaff);
+      if (station === 'blacksmithing') return Boolean(rawWeapon && !isBowOrStaff);
+      return false;
+    };
+
+    // 1. Party bags
+    for (const m of party) {
+      for (const [itemId, count] of m.inventory.entries()) {
+        if (count <= 0) continue;
+        const baseId = getBaseItemId(itemId);
+        const rawWeapon = dataLoader.getRawWeapon?.(baseId) || dataLoader.getWeapon?.(baseId);
+        const rawArmor = dataLoader.getRawArmor?.(baseId) || dataLoader.getArmor?.(baseId);
+        if (!rawWeapon && !rawArmor) continue;
+
+        const recipeInfo = CraftingSystem.getRecipeForGear(itemId);
+        if (recipeInfo) {
+          if (recipeInfo.station !== station) continue;
+          const salvageInfo = CraftingSystem.getSalvageInfo(itemId, { station, party, crafter: player });
+          rows.push({
+            id: itemId,
+            baseItemId: baseId,
+            name: salvageInfo.name,
+            location: `${m.entityName}'s Bag`,
+            source: m,
+            count,
+            expectedRefund: salvageInfo.expectedRefundFormatted,
+            exp: salvageInfo.expGranted,
+            canSalvage: true,
+            isBonusGear: salvageInfo.isBonusGear,
+            bonusText: salvageInfo.bonusText
+          });
+        } else if (isDomainRelevant(baseId)) {
+          const instance = gameState.getGearInstance(itemId);
+          const isBonus = Boolean(instance && instance.bonusPercent > 0);
+          rows.push({
+            id: itemId,
+            baseItemId: baseId,
+            name: isBonus ? `${rawWeapon?.name || rawArmor?.name || baseId} (+${instance!.bonusPercent}%)` : (rawWeapon?.name || rawArmor?.name || baseId),
+            location: `${m.entityName}'s Bag`,
+            source: m,
+            count,
+            expectedRefund: 'None',
+            exp: 0,
+            canSalvage: false,
+            reason: "Can't be salvaged",
+            isBonusGear: isBonus,
+            bonusText: isBonus ? `Crafted by ${instance!.crafterName}, +${instance!.bonusPercent}%` : undefined
+          });
+        }
+      }
+    }
+
+    // 2. Stockpile
+    for (const [itemId, count] of gameState.getInventoryMap().entries()) {
+      if (count <= 0) continue;
+      const baseId = getBaseItemId(itemId);
+      const rawWeapon = dataLoader.getRawWeapon?.(baseId) || dataLoader.getWeapon?.(baseId);
+      const rawArmor = dataLoader.getRawArmor?.(baseId) || dataLoader.getArmor?.(baseId);
+      if (!rawWeapon && !rawArmor) continue;
+
+      const recipeInfo = CraftingSystem.getRecipeForGear(itemId);
+      if (recipeInfo) {
+        if (recipeInfo.station !== station) continue;
+        const salvageInfo = CraftingSystem.getSalvageInfo(itemId, { station, party, crafter: player });
+        rows.push({
+          id: itemId,
+          baseItemId: baseId,
+          name: salvageInfo.name,
+          location: 'Stockpile',
+          source: 'stockpile',
+          count,
+          expectedRefund: salvageInfo.expectedRefundFormatted,
+          exp: salvageInfo.expGranted,
+          canSalvage: true,
+          isBonusGear: salvageInfo.isBonusGear,
+          bonusText: salvageInfo.bonusText
+        });
+      } else if (isDomainRelevant(baseId)) {
+        const instance = gameState.getGearInstance(itemId);
+        const isBonus = Boolean(instance && instance.bonusPercent > 0);
+        rows.push({
+          id: itemId,
+          baseItemId: baseId,
+          name: isBonus ? `${rawWeapon?.name || rawArmor?.name || baseId} (+${instance!.bonusPercent}%)` : (rawWeapon?.name || rawArmor?.name || baseId),
+          location: 'Stockpile',
+          source: 'stockpile',
+          count,
+          expectedRefund: 'None',
+          exp: 0,
+          canSalvage: false,
+          reason: "Can't be salvaged",
+          isBonusGear: isBonus,
+          bonusText: isBonus ? `Crafted by ${instance!.crafterName}, +${instance!.bonusPercent}%` : undefined
+        });
+      }
+    }
+
+    if (rows.length === 0) {
+      targetEl.innerHTML = `
+        <div style="font-size: 11px; color: #9ca3af; font-style: italic; background: rgba(31, 41, 55, 0.4); padding: 10px; border-radius: 6px; text-align: center;">
+          No salvageable gear in party bags or stockpile.
+        </div>
+      `;
+      return;
+    }
+
+    for (const row of rows) {
+      const card = document.createElement('div');
+      card.style.cssText = `background: rgba(31, 41, 55, 0.6); border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 6px; padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; gap: 8px;`;
+
+      const bonusBadge = row.isBonusGear && row.bonusText
+        ? `<span style="font-size: 10px; color: #f59e0b; background: rgba(245, 158, 11, 0.15); padding: 1px 6px; border-radius: 4px; font-weight: 500;">${row.bonusText}</span>`
+        : '';
+
+      const countBadge = (!row.isBonusGear && row.count > 1)
+        ? `<span style="font-size: 11px; color: #94a3b8; font-weight: bold;">(x${row.count})</span>`
+        : '';
+
+      let statsHtml = '';
+      if (row.canSalvage) {
+        statsHtml = `
+          <span style="font-size: 11px; color: #4ade80;">Refund: ${row.expectedRefund}</span>
+          <span style="font-size: 10px; color: #cbd5e1; background: rgba(148, 163, 184, 0.2); padding: 1px 6px; border-radius: 4px;">+${row.exp} EXP</span>
+        `;
+      } else {
+        statsHtml = `<span style="font-size: 11px; color: #ef4444; font-weight: 500;">Can't be salvaged</span>`;
+      }
+
+      let actionsHtml = '';
+      if (row.canSalvage) {
+        const singleBtn = `<button type="button" class="btn-action" data-action="salvage-single" style="background: #334155; border-color: #64748b; font-size: 11px; padding: 4px 10px; font-weight: bold; color: #f8fafc;">♻️ Salvage</button>`;
+        const multiBtn = (!row.isBonusGear && row.count > 1)
+          ? `<button type="button" class="btn-action" data-action="salvage-multi" style="background: #334155; border-color: #64748b; font-size: 11px; padding: 4px 10px; font-weight: bold; color: #f8fafc; margin-left: 6px;">♻️ Salvage ×${row.count}</button>`
+          : '';
+        actionsHtml = `<div style="display: flex; align-items: center;">${singleBtn}${multiBtn}</div>`;
+      } else {
+        actionsHtml = `<span style="font-size: 11px; color: #ef4444; font-weight: bold; padding: 4px 8px; background: rgba(239, 68, 68, 0.1); border-radius: 4px;">Can't be salvaged</span>`;
+      }
+
+      card.innerHTML = `
+        <div style="flex: 1;">
+          <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 3px;">
+            <span style="font-weight: bold; color: #f8fafc; font-size: 12px;">${row.name}</span>
+            ${countBadge}
+            ${bonusBadge}
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 10px; color: #38bdf8; background: rgba(56, 189, 248, 0.15); padding: 1px 5px; border-radius: 3px;">📍 ${row.location}</span>
+            ${statsHtml}
+          </div>
+        </div>
+        <div>${actionsHtml}</div>
+      `;
+
+      if (row.canSalvage) {
+        const handleSalvage = (salvageQty: number) => {
+          if (row.isBonusGear) {
+            const confirmed = typeof window !== 'undefined' && typeof window.confirm === 'function'
+              ? window.confirm(`Salvage ${row.name} (${row.bonusText})?\nThis crafted bonus gear will be dismantled for materials and EXP.`)
+              : true;
+            if (!confirmed) return;
+          }
+          const result = CraftingSystem.applySalvage(player, row.id, {
+            count: salvageQty,
+            source: row.source,
+            station,
+            party
+          });
+          if (result.success) {
+            this.showToast(result.message, 'success', 3000);
+            if (station === 'blacksmithing') this.renderBlacksmithingModal(player, progression);
+            else if (station === 'armorsmithing') this.renderArmorsmithingModal(player, progression);
+            else if (station === 'bowyer') this.renderBowyerModal(player, progression);
+            this.update(player, progression, 0);
+          } else {
+            this.showToast(result.message, 'error', 3000);
+          }
+        };
+
+        const singleBtnEl = card.querySelector<HTMLButtonElement>('[data-action="salvage-single"]');
+        if (singleBtnEl) {
+          singleBtnEl.onclick = () => handleSalvage(1);
+        }
+        const multiBtnEl = card.querySelector<HTMLButtonElement>('[data-action="salvage-multi"]');
+        if (multiBtnEl) {
+          multiBtnEl.onclick = () => handleSalvage(row.count);
+        }
+      }
+
+      targetEl.appendChild(card);
     }
   }
 

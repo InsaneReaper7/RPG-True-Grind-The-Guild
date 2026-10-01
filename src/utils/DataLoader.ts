@@ -828,6 +828,18 @@ export class DataLoader {
     return this.armorsmithRecipesData?.recipes.find((r) => r.id === id);
   }
 
+  public getSalvageRefundRate(): number {
+    return this.blacksmithRecipesData?.salvageRefundRate ??
+      this.armorsmithRecipesData?.salvageRefundRate ??
+      this.bowyerRecipesData?.salvageRefundRate ?? 0.5;
+  }
+
+  public getSalvageExpRate(): number {
+    return this.blacksmithRecipesData?.salvageExpRate ??
+      this.armorsmithRecipesData?.salvageExpRate ??
+      this.bowyerRecipesData?.salvageExpRate ?? 0.5;
+  }
+
   public getFoodsData(): FoodsData {
     return this.foodsData;
   }

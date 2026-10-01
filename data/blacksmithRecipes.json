@@ -1,4 +1,6 @@
 {
+  "salvageRefundRate": 0.5,
+  "salvageExpRate": 0.5,
   "recipes": [
     {
       "id": "mace",

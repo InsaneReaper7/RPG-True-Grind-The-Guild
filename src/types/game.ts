@@ -455,6 +455,8 @@ export interface BlacksmithRecipeDef {
 }
 
 export interface BlacksmithRecipesData {
+  salvageRefundRate?: number;
+  salvageExpRate?: number;
   recipes: BlacksmithRecipeDef[];
 }
 
@@ -469,6 +471,8 @@ export interface BowyerRecipeDef {
 }
 
 export interface BowyerRecipesData {
+  salvageRefundRate?: number;
+  salvageExpRate?: number;
   recipes: BowyerRecipeDef[];
 }
 
@@ -535,6 +539,8 @@ export interface ArmorsmithRecipeDef {
 }
 
 export interface ArmorsmithRecipesData {
+  salvageRefundRate?: number;
+  salvageExpRate?: number;
   recipes: ArmorsmithRecipeDef[];
 }
 

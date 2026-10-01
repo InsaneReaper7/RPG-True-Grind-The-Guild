@@ -92,6 +92,24 @@ class MockElement {
   public innerHTML: string = '';
   public innerText: string = '';
   public value: string = '';
+  public getContext(type: string = '2d') {
+    const noop = () => {};
+    return new Proxy({
+      fillStyle: '',
+      globalCompositeOperation: '',
+      getImageData: () => ({ data: [0, 0, 0, 0] }),
+      createImageData: () => ({ data: [0, 0, 0, 0] })
+    }, {
+      get(target: any, prop) {
+        if (prop in target) return target[prop];
+        return noop;
+      },
+      set(target: any, prop, value) {
+        target[prop] = value;
+        return true;
+      }
+    });
+  }
 
   constructor(tagName: string) {
     this.tagName = tagName.toUpperCase();
@@ -116,8 +134,13 @@ function getOrCreateElement(id: string, tag: string = 'div'): MockElement {
   querySelectorAll: (_selector: string) => [],
   createElement: (tag: string) => new MockElement(tag),
   addEventListener: () => {},
-  removeEventListener: () => {}
+  removeEventListener: () => {},
+  documentElement: {},
+  body: {}
 };
+(global as any).Image = class Image {};
+(global as any).HTMLCanvasElement = class HTMLCanvasElement {};
+(global as any).HTMLVideoElement = class HTMLVideoElement {};
 
 // Setup mock fetch for DataLoader in node
 (global as any).fetch = async (url: string) => {
@@ -128,13 +151,14 @@ function getOrCreateElement(id: string, tag: string = 'div'): MockElement {
   };
 };
 
-import { DataLoader } from '../src/utils/DataLoader.ts';
-import { GameState } from '../src/systems/GameState.ts';
-import { HUD } from '../src/ui/HUD.ts';
 import type { CharacterSnapshot, PlayerSnapshot } from '../src/types/game.ts';
 
 async function runTestSuite() {
   console.log('--- Starting Persistent Saves Milestone Test Suite ---\n');
+
+  const { DataLoader } = await import('../src/utils/DataLoader.ts');
+  const { GameState } = await import('../src/systems/GameState.ts');
+  const { HUD } = await import('../src/ui/HUD.ts');
 
   const dataLoader = DataLoader.getInstance();
   await dataLoader.loadAll();

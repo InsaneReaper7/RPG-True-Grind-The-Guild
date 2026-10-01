@@ -74,6 +74,14 @@ export class GameState {
     return this.gearInstances.get(instanceId);
   }
 
+  public unregisterGearInstance(instanceId: string): boolean {
+    const existed = this.gearInstances.delete(instanceId);
+    if (this.snapshot && this.snapshot.gearInstances) {
+      delete this.snapshot.gearInstances[instanceId];
+    }
+    return existed;
+  }
+
   public getAllGearInstances(): Map<string, GearItemInstance> {
     return new Map(this.gearInstances);
   }
