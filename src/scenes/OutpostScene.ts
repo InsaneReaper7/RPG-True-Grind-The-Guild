@@ -13,6 +13,7 @@ import { RoomClassifier, ClassifiedRoom } from '../systems/RoomClassifier';
 import { HiddenSkillSystem } from '../systems/HiddenSkillSystem';
 import { ActiveReviveChannel, ActiveMoveHighlight } from './MainScene';
 import { TutorialSystem } from '../systems/TutorialSystem';
+import { isTypingInTextField } from '../utils/inputGuard';
 
 export class OutpostScene extends Phaser.Scene {
   private mapWidth: number = 20;
@@ -381,14 +382,16 @@ export class OutpostScene extends Phaser.Scene {
       };
 
       const rKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.R);
-      rKey.on('down', () => {
+      rKey.on('down', (_key?: any, event?: any) => {
+        if (isTypingInTextField(event)) return;
         if (this.isBuildMode) {
           this.rotateBlueprint();
         }
       });
 
       const cKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.C);
-      cKey.on('down', () => {
+      cKey.on('down', (_key?: any, event?: any) => {
+        if (isTypingInTextField(event)) return;
         this.progressionSystem.addProficiencyExp('construction', 25);
         this.hud.updateBuildOverlay(
           GameState.getInstance().getWood(),
@@ -400,19 +403,22 @@ export class OutpostScene extends Phaser.Scene {
       });
 
       const xKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.X);
-      xKey.on('down', () => {
+      xKey.on('down', (_key?: any, event?: any) => {
+        if (isTypingInTextField(event)) return;
         this.progressionSystem.addProficiencyExp(this.player.equippedWeapon.id, 25);
         this.hud.showToast(`+25 ${this.player.equippedWeapon.name} EXP`, 'success', 2000);
       });
 
       const zKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.Z);
-      zKey.on('down', () => {
+      zKey.on('down', (_key?: any, event?: any) => {
+        if (isTypingInTextField(event)) return;
         this.progressionSystem.addProficiencyExp(this.player.equippedWeapon.id, 100);
         this.hud.showToast(`+100 ${this.player.equippedWeapon.name} EXP`, 'success', 2000);
       });
 
       const hKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.H);
-      hKey.on('down', () => {
+      hKey.on('down', (_key?: any, event?: any) => {
+        if (isTypingInTextField(event)) return;
         this.hud.applyBandage();
       });
     }
@@ -2302,7 +2308,7 @@ export class OutpostScene extends Phaser.Scene {
     }
 
     // Camera Controls (WASD & Space lock-on)
-    if (this.wasdKeys) {
+    if (!isTypingInTextField() && this.wasdKeys) {
       const panSpeed = 8;
       let panned = false;
       if (this.wasdKeys.W.isDown) { this.cameras.main.scrollY -= panSpeed; panned = true; }

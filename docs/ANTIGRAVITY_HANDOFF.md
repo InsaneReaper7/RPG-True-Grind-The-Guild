@@ -977,8 +977,38 @@ Never ask Antigravity to jump ahead in this list — each milestone assumes the 
     - Partial split test: 1 ore in stockpile, 5 in crafter bag. Recipe uses 4: stockpile is 0 (1 used), crafter bag is 2 (3 used). Total used is 4.
     - Cross-bag barrier test: crafter lacks items, ally has plenty. Craft fails and no items are consumed.
   - Production Build: `npm run build` compiled cleanly with 0 TypeScript/vite errors.
-  - Test Suite: `npm test -- --quiet` 100/100 test suites passing.
-
-
-
-
+**Resolved and shipped: Urgent Bugfix — Name Fields Trigger Hotkeys Instead of Typing.**
+- **1. Root Cause**:
+  - Phaser's `KeyboardPlugin.addKey` defaults `enableCapture` to `true`, registering keys into `KeyboardManager.captures` which called `preventDefault()` on native browser keydown events for all game hotkeys (`W, A, S, D, SPACE, B, H, G, R, C, X, Z, 1-4, etc.`). This prevented bound letters from typing into `<input>` fields.
+  - In addition, keydown listeners on `window` and Phaser scene polling lacked a unified text field guard, so typing letters triggered game actions (Build Mode toggle, Gathering Mode toggle, quick-slot consumption, bandages, and party selections).
+- **2. One Shared Guard (`src/utils/inputGuard.ts`)**:
+  - Added `isTypingInTextField(e?: Event | KeyboardEvent | null): boolean` that inspects `e.target` and `document.activeElement` for `input`, `textarea`, `select`, or `[contenteditable]`.
+  - Added `initKeyboardGuards(Phaser)` which centralizes interception by patching Phaser's prototypes:
+    - `KeyboardPlugin.prototype.isActive`: Returns `false` while typing, suppressing key queue processing and scene key event emissions across all scenes.
+    - `KeyboardManager.prototype.startListeners`: Returns early from `onKeyDown`/`onKeyUp` while typing, suppressing event queuing and preventing `event.preventDefault()`.
+    - `Key.prototype.onDown`: Bails early if typing.
+  - Added the shared guard at the entry point of the global HUD keydown listener in `src/ui/HUD.ts` and before keyboard polling in `MainScene.ts` and `OutpostScene.ts`.
+- **3. Phaser Key Capture & Focus Lifecycle**:
+  - Implemented `disableGameKeyboard()` and `enableGameKeyboard()`:
+    - Disables `game.input.keyboard.enabled` and sets `preventDefault = false` / `disableGlobalCapture()`, plus `scene.input.keyboard.resetKeys()`.
+    - Hooks `focusin` (capture phase) on `window` to disable Phaser keyboard input and captures immediately when any text field is focused.
+    - Hooks `focusout` (capture phase) to restore Phaser keyboard input and captures once focus leaves all text fields.
+    - Modal open/close hooks in `HUD.ts` (`openNewGameModal`, `closeNewGameModal`, `openRecruitModal`, `closeRecruitModal`, `openSummonFourthModal`, `closeSummonFourthModal`) invoke `disableGameKeyboard()` / `enableGameKeyboard()`, ensuring protection works in both scenes and when the new-game modal opens before scenes are fully active.
+- **4. Enter & Escape Handling (Modal Confirmation & Cancel)**:
+  - Document capture-phase keydown handler intercepts `Enter` and `Escape` when `isTypingInTextField` is true:
+    - `Enter`: Confirms the modal (`confirm-new-game-btn`, `confirm-summon-recruit-btn`, `confirm-summon-fourth-btn`, or generic modal confirm button).
+    - `Escape`: Cancels or closes the modal (`close-new-game-btn`, `close-summon-recruit-btn`, `close-summon-fourth-btn`, or generic modal close button).
+    - Calls `e.preventDefault()` and `e.stopPropagation()` so neither key leaks to the game.
+- **5. HTML Name Input Maxlength**:
+  - Updated `maxlength` from 16 to 32 on the three name fields in `index.html` (`new-game-hero-name`, `recruit-name-input`, `fourth-name-input`) so full test strings like `BFHJKNOPRTWASD1234` type without browser truncation.
+- **6. Verification Evidence**:
+  - Browser E2E (`test/verify_name_fields_hotkey_guard.mjs`):
+    - All 3 name fields focused and typed `BFHJKNOPRTWASD1234`; field values assert exactly to the test string.
+    - Verified 0 game actions triggered (no build mode, no gathering mode, no quick-slot use, no party selection, no panel toggle).
+    - Verified Escape closes modals cleanly without reaching the game.
+    - Verified Enter confirms modals without reaching the game.
+    - Verified after blur, hotkeys are fully restored (e.g. `B` toggles Build Mode on and off).
+  - Test suites:
+    - `test/keyBindingAudit.test.ts`: Passed (4/4 tests).
+    - `test/playtestRound1.test.ts`: Passed (10/10 tests).
+  - Production build: `npm run build` succeeds cleanly.

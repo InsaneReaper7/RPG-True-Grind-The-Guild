@@ -11,6 +11,7 @@ import { TutorialSystem, type TutorialStepDef } from '../systems/TutorialSystem.
 import { CraftingSystem } from '../systems/CraftingSystem.ts';
 import { ConsumableSystem } from '../systems/ConsumableSystem.ts';
 import { isCraftingClass, getBaseItemId, canEquipBowDaggerSidearm } from '../utils/gearResolver.ts';
+import { isTypingInTextField, disableGameKeyboard, enableGameKeyboard, initKeyboardGuards } from '../utils/inputGuard.ts';
 
 export interface AnnouncementItem {
   type: 'class' | 'skill';
@@ -1015,6 +1016,7 @@ export class HUD {
     });
     this.renderGuildGuide(TutorialSystem.getInstance().getCurrentStep());
 
+    initKeyboardGuards();
     this.initTitleScreen();
 
     if (this.hudCardEl) {
@@ -1831,6 +1833,9 @@ export class HUD {
       HUD.hasGlobalListeners = true;
       // Key listeners: Tab (toggle HUD panel), L (toggle Loadout modal), B (toggle Build mode), H (apply bandage), E (drink energy potion), P (drink mana potion), O (toggle Party modal), Escape (close modals)
       window.addEventListener('keydown', (e) => {
+        if (isTypingInTextField(e)) {
+          return;
+        }
         const active = HUD.activeInstance;
         if (!active) return;
 
@@ -3064,6 +3069,11 @@ export class HUD {
   public openRecruitModal(): void {
     if (this.summonRecruitModalEl) {
       this.summonRecruitModalEl.classList.add('active');
+      disableGameKeyboard();
+      setTimeout(() => {
+        const input = document.getElementById('recruit-name-input') as HTMLInputElement | null;
+        input?.focus();
+      }, 0);
     }
   }
 
@@ -3071,6 +3081,7 @@ export class HUD {
     if (this.summonRecruitModalEl) {
       this.summonRecruitModalEl.classList.remove('active');
     }
+    enableGameKeyboard();
   }
 
   public isRecruitModalOpen(): boolean {
@@ -8825,6 +8836,11 @@ export class HUD {
     }
 
     modal.classList.add('active');
+    disableGameKeyboard();
+    setTimeout(() => {
+      const nameInput = document.getElementById('new-game-hero-name') as HTMLInputElement | null;
+      nameInput?.focus();
+    }, 0);
   }
 
   public closeNewGameModal(): void {
@@ -8832,6 +8848,7 @@ export class HUD {
     if (modal) {
       modal.classList.remove('active');
     }
+    enableGameKeyboard();
   }
 
   public startNewGameWithConfig(heroName: string, kitId: string): void {
@@ -8864,6 +8881,11 @@ export class HUD {
     const modal = document.getElementById('summon-fourth-modal');
     if (modal) {
       modal.classList.add('active');
+      disableGameKeyboard();
+      setTimeout(() => {
+        const input = document.getElementById('fourth-name-input') as HTMLInputElement | null;
+        input?.focus();
+      }, 0);
     }
   }
 
@@ -8872,6 +8894,7 @@ export class HUD {
     if (modal) {
       modal.classList.remove('active');
     }
+    enableGameKeyboard();
   }
 
   public openSalvageConfirmModal(title: string, message: string, onConfirm: () => void): void {

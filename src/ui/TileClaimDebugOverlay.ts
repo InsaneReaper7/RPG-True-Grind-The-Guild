@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import type { Player } from '../entities/Player';
 import type { Enemy } from '../entities/Enemy';
+import { isTypingInTextField } from '../utils/inputGuard';
 
 export interface OverlayStackReport {
   occupiedStacks: { tile: { x: number; y: number }; units: string[] }[];
@@ -50,7 +51,8 @@ export class TileClaimDebugOverlay {
 
     if (this.scene.input && this.scene.input.keyboard) {
       this.vKey = this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.V);
-      this.vKey.on('down', () => {
+      this.vKey.on('down', (_key?: any, event?: any) => {
+        if (isTypingInTextField(event)) return;
         this.toggle();
       });
     }

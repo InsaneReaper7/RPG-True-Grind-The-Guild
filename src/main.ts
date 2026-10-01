@@ -6,6 +6,10 @@ import { TutorialSystem } from './systems/TutorialSystem';
 import { MainScene } from './scenes/MainScene';
 import { OutpostScene } from './scenes/OutpostScene';
 import { HUD } from './ui/HUD';
+import { initKeyboardGuards } from './utils/inputGuard';
+
+// Intercept Phaser keyboard captures and hotkeys early before any scene boots
+initKeyboardGuards(Phaser);
 
 async function bootstrap() {
   // Load JSON schemas first
@@ -31,6 +35,7 @@ async function bootstrap() {
 
   const game = new Phaser.Game(config);
   (window as any).game = game;
+  (window as any).HUD = HUD;
   (window as any).GameState = GameState;
   (window as any).DataLoader = DataLoader;
   (window as any).ResearchSystem = ResearchSystem;

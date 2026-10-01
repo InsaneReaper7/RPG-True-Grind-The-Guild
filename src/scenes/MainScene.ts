@@ -15,6 +15,7 @@ import { GridPos, EnemyDef, GeneratedDungeon, DungeonRoom, GatheringNodeDef, Cha
 import { HiddenSkillSystem } from '../systems/HiddenSkillSystem';
 import { TileClaimDebugOverlay } from '../ui/TileClaimDebugOverlay';
 import { TutorialSystem } from '../systems/TutorialSystem';
+import { isTypingInTextField } from '../utils/inputGuard';
 
 export interface GatheringNode {
   x: number;
@@ -580,7 +581,8 @@ export class MainScene extends Phaser.Scene {
       this.zKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.Z);
       this.cKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.C);
       this.hKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.H);
-      this.hKey.on('down', () => {
+      this.hKey.on('down', (_key?: any, event?: any) => {
+        if (isTypingInTextField(event)) return;
         this.hud.applyBandage();
       });
       this.gKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.G);
@@ -1993,29 +1995,6 @@ export class MainScene extends Phaser.Scene {
       }
     }
 
-    // Milestone 25: Reselect All Party Members [G]
-    if (this.gKey && Phaser.Input.Keyboard.JustDown(this.gKey)) {
-      this.selectAllMembers();
-    }
-
-
-    // Milestone: Party Selection Keys [F1]..[F4]
-    for (let i = 0; i < this.fKeys.length; i++) {
-      const key = this.fKeys[i];
-      if (key && Phaser.Input.Keyboard.JustDown(key)) {
-        const isShift = this.input.keyboard?.checkDown(this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT), 0) ?? false;
-        this.selectMemberByIndex(i, isShift);
-      }
-    }
-
-    // Milestone: Consumable Quick Bar Keys [1]..[4]
-    for (let i = 0; i < this.quickSlotKeys.length; i++) {
-      const key = this.quickSlotKeys[i];
-      if (key && Phaser.Input.Keyboard.JustDown(key)) {
-        this.hud?.triggerQuickSlot(i);
-      }
-    }
-
     // Milestone 25: Render in-world selection circles under selected party members
     if (this.selectionReticleGraphics) {
       this.selectionReticleGraphics.clear();
@@ -2029,57 +2008,80 @@ export class MainScene extends Phaser.Scene {
       }
     }
 
-
-    // Debug Grant +25 Weapon EXP [X]
-    if (this.xKey && Phaser.Input.Keyboard.JustDown(this.xKey)) {
-      this.progressionSystem.addProficiencyExp(this.player.equippedWeapon.id, 25);
-    }
-
-    // Debug Grant +100 Weapon EXP [Z]
-    if (this.zKey && Phaser.Input.Keyboard.JustDown(this.zKey)) {
-      this.progressionSystem.addProficiencyExp(this.player.equippedWeapon.id, 100);
-    }
-
-    // Debug Grant +25 Construction EXP [C]
-    if (this.cKey && Phaser.Input.Keyboard.JustDown(this.cKey)) {
-      this.progressionSystem.addProficiencyExp('construction', 25);
-    }
-
-    // WASD Camera Panning
-    const panSpeed = 8;
-    let panned = false;
-
-    if (this.wasdKeys) {
-      if (this.wasdKeys.W.isDown) {
-        this.cameras.main.scrollY -= panSpeed;
-        panned = true;
-      }
-      if (this.wasdKeys.S.isDown) {
-        this.cameras.main.scrollY += panSpeed;
-        panned = true;
-      }
-      if (this.wasdKeys.A.isDown) {
-        this.cameras.main.scrollX -= panSpeed;
-        panned = true;
-      }
-      if (this.wasdKeys.D.isDown) {
-        this.cameras.main.scrollX += panSpeed;
-        panned = true;
+    if (!isTypingInTextField()) {
+      // Milestone 25: Reselect All Party Members [G]
+      if (this.gKey && Phaser.Input.Keyboard.JustDown(this.gKey)) {
+        this.selectAllMembers();
       }
 
-      // Note: Reaching into Phaser's private `_follow` property via (this.cameras.main as any)._follow
-      // is an unstable internal API fallback. It is kept as a defensive belt-and-suspenders guard in case
-      // isCameraLocked ever gets desynchronized, but may need maintenance if Phaser changes internal follow properties.
-      const hasFollowTarget = !!(this.cameras.main as any)._follow;
-      if (panned && (this.isCameraLocked || hasFollowTarget)) {
-        this.isCameraLocked = false;
-        this.cameras.main.stopFollow();
+      // Milestone: Party Selection Keys [F1]..[F4]
+      for (let i = 0; i < this.fKeys.length; i++) {
+        const key = this.fKeys[i];
+        if (key && Phaser.Input.Keyboard.JustDown(key)) {
+          const isShift = this.input.keyboard?.checkDown(this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT), 0) ?? false;
+          this.selectMemberByIndex(i, isShift);
+        }
       }
 
-      // Space key re-locks camera onto player
-      if (Phaser.Input.Keyboard.JustDown(this.wasdKeys.SPACE)) {
-        this.isCameraLocked = true;
-        this.cameras.main.startFollow(this.player, true, 0.1, 0.1);
+      // Milestone: Consumable Quick Bar Keys [1]..[4]
+      for (let i = 0; i < this.quickSlotKeys.length; i++) {
+        const key = this.quickSlotKeys[i];
+        if (key && Phaser.Input.Keyboard.JustDown(key)) {
+          this.hud?.triggerQuickSlot(i);
+        }
+      }
+
+      // Debug Grant +25 Weapon EXP [X]
+      if (this.xKey && Phaser.Input.Keyboard.JustDown(this.xKey)) {
+        this.progressionSystem.addProficiencyExp(this.player.equippedWeapon.id, 25);
+      }
+
+      // Debug Grant +100 Weapon EXP [Z]
+      if (this.zKey && Phaser.Input.Keyboard.JustDown(this.zKey)) {
+        this.progressionSystem.addProficiencyExp(this.player.equippedWeapon.id, 100);
+      }
+
+      // Debug Grant +25 Construction EXP [C]
+      if (this.cKey && Phaser.Input.Keyboard.JustDown(this.cKey)) {
+        this.progressionSystem.addProficiencyExp('construction', 25);
+      }
+
+      // WASD Camera Panning
+      const panSpeed = 8;
+      let panned = false;
+
+      if (this.wasdKeys) {
+        if (this.wasdKeys.W.isDown) {
+          this.cameras.main.scrollY -= panSpeed;
+          panned = true;
+        }
+        if (this.wasdKeys.S.isDown) {
+          this.cameras.main.scrollY += panSpeed;
+          panned = true;
+        }
+        if (this.wasdKeys.A.isDown) {
+          this.cameras.main.scrollX -= panSpeed;
+          panned = true;
+        }
+        if (this.wasdKeys.D.isDown) {
+          this.cameras.main.scrollX += panSpeed;
+          panned = true;
+        }
+
+        // Note: Reaching into Phaser's private `_follow` property via (this.cameras.main as any)._follow
+        // is an unstable internal API fallback. It is kept as a defensive belt-and-suspenders guard in case
+        // isCameraLocked ever gets desynchronized, but may need maintenance if Phaser changes internal follow properties.
+        const hasFollowTarget = !!(this.cameras.main as any)._follow;
+        if (panned && (this.isCameraLocked || hasFollowTarget)) {
+          this.isCameraLocked = false;
+          this.cameras.main.stopFollow();
+        }
+
+        // Space key re-locks camera onto player
+        if (Phaser.Input.Keyboard.JustDown(this.wasdKeys.SPACE)) {
+          this.isCameraLocked = true;
+          this.cameras.main.startFollow(this.player, true, 0.1, 0.1);
+        }
       }
     }
 
