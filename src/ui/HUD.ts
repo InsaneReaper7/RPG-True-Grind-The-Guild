@@ -6475,11 +6475,12 @@ export class HUD {
         const card = document.createElement('div');
         card.style.cssText = `background: rgba(31, 41, 55, 0.85); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 8px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; gap: 10px;`;
 
-        let canCook = true;
+        const canCook = CraftingSystem.canAfford(recipe, player);
         const ingStrings: string[] = [];
         for (const [item, qty] of Object.entries(recipe.ingredients)) {
-          const has = gameState.getItemCount(item);
-          if (has < qty) canCook = false;
+          const stockpileCount = item === 'wood' ? gameState.getWood() : gameState.getItemCount(item);
+          const carriedCount = (player && typeof player.getItemCount === 'function') ? player.getItemCount(item) : 0;
+          const has = stockpileCount + carriedCount;
           const itemLabel = item.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
           ingStrings.push(`${itemLabel} (${has}/${qty})`);
         }
@@ -6672,13 +6673,7 @@ export class HUD {
         }
         visibleCount++;
 
-        let canAfford = true;
-        for (const [item, qty] of Object.entries(recipe.ingredients)) {
-          if (gameState.getItemCount(item) < qty) {
-            canAfford = false;
-            break;
-          }
-        }
+        const canAfford = CraftingSystem.canAfford(recipe, player);
 
         const weaponDef = recipe.resultWeaponId ? dataLoader.getWeapon(recipe.resultWeaponId) : undefined;
         const card = document.createElement('div');
@@ -6686,7 +6681,9 @@ export class HUD {
 
         // Ingredients formatting
         const ingDetails = Object.entries(recipe.ingredients).map(([item, qty]) => {
-          const have = gameState.getItemCount(item);
+          const stockpileCount = item === 'wood' ? gameState.getWood() : gameState.getItemCount(item);
+          const carriedCount = (player && typeof player.getItemCount === 'function') ? player.getItemCount(item) : 0;
+          const have = stockpileCount + carriedCount;
           const ok = have >= qty;
           const label = item.replace(/_/g, ' ');
           return `<span style="color: ${ok ? '#4ade80' : '#f87171'}; font-weight: ${ok ? '500' : 'bold'};">${qty}x ${label} (${have}/${qty})</span>`;
@@ -6837,13 +6834,7 @@ export class HUD {
         }
         visibleCount++;
 
-        let canAfford = true;
-        for (const [item, qty] of Object.entries(recipe.ingredients)) {
-          if (gameState.getItemCount(item) < qty) {
-            canAfford = false;
-            break;
-          }
-        }
+        const canAfford = CraftingSystem.canAfford(recipe, player);
 
         const armorDef = dataLoader.getArmor(recipe.resultArmorId);
         const card = document.createElement('div');
@@ -6851,7 +6842,9 @@ export class HUD {
 
         // Ingredients formatting
         const ingDetails = Object.entries(recipe.ingredients).map(([item, qty]) => {
-          const have = gameState.getItemCount(item);
+          const stockpileCount = item === 'wood' ? gameState.getWood() : gameState.getItemCount(item);
+          const carriedCount = (player && typeof player.getItemCount === 'function') ? player.getItemCount(item) : 0;
+          const have = stockpileCount + carriedCount;
           const ok = have >= qty;
           const label = item.replace(/_/g, ' ');
           return `<span style="color: ${ok ? '#4ade80' : '#f87171'}; font-weight: ${ok ? '500' : 'bold'};">${qty}x ${label} (${have}/${qty})</span>`;
@@ -6999,13 +6992,7 @@ export class HUD {
         }
         visibleCount++;
 
-        let canAfford = true;
-        for (const [item, qty] of Object.entries(recipe.ingredients)) {
-          if (gameState.getItemCount(item) < qty) {
-            canAfford = false;
-            break;
-          }
-        }
+        const canAfford = CraftingSystem.canAfford(recipe, player);
 
         const weaponDef = dataLoader.getWeapon(recipe.resultWeaponId);
         const card = document.createElement('div');
@@ -7013,7 +7000,9 @@ export class HUD {
 
         // Ingredients formatting
         const ingDetails = Object.entries(recipe.ingredients).map(([item, qty]) => {
-          const have = gameState.getItemCount(item);
+          const stockpileCount = item === 'wood' ? gameState.getWood() : gameState.getItemCount(item);
+          const carriedCount = (player && typeof player.getItemCount === 'function') ? player.getItemCount(item) : 0;
+          const have = stockpileCount + carriedCount;
           const ok = have >= qty;
           const label = item.replace(/_/g, ' ');
           return `<span style="color: ${ok ? '#4ade80' : '#f87171'}; font-weight: ${ok ? '500' : 'bold'};">${qty}x ${label} (${have}/${qty})</span>`;

@@ -156,22 +156,29 @@ export class CraftingSystem {
       };
     }
 
-    // 2. Consume materials (carried first, then stockpile)
+    // 2. Consume materials: stockpile first, then crafter's own bag
     for (const [item, qty] of Object.entries(recipe.ingredients)) {
       let remaining = qty;
-      if (crafter && typeof crafter.getItemCount === 'function' && typeof crafter.removeItem === 'function') {
+
+      // 2a. Stockpile first
+      const stockpileCount = item === 'wood' ? gameState.getWood() : gameState.getItemCount(item);
+      const fromStockpile = Math.min(stockpileCount, remaining);
+      if (fromStockpile > 0) {
+        if (item === 'wood') {
+          gameState.addWood(-fromStockpile);
+        } else {
+          gameState.consumeItem(item, fromStockpile);
+        }
+        remaining -= fromStockpile;
+      }
+
+      // 2b. Crafter's own bag second (not other party members)
+      if (remaining > 0 && crafter && typeof crafter.getItemCount === 'function' && typeof crafter.removeItem === 'function') {
         const carried = crafter.getItemCount(item);
-        if (carried > 0) {
-          const fromCarried = Math.min(carried, remaining);
+        const fromCarried = Math.min(carried, remaining);
+        if (fromCarried > 0) {
           crafter.removeItem(item, fromCarried);
           remaining -= fromCarried;
-        }
-      }
-      if (remaining > 0) {
-        if (item === 'wood') {
-          gameState.addWood(-remaining);
-        } else {
-          gameState.consumeItem(item, remaining);
         }
       }
     }

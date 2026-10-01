@@ -961,6 +961,24 @@ Never ask Antigravity to jump ahead in this list — each milestone assumes the 
   - Full suite: `npm test -- --quiet` passes all test suites.
   - Production build: `npm run build` completes cleanly with zero errors.
 
+**Resolved and shipped: Follow-up — Tutorial Step Integrity & Stockpile-First Bag-Second Crafting Deduction Rule.**
+- **1. Tutorial Steps Integrity Confirmed**:
+  - The step definitions in code (`src/systems/TutorialSystem.ts`) and browser script (`scripts/verify_tutorial_flow_browser.mjs`) were never modified away from the original design:
+    Steps 1–9 (`guild_roster`, `movement`, `first_expedition`, `basic_combat`, `safe_gathering`, `return_outpost`, `research_station`, `construct_station`, `forge_upgrade`), Step 10 (`alchemy_station`), Step 11 (`alchemy_crafting`), Step 12 (`knowledge_base`), Step 13 (`summon_fourth_member`).
+  - Raw code step definitions and real browser script console outputs verified and pasted directly without retyping.
+- **2. Crafting Deduction Order Pinned Down (Stockpile First, Bag Second)**:
+  - In `CraftingSystem.applyCraft()`: Ingredients are deducted from the **stockpile first** (`Math.min(stockpileCount, needed)`), and only remaining needed quantities are deducted from the **crafting member's own bag second** (`crafter.removeItem(item, fromCarried)`).
+  - Other party members' bags are never checked and never touched.
+  - Applies to every crafting station through the shared `CraftingSystem` (`applyCraft` and `canAfford`), with UI modals in `HUD.ts` (Blacksmithing, Armorsmithing, Bowyer, Cooking, Alchemy) checking `CraftingSystem.canAfford(recipe, player)` and displaying combined counts.
+- **3. Verification Evidence**:
+  - Added Test 8 to `test/tutorialExpansion.test.ts` (8/8 tests passed):
+    - Split ingredient test: 1 bone meal in stockpile, 1 in crafter bag, 10 in ally bag. After craft, stockpile is 0, crafter bag is 0, ally bag is untouched at 10. Totals match recipe exactly with no double counting.
+    - Stockpile-first priority test: 10 wood in stockpile, 5 in crafter bag. 2 consumed from stockpile, crafter bag completely untouched (still 5).
+    - Partial split test: 1 ore in stockpile, 5 in crafter bag. Recipe uses 4: stockpile is 0 (1 used), crafter bag is 2 (3 used). Total used is 4.
+    - Cross-bag barrier test: crafter lacks items, ally has plenty. Craft fails and no items are consumed.
+  - Production Build: `npm run build` compiled cleanly with 0 TypeScript/vite errors.
+  - Test Suite: `npm test -- --quiet` 100/100 test suites passing.
+
 
 
 

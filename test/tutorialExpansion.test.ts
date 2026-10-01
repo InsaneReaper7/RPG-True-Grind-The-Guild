@@ -98,6 +98,7 @@ import { ConsumableSystem } from '../src/systems/ConsumableSystem.ts';
 import { TutorialSystem, TUTORIAL_STEPS } from '../src/systems/TutorialSystem.ts';
 import { ResearchSystem } from '../src/systems/ResearchSystem.ts';
 import { ProgressionSystem } from '../src/systems/ProgressionSystem.ts';
+import { CraftingSystem } from '../src/systems/CraftingSystem.ts';
 
 function createMockPlayer(id: string, name: string, overrides: Partial<any> = {}) {
   const inventory = new Map<string, number>();
@@ -394,6 +395,7 @@ async function runTutorialExpansionTests() {
     // Simulate save/load round-trip
     (gameState as any).snapshot = { hasReceivedTutorialSupplyCrate: gameState.hasReceivedTutorialSupplyCrate };
     assert.equal((gameState as any).snapshot.hasReceivedTutorialSupplyCrate, true, 'Flag is preserved in snapshot');
+    (gameState as any).snapshot = null;
 
     console.log('✔ Test 4 passed: Guild Supply Crate top-up math, delivery, and one-time persistence verified.');
   }
@@ -558,6 +560,99 @@ async function runTutorialExpansionTests() {
     assert.equal(recruit.progression.getProficiencyStat('healing_magic').currentExp, 20);
 
     console.log('✔ Test 7 passed: Healing Staff Lv 0 healing and healing_magic EXP progression verified.');
+  }
+
+  // ---------------------------------------------------------------------------
+  // TEST 8: Crafting draws ingredients from Stockpile first, then Crafter's bag second
+  // ---------------------------------------------------------------------------
+  console.log('\n--- TEST 8: Crafting Ingredient Consumption: Stockpile First, Bag Second ---');
+  {
+    const crafter = createMockPlayer('crafter', 'Aria');
+    const partyAlly = createMockPlayer('ally', 'Kaelen');
+
+    // 1. Shared recipe across stations: Alchemy Revive Potion
+    // revive_potion ingredients: { "wild_herbs": 1, "bone_meal": 2 }
+    const alchemyRecipe = dataLoader.getAlchemyRecipes().find(r => r.id === 'revive_potion');
+    assert.ok(alchemyRecipe, 'Revive potion recipe exists');
+
+    // Scenario A: Split ingredient (bone_meal: 1 in stockpile, 1 in crafter bag)
+    // Ally has 10 bone_meal (must NOT be touched)
+    gameState.inventory.clear();
+    crafter.inventory.clear();
+    partyAlly.inventory.clear();
+
+    gameState.addItem('wild_herbs', 1);
+    gameState.addItem('bone_meal', 1); // 1 in stockpile
+    crafter.addItem('bone_meal', 1);   // 1 in crafter bag
+    partyAlly.addItem('bone_meal', 10); // 10 in ally bag
+
+    assert.equal(CraftingSystem.canAfford(alchemyRecipe, crafter), true, 'Can afford when split between stockpile and crafter bag');
+
+    const resA = CraftingSystem.applyCraft(crafter, alchemyRecipe, 'alchemy');
+    assert.equal(resA.success, true, 'Crafting should succeed');
+
+    // Verify stockpile-first deduction with exact matching and no double count
+    assert.equal(gameState.getItemCount('bone_meal'), 0, 'Stockpile bone_meal deducted first (1 -> 0)');
+    assert.equal(crafter.getItemCount('bone_meal'), 0, 'Crafter bag bone_meal deducted second (1 -> 0)');
+    assert.equal(gameState.getItemCount('wild_herbs'), 0, 'Stockpile wild_herbs deducted (1 -> 0)');
+    assert.equal(partyAlly.getItemCount('bone_meal'), 10, 'Ally bag bone_meal untouched (still 10)');
+    assert.equal(crafter.getItemCount('revive_potion'), 1, 'Crafted revive potion landed in crafter bag');
+
+    // Scenario B: Stockpile has enough (wood: 10 in stockpile, 5 in crafter bag; recipe needs 2 wood, 4 ore)
+    const ironMaceRecipe = dataLoader.getBlacksmithRecipes().find(r => r.id === 'mace');
+    assert.ok(ironMaceRecipe, 'Iron mace recipe exists');
+    gameState.inventory.clear();
+    crafter.inventory.clear();
+    partyAlly.inventory.clear();
+
+    gameState.addItem('ore', 4);
+    gameState.setWood(10);        // 10 wood in stockpile
+    crafter.addItem('wood', 5);   // 5 wood in crafter bag
+
+    assert.equal(CraftingSystem.canAfford(ironMaceRecipe, crafter), true);
+    const resB = CraftingSystem.applyCraft(crafter, ironMaceRecipe, 'blacksmithing');
+    assert.equal(resB.success, true);
+
+    assert.equal(gameState.getWood(), 8, 'Stockpile wood deducted by 2 (10 -> 8)');
+    assert.equal(crafter.getItemCount('wood'), 5, 'Crafter bag wood completely untouched (still 5)');
+    assert.equal(gameState.getItemCount('ore'), 0, 'Stockpile ore deducted by 4 (4 -> 0)');
+
+    // Scenario C: Partial split with remainder in crafter bag
+    // Recipe needs 4 ore. Stockpile has 1, crafter bag has 5.
+    gameState.inventory.clear();
+    crafter.inventory.clear();
+
+    gameState.addItem('ore', 1);
+    gameState.setWood(5);
+    crafter.addItem('ore', 5);
+
+    assert.equal(CraftingSystem.canAfford(ironMaceRecipe, crafter), true);
+    const resC = CraftingSystem.applyCraft(crafter, ironMaceRecipe, 'blacksmithing');
+    assert.equal(resC.success, true);
+
+    // Stockpile deducted from 1 to 0 (1 used)
+    // Crafter bag deducted from 5 to 2 (3 used)
+    // Total used: 1 + 3 = 4 ore.
+    assert.equal(gameState.getItemCount('ore'), 0, 'Stockpile ore exhausted from 1 to 0');
+    assert.equal(crafter.getItemCount('ore'), 2, 'Crafter bag ore reduced from 5 to 2');
+
+    // Scenario D: Crafter lacks mats, but ally has them (must fail, not access ally bag)
+    gameState.inventory.clear();
+    crafter.inventory.clear();
+    partyAlly.inventory.clear();
+
+    gameState.addItem('ore', 1);
+    crafter.addItem('ore', 1);        // 1 + 1 = 2 < 4
+    partyAlly.addItem('ore', 20);     // Ally has plenty
+
+    assert.equal(CraftingSystem.canAfford(ironMaceRecipe, crafter), false, 'Cannot afford when only ally has remaining items');
+    const resD = CraftingSystem.applyCraft(crafter, ironMaceRecipe, 'blacksmithing');
+    assert.equal(resD.success, false, 'applyCraft must fail');
+    assert.equal(gameState.getItemCount('ore'), 1, 'Stockpile ore not deducted on failure');
+    assert.equal(crafter.getItemCount('ore'), 1, 'Crafter ore not deducted on failure');
+    assert.equal(partyAlly.getItemCount('ore'), 20, 'Ally ore untouched');
+
+    console.log('✔ Test 8 passed: Stockpile-first crafting deduction across stations with split bag math verified.');
   }
 
   console.log('\n================================================================');
