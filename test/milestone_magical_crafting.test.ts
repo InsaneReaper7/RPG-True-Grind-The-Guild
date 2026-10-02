@@ -353,7 +353,84 @@ async function runTests() {
     }
   }
   assert.ok(totalElementalsSpawned > 0, 'Elementals should spawn across multiple cleared runs when tutorial is complete');
-  console.log(`✓ Test 8 passed: 0 elementals during tutorial; spawned ${totalElementalsSpawned} in valid combat rooms over 50 runs post-tutorial.`);
+  console.log(`✓ Test 8 passed: 0 elementals during tutorial; spawned ${totalElementalsSpawned} in valid combat rooms over 50 runs in Band 1 post-tutorial (expected ~20).`);
+
+  // Test 8c: A disabled-school roll gives no spawn (seed 3 rolls Water in Band 2)
+  console.log('Test 8c: Disabled-school roll gives no spawn and crystal recipe is hidden');
+  const dWater = DungeonGenerator.generate(dungeonConfig, DungeonGenerator.createRng(3), {
+    floorNumber: 3, // Band 2
+    seed: 3,
+    isTutorialComplete: true
+  });
+  const waterElementals = dWater.enemySpawns.filter(e => e.enemyId.endsWith('_elemental'));
+  assert.equal(waterElementals.length, 0, 'Rolling a disabled school (water) must result in 0 elemental spawns (null roll)');
+
+  // Also assert Water crystal recipe is hidden from station visible recipe list
+  const visibleStationRecipes = dataLoader.getEnchantingRecipes().filter(
+    (recipe) => !recipe.school || dataLoader.isElementalSchoolEnabled(recipe.school)
+  );
+  assert.equal(dataLoader.isElementalSchoolEnabled('water'), false, 'Water school must be disabled');
+  assert.equal(
+    visibleStationRecipes.some(r => r.resultItemId === 'water_crystal' || r.id === 'water_crystal_craft'),
+    false,
+    'Water crystal recipe must NOT be in the station visible recipe list'
+  );
+  console.log('✓ Test 8c passed: Water roll produces 0 elemental spawn and Water crystal recipe is hidden from station.');
+
+  // Test 8d: Never a replacement - compare core-pool and carry-over enemies with and without an elemental
+  console.log('Test 8d: Never a replacement: core-pool and carry-over enemies are identical plus exactly 1 elemental');
+  const seededFloorWithoutElem = DungeonGenerator.generate(dungeonConfig, DungeonGenerator.createRng(2), {
+    floorNumber: 1,
+    seed: 2,
+    isTutorialComplete: false
+  });
+  const seededFloorWithElem = DungeonGenerator.generate(dungeonConfig, DungeonGenerator.createRng(2), {
+    floorNumber: 1,
+    seed: 2,
+    isTutorialComplete: true
+  });
+
+  const baseNonElemEnemies = seededFloorWithoutElem.enemySpawns.filter(e => !e.enemyId.endsWith('_elemental'));
+  const withElemNonElemEnemies = seededFloorWithElem.enemySpawns.filter(e => !e.enemyId.endsWith('_elemental'));
+  const withElemElementals = seededFloorWithElem.enemySpawns.filter(e => e.enemyId.endsWith('_elemental'));
+
+  assert.equal(withElemElementals.length, 1, 'Exactly one elemental must be spawned on this floor');
+  assert.equal(baseNonElemEnemies.length, withElemNonElemEnemies.length, 'Non-elemental enemy count must match exactly');
+  assert.deepEqual(baseNonElemEnemies, withElemNonElemEnemies, 'Core and carry-over enemy placements must be 100% identical');
+  console.log('✓ Test 8d passed: Seeded floor non-elemental enemies are 100% identical, plus exactly one elemental.');
+
+  // Test 8e: 1,000 runs per band rate within +-20% of supply simulation
+  console.log('Test 8e: 1,000 runs per band rate verification within +-20% of simulation');
+  const bandRunConfigs = [
+    { band: 1, floor: 1, expectedRate: 0.40, name: 'Band 1 (Crypts)' },
+    { band: 2, floor: 3, expectedRate: 0.2333, name: 'Band 2 (Abyss)' },
+    { band: 3, floor: 6, expectedRate: 0.40, name: 'Band 3 (Caldera)' },
+    { band: 4, floor: 11, expectedRate: 0.275, name: 'Band 4 (Glacial)' }
+  ];
+
+  for (const b of bandRunConfigs) {
+    let elemCount = 0;
+    const runs = 1000;
+    for (let s = 1; s <= runs; s++) {
+      const d = DungeonGenerator.generate(dungeonConfig, DungeonGenerator.createRng(s), {
+        floorNumber: b.floor,
+        seed: s,
+        isTutorialComplete: true
+      });
+      if (d.enemySpawns.some(e => e.enemyId.endsWith('_elemental'))) {
+        elemCount++;
+      }
+    }
+    const observedRate = elemCount / runs;
+    const lowerBound = b.expectedRate * 0.80;
+    const upperBound = b.expectedRate * 1.20;
+    assert.ok(
+      observedRate >= lowerBound && observedRate <= upperBound,
+      `${b.name} observed rate ${(observedRate * 100).toFixed(1)}% must be within +-20% of sim ${(b.expectedRate * 100).toFixed(1)}% [${(lowerBound * 100).toFixed(1)}% - ${(upperBound * 100).toFixed(1)}%]`
+    );
+    console.log(`  ${b.name}: ${elemCount}/${runs} (${(observedRate * 100).toFixed(1)}%) vs sim ${(b.expectedRate * 100).toFixed(1)}% -> within +-20%`);
+  }
+  console.log('✓ Test 8e passed: 1,000 runs across all 4 bands are within +-20% of supply simulation rates.');
 
   // Test 9: Holy Elemental Drops (Guaranteed 1-2 Holy Gemstone + 70% Healing Gemstone)
   console.log('Test 9: Holy Elemental harvest drops simulation (guaranteed holy + 70% healing)');
