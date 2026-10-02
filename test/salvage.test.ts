@@ -464,14 +464,14 @@ async function runSalvageTests() {
   assert.equal(rodAttempt.success, false, 'Fishing Rod cannot be salvaged');
   assert.ok(rodAttempt.message.toLowerCase().includes('fishing rod'));
 
-  // 2.6 Real gear item without a crafting recipe ('fire_staff') CANNOT be salvaged
-  hero.addItem('fire_staff', 1);
-  assert.equal(CraftingSystem.canSalvage('fire_staff').canSalvage, false);
-  const uncraftableAttempt = CraftingSystem.applySalvage(hero, 'fire_staff');
+  // 2.6 Real gear item without a crafting recipe ('druid_staff') CANNOT be salvaged
+  hero.addItem('druid_staff', 1);
+  assert.equal(CraftingSystem.canSalvage('druid_staff').canSalvage, false);
+  const uncraftableAttempt = CraftingSystem.applySalvage(hero, 'druid_staff');
   assert.equal(uncraftableAttempt.success, false, 'Real gear with no recipe cannot be salvaged');
   assert.ok(uncraftableAttempt.message.toLowerCase().includes('recipe'));
 
-  console.log('✔ Test Group 2 Passed: Equipped gear, ore, bandage, lockpick, fishing_rod, and fire_staff rejected.');
+  console.log('✔ Test Group 2 Passed: Equipped gear, ore, bandage, lockpick, fishing_rod, and druid_staff rejected.');
 
   // =========================================================================
   // TEST GROUP 3: COUNTS AND CLEANUP

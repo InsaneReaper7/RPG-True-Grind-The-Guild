@@ -962,6 +962,11 @@ export class CombatSystem {
                     }
                   }
 
+                  // Milestone: Magical Crafting - Elemental Enemy Status Effect Proc
+                  if (enemy.enemyData.tier === 'elemental' && actualDamage > 0 && !targetDowned) {
+                    this.applyElementalAttackStatus(enemy, target);
+                  }
+
                   if (targetDowned) {
                     console.log(`[Combat] ${target.entityName} has been downed by enemy attack!`);
                     target.clearTarget();
@@ -1997,6 +2002,126 @@ export class CombatSystem {
     }
   }
 
+  public applyElementalAttackStatus(enemy: Enemy, target: Entity): void {
+    const school = (enemy.enemyData as any).school || enemy.enemyData.id.replace('_elemental', '');
+    const dataLoader = DataLoader.getInstance();
+
+    switch (school) {
+      case 'fire': {
+        // Fire: Burn (30% proc, DoT)
+        if (Math.random() < 0.30) {
+          const burnDef = dataLoader.getStatusEffect('burn');
+          if (burnDef) {
+            target.applyStatusEffect(burnDef);
+            this.createFloatingText(target.x, target.y - 25, 'BURN!', '#f97316');
+          }
+        }
+        break;
+      }
+      case 'ice':
+      case 'water': {
+        // Ice & Water: Slow (25% proc, -50% move)
+        if (Math.random() < 0.25) {
+          const slowDef = dataLoader.getStatusEffect('slow') || {
+            id: 'slow',
+            name: 'Slow',
+            durationMs: 3000,
+            tickIntervalMs: 1000,
+            damagePerTick: 0,
+            moveSpeedMultiplier: 0.5,
+            isHarmful: true,
+            color: '#67e8f9'
+          };
+          target.applyStatusEffect(slowDef);
+          this.createFloatingText(target.x, target.y - 25, 'SLOWED!', '#67e8f9');
+          this.createFrostEffect(target.x, target.y);
+        }
+        break;
+      }
+      case 'lightning': {
+        // Lightning: Shock (25% proc, interrupt)
+        if (Math.random() < 0.25) {
+          const shockDef = dataLoader.getStatusEffect('shock') || {
+            id: 'shock',
+            name: 'Shock',
+            durationMs: 1000,
+            tickIntervalMs: 1000,
+            damagePerTick: 0,
+            disablesActions: true,
+            disablesMovement: true,
+            interruptsAttack: true,
+            color: '#06b6d4'
+          };
+          target.applyStatusEffect(shockDef);
+          if (shockDef.disablesMovement) target.stopMovement();
+          this.createFloatingText(target.x, target.y - 25, 'SHOCKED!', '#06b6d4');
+          this.createShockSparksEffect(target.x, target.y);
+        }
+        break;
+      }
+      case 'earth': {
+        // Earth: Shock (20% proc, interrupt)
+        if (Math.random() < 0.20) {
+          const shockDef = dataLoader.getStatusEffect('shock') || {
+            id: 'shock',
+            name: 'Shock',
+            durationMs: 1000,
+            tickIntervalMs: 1000,
+            damagePerTick: 0,
+            disablesActions: true,
+            disablesMovement: true,
+            interruptsAttack: true,
+            color: '#06b6d4'
+          };
+          target.applyStatusEffect(shockDef);
+          if (shockDef.disablesMovement) target.stopMovement();
+          this.createFloatingText(target.x, target.y - 25, 'SHOCKED!', '#06b6d4');
+          this.createShockSparksEffect(target.x, target.y);
+        }
+        break;
+      }
+      case 'dark': {
+        // Dark: Curse (25% proc, -25% dmg)
+        if (Math.random() < 0.25) {
+          const curseDef = dataLoader.getStatusEffect('curse') || {
+            id: 'curse',
+            name: 'Curse',
+            durationMs: 5000,
+            tickIntervalMs: 5000,
+            damagePerTick: 0,
+            damageReductionPercent: 0.25,
+            isHarmful: true,
+            color: '#a855f7'
+          };
+          target.applyStatusEffect(curseDef);
+          this.createFloatingText(target.x, target.y - 25, 'CURSED!', '#a855f7');
+          this.createDarkImpactEffect(target.x, target.y);
+        }
+        break;
+      }
+      case 'nature': {
+        // Nature: Poison (25% proc, DoT)
+        if (Math.random() < 0.25) {
+          const poisonDef = dataLoader.getStatusEffect('poison') || {
+            id: 'poison',
+            name: 'Poison',
+            tickIntervalMs: 2000,
+            damagePerTick: 2,
+            persistent: true,
+            isHarmful: true,
+            color: '#16a34a'
+          };
+          target.applyStatusEffect(poisonDef);
+          this.createFloatingText(target.x, target.y - 25, 'POISONED!', '#16a34a');
+        }
+        break;
+      }
+      // Holy, Arcane, Wind: Plain damage, no status
+      default:
+        break;
+    }
+  }
+
   public getPassiveImbuement(member: Player): PassiveImbuementDef | null {
     if (!member.activeClass) return null;
     const clsDef =
@@ -2460,6 +2585,41 @@ export class CombatSystem {
             const isRare = chosen.method === 'rare_drop';
             const floatColor = isRare ? '#f59e0b' : '#34d399';
             this.createFloatingText(target.x, target.y - 35, `+1 ${itemName}`, floatColor);
+          }
+        } else if (target.enemyData.tier === 'elemental') {
+          // Milestone: Magical Crafting - Elemental Enemy Drops
+          // Guaranteed 1-2 Gemstones of elemental's own school (100% drop)
+          // Holy elemental has 70% chance of 1 Healing Gemstone
+          // Thematic secondary drops rolled by individual chance
+          for (const h of validHarvest) {
+            let shouldDrop = false;
+            let count = 1;
+
+            if (h.method === 'guaranteed') {
+              shouldDrop = true;
+              count = Array.isArray(h.amount)
+                ? Math.floor(Math.random() * (h.amount[1] - h.amount[0] + 1)) + h.amount[0]
+                : (typeof h.amount === 'number' ? h.amount : 1);
+            } else {
+              const chance = (h as any).chance ?? (h.method === 'rare_drop' ? 0.35 : 0.5);
+              if (Math.random() < chance) {
+                shouldDrop = true;
+                count = Array.isArray(h.amount)
+                  ? Math.floor(Math.random() * (h.amount[1] - h.amount[0] + 1)) + h.amount[0]
+                  : (typeof h.amount === 'number' ? h.amount : 1);
+              }
+            }
+
+            if (shouldDrop && count > 0) {
+              if (recipient) {
+                recipient.addItem(h.item, count);
+              } else {
+                gameState.addItem(h.item, count);
+              }
+              const itemName = h.item.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+              const floatColor = h.method === 'guaranteed' ? '#38bdf8' : (h.item === 'healing_gemstone' ? '#fde047' : '#a78bfa');
+              this.createFloatingText(target.x, target.y - 35, `+${count} ${itemName}`, floatColor);
+            }
           }
         } else {
           // Elite, Epic and Boss keep their existing tiered reward structure

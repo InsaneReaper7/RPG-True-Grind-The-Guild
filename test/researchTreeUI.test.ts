@@ -332,9 +332,9 @@ async function runTests() {
   // ---------------------------------------------------------------------------
   // TEST 3: SVG Connector Lines Between Prerequisites and Dependents
   // ---------------------------------------------------------------------------
-  console.log('\n--- TEST 3: SVG Connector Lines (Skinning->Armor, Butchering->Cooking, Digging->Gardening) ---');
+  console.log('\n--- TEST 3: SVG Connector Lines (Prerequisite Connections) ---');
   const connectorLines = svg.querySelectorAll('.research-connector-line');
-  assert.equal(connectorLines.length, 3, 'Exactly 3 prerequisite connector lines must be drawn');
+  assert.equal(connectorLines.length, 4, 'Exactly 4 prerequisite connector lines must be drawn');
 
   const skinningLine = svg.querySelector('[data-source-node="research_skinning"][data-target-node="research_armorsmithing_bench"]') as MockDOMElement;
   assert.ok(skinningLine, 'Connector line from research_skinning to research_armorsmithing_bench must exist');
@@ -348,6 +348,10 @@ async function runTests() {
   const diggingLine = svg.querySelector('[data-source-node="research_digging"][data-target-node="research_gardening"]') as MockDOMElement;
   assert.ok(diggingLine, 'Connector line from research_digging to research_gardening must exist');
   assert.equal(diggingLine.getAttribute('stroke'), '#64748b');
+
+  const magicalCraftingLine = svg.querySelector('[data-source-node="research_blacksmithing_station"][data-target-node="research_magical_crafting"]') as MockDOMElement;
+  assert.ok(magicalCraftingLine, 'Connector line from research_blacksmithing_station to research_magical_crafting must exist');
+  assert.equal(magicalCraftingLine.getAttribute('stroke'), '#64748b');
 
   console.log('✔ Test 3 passed: SVG connector lines correctly connect prerequisite pairs.');
 

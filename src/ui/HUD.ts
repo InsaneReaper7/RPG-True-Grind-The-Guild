@@ -250,6 +250,17 @@ export class HUD {
   private bowyerSalvageContainerEl: HTMLElement | null;
   private bowyerStatusMsgEl: HTMLElement | null;
 
+  // Milestone: Magical Crafting Elements (Magical Weapon Station)
+  private magicalWeaponModalEl: HTMLElement | null;
+  private closeMagicalWeaponBtn: HTMLElement | null;
+  private magicalWeaponModalProfEl: HTMLElement | null;
+  private magicalWeaponStockpileStavesEl: HTMLElement | null;
+  private magicalWeaponStockpileGemsEl: HTMLElement | null;
+  private magicalWeaponStockpileCrystalsEl: HTMLElement | null;
+  private magicalWeaponRecipesContainerEl: HTMLElement | null;
+  private magicalWeaponSalvageContainerEl: HTMLElement | null;
+  private magicalWeaponStatusMsgEl: HTMLElement | null;
+
   // Milestone 16 Elements (Floor Timer & Respawn Debug)
   private floorTimerBadgeEl: HTMLElement | null;
   private debugBtnFastForwardFloorTimer: HTMLElement | null;
@@ -285,13 +296,15 @@ export class HUD {
     armorsmithing: true,
     bowyer: true,
     alchemy: true,
-    cooking: true
+    cooking: true,
+    'magical-weapon': true
   };
   public blacksmithingToggleFilterBtn: HTMLElement | null = null;
   public armorsmithingToggleFilterBtn: HTMLElement | null = null;
   public bowyerToggleFilterBtn: HTMLElement | null = null;
   public alchemyToggleFilterBtn: HTMLElement | null = null;
   public cookingToggleFilterBtn: HTMLElement | null = null;
+  public magicalWeaponToggleFilterBtn: HTMLElement | null = null;
 
   // Knowledge Base (Guild Codex) Elements & State (Milestone 50)
   private knowledgeBaseModalEl: HTMLElement | null = null;
@@ -746,14 +759,32 @@ export class HUD {
       };
     }
 
+    // Milestone: Magical Crafting Elements
+    this.magicalWeaponModalEl = document.getElementById('magical-weapon-modal');
+    this.closeMagicalWeaponBtn = document.getElementById('close-magical-weapon-btn');
+    this.magicalWeaponModalProfEl = document.getElementById('magical-weapon-modal-prof');
+    this.magicalWeaponStockpileStavesEl = document.getElementById('magical-weapon-stockpile-staves');
+    this.magicalWeaponStockpileGemsEl = document.getElementById('magical-weapon-stockpile-gems');
+    this.magicalWeaponStockpileCrystalsEl = document.getElementById('magical-weapon-stockpile-crystals');
+    this.magicalWeaponRecipesContainerEl = document.getElementById('magical-weapon-recipes-container');
+    this.magicalWeaponSalvageContainerEl = document.getElementById('magical-weapon-salvage-container');
+    this.magicalWeaponStatusMsgEl = document.getElementById('magical-weapon-status-msg');
+
+    if (this.closeMagicalWeaponBtn) {
+      this.closeMagicalWeaponBtn.onclick = () => {
+        HUD.activeInstance?.closeMagicalWeaponModal();
+      };
+    }
+
     // Crafting Station Filter Toggle Buttons (Milestone: Crafting Station Recipe Filter)
     this.blacksmithingToggleFilterBtn = document.getElementById('blacksmithing-toggle-filter-btn');
     this.armorsmithingToggleFilterBtn = document.getElementById('armorsmithing-toggle-filter-btn');
     this.bowyerToggleFilterBtn = document.getElementById('bowyer-toggle-filter-btn');
     this.alchemyToggleFilterBtn = document.getElementById('alchemy-toggle-filter-btn');
     this.cookingToggleFilterBtn = document.getElementById('cooking-toggle-filter-btn');
+    this.magicalWeaponToggleFilterBtn = document.getElementById('magical-weapon-toggle-filter-btn');
 
-    const craftingStations = ['blacksmithing', 'armorsmithing', 'bowyer', 'alchemy', 'cooking'] as const;
+    const craftingStations = ['blacksmithing', 'armorsmithing', 'bowyer', 'alchemy', 'cooking', 'magical-weapon'] as const;
     craftingStations.forEach((st) => {
       const btn = document.getElementById(`${st}-toggle-filter-btn`);
       if (btn) {
@@ -1939,6 +1970,7 @@ export class HUD {
           active.closeBlacksmithingModal?.();
           active.closeArmorsmithingModal?.();
           active.closeBowyerModal?.();
+          active.closeMagicalWeaponModal?.();
           active.closePartyOverviewModal();
           if (active.isBuildOverlayVisible()) {
             active.onBuildModeToggleCallback?.();
@@ -7276,10 +7308,179 @@ export class HUD {
     this.renderSalvageSection('bowyer', player, progression, this.bowyerSalvageContainerEl);
   }
 
+  // --- MAGICAL WEAPON STATION & ENCHANTING (Milestone: Magical Crafting) ---
+
+  public openMagicalWeaponModal(player: Player, progression: ProgressionSystem): void {
+    this.currentPlayer = player;
+    this.currentProgression = progression;
+    if (this.magicalWeaponModalEl) {
+      this.magicalWeaponModalEl.classList.add('active');
+      this.renderMagicalWeaponModal(player, progression);
+    }
+  }
+
+  public closeMagicalWeaponModal(): void {
+    if (this.magicalWeaponModalEl) {
+      this.magicalWeaponModalEl.classList.remove('active');
+    }
+  }
+
+  public isMagicalWeaponModalOpen(): boolean {
+    return this.magicalWeaponModalEl?.classList.contains('active') ?? false;
+  }
+
+  public renderMagicalWeaponModal(player: Player, progression: ProgressionSystem): void {
+    this.currentPlayer = player;
+    this.currentProgression = progression;
+    this.updateCraftingFilterToggleUI('magical-weapon');
+    const isCraftableOnly = this.isCraftingFilterActive('magical-weapon');
+
+    const gameState = GameState.getInstance();
+    const dataLoader = DataLoader.getInstance();
+
+    // 1. Proficiency Bar & Materials Stockpile
+    const encStat = progression.getProficiencyStat('enchanting');
+    if (this.magicalWeaponModalProfEl) {
+      const nextExp = LevelingSystem.expForNextLevel(encStat.level);
+      const perks = CraftingSystem.getCrafterPerks(player, 'enchanting');
+      const perkText = perks.perkDescription ? ` — ${perks.perkDescription}` : '';
+      this.magicalWeaponModalProfEl.innerText = `Level ${encStat.level} (${encStat.currentExp}/${nextExp} EXP)${perkText}`;
+    }
+
+    if (this.magicalWeaponStockpileStavesEl) {
+      const plainStaves = gameState.getItemCount('staff') + (player && typeof player.getItemCount === 'function' ? player.getItemCount('staff') : 0);
+      this.setElementTextIfChanged(this.magicalWeaponStockpileStavesEl, `${plainStaves}`);
+    }
+
+    if (this.magicalWeaponStockpileGemsEl) {
+      let gemCount = 0;
+      const allItems = dataLoader.getItemsData()?.items || [];
+      for (const item of allItems) {
+        if (item.category === 'gemstone' || item.id.endsWith('_gemstone')) {
+          gemCount += gameState.getItemCount(item.id) + (player && typeof player.getItemCount === 'function' ? player.getItemCount(item.id) : 0);
+        }
+      }
+      this.setElementTextIfChanged(this.magicalWeaponStockpileGemsEl, `${gemCount}`);
+    }
+
+    if (this.magicalWeaponStockpileCrystalsEl) {
+      let crystalCount = 0;
+      const allItems = dataLoader.getItemsData()?.items || [];
+      for (const item of allItems) {
+        if (item.category === 'crystal' || item.id.endsWith('_crystal')) {
+          crystalCount += gameState.getItemCount(item.id) + (player && typeof player.getItemCount === 'function' ? player.getItemCount(item.id) : 0);
+        }
+      }
+      this.setElementTextIfChanged(this.magicalWeaponStockpileCrystalsEl, `${crystalCount}`);
+    }
+
+    if (this.magicalWeaponStatusMsgEl) {
+      this.magicalWeaponStatusMsgEl.innerText = '';
+    }
+
+    // 2. Render Recipes
+    if (this.magicalWeaponRecipesContainerEl) {
+      this.magicalWeaponRecipesContainerEl.innerHTML = '';
+      const recipes = dataLoader.getEnchantingRecipes();
+      let visibleCount = 0;
+
+      for (const recipe of recipes) {
+        // Director Decision: Disabled schools: Their crystal recipes are hidden at the station
+        if (recipe.school && !dataLoader.isElementalSchoolEnabled(recipe.school)) {
+          continue;
+        }
+
+        const isLevelUnlocked = encStat.level >= (recipe.requiredLevel ?? 0);
+        if (isCraftableOnly && !isLevelUnlocked) {
+          continue;
+        }
+        visibleCount++;
+
+        const canAfford = CraftingSystem.canAfford(recipe, player);
+        const weaponDef = recipe.resultWeaponId ? dataLoader.getWeapon(recipe.resultWeaponId) : null;
+        const card = document.createElement('div');
+        card.style.cssText = `background: rgba(31, 41, 55, ${isLevelUnlocked ? '0.75' : '0.4'}); border: 1px solid ${isLevelUnlocked ? (canAfford ? 'rgba(192, 132, 252, 0.4)' : 'rgba(107, 114, 128, 0.3)') : 'rgba(239, 68, 68, 0.3)'}; border-radius: 8px; padding: 12px; display: flex; justify-content: space-between; align-items: center;`;
+
+        // Ingredients formatting
+        const ingDetails = Object.entries(recipe.ingredients).map(([item, qty]) => {
+          const stockpileCount = item === 'wood' ? gameState.getWood() : gameState.getItemCount(item);
+          const carriedCount = (player && typeof player.getItemCount === 'function') ? player.getItemCount(item) : 0;
+          const have = stockpileCount + carriedCount;
+          const ok = have >= qty;
+          const label = item.replace(/_/g, ' ');
+          return `<span style="color: ${ok ? '#4ade80' : '#f87171'}; font-weight: ${ok ? '500' : 'bold'};">${qty}x ${label} (${have}/${qty})</span>`;
+        }).join(', ');
+
+        const weaponStats = weaponDef ? `Range: ${weaponDef.attackRangeTiles ?? 4} | Dmg: ${weaponDef.baseDamage} | Spd: ${weaponDef.attackIntervalMs}ms | Acc: ${Math.round((weaponDef.baseAccuracy ?? 0.8) * 100)}%` : '';
+
+        let actionBtnHtml = '';
+        if (!isLevelUnlocked) {
+          actionBtnHtml = `<span style="font-size: 11px; color: #ef4444; font-weight: bold; padding: 6px 12px; background: rgba(239, 68, 68, 0.1); border-radius: 4px;">🔒 Req. Enchanting Lv ${recipe.requiredLevel}</span>`;
+        } else if (!canAfford) {
+          actionBtnHtml = `<button type="button" class="btn-action" style="background: #374151; border-color: #4b5563; color: #9ca3af; cursor: not-allowed; font-size: 11px; padding: 6px 14px;" disabled>Insufficient Mats</button>`;
+        } else {
+          const btnLabel = recipe.resultWeaponId ? '🔮 Craft Staff' : '✨ Refine Crystal';
+          actionBtnHtml = `<button type="button" class="btn-action" style="background: #581c87; border-color: #9333ea; font-size: 11px; padding: 6px 14px; font-weight: bold; color: #f3e8ff;" data-enchant-recipe="${recipe.id}">${btnLabel}</button>`;
+        }
+
+        card.innerHTML = `
+          <div style="flex: 1; padding-right: 12px;">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 2px;">
+              <span style="font-weight: bold; color: ${isLevelUnlocked ? '#f8fafc' : '#9ca3af'}; font-size: 13px;">${recipe.name}</span>
+              <span style="font-size: 10px; color: #e9d5ff; background: rgba(147, 51, 234, 0.25); padding: 2px 6px; border-radius: 4px;">+${recipe.expGranted} EXP</span>
+              ${weaponStats ? `<span style="font-size: 10px; color: #c084fc;">${weaponStats}</span>` : ''}
+            </div>
+            <div style="font-size: 11px; color: #9ca3af; margin-bottom: 6px;">${recipe.description}</div>
+            <div style="font-size: 11px; color: #d1d5db;">Cost: ${ingDetails}</div>
+          </div>
+          <div>${actionBtnHtml}</div>
+        `;
+
+        const btn = card.querySelector<HTMLButtonElement>(`[data-enchant-recipe="${recipe.id}"]`);
+        if (btn) {
+          btn.onclick = () => {
+            const wasEnc = player.isEncumbered;
+            const craftRes = CraftingSystem.applyCraft(player, recipe, 'enchanting');
+            if (craftRes.success) {
+              if (!wasEnc && player.isEncumbered) {
+                this.showToast(`⚠️ ${player.entityName} is ENCUMBERED (-80% Movement Speed)!`, 'warn', 3000);
+              }
+              let toastMsg = `✨ Crafted 1x ${recipe.name}! (+${recipe.expGranted} Enchanting EXP`;
+              if (craftRes.classExpGranted > 0) {
+                toastMsg += `, +${craftRes.classExpGranted} Class EXP`;
+              }
+              toastMsg += ')';
+              if (craftRes.bonusPercent > 0) {
+                toastMsg += ` (+${craftRes.bonusPercent}% Stats)`;
+              }
+              this.showToast(toastMsg, 'success', 2500);
+              this.renderMagicalWeaponModal(player, progression);
+              this.update(player, progression, 0);
+            } else {
+              this.showToast(craftRes.message, 'error');
+            }
+          };
+        }
+
+        this.magicalWeaponRecipesContainerEl.appendChild(card);
+      }
+
+      if (visibleCount === 0) {
+        this.magicalWeaponRecipesContainerEl.innerHTML = `
+          <div style="font-size: 11px; color: #9ca3af; font-style: italic; background: rgba(31, 41, 55, 0.4); padding: 12px; border-radius: 6px; text-align: center;">
+            No recipes unlocked at your current Enchanting level (Lv ${encStat.level}). Toggle "Show All" to view all recipes.
+          </div>
+        `;
+      }
+    }
+
+    this.renderSalvageSection('enchanting', player, progression, this.magicalWeaponSalvageContainerEl);
+  }
+
   // --- GEAR SALVAGE UI (Milestone: Gear Salvage) ---
 
   public renderSalvageSection(
-    station: 'blacksmithing' | 'armorsmithing' | 'bowyer',
+    station: 'blacksmithing' | 'armorsmithing' | 'bowyer' | 'enchanting',
     player: Player,
     progression: ProgressionSystem,
     containerEl: HTMLElement | null
@@ -7319,7 +7520,8 @@ export class HUD {
       const rawWeapon = dataLoader.getRawWeapon?.(baseId) || dataLoader.getWeapon?.(baseId);
       const rawArmor = dataLoader.getRawArmor?.(baseId) || dataLoader.getArmor?.(baseId);
       if (station === 'armorsmithing') return Boolean(rawArmor);
-      if (station === 'bowyer') return Boolean(isBowOrStaff);
+      if (station === 'enchanting') return Boolean(rawWeapon && baseId.endsWith('_staff'));
+      if (station === 'bowyer') return Boolean(isBowOrStaff && !baseId.endsWith('_staff'));
       if (station === 'blacksmithing') return Boolean(rawWeapon && !isBowOrStaff);
       return false;
     };
@@ -7487,6 +7689,7 @@ export class HUD {
               if (station === 'blacksmithing') this.renderBlacksmithingModal(player, progression);
               else if (station === 'armorsmithing') this.renderArmorsmithingModal(player, progression);
               else if (station === 'bowyer') this.renderBowyerModal(player, progression);
+              else if (station === 'enchanting') this.renderMagicalWeaponModal(player, progression);
               this.update(player, progression, 0);
             } else {
               this.showToast(result.message, 'error', 3000);
@@ -7548,6 +7751,9 @@ export class HUD {
           break;
         case 'cooking':
           this.renderCookingModal(this.currentPlayer, this.currentProgression);
+          break;
+        case 'magical-weapon':
+          this.renderMagicalWeaponModal(this.currentPlayer, this.currentProgression);
           break;
       }
     }
@@ -8575,6 +8781,9 @@ export class HUD {
     }[] = [];
 
     for (const e of enemyDefs) {
+      if ((e as any).school && !dataLoader.isElementalSchoolEnabled((e as any).school)) {
+        continue;
+      }
       if (gameState.isEnemyEncountered(e.id)) {
         const stats: { label: string; value: string }[] = [
           { label: 'Threat Tier', value: (e.tier || 'Common').toUpperCase() },

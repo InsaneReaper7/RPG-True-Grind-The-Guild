@@ -1,4 +1,16 @@
 {
   "salvageRefundRate": 0.5,
-  "salvageExpRate": 0.5
+  "salvageExpRate": 0.5,
+  "elementalSchools": {
+    "fire": { "enabled": true, "homeBand": 3 },
+    "ice": { "enabled": true, "homeBand": 4 },
+    "lightning": { "enabled": true, "homeBand": 3 },
+    "holy": { "enabled": true, "homeBand": 1 },
+    "dark": { "enabled": true, "homeBand": 1 },
+    "arcane": { "enabled": true, "homeBand": 2 },
+    "water": { "enabled": false, "homeBand": 2 },
+    "earth": { "enabled": false, "homeBand": 2 },
+    "nature": { "enabled": false, "homeBand": null },
+    "wind": { "enabled": false, "homeBand": 4 }
+  }
 }

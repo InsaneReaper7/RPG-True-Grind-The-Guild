@@ -8,6 +8,8 @@ import {
   TileType
 } from '../types/game.ts';
 import { GameState } from '../systems/GameState.ts';
+import { DataLoader } from './DataLoader.ts';
+import { TutorialSystem } from '../systems/TutorialSystem.ts';
 
 export class DungeonGenerator {
   /**
@@ -31,7 +33,7 @@ export class DungeonGenerator {
   public static generate(
     config: DungeonConfig,
     rng: () => number = Math.random,
-    options?: { isDiggingUnlocked?: boolean; floorNumber?: number; currentFloorSeed?: number; seed?: number; forceBoss?: boolean; forceBossEnemyId?: string }
+    options?: { isDiggingUnlocked?: boolean; floorNumber?: number; currentFloorSeed?: number; seed?: number; forceBoss?: boolean; forceBossEnemyId?: string; isTutorialComplete?: boolean }
   ): GeneratedDungeon {
     const width = config.mapWidth;
     const height = config.mapHeight;
@@ -780,6 +782,11 @@ export class DungeonGenerator {
       return floorNumber >= min && floorNumber <= max;
     });
 
+    let band = 1;
+    if (currentRegion?.id === 'abyssal_depths' || (floorNumber >= 3 && floorNumber <= 5)) band = 2;
+    else if (currentRegion?.id === 'infernal_caldera' || (floorNumber >= 6 && floorNumber <= 10)) band = 3;
+    else if (currentRegion?.id === 'glacial_caverns' || floorNumber >= 11) band = 4;
+
     const regionEnemyPool = currentRegion?.enemyPool && currentRegion.enemyPool.length > 0
       ? currentRegion.enemyPool
       : null;
@@ -1074,6 +1081,84 @@ export class DungeonGenerator {
       }
     }
 
+    // 7. Elemental Enemy Spawn (Milestone: Magical Crafting - GDD §8.1)
+    // - Appears on every floor of every band, at a low chance (50% per floor)
+    // - Extra enemy added to one random combat room (never replaces core or carry-over)
+    // - Never in entrance, gathering, or boss rooms
+    // - ZERO spawns while tutorial is incomplete
+    let isTutorialComplete = options?.isTutorialComplete;
+    if (isTutorialComplete === undefined) {
+      try {
+        isTutorialComplete = TutorialSystem.getInstance().getIsCompleted();
+      } catch {
+        isTutorialComplete = false;
+      }
+    }
+
+    if (isTutorialComplete) {
+      const elementalRng = options?.seed !== undefined
+        ? DungeonGenerator.createRng(options.seed * 31 + 1013)
+        : rng;
+      const elementalRoll = elementalRng();
+      if (elementalRoll < 0.50) {
+        const bandFavoured: Record<number, string[]> = {
+          1: ['holy', 'dark'],
+          2: ['arcane', 'water', 'earth'],
+          3: ['fire', 'lightning'],
+          4: ['ice', 'wind']
+        };
+        const allSchools = ['fire', 'water', 'ice', 'earth', 'nature', 'lightning', 'wind', 'holy', 'dark', 'arcane'];
+        const favoured = bandFavoured[band] || bandFavoured[1];
+
+        let chosenSchool = '';
+        if (elementalRng() < 0.50) {
+          chosenSchool = favoured[Math.floor(elementalRng() * favoured.length)];
+        } else {
+          chosenSchool = allSchools[Math.floor(elementalRng() * allSchools.length)];
+        }
+
+        // Disabled schools (gap schools: water, earth, nature, wind) are treated as NO SPAWN (null roll)
+        const isSchoolEnabled = DataLoader.getInstance().isElementalSchoolEnabled(chosenSchool);
+        if (isSchoolEnabled) {
+          const combatRooms = rooms.filter(r => r.type === 'light_combat' || r.type === 'heavy_combat');
+          if (combatRooms.length > 0) {
+            const chosenRoom = combatRooms[Math.floor(elementalRng() * combatRooms.length)];
+            const occupiedTiles = new Set<string>();
+            occupiedTiles.add(`${portalPos.x},${portalPos.y}`);
+            occupiedTiles.add(`${crystalPos.x},${crystalPos.y}`);
+            for (const e of enemySpawns) {
+              occupiedTiles.add(`${e.x},${e.y}`);
+            }
+            for (const b of bushSpawns) {
+              occupiedTiles.add(`${b.x},${b.y}`);
+            }
+            for (const wt of waterTiles) {
+              occupiedTiles.add(`${wt.x},${wt.y}`);
+            }
+
+            const candidateTiles: GridPos[] = [];
+            for (let y = chosenRoom.y + 1; y <= chosenRoom.y + chosenRoom.height - 2; y++) {
+              for (let x = chosenRoom.x + 1; x <= chosenRoom.x + chosenRoom.width - 2; x++) {
+                if (gridMatrix[y]?.[x] === 0 && !occupiedTiles.has(`${x},${y}`)) {
+                  candidateTiles.push({ x, y });
+                }
+              }
+            }
+            if (candidateTiles.length > 0) {
+              const picked = candidateTiles[Math.floor(elementalRng() * candidateTiles.length)];
+              enemySpawns.push({
+                enemyId: `${chosenSchool}_elemental`,
+                x: picked.x,
+                y: picked.y,
+                roomIndex: chosenRoom.id
+              });
+              occupiedTiles.add(`${picked.x},${picked.y}`);
+            }
+          }
+        }
+      }
+    }
+
     return {
       width,
       height,
@@ -1083,7 +1168,9 @@ export class DungeonGenerator {
       crystalPos,
       enemySpawns,
       bushSpawns,
-      waterTiles
+      waterTiles,
+      seed: options?.seed,
+      band
     };
   }
 }

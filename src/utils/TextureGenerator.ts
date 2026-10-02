@@ -848,6 +848,60 @@ export class TextureGenerator {
       g.destroy();
     }
 
+    // 4m. Elemental Avatar Textures (Milestone: Magical Crafting - 10 Elemental Types)
+    const elementalColors: Record<string, { outer: number; inner: number; core: number; ring: number }> = {
+      fire_elemental: { outer: 0xc2410c, inner: 0xf97316, core: 0xfef08a, ring: 0xef4444 },
+      water_elemental: { outer: 0x0369a1, inner: 0x0284c7, core: 0xe0f2fe, ring: 0x38bdf8 },
+      ice_elemental: { outer: 0x0284c7, inner: 0x38bdf8, core: 0xffffff, ring: 0xbae6fd },
+      earth_elemental: { outer: 0x78350f, inner: 0xb45309, core: 0xfef08a, ring: 0xd97706 },
+      nature_elemental: { outer: 0x14532d, inner: 0x16a34a, core: 0xbef264, ring: 0x4ade80 },
+      lightning_elemental: { outer: 0x6d28d9, inner: 0x8b5cf6, core: 0xfef08a, ring: 0x06b6d4 },
+      wind_elemental: { outer: 0x0f766e, inner: 0x14b8a6, core: 0xf0fdfa, ring: 0xa7f3d0 },
+      holy_elemental: { outer: 0xb45309, inner: 0xeab308, core: 0xffffff, ring: 0xfef08a },
+      dark_elemental: { outer: 0x3b0764, inner: 0x7e22ce, core: 0xc084fc, ring: 0xa855f7 },
+      arcane_elemental: { outer: 0x4c1d95, inner: 0x7c3aed, core: 0xf5d0fe, ring: 0xc084fc }
+    };
+
+    for (const [elKey, colors] of Object.entries(elementalColors)) {
+      const texKey = `${elKey}-avatar`;
+      if (!scene.textures.exists(texKey)) {
+        const size = 30;
+        const g = scene.make.graphics({ x: 0, y: 0 });
+        const cx = size / 2;
+        const cy = size / 2;
+
+        // Outer pulsing energy aura
+        g.fillStyle(colors.outer, 0.4);
+        g.fillCircle(cx, cy, 13);
+
+        // Radiant energy ring
+        g.lineStyle(1.5, colors.ring, 0.8);
+        g.strokeCircle(cx, cy, 11);
+
+        // Elemental orb body
+        g.fillStyle(colors.inner, 0.9);
+        g.fillCircle(cx, cy, 8.5);
+
+        // Bright energetic core
+        g.fillStyle(colors.core, 1);
+        g.fillCircle(cx, cy, 4.5);
+
+        // Inner spark specular highlight
+        g.fillStyle(0xffffff, 0.9);
+        g.fillCircle(cx - 2, cy - 2, 1.5);
+
+        // 4 orbiting elemental sparks
+        g.fillStyle(colors.core, 0.85);
+        g.fillCircle(cx - 9, cy, 1.5);
+        g.fillCircle(cx + 9, cy, 1.5);
+        g.fillCircle(cx, cy - 9, 1.5);
+        g.fillCircle(cx, cy + 9, 1.5);
+
+        g.generateTexture(texKey, size, size);
+        g.destroy();
+      }
+    }
+
     // 5. Target Selection Reticle
     if (!scene.textures.exists('target-reticle')) {
       const size = 32;
@@ -1582,6 +1636,55 @@ export class TextureGenerator {
       g.fillRect(tileSize - 7, tileSize - 6, 4, 3);
 
       g.generateTexture('buildable-bowyer-station', tileSize, tileSize);
+      g.destroy();
+    }
+
+    // 20d. Magical Weapon Station (Carved enchanting altar with runic inlays and floating catalyst crystal)
+    if (!scene.textures.exists('buildable-magical-weapon-station')) {
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      // Carved obsidian / arcane slate pedestal
+      g.fillStyle(0x1e1b4b, 1);
+      g.fillRoundedRect(3, 8, tileSize - 6, tileSize - 11, 3);
+      g.lineStyle(1.5, 0x6366f1, 1);
+      g.strokeRoundedRect(3, 8, tileSize - 6, tileSize - 11, 3);
+
+      // Inlaid gold / glowing runic border
+      g.lineStyle(1, 0xa855f7, 0.9);
+      g.strokeRect(6, 11, tileSize - 12, tileSize - 17);
+
+      // Open spell tome / runic parchment on station
+      g.fillStyle(0xfef3c7, 0.9);
+      g.fillRect(8, 14, 7, 9);
+      g.fillRect(16, 14, 7, 9);
+      g.lineStyle(1, 0x78350f, 0.8);
+      g.strokeRect(8, 14, 7, 9);
+      g.strokeRect(16, 14, 7, 9);
+
+      // Floating radiant magical catalyst crystal in center
+      g.fillStyle(0x06b6d4, 0.9);
+      g.beginPath();
+      g.moveTo(tileSize / 2, 2);
+      g.lineTo(tileSize / 2 + 5, 8);
+      g.lineTo(tileSize / 2, 14);
+      g.lineTo(tileSize / 2 - 5, 8);
+      g.closePath();
+      g.fillPath();
+
+      // Crystal highlight facet
+      g.fillStyle(0xffffff, 0.85);
+      g.beginPath();
+      g.moveTo(tileSize / 2, 3);
+      g.lineTo(tileSize / 2 + 2, 8);
+      g.lineTo(tileSize / 2, 12);
+      g.closePath();
+      g.fillPath();
+
+      // Stone altar pillar base feet
+      g.fillStyle(0x0f172a, 1);
+      g.fillRect(4, tileSize - 4, 5, 3);
+      g.fillRect(tileSize - 9, tileSize - 4, 5, 3);
+
+      g.generateTexture('buildable-magical-weapon-station', tileSize, tileSize);
       g.destroy();
     }
 

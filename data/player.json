@@ -6,49 +6,158 @@
   "maxEnergy": 100,
   "hpRegenPerSecond": 0.25,
   "energyRegenPerSecond": 0.5,
-  "outOfCombatRegenMultiplier": 2.0,
+  "outOfCombatRegenMultiplier": 2,
   "moveSpeed": 120,
-  "baseCarryCapacity": 45.0,
+  "baseCarryCapacity": 45,
   "attackRangeTiles": 1,
   "startingWeaponId": "short_swords",
   "knownSkillIds": [],
   "equippedSkillIds": [],
   "proficiencies": {
-    "short_swords": { "level": 0, "currentExp": 0 },
-    "daggers": { "level": 0, "currentExp": 0 },
-    "shields": { "level": 0, "currentExp": 0 },
-    "dual_wielding": { "level": 0, "currentExp": 0 },
-    "construction": { "level": 0, "currentExp": 0 },
-    "alchemy": { "level": 0, "currentExp": 0 },
-    "evasion": { "level": 0, "currentExp": 0 },
-    "parry": { "level": 0, "currentExp": 0 },
-    "block": { "level": 0, "currentExp": 0 },
-    "counterattack": { "level": 0, "currentExp": 0 },
-    "resilience": { "level": 0, "currentExp": 0 },
-    "health_regen": { "level": 0, "currentExp": 0 },
-    "mana_regen": { "level": 0, "currentExp": 0 },
-    "energy_regen": { "level": 0, "currentExp": 0 },
-    "staff": { "level": 0, "currentExp": 0 },
-    "healing_magic": { "level": 0, "currentExp": 0 },
-    "fire_magic": { "level": 0, "currentExp": 0 },
-    "foraging": { "level": 0, "currentExp": 0 },
-    "woodcutting": { "level": 0, "currentExp": 0 },
-    "mining": { "level": 0, "currentExp": 0 },
-    "mace": { "level": 0, "currentExp": 0 },
-    "blacksmithing": { "level": 0, "currentExp": 0 },
-    "armorsmithing": { "level": 0, "currentExp": 0 },
-    "digging": { "level": 0, "currentExp": 0 },
-    "skinning": { "level": 0, "currentExp": 0 },
-    "butchering": { "level": 0, "currentExp": 0 },
-    "lockpicking": { "level": 0, "currentExp": 0 },
-    "gardening": { "level": 0, "currentExp": 0 },
-    "fist": { "level": 0, "currentExp": 0 },
-    "longswords": { "level": 0, "currentExp": 0 },
-    "dark_magic": { "level": 0, "currentExp": 0 },
-    "light_armor": { "level": 0, "currentExp": 0 },
-    "medium_armor": { "level": 0, "currentExp": 0 },
-    "heavy_armor": { "level": 0, "currentExp": 0 },
-    "fishing": { "level": 0, "currentExp": 0 }
+    "short_swords": {
+      "level": 0,
+      "currentExp": 0
+    },
+    "daggers": {
+      "level": 0,
+      "currentExp": 0
+    },
+    "shields": {
+      "level": 0,
+      "currentExp": 0
+    },
+    "dual_wielding": {
+      "level": 0,
+      "currentExp": 0
+    },
+    "construction": {
+      "level": 0,
+      "currentExp": 0
+    },
+    "alchemy": {
+      "level": 0,
+      "currentExp": 0
+    },
+    "evasion": {
+      "level": 0,
+      "currentExp": 0
+    },
+    "parry": {
+      "level": 0,
+      "currentExp": 0
+    },
+    "block": {
+      "level": 0,
+      "currentExp": 0
+    },
+    "counterattack": {
+      "level": 0,
+      "currentExp": 0
+    },
+    "resilience": {
+      "level": 0,
+      "currentExp": 0
+    },
+    "health_regen": {
+      "level": 0,
+      "currentExp": 0
+    },
+    "mana_regen": {
+      "level": 0,
+      "currentExp": 0
+    },
+    "energy_regen": {
+      "level": 0,
+      "currentExp": 0
+    },
+    "staff": {
+      "level": 0,
+      "currentExp": 0
+    },
+    "healing_magic": {
+      "level": 0,
+      "currentExp": 0
+    },
+    "fire_magic": {
+      "level": 0,
+      "currentExp": 0
+    },
+    "foraging": {
+      "level": 0,
+      "currentExp": 0
+    },
+    "woodcutting": {
+      "level": 0,
+      "currentExp": 0
+    },
+    "mining": {
+      "level": 0,
+      "currentExp": 0
+    },
+    "mace": {
+      "level": 0,
+      "currentExp": 0
+    },
+    "blacksmithing": {
+      "level": 0,
+      "currentExp": 0
+    },
+    "armorsmithing": {
+      "level": 0,
+      "currentExp": 0
+    },
+    "digging": {
+      "level": 0,
+      "currentExp": 0
+    },
+    "skinning": {
+      "level": 0,
+      "currentExp": 0
+    },
+    "butchering": {
+      "level": 0,
+      "currentExp": 0
+    },
+    "lockpicking": {
+      "level": 0,
+      "currentExp": 0
+    },
+    "gardening": {
+      "level": 0,
+      "currentExp": 0
+    },
+    "fist": {
+      "level": 0,
+      "currentExp": 0
+    },
+    "longswords": {
+      "level": 0,
+      "currentExp": 0
+    },
+    "dark_magic": {
+      "level": 0,
+      "currentExp": 0
+    },
+    "light_armor": {
+      "level": 0,
+      "currentExp": 0
+    },
+    "medium_armor": {
+      "level": 0,
+      "currentExp": 0
+    },
+    "heavy_armor": {
+      "level": 0,
+      "currentExp": 0
+    },
+    "fishing": {
+      "level": 0,
+      "currentExp": 0
+    },
+    "enchanting": {
+      "level": 0,
+      "currentExp": 0
+    }
   },
   "resources": {
     "wood": 100,

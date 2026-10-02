@@ -208,6 +208,7 @@ export interface BuildableDef {
   name: string;
   woodCost: number;
   clayCost?: number;
+  oreCost?: number;
   requiredProficiency?: { proficiency: string; level: number };
   footprint: FootprintDef;
   rotatable: boolean;
@@ -457,9 +458,33 @@ export interface BlacksmithRecipeDef {
   description: string;
 }
 
+export interface ElementalSchoolConfig {
+  enabled: boolean;
+  homeBand: number | null;
+}
+
 export interface CraftingConfigData {
   salvageRefundRate?: number;
   salvageExpRate?: number;
+  elementalSchools?: Record<string, ElementalSchoolConfig>;
+}
+
+export interface EnchantingRecipeDef {
+  id: string;
+  name: string;
+  station: string;
+  requiredLevel: number;
+  ingredients: Record<string, number>;
+  resultWeaponId?: string;
+  resultItemId?: string;
+  expGranted: number;
+  profession: string;
+  school?: string;
+  description: string;
+}
+
+export interface EnchantingRecipesData {
+  recipes: EnchantingRecipeDef[];
 }
 
 export interface IntroNarrativeData {
@@ -973,6 +998,7 @@ export interface GeneratedDungeon {
   bushSpawns: BushSpawnDef[];
   waterTiles?: GridPos[];
   seed?: number;
+  band?: number;
 }
 
 export interface DynamicObstaclesConfig {

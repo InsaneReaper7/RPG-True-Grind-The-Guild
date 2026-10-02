@@ -1,0 +1,264 @@
+{
+  "_comment": "GDD §8.1 Magical Crafting - Enchanting Recipes at the Magical Weapon Station",
+  "recipes": [
+    {
+      "id": "fire_crystal_craft",
+      "name": "Fire Crystal",
+      "station": "magical_weapon_station",
+      "requiredLevel": 0,
+      "ingredients": {
+        "fire_gemstone": 2
+      },
+      "resultItemId": "fire_crystal",
+      "expGranted": 52,
+      "profession": "enchanting",
+      "school": "fire",
+      "description": "Cuts and aligns two Fire Gemstones into a focused fiery magical crystal."
+    },
+    {
+      "id": "water_crystal_craft",
+      "name": "Water Crystal",
+      "station": "magical_weapon_station",
+      "requiredLevel": 0,
+      "ingredients": {
+        "water_gemstone": 2
+      },
+      "resultItemId": "water_crystal",
+      "expGranted": 52,
+      "profession": "enchanting",
+      "school": "water",
+      "description": "Distills two Water Gemstones into a crystalline tidal focal point."
+    },
+    {
+      "id": "ice_crystal_craft",
+      "name": "Ice Crystal",
+      "station": "magical_weapon_station",
+      "requiredLevel": 0,
+      "ingredients": {
+        "ice_gemstone": 2
+      },
+      "resultItemId": "ice_crystal",
+      "expGranted": 52,
+      "profession": "enchanting",
+      "school": "ice",
+      "description": "Fuses two Ice Gemstones into an intensely cold frost crystal."
+    },
+    {
+      "id": "earth_crystal_craft",
+      "name": "Earth Crystal",
+      "station": "magical_weapon_station",
+      "requiredLevel": 0,
+      "ingredients": {
+        "earth_gemstone": 2
+      },
+      "resultItemId": "earth_crystal",
+      "expGranted": 52,
+      "profession": "enchanting",
+      "school": "earth",
+      "description": "Solidifies two Earth Gemstones into a dense geological conduit crystal."
+    },
+    {
+      "id": "nature_crystal_craft",
+      "name": "Nature Crystal",
+      "station": "magical_weapon_station",
+      "requiredLevel": 0,
+      "ingredients": {
+        "nature_gemstone": 2
+      },
+      "resultItemId": "nature_crystal",
+      "expGranted": 52,
+      "profession": "enchanting",
+      "school": "nature",
+      "description": "Weaves two Nature Gemstones into a living verdant crystal."
+    },
+    {
+      "id": "lightning_crystal_craft",
+      "name": "Lightning Crystal",
+      "station": "magical_weapon_station",
+      "requiredLevel": 0,
+      "ingredients": {
+        "lightning_gemstone": 2
+      },
+      "resultItemId": "lightning_crystal",
+      "expGranted": 52,
+      "profession": "enchanting",
+      "school": "lightning",
+      "description": "Energizes two Lightning Gemstones into an arcing tempest crystal."
+    },
+    {
+      "id": "wind_crystal_craft",
+      "name": "Wind Crystal",
+      "station": "magical_weapon_station",
+      "requiredLevel": 0,
+      "ingredients": {
+        "wind_gemstone": 2
+      },
+      "resultItemId": "wind_crystal",
+      "expGranted": 52,
+      "profession": "enchanting",
+      "school": "wind",
+      "description": "Traps soaring gale essence from two Wind Gemstones into a crystalline vortex."
+    },
+    {
+      "id": "holy_crystal_craft",
+      "name": "Holy Crystal",
+      "station": "magical_weapon_station",
+      "requiredLevel": 0,
+      "ingredients": {
+        "holy_gemstone": 2
+      },
+      "resultItemId": "holy_crystal",
+      "expGranted": 52,
+      "profession": "enchanting",
+      "school": "holy",
+      "description": "Sanctifies two Holy Gemstones into a radiant beacon crystal."
+    },
+    {
+      "id": "dark_crystal_craft",
+      "name": "Dark Crystal",
+      "station": "magical_weapon_station",
+      "requiredLevel": 0,
+      "ingredients": {
+        "dark_gemstone": 2
+      },
+      "resultItemId": "dark_crystal",
+      "expGranted": 52,
+      "profession": "enchanting",
+      "school": "dark",
+      "description": "Condenses two Dark Gemstones into an abyssal shadow crystal."
+    },
+    {
+      "id": "arcane_crystal_craft",
+      "name": "Arcane Crystal",
+      "station": "magical_weapon_station",
+      "requiredLevel": 0,
+      "ingredients": {
+        "arcane_gemstone": 2
+      },
+      "resultItemId": "arcane_crystal",
+      "expGranted": 52,
+      "profession": "enchanting",
+      "school": "arcane",
+      "description": "Purifies two Arcane Gemstones into a prismatic mana crystal."
+    },
+    {
+      "id": "healing_crystal_craft",
+      "name": "Healing Crystal",
+      "station": "magical_weapon_station",
+      "requiredLevel": 0,
+      "ingredients": {
+        "healing_gemstone": 2
+      },
+      "resultItemId": "healing_crystal",
+      "expGranted": 52,
+      "profession": "enchanting",
+      "school": "healing",
+      "description": "Bathes two Healing Gemstones into an invigorating restorative crystal."
+    },
+    {
+      "id": "craft_fire_staff",
+      "name": "Fire Staff",
+      "station": "magical_weapon_station",
+      "requiredLevel": 0,
+      "ingredients": {
+        "staff": 1,
+        "fire_crystal": 1
+      },
+      "resultWeaponId": "fire_staff",
+      "expGranted": 120,
+      "profession": "enchanting",
+      "school": "fire",
+      "description": "Binds a Fire Magical Crystal into a hardwood staff, channeling explosive AoE fireballs that burn targets."
+    },
+    {
+      "id": "craft_ice_staff",
+      "name": "Ice Staff",
+      "station": "magical_weapon_station",
+      "requiredLevel": 0,
+      "ingredients": {
+        "staff": 1,
+        "ice_crystal": 1
+      },
+      "resultWeaponId": "ice_staff",
+      "expGranted": 120,
+      "profession": "enchanting",
+      "school": "ice",
+      "description": "Binds an Ice Magical Crystal into a hardwood staff, casting piercing frostbolts that slow enemy movement."
+    },
+    {
+      "id": "craft_lightning_staff",
+      "name": "Lightning Staff",
+      "station": "magical_weapon_station",
+      "requiredLevel": 0,
+      "ingredients": {
+        "staff": 1,
+        "lightning_crystal": 1
+      },
+      "resultWeaponId": "lightning_staff",
+      "expGranted": 120,
+      "profession": "enchanting",
+      "school": "lightning",
+      "description": "Binds a Lightning Magical Crystal into a hardwood staff, discharging chain lightning that shocks and interrupts targets."
+    },
+    {
+      "id": "craft_holy_staff",
+      "name": "Holy Staff",
+      "station": "magical_weapon_station",
+      "requiredLevel": 0,
+      "ingredients": {
+        "staff": 1,
+        "holy_crystal": 1
+      },
+      "resultWeaponId": "holy_staff",
+      "expGranted": 120,
+      "profession": "enchanting",
+      "school": "holy",
+      "description": "Binds a Holy Magical Crystal into a hardwood staff, smiting enemies with radiant light while emitting healing pulses to nearby allies."
+    },
+    {
+      "id": "craft_dark_staff",
+      "name": "Dark Staff",
+      "station": "magical_weapon_station",
+      "requiredLevel": 0,
+      "ingredients": {
+        "staff": 1,
+        "dark_crystal": 1
+      },
+      "resultWeaponId": "dark_staff",
+      "expGranted": 120,
+      "profession": "enchanting",
+      "school": "dark",
+      "description": "Binds a Dark Magical Crystal into a hardwood staff, unleashing shadowy bolts that curse targets to reduce their damage."
+    },
+    {
+      "id": "craft_arcane_staff",
+      "name": "Arcane Staff",
+      "station": "magical_weapon_station",
+      "requiredLevel": 0,
+      "ingredients": {
+        "staff": 1,
+        "arcane_crystal": 1
+      },
+      "resultWeaponId": "arcane_staff",
+      "expGranted": 120,
+      "profession": "enchanting",
+      "school": "arcane",
+      "description": "Binds an Arcane Magical Crystal into a hardwood staff, hurling pure mana bolts that siphon energy back to the caster."
+    },
+    {
+      "id": "craft_healing_staff",
+      "name": "Healing Staff",
+      "station": "magical_weapon_station",
+      "requiredLevel": 0,
+      "ingredients": {
+        "staff": 1,
+        "healing_crystal": 1
+      },
+      "resultWeaponId": "healing_staff",
+      "expGranted": 120,
+      "profession": "enchanting",
+      "school": "healing",
+      "description": "Binds a Healing Magical Crystal into a hardwood staff, granting dedicated combat healing support for party members."
+    }
+  ]
+}

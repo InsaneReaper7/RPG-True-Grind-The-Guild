@@ -4,50 +4,74 @@
       "id": "cooking_dining",
       "name": "Cooking & Dining Area",
       "priority": 100,
-      "requiredTags": ["cooking", "dining"],
+      "requiredTags": [
+        "cooking",
+        "dining"
+      ],
       "description": "Combination of cooking and dining furniture."
     },
     {
       "id": "bedroom",
       "name": "Bedroom",
       "priority": 10,
-      "requiredTags": ["bedroom"],
+      "requiredTags": [
+        "bedroom"
+      ],
       "description": "Sleeping quarters with a guild bed."
     },
     {
       "id": "study",
       "name": "Study",
       "priority": 10,
-      "requiredTags": ["study"],
+      "requiredTags": [
+        "study"
+      ],
       "description": "Research and reading quarters with a research station."
     },
     {
       "id": "alchemy_lab",
       "name": "Alchemy Laboratory",
       "priority": 10,
-      "requiredTags": ["alchemy"],
+      "requiredTags": [
+        "alchemy"
+      ],
       "description": "Brewing laboratory with an alchemy station."
     },
     {
       "id": "smithy",
       "name": "Smithy",
       "priority": 10,
-      "requiredTags": ["blacksmithing"],
+      "requiredTags": [
+        "blacksmithing"
+      ],
       "description": "Forge workshop with a blacksmithing station."
     },
     {
       "id": "armory",
       "name": "Armory Workshop",
       "priority": 10,
-      "requiredTags": ["armorsmithing"],
+      "requiredTags": [
+        "armorsmithing"
+      ],
       "description": "Armorsmithing workshop with an armorsmithing bench."
     },
     {
       "id": "bowyer_workshop",
       "name": "Bowyer Workshop",
       "priority": 10,
-      "requiredTags": ["bowyer"],
+      "requiredTags": [
+        "bowyer"
+      ],
       "description": "Bowcrafting workshop with a bowyer station."
+    },
+    {
+      "id": "enchanters_sanctum",
+      "name": "Enchanter's Sanctum",
+      "priority": 10,
+      "requiredTags": [
+        "enchanting"
+      ],
+      "description": "Magical workshop with an enchanting altar for crafting conduit staves."
     }
   ]
 }

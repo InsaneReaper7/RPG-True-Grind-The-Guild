@@ -4,7 +4,10 @@
       "id": "floor",
       "name": "Wood Floor",
       "woodCost": 2,
-      "footprint": { "width": 1, "height": 1 },
+      "footprint": {
+        "width": 1,
+        "height": 1
+      },
       "rotatable": true,
       "indoorRequired": false,
       "walkable": true,
@@ -14,7 +17,10 @@
       "id": "wall",
       "name": "Wood Wall",
       "woodCost": 5,
-      "footprint": { "width": 1, "height": 1 },
+      "footprint": {
+        "width": 1,
+        "height": 1
+      },
       "rotatable": false,
       "indoorRequired": false,
       "walkable": false,
@@ -24,7 +30,10 @@
       "id": "door",
       "name": "Wood Door",
       "woodCost": 8,
-      "footprint": { "width": 1, "height": 1 },
+      "footprint": {
+        "width": 1,
+        "height": 1
+      },
       "rotatable": true,
       "indoorRequired": false,
       "walkable": true,
@@ -34,7 +43,10 @@
       "id": "research_station",
       "name": "Research Station",
       "woodCost": 20,
-      "footprint": { "width": 1, "height": 1 },
+      "footprint": {
+        "width": 1,
+        "height": 1
+      },
       "rotatable": true,
       "indoorRequired": true,
       "walkable": false,
@@ -45,7 +57,10 @@
       "id": "bed",
       "name": "Bed",
       "woodCost": 15,
-      "footprint": { "width": 1, "height": 1 },
+      "footprint": {
+        "width": 1,
+        "height": 1
+      },
       "rotatable": true,
       "indoorRequired": true,
       "walkable": false,
@@ -56,7 +71,10 @@
       "id": "alchemy_station",
       "name": "Alchemy Station",
       "woodCost": 25,
-      "footprint": { "width": 1, "height": 1 },
+      "footprint": {
+        "width": 1,
+        "height": 1
+      },
       "rotatable": true,
       "indoorRequired": true,
       "walkable": false,
@@ -68,7 +86,10 @@
       "id": "cooking_station",
       "name": "Cooking Station",
       "woodCost": 25,
-      "footprint": { "width": 1, "height": 1 },
+      "footprint": {
+        "width": 1,
+        "height": 1
+      },
       "rotatable": true,
       "indoorRequired": true,
       "walkable": false,
@@ -80,7 +101,10 @@
       "id": "blacksmithing_station",
       "name": "Blacksmithing Station",
       "woodCost": 25,
-      "footprint": { "width": 1, "height": 1 },
+      "footprint": {
+        "width": 1,
+        "height": 1
+      },
       "rotatable": true,
       "indoorRequired": true,
       "walkable": false,
@@ -92,7 +116,10 @@
       "id": "armorsmithing_bench",
       "name": "Armorsmithing Bench",
       "woodCost": 25,
-      "footprint": { "width": 1, "height": 1 },
+      "footprint": {
+        "width": 1,
+        "height": 1
+      },
       "rotatable": true,
       "indoorRequired": true,
       "walkable": false,
@@ -104,7 +131,10 @@
       "id": "bowyer_station",
       "name": "Bowyer Station",
       "woodCost": 25,
-      "footprint": { "width": 1, "height": 1 },
+      "footprint": {
+        "width": 1,
+        "height": 1
+      },
       "rotatable": true,
       "indoorRequired": true,
       "walkable": false,
@@ -117,7 +147,10 @@
       "name": "Planting Plot",
       "woodCost": 0,
       "clayCost": 3,
-      "footprint": { "width": 1, "height": 1 },
+      "footprint": {
+        "width": 1,
+        "height": 1
+      },
       "rotatable": false,
       "indoorRequired": false,
       "walkable": true,
@@ -129,7 +162,10 @@
       "name": "Seed Maker",
       "woodCost": 25,
       "clayCost": 0,
-      "footprint": { "width": 1, "height": 1 },
+      "footprint": {
+        "width": 1,
+        "height": 1
+      },
       "rotatable": true,
       "indoorRequired": false,
       "walkable": false,
@@ -138,6 +174,22 @@
         "level": 25
       },
       "description": "Extracts viable seeds from fresh produce. Place in Outpost, insert 1 vegetable, wait for processing, and collect 2 seeds."
+    },
+    {
+      "id": "magical_weapon_station",
+      "name": "Magical Weapon Station",
+      "woodCost": 25,
+      "oreCost": 5,
+      "footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "rotatable": true,
+      "indoorRequired": true,
+      "walkable": false,
+      "roomTag": "enchanting",
+      "description": "Guild enchanting altar for infusing magical crystals and crafting elemental conduit staves. Requires a fully enclosed indoor room.",
+      "lockedByDefault": true
     }
   ]
 }

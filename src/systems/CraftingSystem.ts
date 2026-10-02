@@ -4,6 +4,7 @@ import type {
   BowyerRecipeDef,
   AlchemyRecipeDef,
   CookingRecipeDef,
+  EnchantingRecipeDef,
   GearItemInstance
 } from '../types/game.ts';
 import type { Player } from '../entities/Player.ts';
@@ -17,7 +18,8 @@ export type AnyRecipeDef =
   | ArmorsmithRecipeDef
   | BowyerRecipeDef
   | AlchemyRecipeDef
-  | CookingRecipeDef;
+  | CookingRecipeDef
+  | EnchantingRecipeDef;
 
 export interface CraftResult {
   success: boolean;
@@ -77,6 +79,8 @@ export class CraftingSystem {
         return 'apprentice_alchemist';
       case 'cooking':
         return 'apprentice_cook';
+      case 'enchanting':
+        return 'apprentice_enchanter';
       default:
         return null;
     }
@@ -107,7 +111,7 @@ export class CraftingSystem {
     const classLevel = crafter.progression.getClassLevel(classId);
     const clsDef = DataLoader.getInstance().getClass(classId);
     const cappedBonus = Math.min(15, Math.max(0, classLevel));
-    const perkType = professionId === 'alchemy' ? 'bonus yield' : 'gear stats';
+    const perkType = professionId === 'alchemy' ? 'bonus yield' : (professionId === 'enchanting' ? 'bonus yield & gear stats' : 'gear stats');
     const perkDescription = `${clsDef?.name ?? classId} Lv ${classLevel}: +${cappedBonus}% ${perkType}`;
 
     return {
@@ -319,6 +323,15 @@ export class CraftingSystem {
       }
     }
 
+    // 4. Enchanting
+    const encRecipes = dataLoader.getEnchantingRecipes?.() || [];
+    for (const r of encRecipes) {
+      const outputItemId = (r as any).resultWeaponId || (r as any).resultArmorId || (r as any).resultItemId;
+      if (outputItemId === baseId) {
+        return { recipe: r, station: 'enchanting' };
+      }
+    }
+
     return null;
   }
 
@@ -401,8 +414,13 @@ export class CraftingSystem {
     }
 
     // 4. Check station match if station specified
-    if (options?.station && options.station !== recipeInfo.station) {
-      return { canSalvage: false, reason: `Must be salvaged at the ${recipeInfo.station} station.` };
+    if (options?.station) {
+      const isStationMatch = options.station === recipeInfo.station ||
+        (options.station === 'magical_weapon_station' && recipeInfo.station === 'enchanting') ||
+        (options.station === 'enchanting' && recipeInfo.station === 'magical_weapon_station');
+      if (!isStationMatch) {
+        return { canSalvage: false, reason: `Must be salvaged at the ${recipeInfo.station} station.` };
+      }
     }
 
     // 5. Check if equipped
@@ -657,7 +675,7 @@ export class CraftingSystem {
 
     const stationLabel = station === 'blacksmithing'
       ? 'Blacksmithing'
-      : (station === 'armorsmithing' ? 'Armorsmithing' : 'Bowyer');
+      : (station === 'armorsmithing' ? 'Armorsmithing' : (station === 'bowyer' ? 'Bowyer' : 'Enchanting'));
 
     const prefix = qtyToSalvage > 1 ? `${qtyToSalvage}x ` : '';
     const message = `Salvaged ${prefix}${displayName} → ${refundParts}, +${expGranted} ${stationLabel} EXP`;

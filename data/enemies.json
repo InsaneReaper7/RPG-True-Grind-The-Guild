@@ -11,14 +11,47 @@
       "aggroRadius": 5,
       "attackIntervalMs": 1200,
       "moveSpeed": 90,
-      "dropChance": 0.40,
+      "dropChance": 0.4,
       "harvest": [
-        { "method": "rare_drop", "item": "wolf_claw", "weight": 1, "tags": ["blacksmithing", "bowyer", "jewelcrafting"] },
-        { "method": "salvage", "item": "bone", "weight": 1, "tags": ["bowyer", "blacksmithing"] }
+        {
+          "method": "rare_drop",
+          "item": "wolf_claw",
+          "weight": 1,
+          "tags": [
+            "blacksmithing",
+            "bowyer",
+            "jewelcrafting"
+          ]
+        },
+        {
+          "method": "salvage",
+          "item": "bone",
+          "weight": 1,
+          "tags": [
+            "bowyer",
+            "blacksmithing"
+          ]
+        }
       ],
       "corpseHarvest": {
-        "skinning": { "item": "wolf_pelt", "name": "Wolf Pelt", "count": 1, "exp": 15, "tags": ["armorsmithing"] },
-        "butchering": { "item": "wolf_meat", "name": "Wolf Meat", "count": 1, "exp": 15, "tags": ["cooking"] }
+        "skinning": {
+          "item": "wolf_pelt",
+          "name": "Wolf Pelt",
+          "count": 1,
+          "exp": 15,
+          "tags": [
+            "armorsmithing"
+          ]
+        },
+        "butchering": {
+          "item": "wolf_meat",
+          "name": "Wolf Meat",
+          "count": 1,
+          "exp": 15,
+          "tags": [
+            "cooking"
+          ]
+        }
       }
     },
     {
@@ -31,9 +64,17 @@
       "aggroRadius": 4,
       "attackIntervalMs": 1500,
       "moveSpeed": 60,
-      "dropChance": 0.40,
+      "dropChance": 0.4,
       "harvest": [
-        { "method": "collect", "item": "slime_gel", "weight": 1, "tags": ["cooking", "alchemy"] }
+        {
+          "method": "collect",
+          "item": "slime_gel",
+          "weight": 1,
+          "tags": [
+            "cooking",
+            "alchemy"
+          ]
+        }
       ]
     },
     {
@@ -46,13 +87,37 @@
       "aggroRadius": 6,
       "attackIntervalMs": 950,
       "moveSpeed": 105,
-      "dropChance": 0.40,
+      "dropChance": 0.4,
       "harvest": [
-        { "method": "rare_drop", "item": "goblin_ear", "weight": 1, "tags": ["alchemy"] },
-        { "method": "salvage", "item": "bone", "weight": 1, "tags": ["bowyer", "blacksmithing"] }
+        {
+          "method": "rare_drop",
+          "item": "goblin_ear",
+          "weight": 1,
+          "tags": [
+            "alchemy"
+          ]
+        },
+        {
+          "method": "salvage",
+          "item": "bone",
+          "weight": 1,
+          "tags": [
+            "bowyer",
+            "blacksmithing"
+          ]
+        }
       ],
       "corpseHarvest": {
-        "butchering": { "item": "monster_meat", "name": "Monster Meat", "count": 1, "exp": 15, "tags": ["cooking"], "note": "lower Chef dish-quality ceiling than wolf_meat" }
+        "butchering": {
+          "item": "monster_meat",
+          "name": "Monster Meat",
+          "count": 1,
+          "exp": 15,
+          "tags": [
+            "cooking"
+          ],
+          "note": "lower Chef dish-quality ceiling than wolf_meat"
+        }
       }
     },
     {
@@ -66,14 +131,45 @@
       "attackIntervalMs": 1100,
       "moveSpeed": 95,
       "attackRangeTiles": 4,
-      "dropChance": 0.40,
+      "dropChance": 0.4,
       "harvest": [
-        { "method": "salvage", "item": "bowstring", "weight": 3, "tags": ["bowyer"] },
-        { "method": "rare_drop", "item": "feather", "weight": 1, "tags": ["bowyer", "fletching"] },
-        { "method": "salvage", "item": "bone", "weight": 1, "tags": ["bowyer", "blacksmithing"] }
+        {
+          "method": "salvage",
+          "item": "bowstring",
+          "weight": 3,
+          "tags": [
+            "bowyer"
+          ]
+        },
+        {
+          "method": "rare_drop",
+          "item": "feather",
+          "weight": 1,
+          "tags": [
+            "bowyer",
+            "fletching"
+          ]
+        },
+        {
+          "method": "salvage",
+          "item": "bone",
+          "weight": 1,
+          "tags": [
+            "bowyer",
+            "blacksmithing"
+          ]
+        }
       ],
       "corpseHarvest": {
-        "butchering": { "item": "monster_meat", "name": "Monster Meat", "count": 1, "exp": 15, "tags": ["cooking"] }
+        "butchering": {
+          "item": "monster_meat",
+          "name": "Monster Meat",
+          "count": 1,
+          "exp": 15,
+          "tags": [
+            "cooking"
+          ]
+        }
       }
     },
     {
@@ -86,10 +182,26 @@
       "aggroRadius": 5,
       "attackIntervalMs": 1350,
       "moveSpeed": 80,
-      "dropChance": 0.40,
+      "dropChance": 0.4,
       "harvest": [
-        { "method": "salvage", "item": "bone", "weight": 1, "tags": ["bowyer", "blacksmithing"] },
-        { "method": "rare_drop", "item": "ectoplasm", "weight": 1, "tags": ["enchanting", "alchemy"] }
+        {
+          "method": "salvage",
+          "item": "bone",
+          "weight": 1,
+          "tags": [
+            "bowyer",
+            "blacksmithing"
+          ]
+        },
+        {
+          "method": "rare_drop",
+          "item": "ectoplasm",
+          "weight": 1,
+          "tags": [
+            "enchanting",
+            "alchemy"
+          ]
+        }
       ]
     },
     {
@@ -103,11 +215,34 @@
       "attackIntervalMs": 1300,
       "moveSpeed": 85,
       "attackRangeTiles": 5,
-      "dropChance": 0.40,
+      "dropChance": 0.4,
       "harvest": [
-        { "method": "salvage", "item": "bone", "weight": 2, "tags": ["bowyer", "blacksmithing"] },
-        { "method": "salvage", "item": "bowstring", "weight": 1, "tags": ["bowyer"] },
-        { "method": "rare_drop", "item": "ectoplasm", "weight": 1, "tags": ["enchanting", "alchemy"] }
+        {
+          "method": "salvage",
+          "item": "bone",
+          "weight": 2,
+          "tags": [
+            "bowyer",
+            "blacksmithing"
+          ]
+        },
+        {
+          "method": "salvage",
+          "item": "bowstring",
+          "weight": 1,
+          "tags": [
+            "bowyer"
+          ]
+        },
+        {
+          "method": "rare_drop",
+          "item": "ectoplasm",
+          "weight": 1,
+          "tags": [
+            "enchanting",
+            "alchemy"
+          ]
+        }
       ]
     },
     {
@@ -120,11 +255,35 @@
       "aggroRadius": 4,
       "attackIntervalMs": 1600,
       "moveSpeed": 65,
-      "dropChance": 0.40,
+      "dropChance": 0.4,
       "harvest": [
-        { "method": "salvage", "item": "bone", "weight": 2, "tags": ["bowyer", "blacksmithing"] },
-        { "method": "rare_drop", "item": "ectoplasm", "weight": 1, "tags": ["enchanting", "alchemy"] },
-        { "method": "salvage", "item": "steel_scrap", "weight": 1, "tags": ["blacksmithing"], "note": "rusted armor scrap" }
+        {
+          "method": "salvage",
+          "item": "bone",
+          "weight": 2,
+          "tags": [
+            "bowyer",
+            "blacksmithing"
+          ]
+        },
+        {
+          "method": "rare_drop",
+          "item": "ectoplasm",
+          "weight": 1,
+          "tags": [
+            "enchanting",
+            "alchemy"
+          ]
+        },
+        {
+          "method": "salvage",
+          "item": "steel_scrap",
+          "weight": 1,
+          "tags": [
+            "blacksmithing"
+          ],
+          "note": "rusted armor scrap"
+        }
       ]
     },
     {
@@ -138,12 +297,29 @@
       "attackIntervalMs": 950,
       "moveSpeed": 110,
       "poisonChance": 0.35,
-      "dropChance": 0.40,
+      "dropChance": 0.4,
       "harvest": [
-        { "method": "rare_drop", "item": "spider_venom", "weight": 1, "tags": ["alchemy"] }
+        {
+          "method": "rare_drop",
+          "item": "spider_venom",
+          "weight": 1,
+          "tags": [
+            "alchemy"
+          ]
+        }
       ],
       "corpseHarvest": {
-        "skinning": { "item": "spider_silk", "name": "Spider Silk", "count": 1, "exp": 15, "tags": ["armorsmithing", "tailoring", "bowyer"] }
+        "skinning": {
+          "item": "spider_silk",
+          "name": "Spider Silk",
+          "count": 1,
+          "exp": 15,
+          "tags": [
+            "armorsmithing",
+            "tailoring",
+            "bowyer"
+          ]
+        }
       }
     },
     {
@@ -156,12 +332,49 @@
       "aggroRadius": 6,
       "attackIntervalMs": 1300,
       "moveSpeed": 90,
-      "researchPoints": { "min": 3, "max": 6 },
+      "researchPoints": {
+        "min": 3,
+        "max": 6
+      },
       "harvest": [
-        { "method": "salvage", "item": "orc_heavy_hide", "tags": ["armorsmithing"] },
-        { "method": "salvage", "item": "steel_scrap", "amount": [2, 3], "count": [2, 3], "tags": ["blacksmithing"] },
-        { "method": "rare_drop", "item": "orc_emblem", "tags": ["enchanting", "blacksmithing"] },
-        { "method": "rare_drop", "item": "bone", "tags": ["bowyer", "blacksmithing"] }
+        {
+          "method": "salvage",
+          "item": "orc_heavy_hide",
+          "tags": [
+            "armorsmithing"
+          ]
+        },
+        {
+          "method": "salvage",
+          "item": "steel_scrap",
+          "amount": [
+            2,
+            3
+          ],
+          "count": [
+            2,
+            3
+          ],
+          "tags": [
+            "blacksmithing"
+          ]
+        },
+        {
+          "method": "rare_drop",
+          "item": "orc_emblem",
+          "tags": [
+            "enchanting",
+            "blacksmithing"
+          ]
+        },
+        {
+          "method": "rare_drop",
+          "item": "bone",
+          "tags": [
+            "bowyer",
+            "blacksmithing"
+          ]
+        }
       ]
     },
     {
@@ -174,12 +387,61 @@
       "aggroRadius": 7,
       "attackIntervalMs": 1100,
       "moveSpeed": 95,
-      "researchPoints": { "min": 7, "max": 10 },
+      "researchPoints": {
+        "min": 7,
+        "max": 10
+      },
       "harvest": [
-        { "method": "salvage", "item": "void_plate", "amount": [2, 3], "count": [2, 3], "tags": ["armorsmithing", "blacksmithing"] },
-        { "method": "salvage", "item": "void_essence", "amount": [1, 2], "count": [1, 2], "tags": ["enchanting", "alchemy"] },
-        { "method": "rare_drop", "item": "void_core", "tags": ["enchanting", "jewelcrafting", "blacksmithing"], "note": "Pulsing epic core radiating concentrated planar void energy" },
-        { "method": "rare_drop", "item": "bone", "tags": ["bowyer", "blacksmithing"] }
+        {
+          "method": "salvage",
+          "item": "void_plate",
+          "amount": [
+            2,
+            3
+          ],
+          "count": [
+            2,
+            3
+          ],
+          "tags": [
+            "armorsmithing",
+            "blacksmithing"
+          ]
+        },
+        {
+          "method": "salvage",
+          "item": "void_essence",
+          "amount": [
+            1,
+            2
+          ],
+          "count": [
+            1,
+            2
+          ],
+          "tags": [
+            "enchanting",
+            "alchemy"
+          ]
+        },
+        {
+          "method": "rare_drop",
+          "item": "void_core",
+          "tags": [
+            "enchanting",
+            "jewelcrafting",
+            "blacksmithing"
+          ],
+          "note": "Pulsing epic core radiating concentrated planar void energy"
+        },
+        {
+          "method": "rare_drop",
+          "item": "bone",
+          "tags": [
+            "bowyer",
+            "blacksmithing"
+          ]
+        }
       ]
     },
     {
@@ -195,10 +457,45 @@
       "attackRangeTiles": 1,
       "researchPoints": 20,
       "harvest": [
-        { "method": "salvage", "item": "colossus_core", "tags": ["blacksmithing", "armorsmithing", "enchanting"], "note": "Ancient pulsating heart forged of solidified cataclysmic magma and raw planar energy" },
-        { "method": "salvage", "item": "abyssal_ingot", "tags": ["blacksmithing", "armorsmithing"], "note": "Titanic indestructible dark metal slab harvested from the dread colossus" },
-        { "method": "salvage", "item": "dread_essence", "tags": ["alchemy", "enchanting"], "note": "Concentrated dread energy distilled from centuries of dungeon slumber" },
-        { "method": "rare_drop", "item": "heart_of_the_colossus", "tags": ["jewelcrafting", "enchanting", "blacksmithing", "armorsmithing"], "note": "Legendary pinnacle artifact radiating immense planar power. The ultimate treasure of the deep dungeon." }
+        {
+          "method": "salvage",
+          "item": "colossus_core",
+          "tags": [
+            "blacksmithing",
+            "armorsmithing",
+            "enchanting"
+          ],
+          "note": "Ancient pulsating heart forged of solidified cataclysmic magma and raw planar energy"
+        },
+        {
+          "method": "salvage",
+          "item": "abyssal_ingot",
+          "tags": [
+            "blacksmithing",
+            "armorsmithing"
+          ],
+          "note": "Titanic indestructible dark metal slab harvested from the dread colossus"
+        },
+        {
+          "method": "salvage",
+          "item": "dread_essence",
+          "tags": [
+            "alchemy",
+            "enchanting"
+          ],
+          "note": "Concentrated dread energy distilled from centuries of dungeon slumber"
+        },
+        {
+          "method": "rare_drop",
+          "item": "heart_of_the_colossus",
+          "tags": [
+            "jewelcrafting",
+            "enchanting",
+            "blacksmithing",
+            "armorsmithing"
+          ],
+          "note": "Legendary pinnacle artifact radiating immense planar power. The ultimate treasure of the deep dungeon."
+        }
       ]
     },
     {
@@ -214,10 +511,434 @@
       "attackRangeTiles": 4,
       "researchPoints": 20,
       "harvest": [
-        { "method": "salvage", "item": "glacial_core", "tags": ["blacksmithing", "jewelcrafting", "enchanting"], "note": "Sub-zero crystalline heart radiating perpetual absolute zero temperature" },
-        { "method": "salvage", "item": "rime_carapace", "tags": ["armorsmithing", "blacksmithing"], "note": "Hardened glacial ice plate formed under centuries of subterranean arctic pressure" },
-        { "method": "salvage", "item": "glacial_essence", "tags": ["alchemy", "enchanting"], "note": "Distilled essence of pure arctic frost capable of flash-freezing alchemical compounds" },
-        { "method": "rare_drop", "item": "eye_of_the_sovereign", "tags": ["jewelcrafting", "enchanting", "blacksmithing", "armorsmithing"], "note": "Legendary crystalline gem radiating intense diamond dust frost. The crown jewel of the Glacial Caverns." }
+        {
+          "method": "salvage",
+          "item": "glacial_core",
+          "tags": [
+            "blacksmithing",
+            "jewelcrafting",
+            "enchanting"
+          ],
+          "note": "Sub-zero crystalline heart radiating perpetual absolute zero temperature"
+        },
+        {
+          "method": "salvage",
+          "item": "rime_carapace",
+          "tags": [
+            "armorsmithing",
+            "blacksmithing"
+          ],
+          "note": "Hardened glacial ice plate formed under centuries of subterranean arctic pressure"
+        },
+        {
+          "method": "salvage",
+          "item": "glacial_essence",
+          "tags": [
+            "alchemy",
+            "enchanting"
+          ],
+          "note": "Distilled essence of pure arctic frost capable of flash-freezing alchemical compounds"
+        },
+        {
+          "method": "rare_drop",
+          "item": "eye_of_the_sovereign",
+          "tags": [
+            "jewelcrafting",
+            "enchanting",
+            "blacksmithing",
+            "armorsmithing"
+          ],
+          "note": "Legendary crystalline gem radiating intense diamond dust frost. The crown jewel of the Glacial Caverns."
+        }
+      ]
+    },
+    {
+      "id": "holy_elemental",
+      "name": "Holy Elemental",
+      "tier": "elemental",
+      "school": "holy",
+      "hp": 26,
+      "criticalHpMax": 13,
+      "meleeDamage": 6,
+      "aggroRadius": 5,
+      "attackIntervalMs": 1300,
+      "moveSpeed": 80,
+      "dropChance": 1,
+      "description": "A radiant manifestation of pure divine light. Channels incandescent holy energy.",
+      "harvest": [
+        {
+          "method": "guaranteed",
+          "item": "holy_gemstone",
+          "amount": [
+            1,
+            2
+          ],
+          "weight": 1,
+          "tags": [
+            "enchanting"
+          ]
+        },
+        {
+          "method": "rare_drop",
+          "item": "healing_gemstone",
+          "chance": 0.7,
+          "amount": 1,
+          "weight": 1,
+          "tags": [
+            "enchanting"
+          ]
+        },
+        {
+          "method": "rare_drop",
+          "item": "ectoplasm",
+          "chance": 0.2,
+          "amount": 1,
+          "weight": 1,
+          "tags": [
+            "enchanting",
+            "alchemy"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dark_elemental",
+      "name": "Dark Elemental",
+      "tier": "elemental",
+      "school": "dark",
+      "hp": 26,
+      "criticalHpMax": 13,
+      "meleeDamage": 6,
+      "aggroRadius": 5,
+      "attackIntervalMs": 1300,
+      "moveSpeed": 80,
+      "dropChance": 1,
+      "description": "An entity of writhing abyssal shadow that curses attackers with enfeebling darkness.",
+      "harvest": [
+        {
+          "method": "guaranteed",
+          "item": "dark_gemstone",
+          "amount": [
+            1,
+            2
+          ],
+          "weight": 1,
+          "tags": [
+            "enchanting"
+          ]
+        },
+        {
+          "method": "rare_drop",
+          "item": "ectoplasm",
+          "chance": 0.25,
+          "amount": 1,
+          "weight": 1,
+          "tags": [
+            "enchanting",
+            "alchemy"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "arcane_elemental",
+      "name": "Arcane Elemental",
+      "tier": "elemental",
+      "school": "arcane",
+      "hp": 26,
+      "criticalHpMax": 13,
+      "meleeDamage": 6,
+      "aggroRadius": 5,
+      "attackIntervalMs": 1300,
+      "moveSpeed": 80,
+      "dropChance": 1,
+      "description": "A surging vortex of pure prismatic mana coalesced into violent magical form.",
+      "harvest": [
+        {
+          "method": "guaranteed",
+          "item": "arcane_gemstone",
+          "amount": [
+            1,
+            2
+          ],
+          "weight": 1,
+          "tags": [
+            "enchanting"
+          ]
+        },
+        {
+          "method": "rare_drop",
+          "item": "ectoplasm",
+          "chance": 0.2,
+          "amount": 1,
+          "weight": 1,
+          "tags": [
+            "enchanting",
+            "alchemy"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "water_elemental",
+      "name": "Water Elemental",
+      "tier": "elemental",
+      "school": "water",
+      "hp": 26,
+      "criticalHpMax": 13,
+      "meleeDamage": 6,
+      "aggroRadius": 5,
+      "attackIntervalMs": 1300,
+      "moveSpeed": 80,
+      "dropChance": 1,
+      "description": "A rushing torrent of liquid mana capable of drenching foes to drastically slow their strides.",
+      "harvest": [
+        {
+          "method": "guaranteed",
+          "item": "water_gemstone",
+          "amount": [
+            1,
+            2
+          ],
+          "weight": 1,
+          "tags": [
+            "enchanting"
+          ]
+        },
+        {
+          "method": "rare_drop",
+          "item": "raw_fish",
+          "chance": 0.15,
+          "amount": 1,
+          "weight": 1,
+          "tags": [
+            "gathering",
+            "cooking"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "earth_elemental",
+      "name": "Earth Elemental",
+      "tier": "elemental",
+      "school": "earth",
+      "hp": 26,
+      "criticalHpMax": 13,
+      "meleeDamage": 6,
+      "aggroRadius": 5,
+      "attackIntervalMs": 1300,
+      "moveSpeed": 80,
+      "dropChance": 1,
+      "description": "A dense cluster of subterranean granite that shudders the ground to shock and interrupt foes.",
+      "harvest": [
+        {
+          "method": "guaranteed",
+          "item": "earth_gemstone",
+          "amount": [
+            1,
+            2
+          ],
+          "weight": 1,
+          "tags": [
+            "enchanting"
+          ]
+        },
+        {
+          "method": "rare_drop",
+          "item": "ore",
+          "chance": 0.3,
+          "amount": 1,
+          "weight": 1,
+          "tags": [
+            "mining",
+            "blacksmithing"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "fire_elemental",
+      "name": "Fire Elemental",
+      "tier": "elemental",
+      "school": "fire",
+      "hp": 26,
+      "criticalHpMax": 13,
+      "meleeDamage": 6,
+      "aggroRadius": 5,
+      "attackIntervalMs": 1300,
+      "moveSpeed": 80,
+      "dropChance": 1,
+      "description": "A roaring pyre of living flame that incinerates foes with searing burns.",
+      "harvest": [
+        {
+          "method": "guaranteed",
+          "item": "fire_gemstone",
+          "amount": [
+            1,
+            2
+          ],
+          "weight": 1,
+          "tags": [
+            "enchanting"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "lightning_elemental",
+      "name": "Lightning Elemental",
+      "tier": "elemental",
+      "school": "lightning",
+      "hp": 26,
+      "criticalHpMax": 13,
+      "meleeDamage": 6,
+      "aggroRadius": 5,
+      "attackIntervalMs": 1300,
+      "moveSpeed": 80,
+      "dropChance": 1,
+      "description": "A crackling storm core discharging high-voltage static that shocks and stuns upon impact.",
+      "harvest": [
+        {
+          "method": "guaranteed",
+          "item": "lightning_gemstone",
+          "amount": [
+            1,
+            2
+          ],
+          "weight": 1,
+          "tags": [
+            "enchanting"
+          ]
+        },
+        {
+          "method": "rare_drop",
+          "item": "ectoplasm",
+          "chance": 0.2,
+          "amount": 1,
+          "weight": 1,
+          "tags": [
+            "enchanting",
+            "alchemy"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ice_elemental",
+      "name": "Ice Elemental",
+      "tier": "elemental",
+      "school": "ice",
+      "hp": 26,
+      "criticalHpMax": 13,
+      "meleeDamage": 6,
+      "aggroRadius": 5,
+      "attackIntervalMs": 1300,
+      "moveSpeed": 80,
+      "dropChance": 1,
+      "description": "A jagged crystal of perpetual arctic frost that numbs and slows any target it touches.",
+      "harvest": [
+        {
+          "method": "guaranteed",
+          "item": "ice_gemstone",
+          "amount": [
+            1,
+            2
+          ],
+          "weight": 1,
+          "tags": [
+            "enchanting"
+          ]
+        },
+        {
+          "method": "rare_drop",
+          "item": "glacial_essence",
+          "chance": 0.15,
+          "amount": 1,
+          "weight": 1,
+          "tags": [
+            "alchemy",
+            "enchanting"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "wind_elemental",
+      "name": "Wind Elemental",
+      "tier": "elemental",
+      "school": "wind",
+      "hp": 26,
+      "criticalHpMax": 13,
+      "meleeDamage": 6,
+      "aggroRadius": 5,
+      "attackIntervalMs": 1300,
+      "moveSpeed": 80,
+      "dropChance": 1,
+      "description": "A howling vortex of razor-sharp gale currents tearing across the battlefield.",
+      "harvest": [
+        {
+          "method": "guaranteed",
+          "item": "wind_gemstone",
+          "amount": [
+            1,
+            2
+          ],
+          "weight": 1,
+          "tags": [
+            "enchanting"
+          ]
+        },
+        {
+          "method": "rare_drop",
+          "item": "ectoplasm",
+          "chance": 0.2,
+          "amount": 1,
+          "weight": 1,
+          "tags": [
+            "enchanting",
+            "alchemy"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "nature_elemental",
+      "name": "Nature Elemental",
+      "tier": "elemental",
+      "school": "nature",
+      "hp": 26,
+      "criticalHpMax": 13,
+      "meleeDamage": 6,
+      "aggroRadius": 5,
+      "attackIntervalMs": 1300,
+      "moveSpeed": 80,
+      "dropChance": 1,
+      "description": "A tangled animated briar of wild growth that secretes venomous thorns upon striking.",
+      "harvest": [
+        {
+          "method": "guaranteed",
+          "item": "nature_gemstone",
+          "amount": [
+            1,
+            2
+          ],
+          "weight": 1,
+          "tags": [
+            "enchanting"
+          ]
+        },
+        {
+          "method": "rare_drop",
+          "item": "wild_herbs",
+          "chance": 0.3,
+          "amount": 1,
+          "weight": 1,
+          "tags": [
+            "foraging",
+            "alchemy"
+          ]
+        }
       ]
     }
   ]

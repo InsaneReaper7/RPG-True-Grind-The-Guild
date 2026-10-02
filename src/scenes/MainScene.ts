@@ -285,7 +285,12 @@ export class MainScene extends Phaser.Scene {
       const seed = this.assignedSeed ?? (Math.floor(Math.random() * 1000000) + 1);
       this.currentFloorSeed = seed;
       const rng = DungeonGenerator.createRng(seed);
-      this.dungeon = DungeonGenerator.generate(dungeonConfig, rng, { floorNumber, currentFloorSeed: seed, seed });
+      this.dungeon = DungeonGenerator.generate(dungeonConfig, rng, {
+        floorNumber,
+        currentFloorSeed: seed,
+        seed,
+        isTutorialComplete: TutorialSystem.getInstance().getIsCompleted()
+      });
       this.dungeon.seed = seed;
     } else {
       if (this.assignedSeed !== null && this.assignedSeed !== undefined) {
@@ -518,9 +523,27 @@ export class MainScene extends Phaser.Scene {
     for (const espawn of this.dungeon.enemySpawns) {
       const enemyDef = dataLoader.getEnemy(espawn.enemyId);
       if (enemyDef) {
-        const texKey = `${enemyDef.id}-avatar`;
+        let finalDef = enemyDef;
+        if (enemyDef.tier === 'elemental') {
+          const band = this.dungeon.band || 1;
+          const bandStats: Record<number, { hp: number; damage: number; attackSpeedMs: number; moveSpeed: number }> = {
+            1: { hp: 26, damage: 6, attackSpeedMs: 1300, moveSpeed: 80 },
+            2: { hp: 38, damage: 8, attackSpeedMs: 1200, moveSpeed: 80 },
+            3: { hp: 52, damage: 11, attackSpeedMs: 1150, moveSpeed: 85 },
+            4: { hp: 68, damage: 14, attackSpeedMs: 1100, moveSpeed: 90 }
+          };
+          const stats = bandStats[band] || bandStats[1];
+          finalDef = {
+            ...enemyDef,
+            hp: stats.hp,
+            meleeDamage: stats.damage,
+            attackIntervalMs: stats.attackSpeedMs,
+            moveSpeed: stats.moveSpeed
+          };
+        }
+        const texKey = `${finalDef.id}-avatar`;
         const tex = this.textures.exists(texKey) ? texKey : 'wolf-avatar';
-        const enemy = this.spawnEnemyUnit(enemyDef, espawn.x, espawn.y, tex);
+        const enemy = this.spawnEnemyUnit(finalDef, espawn.x, espawn.y, tex);
         enemy.roomIndex = espawn.roomIndex;
       }
     }

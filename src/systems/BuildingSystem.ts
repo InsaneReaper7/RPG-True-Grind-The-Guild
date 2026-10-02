@@ -189,7 +189,8 @@ export class BuildingSystem {
     constructionLevel: number = 0,
     currentClay: number = 0,
     gardeningLevel: number = 0,
-    isUnlockedFn?: (id: string) => boolean
+    isUnlockedFn?: (id: string) => boolean,
+    currentOre: number = 0
   ): { valid: boolean; reason?: string } {
     // 0. Research unlock check for lockedByDefault buildables
     if (blueprint.lockedByDefault) {
@@ -214,7 +215,7 @@ export class BuildingSystem {
       }
     }
 
-    // 2. Resource checks (Wood & Clay)
+    // 2. Resource checks (Wood, Clay & Ore)
     if (blueprint.woodCost > 0) {
       const effectiveCost = BuildingSystem.getEffectiveBuildCost(blueprint.woodCost, constructionLevel);
       if (currentWood < effectiveCost) {
@@ -230,6 +231,15 @@ export class BuildingSystem {
         return {
           valid: false,
           reason: `Not enough Clay! Requires ${blueprint.clayCost} Clay (You have ${currentClay}).`
+        };
+      }
+    }
+
+    if (blueprint.oreCost && blueprint.oreCost > 0) {
+      if (currentOre < blueprint.oreCost) {
+        return {
+          valid: false,
+          reason: `Not enough Ore! Requires ${blueprint.oreCost} Ore (You have ${currentOre}).`
         };
       }
     }

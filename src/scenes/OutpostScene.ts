@@ -746,6 +746,12 @@ export class OutpostScene extends Phaser.Scene {
         return;
       }
 
+      // Check if clicking a placed Magical Weapon Station
+      if (this.isPlacedMagicalWeaponStation(clickedTileX, clickedTileY)) {
+        this.hud.openMagicalWeaponModal(this.player, this.progressionSystem);
+        return;
+      }
+
       // Check if portal clicked
       if (clickedTileX === this.portalPos.x && clickedTileY === this.portalPos.y) {
         this.triggerPortalTransition();
@@ -1461,6 +1467,7 @@ export class OutpostScene extends Phaser.Scene {
     else if (def.id === 'blacksmithing_station') texture = 'buildable-blacksmithing-station';
     else if (def.id === 'armorsmithing_bench') texture = 'buildable-armorsmithing-bench';
     else if (def.id === 'bowyer_station') texture = 'buildable-bowyer-station';
+    else if (def.id === 'magical_weapon_station') texture = 'buildable-magical-weapon-station';
     else if (def.id === 'planting_plot') texture = 'buildable-planting-plot';
     else if (def.id === 'seed_maker') texture = 'buildable-seed-maker';
 
@@ -1510,10 +1517,13 @@ export class OutpostScene extends Phaser.Scene {
         const def = dataLoader.getBuildable(placed.id);
         const costPaid = placed.costPaid ?? (def?.woodCost || 0);
         const refund = BuildingSystem.getEffectiveDemolishRefund(costPaid, constLevel);
+        const oreCostPaid = def?.oreCost || 0;
+        const oreRefund = oreCostPaid > 0 ? BuildingSystem.getEffectiveDemolishRefund(oreCostPaid, constLevel) : 0;
+        const oreRefundStr = oreRefund > 0 ? `, +${oreRefund} Ore` : '';
 
         this.hoverHighlightSprite.setTexture('tile-highlight-valid');
         this.hoverGhostSprite.setTint(0xffffff);
-        this.hoverReasonText.setText(`Demolish ${def?.name || placed.id} (Refund +${refund} Wood)`).setVisible(true);
+        this.hoverReasonText.setText(`Demolish ${def?.name || placed.id} (Refund +${refund} Wood${oreRefundStr})`).setVisible(true);
       } else {
         this.hoverHighlightSprite.setTexture('tile-highlight-invalid');
         this.hoverGhostSprite.setTint(0xff6666);
@@ -1533,6 +1543,7 @@ export class OutpostScene extends Phaser.Scene {
     const playerPos = this.player?.gridPos ?? { x: -1, y: -1 };
     const gardeningLevel = this.progressionSystem.getProficiencyLevel('gardening');
     const currentClay = GameState.getInstance().getItemCount('clay');
+    const currentOre = GameState.getInstance().getItemCount('ore');
     let validation = this.buildingSystem.canPlace(
       blueprint,
       tileX,
@@ -1546,7 +1557,8 @@ export class OutpostScene extends Phaser.Scene {
       constLevel,
       currentClay,
       gardeningLevel,
-      (id) => GameState.getInstance().isBuildableUnlocked(id)
+      (id) => GameState.getInstance().isBuildableUnlocked(id),
+      currentOre
     );
 
     if (validation.valid && !blueprint.walkable && this.party.some((m) => m.gridPos.x === tileX && m.gridPos.y === tileY)) {
@@ -1588,6 +1600,7 @@ export class OutpostScene extends Phaser.Scene {
     const constLevel = this.progressionSystem.getProficiencyLevel('construction');
     const gardeningLevel = this.progressionSystem.getProficiencyLevel('gardening');
     const currentClay = GameState.getInstance().getItemCount('clay');
+    const currentOre = GameState.getInstance().getItemCount('ore');
     const effectiveCost = BuildingSystem.getEffectiveBuildCost(blueprint.woodCost, constLevel);
 
     const playerPos = this.player?.gridPos ?? { x: -1, y: -1 };
@@ -1604,7 +1617,8 @@ export class OutpostScene extends Phaser.Scene {
       constLevel,
       currentClay,
       gardeningLevel,
-      (id) => GameState.getInstance().isBuildableUnlocked(id)
+      (id) => GameState.getInstance().isBuildableUnlocked(id),
+      currentOre
     );
 
     if (validation.valid && !blueprint.walkable && this.party.some((m) => m.gridPos.x === x && m.gridPos.y === y)) {
@@ -1639,7 +1653,24 @@ export class OutpostScene extends Phaser.Scene {
       }
     }
 
-    const costLabel = (blueprint.clayCost && blueprint.clayCost > 0) ? `-${blueprint.clayCost} Clay` : `-${effectiveCost} Wood`;
+    // Deduct ore if oreCost > 0
+    if (blueprint.oreCost && blueprint.oreCost > 0) {
+      const success = GameState.getInstance().consumeItem('ore', blueprint.oreCost);
+      if (!success) {
+        if (blueprint.woodCost > 0) {
+          GameState.getInstance().addWood(effectiveCost);
+        }
+        console.log(`[BuildMode:Place] Tile: (${x}, ${y}) | Result: REJECTED | Reason: Not enough ore`);
+        this.hud.showToast(`Not enough Ore! Requires ${blueprint.oreCost} Ore.`, 'error');
+        return;
+      }
+    }
+
+    const costParts: string[] = [];
+    if (effectiveCost > 0) costParts.push(`-${effectiveCost} Wood`);
+    if (blueprint.clayCost && blueprint.clayCost > 0) costParts.push(`-${blueprint.clayCost} Clay`);
+    if (blueprint.oreCost && blueprint.oreCost > 0) costParts.push(`-${blueprint.oreCost} Ore`);
+    const costLabel = costParts.length > 0 ? costParts.join(', ') : 'Free';
     console.log(`[BuildMode:Place] Tile: (${x}, ${y}) | Result: PLACED ${blueprint.name} (${costLabel})`);
 
     // Save to GameState with costPaid
@@ -1723,6 +1754,12 @@ export class OutpostScene extends Phaser.Scene {
     } else {
       GameState.getInstance().addWood(refund);
     }
+    if (def?.oreCost && def.oreCost > 0) {
+      const oreRefund = BuildingSystem.getEffectiveDemolishRefund(def.oreCost, constLevel);
+      if (oreRefund > 0) {
+        GameState.getInstance().addItem('ore', oreRefund);
+      }
+    }
 
     // Award +1 Construction EXP
     this.progressionSystem.addProficiencyExp('construction', 1);
@@ -1755,8 +1792,10 @@ export class OutpostScene extends Phaser.Scene {
       this.selectedBuildableId,
       this.progressionSystem.getProficiencyLevel('construction')
     );
-    console.log(`[BuildMode:Demolish] Tile: (${x}, ${y}) | Result: DEMOLISHED ${placed.id} (+${refund} Wood refunded from ${costPaid} paid)`);
-    this.hud.showToast(`Demolished ${def?.name || placed.id} (+${refund} Wood refunded). +1 Construction Exp`, 'success');
+    const oreRefund = (def?.oreCost && def.oreCost > 0) ? BuildingSystem.getEffectiveDemolishRefund(def.oreCost, constLevel) : 0;
+    const oreRefundStr = oreRefund > 0 ? `, +${oreRefund} Ore` : '';
+    console.log(`[BuildMode:Demolish] Tile: (${x}, ${y}) | Result: DEMOLISHED ${placed.id} (+${refund} Wood${oreRefundStr} refunded from ${costPaid} paid)`);
+    this.hud.showToast(`Demolished ${def?.name || placed.id} (+${refund} Wood${oreRefundStr} refunded). +1 Construction Exp`, 'success');
   }
 
   private createPlacedSprite(item: PlacedBuildable): void {
@@ -1812,6 +1851,10 @@ export class OutpostScene extends Phaser.Scene {
         .setDepth(posY);
     } else if (item.id === 'bowyer_station') {
       sprite = this.add.sprite(posX, posY, 'buildable-bowyer-station')
+        .setAngle(item.rotation)
+        .setDepth(posY);
+    } else if (item.id === 'magical_weapon_station') {
+      sprite = this.add.sprite(posX, posY, 'buildable-magical-weapon-station')
         .setAngle(item.rotation)
         .setDepth(posY);
     } else if (item.id === 'planting_plot') {
@@ -1920,6 +1963,11 @@ export class OutpostScene extends Phaser.Scene {
   private isPlacedBowyerStation(x: number, y: number): boolean {
     const placed = this.getPlacedBuildableAt(x, y);
     return placed?.id === 'bowyer_station';
+  }
+
+  private isPlacedMagicalWeaponStation(x: number, y: number): boolean {
+    const placed = this.getPlacedBuildableAt(x, y);
+    return placed?.id === 'magical_weapon_station';
   }
 
   private isPlacedBed(x: number, y: number): boolean {

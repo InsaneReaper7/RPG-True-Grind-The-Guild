@@ -46,7 +46,9 @@ import type {
   RecruitDef,
   RecruitsData,
   CraftingConfigData,
-  IntroNarrativeData
+  IntroNarrativeData,
+  EnchantingRecipeDef,
+  EnchantingRecipesData
 } from '../types/game.ts';
 import { HiddenSkillSystem } from '../systems/HiddenSkillSystem.ts';
 import { resolveGearStats, getBaseItemId, isCraftingClass } from './gearResolver.ts';
@@ -80,6 +82,7 @@ export class DataLoader {
   private recruitsData!: RecruitsData;
   private craftingConfigData?: CraftingConfigData;
   private introNarrativeData?: IntroNarrativeData;
+  private enchantingRecipesData?: EnchantingRecipesData;
 
   private constructor() {}
 
@@ -91,7 +94,7 @@ export class DataLoader {
   }
 
   public async loadAll(): Promise<void> {
-    const [player, weapons, classes, enemies, skills, statusEffects, buildables, rooms, hiddenSkills, skillBooks, researchTree, alchemyRecipes, cookingRecipes, blacksmithRecipes, bowyerRecipes, armors, armorsmithRecipes, foods, moodEffects, dungeon, gathering, items, recruits, craftingConfig, introNarrative] = await Promise.all([
+    const [player, weapons, classes, enemies, skills, statusEffects, buildables, rooms, hiddenSkills, skillBooks, researchTree, alchemyRecipes, cookingRecipes, blacksmithRecipes, bowyerRecipes, armors, armorsmithRecipes, foods, moodEffects, dungeon, gathering, items, recruits, craftingConfig, introNarrative, enchantingRecipes] = await Promise.all([
       fetch('/data/player.json').then((res) => res.json()),
       fetch('/data/weapons.json').then((res) => res.json()),
       fetch('/data/classes.json').then((res) => res.json()),
@@ -116,7 +119,8 @@ export class DataLoader {
       fetch('/data/items.json').then((res) => res.json()).catch(() => null),
       fetch('/data/recruits.json').then((res) => res.json()).catch(() => null),
       fetch('/data/craftingConfig.json').then((res) => res.json()).catch(() => null),
-      fetch('/data/introNarrative.json').then((res) => res.json()).catch(() => null)
+      fetch('/data/introNarrative.json').then((res) => res.json()).catch(() => null),
+      fetch('/data/enchantingRecipes.json').then((res) => res.json()).catch(() => null)
     ]);
 
     this.playerData = player as PlayerData;
@@ -154,6 +158,9 @@ export class DataLoader {
     }
     if (introNarrative) {
       this.introNarrativeData = introNarrative as IntroNarrativeData;
+    }
+    if (enchantingRecipes) {
+      this.enchantingRecipesData = enchantingRecipes as EnchantingRecipesData;
     }
     if (dungeon) {
       this.dungeonConfig = dungeon as DungeonConfig;
@@ -729,6 +736,14 @@ export class DataLoader {
       };
     }
 
+    if (id === 'enchanting') {
+      return {
+        id: 'enchanting',
+        name: 'Enchanting',
+        description: 'Imbuing catalysts and shaping magical crystals into staves at the magical weapon station.'
+      };
+    }
+
     return {
       id,
       name: id.split('_').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),
@@ -852,6 +867,22 @@ export class DataLoader {
 
   public getArmorsmithRecipe(id: string): ArmorsmithRecipeDef | undefined {
     return this.armorsmithRecipesData?.recipes.find((r) => r.id === id);
+  }
+
+  public getEnchantingRecipesData(): EnchantingRecipesData | undefined {
+    return this.enchantingRecipesData;
+  }
+
+  public getEnchantingRecipes(): EnchantingRecipeDef[] {
+    return this.enchantingRecipesData?.recipes ?? [];
+  }
+
+  public getEnchantingRecipe(id: string): EnchantingRecipeDef | undefined {
+    return this.enchantingRecipesData?.recipes.find((r) => r.id === id);
+  }
+
+  public isElementalSchoolEnabled(school: string): boolean {
+    return this.craftingConfigData?.elementalSchools?.[school]?.enabled ?? false;
   }
 
   public getSalvageRefundRate(): number {

@@ -13,7 +13,9 @@
       "name": "Cooking Station",
       "targetBuildableId": "cooking_station",
       "cost": 10,
-      "prerequisites": ["research_butchering"],
+      "prerequisites": [
+        "research_butchering"
+      ],
       "description": "Unlocks the Cooking Station for the Guild Outpost, enabling recipe discovery, food preparation, and cooking."
     },
     {
@@ -29,7 +31,9 @@
       "name": "Armorsmithing Bench",
       "targetBuildableId": "armorsmithing_bench",
       "cost": 10,
-      "prerequisites": ["research_skinning"],
+      "prerequisites": [
+        "research_skinning"
+      ],
       "description": "Unlocks the Armorsmithing Bench for the Guild Outpost, enabling hide tailoring and silk weaving into armor."
     },
     {
@@ -66,7 +70,9 @@
       "name": "Gardening",
       "targetBuildableId": "planting_plot",
       "cost": 10,
-      "prerequisites": ["research_digging"],
+      "prerequisites": [
+        "research_digging"
+      ],
       "description": "Unlocks planting plots for cultivating crops in the Outpost and begins the study of agriculture."
     },
     {
@@ -75,6 +81,16 @@
       "cost": 10,
       "prerequisites": [],
       "description": "Unlocks fishing spots in dungeon water bodies, allowing fish and aquatic reagents to be gathered."
+    },
+    {
+      "id": "research_magical_crafting",
+      "name": "Magical Crafting",
+      "targetBuildableId": "magical_weapon_station",
+      "cost": 10,
+      "prerequisites": [
+        "research_blacksmithing_station"
+      ],
+      "description": "Unlocks the Magical Weapon Station for the Guild Outpost, enabling magical crystal cutting and staff enchantment."
     }
   ]
 }

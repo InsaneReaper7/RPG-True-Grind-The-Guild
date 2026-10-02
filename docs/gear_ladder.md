@@ -71,3 +71,57 @@ All recipe levels follow the Director-approved tier structure:
   - Level 6: `silk_robe`.
 - **Band 3 (Pinnacle):** Level 8.
   - Level 8: `spiked_morningstar`, `war_bow`, all `voidforged` weapons, `void_greathelm`, `void_plate_armor`, `void_pendant`, `void_ring`, `void_relic`.
+
+---
+
+## 6. Magical Staves & Enchanting Station (Milestone: Magical Crafting)
+
+Introduced in GDD §8.1 to complete the caster equipment loop and provide conduit progression for spellcasters and healers.
+
+### Station & Progression
+- **Station:** **Magical Weapon Station** (Cost: 25 Wood + 5 Ore, Indoor placement required, Room tag: `enchanting`, Room definition: `Enchanter's Sanctum`).
+- **Proficiency:** Trains **Enchanting** proficiency.
+- **Class Mastery:** **Apprentice Enchanter** unlocks at Enchanting Lv 10 (680 cumulative EXP). Under standard crafting mastery, it grants bonus yield chances on crystals and stat roll bonuses on crafted staves, plus dual class EXP while active.
+- **Recipe Levels:** All initial crystal refinement and staff binding recipes are **Level 0**. Higher staff tiers (Band 2/3 rungs) are planned for future content.
+
+### Gemstones & Crystals (Refinement)
+- Refinement Recipe: **2 × [School] Gemstone → 1 [School] Magical Crystal** (+52 Enchanting EXP).
+- **11 Gemstones:** `fire_gemstone`, `water_gemstone`, `ice_gemstone`, `earth_gemstone`, `lightning_gemstone`, `nature_gemstone`, `wind_gemstone`, `holy_gemstone`, `dark_gemstone`, `arcane_gemstone`, `healing_gemstone`.
+- **11 Magical Crystals:** `fire_crystal`, `water_crystal`, `ice_crystal`, `earth_crystal`, `lightning_crystal`, `nature_crystal`, `wind_crystal`, `holy_crystal`, `dark_crystal`, `arcane_crystal`, `healing_crystal`.
+
+### Magical Staves Ladder (Conduit Binding)
+- Conduit Recipe: **1 Hardwood Quarterstaff (`staff`) + 1 [School] Magical Crystal → 1 [School] Staff** (+120 Enchanting EXP).
+- **Active / Enabled Staves (6 Elemental + 1 Healing):**
+  - **Fire Staff (`fire_staff`):** 9 base damage, 1400ms cadence, Range 4, 80% accuracy. AoE spell explosion inflicting Burn (30% proc).
+  - **Ice Staff (`ice_staff`):** 8 base damage, 1200ms cadence, Range 4, 85% accuracy. Piercing frost projectile inflicting Slow (25% proc).
+  - **Lightning Staff (`lightning_staff`):** 10 base damage, 1100ms cadence, Range 4, 80% accuracy. Chain electric arc inflicting Shock (25% proc).
+  - **Holy Staff (`holy_staff`):** 8 base damage, 1300ms cadence, Range 4, 85% accuracy. Radiant bolt with pulse heal to injured allies.
+  - **Dark Staff (`dark_staff`):** 9 base damage, 1300ms cadence, Range 4, 80% accuracy. Shadow bolt inflicting Curse (25% proc).
+  - **Arcane Staff (`arcane_staff`):** 11 base damage, 1200ms cadence, Range 4, 85% accuracy. Concentrated pure mana projectile.
+  - **Healing Staff (`healing_staff`):** 7 base damage, 1300ms cadence, Range 4, 90% accuracy. Restorative beacon priority-healing lowest-HP ally or smiting foes.
+- **Gap Schools (Disabled until "Four Schools" Milestone):**
+  - `water`, `earth`, `nature`, `wind` are defined in data (`elementalSchools.<school>.enabled: false`).
+  - Gap elementals never spawn (rolls landing on them yield no spawn).
+  - Gap crystal recipes and bestiary entries remain hidden until combat behaviours and staves are implemented.
+
+### Elemental Enemies & Gemstone Sources
+- **Spawning:** 50% spawn chance per floor on cleared floors once the tutorial is complete (0 spawns during tutorial). Added as an extra enemy to a random combat room (never replaces core/carry-over enemies).
+- **Home-Band Weighting:** 50% weighted to home band schools, 50% spread over all schools:
+  - *Band 1 (Crypts):* Holy, Dark
+  - *Band 2 (Abyss):* Arcane, Water, Earth
+  - *Band 3 (Caldera):* Fire, Lightning
+  - *Band 4 (Glacial):* Ice, Wind
+  - *Nature:* Evenly distributed across all bands.
+- **Harvest Drops:**
+  - Guaranteed 1–2 Gemstones of the defeated elemental's school (100% chance, bypassing common drop rate).
+  - Holy Elemental has an additional **70% chance** to drop 1 Healing Gemstone.
+  - Thematic secondary drops using existing items (`wild_herbs`, `raw_fish`, `ectoplasm`, `glacial_essence`, `ore`).
+- **Elemental Stats Scaling:**
+  - *Band 1:* 26 HP, 6 DMG, 1300ms cadence, 80 spd (matched to Skeleton threat).
+  - *Band 2:* 38 HP, 8 DMG, 1200ms cadence, 80 spd.
+  - *Band 3:* 52 HP, 11 DMG, 1150ms cadence, 85 spd.
+  - *Band 4:* 68 HP, 14 DMG, 1100ms cadence, 90 spd.
+
+### Salvage
+- All 7 magical staves can be dismantled at the Magical Weapon Station via `CraftingSystem.applySalvage(..., 'enchanting')`.
+- Returns 50% of ingredients (Plain Staff rolled at 50%, Magical Crystal rolled at 50%) and awards 50% recipe EXP (60 Enchanting EXP + 60 Apprentice Enchanter EXP if unlocked). Plain staves remain salvageable at the Bowyer Station.
