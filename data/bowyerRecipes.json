@@ -30,7 +30,7 @@
       "id": "war_bow",
       "name": "War Bow",
       "resultWeaponId": "war_bow",
-      "requiredLevel": 10,
+      "requiredLevel": 8,
       "ingredients": {
         "wood": 8,
         "wolf_claw": 2,
@@ -49,6 +49,32 @@
       },
       "expGranted": 20,
       "description": "A balanced quarterstaff shaped from seasoned hardwood. Used for bludgeoning or as a conduit for mystical arts."
+    },
+    {
+      "id": "reinforced_staff",
+      "name": "Reinforced Staff",
+      "resultWeaponId": "reinforced_staff",
+      "requiredLevel": 5,
+      "ingredients": {
+        "wood": 6,
+        "bone": 2,
+        "steel_scrap": 2
+      },
+      "expGranted": 50,
+      "description": "A sturdy quarterstaff wrapped with steel bands and monster bone fittings, delivering crushing bludgeoning strikes."
+    },
+    {
+      "id": "void_staff",
+      "name": "Voidforged Staff",
+      "resultWeaponId": "void_staff",
+      "requiredLevel": 8,
+      "ingredients": {
+        "wood": 8,
+        "steel_scrap": 2,
+        "void_plate": 1
+      },
+      "expGranted": 80,
+      "description": "A dark quarterstaff bound in void metal. Humms with concentrated planar force that shatters enemy defenses."
     }
   ]
 }

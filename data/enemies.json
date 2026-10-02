@@ -176,8 +176,8 @@
       "moveSpeed": 95,
       "researchPoints": { "min": 7, "max": 10 },
       "harvest": [
-        { "method": "salvage", "item": "void_plate", "tags": ["armorsmithing", "blacksmithing"] },
-        { "method": "salvage", "item": "void_essence", "tags": ["enchanting", "alchemy"] },
+        { "method": "salvage", "item": "void_plate", "amount": [2, 3], "count": [2, 3], "tags": ["armorsmithing", "blacksmithing"] },
+        { "method": "salvage", "item": "void_essence", "amount": [1, 2], "count": [1, 2], "tags": ["enchanting", "alchemy"] },
         { "method": "rare_drop", "item": "void_core", "tags": ["enchanting", "jewelcrafting", "blacksmithing"], "note": "Pulsing epic core radiating concentrated planar void energy" },
         { "method": "rare_drop", "item": "bone", "tags": ["bowyer", "blacksmithing"] }
       ]

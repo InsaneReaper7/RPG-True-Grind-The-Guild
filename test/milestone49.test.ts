@@ -243,7 +243,7 @@ async function runMilestone49Tests() {
     const recipe1h = recipes.find((r) => r.id === 'spear');
     assert.ok(recipe1h, '1H Spear recipe (id: "spear") must exist in Blacksmithing');
     assert.equal(recipe1h.resultWeaponId, 'spears', 'Recipe produces "spears"');
-    assert.equal(recipe1h.requiredLevel, 0, 'Level 0 required');
+    assert.equal(recipe1h.requiredLevel, 1, 'Level 1 required');
     assert.deepEqual(recipe1h.ingredients, { ore: 4, wood: 3 }, 'Recipe requires 4 Ore and 3 Wood');
     assert.equal(recipe1h.expGranted, 25, 'Recipe grants 25 Blacksmithing EXP');
 
@@ -251,7 +251,7 @@ async function runMilestone49Tests() {
     const recipe2h = recipes.find((r) => r.id === 'spears_2h');
     assert.ok(recipe2h, '2H Spear recipe (id: "spears_2h") must exist in Blacksmithing');
     assert.equal(recipe2h.resultWeaponId, 'spears_2h', 'Recipe produces "spears_2h"');
-    assert.equal(recipe2h.requiredLevel, 0, 'Level 0 required');
+    assert.equal(recipe2h.requiredLevel, 2, 'Level 2 required');
     assert.deepEqual(recipe2h.ingredients, { ore: 7, wood: 5 }, 'Recipe requires 7 Ore and 5 Wood');
     assert.equal(recipe2h.expGranted, 35, 'Recipe grants 35 Blacksmithing EXP');
 

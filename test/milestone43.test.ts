@@ -528,7 +528,7 @@ async function runMilestone43Tests() {
     const r1H = dataLoader.getBlacksmithRecipe('longsword_1h');
     assert.ok(r1H, 'longsword_1h recipe exists in blacksmithRecipes.json');
     assert.equal(r1H.resultWeaponId, 'longsword_1h');
-    assert.equal(r1H.requiredLevel, 0);
+    assert.equal(r1H.requiredLevel, 1);
     assert.equal(r1H.ingredients.ore, 4);
     assert.equal(r1H.ingredients.wood, 2);
     assert.equal(r1H.expGranted, 25);
@@ -536,7 +536,7 @@ async function runMilestone43Tests() {
     const r2H = dataLoader.getBlacksmithRecipe('longsword_2h');
     assert.ok(r2H, 'longsword_2h recipe exists in blacksmithRecipes.json');
     assert.equal(r2H.resultWeaponId, 'longsword_2h');
-    assert.equal(r2H.requiredLevel, 0);
+    assert.equal(r2H.requiredLevel, 2);
     assert.equal(r2H.ingredients.ore, 7);
     assert.equal(r2H.ingredients.wood, 3);
     assert.equal(r2H.expGranted, 35);

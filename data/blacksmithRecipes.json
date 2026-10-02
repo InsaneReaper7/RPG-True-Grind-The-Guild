@@ -29,7 +29,7 @@
       "id": "spiked_morningstar",
       "name": "Spiked Morningstar",
       "resultWeaponId": "spiked_morningstar",
-      "requiredLevel": 10,
+      "requiredLevel": 8,
       "ingredients": {
         "ore": 8,
         "steel_scrap": 5,
@@ -42,7 +42,7 @@
       "id": "longsword_1h",
       "name": "Iron Longsword",
       "resultWeaponId": "longsword_1h",
-      "requiredLevel": 0,
+      "requiredLevel": 1,
       "ingredients": {
         "ore": 4,
         "wood": 2
@@ -54,7 +54,7 @@
       "id": "longsword_2h",
       "name": "Two-Handed Longsword",
       "resultWeaponId": "longsword_2h",
-      "requiredLevel": 0,
+      "requiredLevel": 2,
       "ingredients": {
         "ore": 7,
         "wood": 3
@@ -66,7 +66,7 @@
       "id": "spear",
       "name": "Iron Spear",
       "resultWeaponId": "spears",
-      "requiredLevel": 0,
+      "requiredLevel": 1,
       "ingredients": {
         "ore": 4,
         "wood": 3
@@ -78,7 +78,7 @@
       "id": "spears_2h",
       "name": "Two-Handed Spear",
       "resultWeaponId": "spears_2h",
-      "requiredLevel": 0,
+      "requiredLevel": 2,
       "ingredients": {
         "ore": 7,
         "wood": 5
@@ -90,7 +90,7 @@
       "id": "katana",
       "name": "Forged Katana",
       "resultWeaponId": "katana",
-      "requiredLevel": 0,
+      "requiredLevel": 2,
       "ingredients": {
         "ore": 5,
         "wood": 2
@@ -102,7 +102,7 @@
       "id": "throwing_weapons",
       "name": "Iron Throwing Knives",
       "resultWeaponId": "throwing_weapons",
-      "requiredLevel": 0,
+      "requiredLevel": 1,
       "ingredients": {
         "ore": 3,
         "wood": 1
@@ -114,7 +114,7 @@
       "id": "crossbow",
       "name": "Arbalest Crossbow",
       "resultWeaponId": "crossbows",
-      "requiredLevel": 0,
+      "requiredLevel": 1,
       "ingredients": {
         "ore": 5,
         "wood": 3
@@ -187,7 +187,7 @@
       "id": "greatsword",
       "name": "Steel Greatsword",
       "resultWeaponId": "greatswords",
-      "requiredLevel": 0,
+      "requiredLevel": 5,
       "ingredients": {
         "ore": 8,
         "wood": 3,
@@ -207,6 +207,257 @@
       },
       "expGranted": 15,
       "description": "A pair of lightweight iron daggers designed for rapid stabbing strikes."
+    },
+    {
+      "id": "steel_short_sword",
+      "name": "Steel Short Sword",
+      "resultWeaponId": "steel_short_sword",
+      "requiredLevel": 5,
+      "ingredients": {
+        "ore": 5,
+        "wood": 2,
+        "steel_scrap": 2
+      },
+      "expGranted": 40,
+      "description": "A razor-honed steel short sword reinforced with salvaged steel. Fast, lethal, and causes grievous bleeding."
+    },
+    {
+      "id": "steel_longsword",
+      "name": "Steel Longsword",
+      "resultWeaponId": "steel_longsword",
+      "requiredLevel": 5,
+      "ingredients": {
+        "ore": 6,
+        "wood": 2,
+        "steel_scrap": 2
+      },
+      "expGranted": 50,
+      "description": "A masterfully balanced one-handed steel longsword forged with folded steel plates."
+    },
+    {
+      "id": "steel_katana",
+      "name": "Folded Steel Katana",
+      "resultWeaponId": "steel_katana",
+      "requiredLevel": 5,
+      "ingredients": {
+        "ore": 6,
+        "wood": 2,
+        "steel_scrap": 2
+      },
+      "expGranted": 50,
+      "description": "A deadly curved blade folded repeatedly from refined steel. Inflicts severe bleeding wounds."
+    },
+    {
+      "id": "steel_spear",
+      "name": "Steel Spear",
+      "resultWeaponId": "steel_spear",
+      "requiredLevel": 5,
+      "ingredients": {
+        "ore": 6,
+        "wood": 3,
+        "steel_scrap": 2
+      },
+      "expGranted": 50,
+      "description": "A formidable one-handed spear tipped with a heavy steel pike point, balanced for shield fighting."
+    },
+    {
+      "id": "steel_halberd",
+      "name": "Steel Halberd",
+      "resultWeaponId": "steel_halberd",
+      "requiredLevel": 5,
+      "ingredients": {
+        "ore": 8,
+        "wood": 4,
+        "steel_scrap": 3
+      },
+      "expGranted": 60,
+      "description": "A heavy polearm mounting a broad axe blade and armor-piercing steel spike for devastating two-handed cleaves."
+    },
+    {
+      "id": "serrated_daggers",
+      "name": "Serrated Daggers",
+      "resultWeaponId": "serrated_daggers",
+      "requiredLevel": 5,
+      "ingredients": {
+        "ore": 4,
+        "wood": 1,
+        "steel_scrap": 1,
+        "spider_venom": 1
+      },
+      "expGranted": 40,
+      "description": "Twin steel daggers quenched in spider venom with cruel serrated edges that shred flesh."
+    },
+    {
+      "id": "heavy_crossbow",
+      "name": "Heavy Crossbow",
+      "resultWeaponId": "heavy_crossbow",
+      "requiredLevel": 5,
+      "ingredients": {
+        "ore": 7,
+        "wood": 3,
+        "steel_scrap": 2
+      },
+      "expGranted": 50,
+      "description": "A high-tension mechanical crossbow with reinforced steel limbs delivering heavy kinetic penetration."
+    },
+    {
+      "id": "steel_shield",
+      "name": "Steel Kite Shield",
+      "resultWeaponId": "steel_shield",
+      "requiredLevel": 5,
+      "ingredients": {
+        "ore": 6,
+        "wood": 2,
+        "steel_scrap": 2
+      },
+      "expGranted": 50,
+      "description": "A tapered kite shield forged from layered steel plates, offering superior deflection and damage mitigation."
+    },
+    {
+      "id": "steel_throwing_weapons",
+      "name": "Steel Chakrams",
+      "resultWeaponId": "steel_throwing_weapons",
+      "requiredLevel": 5,
+      "ingredients": {
+        "ore": 4,
+        "wood": 1,
+        "steel_scrap": 2
+      },
+      "expGranted": 40,
+      "description": "Aerodynamic circular throwing blades ground to razor sharpness. Fast and sidearm-compatible."
+    },
+    {
+      "id": "void_short_sword",
+      "name": "Voidforged Short Sword",
+      "resultWeaponId": "void_short_sword",
+      "requiredLevel": 8,
+      "ingredients": {
+        "ore": 6,
+        "steel_scrap": 2,
+        "void_plate": 1
+      },
+      "expGranted": 80,
+      "description": "A swift short sword forged from planar void plate. Swift, deep strikes produce catastrophic bleed."
+    },
+    {
+      "id": "void_longsword",
+      "name": "Voidforged Longsword",
+      "resultWeaponId": "void_longsword",
+      "requiredLevel": 8,
+      "ingredients": {
+        "ore": 8,
+        "steel_scrap": 2,
+        "void_plate": 1
+      },
+      "expGranted": 80,
+      "description": "A legendary one-handed blade radiating void resonance. Cuts through enemy armor with effortless power."
+    },
+    {
+      "id": "void_katana",
+      "name": "Voidforged Katana",
+      "resultWeaponId": "void_katana",
+      "requiredLevel": 8,
+      "ingredients": {
+        "ore": 8,
+        "steel_scrap": 2,
+        "void_plate": 1
+      },
+      "expGranted": 80,
+      "description": "A masterwork katana folded from void metal. Each lightning-fast draw opens deep planar lacerations."
+    },
+    {
+      "id": "void_greatsword",
+      "name": "Voidforged Greatsword",
+      "resultWeaponId": "void_greatsword",
+      "requiredLevel": 8,
+      "ingredients": {
+        "ore": 10,
+        "steel_scrap": 3,
+        "void_plate": 1
+      },
+      "expGranted": 90,
+      "description": "A colossal two-handed greatsword forged from dense void plate. Delivers cataclysmic impact damage."
+    },
+    {
+      "id": "void_spear",
+      "name": "Voidforged Spear",
+      "resultWeaponId": "void_spear",
+      "requiredLevel": 8,
+      "ingredients": {
+        "ore": 8,
+        "wood": 2,
+        "steel_scrap": 2,
+        "void_plate": 1
+      },
+      "expGranted": 80,
+      "description": "A sleek one-handed void spear capable of impaling foes with immense piercing force behind a shield."
+    },
+    {
+      "id": "void_halberd",
+      "name": "Voidforged Halberd",
+      "resultWeaponId": "void_halberd",
+      "requiredLevel": 8,
+      "ingredients": {
+        "ore": 10,
+        "wood": 3,
+        "steel_scrap": 3,
+        "void_plate": 1
+      },
+      "expGranted": 90,
+      "description": "A titanic two-handed void halberd whose massive cleaving blade disrupts reality with each swing."
+    },
+    {
+      "id": "void_daggers",
+      "name": "Voidforged Daggers",
+      "resultWeaponId": "void_daggers",
+      "requiredLevel": 8,
+      "ingredients": {
+        "ore": 6,
+        "steel_scrap": 1,
+        "void_plate": 1
+      },
+      "expGranted": 75,
+      "description": "Pair of void assassin daggers that blur through the shadows, opening vicious bleeding wounds."
+    },
+    {
+      "id": "void_crossbow",
+      "name": "Voidforged Crossbow",
+      "resultWeaponId": "void_crossbow",
+      "requiredLevel": 8,
+      "ingredients": {
+        "ore": 8,
+        "wood": 3,
+        "steel_scrap": 2,
+        "void_plate": 1
+      },
+      "expGranted": 80,
+      "description": "A pinnacle siege crossbow radiating void energy, launching heavy quarrels at extreme range."
+    },
+    {
+      "id": "void_shield",
+      "name": "Voidforged Tower Shield",
+      "resultWeaponId": "void_shield",
+      "requiredLevel": 8,
+      "ingredients": {
+        "ore": 8,
+        "steel_scrap": 2,
+        "void_plate": 1
+      },
+      "expGranted": 80,
+      "description": "An impenetrable tower shield hammered from void plate, neutralizing blows and absorbing punishment."
+    },
+    {
+      "id": "void_throwing_weapons",
+      "name": "Voidforged Throwing Blades",
+      "resultWeaponId": "void_throwing_weapons",
+      "requiredLevel": 8,
+      "ingredients": {
+        "ore": 6,
+        "steel_scrap": 1,
+        "void_plate": 1
+      },
+      "expGranted": 75,
+      "description": "Balanced throwing discs honed from void metal that curve through the air with unerring precision."
     }
   ]
 }

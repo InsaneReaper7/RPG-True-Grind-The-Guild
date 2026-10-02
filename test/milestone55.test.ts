@@ -385,7 +385,7 @@ async function runMilestone55Tests() {
     const recipe = recipes.find((r) => r.id === 'crossbow' || r.resultWeaponId === 'crossbows');
     assert.ok(recipe, 'Crossbow crafting recipe must exist in blacksmithRecipes.json');
     assert.equal(recipe.resultWeaponId, 'crossbows');
-    assert.equal(recipe.requiredLevel, 0, 'Crossbow must be craftable at Tier 0 Blacksmithing');
+    assert.equal(recipe.requiredLevel, 1, 'Crossbow requires Blacksmithing Level 1');
     assert.deepEqual(recipe.ingredients, { ore: 5, wood: 3 }, 'Recipe must require 5 ore and 3 wood');
     assert.equal(recipe.expGranted, 25, 'Recipe must grant 25 Blacksmithing EXP');
 

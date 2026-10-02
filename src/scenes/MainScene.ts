@@ -905,6 +905,7 @@ export class MainScene extends Phaser.Scene {
       if (this.isGatheringMode) {
         this.gatherDragStart = { x: worldPoint.x, y: worldPoint.y };
         this.isGatheringDrag = true;
+        this.hud?.setGatheringDragActive(true);
         const initialNodes = this.getGatheringNodesInSelection(worldPoint.x, worldPoint.x, worldPoint.y, worldPoint.y);
         this.renderGatheringMarqueeAndHighlights(worldPoint.x, worldPoint.y, 0, 0, initialNodes);
         return;
@@ -1047,6 +1048,7 @@ export class MainScene extends Phaser.Scene {
         this.gatherDragStart = null;
         this.currentGatherSelectionHighlights = [];
         this.gatheringMarqueeGraphics.clear();
+        this.hud?.setGatheringDragActive(false);
 
         if (selectedNodes.length === 0) {
           this.hud?.showToast('No gathering nodes in selected area.', 'info', 2000);
@@ -1055,6 +1057,67 @@ export class MainScene extends Phaser.Scene {
         }
       }
     });
+
+    // Milestone: Allow marquee drag to start or end over HUD overlays in Gathering Mode
+    if (typeof window !== 'undefined') {
+      window.addEventListener('pointerdown', (e: PointerEvent) => {
+        if (!this.isGatheringMode || this.isGatheringDrag) return;
+        const target = e.target as HTMLElement;
+        if (!target) return;
+        if (target.id === 'gathering-mode-toggle-btn' || target.closest('#gathering-mode-toggle-btn')) {
+          return;
+        }
+        const isOverHud = target.closest('#party-portraits-hud') || target.closest('#quick-bar-hud') || target.closest('.hud-card') || target.closest('#guild-guide-widget');
+        if (isOverHud) {
+          const canvas = this.game.canvas;
+          if (!canvas) return;
+          const rect = canvas.getBoundingClientRect();
+          const scaleX = canvas.width / rect.width;
+          const scaleY = canvas.height / rect.height;
+          const canvasX = (e.clientX - rect.left) * scaleX;
+          const canvasY = (e.clientY - rect.top) * scaleY;
+          const worldPoint = this.cameras.main.getWorldPoint(canvasX, canvasY);
+
+          this.gatherDragStart = { x: worldPoint.x, y: worldPoint.y };
+          this.isGatheringDrag = true;
+          this.hud?.setGatheringDragActive(true);
+          const initialNodes = this.getGatheringNodesInSelection(worldPoint.x, worldPoint.x, worldPoint.y, worldPoint.y);
+          this.renderGatheringMarqueeAndHighlights(worldPoint.x, worldPoint.y, 0, 0, initialNodes);
+        }
+      });
+
+      window.addEventListener('pointerup', (e: PointerEvent) => {
+        if (this.isGatheringDrag && this.gatherDragStart) {
+          const canvas = this.game.canvas;
+          if (!canvas) return;
+          const rect = canvas.getBoundingClientRect();
+          const scaleX = canvas.width / rect.width;
+          const scaleY = canvas.height / rect.height;
+          const canvasX = (e.clientX - rect.left) * scaleX;
+          const canvasY = (e.clientY - rect.top) * scaleY;
+          const worldPoint = this.cameras.main.getWorldPoint(canvasX, canvasY);
+
+          const minX = Math.min(this.gatherDragStart.x, worldPoint.x);
+          const maxX = Math.max(this.gatherDragStart.x, worldPoint.x);
+          const minY = Math.min(this.gatherDragStart.y, worldPoint.y);
+          const maxY = Math.max(this.gatherDragStart.y, worldPoint.y);
+
+          const selectedNodes = this.getGatheringNodesInSelection(minX, maxX, minY, maxY);
+
+          this.isGatheringDrag = false;
+          this.gatherDragStart = null;
+          this.currentGatherSelectionHighlights = [];
+          this.gatheringMarqueeGraphics.clear();
+          this.hud?.setGatheringDragActive(false);
+
+          if (selectedNodes.length === 0) {
+            this.hud?.showToast('No gathering nodes in selected area.', 'info', 2000);
+          } else {
+            this.startGatheringQueue(selectedNodes);
+          }
+        }
+      });
+    }
   }
 
   public findBest2x2Anchor(
@@ -3968,6 +4031,7 @@ export class MainScene extends Phaser.Scene {
       this.gatherDragStart = null;
       this.currentGatherSelectionHighlights = [];
       this.gatheringMarqueeGraphics?.clear();
+      this.hud?.setGatheringDragActive(false);
       this.clearGatheringQueue(true);
       this.hud?.showToast('🌿 Gathering Mode: OFF', 'info', 1500);
       this.hud?.setGatheringModeActive(false);

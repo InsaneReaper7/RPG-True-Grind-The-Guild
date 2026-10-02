@@ -39,7 +39,7 @@
       "id": "silk_robe",
       "name": "Silk Robe",
       "resultArmorId": "silk_robe",
-      "requiredLevel": 5,
+      "requiredLevel": 6,
       "ingredients": {
         "spider_silk": 5,
         "wolf_pelt": 2
@@ -75,13 +75,78 @@
       "id": "venom_charm",
       "name": "Venom Charm",
       "resultArmorId": "venom_charm",
-      "requiredLevel": 4,
+      "requiredLevel": 5,
       "ingredients": {
         "spider_venom": 2,
         "spider_silk": 2
       },
       "expGranted": 60,
       "description": "Stabilize spider venom within an intricate silk weave to craft a protective ward."
+    },
+    {
+      "id": "void_greathelm",
+      "name": "Voidforged Greathelm",
+      "resultArmorId": "void_greathelm",
+      "requiredLevel": 8,
+      "ingredients": {
+        "void_plate": 1,
+        "steel_scrap": 2,
+        "ore": 4
+      },
+      "expGranted": 80,
+      "description": "Hammer dense void plate into an impenetrable greathelm that deflects mortal blows."
+    },
+    {
+      "id": "void_plate_armor",
+      "name": "Voidforged Plate Armor",
+      "resultArmorId": "void_plate_armor",
+      "requiredLevel": 8,
+      "ingredients": {
+        "void_plate": 2,
+        "steel_scrap": 3,
+        "ore": 6
+      },
+      "expGranted": 90,
+      "description": "Forge an impenetrable heavy void cuirass radiating otherworldly defensive power."
+    },
+    {
+      "id": "void_pendant",
+      "name": "Voidforged Pendant",
+      "resultArmorId": "void_pendant",
+      "requiredLevel": 8,
+      "ingredients": {
+        "void_essence": 1,
+        "bone": 2,
+        "bowstring": 1
+      },
+      "expGranted": 80,
+      "description": "Suspend concentrated void essence within an intricate bone weave to project a defensive ward."
+    },
+    {
+      "id": "void_ring",
+      "name": "Voidforged Band",
+      "resultArmorId": "void_ring",
+      "requiredLevel": 8,
+      "ingredients": {
+        "void_essence": 1,
+        "wolf_claw": 2,
+        "steel_scrap": 1
+      },
+      "expGranted": 80,
+      "description": "Infuse a beast-claw and steel band with void essence to reinforce physical endurance."
+    },
+    {
+      "id": "void_relic",
+      "name": "Voidforged Relic",
+      "resultArmorId": "void_relic",
+      "requiredLevel": 8,
+      "ingredients": {
+        "void_core": 1,
+        "void_essence": 1,
+        "spider_silk": 2
+      },
+      "expGranted": 95,
+      "description": "Encase a legendary void core in woven subterranean silk, anchoring massive extra carry capacity and health."
     }
   ]
 }

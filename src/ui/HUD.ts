@@ -1974,6 +1974,29 @@ export class HUD {
         this.gatheringModeBtnEl.classList.remove('active');
       }
     }
+    if (!active) {
+      this.setGatheringDragActive(false);
+    }
+  }
+
+  public setGatheringDragActive(dragging: boolean): void {
+    const overlays: (HTMLElement | null)[] = [
+      this.partyPortraitsHudEl,
+      document.getElementById('quick-bar-hud'),
+      document.getElementById('guild-guide-widget'),
+      ...(Array.from(document.querySelectorAll('.hud-card')) as HTMLElement[])
+    ];
+    for (const el of overlays) {
+      if (!el) continue;
+      if (dragging) {
+        el.style.transition = 'opacity 0.15s ease';
+        el.style.opacity = '0.1';
+        el.style.pointerEvents = 'none';
+      } else {
+        el.style.opacity = '';
+        el.style.pointerEvents = '';
+      }
+    }
   }
 
   public setBuildCallbacks(

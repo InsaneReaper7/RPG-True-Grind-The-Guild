@@ -68,6 +68,54 @@
       "hpBonus": 26,
       "splitRatio": "50/50",
       "description": "A resilient ward vial containing stabilized spider venom and silk. Increases Max HP by 13, Critical HP by 13, and Carry Capacity by 5kg."
+    },
+    {
+      "id": "void_greathelm",
+      "name": "Voidforged Greathelm",
+      "slot": "helmet",
+      "weightClass": "heavy",
+      "weight": 4.5,
+      "hpBonus": 60,
+      "splitRatio": "50/50",
+      "description": "A monolithic greathelm beaten from dense void plate. Increases Max HP by 30 and Critical HP by 30."
+    },
+    {
+      "id": "void_plate_armor",
+      "name": "Voidforged Plate Armor",
+      "slot": "body",
+      "weightClass": "heavy",
+      "weight": 12.0,
+      "hpBonus": 100,
+      "splitRatio": "50/50",
+      "description": "An impenetrable suit of heavy void plate armor infused with otherworldly resilience. Increases Max HP by 50 and Critical HP by 50."
+    },
+    {
+      "id": "void_pendant",
+      "name": "Voidforged Pendant",
+      "slot": "necklace",
+      "weight": 0.5,
+      "hpBonus": 40,
+      "splitRatio": "50/50",
+      "description": "A dark crystalline talisman radiating pure planar wards. Increases Max HP by 20 and Critical HP by 20."
+    },
+    {
+      "id": "void_ring",
+      "name": "Voidforged Band",
+      "slot": "ring",
+      "weight": 0.2,
+      "hpBonus": 28,
+      "splitRatio": "50/50",
+      "description": "A heavy signet forged of void essence and steel. Increases Max HP by 14 and Critical HP by 14."
+    },
+    {
+      "id": "void_relic",
+      "name": "Voidforged Relic",
+      "slot": "accessory",
+      "weight": 0.5,
+      "carryCapacityBonus": 10.0,
+      "hpBonus": 50,
+      "splitRatio": "50/50",
+      "description": "A pulsating relic housing an epic void core. Increases Max HP by 25, Critical HP by 25, and Carry Capacity by 10kg."
     }
   ]
 }

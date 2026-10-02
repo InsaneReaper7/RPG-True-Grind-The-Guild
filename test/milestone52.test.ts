@@ -439,7 +439,7 @@ async function runMilestone52Tests() {
     assert.ok(recipe, 'Katana recipe must exist in blacksmithRecipes.json');
     assert.equal(recipe.name, 'Forged Katana');
     assert.equal(recipe.resultWeaponId, 'katana');
-    assert.equal(recipe.requiredLevel, 0, 'Katana must be craftable at Tier 0 Blacksmithing (level 0) per class_system line 230');
+    assert.equal(recipe.requiredLevel, 2, 'Katana requires Blacksmithing level 2');
     assert.deepEqual(recipe.ingredients, { ore: 5, wood: 2 }, 'Katana recipe must require 5 ore and 2 wood');
     assert.equal(recipe.expGranted, 25, 'Katana recipe must grant 25 exp');
 

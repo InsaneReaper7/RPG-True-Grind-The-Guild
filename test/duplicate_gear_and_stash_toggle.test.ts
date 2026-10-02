@@ -414,7 +414,10 @@ async function runTests() {
     const testCases = [
       {
         station: 'Blacksmithing (Weapon)',
-        openModal: () => hud.openBlacksmithingModal(hero, hero.progression),
+        openModal: () => {
+          hero.progression.getProficiencyStat('blacksmithing').level = 2;
+          hud.openBlacksmithingModal(hero, hero.progression);
+        },
         containerId: 'blacksmithing-recipes-container',
         attr: 'data-forge-recipe',
         recipeId: 'katana',
@@ -553,6 +556,7 @@ async function runTests() {
     gameState.addItem('ore', 50);
     gameState.addItem('wood', 50);
 
+    hero.progression.getProficiencyStat('blacksmithing').level = 2;
     hud.update(hero, hero.progression, 0, [hero, valerie]);
 
     // Craft 1 Katana via UI
@@ -620,6 +624,7 @@ async function runTests() {
     // Craft Katana and toggle ON again
     gameState.addItem('ore', 20);
     gameState.addItem('wood', 20);
+    hero.progression.getProficiencyStat('blacksmithing').level = 2;
     hud.openBlacksmithingModal(hero, hero.progression);
     const bsContainer = getOrCreateElement('blacksmithing-recipes-container');
     const katanaBtn = bsContainer.querySelector('[data-forge-recipe="katana"]') as MockElement;

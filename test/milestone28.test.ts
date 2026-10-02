@@ -201,7 +201,7 @@ async function runMilestone28Tests() {
   const rCap = dataLoader.getArmorsmithRecipe('leather_cap');
   const rRobe = dataLoader.getArmorsmithRecipe('silk_robe');
   assert.ok(rCap && rCap.requiredLevel === 0 && rCap.ingredients.wolf_pelt === 2);
-  assert.ok(rRobe && rRobe.requiredLevel === 5 && rRobe.ingredients.spider_silk === 5);
+  assert.ok(rRobe && rRobe.requiredLevel === 6 && rRobe.ingredients.spider_silk === 5);
 
   const classes = dataLoader.getClasses();
   const armorerClass = classes.find(c => c.id === 'apprentice_armorer');

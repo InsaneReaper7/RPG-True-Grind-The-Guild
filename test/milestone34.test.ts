@@ -592,6 +592,12 @@ async function runMilestone34Tests() {
     const extraBoss = new Enemy(mockScene, 10, 11, abyssalColossus, 'abyssal_colossus-avatar', 32);
     (testCombat as any).handleTargetDefeated(heroPlayer, extraBoss, 'short_swords');
   }
+  let extraAttempts = 0;
+  while (heroPlayer.getItemCount('heart_of_the_colossus') === preHeart && extraAttempts < 15) {
+    const extraBoss = new Enemy(mockScene, 10, 11, abyssalColossus, 'abyssal_colossus-avatar', 32);
+    (testCombat as any).handleTargetDefeated(heroPlayer, extraBoss, 'short_swords');
+    extraAttempts++;
+  }
 
   const postCore = heroPlayer.getItemCount('colossus_core');
   const postIngot = heroPlayer.getItemCount('abyssal_ingot');

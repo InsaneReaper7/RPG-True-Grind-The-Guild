@@ -493,7 +493,7 @@ async function runTests() {
   assert.ok(bsContainer.innerHTML.includes('Heavy War Mace'), 'Heavy War Mace (Lv 5) must be visible when Show All is active');
   assert.ok(bsContainer.innerHTML.includes('Spiked Morningstar'), 'Spiked Morningstar (Lv 10) must be visible when Show All is active');
   assert.ok(bsContainer.innerHTML.includes('Req. Blacksmithing Lv 5'), 'Locked badge for Lv 5 must be present');
-  assert.ok(bsContainer.innerHTML.includes('Req. Blacksmithing Lv 10'), 'Locked badge for Lv 10 must be present');
+  assert.ok(bsContainer.innerHTML.includes('Req. Blacksmithing Lv 8'), 'Locked badge for Lv 8 must be present');
   const bsCountAll = bsContainer.children.length;
   console.log(`  Per-Station Count: Blacksmithing -> Unlocked Only = ${bsCountFiltered}, Show All = ${bsCountAll}`);
 
@@ -567,7 +567,7 @@ async function runTests() {
   assert.ok(byContainer.innerHTML.includes('Composite Bow'), 'Composite Bow visible in Show All');
   assert.ok(byContainer.innerHTML.includes('War Bow'), 'War Bow visible in Show All');
   assert.ok(byContainer.innerHTML.includes('Req. Bowyer Lv 5'), 'Req Lv 5 badge shown');
-  assert.ok(byContainer.innerHTML.includes('Req. Bowyer Lv 10'), 'Req Lv 10 badge shown');
+  assert.ok(byContainer.innerHTML.includes('Req. Bowyer Lv 8'), 'Req Lv 8 badge shown');
   const byCountAll = byContainer.children.length;
   console.log(`  Per-Station Count: Bowyer -> Unlocked Only = ${byCountFiltered}, Show All = ${byCountAll}`);
 

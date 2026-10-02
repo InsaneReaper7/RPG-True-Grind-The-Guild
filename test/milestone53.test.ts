@@ -186,7 +186,7 @@ async function runMilestone53Tests() {
     const twRecipe = recipes.find((r) => r.id === 'throwing_weapons');
     assert.ok(twRecipe, 'Throwing Weapons recipe (id: "throwing_weapons") must exist in Blacksmithing');
     assert.equal(twRecipe.resultWeaponId, 'throwing_weapons', 'Recipe produces "throwing_weapons"');
-    assert.equal(twRecipe.requiredLevel, 0, 'Tier 0 recipe requires Blacksmithing Level 0');
+    assert.equal(twRecipe.requiredLevel, 1, 'Recipe requires Blacksmithing Level 1');
     assert.deepEqual(twRecipe.ingredients, { ore: 3, wood: 1 }, 'Recipe requires 3 Ore and 1 Wood');
     assert.equal(twRecipe.expGranted, 20, 'Recipe grants 20 Blacksmithing EXP');
 

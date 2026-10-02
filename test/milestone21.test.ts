@@ -227,7 +227,7 @@ async function runMilestone21Tests() {
 
   const rStar = dataLoader.getBlacksmithRecipe('spiked_morningstar');
   assert.ok(rStar);
-  assert.equal(rStar.requiredLevel, 10);
+  assert.equal(rStar.requiredLevel, 8);
   assert.equal(rStar.ingredients.ore, 8);
   assert.equal(rStar.ingredients.steel_scrap, 5);
   assert.equal(rStar.ingredients.orc_heavy_hide, 2);
