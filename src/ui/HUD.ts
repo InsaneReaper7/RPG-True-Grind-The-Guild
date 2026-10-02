@@ -1981,7 +1981,8 @@ export class HUD {
 
   public setGatheringDragActive(dragging: boolean): void {
     const overlays: (HTMLElement | null)[] = [
-      this.partyPortraitsHudEl,
+      document.getElementById('hud-card'),
+      this.partyPortraitsHudEl || document.getElementById('party-portraits-hud'),
       document.getElementById('quick-bar-hud'),
       document.getElementById('guild-guide-widget'),
       ...(Array.from(document.querySelectorAll('.hud-card')) as HTMLElement[])
