@@ -8,9 +8,9 @@
     "holy": { "enabled": true, "homeBand": 1 },
     "dark": { "enabled": true, "homeBand": 1 },
     "arcane": { "enabled": true, "homeBand": 2 },
-    "water": { "enabled": false, "homeBand": 2 },
-    "earth": { "enabled": false, "homeBand": 2 },
-    "nature": { "enabled": false, "homeBand": null },
-    "wind": { "enabled": false, "homeBand": 4 }
+    "water": { "enabled": true, "homeBand": 2 },
+    "earth": { "enabled": true, "homeBand": 2 },
+    "nature": { "enabled": true, "homeBand": null },
+    "wind": { "enabled": true, "homeBand": 4 }
   }
 }

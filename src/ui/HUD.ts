@@ -6436,6 +6436,10 @@ export class HUD {
       case 'holy_magic': return '#facc15';
       case 'dark_magic': return '#a855f7';
       case 'arcane_magic': return '#c084fc';
+      case 'water_magic': return '#0284c7';
+      case 'earth_magic': return '#b45309';
+      case 'nature_magic': return '#16a34a';
+      case 'wind_magic': return '#a7f3d0';
       case 'energy_regen': return '#38bdf8';
       case 'mana_regen': return '#818cf8';
       case 'lockpicking': return '#f59e0b';
@@ -8715,6 +8719,30 @@ export class HUD {
             { label: 'Station', value: 'Bowyer Bench' },
             { label: 'Required Bowyer', value: `Lv ${r.requiredLevel || 1}` },
             { label: 'Ingredients', value: ingStr || 'None' }
+          ]
+        });
+      }
+    }
+
+    // Enchanting (Magical Crafting)
+    const enchantingRecipes = dataLoader.getEnchantingRecipes() || [];
+    const enchantingLvl = getPartyMaxLevel('enchanting');
+    for (const r of enchantingRecipes) {
+      if (r.school && !dataLoader.isElementalSchoolEnabled(r.school)) continue;
+      if (enchantingLvl >= (r.requiredLevel || 0) || gameState.getItemCount(r.resultItemId || r.resultWeaponId || r.id) > 0) {
+        const ingStr = Object.entries(r.ingredients || {})
+          .map(([k, v]) => `${v}x ${k.replace('_', ' ')}`)
+          .join(', ');
+        discoveredCrafting.push({
+          id: `enchant_${r.id}`,
+          name: r.name,
+          badge: 'ENCHANTING',
+          description: r.description || 'Infused elemental conduit or crystal crafted at the magical weapon station.',
+          stats: [
+            { label: 'Station', value: 'Magical Weapon Station' },
+            { label: 'School', value: (r.school || 'Magic').toUpperCase() },
+            { label: 'Ingredients', value: ingStr || 'None' },
+            { label: 'Crafting EXP', value: `+${r.expGranted ?? 120} Enchanting EXP` }
           ]
         });
       }

@@ -1038,3 +1038,39 @@ Never ask Antigravity to jump ahead in this list — each milestone assumes the 
 - **4. Test Suite & Build Verification**:
   - All 102 test suites passing (100% green, 0 failures) via `npm test -- --quiet`.
   - Production bundle verified with `npm run build`.
+
+---
+
+### Milestone: Four Schools (Water, Earth, Nature, Wind) (2026-10-03)
+
+**Resolved and shipped: Four Combat Magic Schools, Staves, Elementals Enabled, and Proficiencies.**
+- **1. Water Magic (`water_magic` & `water_staff`)**:
+  - Single-target DPS: 7 damage / 1400 ms = 5.00 DPS, 20 EN cost (14.29 EN/s).
+  - Primary: 20% chance to inflict Slow (-50% move speed for 3s).
+  - Secondary (Tidal Heal): Restores 2 HP on hit to the most injured living ally within 4-tile spell range (prioritizing Critical HP first).
+- **2. Earth Magic (`earth_magic` & `earth_staff`)**:
+  - Single-target DPS: 10 damage / 1800 ms = 5.56 DPS, 22 EN cost (12.22 EN/s).
+  - Primary: 20% chance to Stun (2s duration on player cast; 1s duration override on elemental attack).
+  - Secondary (Stoneskin): Applies -10% damage taken (`damageTakenMultiplier: 0.90`) for 4s to all living party members; refreshed on cast, not stacked.
+- **3. Nature Magic (`nature_magic` & `nature_staff`)**:
+  - Single-target DPS: 7 damage / 1400 ms = 5.00 DPS, 20 EN cost (14.29 EN/s).
+  - Primary: 30% chance to inflict timed Poison (6s duration, 3 ticks of 2 damage = 6 total damage).
+  - Secondary (Regrowth): Applies 1 HP/s HoT for 4s to the most injured ally. Enforces exactly one active Regrowth per caster (applying to a new ally removes the caster's previous Regrowth).
+  - Persistent Poison Guard: Applying timed Nature poison never overwrites or downgrades existing persistent poison (e.g. from Spiders or Venom Charm).
+- **4. Wind Magic (`wind_magic` & `wind_staff`)**:
+  - Single-target DPS: 5 damage / 1000 ms = 5.00 DPS, 14 EN cost (14.00 EN/s).
+  - Primary / Secondary (Line Pierce): Deals full 5 damage to primary target plus up to 2 enemies behind it within a 1-tile corridor, up to 3 tiles past primary target (`proj > 0`, `proj <= 3 tiles + 4`, `perp <= 1 tile`). Max 3 targets hit total. No status effect.
+- **5. Crafting & Salvage**:
+  - Added Enchanting recipes for `water_staff`, `earth_staff`, `nature_staff`, `wind_staff` at the Magical Weapon Station (120 EXP, Lv 0 Enchanting requirement).
+  - Salvage refund rates (50% materials refund & 60 Enchanting EXP) verified across all 4 staves.
+- **6. Elementals Enabled & Drops**:
+  - All 10 elementals enabled in `data/craftingConfig.json`.
+  - Elemental attack status effects: Earth (1s stun), Nature (6s timed poison), Ice (frostbite), Water (slow), Holy (blind), Fire (burn), Lightning (shock), Dark (curse), Arcane/Wind (plain damage).
+- **7. Backward-Compatible Save Loading**:
+  - `water_magic`, `earth_magic`, `nature_magic`, `wind_magic` initialized in `ProgressionSystem.initDefaultProficiencies()`.
+  - Old save snapshots missing the four proficiencies load safely at Lv 0 with 0 EXP.
+- **8. Verification & Test Suite**:
+  - Dedicated test suite `test/milestone_four_schools.test.ts` (10/10 passed).
+  - Updated legacy suite thresholds in `test/milestone47.test.ts`, `test/milestone57.test.ts`, and `test/milestone_magical_crafting.test.ts` for 10-school configuration.
+  - Production build: `npm run build` succeeds cleanly.
+  - Full test suite: `npm test -- --quiet` (105/105 suites passed, 100% green).

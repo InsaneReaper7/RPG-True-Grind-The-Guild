@@ -224,21 +224,17 @@ async function runTests() {
     assert.ok(crystal, `Crystal for ${s} (${s}_crystal) must exist in items.json`);
   }
 
-  // Gap schools check
-  const gapSchools = ['water', 'earth', 'nature', 'wind'];
-  for (const gs of gapSchools) {
-    assert.equal(dataLoader.isElementalSchoolEnabled(gs), false, `Gap school ${gs} must be disabled in craftingConfig.json`);
+  // All 10 schools enabled (Four Schools milestone)
+  const allElementalSchools = ['fire', 'ice', 'lightning', 'holy', 'dark', 'arcane', 'water', 'earth', 'nature', 'wind'];
+  for (const es of allElementalSchools) {
+    assert.equal(dataLoader.isElementalSchoolEnabled(es), true, `Elemental school ${es} must be enabled in craftingConfig.json`);
   }
-  const enabledSchools = ['fire', 'ice', 'lightning', 'holy', 'dark', 'arcane'];
-  for (const es of enabledSchools) {
-    assert.equal(dataLoader.isElementalSchoolEnabled(es), true, `Enabled school ${es} must be enabled in craftingConfig.json`);
-  }
-  console.log('✓ Test 3 passed: All 11 gemstones/crystals exist; gap schools properly flagged false.');
+  console.log('✓ Test 3 passed: All 11 gemstones/crystals exist; all 10 elemental schools enabled.');
 
   // Test 4: Enchanting recipes and crafting EXP
   console.log('Test 4: Enchanting crystal & staff recipes, EXP values');
   const enchantingRecipes = dataLoader.getEnchantingRecipes();
-  assert.equal(enchantingRecipes.length, 18, 'There should be 11 crystal recipes + 7 staff recipes = 18 total enchanting recipes');
+  assert.equal(enchantingRecipes.length, 22, 'There should be 11 crystal recipes + 11 staff recipes = 22 total enchanting recipes');
   for (const r of enchantingRecipes) {
     assert.equal(r.requiredLevel, 0, `Recipe ${r.id} must be Level 0`);
     if (r.resultItemId) {
@@ -356,26 +352,27 @@ async function runTests() {
   console.log(`✓ Test 8 passed: 0 elementals during tutorial; spawned ${totalElementalsSpawned} in valid combat rooms over 50 runs in Band 1 post-tutorial (expected ~20).`);
 
   // Test 8c: A disabled-school roll gives no spawn (seed 3 rolls Water in Band 2)
-  console.log('Test 8c: Disabled-school roll gives no spawn and crystal recipe is hidden');
+  // Test 8c: Water school enabled & crystal recipe is visible in station list
+  console.log('Test 8c: Four Schools enables Water; verify elemental spawn and station recipe visibility');
   const dWater = DungeonGenerator.generate(dungeonConfig, DungeonGenerator.createRng(3), {
     floorNumber: 3, // Band 2
     seed: 3,
     isTutorialComplete: true
   });
   const waterElementals = dWater.enemySpawns.filter(e => e.enemyId.endsWith('_elemental'));
-  assert.equal(waterElementals.length, 0, 'Rolling a disabled school (water) must result in 0 elemental spawns (null roll)');
+  assert.equal(waterElementals.length, 1, 'Now that water is enabled, rolling water spawns water_elemental');
 
-  // Also assert Water crystal recipe is hidden from station visible recipe list
+  // Also assert Water crystal recipe is visible in station recipe list
   const visibleStationRecipes = dataLoader.getEnchantingRecipes().filter(
     (recipe) => !recipe.school || dataLoader.isElementalSchoolEnabled(recipe.school)
   );
-  assert.equal(dataLoader.isElementalSchoolEnabled('water'), false, 'Water school must be disabled');
+  assert.equal(dataLoader.isElementalSchoolEnabled('water'), true, 'Water school must be enabled');
   assert.equal(
     visibleStationRecipes.some(r => r.resultItemId === 'water_crystal' || r.id === 'water_crystal_craft'),
-    false,
-    'Water crystal recipe must NOT be in the station visible recipe list'
+    true,
+    'Water crystal recipe must be in the station visible recipe list'
   );
-  console.log('✓ Test 8c passed: Water roll produces 0 elemental spawn and Water crystal recipe is hidden from station.');
+  console.log('✓ Test 8c passed: Water roll produces elemental spawn and Water crystal recipe is visible.');
 
   // Test 8d: Never a replacement - compare core-pool and carry-over enemies with and without an elemental
   console.log('Test 8d: Never a replacement: core-pool and carry-over enemies are identical plus exactly 1 elemental');
@@ -402,10 +399,10 @@ async function runTests() {
   // Test 8e: 1,000 runs per band rate within +-20% of supply simulation
   console.log('Test 8e: 1,000 runs per band rate verification within +-20% of simulation');
   const bandRunConfigs = [
-    { band: 1, floor: 1, expectedRate: 0.40, name: 'Band 1 (Crypts)' },
-    { band: 2, floor: 3, expectedRate: 0.2333, name: 'Band 2 (Abyss)' },
-    { band: 3, floor: 6, expectedRate: 0.40, name: 'Band 3 (Caldera)' },
-    { band: 4, floor: 11, expectedRate: 0.275, name: 'Band 4 (Glacial)' }
+    { band: 1, floor: 1, expectedRate: 0.50, name: 'Band 1 (Crypts)' },
+    { band: 2, floor: 3, expectedRate: 0.50, name: 'Band 2 (Abyss)' },
+    { band: 3, floor: 6, expectedRate: 0.50, name: 'Band 3 (Caldera)' },
+    { band: 4, floor: 11, expectedRate: 0.50, name: 'Band 4 (Glacial)' }
   ];
 
   for (const b of bandRunConfigs) {

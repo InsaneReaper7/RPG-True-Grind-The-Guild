@@ -260,6 +260,11 @@ export class Entity extends Phaser.GameObjects.Container {
       const amp = arcaneVulnEffect.def?.damageAmplificationPercent ?? 0.15;
       damageRemaining *= (1 + amp);
     }
+    for (const activeEffect of this.activeStatusEffects.values()) {
+      if (activeEffect.def?.damageTakenMultiplier !== undefined) {
+        damageRemaining *= activeEffect.def.damageTakenMultiplier;
+      }
+    }
     if (damageRemaining > 0) {
       for (const [effectId, activeEffect] of this.activeStatusEffects.entries()) {
         if (activeEffect.shieldHp !== undefined && activeEffect.shieldHp > 0) {
@@ -377,6 +382,14 @@ export class Entity extends Phaser.GameObjects.Container {
 
   public applyStatusEffect(effectDef: StatusEffectDef): void {
     if (this.state === 'downed' || this.state === 'dead') return;
+
+    // Director Rule: Never downgrade an existing persistent poison to a finite/timed poison
+    if (effectDef.id === 'poison') {
+      const existing = this.activeStatusEffects.get('poison');
+      if (existing && existing.def?.persistent === true && !effectDef.persistent) {
+        return;
+      }
+    }
 
     GameState.getInstance().discoverStatusEffect(effectDef.id);
 
@@ -563,6 +576,12 @@ export class Entity extends Phaser.GameObjects.Container {
         }
         this.statusIconSprite.setVisible(true);
       }
+    } else if (this.activeStatusEffects.has('stoneskin')) {
+      this.avatarSprite.setTint(0xa8a29e);
+      if (this.statusIconSprite) this.statusIconSprite.setVisible(false);
+    } else if (this.activeStatusEffects.has('regrowth')) {
+      this.avatarSprite.setTint(0x22c55e);
+      if (this.statusIconSprite) this.statusIconSprite.setVisible(false);
     } else {
       this.avatarSprite.clearTint();
       if (this.statusIconSprite) this.statusIconSprite.setVisible(false);

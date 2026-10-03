@@ -404,6 +404,10 @@ async function runMilestone47Tests() {
   let holyCount = 0;
   let darkCount = 0;
   let arcaneCount = 0;
+  let waterCount = 0;
+  let earthCount = 0;
+  let natureCount = 0;
+  let windCount = 0;
 
   for (let i = 0; i < 500; i++) {
     const resolved = gameState.resolveStartingKit('random_magic_staff');
@@ -413,17 +417,21 @@ async function runMilestone47Tests() {
     else if (resolved.mainWeaponId === 'holy_staff') holyCount++;
     else if (resolved.mainWeaponId === 'dark_staff') darkCount++;
     else if (resolved.mainWeaponId === 'arcane_staff') arcaneCount++;
+    else if (resolved.mainWeaponId === 'water_staff') waterCount++;
+    else if (resolved.mainWeaponId === 'earth_staff') earthCount++;
+    else if (resolved.mainWeaponId === 'nature_staff') natureCount++;
+    else if (resolved.mainWeaponId === 'wind_staff') windCount++;
     else assert.fail(`Unexpected weapon resolved: ${resolved.mainWeaponId}`);
   }
 
-  console.log(`  500 Rolls: Fire=${fireCount}, Lightning=${lightningCount}, Ice=${iceCount}, Holy=${holyCount}, Dark=${darkCount}, Arcane=${arcaneCount}`);
-  assert.ok(fireCount >= 40, `Fire staff rolled sufficiently (${fireCount} >= 40)`);
-  assert.ok(lightningCount >= 40, `Lightning staff rolled sufficiently (${lightningCount} >= 40)`);
-  assert.ok(iceCount >= 40, `Ice staff rolled sufficiently (${iceCount} >= 40)`);
-  assert.ok(holyCount >= 40, `Holy staff rolled sufficiently (${holyCount} >= 40)`);
-  assert.ok(darkCount >= 40, `Dark staff rolled sufficiently (${darkCount} >= 40)`);
-  assert.equal(fireCount + lightningCount + iceCount + holyCount + darkCount + arcaneCount, 500, 'All 500 rolls distributed across the schools');
-  console.log('✓ PASS: Random Magic Staff starting kit spans all 5 schools with statistical variation.\n');
+  console.log(`  500 Rolls across 10 schools: Fire=${fireCount}, Lightning=${lightningCount}, Ice=${iceCount}, Holy=${holyCount}, Dark=${darkCount}, Arcane=${arcaneCount}, Water=${waterCount}, Earth=${earthCount}, Nature=${natureCount}, Wind=${windCount}`);
+  assert.ok(fireCount >= 20, `Fire staff rolled sufficiently (${fireCount} >= 20)`);
+  assert.ok(lightningCount >= 20, `Lightning staff rolled sufficiently (${lightningCount} >= 20)`);
+  assert.ok(iceCount >= 20, `Ice staff rolled sufficiently (${iceCount} >= 20)`);
+  assert.ok(holyCount >= 20, `Holy staff rolled sufficiently (${holyCount} >= 20)`);
+  assert.ok(darkCount >= 20, `Dark staff rolled sufficiently (${darkCount} >= 20)`);
+  assert.equal(fireCount + lightningCount + iceCount + holyCount + darkCount + arcaneCount + waterCount + earthCount + natureCount + windCount, 500, 'All 500 rolls distributed across all 10 schools');
+  console.log('✓ PASS: Random Magic Staff starting kit spans all 10 schools with statistical variation.\n');
 
   // =========================================================================
   // TEST 3: Dark Magic Combat Attack & Curse (Enfeeblement) Mechanic

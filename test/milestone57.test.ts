@@ -348,7 +348,7 @@ async function runMilestone57Tests() {
   const derivedSpell = dataLoader.getSpellForConduit(arcaneStaff);
   assert.equal(derivedSpell?.id, 'arcane_magic', 'getSpellForConduit maps arcane_staff to arcane_magic');
 
-  // Offensive magic schools pool now contains all 6 schools
+  // Offensive magic schools pool now contains all 10 schools
   const offensivePool = dataLoader.getOffensiveMagicSchools();
   const poolIds = offensivePool.map((w) => w.id);
   assert.ok(poolIds.includes('fire_magic'), 'Pool includes fire_magic');
@@ -357,8 +357,12 @@ async function runMilestone57Tests() {
   assert.ok(poolIds.includes('holy_magic'), 'Pool includes holy_magic');
   assert.ok(poolIds.includes('dark_magic'), 'Pool includes dark_magic');
   assert.ok(poolIds.includes('arcane_magic'), 'Pool includes arcane_magic');
+  assert.ok(poolIds.includes('water_magic'), 'Pool includes water_magic');
+  assert.ok(poolIds.includes('earth_magic'), 'Pool includes earth_magic');
+  assert.ok(poolIds.includes('nature_magic'), 'Pool includes nature_magic');
+  assert.ok(poolIds.includes('wind_magic'), 'Pool includes wind_magic');
   assert.equal(poolIds.includes('healing_magic'), false, 'Pool strictly excludes healing_magic');
-  assert.equal(poolIds.length, 6, 'Offensive magic pool contains exactly 6 schools');
+  assert.equal(poolIds.length, 10, 'Offensive magic pool contains exactly 10 schools');
 
   // Verify class_system.md Line 90 exact citation
   const classSystemDocPath = path.resolve(rootDir, 'docs/class_system (1).md');
@@ -383,7 +387,7 @@ async function runMilestone57Tests() {
   // =========================================================================
   // TEST 2: Random Magic Staff 6-School Statistical Distribution (600 Iterations)
   // =========================================================================
-  console.log('--- TEST 2: Random Magic Staff 6-School Statistical Distribution (600 Iterations) ---');
+  console.log('--- TEST 2: Random Magic Staff 10-School Statistical Distribution (600 Iterations) ---');
   const gameState = GameState.getInstance();
   let fireCount = 0;
   let lightningCount = 0;
@@ -391,6 +395,10 @@ async function runMilestone57Tests() {
   let holyCount = 0;
   let darkCount = 0;
   let arcaneCount = 0;
+  let waterCount = 0;
+  let earthCount = 0;
+  let natureCount = 0;
+  let windCount = 0;
 
   for (let i = 0; i < 600; i++) {
     const resolved = gameState.resolveStartingKit('random_magic_staff');
@@ -400,18 +408,22 @@ async function runMilestone57Tests() {
     else if (resolved.mainWeaponId === 'holy_staff') holyCount++;
     else if (resolved.mainWeaponId === 'dark_staff') darkCount++;
     else if (resolved.mainWeaponId === 'arcane_staff') arcaneCount++;
+    else if (resolved.mainWeaponId === 'water_staff') waterCount++;
+    else if (resolved.mainWeaponId === 'earth_staff') earthCount++;
+    else if (resolved.mainWeaponId === 'nature_staff') natureCount++;
+    else if (resolved.mainWeaponId === 'wind_staff') windCount++;
     else assert.fail(`Unexpected weapon resolved: ${resolved.mainWeaponId}`);
   }
 
-  console.log(`  600 Rolls: Fire=${fireCount}, Lightning=${lightningCount}, Ice=${iceCount}, Holy=${holyCount}, Dark=${darkCount}, Arcane=${arcaneCount}`);
-  assert.ok(fireCount >= 40, `Fire staff rolled sufficiently (${fireCount} >= 40)`);
-  assert.ok(lightningCount >= 40, `Lightning staff rolled sufficiently (${lightningCount} >= 40)`);
-  assert.ok(iceCount >= 40, `Ice staff rolled sufficiently (${iceCount} >= 40)`);
-  assert.ok(holyCount >= 40, `Holy staff rolled sufficiently (${holyCount} >= 40)`);
-  assert.ok(darkCount >= 40, `Dark staff rolled sufficiently (${darkCount} >= 40)`);
-  assert.ok(arcaneCount >= 40, `Arcane staff rolled sufficiently (${arcaneCount} >= 40)`);
-  assert.equal(fireCount + lightningCount + iceCount + holyCount + darkCount + arcaneCount, 600, 'All 600 rolls distributed across the 6 schools');
-  console.log('✓ PASS: Random Magic Staff starting kit spans all 6 schools with statistical variation.\n');
+  console.log(`  600 Rolls across 10 schools: Fire=${fireCount}, Lightning=${lightningCount}, Ice=${iceCount}, Holy=${holyCount}, Dark=${darkCount}, Arcane=${arcaneCount}, Water=${waterCount}, Earth=${earthCount}, Nature=${natureCount}, Wind=${windCount}`);
+  assert.ok(fireCount >= 20, `Fire staff rolled sufficiently (${fireCount} >= 20)`);
+  assert.ok(lightningCount >= 20, `Lightning staff rolled sufficiently (${lightningCount} >= 20)`);
+  assert.ok(iceCount >= 20, `Ice staff rolled sufficiently (${iceCount} >= 20)`);
+  assert.ok(holyCount >= 20, `Holy staff rolled sufficiently (${holyCount} >= 20)`);
+  assert.ok(darkCount >= 20, `Dark staff rolled sufficiently (${darkCount} >= 20)`);
+  assert.ok(arcaneCount >= 20, `Arcane staff rolled sufficiently (${arcaneCount} >= 20)`);
+  assert.equal(fireCount + lightningCount + iceCount + holyCount + darkCount + arcaneCount + waterCount + earthCount + natureCount + windCount, 600, 'All 600 rolls distributed across all 10 schools');
+  console.log('✓ PASS: Random Magic Staff starting kit spans all 10 schools with statistical variation.\n');
 
   // =========================================================================
   // TEST 3: Arcane Magic Combat Attack & Mana Siphon Mechanic

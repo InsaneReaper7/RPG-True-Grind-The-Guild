@@ -105,6 +105,10 @@ export class ProgressionSystem {
     this.proficiencies.set('holy_magic', { level: 0, currentExp: 0 });
     this.proficiencies.set('dark_magic', { level: 0, currentExp: 0 });
     this.proficiencies.set('arcane_magic', { level: 0, currentExp: 0 });
+    this.proficiencies.set('water_magic', { level: 0, currentExp: 0 });
+    this.proficiencies.set('earth_magic', { level: 0, currentExp: 0 });
+    this.proficiencies.set('nature_magic', { level: 0, currentExp: 0 });
+    this.proficiencies.set('wind_magic', { level: 0, currentExp: 0 });
     this.proficiencies.set('dual_wielding', { level: 0, currentExp: 0 });
     this.proficiencies.set('construction', { level: 0, currentExp: 0 });
     this.proficiencies.set('alchemy', { level: 0, currentExp: 0 });
@@ -527,25 +531,29 @@ export class ProgressionSystem {
       }
     }
     this.classLevels.clear();
-    for (const [k, v] of Object.entries(data.classLevels)) {
-      this.classLevels.set(k, v);
+    if (data.classLevels) {
+      for (const [k, v] of Object.entries(data.classLevels)) {
+        this.classLevels.set(k, v);
+      }
     }
     this.classStats.clear();
     if (data.classStats) {
       for (const [k, v] of Object.entries(data.classStats)) {
         this.classStats.set(k, { level: v.level ?? 0, currentExp: v.currentExp ?? 0 });
       }
-    } else {
+    } else if (data.classLevels) {
       for (const [k, v] of Object.entries(data.classLevels)) {
         this.classStats.set(k, { level: v, currentExp: 0 });
       }
     }
     this.unlockedClasses.clear();
-    for (const c of data.unlockedClasses) {
-      this.unlockedClasses.add(c);
-      if (!this.classStats.has(c)) {
-        const lvl = this.classLevels.get(c) ?? 1;
-        this.classStats.set(c, { level: lvl, currentExp: 0 });
+    if (data.unlockedClasses) {
+      for (const c of data.unlockedClasses) {
+        this.unlockedClasses.add(c);
+        if (!this.classStats.has(c)) {
+          const lvl = this.classLevels.get(c) ?? 1;
+          this.classStats.set(c, { level: lvl, currentExp: 0 });
+        }
       }
     }
     this.activityCounts.clear();

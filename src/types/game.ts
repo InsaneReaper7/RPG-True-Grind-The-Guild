@@ -23,6 +23,8 @@ export interface WeaponLevelBonus {
   radianceHealPerLevel?: number;
   curseChancePerLevel?: number;
   manaSiphonPerLevel?: number;
+  tidalHealPerLevel?: number;
+  poisonChancePerLevel?: number;
 }
 
 export interface GearItemInstance {
@@ -48,6 +50,11 @@ export interface WeaponDef {
   curseChance?: number;
   manaSiphonAmount?: number;
   radianceHealAmount?: number;
+  tidalHealAmount?: number;
+  poisonChance?: number;
+  pierceLineTargets?: number;
+  stoneskinDurationMs?: number;
+  regrowthDurationMs?: number;
   chainTargets?: number;
   chainHopRangeTiles?: number;
   chainDamageFalloff?: number;
@@ -646,6 +653,7 @@ export interface StatusEffectDef {
   holyBonusDamage?: number;
   damageAmplificationPercent?: number;
   damageReductionPercent?: number;
+  damageTakenMultiplier?: number;
   evasionBonus?: number;
   accuracyReduction?: number;
   reflectPercent?: number;

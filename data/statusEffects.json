@@ -288,6 +288,26 @@
       "damagePerTick": 0,
       "evasionBonus": 0.35,
       "color": "#38bdf8"
+    },
+    {
+      "id": "stoneskin",
+      "name": "Stoneskin",
+      "durationMs": 4000,
+      "tickIntervalMs": 4000,
+      "damagePerTick": 0,
+      "damageTakenMultiplier": 0.90,
+      "isHarmful": false,
+      "color": "#a8a29e"
+    },
+    {
+      "id": "regrowth",
+      "name": "Regrowth",
+      "durationMs": 4000,
+      "tickIntervalMs": 1000,
+      "damagePerTick": 0,
+      "healPerTick": 1,
+      "isHarmful": false,
+      "color": "#22c55e"
     }
   ]
 }

@@ -157,6 +157,22 @@
     "enchanting": {
       "level": 0,
       "currentExp": 0
+    },
+    "water_magic": {
+      "level": 0,
+      "currentExp": 0
+    },
+    "earth_magic": {
+      "level": 0,
+      "currentExp": 0
+    },
+    "nature_magic": {
+      "level": 0,
+      "currentExp": 0
+    },
+    "wind_magic": {
+      "level": 0,
+      "currentExp": 0
     }
   },
   "resources": {

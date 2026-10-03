@@ -20,6 +20,7 @@ export class CombatSystem {
   private lastCombatTimeMs: number = 0;
   private lastPassiveTickTimeMs: number = 0;
   private enemyTargets: Map<Enemy, Player> = new Map();
+  private casterRegrowthTargets: Map<string, Entity> = new Map();
 
   constructor(
     scene: Phaser.Scene,
@@ -2002,6 +2003,39 @@ export class CombatSystem {
     }
   }
 
+  public checkAndApplyPoison(
+    attacker: Player,
+    target: Entity,
+    weaponOverride?: WeaponDef,
+    weaponLevel?: number
+  ): void {
+    const weapon = weaponOverride ?? attacker.equippedWeapon;
+    if (!weapon.poisonChance || weapon.poisonChance <= 0) return;
+
+    const wLevel = weaponLevel ?? attacker.progression.getProficiencyLevel(weapon.proficiencyId ?? weapon.id);
+    const poisonBonusPerLevel = weapon.levelBonus?.poisonChancePerLevel ?? 0;
+    const effectivePoisonChance = weapon.poisonChance + wLevel * poisonBonusPerLevel;
+
+    if (Math.random() < effectivePoisonChance) {
+      const dataLoader = DataLoader.getInstance();
+      const poisonDef = {
+        ...(dataLoader.getStatusEffect('poison') || {
+          id: 'poison',
+          name: 'Poison',
+          tickIntervalMs: 2000,
+          damagePerTick: 2,
+          isHarmful: true,
+          color: '#16a34a'
+        }),
+        persistent: false,
+        durationMs: 6000
+      };
+      target.applyStatusEffect(poisonDef);
+      this.createFloatingText(target.x, target.y - 25, 'POISONED!', '#16a34a');
+      console.log(`[Combat:Nature] 🍃 Poison proc on ${target.entityName} (6s duration)!`);
+    }
+  }
+
   public applyElementalAttackStatus(enemy: Enemy, target: Entity): void {
     const school = (enemy.enemyData as any).school || enemy.enemyData.id.replace('_elemental', '');
     const dataLoader = DataLoader.getInstance();
@@ -2018,9 +2052,27 @@ export class CombatSystem {
         }
         break;
       }
-      case 'ice':
+      case 'ice': {
+        // Ice: Frostbite (25% proc, 4.5s DoT + 50% slow)
+        if (Math.random() < 0.25) {
+          const frostbiteDef = dataLoader.getStatusEffect('frostbite') || {
+            id: 'frostbite',
+            name: 'Frostbite',
+            durationMs: 4500,
+            tickIntervalMs: 1500,
+            damagePerTick: 3,
+            moveSpeedMultiplier: 0.5,
+            isHarmful: true,
+            color: '#06b6d4'
+          };
+          target.applyStatusEffect(frostbiteDef);
+          this.createFloatingText(target.x, target.y - 25, 'FROSTBITE!', '#06b6d4');
+          this.createFrostEffect(target.x, target.y);
+        }
+        break;
+      }
       case 'water': {
-        // Ice & Water: Slow (25% proc, -50% move)
+        // Water: Slow (25% proc, -50% move)
         if (Math.random() < 0.25) {
           const slowDef = dataLoader.getStatusEffect('slow') || {
             id: 'slow',
@@ -2060,23 +2112,24 @@ export class CombatSystem {
         break;
       }
       case 'earth': {
-        // Earth: Shock (20% proc, interrupt)
+        // Earth: Stun (20% proc, 1s duration override on elemental attack)
         if (Math.random() < 0.20) {
-          const shockDef = dataLoader.getStatusEffect('shock') || {
-            id: 'shock',
-            name: 'Shock',
+          const stunDef = {
+            ...(dataLoader.getStatusEffect('stun') || {
+              id: 'stun',
+              name: 'Stun',
+              tickIntervalMs: 1000,
+              damagePerTick: 0,
+              disablesActions: true,
+              disablesMovement: true,
+              color: '#facc15'
+            }),
             durationMs: 1000,
-            tickIntervalMs: 1000,
-            damagePerTick: 0,
-            disablesActions: true,
-            disablesMovement: true,
-            interruptsAttack: true,
-            color: '#06b6d4'
+            tickIntervalMs: 1000
           };
-          target.applyStatusEffect(shockDef);
-          if (shockDef.disablesMovement) target.stopMovement();
-          this.createFloatingText(target.x, target.y - 25, 'SHOCKED!', '#06b6d4');
-          this.createShockSparksEffect(target.x, target.y);
+          target.applyStatusEffect(stunDef);
+          if (stunDef.disablesMovement) target.stopMovement();
+          this.createFloatingText(target.x, target.y - 25, 'STUNNED!', '#facc15');
         }
         break;
       }
@@ -2100,23 +2153,44 @@ export class CombatSystem {
         break;
       }
       case 'nature': {
-        // Nature: Poison (25% proc, DoT)
+        // Nature: Poison (25% proc, 6s duration override)
         if (Math.random() < 0.25) {
-          const poisonDef = dataLoader.getStatusEffect('poison') || {
-            id: 'poison',
-            name: 'Poison',
-            tickIntervalMs: 2000,
-            damagePerTick: 2,
-            persistent: true,
-            isHarmful: true,
-            color: '#16a34a'
+          const poisonDef = {
+            ...(dataLoader.getStatusEffect('poison') || {
+              id: 'poison',
+              name: 'Poison',
+              tickIntervalMs: 2000,
+              damagePerTick: 2,
+              isHarmful: true,
+              color: '#16a34a'
+            }),
+            persistent: false,
+            durationMs: 6000
           };
           target.applyStatusEffect(poisonDef);
           this.createFloatingText(target.x, target.y - 25, 'POISONED!', '#16a34a');
         }
         break;
       }
-      // Holy, Arcane, Wind: Plain damage, no status
+      case 'holy': {
+        // Holy: Blind (25% proc, 5s miss chance)
+        if (Math.random() < 0.25) {
+          const blindDef = dataLoader.getStatusEffect('blind') || {
+            id: 'blind',
+            name: 'Blind',
+            durationMs: 5000,
+            tickIntervalMs: 5000,
+            damagePerTick: 0,
+            accuracyReduction: 0.35,
+            isHarmful: true,
+            color: '#4c1d95'
+          };
+          target.applyStatusEffect(blindDef);
+          this.createFloatingText(target.x, target.y - 25, 'BLINDED!', '#facc15');
+        }
+        break;
+      }
+      // Arcane, Wind: Plain damage, no status
       default:
         break;
     }
@@ -2227,8 +2301,12 @@ export class CombatSystem {
     const isHoly = effectiveWeapon.id === 'holy_magic';
     const isDark = effectiveWeapon.id === 'dark_magic';
     const isArcane = effectiveWeapon.id === 'arcane_magic';
+    const isWater = effectiveWeapon.id === 'water_magic';
+    const isEarth = effectiveWeapon.id === 'earth_magic';
+    const isNature = effectiveWeapon.id === 'nature_magic';
+    const isWind = effectiveWeapon.id === 'wind_magic';
     const isRangedBow = effectiveWeapon.category === 'ranged' || effectiveWeapon.proficiencyId === 'bows' || effectiveWeapon.id === 'bows';
-    const attackColor = isFire ? 0xf97316 : isLightning ? 0x38bdf8 : isIce ? 0x67e8f9 : isHoly ? 0xfacc15 : isDark ? 0xa855f7 : isArcane ? 0xc084fc : isRangedBow ? 0xf59e0b : isFist ? 0xf97316 : 0x3b82f6;
+    const attackColor = isFire ? 0xf97316 : isLightning ? 0x38bdf8 : isIce ? 0x67e8f9 : isHoly ? 0xfacc15 : isDark ? 0xa855f7 : isArcane ? 0xc084fc : isWater ? 0x0284c7 : isEarth ? 0x78350f : isNature ? 0x16a34a : isWind ? 0xa7f3d0 : isRangedBow ? 0xf59e0b : isFist ? 0xf97316 : 0x3b82f6;
     if (isLightning) {
       this.createLightningBoltEffect(member.x, member.y, target.x, target.y);
     } else if (isHoly) {
@@ -2242,7 +2320,7 @@ export class CombatSystem {
     }
     if (isFire) {
       this.createFireExplosionEffect(target.x, target.y);
-    } else if (isIce) {
+    } else if (isIce || isWater) {
       this.createFrostEffect(target.x, target.y);
     } else if (isHoly) {
       this.createHolyImpactEffect(target.x, target.y);
@@ -2250,6 +2328,8 @@ export class CombatSystem {
       this.createDarkImpactEffect(target.x, target.y);
     } else if (isArcane) {
       this.createArcaneImpactEffect(target.x, target.y);
+    } else if (isEarth || isNature || isWind) {
+      this.createAttackEffect(target.x, target.y, target.x, target.y, attackColor);
     }
 
     const hitRoll = Math.random();
@@ -2284,7 +2364,7 @@ export class CombatSystem {
     console.log(
       `[Combat] ${member.entityName} attacks ${target.entityName} with ${effectiveWeapon.name} for ${damage.toFixed(1)} damage! (Base: ${effectiveWeapon.baseDamage}, Lv ${weaponLevel} Bonus: +${(weaponLevel * damageBonusPerLevel).toFixed(1)}, Accuracy: ${(effectiveAccuracy * 100).toFixed(1)}%${isDW ? ` [DW Penalty -${(dwPenalty * 100).toFixed(0)}%]` : ''}${passiveImbuement?.bonusDamagePercent ? ` [Passive Imbuement: +${(passiveImbuement.bonusDamagePercent * 100).toFixed(0)}%]` : ''})`
     );
-    const dmgColor = isFire ? '#f97316' : isLightning ? '#38bdf8' : isIce ? '#67e8f9' : isHoly ? '#facc15' : isDark ? '#a855f7' : isArcane ? '#c084fc' : isRangedBow ? '#f59e0b' : isFist ? '#f97316' : '#38bdf8';
+    const dmgColor = isFire ? '#f97316' : isLightning ? '#38bdf8' : isIce ? '#67e8f9' : isHoly ? '#facc15' : isDark ? '#a855f7' : isArcane ? '#c084fc' : isWater ? '#0284c7' : isEarth ? '#b45309' : isNature ? '#16a34a' : isWind ? '#a7f3d0' : isRangedBow ? '#f59e0b' : isFist ? '#f97316' : '#38bdf8';
     const hitText = isFist ? `PUNCH! -${damage.toFixed(1)}` : `-${damage.toFixed(1)}`;
     this.createFloatingText(target.x, target.y - 10, hitText, dmgColor);
 
@@ -2294,11 +2374,21 @@ export class CombatSystem {
     this.checkAndApplyShock(member, target, effectiveWeapon);
     this.checkAndApplySlow(member, target, effectiveWeapon);
     this.checkAndApplyCurse(member, target, effectiveWeapon, weaponLevel);
+    this.checkAndApplyPoison(member, target, effectiveWeapon, weaponLevel);
     if (isHoly) {
       this.applyHolyRadiance(member, target, effectiveWeapon, weaponLevel);
     }
     if (isArcane) {
       this.applyArcaneManaSiphon(member, target, effectiveWeapon, weaponLevel);
+    }
+    if (isWater) {
+      this.applyWaterTidalHeal(member, target, effectiveWeapon, weaponLevel);
+    }
+    if (isEarth) {
+      this.applyEarthStoneskin(member, effectiveWeapon);
+    }
+    if (isNature) {
+      this.applyNatureRegrowth(member, effectiveWeapon);
     }
     if (passiveImbuement?.proc) {
       this.checkAndApplyPassiveImbuementProc(member, target, passiveImbuement.proc);
@@ -2371,6 +2461,11 @@ export class CombatSystem {
           }
         }
       }
+    }
+
+    // Piercing Line targeting for weapons with pierceLineTargets (e.g. Wind Magic)
+    if (effectiveWeapon.pierceLineTargets && effectiveWeapon.pierceLineTargets > 1 && this.enemies) {
+      this.applyWindLinePierce(member, target, damage, effectiveWeapon, weaponId);
     }
 
     if (member.progression) {
@@ -2487,6 +2582,192 @@ export class CombatSystem {
     console.log(
       `[Combat:Arcane] ✨ Mana Siphon siphoned ${siphonAmount} Energy from ${target.entityName} to ${caster.entityName}! (Restored: +${actualRestored.toFixed(1)}, EN: ${caster.energy.toFixed(1)}/${maxEnergy})`
     );
+  }
+
+  public applyWaterTidalHeal(
+    caster: Player,
+    _target: Entity,
+    weaponDef: WeaponDef,
+    weaponLevel: number
+  ): void {
+    const baseHeal = weaponDef.tidalHealAmount ?? 2;
+    const healBonusPerLevel = weaponDef.levelBonus?.tidalHealPerLevel ?? 0.1;
+    const healAmount = Math.max(1, Math.round(baseHeal + weaponLevel * healBonusPerLevel));
+
+    const radiusTiles = weaponDef.attackRangeTiles ?? 4;
+    const casterTile = {
+      x: Math.floor(caster.x / caster.tileSize),
+      y: Math.floor(caster.y / caster.tileSize)
+    };
+
+    const candidates = this.party && this.party.length > 0 ? this.party : [caster];
+    let bestCandidate: Player | null = null;
+    let lowestHpRatio = 1.0;
+
+    for (const ally of candidates) {
+      if (ally.state === 'dead' || ally.state === 'downed') continue;
+      const aTile = {
+        x: Math.floor(ally.x / ally.tileSize),
+        y: Math.floor(ally.y / ally.tileSize)
+      };
+      const dist = Math.max(Math.abs(casterTile.x - aTile.x), Math.abs(casterTile.y - aTile.y));
+      if (dist <= radiusTiles && (ally.hp < ally.maxHp || ally.criticalHp < ally.maxCriticalHp)) {
+        const hpRatio = (ally.hp + ally.criticalHp) / (ally.maxHp + ally.maxCriticalHp);
+        if (hpRatio < lowestHpRatio) {
+          lowestHpRatio = hpRatio;
+          bestCandidate = ally;
+        }
+      }
+    }
+
+    if (bestCandidate) {
+      const restored = bestCandidate.heal(healAmount);
+      if (restored > 0) {
+        this.createHealEffect(bestCandidate.x, bestCandidate.y);
+        this.createFloatingText(bestCandidate.x, bestCandidate.y - 14, `+${restored} HP (Tidal)`, '#0284c7');
+        console.log(
+          `[Combat:Water] 🌊 Tidal surge healed ${bestCandidate.entityName} for ${restored} HP! (HP: ${bestCandidate.hp}/${bestCandidate.maxHp})`
+        );
+      }
+    }
+  }
+
+  public applyEarthStoneskin(
+    caster: Player,
+    weaponDef: WeaponDef
+  ): void {
+    const candidates = this.party && this.party.length > 0 ? this.party : [caster];
+    const stoneskinDef = DataLoader.getInstance().getStatusEffect('stoneskin') || {
+      id: 'stoneskin',
+      name: 'Stoneskin',
+      durationMs: weaponDef.stoneskinDurationMs ?? 4000,
+      tickIntervalMs: 4000,
+      damagePerTick: 0,
+      damageTakenMultiplier: 0.90,
+      isHarmful: false,
+      color: '#a8a29e'
+    };
+
+    for (const ally of candidates) {
+      if (ally.state === 'dead' || ally.state === 'downed') continue;
+      ally.applyStatusEffect(stoneskinDef);
+      this.createFloatingText(ally.x, ally.y - 16, 'STONESKIN!', '#a8a29e');
+    }
+    console.log(`[Combat:Earth] 🪨 Stoneskin applied to party (-10% damage taken for 4s)!`);
+  }
+
+  public applyNatureRegrowth(
+    caster: Player,
+    weaponDef: WeaponDef
+  ): void {
+    const radiusTiles = weaponDef.attackRangeTiles ?? 4;
+    const casterTile = {
+      x: Math.floor(caster.x / caster.tileSize),
+      y: Math.floor(caster.y / caster.tileSize)
+    };
+
+    const candidates = this.party && this.party.length > 0 ? this.party : [caster];
+    let bestCandidate: Player | null = null;
+    let lowestHpRatio = 1.0;
+
+    for (const ally of candidates) {
+      if (ally.state === 'dead' || ally.state === 'downed') continue;
+      const aTile = {
+        x: Math.floor(ally.x / ally.tileSize),
+        y: Math.floor(ally.y / ally.tileSize)
+      };
+      const dist = Math.max(Math.abs(casterTile.x - aTile.x), Math.abs(casterTile.y - aTile.y));
+      if (dist <= radiusTiles && (ally.hp < ally.maxHp || ally.criticalHp < ally.maxCriticalHp)) {
+        const hpRatio = (ally.hp + ally.criticalHp) / (ally.maxHp + ally.maxCriticalHp);
+        if (hpRatio < lowestHpRatio) {
+          lowestHpRatio = hpRatio;
+          bestCandidate = ally;
+        }
+      }
+    }
+
+    const targetAlly = bestCandidate || caster;
+    if (targetAlly.state === 'dead' || targetAlly.state === 'downed') return;
+
+    // Director Rule: Exactly one active Regrowth per caster
+    const oldTarget = this.casterRegrowthTargets.get(caster.id);
+    if (oldTarget && oldTarget !== targetAlly && oldTarget.hasStatusEffect('regrowth')) {
+      oldTarget.removeStatusEffect('regrowth');
+      console.log(`[Combat:Nature] 🌿 Regrowth shifted from ${oldTarget.entityName} to ${targetAlly.entityName}!`);
+    }
+
+    const regrowthDef = DataLoader.getInstance().getStatusEffect('regrowth') || {
+      id: 'regrowth',
+      name: 'Regrowth',
+      durationMs: weaponDef.regrowthDurationMs ?? 4000,
+      tickIntervalMs: 1000,
+      damagePerTick: 0,
+      healPerTick: 1,
+      isHarmful: false,
+      color: '#22c55e'
+    };
+
+    targetAlly.applyStatusEffect(regrowthDef);
+    this.casterRegrowthTargets.set(caster.id, targetAlly);
+    this.createFloatingText(targetAlly.x, targetAlly.y - 16, 'REGROWTH!', '#22c55e');
+    console.log(`[Combat:Nature] 🌿 Regrowth placed on ${targetAlly.entityName} (1 HP/s for 4s)!`);
+  }
+
+  public applyWindLinePierce(
+    caster: Player,
+    primaryTarget: Entity,
+    damage: number,
+    _weaponDef: WeaponDef,
+    weaponId: string
+  ): void {
+    if (!this.enemies || this.enemies.length === 0) return;
+
+    const dx = primaryTarget.x - caster.x;
+    const dy = primaryTarget.y - caster.y;
+    const len = Math.sqrt(dx * dx + dy * dy);
+    if (len === 0) return;
+
+    const ux = dx / len;
+    const uy = dy / len;
+    const tileSize = primaryTarget.tileSize || 32;
+    const maxPastDist = 3.0 * tileSize + 4; // up to 3 tiles past primary target
+    const maxCorridorHalfWidth = 1.0 * tileSize; // 1-tile corridor
+
+    const candidates: { enemy: Enemy; proj: number }[] = [];
+
+    for (const enemy of this.enemies) {
+      if (enemy === primaryTarget || enemy.state === 'dead' || enemy.state === 'downed') continue;
+
+      const ex = enemy.x - primaryTarget.x;
+      const ey = enemy.y - primaryTarget.y;
+
+      // Projection along the shot line (must be > 0, i.e., behind primary target)
+      const proj = ex * ux + ey * uy;
+      if (proj <= 0 || proj > maxPastDist) continue;
+
+      // Perpendicular distance from shot centerline
+      const perp = Math.abs(ex * uy - ey * ux);
+      if (perp > maxCorridorHalfWidth) continue;
+
+      candidates.push({ enemy, proj });
+    }
+
+    // Sort nearest to primary target first
+    candidates.sort((a, b) => a.proj - b.proj);
+
+    // Hit up to 2 extra enemies behind primary target
+    const hitList = candidates.slice(0, 2);
+    for (let i = 0; i < hitList.length; i++) {
+      const { enemy } = hitList[i];
+      console.log(`[Combat:Wind] 💨 Piercing wind slices through ${enemy.entityName} for ${damage.toFixed(1)} damage!`);
+      this.createAttackEffect(primaryTarget.x, primaryTarget.y, enemy.x, enemy.y, 0xa7f3d0);
+      this.createFloatingText(enemy.x, enemy.y - 10, `-${damage.toFixed(1)} (Pierce)`, '#a7f3d0');
+      enemy.isAggroed = true;
+      const downed = enemy.takeDamage(damage);
+      if (downed) {
+        this.handleTargetDefeated(caster, enemy, weaponId);
+      }
+    }
   }
 
   private handleTargetDefeated(killer: Player, target: Entity, weaponId: string): void {

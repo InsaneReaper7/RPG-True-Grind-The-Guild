@@ -527,6 +527,14 @@ export class DataLoader {
         description = 'Proficiency with dark magic to enfeeble foes with weakening curses and destructive shadow.';
       } else if (weapon.id === 'arcane_magic') {
         description = 'Proficiency with arcane magic to siphon raw mana and unleash pure magical energy.';
+      } else if (weapon.id === 'water_magic' || id === 'water_magic') {
+        description = 'Proficiency with water magic. Unleashes tidal bolts that slow enemy movement by 20% and mend the most injured ally within range for 2 HP per hit. Cast through the Water Staff. Home Band: Band 2 (Abyssal Depths).';
+      } else if (weapon.id === 'earth_magic' || id === 'earth_magic') {
+        description = 'Proficiency with earth magic. Hurls heavy stone strikes with a 20% chance to stun foes for 2s, granting all party members Stoneskin (-10% damage taken for 4s, refreshed on cast). Cast through the Earth Staff. Home Band: Band 2 (Abyssal Depths).';
+      } else if (weapon.id === 'nature_magic' || id === 'nature_magic') {
+        description = 'Proficiency with nature magic. Discharges thorny bolts with a 30% chance to inflict a 6s decaying poison (2 dmg/tick) and grants Regrowth (1 HP/s HoT for 4s) to the most injured ally, limited to one active Regrowth per caster. Cast through the Nature Staff. Home Band: All dungeon bands & wilderness.';
+      } else if (weapon.id === 'wind_magic' || id === 'wind_magic') {
+        description = 'Proficiency with wind magic. Casts swift, low-cost cutting gales (1000ms, 14 EN) that pierce through up to 3 lined-up enemies within a 1-tile corridor. Cast through the Wind Staff. Home Band: Band 4 (Glacial Depths).';
       } else if (weapon.id === 'staff' || weapon.id.endsWith('_staff')) {
         description = 'Proficiency with two-handed staves in melee combat.';
       } else if (weapon.id === 'fist') {

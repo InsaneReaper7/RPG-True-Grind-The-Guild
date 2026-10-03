@@ -259,6 +259,66 @@
       "profession": "enchanting",
       "school": "healing",
       "description": "Binds a Healing Magical Crystal into a hardwood staff, granting dedicated combat healing support for party members."
+    },
+    {
+      "id": "craft_water_staff",
+      "name": "Water Staff",
+      "station": "magical_weapon_station",
+      "requiredLevel": 0,
+      "ingredients": {
+        "staff": 1,
+        "water_crystal": 1
+      },
+      "resultWeaponId": "water_staff",
+      "expGranted": 120,
+      "profession": "enchanting",
+      "school": "water",
+      "description": "Binds a Water Magical Crystal into a hardwood staff, casting tidal bolts that slow enemy movement while restoring health to injured allies."
+    },
+    {
+      "id": "craft_earth_staff",
+      "name": "Earth Staff",
+      "station": "magical_weapon_station",
+      "requiredLevel": 0,
+      "ingredients": {
+        "staff": 1,
+        "earth_crystal": 1
+      },
+      "resultWeaponId": "earth_staff",
+      "expGranted": 120,
+      "profession": "enchanting",
+      "school": "earth",
+      "description": "Binds an Earth Magical Crystal into a hardwood staff, striking with stone bolts that stun foes and shield the party with Stoneskin."
+    },
+    {
+      "id": "craft_nature_staff",
+      "name": "Nature Staff",
+      "station": "magical_weapon_station",
+      "requiredLevel": 0,
+      "ingredients": {
+        "staff": 1,
+        "nature_crystal": 1
+      },
+      "resultWeaponId": "nature_staff",
+      "expGranted": 120,
+      "profession": "enchanting",
+      "school": "nature",
+      "description": "Binds a Nature Magical Crystal into a hardwood staff, unleashing thorn bolts that poison foes and grant Regrowth to allies."
+    },
+    {
+      "id": "craft_wind_staff",
+      "name": "Wind Staff",
+      "station": "magical_weapon_station",
+      "requiredLevel": 0,
+      "ingredients": {
+        "staff": 1,
+        "wind_crystal": 1
+      },
+      "resultWeaponId": "wind_staff",
+      "expGranted": 120,
+      "profession": "enchanting",
+      "school": "wind",
+      "description": "Binds a Wind Magical Crystal into a hardwood staff, casting swift gale bolts that pierce through up to 3 lined-up enemies."
     }
   ]
 }
