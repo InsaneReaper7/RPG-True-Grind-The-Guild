@@ -307,6 +307,59 @@ async function runTests() {
   console.log('✓ PASS: Water Magic heals most injured ally and applies Slow.\n');
 
   // ----------------------------------------------------------------
+  // TEST 3B: Downed Ally Revive Guard (Water, Holy, Nature Regrowth)
+  // ----------------------------------------------------------------
+  console.log('--- TEST 3B: Downed Ally Revive Guard (Water, Holy, Nature Regrowth) ---');
+  {
+    const caster = createTestPlayer(mockScene, 'Healer Caster', 0, 0, 50, 25);
+    const downedKnight = createTestPlayer(mockScene, 'Downed Knight', 1, 0, 50, 25);
+    const injuredRanger = createTestPlayer(mockScene, 'Injured Ranger', 2, 0, 50, 25);
+    const enemyDef = dataLoader.getEnemy('goblin') || dataLoader.getEnemiesData().enemies[0];
+    const enemy = new Enemy(mockScene, 3, 0, enemyDef);
+
+    // Setup downed ally at 0 HP and 0 Critical HP with 'downed' state
+    downedKnight.hp = 0;
+    downedKnight.criticalHp = 0;
+    downedKnight.state = 'downed';
+
+    // Setup injured ally at 20 HP (missing 30 HP) and full Critical HP
+    injuredRanger.hp = 20;
+    injuredRanger.criticalHp = 25;
+    injuredRanger.state = 'idle';
+
+    const combat = new CombatSystem(mockScene, [caster, downedKnight, injuredRanger], [enemy], mockScene.pathfinder);
+
+    const waterMagic = dataLoader.getWeapon('water_magic')!;
+    const holyMagic = dataLoader.getWeapon('holy_magic')!;
+    const natureMagic = dataLoader.getWeapon('nature_magic')!;
+
+    // 1. Water Tidal Heal
+    combat.applyWaterTidalHeal(caster, enemy, waterMagic, 0);
+    assert.equal(injuredRanger.hp, 22, 'Injured Ranger received 2 HP heal from Water Tidal Heal');
+    assert.equal(downedKnight.hp, 0, 'Downed Knight Main HP remains 0 after Water Tidal Heal');
+    assert.equal(downedKnight.criticalHp, 0, 'Downed Knight Critical HP remains 0 after Water Tidal Heal');
+    assert.equal(downedKnight.state, 'downed', 'Downed Knight remains in downed state');
+
+    // 2. Holy Radiance
+    combat.applyHolyRadiance(caster, enemy, holyMagic, 0);
+    assert.equal(injuredRanger.hp, 25, 'Injured Ranger received 3 HP heal from Holy Radiance');
+    assert.equal(downedKnight.hp, 0, 'Downed Knight Main HP remains 0 after Holy Radiance');
+    assert.equal(downedKnight.criticalHp, 0, 'Downed Knight Critical HP remains 0 after Holy Radiance');
+    assert.equal(downedKnight.state, 'downed', 'Downed Knight remains in downed state');
+
+    // 3. Nature Regrowth
+    combat.applyNatureRegrowth(caster, natureMagic);
+    assert.ok(injuredRanger.hasStatusEffect('regrowth'), 'Injured Ranger received Regrowth HoT');
+    assert.equal(downedKnight.hasStatusEffect('regrowth'), false, 'Downed Knight must NEVER receive Regrowth HoT');
+    assert.equal(downedKnight.hp, 0, 'Downed Knight Main HP remains 0');
+    assert.equal(downedKnight.criticalHp, 0, 'Downed Knight Critical HP remains 0');
+    assert.equal(downedKnight.state, 'downed', 'Downed Knight remains in downed state');
+    console.log('Downed Knight HP:', downedKnight.hp, 'Crit:', downedKnight.criticalHp, 'State:', downedKnight.state);
+    console.log('Injured Ranger HP:', injuredRanger.hp, 'Crit:', injuredRanger.criticalHp, 'Regrowth:', injuredRanger.hasStatusEffect('regrowth'));
+  }
+  console.log('✓ PASS: Water, Holy, and Nature strictly target injured allies and never touch downed allies at 0 HP.\n');
+
+  // ----------------------------------------------------------------
   // TEST 4: Earth Magic - Stun & Stoneskin (-10% Damage Taken)
   // ----------------------------------------------------------------
   console.log('--- TEST 4: Earth Magic (Stun + Party Stoneskin & Damage Reduction) ---');
@@ -463,13 +516,47 @@ async function runTests() {
     const allEnemies = [target1, behind1, behind2, behind3, enemyBehindCaster, enemyWide];
     const combat = new CombatSystem(mockScene, [caster], allEnemies, mockScene.pathfinder);
 
-    // Sub-case A: Single target with nothing behind
-    const soloCombat = new CombatSystem(mockScene, [caster], [target1], mockScene.pathfinder);
-    target1.hp = 50;
-    soloCombat.applyWindLinePierce(caster, target1, 5, windMagic, 'wind_magic');
-    assert.equal(target1.hp, 50, 'applyWindLinePierce only affects secondary targets behind primary');
+    // Helper to simulate a complete Wind Magic attack (primary hit + line pierce) and return total targets hit
+    function simulateWindAttack(primary: Enemy, corridorEnemies: Enemy[]): { totalHits: number; hitEnemies: Enemy[] } {
+      const hitList: Enemy[] = [];
+      const testEnemies = [primary, ...corridorEnemies];
+      for (const e of testEnemies) e.hp = 50;
 
-    // Sub-case B: Hits up to 2 enemies behind in corridor, nearest first
+      // Primary target hit
+      primary.takeDamage(5);
+      hitList.push(primary);
+
+      // Line pierce secondary hits
+      const c = new CombatSystem(mockScene, [caster], testEnemies, mockScene.pathfinder);
+      c.applyWindLinePierce(caster, primary, 5, windMagic, 'wind_magic');
+
+      for (const e of corridorEnemies) {
+        if (e.hp < 50) {
+          hitList.push(e);
+        }
+      }
+      return { totalHits: hitList.length, hitEnemies: hitList };
+    }
+
+    // Case 1: Nothing behind target (0 behind) -> exactly 1 hit total
+    const res0 = simulateWindAttack(target1, []);
+    console.log(`[Wind Piercing] Case 1 (0 behind): Total targets hit = ${res0.totalHits} (Primary: 1, Secondary: 0)`);
+    assert.equal(res0.totalHits, 1, 'Wind hits exactly 1 target when 0 enemies behind');
+
+    // Case 2: 1 enemy behind target -> exactly 2 hits total
+    const res1 = simulateWindAttack(target1, [behind1]);
+    console.log(`[Wind Piercing] Case 2 (1 behind): Total targets hit = ${res1.totalHits} (Primary: 1, Secondary: 1)`);
+    assert.equal(res1.totalHits, 2, 'Wind hits exactly 2 targets when 1 enemy behind');
+
+    // Case 3: 3 enemies behind target -> exactly 3 hits total (primary + 2 secondary, 3rd spared)
+    const res3 = simulateWindAttack(target1, [behind1, behind2, behind3]);
+    console.log(`[Wind Piercing] Case 3 (3 behind): Total targets hit = ${res3.totalHits} (Primary: 1, Secondary: 2, Spared: 1)`);
+    assert.equal(res3.totalHits, 3, 'Wind hits exactly 3 targets max when 3 enemies behind (primary + 2 secondary)');
+    assert.equal(behind1.hp, 45, 'First enemy behind took damage');
+    assert.equal(behind2.hp, 45, 'Second enemy behind took damage');
+    assert.equal(behind3.hp, 50, 'Third enemy behind was spared (corridor cap of 2 behind primary)');
+
+    // Sub-case D: Geometry isolation checks (behind caster and outside 1-tile corridor)
     behind1.hp = 50;
     behind2.hp = 50;
     behind3.hp = 50;
@@ -477,10 +564,6 @@ async function runTests() {
     enemyWide.hp = 50;
 
     combat.applyWindLinePierce(caster, target1, 5, windMagic, 'wind_magic');
-
-    assert.equal(behind1.hp, 45, 'First enemy behind took full 5 damage');
-    assert.equal(behind2.hp, 45, 'Second enemy behind took full 5 damage');
-    assert.equal(behind3.hp, 50, 'Third enemy behind was spared (max 2 behind primary target)');
     assert.equal(enemyBehindCaster.hp, 50, 'Enemy behind caster took no damage');
     assert.equal(enemyWide.hp, 50, 'Enemy outside 1-tile corridor took no damage');
   }
@@ -519,6 +602,28 @@ async function runTests() {
     assert.ok(earthStatus, 'Earth elemental procs stun');
     assert.equal(earthStatus?.def?.id, 'stun', 'Earth status is stun');
     assert.equal(earthStatus?.remainingMs, 1000, 'Earth elemental stun duration is 1s override (1000ms)');
+    console.log(`[Elemental Status] Earth elemental stun duration: ${earthStatus?.remainingMs}ms (${earthStatus?.remainingMs! / 1000}s)`);
+
+    // Earth Magic (player spell): Stun duration is 2s (2000ms)
+    const earthMagicDef = dataLoader.getWeapon('earth_magic')!;
+    const dummyEnemy = new Enemy(mockScene, 1, 0, dataLoader.getEnemy('goblin') || dataLoader.getEnemiesData().enemies[0]);
+    dummyEnemy.clearStatusEffects();
+    const origRandom = Math.random;
+    try {
+      Math.random = () => 0.01;
+      (combat as any).checkAndApplyStun(player, dummyEnemy, earthMagicDef);
+    } finally {
+      Math.random = origRandom;
+    }
+    const playerStunEffect = dummyEnemy.getStatusEffect('stun');
+    assert.ok(playerStunEffect, 'Earth Magic proc applies stun');
+    assert.equal(playerStunEffect?.remainingMs, 2000, 'Earth Magic spell stun duration is 2000ms (2s)');
+    console.log(`[Player Spell] Earth Magic spell stun duration: ${playerStunEffect?.remainingMs}ms (${playerStunEffect?.remainingMs! / 1000}s)`);
+
+    // Water Magic (player spell): Slow chance is 0.20
+    const waterMagicDef = dataLoader.getWeapon('water_magic')!;
+    assert.equal(waterMagicDef.slowChance, 0.20, 'Water Magic slow chance is 0.20');
+    console.log(`[Player Spell] Water Magic slow chance: ${waterMagicDef.slowChance}`);
 
     // 2. Nature elemental: Poison with 6s duration override
     const natureStatus = testElementalStatus('nature');

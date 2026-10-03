@@ -1111,10 +1111,16 @@ export class DungeonGenerator {
         const favoured = bandFavoured[band] || bandFavoured[1];
 
         let chosenSchool = '';
-        if (elementalRng() < 0.50) {
+        const schoolRoll = elementalRng();
+        if (schoolRoll < 0.50) {
           chosenSchool = favoured[Math.floor(elementalRng() * favoured.length)];
+        } else if (schoolRoll < 0.62) {
+          // Director Decision: Nature has a fixed 12% share of elemental rolls across all bands
+          chosenSchool = 'nature';
         } else {
-          chosenSchool = allSchools[Math.floor(elementalRng() * allSchools.length)];
+          // Remaining 38% spread pool distributed across non-nature schools
+          const spreadPool = allSchools.filter((s) => s !== 'nature');
+          chosenSchool = spreadPool[Math.floor(elementalRng() * spreadPool.length)];
         }
 
         // Disabled schools (gap schools: water, earth, nature, wind) are treated as NO SPAWN (null roll)

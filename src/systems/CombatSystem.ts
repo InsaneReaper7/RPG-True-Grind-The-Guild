@@ -2535,7 +2535,7 @@ export class CombatSystem {
     let lowestHpRatio = 1.0;
 
     for (const ally of candidates) {
-      if (ally.state === 'dead' || ally.state === 'downed') continue;
+      if (ally.state === 'dead' || ally.state === 'downed' || (ally.hp <= 0 && ally.criticalHp <= 0)) continue;
       const aTile = {
         x: Math.floor(ally.x / ally.tileSize),
         y: Math.floor(ally.y / ally.tileSize)
@@ -2556,7 +2556,7 @@ export class CombatSystem {
         this.createHealEffect(bestCandidate.x, bestCandidate.y);
         this.createFloatingText(bestCandidate.x, bestCandidate.y - 14, `+${restored} HP (Radiance)`, '#22c55e');
         console.log(
-          `[Combat:Holy] ☀️ Radiance pulse healed ${bestCandidate.entityName} for ${restored} HP! (HP: ${bestCandidate.hp}/${bestCandidate.maxHp})`
+          `[Combat:Holy] ☀️ Radiance pulse healed ${bestCandidate.entityName} for ${restored} HP! (HP: ${bestCandidate.hp}/${bestCandidate.maxHp}, Crit: ${bestCandidate.criticalHp}/${bestCandidate.maxCriticalHp})`
         );
       }
     }
@@ -2605,7 +2605,7 @@ export class CombatSystem {
     let lowestHpRatio = 1.0;
 
     for (const ally of candidates) {
-      if (ally.state === 'dead' || ally.state === 'downed') continue;
+      if (ally.state === 'dead' || ally.state === 'downed' || (ally.hp <= 0 && ally.criticalHp <= 0)) continue;
       const aTile = {
         x: Math.floor(ally.x / ally.tileSize),
         y: Math.floor(ally.y / ally.tileSize)
@@ -2626,7 +2626,7 @@ export class CombatSystem {
         this.createHealEffect(bestCandidate.x, bestCandidate.y);
         this.createFloatingText(bestCandidate.x, bestCandidate.y - 14, `+${restored} HP (Tidal)`, '#0284c7');
         console.log(
-          `[Combat:Water] 🌊 Tidal surge healed ${bestCandidate.entityName} for ${restored} HP! (HP: ${bestCandidate.hp}/${bestCandidate.maxHp})`
+          `[Combat:Water] 🌊 Tidal surge healed ${bestCandidate.entityName} for ${restored} HP! (HP: ${bestCandidate.hp}/${bestCandidate.maxHp}, Crit: ${bestCandidate.criticalHp}/${bestCandidate.maxCriticalHp})`
         );
       }
     }
@@ -2649,7 +2649,7 @@ export class CombatSystem {
     };
 
     for (const ally of candidates) {
-      if (ally.state === 'dead' || ally.state === 'downed') continue;
+      if (ally.state === 'dead' || ally.state === 'downed' || (ally.hp <= 0 && ally.criticalHp <= 0)) continue;
       ally.applyStatusEffect(stoneskinDef);
       this.createFloatingText(ally.x, ally.y - 16, 'STONESKIN!', '#a8a29e');
     }
@@ -2671,7 +2671,7 @@ export class CombatSystem {
     let lowestHpRatio = 1.0;
 
     for (const ally of candidates) {
-      if (ally.state === 'dead' || ally.state === 'downed') continue;
+      if (ally.state === 'dead' || ally.state === 'downed' || (ally.hp <= 0 && ally.criticalHp <= 0)) continue;
       const aTile = {
         x: Math.floor(ally.x / ally.tileSize),
         y: Math.floor(ally.y / ally.tileSize)
@@ -2687,7 +2687,7 @@ export class CombatSystem {
     }
 
     const targetAlly = bestCandidate || caster;
-    if (targetAlly.state === 'dead' || targetAlly.state === 'downed') return;
+    if (targetAlly.state === 'dead' || targetAlly.state === 'downed' || (targetAlly.hp <= 0 && targetAlly.criticalHp <= 0)) return;
 
     // Director Rule: Exactly one active Regrowth per caster
     const oldTarget = this.casterRegrowthTargets.get(caster.id);
