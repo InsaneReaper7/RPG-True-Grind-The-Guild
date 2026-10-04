@@ -911,16 +911,16 @@ export class DungeonGenerator {
         const [minB, maxB] = roomConfig?.bushesRange ?? (
           room.type === 'gathering' ? [2, 4] : room.type === 'light_combat' ? [1, 3] : room.type === 'heavy_combat' ? [2, 5] : [0, 0]
         );
-        // Floors 1-5: Increase tree node ratio by ~50% (~1.5x wood yield) via enriched node pool
-        const isEarlyFloor = (floorNumber ?? 1) <= 5;
-        const nodeTypes = isEarlyFloor
-          ? ['woodcutting_tree', 'foraging_bush', 'woodcutting_tree', 'mining_rock']
-          : ['foraging_bush', 'woodcutting_tree', 'mining_rock'];
+        const nodeTypes = ['foraging_bush', 'woodcutting_tree', 'mining_rock'];
         const vegetableNodeChance = (config as any).vegetableNodeChance ?? 0.10;
         const bushCount = Math.min(Math.max(0, interiorTiles.length - tileIdx), randInt(minB, maxB));
+        let roomTreeCount = 0;
         for (let i = 0; i < bushCount; i++) {
           const isRareVegetable = rng() < vegetableNodeChance;
           const nodeTypeId = isRareVegetable ? 'vegetable_node' : nodeTypes[(rIdx + i) % nodeTypes.length];
+          if (nodeTypeId === 'woodcutting_tree') {
+            roomTreeCount++;
+          }
           bushSpawns.push({
             x: interiorTiles[tileIdx].x,
             y: interiorTiles[tileIdx].y,
@@ -928,6 +928,24 @@ export class DungeonGenerator {
             nodeTypeId
           });
           tileIdx++;
+        }
+
+        // Floors 1-5: Add ~50% bonus tree nodes without altering foraging bush (herbs) or mining rock (ore) counts
+        const isEarlyFloor = options?.floorNumber !== undefined && options.floorNumber >= 1 && options.floorNumber <= 5;
+        if (isEarlyFloor && roomTreeCount > 0) {
+          // Exactly 1 bonus tree per 2 baseline trees (e.g. 1 tree -> 50% chance for +1; 2 trees -> +1 guaranteed; 3 trees -> 1 + 50% for 2nd)
+          const bonusTrees = Math.floor(roomTreeCount / 2) + ((roomTreeCount % 2 === 1 && rng() < 0.50) ? 1 : 0);
+          for (let b = 0; b < bonusTrees; b++) {
+            if (tileIdx < interiorTiles.length) {
+              bushSpawns.push({
+                x: interiorTiles[tileIdx].x,
+                y: interiorTiles[tileIdx].y,
+                roomIndex: rIdx,
+                nodeTypeId: 'woodcutting_tree'
+              });
+              tileIdx++;
+            }
+          }
         }
       }
       // 'entrance' room: 0 bushes, 0 enemies
