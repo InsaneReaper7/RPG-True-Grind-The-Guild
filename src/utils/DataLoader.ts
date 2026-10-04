@@ -51,9 +51,9 @@ import type {
   EnchantingRecipesData
 } from '../types/game.ts';
 import { HiddenSkillSystem } from '../systems/HiddenSkillSystem.ts';
-import { resolveGearStats, getBaseItemId, isCraftingClass } from './gearResolver.ts';
+import { resolveGearStats, getBaseItemId, isCraftingClass, resolvePartyGearSource, getPartyGearOwnership, canEquipBowDaggerSidearm } from './gearResolver.ts';
 
-export { resolveGearStats, getBaseItemId, isCraftingClass };
+export { resolveGearStats, getBaseItemId, isCraftingClass, resolvePartyGearSource, getPartyGearOwnership, canEquipBowDaggerSidearm };
 
 export class DataLoader {
   private static instance: DataLoader;

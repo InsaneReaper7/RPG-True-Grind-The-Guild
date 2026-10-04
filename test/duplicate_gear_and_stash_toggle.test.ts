@@ -576,12 +576,20 @@ async function runTests() {
     assert.strictEqual(hero.equippedWeapon.id, 'katana', 'Crafter equipped weapon is Katana');
     assert.strictEqual(hero.getItemCount('katana'), 0, 'Crafter bag now has 0 unequipped Katana');
 
-    // Companion attempts to equip Katana
+    // Companion attempts to equip Katana -> Under Guild-wide ownership rule, it moves from Hero to Valerie!
     const equipValerieRes = hud.handleSlotDrop('main', { itemId: 'katana', itemType: 'weapon', itemSlot: 'main' }, valerie);
-    assert.strictEqual(equipValerieRes, false, 'Companion equip of Katana MUST BE REJECTED (0 available in bag or stash)');
-    assert.strictEqual(valerie.equippedWeapon.id, 'bows', 'Companion weapon remains bows');
+    assert.strictEqual(equipValerieRes, true, 'Companion equip of Katana succeeds by moving it from Hero');
+    assert.strictEqual(valerie.equippedWeapon.id, 'katana', 'Companion equipped weapon is now Katana');
+    assert.strictEqual(hero.equippedWeapon.id, 'fist', 'Hero main hand slot reverted to default (fist)');
+    assert.notStrictEqual(hero.equippedWeapon.id, 'katana', 'Katana must NOT be equipped on both characters at once');
 
-    console.log('✓ Test 2 Passed: Single crafted copy equip lockout strictly enforced across party members.');
+    // Conservation: total count across all bags, stockpile and equipped slots strictly remains 1
+    const heroEquippedCount = hero.equippedWeapon.id === 'katana' ? 1 : 0;
+    const valerieEquippedCount = valerie.equippedWeapon.id === 'katana' ? 1 : 0;
+    const totalKatanaCount = hero.getItemCount('katana') + valerie.getItemCount('katana') + gameState.getItemCount('katana') + heroEquippedCount + valerieEquippedCount;
+    assert.strictEqual(totalKatanaCount, 1, 'Total Katana count across guild bags, stockpile, and equipped slots stays strictly 1');
+
+    console.log('✓ Test 2 Passed: Single crafted copy equip moves from member to member without duplication.');
   }
 
   // -------------------------------------------------------------

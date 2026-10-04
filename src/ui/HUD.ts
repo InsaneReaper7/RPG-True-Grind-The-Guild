@@ -10,7 +10,7 @@ import { ResearchSystem } from '../systems/ResearchSystem.ts';
 import { TutorialSystem, type TutorialStepDef } from '../systems/TutorialSystem.ts';
 import { CraftingSystem } from '../systems/CraftingSystem.ts';
 import { ConsumableSystem } from '../systems/ConsumableSystem.ts';
-import { isCraftingClass, getBaseItemId, canEquipBowDaggerSidearm } from '../utils/gearResolver.ts';
+import { isCraftingClass, getBaseItemId, canEquipBowDaggerSidearm, resolvePartyGearSource, getPartyGearOwnership } from '../utils/gearResolver.ts';
 import { isTypingInTextField, disableGameKeyboard, enableGameKeyboard, initKeyboardGuards } from '../utils/inputGuard.ts';
 
 export interface AnnouncementItem {
@@ -4298,9 +4298,15 @@ export class HUD {
       icon: string;
       statText: string;
       count: number;
+      wornCount?: number;
+      wornDetails?: { memberName: string; count: number }[];
     }
 
     const items: InventoryDisplayItem[] = [];
+
+    const partyMembers = (this.currentParty && this.currentParty.length > 0)
+      ? this.currentParty
+      : (this.currentPlayer ? [this.currentPlayer] : []);
 
     const getAvailableCount = (itemId: string): number => {
       let total = gameState.getItemCount(itemId);
@@ -4321,7 +4327,7 @@ export class HUD {
           const icon = isShield ? '🛡️' : (w.category === 'ranged' ? '🏹' : (w.category === 'magic' ? '✨' : '⚔️'));
           const slot = isShield ? 'offhand' : 'main';
           const displaySlot = isShield ? 'Shield / Off-Hand' : (w.twoHanded ? '2H Weapon' : '1H Weapon');
-          const count = getAvailableCount(w.id);
+          const ownership = getPartyGearOwnership(w.id, partyMembers, gameState, this.isOutpost, this.currentPlayer);
           items.push({
             id: w.id,
             name: w.name,
@@ -4330,7 +4336,9 @@ export class HUD {
             displaySlot,
             icon,
             statText: `Dmg: ${w.baseDamage}` + (w.baseBlock ? ` | Block: ${Math.round(w.baseBlock * 100)}%` : '') + ` · ${w.weight || 0} kg`,
-            count
+            count: ownership.totalOwned,
+            wornCount: ownership.wornCount,
+            wornDetails: ownership.wornDetails
           });
         }
       }
@@ -4340,7 +4348,7 @@ export class HUD {
       for (const a of allArmors) {
         if (a.slot === 'helmet' || a.slot === 'body') {
           const icon = a.slot === 'helmet' ? '🪖' : '🛡️';
-          const count = getAvailableCount(a.id);
+          const ownership = getPartyGearOwnership(a.id, partyMembers, gameState, this.isOutpost, this.currentPlayer);
           items.push({
             id: a.id,
             name: a.name,
@@ -4349,7 +4357,9 @@ export class HUD {
             displaySlot: a.slot === 'helmet' ? 'Helmet' : 'Body Armor',
             icon,
             statText: `+${a.hpBonus} HP · ${a.weight || 0} kg`,
-            count
+            count: ownership.totalOwned,
+            wornCount: ownership.wornCount,
+            wornDetails: ownership.wornDetails
           });
         }
       }
@@ -4359,7 +4369,7 @@ export class HUD {
       for (const a of allArmors) {
         if (a.slot === 'necklace' || a.slot === 'ring' || a.slot === 'accessory') {
           const icon = a.slot === 'necklace' ? '📿' : (a.slot === 'ring' ? '💍' : '🔮');
-          const count = getAvailableCount(a.id);
+          const ownership = getPartyGearOwnership(a.id, partyMembers, gameState, this.isOutpost, this.currentPlayer);
           items.push({
             id: a.id,
             name: a.name,
@@ -4368,7 +4378,9 @@ export class HUD {
             displaySlot: a.slot.charAt(0).toUpperCase() + a.slot.slice(1),
             icon,
             statText: `+${a.hpBonus} HP · ${a.weight || 0} kg`,
-            count
+            count: ownership.totalOwned,
+            wornCount: ownership.wornCount,
+            wornDetails: ownership.wornDetails
           });
         }
       }
@@ -4440,8 +4452,16 @@ export class HUD {
     for (const item of filteredItems) {
       const isOwned = item.count > 0;
       const canDrag = isOwned || debugBypass;
+      let badgeLabel = `x${item.count}`;
+      if (item.wornCount && item.wornCount > 0) {
+        if (item.wornDetails && item.wornDetails.length === 1) {
+          badgeLabel = `x${item.count} (${item.wornCount} worn by ${item.wornDetails[0].memberName})`;
+        } else {
+          badgeLabel = `x${item.count} (${item.wornCount} worn)`;
+        }
+      }
       const countBadge = isOwned
-        ? `<span style="font-size: 9px; color: #a78bfa; background: rgba(139, 92, 246, 0.2); padding: 1px 5px; border-radius: 3px; font-weight: bold;">x${item.count}</span>`
+        ? `<span style="font-size: 9px; color: #a78bfa; background: rgba(139, 92, 246, 0.2); padding: 1px 5px; border-radius: 3px; font-weight: bold;">${badgeLabel}</span>`
         : (debugBypass
           ? `<span style="font-size: 9px; color: #f59e0b; background: rgba(245, 158, 11, 0.2); padding: 1px 5px; border-radius: 3px;">DEBUG</span>`
           : `<span style="font-size: 9px; color: #9ca3af; background: rgba(55, 65, 81, 0.5); padding: 1px 5px; border-radius: 3px;">Craft Required</span>`);
@@ -4567,32 +4587,45 @@ export class HUD {
     const gameState = GameState.getInstance();
     const debugBypass = typeof window !== 'undefined' && Boolean((window as any).__debugBypassEquipCheck);
 
-    const hasInPersonal = member.getItemCount(payload.itemId) > 0;
-    const hasInStockpile = gameState.getItemCount(payload.itemId) > 0;
-    if (!debugBypass && !hasInPersonal && !hasInStockpile) {
+    const partyMembers = (this.currentParty && this.currentParty.length > 0)
+      ? this.currentParty
+      : (this.currentPlayer ? [this.currentPlayer] : []);
+
+    const source = resolvePartyGearSource(payload.itemId, member, partyMembers, gameState, this.isOutpost);
+    if (!debugBypass && !source) {
       const itemDef = dataLoader.getArmor(payload.itemId) || dataLoader.getWeapon(payload.itemId);
       this.showToast(`❌ Cannot equip ${itemDef?.name || payload.itemId}: You do not own this equipment! Craft it first at an Outpost station.`, 'error', 3000);
       return false;
     }
 
-    // Resolve specific item/instance ID (prefer personal bag instance, then stockpile instance, then base ID)
-    let equipItemId = payload.itemId;
-    if ((member.inventory.get(equipItemId) || 0) === 0) {
-      for (const [key, qty] of member.inventory.entries()) {
-        if (qty > 0 && getBaseItemId(key) === payload.itemId) {
-          equipItemId = key;
-          break;
+    const equipItemId = source ? source.exactItemId : payload.itemId;
+
+    // Helper to consume/move the gear from its resolved source after successful equip
+    const consumeSource = () => {
+      if (!source || debugBypass) return;
+      if (source.type === 'personal_bag') {
+        member.removeItem(source.exactItemId, 1);
+      } else if (source.type === 'party_bag' && source.member) {
+        source.member.removeItem(source.exactItemId, 1);
+      } else if (source.type === 'stockpile') {
+        gameState.consumeItem(source.exactItemId, 1);
+      } else if (source.type === 'equipped' && source.member && source.slot) {
+        const donor = source.member;
+        const donorName = donor.entityName || (donor as any).name || 'Party Member';
+        const targetName = member.entityName || (member as any).name || 'Party Member';
+        const donorItemDef = dataLoader.getArmor(source.exactItemId) || dataLoader.getWeapon(source.exactItemId);
+        const itemName = donorItemDef?.name || getBaseItemId(source.exactItemId);
+
+        if (source.slot === 'main') {
+          donor.equipWeapon(null, this.isOutpost);
+        } else if (source.slot === 'offhand') {
+          donor.equipOffhandWeapon(null, this.isOutpost);
+        } else {
+          donor.equipArmorSlot(source.slot as ArmorSlot, null, this.isOutpost);
         }
+        this.showToast(`${itemName} moved from ${donorName} to ${targetName}.`, 'info');
       }
-    }
-    if ((member.inventory.get(equipItemId) || 0) === 0 && gameState.getItemCount(equipItemId) === 0) {
-      for (const [key, qty] of gameState.getInventoryMap().entries()) {
-        if (qty > 0 && getBaseItemId(key) === payload.itemId) {
-          equipItemId = key;
-          break;
-        }
-      }
-    }
+    };
 
     // 1. Incompatible slot assignment
     if (['helmet', 'body', 'necklace', 'ring', 'accessory'].includes(targetSlot)) {
@@ -4622,9 +4655,7 @@ export class HUD {
       const success = member.equipArmorSlot(targetSlot as ArmorSlot, armor, this.isOutpost);
       if (success) {
         if (!debugBypass) {
-          if (!member.removeItem(equipItemId, 1)) {
-            gameState.consumeItem(equipItemId, 1);
-          }
+          consumeSource();
           if (prevArmor) {
             member.addItem(prevArmor.id, 1);
           }
@@ -4659,9 +4690,7 @@ export class HUD {
       const success = member.equipWeapon(weapon, this.isOutpost);
       if (success) {
         if (!debugBypass) {
-          if (!member.removeItem(equipItemId, 1)) {
-            gameState.consumeItem(equipItemId, 1);
-          }
+          consumeSource();
           if (prevWeapon) {
             member.addItem(prevWeapon.id, 1);
           }
@@ -4709,9 +4738,7 @@ export class HUD {
       const success = member.equipOffhandWeapon(weapon, this.isOutpost);
       if (success) {
         if (!debugBypass) {
-          if (!member.removeItem(equipItemId, 1)) {
-            gameState.consumeItem(equipItemId, 1);
-          }
+          consumeSource();
           if (prevOffhand) {
             member.addItem(prevOffhand.id, 1);
           }

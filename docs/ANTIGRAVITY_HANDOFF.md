@@ -1113,3 +1113,36 @@ Never ask Antigravity to jump ahead in this list — each milestone assumes the 
   - Updated legacy assertion routing in `test/milestone34.test.ts` and `test/milestone_second_boss.test.ts` passed 100%.
   - Production build: `npm run build` succeeds cleanly.
 
+---
+
+### Bugfix: Guild-Wide Gear Ownership & Paperdoll/Stash Unification (2026-10-04)
+
+**Resolved and shipped: Gear belongs to the guild, not the crafter. Equipment crafted or found by any party member can be equipped by any party member.**
+- **1. Root Cause Diagnosis**:
+  - `HUD.handleSlotDrop` checked ownership exclusively against `targetMember.getItemCount(payload.itemId)` and `gameState.getItemCount(payload.itemId)`. Because crafted gear lands in the crafter's personal bag (`crafter.addItem`), another party member attempting to equip it was blocked with "Cannot equip <Item> — you do not own this equipment, craft it first."
+  - Furthermore, `GearItemInstance` crafting IDs were not resolved through `getBaseItemId` when checking target bag / stockpile.
+- **2. Shared Ownership & Source Resolution Helper (`src/utils/gearResolver.ts`)**:
+  - Implemented `resolvePartyGearSource` and `getPartyGearOwnership`.
+  - Priority order strictly enforced:
+    1. Target's personal bag
+    2. Another party member's bag (prefers highest bonus instance across members)
+    3. Stockpile (Outpost only)
+    4. Equipped on another party member (stripping gear only occurs if no free copy exists anywhere)
+  - Exact instance IDs in drag payloads are preserved with 100% fidelity without substitution.
+  - Moving equipped gear unequips it from the donor (reverting donor slot to default fist/empty) and triggers toast `"<Item> moved from <Donor> to <Target>."`. Target's prior equipped gear goes to target's personal bag.
+- **3. Conservation & Outpost-Only Equipping**:
+  - Gear equips are strictly Outpost-only (unchanged from existing rules in `Player.ts` and `HUD.ts`).
+  - Total item counts across all bags, stockpile, and equipped slots are strictly conserved (no duplication, no loss).
+  - One item cannot be equipped on two characters simultaneously.
+- **4. Equipment Stash Display & Filter**:
+  - Unified ownership check: Stash uses `getPartyGearOwnership(item.id, party, gameState, isOutpost, currentPlayer)`.
+  - Split badge displayed when teammates are wearing copies: `x{total} ({wornCount} worn by {memberName})`.
+  - "Owned Only" toggle considers worn items as owned.
+- **5. Verification & Test Evidence**:
+  - Dedicated verification test suite `test/guild_gear_ownership_equip.test.ts` (8/8 passed).
+  - Updated companion equip assertion in `test/duplicate_gear_and_stash_toggle.test.ts` (4/4 passed).
+  - Regression suites passed: `test/milestone35.test.ts` (10/10), `test/crafting_mastery_apprentice.test.ts` (7/7), `test/playtestRound1.test.ts` (10/10).
+  - Production build: `npm run build` succeeds cleanly.
+  - Full test suite: `npm test -- --quiet` (107/107 suites passed, 100% green).
+
+
