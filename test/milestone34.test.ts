@@ -456,7 +456,7 @@ async function runMilestone34Tests() {
     assert.equal(bossRoom.id, expectedBossIdx, `Boss room on Floor ${floorNum} must be the deepest room`);
 
     // Exactly 1 boss spawned in boss room center, 0 bushes
-    const bossSpawns = dungeon.enemySpawns.filter((e) => e.enemyId === 'abyssal_colossus' || e.enemyId === 'glacial_sovereign');
+    const bossSpawns = dungeon.enemySpawns.filter((e) => e.enemyId === 'abyssal_colossus' || e.enemyId === 'magma_tyrant' || e.enemyId === 'glacial_sovereign');
     assert.equal(bossSpawns.length, 1, `Exactly 1 Boss must spawn on milestone floor ${floorNum}`);
     assert.equal(bossSpawns[0].roomIndex, bossRoom.id, 'Boss must spawn in the designated boss room');
     assert.equal(bossSpawns[0].x, bossRoom.centerX);
@@ -473,7 +473,7 @@ async function runMilestone34Tests() {
     const dungeon = DungeonGenerator.generate(dungeonConfig, rng, { floorNumber: floorNum, forceBoss: false });
     const bossRooms = dungeon.rooms.filter((r) => r.type === 'boss');
     assert.equal(bossRooms.length, 0, `Non-milestone Floor ${floorNum} must NOT generate a boss room when suppressed`);
-    const bossSpawns = dungeon.enemySpawns.filter((e) => e.enemyId === 'abyssal_colossus' || e.enemyId === 'glacial_sovereign');
+    const bossSpawns = dungeon.enemySpawns.filter((e) => e.enemyId === 'abyssal_colossus' || e.enemyId === 'magma_tyrant' || e.enemyId === 'glacial_sovereign');
     assert.equal(bossSpawns.length, 0, `Non-milestone Floor ${floorNum} must have 0 boss spawns`);
   }
   console.log('  ✓ Non-milestone floors (1-4) cleanly suppress boss room when not triggered.');
@@ -512,14 +512,17 @@ async function runMilestone34Tests() {
 
     for (const espawn of dungeon.enemySpawns) {
       totalEnemyCount++;
-      if (espawn.enemyId === 'abyssal_colossus' || espawn.enemyId === 'glacial_sovereign') {
+      if (espawn.enemyId === 'abyssal_colossus' || espawn.enemyId === 'magma_tyrant' || espawn.enemyId === 'glacial_sovereign') {
         totalBossCount++;
       } else if (espawn.enemyId === 'void_knight') {
         totalEpicCount++;
       } else if (espawn.enemyId === 'orc_warrior') {
         totalEliteCount++;
       } else {
-        assert.ok(dungeonConfig.enemyPool.includes(espawn.enemyId), `Spawn ${espawn.enemyId} must be in enemyPool`);
+        const isCommon = dungeonConfig.enemyPool.includes(espawn.enemyId) ||
+          dungeonConfig.regions.some((r: any) => r.enemyPool.some((e: any) => e.enemyId === espawn.enemyId)) ||
+          espawn.enemyId.includes('elemental');
+        assert.ok(isCommon, `Spawn ${espawn.enemyId} must be a valid common or elemental enemy`);
         totalCommonCount++;
       }
     }

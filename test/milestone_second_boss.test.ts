@@ -304,24 +304,24 @@ async function runSecondBossMilestoneTests() {
   assert.strictEqual(floor5BossSpawns[0].enemyId, 'abyssal_colossus', 'Floor 5 (Abyssal Depths) must spawn Abyssal Colossus');
   console.log('  ✓ Floor 5 (Abyssal Depths) correctly routed Abyssal Colossus.');
 
-  // 2B: Floor 10 (Infernal Caldera) -> Explicit Deliberate Abyssal Colossus (Zero Glacial Sovereign Bleed)
+  // 2B: Floor 10 (Infernal Caldera) -> Explicit Deliberate Magma Tyrant (Zero Glacial Sovereign Bleed)
   const floor10Dungeon = DungeonGenerator.generate(dungeonConfig, rng, { floorNumber: 10 });
   const floor10BossRoom = floor10Dungeon.rooms.find((r) => r.type === 'boss');
   assert.ok(floor10BossRoom, 'Floor 10 must generate a boss chamber');
   const floor10BossSpawns = floor10Dungeon.enemySpawns.filter((e) => e.roomIndex === floor10BossRoom.id);
   assert.strictEqual(floor10BossSpawns.length, 1, 'Floor 10 must spawn exactly 1 boss');
-  assert.strictEqual(floor10BossSpawns[0].enemyId, 'abyssal_colossus', 'Floor 10 (Infernal Caldera) must explicitly spawn Abyssal Colossus');
+  assert.strictEqual(floor10BossSpawns[0].enemyId, 'magma_tyrant', 'Floor 10 (Infernal Caldera) must explicitly spawn Magma Tyrant');
   
-  // Verify 50 random seeds on Floor 10: 100% abyssal_colossus, 0% glacial_sovereign (no ice boss in volcanic caldera)
+  // Verify 50 random seeds on Floor 10: 100% magma_tyrant, 0% glacial_sovereign (no ice boss in volcanic caldera)
   for (let s = 1; s <= 50; s++) {
     const seedRng = makeSeededRng(s * 777);
     const d10 = DungeonGenerator.generate(dungeonConfig, seedRng, { floorNumber: 10 });
     const bRoom = d10.rooms.find((r) => r.type === 'boss');
     assert.ok(bRoom, `Seed ${s}: Floor 10 must generate boss room`);
     const bSpawns = d10.enemySpawns.filter((e) => e.roomIndex === bRoom.id);
-    assert.strictEqual(bSpawns[0].enemyId, 'abyssal_colossus', `Seed ${s}: Floor 10 must spawn abyssal_colossus, never an ice boss`);
+    assert.strictEqual(bSpawns[0].enemyId, 'magma_tyrant', `Seed ${s}: Floor 10 must spawn magma_tyrant, never an ice boss`);
   }
-  console.log('  ✓ Floor 10 (Infernal Caldera) explicitly routed Abyssal Colossus across 50 random seeds with 0% Glacial Sovereign bleed.');
+  console.log('  ✓ Floor 10 (Infernal Caldera) explicitly routed Magma Tyrant across 50 random seeds with 0% Glacial Sovereign bleed.');
 
   // 2C: Floor 15 (Glacial Caverns) -> Guaranteed Glacial Sovereign
   const floor15Dungeon = DungeonGenerator.generate(dungeonConfig, rng, { floorNumber: 15 });
@@ -341,7 +341,7 @@ async function runSecondBossMilestoneTests() {
   for (const f of [1, 2, 3, 4, 6, 7, 8, 9, 11, 12, 13, 14]) {
     const d = DungeonGenerator.generate(dungeonConfig, rng, { floorNumber: f, forceBoss: false });
     assert.strictEqual(d.rooms.filter((r) => r.type === 'boss').length, 0, `Floor ${f} must NOT generate a boss room when suppressed`);
-    assert.strictEqual(d.enemySpawns.filter((e) => e.enemyId === 'abyssal_colossus' || e.enemyId === 'glacial_sovereign').length, 0, `Floor ${f} must have 0 boss spawns`);
+    assert.strictEqual(d.enemySpawns.filter((e) => e.enemyId === 'abyssal_colossus' || e.enemyId === 'magma_tyrant' || e.enemyId === 'glacial_sovereign').length, 0, `Floor ${f} must have 0 boss spawns`);
   }
   console.log('  ✓ Non-boss floors cleanly suppress boss rooms without any spawn bleed.');
   console.log('✓ PASS: Boss spawn logic integration and region routing confirmed.');

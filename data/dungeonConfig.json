@@ -49,6 +49,7 @@
   "bossEnemyId": "abyssal_colossus",
   "bossPool": [
     "abyssal_colossus",
+    "magma_tyrant",
     "glacial_sovereign"
   ],
   "bossMilestoneInterval": 5,
@@ -135,16 +136,18 @@
       "waterTexture": "tile-caldera-water",
       "accentColor": "#f97316",
       "tagline": "The Scorched Subterranean Core",
-      "bossEnemyId": "abyssal_colossus",
+      "bossEnemyId": "magma_tyrant",
       "corePercentage": 70,
       "carryOverPercentage": 30,
       "eliteEnemyId": "orc_warrior",
       "epicEnemyId": "void_knight",
       "enemyPool": [
-        { "enemyId": "skeleton_archer", "weight": 40, "type": "core" },
-        { "enemyId": "spider", "weight": 30, "type": "core" },
-        { "enemyId": "undead", "weight": 15, "type": "carry_over" },
-        { "enemyId": "goblin_archer", "weight": 15, "type": "carry_over" }
+        { "enemyId": "cinder_hound", "weight": 25, "type": "core" },
+        { "enemyId": "magma_brute", "weight": 18, "type": "core" },
+        { "enemyId": "ash_wraith", "weight": 15, "type": "core" },
+        { "enemyId": "obsidian_sentry", "weight": 12, "type": "core" },
+        { "enemyId": "spider", "weight": 15, "type": "carry_over" },
+        { "enemyId": "undead", "weight": 15, "type": "carry_over" }
       ]
     },
     {

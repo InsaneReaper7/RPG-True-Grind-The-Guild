@@ -902,6 +902,181 @@ export class TextureGenerator {
       }
     }
 
+    // 4n. Infernal Caldera Procedural Avatars (Milestone: Band 3 Infernal Caldera)
+    // Cinder Hound Avatar
+    if (!scene.textures.exists('cinder_hound-avatar')) {
+      const size = 28;
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      const cx = size / 2;
+      const cy = size / 2;
+      // Charcoal/cinder body silhouette
+      g.fillStyle(0x271714, 1);
+      g.fillRoundedRect(cx - 9, cy - 6, 18, 12, 4);
+      // Head
+      g.fillStyle(0x3a1d17, 1);
+      g.fillCircle(cx + 6, cy - 4, 5);
+      // Fiery ember ears
+      g.fillStyle(0xe11d48, 1);
+      g.fillTriangle(cx + 5, cy - 9, cx + 8, cy - 10, cx + 7, cy - 4);
+      // Glowing molten muzzle & eyes
+      g.fillStyle(0xf97316, 1);
+      g.fillCircle(cx + 9, cy - 4, 1.8);
+      g.fillStyle(0xfef08a, 1);
+      g.fillCircle(cx + 6, cy - 6, 1.2);
+      // Fiery ember spine/mane
+      g.fillStyle(0xf97316, 0.9);
+      g.fillTriangle(cx - 6, cy - 9, cx - 3, cy - 6, cx - 8, cy - 5);
+      g.fillTriangle(cx - 1, cy - 10, cx + 2, cy - 6, cx - 3, cy - 5);
+      // Ember tail
+      g.lineStyle(2, 0xe11d48, 0.85);
+      g.lineBetween(cx - 9, cy, cx - 13, cy - 4);
+      // Glowing sparks
+      g.fillStyle(0xfde047, 0.8);
+      g.fillCircle(cx - 4, cy + 2, 1);
+      g.fillCircle(cx + 3, cy + 1, 1);
+
+      g.generateTexture('cinder_hound-avatar', size, size);
+      g.destroy();
+    }
+
+    // Magma Brute Avatar
+    if (!scene.textures.exists('magma_brute-avatar')) {
+      const size = 32;
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      const cx = size / 2;
+      const cy = size / 2;
+      // Heavy volcanic rock torso & shoulders
+      g.fillStyle(0x1c1917, 1);
+      g.fillCircle(cx, cy, 12);
+      // Hardened basalt shoulder pauldrons
+      g.fillStyle(0x292524, 1);
+      g.fillCircle(cx - 10, cy - 4, 5);
+      g.fillCircle(cx + 10, cy - 4, 5);
+      // Head / brow
+      g.fillStyle(0x44403c, 1);
+      g.fillRect(cx - 6, cy - 10, 12, 6);
+      // Glowing magma fissures
+      g.lineStyle(1.5, 0xe11d48, 0.9);
+      g.lineBetween(cx - 6, cy - 4, cx, cy + 4);
+      g.lineBetween(cx + 6, cy - 4, cx, cy + 4);
+      g.lineBetween(cx, cy + 4, cx - 4, cy + 9);
+      g.lineBetween(cx, cy + 4, cx + 4, cy + 9);
+      // Molten core
+      g.fillStyle(0xf97316, 1);
+      g.fillCircle(cx, cy, 3);
+      g.fillStyle(0xfef08a, 1);
+      g.fillCircle(cx, cy, 1.5);
+      // Glowing eyes
+      g.fillStyle(0xfacc15, 1);
+      g.fillCircle(cx - 3, cy - 7, 1.2);
+      g.fillCircle(cx + 3, cy - 7, 1.2);
+
+      g.generateTexture('magma_brute-avatar', size, size);
+      g.destroy();
+    }
+
+    // Ash Wraith Avatar
+    if (!scene.textures.exists('ash_wraith-avatar')) {
+      const size = 28;
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      const cx = size / 2;
+      const cy = size / 2;
+      // Spectral smoky shroud
+      g.fillStyle(0x334155, 0.85);
+      g.fillCircle(cx, cy - 4, 8);
+      // Trailing ash wisps
+      g.beginPath();
+      g.moveTo(cx - 8, cy - 4);
+      g.lineTo(cx - 5, cy + 10);
+      g.lineTo(cx, cy + 6);
+      g.lineTo(cx + 5, cy + 11);
+      g.lineTo(cx + 8, cy - 4);
+      g.closePath();
+      g.fillPath();
+      // Shadowy hood recess
+      g.fillStyle(0x0f172a, 0.95);
+      g.fillCircle(cx, cy - 5, 5);
+      // Sinister glowing eyes (violet/ember)
+      g.fillStyle(0xa855f7, 1);
+      g.fillCircle(cx - 2.5, cy - 5, 1.2);
+      g.fillCircle(cx + 2.5, cy - 5, 1.2);
+      // Floating soot flecks
+      g.fillStyle(0x94a3b8, 0.6);
+      g.fillCircle(cx - 8, cy + 3, 1);
+      g.fillCircle(cx + 9, cy + 1, 1);
+      g.fillCircle(cx + 7, cy - 8, 1);
+
+      g.generateTexture('ash_wraith-avatar', size, size);
+      g.destroy();
+    }
+
+    // Obsidian Sentry Avatar
+    if (!scene.textures.exists('obsidian_sentry-avatar')) {
+      const size = 30;
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      const cx = size / 2;
+      const cy = size / 2;
+      // Angular faceted obsidian shield/body
+      g.fillStyle(0x0a0a0f, 1);
+      g.fillTriangle(cx, cy - 12, cx - 11, cy + 2, cx + 11, cy + 2);
+      g.fillTriangle(cx, cy + 12, cx - 11, cy + 2, cx + 11, cy + 2);
+      // Beveled facets
+      g.lineStyle(1.5, 0x4338ca, 0.7);
+      g.lineBetween(cx, cy - 12, cx, cy + 12);
+      g.lineBetween(cx - 11, cy + 2, cx + 11, cy + 2);
+      // Outer glassy sheen
+      g.lineStyle(1, 0x818cf8, 0.8);
+      g.strokeTriangle(cx, cy - 12, cx - 11, cy + 2, cx + 11, cy + 2);
+      // Fiery central rune eye
+      g.fillStyle(0xef4444, 0.9);
+      g.fillCircle(cx, cy + 1, 3);
+      g.fillStyle(0xfde047, 1);
+      g.fillCircle(cx, cy + 1, 1.5);
+
+      g.generateTexture('obsidian_sentry-avatar', size, size);
+      g.destroy();
+    }
+
+    // Magma Tyrant Avatar
+    if (!scene.textures.exists('magma_tyrant-avatar')) {
+      const size = 36;
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      const cx = size / 2;
+      const cy = size / 2;
+      // Outer radiant heat aura
+      g.fillStyle(0xef4444, 0.35);
+      g.fillCircle(cx, cy, 16);
+      // Titanic molten basalt torso
+      g.fillStyle(0x271714, 1);
+      g.fillCircle(cx, cy + 2, 12);
+      // Basalt shoulder boulders
+      g.fillStyle(0x451a03, 1);
+      g.fillCircle(cx - 12, cy, 6);
+      g.fillCircle(cx + 12, cy, 6);
+      // Magma horn crest
+      g.fillStyle(0x991b1b, 1);
+      g.fillTriangle(cx - 8, cy - 8, cx - 14, cy - 15, cx - 4, cy - 10);
+      g.fillTriangle(cx + 8, cy - 8, cx + 14, cy - 15, cx + 4, cy - 10);
+      // Blazing crown spires
+      g.fillStyle(0xf97316, 1);
+      g.fillTriangle(cx, cy - 16, cx - 4, cy - 9, cx + 4, cy - 9);
+      // Incandescent molten lava fissures
+      g.lineStyle(2, 0xf97316, 1);
+      g.lineBetween(cx - 8, cy - 2, cx, cy + 6);
+      g.lineBetween(cx + 8, cy - 2, cx, cy + 6);
+      g.lineBetween(cx, cy + 6, cx, cy + 12);
+      // Blazing core heart
+      g.fillStyle(0xfef08a, 1);
+      g.fillCircle(cx, cy + 3, 3.5);
+      // Fierce glowing eyes
+      g.fillStyle(0xffffff, 1);
+      g.fillCircle(cx - 4, cy - 5, 1.5);
+      g.fillCircle(cx + 4, cy - 5, 1.5);
+
+      g.generateTexture('magma_tyrant-avatar', size, size);
+      g.destroy();
+    }
+
     // 5. Target Selection Reticle
     if (!scene.textures.exists('target-reticle')) {
       const size = 32;

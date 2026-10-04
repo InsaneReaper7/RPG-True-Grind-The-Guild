@@ -940,6 +940,222 @@
           ]
         }
       ]
+    },
+    {
+      "id": "cinder_hound",
+      "name": "Cinder Hound",
+      "tier": "common",
+      "hp": 32,
+      "criticalHpMax": 16,
+      "meleeDamage": 7,
+      "aggroRadius": 7,
+      "attackIntervalMs": 900,
+      "moveSpeed": 100,
+      "attackRangeTiles": 1,
+      "dropChance": 0.4,
+      "burnChance": 0.15,
+      "description": "A predatory hound born from the fiery depths of the Infernal Caldera. Its fangs burn with smoldering embers, inflicting burning wounds.",
+      "harvest": [
+        {
+          "method": "salvage",
+          "item": "monster_meat",
+          "weight": 2,
+          "tags": [
+            "cooking",
+            "provisioning"
+          ]
+        },
+        {
+          "method": "salvage",
+          "item": "bone",
+          "weight": 2,
+          "tags": [
+            "blacksmithing",
+            "bowyer"
+          ]
+        }
+      ],
+      "corpseHarvest": {
+        "skinning": {
+          "item": "wolf_pelt",
+          "name": "Wolf Pelt",
+          "count": 1,
+          "exp": 15,
+          "tags": [
+            "armorsmithing"
+          ]
+        },
+        "butchering": {
+          "item": "wolf_meat",
+          "name": "Wolf Meat",
+          "count": 1,
+          "exp": 15,
+          "tags": [
+            "cooking"
+          ]
+        }
+      }
+    },
+    {
+      "id": "magma_brute",
+      "name": "Magma Brute",
+      "tier": "common",
+      "hp": 65,
+      "criticalHpMax": 32,
+      "meleeDamage": 14,
+      "aggroRadius": 6,
+      "attackIntervalMs": 1700,
+      "moveSpeed": 70,
+      "attackRangeTiles": 1,
+      "dropChance": 0.4,
+      "stunChance": 0.15,
+      "description": "A lumbering volcanic titan constructed from cooling lava crust and raw stone. Strikes with crushing force that briefly stuns opponents.",
+      "harvest": [
+        {
+          "method": "salvage",
+          "item": "ore",
+          "weight": 3,
+          "tags": [
+            "blacksmithing",
+            "armorsmithing"
+          ]
+        },
+        {
+          "method": "salvage",
+          "item": "bone",
+          "weight": 1,
+          "tags": [
+            "blacksmithing",
+            "bowyer"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ash_wraith",
+      "name": "Ash Wraith",
+      "tier": "common",
+      "hp": 28,
+      "criticalHpMax": 14,
+      "meleeDamage": 9,
+      "aggroRadius": 8,
+      "attackIntervalMs": 1250,
+      "moveSpeed": 80,
+      "attackRangeTiles": 4,
+      "dropChance": 0.4,
+      "curseChance": 0.2,
+      "description": "A sinister apparition condensed from the suffocating soot of the caldera. Flings shadowy embers from afar that curse their quarry.",
+      "harvest": [
+        {
+          "method": "salvage",
+          "item": "ectoplasm",
+          "weight": 2,
+          "tags": [
+            "enchanting",
+            "alchemy"
+          ]
+        },
+        {
+          "method": "salvage",
+          "item": "bone",
+          "weight": 2,
+          "tags": [
+            "bowyer",
+            "blacksmithing"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "obsidian_sentry",
+      "name": "Obsidian Sentry",
+      "tier": "common",
+      "hp": 75,
+      "criticalHpMax": 37,
+      "meleeDamage": 5,
+      "aggroRadius": 6,
+      "attackIntervalMs": 1600,
+      "moveSpeed": 65,
+      "attackRangeTiles": 1,
+      "dropChance": 0.4,
+      "description": "An ancient bulwark sculpted from razor-sharp volcanic glass. Imbued with immense structural endurance to block intruders.",
+      "harvest": [
+        {
+          "method": "salvage",
+          "item": "ore",
+          "weight": 3,
+          "tags": [
+            "blacksmithing",
+            "armorsmithing"
+          ]
+        },
+        {
+          "method": "salvage",
+          "item": "clay",
+          "weight": 2,
+          "tags": [
+            "masonry",
+            "crafting"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "magma_tyrant",
+      "name": "Magma Tyrant",
+      "tier": "boss",
+      "hp": 1200,
+      "criticalHpMax": 600,
+      "meleeDamage": 30,
+      "aggroRadius": 8,
+      "attackIntervalMs": 1400,
+      "moveSpeed": 80,
+      "attackRangeTiles": 1,
+      "researchPoints": 25,
+      "burnChance": 0.35,
+      "description": "A titanic elemental lord forged within the caldera core. Sweeps foes with devastating cleaves that inflict burning immolation.",
+      "harvest": [
+        {
+          "method": "salvage",
+          "item": "void_plate",
+          "weight": 1,
+          "tags": [
+            "blacksmithing",
+            "armorsmithing"
+          ],
+          "note": "Dense volcanic plate infused with otherworldly void essence (50% drop)"
+        },
+        {
+          "method": "salvage",
+          "item": "void_essence",
+          "weight": 1,
+          "tags": [
+            "alchemy",
+            "enchanting"
+          ],
+          "note": "Coalesced planar void energy radiating fierce heat (50% drop)"
+        },
+        {
+          "method": "guaranteed",
+          "item": "fire_gemstone",
+          "weight": 1,
+          "tags": [
+            "enchanting",
+            "crafting"
+          ],
+          "note": "Guaranteed 1 Elemental Gemstone (Fire or Lightning 50/50)"
+        },
+        {
+          "method": "rare_drop",
+          "item": "void_core",
+          "weight": 1,
+          "tags": [
+            "enchanting",
+            "crafting"
+          ],
+          "note": "Ancient pulsating void core (10% chase drop)"
+        }
+      ]
     }
   ]
 }

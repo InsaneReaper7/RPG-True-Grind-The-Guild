@@ -8844,7 +8844,7 @@ export class HUD {
           id: e.id,
           name: e.name,
           badge: `${(e.tier || 'COMMON').toUpperCase()} ENEMY`,
-          description: `Hostile entity encountered in dungeon depths. Behavior: aggressive patrol within ${e.aggroRadius ?? 5} tiles.`,
+          description: (e as any).description || `Hostile entity encountered in dungeon depths. Behavior: aggressive patrol within ${e.aggroRadius ?? 5} tiles.`,
           stats
         });
       }

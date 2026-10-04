@@ -847,8 +847,8 @@ export class CombatSystem {
                     }
                   }
 
-                  // Milestone 34: Abyssal Colossus Unique Mechanic — Titanic Cleave Shockwave
-                  if (enemy.enemyData.id === 'abyssal_colossus' && actualDamage > 0) {
+                  // Milestone 34: Boss Unique Mechanic — Titanic Cleave Shockwave (Abyssal Colossus & Magma Tyrant)
+                  if ((enemy.enemyData.id === 'abyssal_colossus' || enemy.enemyData.id === 'magma_tyrant') && actualDamage > 0) {
                     const splashDamage = Math.max(1, Math.round(actualDamage * 0.5));
                     for (const member of this.party) {
                       if (member !== target && member.state !== 'downed' && member.state !== 'dead') {
@@ -960,6 +960,48 @@ export class CombatSystem {
                       target.applyStatusEffect(poisonDef);
                       this.createFloatingText(target.x, target.y - 28, 'POISONED!', poisonDef.color || '#16a34a');
                       console.log(`[Combat] 🕷️ ${enemy.entityName} inflicts Poison on ${target.entityName}!`);
+                    }
+                  }
+
+                  // Milestone: Infernal Caldera - Burn proc (Cinder Hound, Magma Tyrant)
+                  // Uses standard Burn definition from statusEffects.json (4000ms duration, 1000ms interval, 4 dmg/tick = 4 DPS)
+                  if (enemy.enemyData.burnChance && actualDamage > 0 && !targetDowned) {
+                    if (Math.random() < enemy.enemyData.burnChance) {
+                      const burnDef = DataLoader.getInstance().getStatusEffect('burn');
+                      if (burnDef) {
+                        target.applyStatusEffect(burnDef);
+                        this.createFloatingText(target.x, target.y - 28, 'BURNING!', burnDef.color || '#f97316');
+                        console.log(`[Combat] 🔥 ${enemy.entityName} inflicts Burn on ${target.entityName}!`);
+                      }
+                    }
+                  }
+
+                  // Milestone: Infernal Caldera - Stun proc (Magma Brute only: 1s duration)
+                  // Note: Magma Tyrant does NOT stun. Stun is strictly limited to Magma Brute (1s) and Abyssal Colossus (Milestone 34 shockwave).
+                  if (enemy.enemyData.id === 'magma_brute' && enemy.enemyData.stunChance && actualDamage > 0 && !targetDowned) {
+                    if (Math.random() < enemy.enemyData.stunChance) {
+                      const stunDuration = 1000;
+                      const loadedStun = DataLoader.getInstance().getStatusEffect('stun');
+                      if (loadedStun) {
+                        const stunDef = { ...loadedStun, durationMs: stunDuration, tickIntervalMs: stunDuration };
+                        target.applyStatusEffect(stunDef);
+                        target.stopMovement();
+                        this.createFloatingText(target.x, target.y - 28, 'STUNNED!', stunDef.color || '#facc15');
+                        console.log(`[Combat] 💫 ${enemy.entityName} inflicts Stun (${stunDuration}ms) on ${target.entityName}!`);
+                      }
+                    }
+                  }
+
+                  // Milestone: Infernal Caldera - Curse proc (Ash Wraith)
+                  // Uses standard Curse definition from statusEffects.json (-25% outgoing damage for 5s, NO DoT)
+                  if (enemy.enemyData.curseChance && actualDamage > 0 && !targetDowned) {
+                    if (Math.random() < enemy.enemyData.curseChance) {
+                      const curseDef = DataLoader.getInstance().getStatusEffect('curse');
+                      if (curseDef) {
+                        target.applyStatusEffect(curseDef);
+                        this.createFloatingText(target.x, target.y - 28, 'CURSED!', curseDef.color || '#a855f7');
+                        console.log(`[Combat] 💀 ${enemy.entityName} inflicts Curse on ${target.entityName}!`);
+                      }
                     }
                   }
 
@@ -2901,6 +2943,32 @@ export class CombatSystem {
               const floatColor = h.method === 'guaranteed' ? '#38bdf8' : (h.item === 'healing_gemstone' ? '#fde047' : '#a78bfa');
               this.createFloatingText(target.x, target.y - 35, `+${count} ${itemName}`, floatColor);
             }
+          }
+        } else if (target.enemyData.id === 'magma_tyrant') {
+          // Director-mandated drops for Magma Tyrant (Band 3 Milestone Boss):
+          // 1. void_plate: 1 at 50%
+          if (Math.random() < 0.50) {
+            if (recipient) recipient.addItem('void_plate', 1);
+            else gameState.addItem('void_plate', 1);
+            this.createFloatingText(target.x, target.y - 35, '+1 Void Plate', '#ef4444');
+          }
+          // 2. void_essence: 1 at 50%
+          if (Math.random() < 0.50) {
+            if (recipient) recipient.addItem('void_essence', 1);
+            else gameState.addItem('void_essence', 1);
+            this.createFloatingText(target.x, target.y - 50, '+1 Void Essence', '#ef4444');
+          }
+          // 3. Gemstone: 1 guaranteed (Fire or Lightning 50/50)
+          const gemItem = Math.random() < 0.50 ? 'fire_gemstone' : 'lightning_gemstone';
+          const gemName = gemItem === 'fire_gemstone' ? 'Fire Gemstone' : 'Lightning Gemstone';
+          if (recipient) recipient.addItem(gemItem, 1);
+          else gameState.addItem(gemItem, 1);
+          this.createFloatingText(target.x, target.y - 65, `+1 ${gemName}`, '#38bdf8');
+          // 4. void_core: 10% chase drop
+          if (Math.random() < 0.10) {
+            if (recipient) recipient.addItem('void_core', 1);
+            else gameState.addItem('void_core', 1);
+            this.createFloatingText(target.x, target.y - 80, '+1 Void Core', '#c084fc');
           }
         } else {
           // Elite, Epic and Boss keep their existing tiered reward structure

@@ -181,6 +181,10 @@ export interface EnemyDef {
   harvest: HarvestItem[];
   corpseHarvest?: CorpseHarvestDef;
   poisonChance?: number;
+  burnChance?: number;
+  stunChance?: number;
+  curseChance?: number;
+  description?: string;
   researchPoints?: number | { min: number; max: number };
 }
 

@@ -1074,3 +1074,42 @@ Never ask Antigravity to jump ahead in this list — each milestone assumes the 
   - Updated legacy suite thresholds in `test/milestone47.test.ts`, `test/milestone57.test.ts`, and `test/milestone_magical_crafting.test.ts` for 10-school configuration.
   - Production build: `npm run build` succeeds cleanly.
   - Full test suite: `npm test -- --quiet` (105/105 suites passed, 100% green).
+
+---
+
+### Milestone: The Infernal Caldera (Band 3) (2026-10-04)
+
+**Resolved and shipped: Band 3 Region Roster, Magma Tyrant Milestone Boss, Drop Table Rebalancing, and Status Effects.**
+- **1. Band 3 Caldera Roster & Pool Tuning**:
+  - Implemented 4 custom caldera enemies in `data/enemies.json`:
+    - `cinder_hound` (Common, 32 HP, 7 Melee Dmg, 900ms Interval, 15% Burn proc, drops `monster_meat`, `bone`, corpse skinning `wolf_pelt`, butchering `wolf_meat`).
+    - `magma_brute` (Common, 65 HP, 14 Melee Dmg, 1700ms Interval, 15% Stun proc [1s duration], drops `ore`, `bone`).
+    - `ash_wraith` (Common, 28 HP, 9 Melee Dmg, 1250ms Interval, 4-tile range, 20% Curse proc [-25% outgoing damage for 5s, no DoT], drops `ectoplasm`, `bone`).
+    - `obsidian_sentry` (Common, 75 HP, 5 Melee Dmg, 1600ms Interval, drops `ore`, `clay`).
+  - Strict 70/30 Core vs Carry-over split in `data/dungeonConfig.json`: Core enemies (Hound 25, Brute 18, Wraith 15, Sentry 12 = 70%), Carry-over (Undead 15, Spider 15 = 30%).
+  - Removed Goblin Archer and Skeleton Archer from Band 3 to prevent bowstring dilution.
+  - Zero gemstone drops from all 4 common enemies (elemental gemstones exclusively drop from elemental enemies and the Magma Tyrant).
+- **2. Magma Tyrant (Band 3 Milestone Boss, F10)**:
+  - Base Stats: 1200 HP, 600 Critical HP (two sequential pools = 1800 total effective health), 30 Melee Damage, 1400ms attack interval, 25 Research Points.
+  - Mechanics: Cleave splash (50% damage to adjacent melee targets), Burn proc (35% chance to inflict 4s Burn at 4 DPS / 4 dmg per tick), Enrage phase at <= 50% HP (attack interval reduced to 950ms, move speed increased to 105).
+  - Explicitly NO Stun on Magma Tyrant; Stun remains unique to Magma Brute (1s) and Abyssal Colossus (Milestone 34 shockwave).
+  - Guaranteed F10 spawn in dedicated boss chamber across 100% of seeds; zero bleed into F5 or F15.
+- **3. Director-Approved Drop Table Execution**:
+  - `void_plate`: 1 at 50% chance.
+  - `void_essence`: 1 at 50% chance.
+  - Gemstone: Guaranteed 1 elemental gemstone per kill (50% Fire Gemstone, 50% Lightning Gemstone).
+  - `void_core`: 10% chase drop.
+  - Verified across 1,000 kills simulation and live drops in `CombatSystem.ts:2966-2991`.
+- **4. Procedural Avatars & Bestiary**:
+  - Registered unique procedural pixel art canvases in `src/utils/TextureGenerator.ts`: `enemy-cinder-hound`, `enemy-magma-brute`, `enemy-ash-wraith`, `enemy-obsidian-sentry`, `enemy-magma-tyrant`.
+  - Added full Bestiary entries in `src/ui/HUD.ts` with research milestones, item drop tags, and lore.
+- **5. Status Effect Hardening**:
+  - All on-hit status procs strictly reference canonical definitions from `data/statusEffects.json`:
+    - Burn: 4000ms duration, 1000ms tick interval, 4 damage per tick (4 DPS, 16 damage total).
+    - Stun: Exclusive to `magma_brute` (1000ms duration override on canonical stun).
+    - Curse: Standard 5000ms duration, 5000ms tick interval, 0 damage per tick, -25% outgoing damage reduction (`damageReductionPercent: 0.25`), no DoT.
+- **6. Verification & Test Evidence**:
+  - Dedicated verification test suite `test/milestone_infernal_caldera.test.ts` passed (all 4 sections: Bands 1 & 2 unchanged, boss routing F5/F10, gemstone exclusion, 1,000 kills drop rates).
+  - Updated legacy assertion routing in `test/milestone34.test.ts` and `test/milestone_second_boss.test.ts` passed 100%.
+  - Production build: `npm run build` succeeds cleanly.
+
