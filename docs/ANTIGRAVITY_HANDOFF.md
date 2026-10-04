@@ -1142,7 +1142,39 @@ Never ask Antigravity to jump ahead in this list — each milestone assumes the 
   - Dedicated verification test suite `test/guild_gear_ownership_equip.test.ts` (8/8 passed).
   - Updated companion equip assertion in `test/duplicate_gear_and_stash_toggle.test.ts` (4/4 passed).
   - Regression suites passed: `test/milestone35.test.ts` (10/10), `test/crafting_mastery_apprentice.test.ts` (7/7), `test/playtestRound1.test.ts` (10/10).
+---
+
+### Playtest Round 2: Quick Fixes and Poison Resistance (2026-10-04)
+
+**Resolved and shipped: Playtest Round 2 quick fixes across gear inventory management, spider poison tuning, healing staff autocast threshold, early dungeon wood gathering density, and the Poison Resistance hidden passive proficiency.**
+
+- **1. Gear Bag Store & Drop Confirmation**:
+  - **Store Button at Outpost**: Added a "Store" button on every gear entry in a bag, rendered strictly when `isOutpost` is true. Invokes `gameState.depositGearItem(player, itemId)` to move the exact instance (preserving crafter bonuses and unique properties) from bag to stockpile.
+  - **Store All Gear Button**: Added in the personal bag header at Outpost. Invokes `gameState.depositAllUnequippedGear(player)` moving all unequipped weapons and armor from the player's bag to the stockpile, leaving equipped gear strictly untouched.
+  - **Drop Gear Confirmation Modal**: Added `#drop-confirm-modal` modal markup and controller in `HUD.ts`. Dropping any gear item anywhere prompts: *"Drop {ItemName}? It will be destroyed. This can't be undone."* with Confirm (destroys) and Cancel (preserves item). Consumables and materials continue to drop directly.
+  - **Conservation**: Bag count −1 and stockpile +1, zero loss or corruption of instances. Refused outside Outpost.
+- **2. Spider Poison Proc Reduction**:
+  - In `data/enemies.json`, updated `spider.poisonChance` from `0.35` to `0.10` (10% proc chance).
+  - Maintained canonical persistent poison behavior (lasts until cured by Antidote, Cleanse, or Downed state).
+- **3. Healing Staff Autocast Threshold**:
+  - Added `healThresholdPercent: 0.70` to `WeaponDef` interface in `src/types/game.ts` and populated `data/weapons.json` (`healing_magic` and `healing_staff`).
+  - In `CombatSystem.ts` (`checkAndAutocastHealingMagic`), healer scans living non-downed allies within range and only triggers when combined HP ratio (`(hp + criticalHp) / (maxHp + maxCriticalHp)`) is `<= 0.70`.
+  - Targets the ally with the lowest combined HP ratio below threshold. If no ally is `<= 70%`, method returns `false`, smoothly falling through to normal staff melee attacks.
+- **4. Early Dungeon Wood Gathering Density**:
+  - In `src/utils/DungeonGenerator.ts`, weighted resource node selection on Floors 1–5 to 50% trees (`['woodcutting_tree', 'foraging_bush', 'woodcutting_tree', 'mining_rock']`).
+  - Yields ~1.46× (~1.5×) wood yield on F1–5 while preserving F6+ node generation and maintaining the relative lower node count on F5 (boss floor).
+- **5. Poison Resistance Hidden Skill**:
+  - Registered `'poison_resistance'` in `HIDDEN_SKILL_IDS` in `ProgressionSystem.ts` and in `data/hiddenSkills.json`.
+  - Grants +5 EXP per poison damage tick on the standard proficiency curve. Discovered on first tick; loads at Lv 0 for old saves.
+  - Tiers:
+    - Lv 1: 5% chance to cure poison on each tick.
+    - Lv 25: 25% chance to resist poison application, 5% cure per tick.
+    - Lv 50: 50% chance to resist poison application, 50% cure per tick.
+    - Lv 100: Complete immunity to poison.
+  - Floating combat text: `"RESISTED"` / `"CURED"` in poison green (`#16a34a`) and combat log entries. Automatically listed in Knowledge Base upon discovery.
+- **6. Verification & Test Evidence**:
+  - Dedicated verification test suite: `test/playtest_round2_fixes.test.ts` (all 5 items passed 100%).
+  - Full test suite run: `npm test -- --quiet` passed (108/108 suites green, including deterministic pass on `milestone20.test.ts`).
   - Production build: `npm run build` succeeds cleanly.
-  - Full test suite: `npm test -- --quiet` (107/107 suites passed, 100% green).
 
 

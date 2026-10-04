@@ -913,7 +913,7 @@
     #party-overview-modal.active {
       display: flex;
     }
-    #summon-recruit-modal, #new-game-modal, #summon-fourth-modal, #salvage-confirm-modal {
+    #summon-recruit-modal, #new-game-modal, #summon-fourth-modal, #salvage-confirm-modal, #drop-confirm-modal {
       position: absolute;
       top: 50%;
       left: 50%;
@@ -931,7 +931,7 @@
       pointer-events: auto;
       z-index: 120;
     }
-    #summon-recruit-modal.active, #new-game-modal.active, #summon-fourth-modal.active, #salvage-confirm-modal.active {
+    #summon-recruit-modal.active, #new-game-modal.active, #summon-fourth-modal.active, #salvage-confirm-modal.active, #drop-confirm-modal.active {
       display: flex;
     }
     /* Stockpile Overview Modal Styles */
@@ -3435,6 +3435,29 @@
           </button>
           <button id="confirm-salvage-action-btn" class="btn-action" style="background: #dc2626; border-color: #f87171; padding: 7px 16px; font-size: 12px; font-weight: bold; color: #fff; border-radius: 6px; cursor: pointer;" type="button">
             Confirm Salvage
+          </button>
+        </div>
+      </div>
+      <!-- In-Game Gear Drop Confirmation Modal (Playtest Round 2 Item 1) -->
+      <div id="drop-confirm-modal" class="custom-modal" style="width: 440px; border-color: #ef4444; box-shadow: 0 0 30px rgba(239, 68, 68, 0.35);">
+        <div class="modal-header">
+          <div>
+            <div class="modal-title" style="color: #f87171; display: flex; align-items: center; gap: 8px;">
+              <span>⚠️</span> <span id="drop-modal-title">Confirm Drop</span>
+            </div>
+            <div class="modal-subtitle">Equipment Destruction Warning</div>
+          </div>
+          <button id="close-drop-confirm-btn" class="modal-close-btn" type="button">✕</button>
+        </div>
+        <p id="drop-confirm-msg" style="font-size: 13px; color: #e2e8f0; margin: 14px 0 20px; line-height: 1.5;">
+          Drop Katana? It will be destroyed. This can't be undone.
+        </p>
+        <div style="display: flex; justify-content: flex-end; gap: 10px;">
+          <button id="cancel-drop-btn" class="btn-action" style="background: #475569; border-color: #64748b; padding: 7px 16px; font-size: 12px; font-weight: bold; color: #e2e8f0; border-radius: 6px; cursor: pointer;" type="button">
+            Cancel
+          </button>
+          <button id="confirm-drop-action-btn" class="btn-action" style="background: #dc2626; border-color: #f87171; padding: 7px 16px; font-size: 12px; font-weight: bold; color: #fff; border-radius: 6px; cursor: pointer;" type="button">
+            Confirm
           </button>
         </div>
       </div>

@@ -484,12 +484,12 @@ async function runTests() {
   console.log('--- TEST 10: AI Healing Target Selection with Drained Critical HP ---');
   {
     const healer = createTestPlayer(mockScene, 'Healer', 0, 0, 50, 25);
-    // Ally A has FULL Main HP (50/50), but drained Critical HP (5/25) -> severely endangered!
+    // Ally A has partial Main HP (25/50) and drained Critical HP (5/25) -> 30/75 = 40% (severely endangered, <= 70%)
     const allyA = createTestPlayer(mockScene, 'Ally A (Crit Drained)', 1, 0, 50, 25);
-    allyA.hp = 50;
+    allyA.hp = 25;
     allyA.criticalHp = 5;
 
-    // Ally B has partial Main HP (40/50) and full Critical HP (25/25)
+    // Ally B has partial Main HP (40/50) and full Critical HP (25/25) -> 65/75 = 86.7% (> 70%)
     const allyB = createTestPlayer(mockScene, 'Ally B (Main Light Dmg)', 2, 0, 50, 25);
     allyB.hp = 40;
     allyB.criticalHp = 25;

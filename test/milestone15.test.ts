@@ -341,16 +341,16 @@ async function runTests() {
   assert.equal(comp3A.hp, 28, 'Most damaged ally (Companion A) healed first');
   assert.equal(hero3.hp, 40, 'Hero HP untouched this cast');
 
-  // Scenario 3B: All allies at full HP, only Hero is hurt
+  // Scenario 3B: All allies at full HP, only Hero is hurt (<= 70% combined threshold: 25+25 / 75 = 66.7%)
   comp3A.hp = 50;
   comp3B.hp = 50;
-  hero3.hp = 30;
+  hero3.hp = 25;
   hero3.energy = 100;
   hero3.lastSkillUseTimes.clear();
 
   const cast3B = combatSys3.checkAndAutocastHealingMagic(hero3, 3000);
   assert.equal(cast3B, true, 'Heal succeeds');
-  assert.equal(hero3.hp, 38, 'Heals self when no other ally is injured');
+  assert.equal(hero3.hp, 33, 'Heals self when no other ally is injured');
 
   // Scenario 3C: Everyone at full HP -> MUST NOT CAST
   hero3.hp = 50;

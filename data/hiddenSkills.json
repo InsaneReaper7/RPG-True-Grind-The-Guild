@@ -161,6 +161,24 @@
         { "level": 60, "description": "+35 kg capacity, softens overweight penalty to -40%", "capacityBonus": 35, "encumbranceSpeedPenalty": 0.40 },
         { "level": 90, "description": "+50 kg capacity, softens overweight penalty to -20%", "capacityBonus": 50, "encumbranceSpeedPenalty": 0.20 }
       ]
+    },
+    {
+      "id": "poison_resistance",
+      "name": "Poison Resistance",
+      "triggerType": "onPoisonTick",
+      "eligibility": {
+        "gear": "none"
+      },
+      "baseProcChance": 0.05,
+      "procChancePerLevel": 0.01,
+      "expPerProc": 5,
+      "description": "Gradual physiological adaptation to toxins, developed by enduring poison damage. Grants chances to cleanse active poison on each damage tick and resist incoming poison applications.",
+      "tierEffects": [
+        { "level": 1, "description": "Each poison tick has a 5% chance to cure the poison", "cureOnTickChance": 0.05 },
+        { "level": 25, "description": "25% chance to resist a poison application entirely, plus 5% cure per tick", "resistApplicationChance": 0.25, "cureOnTickChance": 0.05 },
+        { "level": 50, "description": "50% chance to resist poison application, and 50% chance to cure on each tick", "resistApplicationChance": 0.50, "cureOnTickChance": 0.50 },
+        { "level": 100, "description": "Immune to poison", "poisonImmune": true }
+      ]
     }
   ]
 }

@@ -25,7 +25,8 @@ export class ProgressionSystem {
     'health_regen',
     'mana_regen',
     'energy_regen',
-    'iron_back'
+    'iron_back',
+    'poison_resistance'
   ];
 
   public static readonly ARMOR_PROFICIENCY_IDS: readonly string[] = [

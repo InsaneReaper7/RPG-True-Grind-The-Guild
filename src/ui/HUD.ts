@@ -346,6 +346,14 @@ export class HUD {
   private cancelSalvageBtn: HTMLButtonElement | null = null;
   private closeSalvageConfirmBtn: HTMLButtonElement | null = null;
 
+  // Playtest Round 2 (Item 1: Gear Drop Confirmation Modal)
+  private dropConfirmModalEl: HTMLElement | null = null;
+  private dropModalTitleEl: HTMLElement | null = null;
+  private dropConfirmMsgEl: HTMLElement | null = null;
+  private confirmDropActionBtn: HTMLButtonElement | null = null;
+  private cancelDropBtn: HTMLButtonElement | null = null;
+  private closeDropConfirmBtn: HTMLButtonElement | null = null;
+
   // Milestone: Tutorial & Onboarding Guide Elements
   private guildGuideWidgetEl: HTMLElement | null = null;
   private guideStepBadgeEl: HTMLElement | null = null;
@@ -1396,6 +1404,20 @@ export class HUD {
     }
     if (this.closeSalvageConfirmBtn) {
       this.closeSalvageConfirmBtn.onclick = () => this.closeSalvageConfirmModal();
+    }
+
+    // Drop Confirmation Modal Wiring (Playtest Round 2 Item 1)
+    this.dropConfirmModalEl = document.getElementById('drop-confirm-modal');
+    this.dropModalTitleEl = document.getElementById('drop-modal-title');
+    this.dropConfirmMsgEl = document.getElementById('drop-confirm-msg');
+    this.confirmDropActionBtn = document.getElementById('confirm-drop-action-btn') as HTMLButtonElement | null;
+    this.cancelDropBtn = document.getElementById('cancel-drop-btn') as HTMLButtonElement | null;
+    this.closeDropConfirmBtn = document.getElementById('close-drop-confirm-btn') as HTMLButtonElement | null;
+    if (this.cancelDropBtn) {
+      this.cancelDropBtn.onclick = () => this.closeDropConfirmModal();
+    }
+    if (this.closeDropConfirmBtn) {
+      this.closeDropConfirmBtn.onclick = () => this.closeDropConfirmModal();
     }
 
     if (this.debugBtnSpawnCompanion) {
@@ -4055,6 +4077,18 @@ export class HUD {
           `;
         }
 
+        const baseItemId = getBaseItemId(itemId);
+        const isGearItem = Boolean(
+          dataLoader.getWeapon(baseItemId) ||
+          dataLoader.getArmor(baseItemId) ||
+          GameState.getInstance().getGearInstance(itemId)
+        );
+
+        let storeBtnHtml = '';
+        if (isGearItem && this.isOutpost) {
+          storeBtnHtml = `<button class="party-item-store-btn btn-action" data-member-idx="${i}" data-item-id="${itemId}" type="button" title="Store in Outpost stockpile" style="padding: 1px 6px; font-size: 9px; background: rgba(59, 130, 246, 0.4); border: 1px solid #3b82f6; color: #ffffff; border-radius: 3px; cursor: pointer;">Store</button>`;
+        }
+
         const isConsumable = ConsumableSystem.getInstance().isConsumable(itemId);
         let useBtnHtml = '';
         let quickSlotAssignHtml = '';
@@ -4089,6 +4123,7 @@ export class HUD {
               <span style="color: #9ca3af; font-size: 9px;">(${(itemWeight * count).toFixed(1)} kg)</span>
             </div>
             <div style="display: flex; align-items: center; gap: 3px;">
+              ${storeBtnHtml}
               ${useBtnHtml}
               ${quickSlotAssignHtml}
               ${transferOptionsHtml}
@@ -4175,7 +4210,10 @@ export class HUD {
 
           <div class="party-equip-box party-personal-inv-box">
             <div style="display: flex; justify-content: space-between; align-items: center;">
-              <span style="font-weight: bold; color: #38bdf8; font-size: 10px; text-transform: uppercase;">🎒 Personal Bag</span>
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <span style="font-weight: bold; color: #38bdf8; font-size: 10px; text-transform: uppercase;">🎒 Personal Bag</span>
+                ${this.isOutpost ? `<button class="party-store-all-gear-btn btn-action" data-member-idx="${i}" type="button" title="Move all unequipped gear from this bag to stockpile" style="padding: 1px 6px; font-size: 9px; background: rgba(59, 130, 246, 0.3); border: 1px solid #3b82f6; color: #93c5fd; border-radius: 3px; cursor: pointer;">Store all gear</button>` : ''}
+              </div>
               <span data-party-inv-count="${i}" style="font-size: 10px; color: #9ca3af;">${personalItemCount} items (${invWeight.toFixed(1)} kg)</span>
             </div>
             <div class="party-personal-inv-list" data-party-inv-list="${i}" style="display: flex; flex-direction: column; gap: 4px; max-height: 110px; overflow-y: auto; margin-top: 4px;">
@@ -4943,19 +4981,74 @@ export class HUD {
         }
       }
 
-      // Milestone 51: Discard personal item button
+      // Playtest Round 2 Item 1: Store single gear item back to stockpile (Outpost only)
+      if (target.classList.contains('party-item-store-btn') || target.closest('.party-item-store-btn')) {
+        const btn = (target.classList.contains('party-item-store-btn') ? target : target.closest('.party-item-store-btn')) as HTMLButtonElement;
+        const memberIdx = parseInt(btn.dataset.memberIdx || '-1', 10);
+        const itemId = btn.dataset.itemId || '';
+        if (memberIdx >= 0 && memberIdx < this.currentParty.length && itemId) {
+          const member = this.currentParty[memberIdx];
+          const success = GameState.getInstance().depositGearItem(member, itemId);
+          if (success) {
+            const dataLoader = DataLoader.getInstance();
+            const itemDef = dataLoader.getWeapon(itemId) || dataLoader.getArmor(itemId) || dataLoader.getItem(itemId);
+            this.showToast(`Stored 1 ${itemDef?.name || itemId} in stockpile`, 'success');
+            this.renderPartyOverviewModal(true);
+          } else {
+            this.showToast('Could not store gear in stockpile', 'warn');
+          }
+        }
+      }
+
+      // Playtest Round 2 Item 1: Store all unequipped gear from personal bag (Outpost only)
+      if (target.classList.contains('party-store-all-gear-btn') || target.closest('.party-store-all-gear-btn')) {
+        const btn = (target.classList.contains('party-store-all-gear-btn') ? target : target.closest('.party-store-all-gear-btn')) as HTMLButtonElement;
+        const memberIdx = parseInt(btn.dataset.memberIdx || '-1', 10);
+        if (memberIdx >= 0 && memberIdx < this.currentParty.length) {
+          const member = this.currentParty[memberIdx];
+          const stored = GameState.getInstance().depositAllUnequippedGear(member);
+          if (stored > 0) {
+            this.showToast(`Stored ${stored} gear item(s) from ${member.entityName}'s bag into stockpile`, 'success');
+            this.renderPartyOverviewModal(true);
+          } else {
+            this.showToast(`No unequipped gear to store in ${member.entityName}'s bag`, 'info');
+          }
+        }
+      }
+
+      // Milestone 51 & Playtest Round 2 Item 1: Discard personal item button
       if (target.classList.contains('party-item-discard-btn') || target.closest('.party-item-discard-btn')) {
         const btn = (target.classList.contains('party-item-discard-btn') ? target : target.closest('.party-item-discard-btn')) as HTMLButtonElement;
         const memberIdx = parseInt(btn.dataset.memberIdx || '-1', 10);
         const itemId = btn.dataset.itemId || '';
         if (memberIdx >= 0 && memberIdx < this.currentParty.length && itemId) {
           const member = this.currentParty[memberIdx];
-          const success = GameState.getInstance().discardItem(member, itemId, 1);
-          if (success) {
-            const dataLoader = DataLoader.getInstance();
-            const itemDef = dataLoader.getItem(itemId) || dataLoader.getWeapon(itemId) || dataLoader.getArmor(itemId) || dataLoader.getFood(itemId);
-            this.showToast(`Dropped 1 ${itemDef?.name || itemId} from ${member.entityName}`, 'info');
-            this.renderPartyOverviewModal(true);
+          const dataLoader = DataLoader.getInstance();
+          const baseItemId = getBaseItemId(itemId);
+          const isGear = Boolean(
+            dataLoader.getWeapon(baseItemId) ||
+            dataLoader.getArmor(baseItemId) ||
+            GameState.getInstance().getGearInstance(itemId)
+          );
+          const itemDef = dataLoader.getItem(itemId) || dataLoader.getWeapon(itemId) || dataLoader.getArmor(itemId) || dataLoader.getFood(itemId);
+          const displayName = itemDef?.name || itemId;
+
+          const executeDiscard = () => {
+            const success = GameState.getInstance().discardItem(member, itemId, 1);
+            if (success) {
+              this.showToast(`Dropped 1 ${displayName} from ${member.entityName}`, 'info');
+              this.renderPartyOverviewModal(true);
+            }
+          };
+
+          if (isGear) {
+            this.openDropConfirmModal(
+              'Confirm Drop',
+              `Drop ${displayName}? It will be destroyed. This can't be undone.`,
+              executeDiscard
+            );
+          } else {
+            executeDiscard();
           }
         }
       }
@@ -9208,6 +9301,26 @@ export class HUD {
   public closeSalvageConfirmModal(): void {
     if (this.salvageConfirmModalEl) {
       this.salvageConfirmModalEl.classList.remove('active');
+    }
+  }
+
+  public openDropConfirmModal(title: string, message: string, onConfirm: () => void): void {
+    if (this.dropModalTitleEl) this.dropModalTitleEl.innerText = title;
+    if (this.dropConfirmMsgEl) this.dropConfirmMsgEl.innerText = message;
+    if (this.confirmDropActionBtn) {
+      this.confirmDropActionBtn.onclick = () => {
+        this.closeDropConfirmModal();
+        onConfirm();
+      };
+    }
+    if (this.dropConfirmModalEl) {
+      this.dropConfirmModalEl.classList.add('active');
+    }
+  }
+
+  public closeDropConfirmModal(): void {
+    if (this.dropConfirmModalEl) {
+      this.dropConfirmModalEl.classList.remove('active');
     }
   }
 

@@ -218,7 +218,7 @@ async function runMilestone42Tests() {
 
     const spiderDef = dataLoader.getEnemy('spider');
     assert.ok(spiderDef, 'Giant Spider must be registered in data/enemies.json');
-    assert.equal(spiderDef.poisonChance, 0.35, 'Giant Spider must have poisonChance: 0.35');
+    assert.equal(spiderDef.poisonChance, 0.10, 'Giant Spider must have poisonChance: 0.10');
 
     const antidoteRecipe = dataLoader.getAlchemyRecipe('antidote');
     assert.ok(antidoteRecipe, 'Antidote recipe must be registered in data/alchemyRecipes.json');
@@ -454,9 +454,9 @@ async function runMilestone42Tests() {
     const origResolve = HiddenSkillSystem.getInstance().resolveIncomingAttack;
     HiddenSkillSystem.getInstance().resolveIncomingAttack = () => ({ type: 'connected' });
 
-    // Force random to 0.1: attack connects and poison proc (chance 0.35) succeeds
+    // Force random to 0.05: attack connects and poison proc (chance 0.10) succeeds
     const originalRandom = Math.random;
-    Math.random = () => 0.1;
+    Math.random = () => 0.05;
 
     try {
       assert.equal(targetHero.hasStatusEffect('poison'), false, 'Target starts unpoisoned');

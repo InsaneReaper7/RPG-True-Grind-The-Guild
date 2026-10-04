@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { Entity } from './Entity.ts';
-import type { PlayerData, WeaponDef, CharacterSnapshot, ArmorDef, ArmorSlot, ArmorWeightClass, FoodQuality, FoodItemInstance } from '../types/game.ts';
+import type { PlayerData, WeaponDef, CharacterSnapshot, ArmorDef, ArmorSlot, ArmorWeightClass, FoodQuality, FoodItemInstance, StatusEffectDef } from '../types/game.ts';
 import type { ClassifiedRoom } from '../systems/RoomClassifier.ts';
 import { getArmorHpSplit, getArmorProficiencyId } from '../types/game.ts';
 import { GameState } from '../systems/GameState.ts';
@@ -1624,8 +1624,81 @@ export class Player extends Entity {
     }
   }
 
+  public override applyStatusEffect(effectDef: StatusEffectDef): void {
+    if (this.state === 'downed' || this.state === 'dead') return;
+
+    if (effectDef.id === 'poison' && this.progression) {
+      const poisonResLevel = this.progression.getProficiencyLevel('poison_resistance');
+      const hiddenSkillDef = DataLoader.getInstance().getHiddenSkill('poison_resistance');
+      const tierEffects = hiddenSkillDef?.tierEffects;
+
+      let immune = false;
+      let resistChance = 0;
+
+      const t100 = tierEffects?.find(t => t.level === 100);
+      const t50 = tierEffects?.find(t => t.level === 50);
+      const t25 = tierEffects?.find(t => t.level === 25);
+
+      if (poisonResLevel >= 100 && t100?.poisonImmune) {
+        immune = true;
+      } else if (poisonResLevel >= 50 && t50?.resistApplicationChance !== undefined) {
+        resistChance = t50.resistApplicationChance;
+      } else if (poisonResLevel >= 25 && t25?.resistApplicationChance !== undefined) {
+        resistChance = t25.resistApplicationChance;
+      }
+
+      if (immune || (resistChance > 0 && Math.random() < resistChance)) {
+        console.log(`[Combat] ${this.entityName} resisted poison! (Poison Resistance Lv ${poisonResLevel})`);
+        this.createFloatingText('RESISTED', '#16a34a');
+        return;
+      }
+    }
+
+    super.applyStatusEffect(effectDef);
+  }
+
+  protected override updateStatusEffects(deltaMs: number): void {
+    if (this.state === 'dead') return;
+
+    // Check if poison tick will occur this frame to grant Poison Resistance EXP & roll cure chance
+    const poisonEffect = this.activeStatusEffects.get('poison');
+    if (poisonEffect && this.progression) {
+      const isPersistent = poisonEffect.def?.persistent === true;
+      const willTick = (poisonEffect.nextTickMs - deltaMs <= 0) && (isPersistent || (poisonEffect.remainingMs - deltaMs >= 0));
+
+      if (willTick) {
+        const poisonResDef = DataLoader.getInstance().getHiddenSkill('poison_resistance');
+        const expPerProc = poisonResDef?.expPerProc ?? 5;
+        this.progression.addProficiencyExp('poison_resistance', expPerProc);
+        GameState.getInstance().discoverProficiency('poison_resistance');
+
+        const poisonResLevel = this.progression.getProficiencyLevel('poison_resistance');
+        const tierEffects = poisonResDef?.tierEffects;
+        let cureChance = 0;
+
+        const t50 = tierEffects?.find(t => t.level === 50);
+        const t1 = tierEffects?.find(t => t.level === 1);
+
+        if (poisonResLevel >= 50 && t50?.cureOnTickChance !== undefined) {
+          cureChance = t50.cureOnTickChance;
+        } else if (poisonResLevel >= 1 && t1?.cureOnTickChance !== undefined) {
+          cureChance = t1.cureOnTickChance;
+        }
+
+        if (cureChance > 0 && Math.random() < cureChance) {
+          console.log(`[Combat] ${this.entityName} cured poison on damage tick! (Poison Resistance Lv ${poisonResLevel})`);
+          this.createFloatingText('CURED', '#16a34a');
+          this.removeStatusEffect('poison');
+        }
+      }
+    }
+
+    super.updateStatusEffects(deltaMs);
+  }
+
   public override destroy(fromScene?: boolean): void {
     this.hideReviveIcon();
     super.destroy(fromScene);
   }
 }
+

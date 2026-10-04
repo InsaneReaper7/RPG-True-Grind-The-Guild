@@ -64,6 +64,7 @@ export interface WeaponDef {
   baseBlock?: number;
   baseMitigation?: number;
   baseHealAmount?: number;
+  healThresholdPercent?: number;
   energyCostPerCast?: number;
   stunChance?: number;
   weight?: number;
@@ -717,6 +718,9 @@ export interface HiddenSkillTierEffect {
   energyAmount?: number;
   burstEnergy?: boolean;
   inCombat?: boolean;
+  cureOnTickChance?: number;
+  resistApplicationChance?: number;
+  poisonImmune?: boolean;
 }
 
 export interface HiddenSkillDef {

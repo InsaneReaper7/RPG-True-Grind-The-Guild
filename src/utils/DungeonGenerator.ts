@@ -911,7 +911,11 @@ export class DungeonGenerator {
         const [minB, maxB] = roomConfig?.bushesRange ?? (
           room.type === 'gathering' ? [2, 4] : room.type === 'light_combat' ? [1, 3] : room.type === 'heavy_combat' ? [2, 5] : [0, 0]
         );
-        const nodeTypes = ['foraging_bush', 'woodcutting_tree', 'mining_rock'];
+        // Floors 1-5: Increase tree node ratio by ~50% (~1.5x wood yield) via enriched node pool
+        const isEarlyFloor = (floorNumber ?? 1) <= 5;
+        const nodeTypes = isEarlyFloor
+          ? ['woodcutting_tree', 'foraging_bush', 'woodcutting_tree', 'mining_rock']
+          : ['foraging_bush', 'woodcutting_tree', 'mining_rock'];
         const vegetableNodeChance = (config as any).vegetableNodeChance ?? 0.10;
         const bushCount = Math.min(Math.max(0, interiorTiles.length - tileIdx), randInt(minB, maxB));
         for (let i = 0; i < bushCount; i++) {

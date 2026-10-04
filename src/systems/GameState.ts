@@ -1208,6 +1208,63 @@ export class GameState {
     return false;
   }
 
+  /**
+   * Playtest Round 2 (Item 1): Stores a single gear item from player's bag back to the Outpost stockpile.
+   * Only allowed at the Outpost. Instance-aware: preserves crafting bonus and instance registration.
+   */
+  public depositGearItem(player: Player, itemId: string): boolean {
+    if (!this.isSafeZone) {
+      console.warn('[GameState] Cannot store gear outside the Outpost.');
+      return false;
+    }
+    if ((player.inventory.get(itemId) || 0) < 1) {
+      return false;
+    }
+    const removed = player.removeItem(itemId, 1);
+    if (removed) {
+      this.addItem(itemId, 1);
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * Playtest Round 2 (Item 1): Stores all unequipped gear from a player's personal bag to the Outpost stockpile.
+   * Strictly never touches equipped items. Instance-aware.
+   */
+  public depositAllUnequippedGear(player: Player): number {
+    if (!this.isSafeZone) {
+      console.warn('[GameState] Cannot store gear outside the Outpost.');
+      return 0;
+    }
+    const dataLoader = DataLoader.getInstance();
+    const gearIdsToDeposit: string[] = [];
+
+    for (const [id, count] of player.inventory.entries()) {
+      if (count <= 0) continue;
+      const baseId = getBaseItemId(id);
+      const isGear = Boolean(
+        dataLoader.getWeapon(baseId) ||
+        dataLoader.getArmor(baseId) ||
+        this.getGearInstance(id)
+      );
+      if (isGear) {
+        for (let i = 0; i < count; i++) {
+          gearIdsToDeposit.push(id);
+        }
+      }
+    }
+
+    let storedCount = 0;
+    for (const id of gearIdsToDeposit) {
+      if (this.depositGearItem(player, id)) {
+        storedCount++;
+      }
+    }
+    return storedCount;
+  }
+
+
   public withdrawItem(player: Player, itemId: string, count: number = 1): boolean {
     if (count <= 0) return false;
     if (this.getItemCount(itemId) < count) return false;

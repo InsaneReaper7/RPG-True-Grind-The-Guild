@@ -3385,12 +3385,17 @@ export class CombatSystem {
 
     const dataLoader = DataLoader.getInstance();
     const healDef = dataLoader.getWeapon('healing_magic');
+    const healThreshold = healDef?.healThresholdPercent ?? 0.70;
     const maxHealRange = healDef?.attackRangeTiles ?? 4;
 
-    // Scan for living damaged party members within powered range (prioritize other allies, then self)
+    // Scan for living party members within powered range at or below heal threshold (70% combined HP)
     const damagedMembers = this.party.filter((m) => {
       if (m.state === 'dead' || m.state === 'downed') return false;
-      if (m.hp >= m.maxHp && m.criticalHp >= m.maxCriticalHp) return false;
+      const totalMaxHp = m.maxHp + m.maxCriticalHp;
+      if (totalMaxHp <= 0) return false;
+      const currentCombinedHp = m.hp + m.criticalHp;
+      const hpRatio = currentCombinedHp / totalMaxHp;
+      if (hpRatio > healThreshold) return false;
       const dist = Math.max(Math.abs(member.gridPos.x - m.gridPos.x), Math.abs(member.gridPos.y - m.gridPos.y));
       return dist <= maxHealRange;
     });
@@ -3425,13 +3430,16 @@ export class CombatSystem {
     }
 
     // Branch 1: Damaged ally exists within range and healer has sufficient energy -> cast Heal
+    // Pick the lowest ally below the threshold (lowest combined HP ratio)
     damagedMembers.sort((a, b) => {
-      const aSelf = a === member ? 1 : 0;
-      const bSelf = b === member ? 1 : 0;
-      if (aSelf !== bSelf) return aSelf - bSelf;
       const aRatio = (a.hp + a.criticalHp) / (a.maxHp + a.maxCriticalHp);
       const bRatio = (b.hp + b.criticalHp) / (b.maxHp + b.maxCriticalHp);
-      return aRatio - bRatio;
+      if (Math.abs(aRatio - bRatio) > 0.001) {
+        return aRatio - bRatio;
+      }
+      const aSelf = a === member ? 1 : 0;
+      const bSelf = b === member ? 1 : 0;
+      return aSelf - bSelf;
     });
 
     const targetAlly = damagedMembers[0];
