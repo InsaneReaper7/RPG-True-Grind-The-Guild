@@ -705,6 +705,66 @@ export class TextureGenerator {
       g.destroy();
     }
 
+    // 4j2. Bone Warden Avatar Texture (Milestone: Area Boss - Skeletal Crypt Knight with Dark Steel Helm, Crown Horns & Glowing Eye Sockets)
+    if (!scene.textures.exists('bone_warden-avatar')) {
+      const size = 36;
+      const g = scene.make.graphics({ x: 0, y: 0 });
+
+      // Outer ancient crypt plate frame (weathered bone/slate)
+      g.fillStyle(0x27272a, 1);
+      g.beginPath();
+      g.moveTo(size / 2, 3);
+      g.lineTo(size - 4, 9);
+      g.lineTo(size - 3, size - 6);
+      g.lineTo(size / 2, size - 2);
+      g.lineTo(3, size - 6);
+      g.lineTo(4, 9);
+      g.closePath();
+      g.fillPath();
+
+      // Ancient Silver / Ossuary Border
+      g.lineStyle(2, 0xa1a1aa, 1);
+      g.strokePath();
+
+      // Skeletal Crown / Horn Crests
+      g.fillStyle(0xe4e4e7, 1);
+      g.fillTriangle(6, 9, 3, 2, 10, 6);
+      g.fillTriangle(size - 6, 9, size - 3, 2, size - 10, 6);
+      g.fillTriangle(size / 2 - 3, 4, size / 2, 0, size / 2 + 3, 4);
+
+      // Skull Faceplate (pale bone)
+      g.fillStyle(0xd4d4d8, 1);
+      g.fillRoundedRect(size / 2 - 8, 10, 16, 12, 3);
+
+      // Sunken Dark Sockets
+      g.fillStyle(0x18181b, 1);
+      g.fillCircle(size / 2 - 4, 15, 3);
+      g.fillCircle(size / 2 + 4, 15, 3);
+
+      // Glowing Cyan Soul Eyes
+      g.fillStyle(0x38bdf8, 1);
+      g.fillCircle(size / 2 - 4, 15, 1.5);
+      g.fillCircle(size / 2 + 4, 15, 1.5);
+
+      // Nasal Cavity & Teeth Grille
+      g.fillStyle(0x18181b, 1);
+      g.fillTriangle(size / 2 - 1, 19, size / 2, 17, size / 2 + 1, 19);
+      g.lineStyle(1, 0x71717a, 1);
+      g.lineBetween(size / 2 - 5, 21, size / 2 + 5, 21);
+      g.lineBetween(size / 2 - 3, 20, size / 2 - 3, 22);
+      g.lineBetween(size / 2, 20, size / 2, 22);
+      g.lineBetween(size / 2 + 3, 20, size / 2 + 3, 22);
+
+      // Chestplate Ossuary Inscription / Ribs
+      g.lineStyle(1.5, 0xa1a1aa, 1);
+      g.lineBetween(size / 2 - 6, 26, size / 2 + 6, 26);
+      g.lineBetween(size / 2 - 5, 29, size / 2 + 5, 29);
+      g.lineBetween(size / 2 - 3, 32, size / 2 + 3, 32);
+
+      g.generateTexture('bone_warden-avatar', size, size);
+      g.destroy();
+    }
+
     // 4k. Abyssal Colossus Avatar Texture (Milestone 34: Boss Tier - Titanic Armored Construct with Molten Fissures & Horned Dread Crest)
     if (!scene.textures.exists('abyssal_colossus-avatar')) {
       const size = 36;

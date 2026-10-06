@@ -212,7 +212,7 @@ function simulateBandSupply(
   let randomBossId = '';
 
   for (let s = 1; s <= runsPerFloor; s++) {
-    for (let f = 6; f <= 10; f++) {
+    for (let f = 11; f <= 15; f++) {
       totalFloors++;
       const seed = s * 10000 + f;
       const rng = DungeonGenerator.createRng(seed);
@@ -239,7 +239,7 @@ function simulateBandSupply(
 
         if (def.tier === 'boss') {
           bossKills++;
-          if (f !== 10) {
+          if (f !== 15) {
             randomBossEncounterCount++;
             randomBossId = def.id;
           }
@@ -325,15 +325,15 @@ function simulateBandSupply(
 }
 
 console.log('========================================================================================');
-console.log('BAND 3 SUPPLY AUDIT: 500 FLOORS SAMPLED (100 FULL RUNS OF F6–F10)');
+console.log('BAND 3 SUPPLY AUDIT: 500 FLOORS SAMPLED (100 FULL RUNS OF F11–F15)');
 console.log('========================================================================================\n');
 
 const beforeSim = simulateBandSupply(false, 100);
 const afterSim = simulateBandSupply(true, 100);
 
-console.log(`- Boss kills per floor (Before): ${beforeSim.bossKillsPerFloor.toFixed(3)} (Milestone F10: 0.200 + Random Boss: ${(beforeSim.bossKillsPerFloor - 0.2).toFixed(3)})`);
+console.log(`- Boss kills per floor (Before): ${beforeSim.bossKillsPerFloor.toFixed(3)} (Milestone F15: 0.200 + Random Boss: ${(beforeSim.bossKillsPerFloor - 0.2).toFixed(3)})`);
 console.log(`  * Random Boss Roll picks: "${beforeSim.randomBossPicks}" (DungeonGenerator lines 848-854 routed by currentRegion.bossEnemyId)`);
-console.log(`- Boss kills per floor (After):  ${afterSim.bossKillsPerFloor.toFixed(3)} (Milestone F10: 0.200 + Random Boss: ${(afterSim.bossKillsPerFloor - 0.2).toFixed(3)})`);
+console.log(`- Boss kills per floor (After):  ${afterSim.bossKillsPerFloor.toFixed(3)} (Milestone F15: 0.200 + Random Boss: ${(afterSim.bossKillsPerFloor - 0.2).toFixed(3)})`);
 console.log(`  * Random Boss Roll picks: "${afterSim.randomBossPicks}" (infernal_caldera.bossEnemyId = "magma_tyrant")\n`);
 
 console.log('--- Material Yields Per Band 3 Floor (Before vs. After) ---');

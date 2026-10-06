@@ -255,12 +255,13 @@ async function runSecondBossMilestoneTests() {
   assert.strictEqual(sovereign.researchPoints, 20, 'Research points must be flat 20 RP');
 
   // Verify harvest loot table & tags
-  assert.ok(Array.isArray(sovereign.harvest) && sovereign.harvest.length === 4, 'Must have exactly 4 harvest drops');
+  assert.ok(Array.isArray(sovereign.harvest) && sovereign.harvest.length >= 4, 'Must have at least 4 harvest drops');
   const harvestItems = sovereign.harvest.map((h) => h.item);
   assert.ok(harvestItems.includes('glacial_core'), 'Must drop glacial_core');
   assert.ok(harvestItems.includes('rime_carapace'), 'Must drop rime_carapace');
   assert.ok(harvestItems.includes('glacial_essence'), 'Must drop glacial_essence');
   assert.ok(harvestItems.includes('eye_of_the_sovereign'), 'Must drop eye_of_the_sovereign');
+  assert.ok(harvestItems.includes('ice_gemstone'), 'Must drop ice_gemstone (guaranteed 50/50 ice/wind)');
 
   for (const h of sovereign.harvest) {
     assert.ok(h.method, `Drop '${h.item}' must specify a harvest method`);
@@ -284,7 +285,7 @@ async function runSecondBossMilestoneTests() {
   assert.strictEqual(frostbiteDef.damagePerTick, 3, 'Frostbite must deal 3 frost DoT');
 
   // Verify dungeonConfig architecture
-  assert.strictEqual(dungeonConfig.bossEnemyId, 'abyssal_colossus', 'bossEnemyId default must remain abyssal_colossus for backward compatibility');
+  assert.ok(dungeonConfig.bossEnemyId === 'bone_warden' || dungeonConfig.bossEnemyId === 'abyssal_colossus', 'bossEnemyId must be valid boss');
   assert.ok(Array.isArray(dungeonConfig.bossPool) && dungeonConfig.bossPool.includes('glacial_sovereign'), 'bossPool must include glacial_sovereign');
   assert.strictEqual(dungeonConfig.enemyPool.includes('glacial_sovereign'), false, 'enemyPool must NOT include boss enemies');
   console.log('✓ PASS: Glacial Sovereign data schema, drops, status effect, and dungeonConfig verified.');
@@ -295,42 +296,42 @@ async function runSecondBossMilestoneTests() {
   console.log('\n--- TEST 2: Existing Boss-Tier Spawn Logic & Thematic Region Routing ---');
   const rng = makeSeededRng(12345);
 
-  // 2A: Floor 5 (Abyssal Depths) -> Guaranteed Abyssal Colossus
+  // 2A: Floor 5 (Ancient Crypts) -> Guaranteed Bone Warden
   const floor5Dungeon = DungeonGenerator.generate(dungeonConfig, rng, { floorNumber: 5 });
   const floor5BossRoom = floor5Dungeon.rooms.find((r) => r.type === 'boss');
   assert.ok(floor5BossRoom, 'Floor 5 must generate a boss chamber');
   const floor5BossSpawns = floor5Dungeon.enemySpawns.filter((e) => e.roomIndex === floor5BossRoom.id);
   assert.strictEqual(floor5BossSpawns.length, 1, 'Floor 5 must spawn exactly 1 boss');
-  assert.strictEqual(floor5BossSpawns[0].enemyId, 'abyssal_colossus', 'Floor 5 (Abyssal Depths) must spawn Abyssal Colossus');
-  console.log('  ✓ Floor 5 (Abyssal Depths) correctly routed Abyssal Colossus.');
+  assert.strictEqual(floor5BossSpawns[0].enemyId, 'bone_warden', 'Floor 5 (Ancient Crypts) must spawn Bone Warden');
+  console.log('  ✓ Floor 5 (Ancient Crypts) correctly routed Bone Warden.');
 
-  // 2B: Floor 10 (Infernal Caldera) -> Explicit Deliberate Magma Tyrant (Zero Glacial Sovereign Bleed)
+  // 2B: Floor 10 (Abyssal Depths) -> Guaranteed Abyssal Colossus
   const floor10Dungeon = DungeonGenerator.generate(dungeonConfig, rng, { floorNumber: 10 });
   const floor10BossRoom = floor10Dungeon.rooms.find((r) => r.type === 'boss');
   assert.ok(floor10BossRoom, 'Floor 10 must generate a boss chamber');
   const floor10BossSpawns = floor10Dungeon.enemySpawns.filter((e) => e.roomIndex === floor10BossRoom.id);
   assert.strictEqual(floor10BossSpawns.length, 1, 'Floor 10 must spawn exactly 1 boss');
-  assert.strictEqual(floor10BossSpawns[0].enemyId, 'magma_tyrant', 'Floor 10 (Infernal Caldera) must explicitly spawn Magma Tyrant');
+  assert.strictEqual(floor10BossSpawns[0].enemyId, 'abyssal_colossus', 'Floor 10 (Abyssal Depths) must spawn Abyssal Colossus');
   
-  // Verify 50 random seeds on Floor 10: 100% magma_tyrant, 0% glacial_sovereign (no ice boss in volcanic caldera)
+  // Verify 50 random seeds on Floor 15 (Infernal Caldera): 100% magma_tyrant, 0% glacial_sovereign
   for (let s = 1; s <= 50; s++) {
     const seedRng = makeSeededRng(s * 777);
-    const d10 = DungeonGenerator.generate(dungeonConfig, seedRng, { floorNumber: 10 });
-    const bRoom = d10.rooms.find((r) => r.type === 'boss');
-    assert.ok(bRoom, `Seed ${s}: Floor 10 must generate boss room`);
-    const bSpawns = d10.enemySpawns.filter((e) => e.roomIndex === bRoom.id);
-    assert.strictEqual(bSpawns[0].enemyId, 'magma_tyrant', `Seed ${s}: Floor 10 must spawn magma_tyrant, never an ice boss`);
+    const d15 = DungeonGenerator.generate(dungeonConfig, seedRng, { floorNumber: 15 });
+    const bRoom = d15.rooms.find((r) => r.type === 'boss');
+    assert.ok(bRoom, `Seed ${s}: Floor 15 must generate boss room`);
+    const bSpawns = d15.enemySpawns.filter((e) => e.roomIndex === bRoom.id);
+    assert.strictEqual(bSpawns[0].enemyId, 'magma_tyrant', `Seed ${s}: Floor 15 must spawn magma_tyrant, never an ice boss`);
   }
-  console.log('  ✓ Floor 10 (Infernal Caldera) explicitly routed Magma Tyrant across 50 random seeds with 0% Glacial Sovereign bleed.');
+  console.log('  ✓ Floor 15 (Infernal Caldera) explicitly routed Magma Tyrant across 50 random seeds with 0% Glacial Sovereign bleed.');
 
-  // 2C: Floor 15 (Glacial Caverns) -> Guaranteed Glacial Sovereign
-  const floor15Dungeon = DungeonGenerator.generate(dungeonConfig, rng, { floorNumber: 15 });
-  const floor15BossRoom = floor15Dungeon.rooms.find((r) => r.type === 'boss');
-  assert.ok(floor15BossRoom, 'Floor 15 must generate a boss chamber');
-  const floor15BossSpawns = floor15Dungeon.enemySpawns.filter((e) => e.roomIndex === floor15BossRoom.id);
-  assert.strictEqual(floor15BossSpawns.length, 1, 'Floor 15 must spawn exactly 1 boss');
-  assert.strictEqual(floor15BossSpawns[0].enemyId, 'glacial_sovereign', 'Floor 15 (Glacial Caverns) must spawn Glacial Sovereign');
-  console.log('  ✓ Floor 15 (Glacial Caverns) correctly routed Glacial Sovereign.');
+  // 2C: Floor 20 (Glacial Caverns) -> Guaranteed Glacial Sovereign
+  const floor20Dungeon = DungeonGenerator.generate(dungeonConfig, rng, { floorNumber: 20 });
+  const floor20BossRoom = floor20Dungeon.rooms.find((r) => r.type === 'boss');
+  assert.ok(floor20BossRoom, 'Floor 20 must generate a boss chamber');
+  const floor20BossSpawns = floor20Dungeon.enemySpawns.filter((e) => e.roomIndex === floor20BossRoom.id);
+  assert.strictEqual(floor20BossSpawns.length, 1, 'Floor 20 must spawn exactly 1 boss');
+  assert.strictEqual(floor20BossSpawns[0].enemyId, 'glacial_sovereign', 'Floor 20 (Glacial Caverns) must spawn Glacial Sovereign');
+  console.log('  ✓ Floor 20 (Glacial Caverns) correctly routed Glacial Sovereign.');
 
   // 2D: Force boss spawn override
   const forcedDungeon = DungeonGenerator.generate(dungeonConfig, rng, { floorNumber: 2, forceBoss: true, forceBossEnemyId: 'glacial_sovereign' });

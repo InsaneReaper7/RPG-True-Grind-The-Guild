@@ -70,6 +70,9 @@ export class GameState {
   private tutorialDismissed: boolean = false;
   private hasReceivedTutorialSupplyCrate: boolean = false;
 
+  // Milestone: Environments Every 5 Floors & Area Boss Gates
+  private defeatedAreaBosses: Set<string> = new Set();
+
   // Milestone: Crafting Mastery, Apprentice Rank — Gear Instance Registry
   private gearInstances: Map<string, GearItemInstance> = new Map();
 
@@ -249,6 +252,7 @@ export class GameState {
       discoveredProficiencies: Array.from(this.discoveredProficiencies),
       discoveredStatusEffects: Array.from(this.discoveredStatusEffects),
       discoveredGatheringNodes: Array.from(this.discoveredGatheringNodes),
+      defeatedAreaBosses: Array.from(this.defeatedAreaBosses),
       quickSlots: ['revive_potion', 'bandage', 'energy_potion', 'antidote']
     };
 
@@ -1512,6 +1516,7 @@ export class GameState {
         discoveredProficiencies: Array.from(this.discoveredProficiencies),
         discoveredStatusEffects: Array.from(this.discoveredStatusEffects),
         discoveredGatheringNodes: Array.from(this.discoveredGatheringNodes),
+        defeatedAreaBosses: Array.from(this.defeatedAreaBosses),
         gearInstances: Object.fromEntries(this.gearInstances)
       };
     }
@@ -1601,6 +1606,7 @@ export class GameState {
       discoveredProficiencies: Array.from(this.discoveredProficiencies),
       discoveredStatusEffects: Array.from(this.discoveredStatusEffects),
       discoveredGatheringNodes: Array.from(this.discoveredGatheringNodes),
+      defeatedAreaBosses: Array.from(this.defeatedAreaBosses),
       gearInstances: Object.fromEntries(this.gearInstances)
     };
 
@@ -1909,6 +1915,25 @@ export class GameState {
     return this.dungeonFloorCount;
   }
 
+  // --- Milestone: Environments Every 5 Floors & Area Boss Gates ---
+  public recordDefeatedAreaBoss(bossId: string): void {
+    if (!bossId) return;
+    this.defeatedAreaBosses.add(bossId);
+    if (this.snapshot) {
+      this.snapshot.defeatedAreaBosses = Array.from(this.defeatedAreaBosses);
+    }
+    console.log(`[GameState] 🏆 Recorded defeated area boss: ${bossId}. All defeated:`, Array.from(this.defeatedAreaBosses));
+  }
+
+  public isAreaBossDefeated(bossId: string): boolean {
+    if (!bossId) return false;
+    return this.defeatedAreaBosses.has(bossId);
+  }
+
+  public getDefeatedAreaBosses(): string[] {
+    return Array.from(this.defeatedAreaBosses);
+  }
+
   // --- Client-Side Persistence System (Milestone: Persistent Saves) ---
   public getStorage(): Storage | null {
     try {
@@ -2097,6 +2122,7 @@ export class GameState {
       this.snapshot.tutorialCompleted = this.tutorialCompleted;
       this.snapshot.tutorialDismissed = this.tutorialDismissed;
       this.snapshot.hasReceivedTutorialSupplyCrate = this.hasReceivedTutorialSupplyCrate;
+      this.snapshot.defeatedAreaBosses = Array.from(this.defeatedAreaBosses);
       this.snapshot.quickSlots = [...this.quickSlots];
 
       const leader = this.partySnapshots[0];
@@ -2257,6 +2283,23 @@ export class GameState {
     this.dungeonFloorCount = snap.dungeonFloorCount ?? 0;
     this.lifetimeDungeonFloorCount = snap.lifetimeDungeonFloorCount ?? 0;
 
+    // Milestone: Environments Every 5 Floors & Area Boss Gates
+    this.defeatedAreaBosses = new Set(snap.defeatedAreaBosses ?? []);
+    // Old Save Migration: never lock a player out of depth they've already reached
+    const deepestFloorReached = Math.max(this.lifetimeDungeonFloorCount, this.dungeonFloorCount);
+    const bossGateFloors: Array<{ floor: number; bossId: string; name: string }> = [
+      { floor: 5, bossId: 'bone_warden', name: 'Bone Warden' },
+      { floor: 10, bossId: 'abyssal_colossus', name: 'Abyssal Colossus' },
+      { floor: 15, bossId: 'magma_tyrant', name: 'Magma Tyrant' },
+      { floor: 20, bossId: 'glacial_sovereign', name: 'Glacial Sovereign' }
+    ];
+    for (const gate of bossGateFloors) {
+      if (deepestFloorReached > gate.floor && !this.defeatedAreaBosses.has(gate.bossId)) {
+        this.defeatedAreaBosses.add(gate.bossId);
+        console.log(`[GameState:Migration] 🔓 Auto-unlocked area boss gate for ${gate.name} (${gate.bossId}) because deepest floor reached is ${deepestFloorReached} > ${gate.floor}.`);
+      }
+    }
+
     if (snap.quickSlots !== undefined) {
       this.quickSlots = snap.quickSlots ? [...snap.quickSlots] : [null, null, null, null];
       while (this.quickSlots.length < 4) this.quickSlots.push(null);
@@ -2302,6 +2345,7 @@ export class GameState {
     this.discoveredProficiencies = new Set();
     this.discoveredStatusEffects = new Set();
     this.discoveredGatheringNodes = new Set();
+    this.defeatedAreaBosses = new Set();
     this.tutorialStep = 0;
     this.tutorialStepId = undefined;
     this.tutorialCompleted = false;

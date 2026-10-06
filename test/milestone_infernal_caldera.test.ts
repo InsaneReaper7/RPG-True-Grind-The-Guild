@@ -26,34 +26,34 @@ async function runMilestoneInfernalCalderaTests() {
   const enemiesData = JSON.parse(fs.readFileSync(path.join(rootDir, 'data/enemies.json'), 'utf8'));
 
   // -------------------------------------------------------------------------------------------------
-  // 1. Bands 1 and 2 Unchanged Verification
+  // 1. Bands 1 and 2 Layout Verification
   // -------------------------------------------------------------------------------------------------
-  console.log('--- TEST 1: Bands 1 and 2 Unchanged Verification ---');
+  console.log('--- TEST 1: Bands 1 and 2 Layout Verification ---');
   const crypts = dungeonConfig.regions.find((r: any) => r.id === 'ancient_crypts');
   assert.ok(crypts, 'ancient_crypts region must exist');
   assert.strictEqual(crypts.minFloor, 1);
-  assert.strictEqual(crypts.maxFloor, 2);
-  assert.strictEqual(crypts.bossEnemyId, null, 'Band 1 has no milestone boss');
+  assert.strictEqual(crypts.maxFloor, 5);
+  assert.strictEqual(crypts.bossEnemyId, 'bone_warden', 'Band 1 has Bone Warden boss');
   assert.strictEqual(crypts.eliteEnemyId, null);
   assert.strictEqual(crypts.epicEnemyId, null);
-  console.log('  ✓ Band 1 (Ancient Crypts) configuration confirmed intact: Floors 1-2, bossEnemyId: null, elite: null, epic: null');
+  console.log('  ✓ Band 1 (Ancient Crypts) configuration confirmed: Floors 1-5, bossEnemyId: bone_warden, elite: null, epic: null');
 
   const abyssal = dungeonConfig.regions.find((r: any) => r.id === 'abyssal_depths');
   assert.ok(abyssal, 'abyssal_depths region must exist');
-  assert.strictEqual(abyssal.minFloor, 3);
-  assert.strictEqual(abyssal.maxFloor, 5);
-  assert.strictEqual(abyssal.bossEnemyId, 'abyssal_colossus', 'Band 2 boss must remain abyssal_colossus');
+  assert.strictEqual(abyssal.minFloor, 6);
+  assert.strictEqual(abyssal.maxFloor, 10);
+  assert.strictEqual(abyssal.bossEnemyId, 'abyssal_colossus', 'Band 2 boss is abyssal_colossus');
   assert.strictEqual(abyssal.eliteEnemyId, 'orc_warrior');
   assert.strictEqual(abyssal.epicEnemyId, null);
   const abyssalSpiders = abyssal.enemyPool.find((e: any) => e.enemyId === 'spider');
   assert.strictEqual(abyssalSpiders?.weight, 40, 'Abyssal Depths spider weight must remain 40');
-  console.log('  ✓ Band 2 (Abyssal Depths) configuration confirmed intact: Floors 3-5, bossEnemyId: abyssal_colossus, spider weight: 40');
-  console.log('✓ PASS: Bands 1 and 2 pools and configurations are completely preserved and unchanged.');
+  console.log('  ✓ Band 2 (Abyssal Depths) configuration confirmed: Floors 6-10, bossEnemyId: abyssal_colossus, spider weight: 40');
+  console.log('✓ PASS: Bands 1 and 2 pools and configurations verified.');
 
   // -------------------------------------------------------------------------------------------------
-  // 2. Boss Routing: Colossus at F5 and Tyrant at F10
+  // 2. Boss Routing: Colossus at F10 and Tyrant at F15
   // -------------------------------------------------------------------------------------------------
-  console.log('\n--- TEST 2: Boss Routing: Colossus at F5 and Tyrant at F10 ---');
+  console.log('\n--- TEST 2: Boss Routing: Bone Warden at F5, Colossus at F10 and Tyrant at F15 ---');
   // Check F5 across 25 random seeds
   for (let s = 1; s <= 25; s++) {
     const rngF5 = makeSeededRng(s * 1000 + 5);
@@ -62,9 +62,9 @@ async function runMilestoneInfernalCalderaTests() {
     assert.ok(bossRoom, `Seed ${s}: Floor 5 must generate boss room`);
     const bosses = d5.enemySpawns.filter((e) => e.roomIndex === bossRoom.id);
     assert.strictEqual(bosses.length, 1, `Seed ${s}: Floor 5 must spawn exactly 1 boss`);
-    assert.strictEqual(bosses[0].enemyId, 'abyssal_colossus', `Seed ${s}: Floor 5 must spawn abyssal_colossus`);
+    assert.strictEqual(bosses[0].enemyId, 'bone_warden', `Seed ${s}: Floor 5 must spawn bone_warden`);
   }
-  console.log('  ✓ Floor 5 (Abyssal Depths) reliably spawns Abyssal Colossus across 25/25 seeds (100%).');
+  console.log('  ✓ Floor 5 (Ancient Crypts) reliably spawns Bone Warden across 25/25 seeds (100%).');
 
   // Check F10 across 25 random seeds
   for (let s = 1; s <= 25; s++) {
@@ -74,10 +74,22 @@ async function runMilestoneInfernalCalderaTests() {
     assert.ok(bossRoom, `Seed ${s}: Floor 10 must generate boss room`);
     const bosses = d10.enemySpawns.filter((e) => e.roomIndex === bossRoom.id);
     assert.strictEqual(bosses.length, 1, `Seed ${s}: Floor 10 must spawn exactly 1 boss`);
-    assert.strictEqual(bosses[0].enemyId, 'magma_tyrant', `Seed ${s}: Floor 10 must spawn magma_tyrant`);
+    assert.strictEqual(bosses[0].enemyId, 'abyssal_colossus', `Seed ${s}: Floor 10 must spawn abyssal_colossus`);
   }
-  console.log('  ✓ Floor 10 (Infernal Caldera) reliably spawns Magma Tyrant across 25/25 seeds (100%).');
-  console.log('✓ PASS: Routing verified: Abyssal Colossus at F5, Magma Tyrant at F10.');
+  console.log('  ✓ Floor 10 (Abyssal Depths) reliably spawns Abyssal Colossus across 25/25 seeds (100%).');
+
+  // Check F15 across 25 random seeds
+  for (let s = 1; s <= 25; s++) {
+    const rngF15 = makeSeededRng(s * 3000 + 15);
+    const d15 = DungeonGenerator.generate(dungeonConfig, rngF15, { floorNumber: 15, forceBoss: true });
+    const bossRoom = d15.rooms.find((r) => r.type === 'boss');
+    assert.ok(bossRoom, `Seed ${s}: Floor 15 must generate boss room`);
+    const bosses = d15.enemySpawns.filter((e) => e.roomIndex === bossRoom.id);
+    assert.strictEqual(bosses.length, 1, `Seed ${s}: Floor 15 must spawn exactly 1 boss`);
+    assert.strictEqual(bosses[0].enemyId, 'magma_tyrant', `Seed ${s}: Floor 15 must spawn magma_tyrant`);
+  }
+  console.log('  ✓ Floor 15 (Infernal Caldera) reliably spawns Magma Tyrant across 25/25 seeds (100%).');
+  console.log('✓ PASS: Routing verified: Bone Warden at F5, Abyssal Colossus at F10, Magma Tyrant at F15.');
 
   // -------------------------------------------------------------------------------------------------
   // 3. Regular Enemies & Gemstone Exclusion Verification

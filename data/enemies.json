@@ -444,13 +444,58 @@
         }
       ]
     },
+  {
+      "id": "bone_warden",
+      "name": "Bone Warden",
+      "tier": "boss",
+      "hp": 240,
+      "criticalHpMax": 120,
+      "meleeDamage": 19,
+      "aggroRadius": 8,
+      "attackIntervalMs": 1400,
+      "moveSpeed": 80,
+      "attackRangeTiles": 1,
+      "researchPoints": 20,
+      "description": "An ancient skeletal knight clad in crypt-forged plate, guarding the sealed descent with an unrelenting blade.",
+      "harvest": [
+        {
+          "method": "guaranteed",
+          "item": "bone",
+          "amount": 3,
+          "tags": [
+            "blacksmithing",
+            "bowyer"
+          ],
+          "note": "Ancient ossuary bone harvested from the fallen warden"
+        },
+        {
+          "method": "guaranteed",
+          "item": "ore",
+          "amount": 2,
+          "tags": [
+            "blacksmithing"
+          ],
+          "note": "Crypt iron ore chipped from the warden's ancient armament"
+        },
+        {
+          "method": "guaranteed",
+          "item": "holy_gemstone",
+          "weight": 1,
+          "tags": [
+            "enchanting",
+            "crafting"
+          ],
+          "note": "Guaranteed 1 Elemental Gemstone (Holy or Dark 50/50)"
+        }
+      ]
+    },
     {
       "id": "abyssal_colossus",
       "name": "Abyssal Colossus",
       "tier": "boss",
       "hp": 450,
       "criticalHpMax": 225,
-      "meleeDamage": 36,
+      "meleeDamage": 28,
       "aggroRadius": 8,
       "attackIntervalMs": 1400,
       "moveSpeed": 80,
@@ -495,6 +540,16 @@
             "armorsmithing"
           ],
           "note": "Legendary pinnacle artifact radiating immense planar power. The ultimate treasure of the deep dungeon."
+        },
+        {
+          "method": "guaranteed",
+          "item": "arcane_gemstone",
+          "weight": 1,
+          "tags": [
+            "enchanting",
+            "crafting"
+          ],
+          "note": "Guaranteed 1 Elemental Gemstone (Arcane, Water, or Earth 1/3 each)"
         }
       ]
     },
@@ -549,6 +604,16 @@
             "armorsmithing"
           ],
           "note": "Legendary crystalline gem radiating intense diamond dust frost. The crown jewel of the Glacial Caverns."
+        },
+        {
+          "method": "guaranteed",
+          "item": "ice_gemstone",
+          "weight": 1,
+          "tags": [
+            "enchanting",
+            "crafting"
+          ],
+          "note": "Guaranteed 1 Elemental Gemstone (Ice or Wind 50/50)"
         }
       ]
     },

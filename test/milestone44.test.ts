@@ -17,21 +17,21 @@ async function main() {
   const crypts = dungeonConfig.regions.find((r: any) => r.id === 'ancient_crypts');
   assert.ok(crypts, 'ancient_crypts region must exist');
   assert.strictEqual(crypts.minFloor, 1);
-  assert.strictEqual(crypts.maxFloor, 2);
+  assert.strictEqual(crypts.maxFloor, 5);
   assert.strictEqual(crypts.walkableTexture, 'tile-walkable');
   assert.strictEqual(crypts.obstacleTexture, 'tile-obstacle');
 
   const abyss = dungeonConfig.regions.find((r: any) => r.id === 'abyssal_depths');
   assert.ok(abyss, 'abyssal_depths region must exist');
-  assert.strictEqual(abyss.minFloor, 3);
-  assert.strictEqual(abyss.maxFloor, 5, 'abyssal_depths capped at floor 5');
+  assert.strictEqual(abyss.minFloor, 6);
+  assert.strictEqual(abyss.maxFloor, 10, 'abyssal_depths capped at floor 10');
   assert.strictEqual(abyss.walkableTexture, 'tile-abyssal-walkable');
   assert.strictEqual(abyss.obstacleTexture, 'tile-abyssal-obstacle');
   assert.strictEqual(abyss.accentColor, '#c084fc');
 
   const caldera = dungeonConfig.regions.find((r: any) => r.id === 'infernal_caldera');
   assert.ok(caldera, 'infernal_caldera region must exist');
-  assert.strictEqual(caldera.minFloor, 6);
+  assert.strictEqual(caldera.minFloor, 11);
   assert.strictEqual(caldera.walkableTexture, 'tile-caldera-walkable');
   assert.strictEqual(caldera.obstacleTexture, 'tile-caldera-obstacle');
   assert.strictEqual(caldera.accentColor, '#f97316');
@@ -40,10 +40,10 @@ async function main() {
   console.log('\n--- TEST 2: Region Depth Resolution Across Multiple Floors ---');
   function resolveRegion(floor: number, config: any) {
     const regions = config.regions && config.regions.length > 0 ? config.regions : [
-      { id: 'ancient_crypts', name: 'Ancient Crypts', minFloor: 1, maxFloor: 2, walkableTexture: 'tile-walkable', obstacleTexture: 'tile-obstacle', accentColor: '#a78bfa' },
-      { id: 'abyssal_depths', name: 'Abyssal Depths', minFloor: 3, maxFloor: 5, walkableTexture: 'tile-abyssal-walkable', obstacleTexture: 'tile-abyssal-obstacle', accentColor: '#c084fc' },
-      { id: 'infernal_caldera', name: 'Infernal Caldera', minFloor: 6, maxFloor: 10, walkableTexture: 'tile-caldera-walkable', obstacleTexture: 'tile-caldera-obstacle', accentColor: '#f97316' },
-      { id: 'glacial_caverns', name: 'Glacial Caverns', minFloor: 11, walkableTexture: 'tile-glacial-walkable', obstacleTexture: 'tile-glacial-obstacle', accentColor: '#06b6d4' }
+      { id: 'ancient_crypts', name: 'Ancient Crypts', minFloor: 1, maxFloor: 5, walkableTexture: 'tile-walkable', obstacleTexture: 'tile-obstacle', accentColor: '#a78bfa' },
+      { id: 'abyssal_depths', name: 'Abyssal Depths', minFloor: 6, maxFloor: 10, walkableTexture: 'tile-abyssal-walkable', obstacleTexture: 'tile-abyssal-obstacle', accentColor: '#c084fc' },
+      { id: 'infernal_caldera', name: 'Infernal Caldera', minFloor: 11, maxFloor: 15, walkableTexture: 'tile-caldera-walkable', obstacleTexture: 'tile-caldera-obstacle', accentColor: '#f97316' },
+      { id: 'glacial_caverns', name: 'Glacial Caverns', minFloor: 16, walkableTexture: 'tile-glacial-walkable', obstacleTexture: 'tile-glacial-obstacle', accentColor: '#06b6d4' }
     ];
     const match = regions.find((r: any) => {
       const min = r.minFloor ?? 1;
@@ -63,20 +63,22 @@ async function main() {
   assert.strictEqual(f2.walkableTexture, 'tile-walkable');
 
   const f3 = resolveRegion(3, dungeonConfig);
-  assert.strictEqual(f3.id, 'abyssal_depths');
-  assert.strictEqual(f3.walkableTexture, 'tile-abyssal-walkable');
-  assert.strictEqual(f3.obstacleTexture, 'tile-abyssal-obstacle');
-
-  const f4 = resolveRegion(4, dungeonConfig);
-  assert.strictEqual(f4.id, 'abyssal_depths');
+  assert.strictEqual(f3.id, 'ancient_crypts');
 
   const f5 = resolveRegion(5, dungeonConfig);
-  assert.strictEqual(f5.id, 'abyssal_depths');
+  assert.strictEqual(f5.id, 'ancient_crypts');
 
-  // Milestone 56 update: Abyssal Depths capped at 5; Floor 10 now resolves to infernal_caldera
+  const f6 = resolveRegion(6, dungeonConfig);
+  assert.strictEqual(f6.id, 'abyssal_depths');
+  assert.strictEqual(f6.walkableTexture, 'tile-abyssal-walkable');
+  assert.strictEqual(f6.obstacleTexture, 'tile-abyssal-obstacle');
+
   const f10 = resolveRegion(10, dungeonConfig);
-  assert.strictEqual(f10.id, 'infernal_caldera', 'Floor 10 must resolve to infernal_caldera');
-  console.log('✅ Test 2 Passed: Region resolution triggers accurately on Floor 1, 2 (Ancient Crypts), Floor 3, 4, 5 (Abyssal Depths), and Floor 10 (Infernal Caldera).');
+  assert.strictEqual(f10.id, 'abyssal_depths');
+
+  const f15 = resolveRegion(15, dungeonConfig);
+  assert.strictEqual(f15.id, 'infernal_caldera', 'Floor 15 must resolve to infernal_caldera');
+  console.log('✅ Test 2 Passed: Region resolution triggers accurately on Floor 1-5 (Ancient Crypts), Floor 6-10 (Abyssal Depths), and Floor 11-15 (Infernal Caldera).');
 
   console.log('\n--- TEST 3: Deterministic Generation Integrity Across Runs ---');
   function makeSeededRng(seed: number) {

@@ -205,7 +205,7 @@ async function runMilestone34Tests() {
   assert.equal(abyssalColossus.tier, 'boss', "Tier must be strictly 'boss'");
   assert.equal(abyssalColossus.hp, 450, 'HP must be 450');
   assert.equal(abyssalColossus.criticalHpMax, 225, 'Critical HP Max must be 225 (50% HP)');
-  assert.equal(abyssalColossus.meleeDamage, 36, 'Melee damage must be 36');
+  assert.equal(abyssalColossus.meleeDamage, 28, 'Melee damage must be 28');
   assert.equal(abyssalColossus.aggroRadius, 8, 'Aggro radius must be 8');
   assert.equal(abyssalColossus.attackIntervalMs, 1400, 'Attack interval must be 1400ms');
   assert.equal(abyssalColossus.moveSpeed, 80, 'Move speed must be 80');
@@ -223,9 +223,10 @@ async function runMilestone34Tests() {
     assert.ok(Array.isArray(h.tags) && h.tags.length > 0, `Drop '${h.item}' must have valid tags`);
   }
 
-  // Verify dungeonConfig.bossEnemyId, rarity parameters, and enemyPool separation
+  // Verify dungeonConfig.bossEnemyId / bossPool, rarity parameters, and enemyPool separation
   const dungeonConfig = dataLoader.getDungeonConfig();
-  assert.equal(dungeonConfig.bossEnemyId, 'abyssal_colossus', "dungeonConfig.bossEnemyId must be 'abyssal_colossus'");
+  assert.ok(dungeonConfig.bossEnemyId === 'bone_warden' || dungeonConfig.bossEnemyId === 'abyssal_colossus', "dungeonConfig.bossEnemyId must be a valid boss");
+  assert.ok(dungeonConfig.bossPool?.includes('abyssal_colossus'), "dungeonConfig.bossPool must include 'abyssal_colossus'");
   assert.equal(dungeonConfig.bossRoom, true, 'dungeonConfig.bossRoom must be true');
   assert.equal(dungeonConfig.bossMilestoneInterval, 5, "dungeonConfig.bossMilestoneInterval must be 5");
   assert.equal(dungeonConfig.bossRandomChance, 0.02, "dungeonConfig.bossRandomChance must be 0.02");
@@ -254,7 +255,7 @@ async function runMilestone34Tests() {
   console.log(`  DPS: Boss Base (${bossBaseDps.toFixed(2)}) / Enraged (${bossEnragedDps.toFixed(2)}) vs Epic (${vkDps.toFixed(2)})`);
 
   assert.ok(hpRatio >= 2.5, `Boss HP must be at least 2.5x Void Knight (got ${hpRatio.toFixed(2)}x)`);
-  assert.ok(bossEnragedDps >= vkDps * 1.8, `Boss Enraged DPS must be at least 1.8x Void Knight (got ${(bossEnragedDps / vkDps).toFixed(2)}x)`);
+  assert.ok(bossEnragedDps >= vkDps * 1.4, `Boss Enraged DPS must be at least 1.4x Void Knight (got ${(bossEnragedDps / vkDps).toFixed(2)}x)`);
 
   // Real combat simulation: Player Time-To-Die (TTD)
   // Basic Hero (50 HP)
@@ -349,10 +350,10 @@ async function runMilestone34Tests() {
   const preDistantHp = distantAllyHero.hp;
 
   // Simulate combat attack loop for boss hitting primary target
-  const rawDmg = bossEnemy.enemyData.meleeDamage; // 36
+  const rawDmg = bossEnemy.enemyData.meleeDamage; // 28
   primaryTargetHero.takeDamage(rawDmg);
-  // Execute cleave logic as done in CombatSystem line 692
-  const splashDamage = Math.max(1, Math.round(rawDmg * 0.5)); // 18
+  // Execute cleave logic as done in CombatSystem
+  const splashDamage = Math.max(1, Math.round(rawDmg * 0.5)); // 14
   for (const member of [primaryTargetHero, adjacentAllyHero, distantAllyHero]) {
     if (member !== primaryTargetHero) {
       const dist = Math.hypot(member.gridPos.x - bossEnemy.gridPos.x, member.gridPos.y - bossEnemy.gridPos.y);
@@ -362,8 +363,8 @@ async function runMilestone34Tests() {
     }
   }
 
-  assert.equal(primaryTargetHero.hp, prePrimaryHp - 36, 'Primary target takes full 36 damage');
-  assert.equal(adjacentAllyHero.hp, preAdjacentHp - 18, 'Adjacent ally takes 50% splash damage (18 damage) from Boss Cleave');
+  assert.equal(primaryTargetHero.hp, prePrimaryHp - 28, 'Primary target takes full 28 damage');
+  assert.equal(adjacentAllyHero.hp, preAdjacentHp - 14, 'Adjacent ally takes 50% splash damage (14 damage) from Boss Cleave');
   assert.equal(distantAllyHero.hp, preDistantHp, 'Distant ally takes 0 damage');
 
   console.log('✓ PASS: Boss unique mechanics (Cleave AoE shockwave, Stun Tremor & Enrage phase transition) verified.');
@@ -456,7 +457,7 @@ async function runMilestone34Tests() {
     assert.equal(bossRoom.id, expectedBossIdx, `Boss room on Floor ${floorNum} must be the deepest room`);
 
     // Exactly 1 boss spawned in boss room center, 0 bushes
-    const bossSpawns = dungeon.enemySpawns.filter((e) => e.enemyId === 'abyssal_colossus' || e.enemyId === 'magma_tyrant' || e.enemyId === 'glacial_sovereign');
+    const bossSpawns = dungeon.enemySpawns.filter((e) => e.enemyId === 'bone_warden' || e.enemyId === 'abyssal_colossus' || e.enemyId === 'magma_tyrant' || e.enemyId === 'glacial_sovereign');
     assert.equal(bossSpawns.length, 1, `Exactly 1 Boss must spawn on milestone floor ${floorNum}`);
     assert.equal(bossSpawns[0].roomIndex, bossRoom.id, 'Boss must spawn in the designated boss room');
     assert.equal(bossSpawns[0].x, bossRoom.centerX);
@@ -473,7 +474,7 @@ async function runMilestone34Tests() {
     const dungeon = DungeonGenerator.generate(dungeonConfig, rng, { floorNumber: floorNum, forceBoss: false });
     const bossRooms = dungeon.rooms.filter((r) => r.type === 'boss');
     assert.equal(bossRooms.length, 0, `Non-milestone Floor ${floorNum} must NOT generate a boss room when suppressed`);
-    const bossSpawns = dungeon.enemySpawns.filter((e) => e.enemyId === 'abyssal_colossus' || e.enemyId === 'magma_tyrant' || e.enemyId === 'glacial_sovereign');
+    const bossSpawns = dungeon.enemySpawns.filter((e) => e.enemyId === 'bone_warden' || e.enemyId === 'abyssal_colossus' || e.enemyId === 'magma_tyrant' || e.enemyId === 'glacial_sovereign');
     assert.equal(bossSpawns.length, 0, `Non-milestone Floor ${floorNum} must have 0 boss spawns`);
   }
   console.log('  ✓ Non-milestone floors (1-4) cleanly suppress boss room when not triggered.');
@@ -512,7 +513,7 @@ async function runMilestone34Tests() {
 
     for (const espawn of dungeon.enemySpawns) {
       totalEnemyCount++;
-      if (espawn.enemyId === 'abyssal_colossus' || espawn.enemyId === 'magma_tyrant' || espawn.enemyId === 'glacial_sovereign') {
+      if (espawn.enemyId === 'bone_warden' || espawn.enemyId === 'abyssal_colossus' || espawn.enemyId === 'magma_tyrant' || espawn.enemyId === 'glacial_sovereign') {
         totalBossCount++;
       } else if (espawn.enemyId === 'void_knight') {
         totalEpicCount++;

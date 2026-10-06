@@ -1176,5 +1176,37 @@ Never ask Antigravity to jump ahead in this list — each milestone assumes the 
   - Dedicated verification test suite: `test/playtest_round2_fixes.test.ts` (all 5 items passed 100%).
   - Full test suite run: `npm test -- --quiet` passed (108/108 suites green, including deterministic pass on `milestone20.test.ts`).
   - Production build: `npm run build` succeeds cleanly.
+---
+
+### Milestone: Environments Every 5 Floors, Area Boss Gates and Boss Tuning (2026-10-06)
+
+**Resolved and shipped: 5-floor biome cadence, milestone area boss gating, new Bone Warden boss, Abyssal Colossus tuning, and elemental gemstone drops.**
+
+- **1. Region Layout Cadence (5 Floors per Biome)**:
+  - F1–5: Ancient Crypts (`ancient_crypts`) ending in F5 milestone boss chamber.
+  - F6–10: Abyssal Depths (`abyssal_depths`) ending in F10 milestone boss chamber.
+  - F11–15: Infernal Caldera (`infernal_caldera`) ending in F15 milestone boss chamber.
+  - F16–20+: Glacial Caverns (`glacial_caverns`) ending in F20 milestone boss chamber.
+  - Maintained region-held Elite and Epic depth scaling via `depthScalingOffset` (Crypts: 0, Abyss: 0, Caldera: 5, Glacial: 10) so Elite/Epic odds do not artificially spike due to deeper floor numbers.
+- **2. Boss Tuning & New Crypts Boss (Bone Warden)**:
+  - Added `bone_warden` (Crypts Boss on F5): HP 240, shieldHp 120, meleeDamage 19, 25% cleave splash, enrage at 50% HP, no stun. Guaranteed drops: 3 bone, 2 ore, 1 Holy or Dark Gemstone (50/50), +20 RP. Procedural avatar and bestiary entry wired.
+  - Tuned `abyssal_colossus` (Abyss Boss on F10): Reduced melee damage from 36 to 28; reduced stun chance from 30% to 15% (hits primary target only, not cleave targets). Guaranteed drops: 1 Arcane, Water, or Earth Gemstone (1/3 each), +20 RP.
+  - Tuned `glacial_sovereign` (Glacial Boss on F20): Guaranteed drops: 1 Ice or Wind Gemstone (50/50), +20 RP.
+- **3. Area Boss Gates & Old Save Migration**:
+  - Teleporter Crystal "Continue Descent" is locked on milestone floors (F5, F10, F15, F20) until that area's boss has been killed at least once (`defeatedAreaBosses: Set<string>`) or killed in the current run (`bossesDefeatedThisRun: Set<string>`).
+  - "Return to Outpost" remains always enabled.
+  - Attempting to continue descent while locked triggers warning toast and modal lock preview: `🔒 Way Down Sealed (Defeat [Boss Name])`.
+  - Backward compatibility: old saves automatically unlock gates if `max(lifetimeDungeonFloorCount, dungeonFloorCount) > gateFloor`, logging migration to console.
+- **4. Director Rules & Biome Integrity**:
+  - **No random bosses in Ancient Crypts (F1–4)**; Bone Warden appears strictly on F5.
+  - **No random bosses while tutorial is incomplete** in any region.
+  - Elemental home bands mapped strictly by `currentRegion.id` (Crypts=1, Abyss=2, Caldera=3, Glacial=4), completely eliminating floor-number fallbacks.
+  - Early-wood bonus tied to `ancient_crypts` region ID.
+- **5. Verification & Test Evidence**:
+  - Dedicated verification test suite: `test/milestone_environments_every_5_floors.test.ts` (all 7/7 tests passed).
+  - Verified supply script: `scripts/recompute_band3_supply.ts` at F11–15 matches baseline Caldera rates.
+  - Full test suite run: `npm test -- --quiet` passed (109/109 suites green).
+  - Production build: `npm run build` succeeds cleanly.
+
 
 

@@ -46,8 +46,9 @@
     "undead",
     "spider"
   ],
-  "bossEnemyId": "abyssal_colossus",
+  "bossEnemyId": "bone_warden",
   "bossPool": [
+    "bone_warden",
     "abyssal_colossus",
     "magma_tyrant",
     "glacial_sovereign"
@@ -84,7 +85,7 @@
       "id": "ancient_crypts",
       "name": "Ancient Crypts",
       "minFloor": 1,
-      "maxFloor": 2,
+      "maxFloor": 5,
       "walkableTexture": "tile-walkable",
       "obstacleTexture": "tile-obstacle",
       "waterTexture": "tile-water",
@@ -94,7 +95,8 @@
       "carryOverPercentage": 0,
       "eliteEnemyId": null,
       "epicEnemyId": null,
-      "bossEnemyId": null,
+      "bossEnemyId": "bone_warden",
+      "depthScalingOffset": 0,
       "enemyPool": [
         { "enemyId": "wolf", "weight": 25, "type": "core" },
         { "enemyId": "skeleton", "weight": 25, "type": "core" },
@@ -106,8 +108,8 @@
     {
       "id": "abyssal_depths",
       "name": "Abyssal Depths",
-      "minFloor": 3,
-      "maxFloor": 5,
+      "minFloor": 6,
+      "maxFloor": 10,
       "walkableTexture": "tile-abyssal-walkable",
       "obstacleTexture": "tile-abyssal-obstacle",
       "waterTexture": "tile-abyssal-water",
@@ -118,6 +120,7 @@
       "carryOverPercentage": 30,
       "eliteEnemyId": "orc_warrior",
       "epicEnemyId": null,
+      "depthScalingOffset": 0,
       "enemyPool": [
         { "enemyId": "spider", "weight": 40, "type": "core" },
         { "enemyId": "undead", "weight": 30, "type": "core" },
@@ -129,8 +132,8 @@
     {
       "id": "infernal_caldera",
       "name": "Infernal Caldera",
-      "minFloor": 6,
-      "maxFloor": 10,
+      "minFloor": 11,
+      "maxFloor": 15,
       "walkableTexture": "tile-caldera-walkable",
       "obstacleTexture": "tile-caldera-obstacle",
       "waterTexture": "tile-caldera-water",
@@ -141,6 +144,7 @@
       "carryOverPercentage": 30,
       "eliteEnemyId": "orc_warrior",
       "epicEnemyId": "void_knight",
+      "depthScalingOffset": 5,
       "enemyPool": [
         { "enemyId": "cinder_hound", "weight": 25, "type": "core" },
         { "enemyId": "magma_brute", "weight": 18, "type": "core" },
@@ -153,7 +157,7 @@
     {
       "id": "glacial_caverns",
       "name": "Glacial Caverns",
-      "minFloor": 11,
+      "minFloor": 16,
       "walkableTexture": "tile-glacial-walkable",
       "obstacleTexture": "tile-glacial-obstacle",
       "waterTexture": "tile-glacial-water",
@@ -164,6 +168,7 @@
       "carryOverPercentage": 30,
       "eliteEnemyId": "orc_warrior",
       "epicEnemyId": "void_knight",
+      "depthScalingOffset": 10,
       "enemyPool": [
         { "enemyId": "undead", "weight": 35, "type": "core" },
         { "enemyId": "skeleton_archer", "weight": 35, "type": "core" },

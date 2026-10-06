@@ -336,8 +336,6 @@ export class DungeonGenerator {
     const floorNumber = options?.floorNumber ?? (
       typeof GameState !== 'undefined' ? GameState.getInstance().getDungeonFloorCount() : 1
     );
-    const depth = Math.max(1, floorNumber);
-    const depthOffset = depth - 1;
 
     let shouldSpawnBossRoom = false;
     if (rooms.length >= 2) {
@@ -347,18 +345,35 @@ export class DungeonGenerator {
         const milestoneInterval = config.bossMilestoneInterval ?? 5;
         const isMilestone = floorNumber > 0 && floorNumber % milestoneInterval === 0;
 
-        const baseBossRandom = config.bossRandomChance ?? 0.02;
-        const bossRandomPerFloor = config.depthScaling?.bossRandomChancePerFloor ?? 0;
-        const maxBossRandom = config.depthScaling?.maxBossRandomChance ?? 0.05;
-        const effectiveBossRandom = Math.min(maxBossRandom, baseBossRandom + depthOffset * bossRandomPerFloor);
-
-        const isRandomBoss = rng() < effectiveBossRandom;
+        let isTutorialComplete = options?.isTutorialComplete;
+        if (isTutorialComplete === undefined) {
+          try {
+            isTutorialComplete = TutorialSystem.getInstance().getIsCompleted();
+          } catch {
+            isTutorialComplete = false;
+          }
+        }
 
         const currentRegion = config.regions?.find((r) => {
           const min = r.minFloor ?? 1;
           const max = r.maxFloor ?? Infinity;
           return floorNumber >= min && floorNumber <= max;
         });
+
+        const regionFloorOffset = Math.max(0, floorNumber - (currentRegion?.minFloor ?? 1));
+        const regionDepthOffset = (currentRegion?.depthScalingOffset ?? 0) + regionFloorOffset;
+
+        const baseBossRandom = config.bossRandomChance ?? 0.02;
+        const bossRandomPerFloor = config.depthScaling?.bossRandomChancePerFloor ?? 0;
+        const maxBossRandom = config.depthScaling?.maxBossRandomChance ?? 0.05;
+        const effectiveBossRandom = Math.min(maxBossRandom, baseBossRandom + regionDepthOffset * bossRandomPerFloor);
+
+        // Director Mandate:
+        // 1. NO random bosses in the Ancient Crypts (F1-5). Bone Warden appears ONLY on F5 milestone.
+        // 2. NO random bosses while tutorial is incomplete, in ANY region.
+        const canRollRandomBoss = isTutorialComplete && currentRegion?.id !== 'ancient_crypts';
+        const isRandomBoss = canRollRandomBoss && (rng() < effectiveBossRandom);
+
         const allowsBoss = currentRegion ? currentRegion.bossEnemyId !== null : true;
 
         shouldSpawnBossRoom = (isMilestone || isRandomBoss) && (config.bossRoom ?? true) && allowsBoss;
@@ -783,9 +798,10 @@ export class DungeonGenerator {
     });
 
     let band = 1;
-    if (currentRegion?.id === 'abyssal_depths' || (floorNumber >= 3 && floorNumber <= 5)) band = 2;
-    else if (currentRegion?.id === 'infernal_caldera' || (floorNumber >= 6 && floorNumber <= 10)) band = 3;
-    else if (currentRegion?.id === 'glacial_caverns' || floorNumber >= 11) band = 4;
+    if (currentRegion?.id === 'abyssal_depths') band = 2;
+    else if (currentRegion?.id === 'infernal_caldera') band = 3;
+    else if (currentRegion?.id === 'glacial_caverns') band = 4;
+    else band = 1;
 
     const regionEnemyPool = currentRegion?.enemyPool && currentRegion.enemyPool.length > 0
       ? currentRegion.enemyPool
@@ -877,15 +893,18 @@ export class DungeonGenerator {
           const regionEpicId = currentRegion !== undefined ? currentRegion.epicEnemyId : config.epicEnemyId;
           const regionEliteId = currentRegion !== undefined ? currentRegion.eliteEnemyId : config.eliteEnemyId;
 
+          const regionFloorOffset = Math.max(0, floorNumber - (currentRegion?.minFloor ?? 1));
+          const regionDepthOffset = (currentRegion?.depthScalingOffset ?? 0) + regionFloorOffset;
+
           const baseEpicChance = config.epicChance ?? 0.05;
           const epicPerFloor = config.depthScaling?.epicChancePerFloor ?? 0;
           const maxEpic = config.depthScaling?.maxEpicChance ?? 0.20;
-          const effectiveEpicChance = Math.min(maxEpic, baseEpicChance + depthOffset * epicPerFloor);
+          const effectiveEpicChance = Math.min(maxEpic, baseEpicChance + regionDepthOffset * epicPerFloor);
 
           const baseEliteChance = config.eliteChance ?? 0.12;
           const elitePerFloor = config.depthScaling?.eliteChancePerFloor ?? 0;
           const maxElite = config.depthScaling?.maxEliteChance ?? 0.35;
-          const effectiveEliteChance = Math.min(maxElite, baseEliteChance + depthOffset * elitePerFloor);
+          const effectiveEliteChance = Math.min(maxElite, baseEliteChance + regionDepthOffset * elitePerFloor);
 
           if (regionEpicId && rng() < effectiveEpicChance) {
             specialEnemyId = regionEpicId;
@@ -930,9 +949,9 @@ export class DungeonGenerator {
           tileIdx++;
         }
 
-        // Floors 1-5: Add ~50% bonus tree nodes without altering foraging bush (herbs) or mining rock (ore) counts
-        const isEarlyFloor = options?.floorNumber !== undefined && options.floorNumber >= 1 && options.floorNumber <= 5;
-        if (isEarlyFloor && roomTreeCount > 0) {
+        // Ancient Crypts (F1-5): Add ~50% bonus tree nodes without altering foraging bush (herbs) or mining rock (ore) counts
+        const isEarlyWoodBonus = currentRegion?.id === 'ancient_crypts';
+        if (isEarlyWoodBonus && roomTreeCount > 0) {
           // Exactly 1 bonus tree per 2 baseline trees (e.g. 1 tree -> 50% chance for +1; 2 trees -> +1 guaranteed; 3 trees -> 1 + 50% for 2nd)
           const bonusTrees = Math.floor(roomTreeCount / 2) + ((roomTreeCount % 2 === 1 && rng() < 0.50) ? 1 : 0);
           for (let b = 0; b < bonusTrees; b++) {

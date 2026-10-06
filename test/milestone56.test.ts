@@ -100,7 +100,7 @@ async function runMilestone56Tests() {
   assert.strictEqual(region1.id, 'ancient_crypts');
   assert.strictEqual(region1.name, 'Ancient Crypts');
   assert.strictEqual(region1.minFloor, 1);
-  assert.strictEqual(region1.maxFloor, 2);
+  assert.strictEqual(region1.maxFloor, 5);
   assert.strictEqual(region1.walkableTexture, 'tile-walkable');
   assert.strictEqual(region1.obstacleTexture, 'tile-obstacle');
   assert.strictEqual(region1.accentColor, '#a78bfa');
@@ -109,8 +109,8 @@ async function runMilestone56Tests() {
   // Region 2: Abyssal Depths
   assert.strictEqual(region2.id, 'abyssal_depths');
   assert.strictEqual(region2.name, 'Abyssal Depths');
-  assert.strictEqual(region2.minFloor, 3);
-  assert.strictEqual(region2.maxFloor, 5, 'Abyssal Depths must cap at Floor 5');
+  assert.strictEqual(region2.minFloor, 6);
+  assert.strictEqual(region2.maxFloor, 10, 'Abyssal Depths must cap at Floor 10');
   assert.strictEqual(region2.walkableTexture, 'tile-abyssal-walkable');
   assert.strictEqual(region2.obstacleTexture, 'tile-abyssal-obstacle');
   assert.strictEqual(region2.accentColor, '#c084fc');
@@ -119,8 +119,8 @@ async function runMilestone56Tests() {
   // Region 3: Infernal Caldera
   assert.strictEqual(region3.id, 'infernal_caldera');
   assert.strictEqual(region3.name, 'Infernal Caldera');
-  assert.strictEqual(region3.minFloor, 6, 'Infernal Caldera must start at Floor 6');
-  assert.ok(region3.maxFloor === undefined || region3.maxFloor >= 10, 'Infernal Caldera covers through floor 10');
+  assert.strictEqual(region3.minFloor, 11, 'Infernal Caldera must start at Floor 11');
+  assert.ok(region3.maxFloor === undefined || region3.maxFloor >= 15, 'Infernal Caldera covers through floor 15');
   assert.strictEqual(region3.walkableTexture, 'tile-caldera-walkable');
   assert.strictEqual(region3.obstacleTexture, 'tile-caldera-obstacle');
   assert.strictEqual(region3.accentColor, '#f97316', 'Accent color must be vibrant molten lava orange');
@@ -129,7 +129,7 @@ async function runMilestone56Tests() {
   // Also check DEFAULT_REGIONS fallback parity
   assert.ok(DataLoader.DEFAULT_REGIONS.length >= 3, 'DEFAULT_REGIONS must contain at least 3 regions');
   assert.strictEqual(DataLoader.DEFAULT_REGIONS[2].id, 'infernal_caldera');
-  assert.strictEqual(DataLoader.DEFAULT_REGIONS[2].minFloor, 6);
+  assert.strictEqual(DataLoader.DEFAULT_REGIONS[2].minFloor, 11);
 
   console.log('✓ PASS: Regions configuration and DataLoader fallback array schema verified.');
 
@@ -137,19 +137,20 @@ async function runMilestone56Tests() {
   // TEST 2: DataLoader Floor Depth Resolution
   // -------------------------------------------------------------------
   console.log('\n--- TEST 2: Dynamic Floor Depth Resolution Across Entire Run ---');
-  // Floors 1 & 2 -> Ancient Crypts
+  // Floors 1-5 -> Ancient Crypts
   assert.strictEqual(dataLoader.getRegionForFloor(1).id, 'ancient_crypts');
   assert.strictEqual(dataLoader.getRegionForFloor(2).id, 'ancient_crypts');
+  assert.strictEqual(dataLoader.getRegionForFloor(5).id, 'ancient_crypts');
 
-  // Floors 3, 4, 5 -> Abyssal Depths
-  assert.strictEqual(dataLoader.getRegionForFloor(3).id, 'abyssal_depths');
-  assert.strictEqual(dataLoader.getRegionForFloor(4).id, 'abyssal_depths');
-  assert.strictEqual(dataLoader.getRegionForFloor(5).id, 'abyssal_depths');
+  // Floors 6-10 -> Abyssal Depths
+  assert.strictEqual(dataLoader.getRegionForFloor(6).id, 'abyssal_depths');
+  assert.strictEqual(dataLoader.getRegionForFloor(8).id, 'abyssal_depths');
+  assert.strictEqual(dataLoader.getRegionForFloor(10).id, 'abyssal_depths');
 
-  // Floors 6, 7, 10 -> Infernal Caldera
-  assert.strictEqual(dataLoader.getRegionForFloor(6).id, 'infernal_caldera');
-  assert.strictEqual(dataLoader.getRegionForFloor(7).id, 'infernal_caldera');
-  assert.strictEqual(dataLoader.getRegionForFloor(10).id, 'infernal_caldera');
+  // Floors 11-15 -> Infernal Caldera
+  assert.strictEqual(dataLoader.getRegionForFloor(11).id, 'infernal_caldera');
+  assert.strictEqual(dataLoader.getRegionForFloor(12).id, 'infernal_caldera');
+  assert.strictEqual(dataLoader.getRegionForFloor(15).id, 'infernal_caldera');
 
   console.log('✓ PASS: Floor depth resolution resolves correct regions accurately across all floors.');
 
@@ -293,22 +294,25 @@ async function runMilestone56Tests() {
   // Floor 1 -> 2: Same region (Ancient Crypts), preview undefined
   assert.strictEqual(getCrystalNextRegionPreview(1), undefined);
 
-  // Floor 2 -> 3: Boundary cross! Preview shows "Abyssal Depths"
-  assert.strictEqual(getCrystalNextRegionPreview(2), 'Abyssal Depths');
-
-  // Floor 3 -> 4: Same region (Abyssal Depths), preview undefined
-  assert.strictEqual(getCrystalNextRegionPreview(3), undefined);
-
-  // Floor 4 -> 5: Same region (Abyssal Depths), preview undefined
+  // Floor 4 -> 5: Same region (Ancient Crypts), preview undefined
   assert.strictEqual(getCrystalNextRegionPreview(4), undefined);
 
-  // Floor 5 -> 6: Boundary cross! Preview shows "Infernal Caldera"
-  assert.strictEqual(getCrystalNextRegionPreview(5), 'Infernal Caldera');
+  // Floor 5 -> 6: Boundary cross! Preview shows "Abyssal Depths"
+  assert.strictEqual(getCrystalNextRegionPreview(5), 'Abyssal Depths');
 
-  // Floor 6 -> 7: Same region (Infernal Caldera), preview undefined
+  // Floor 6 -> 7: Same region (Abyssal Depths), preview undefined
   assert.strictEqual(getCrystalNextRegionPreview(6), undefined);
 
-  console.log('✓ PASS: Crystal modal accurately announces next region only at Floor 2->3 and Floor 5->6 boundaries.');
+  // Floor 9 -> 10: Same region (Abyssal Depths), preview undefined
+  assert.strictEqual(getCrystalNextRegionPreview(9), undefined);
+
+  // Floor 10 -> 11: Boundary cross! Preview shows "Infernal Caldera"
+  assert.strictEqual(getCrystalNextRegionPreview(10), 'Infernal Caldera');
+
+  // Floor 11 -> 12: Same region (Infernal Caldera), preview undefined
+  assert.strictEqual(getCrystalNextRegionPreview(11), undefined);
+
+  console.log('✓ PASS: Crystal modal accurately announces next region only at Floor 5->6 and Floor 10->11 boundaries.');
 
   // -------------------------------------------------------------------
   // TEST 6: Toast Announcement Format & Tagline Consistency
@@ -330,19 +334,20 @@ async function runMilestone56Tests() {
   const toast2 = formatRegionEntryToast(2);
   assert.strictEqual(toast2, null, 'Floor 2 stays in Ancient Crypts, no entry toast');
 
-  const toast3 = formatRegionEntryToast(3);
-  assert.strictEqual(toast3, '🌌 Entering Abyssal Depths (Floor 3) — The Deep Void Stratum');
-
-  const toast4 = formatRegionEntryToast(4);
-  assert.strictEqual(toast4, null, 'Floor 4 stays in Abyssal Depths, no entry toast');
-
   const toast5 = formatRegionEntryToast(5);
-  assert.strictEqual(toast5, null, 'Floor 5 stays in Abyssal Depths, no entry toast');
+  assert.strictEqual(toast5, null, 'Floor 5 stays in Ancient Crypts, no entry toast');
 
   const toast6 = formatRegionEntryToast(6);
-  assert.strictEqual(toast6, '🌌 Entering Infernal Caldera (Floor 6) — The Scorched Subterranean Core');
+  assert.strictEqual(toast6, '🌌 Entering Abyssal Depths (Floor 6) — The Deep Void Stratum');
 
   const toast7 = formatRegionEntryToast(7);
+  assert.strictEqual(toast7, null, 'Floor 7 stays in Abyssal Depths, no entry toast');
+
+  const toast10 = formatRegionEntryToast(10);
+  assert.strictEqual(toast10, null, 'Floor 10 stays in Abyssal Depths, no entry toast');
+
+  const toast11 = formatRegionEntryToast(11);
+  assert.strictEqual(toast11, '🌌 Entering Infernal Caldera (Floor 11) — The Scorched Subterranean Core');
   assert.strictEqual(toast7, null, 'Floor 7 stays in Infernal Caldera, no entry toast');
 
   console.log('✓ PASS: Toast notifications trigger exclusively on boundary crossings with authentic taglines.');

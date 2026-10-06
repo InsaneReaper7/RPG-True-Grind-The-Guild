@@ -847,9 +847,11 @@ export class CombatSystem {
                     }
                   }
 
-                  // Milestone 34: Boss Unique Mechanic — Titanic Cleave Shockwave (Abyssal Colossus & Magma Tyrant)
-                  if ((enemy.enemyData.id === 'abyssal_colossus' || enemy.enemyData.id === 'magma_tyrant') && actualDamage > 0) {
-                    const splashDamage = Math.max(1, Math.round(actualDamage * 0.5));
+                  // Milestone 34 & Environments Milestone: Boss Unique Mechanic — Cleave Shockwave
+                  // Bone Warden has 25% splash, Abyssal Colossus & Magma Tyrant have 50% splash
+                  if ((enemy.enemyData.id === 'bone_warden' || enemy.enemyData.id === 'abyssal_colossus' || enemy.enemyData.id === 'magma_tyrant') && actualDamage > 0) {
+                    const cleaveRatio = enemy.enemyData.id === 'bone_warden' ? 0.25 : 0.5;
+                    const splashDamage = Math.max(1, Math.round(actualDamage * cleaveRatio));
                     for (const member of this.party) {
                       if (member !== target && member.state !== 'downed' && member.state !== 'dead') {
                         const dist = Math.hypot(member.gridPos.x - enemy.gridPos.x, member.gridPos.y - enemy.gridPos.y);
@@ -876,9 +878,9 @@ export class CombatSystem {
                     }
                   }
 
-                  // Milestone 34: Abyssal Colossus Unique Mechanic — Earthshaker Tremor (30% stun chance on hit)
+                  // Milestone 34: Abyssal Colossus Unique Mechanic — Earthshaker Tremor (15% stun chance on hit, tuned down from 30%)
                   if (enemy.enemyData.id === 'abyssal_colossus' && actualDamage > 0 && !targetDowned) {
-                    if (Math.random() < 0.30) {
+                    if (Math.random() < 0.15) {
                       const stunEffect = {
                         id: 'stun',
                         name: 'Stun',
@@ -2883,6 +2885,15 @@ export class CombatSystem {
         );
       }
 
+      if (isBoss) {
+        // Milestone: Environments Every 5 Floors & Area Boss Gates
+        // Defeating an area boss unlocks the gate permanently and for the current run
+        gameState.recordDefeatedAreaBoss(target.enemyData.id);
+        if (this.scene && typeof (this.scene as any).onAreaBossDefeated === 'function') {
+          (this.scene as any).onAreaBossDefeated(target.enemyData.id);
+        }
+      }
+
       // Roll and award harvest drops (excluding Skinning and Butchering items moved to manual corpse interaction)
       if (target.enemyData.harvest && target.enemyData.harvest.length > 0) {
         const validHarvest = target.enemyData.harvest.filter(
@@ -2944,6 +2955,24 @@ export class CombatSystem {
               this.createFloatingText(target.x, target.y - 35, `+${count} ${itemName}`, floatColor);
             }
           }
+        } else if (target.enemyData.id === 'bone_warden') {
+          // Director-mandated drops for Bone Warden (Band 1 Crypts Boss):
+          // 1. Guaranteed: 3 bone, 2 ore
+          if (recipient) {
+            recipient.addItem('bone', 3);
+            recipient.addItem('ore', 2);
+          } else {
+            gameState.addItem('bone', 3);
+            gameState.addItem('ore', 2);
+          }
+          this.createFloatingText(target.x, target.y - 35, '+3 Bone', '#e4e4e7');
+          this.createFloatingText(target.x, target.y - 50, '+2 Ore', '#a1a1aa');
+          // 2. Guaranteed 1 Gemstone: Holy or Dark 50/50
+          const gemItem = Math.random() < 0.50 ? 'holy_gemstone' : 'dark_gemstone';
+          const gemName = gemItem === 'holy_gemstone' ? 'Holy Gemstone' : 'Dark Gemstone';
+          if (recipient) recipient.addItem(gemItem, 1);
+          else gameState.addItem(gemItem, 1);
+          this.createFloatingText(target.x, target.y - 65, `+1 ${gemName}`, '#38bdf8');
         } else if (target.enemyData.id === 'magma_tyrant') {
           // Director-mandated drops for Magma Tyrant (Band 3 Milestone Boss):
           // 1. void_plate: 1 at 50%
@@ -2972,7 +3001,24 @@ export class CombatSystem {
           }
         } else {
           // Elite, Epic and Boss keep their existing tiered reward structure
+          // Guaranteed Gemstones for Abyssal Colossus and Glacial Sovereign:
+          if (target.enemyData.id === 'abyssal_colossus') {
+            const roll = Math.random();
+            const gemItem = roll < 1 / 3 ? 'arcane_gemstone' : roll < 2 / 3 ? 'water_gemstone' : 'earth_gemstone';
+            const gemName = gemItem === 'arcane_gemstone' ? 'Arcane Gemstone' : gemItem === 'water_gemstone' ? 'Water Gemstone' : 'Earth Gemstone';
+            if (recipient) recipient.addItem(gemItem, 1);
+            else gameState.addItem(gemItem, 1);
+            this.createFloatingText(target.x, target.y - 65, `+1 ${gemName}`, '#38bdf8');
+          } else if (target.enemyData.id === 'glacial_sovereign') {
+            const gemItem = Math.random() < 0.50 ? 'ice_gemstone' : 'wind_gemstone';
+            const gemName = gemItem === 'ice_gemstone' ? 'Ice Gemstone' : 'Wind Gemstone';
+            if (recipient) recipient.addItem(gemItem, 1);
+            else gameState.addItem(gemItem, 1);
+            this.createFloatingText(target.x, target.y - 65, `+1 ${gemName}`, '#38bdf8');
+          }
+
           for (const h of validHarvest) {
+            if (h.item === 'arcane_gemstone' || h.item === 'ice_gemstone') continue; // handled above
             const isRare = h.method === 'rare_drop';
             const roll = Math.random();
             const rareThreshold = isBoss ? 0.60 : 0.35;

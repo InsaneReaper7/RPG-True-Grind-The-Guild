@@ -339,8 +339,8 @@ async function runMilestone40Tests(): Promise<void> {
     const d5 = DungeonGenerator.generate(dungeonConfig, Math.random, { floorNumber: f5 });
     const hasBossRoomF5 = d5.rooms.some(r => r.type === 'boss');
     assert.equal(hasBossRoomF5, true, 'Floor 5 of current run MUST trigger guaranteed Boss chamber');
-    const bossSpawn = d5.enemySpawns.find(e => e.enemyId === 'abyssal_colossus');
-    assert.ok(bossSpawn, 'Abyssal Colossus spawned in Floor 5 Boss chamber');
+    const bossSpawn = d5.enemySpawns.find(e => e.enemyId === 'bone_warden');
+    assert.ok(bossSpawn, 'Bone Warden spawned in Floor 5 Boss chamber');
 
     console.log('✓ PASS: 5-floor continuous descent verified with state persistence and guaranteed Boss trigger at run depth 5.');
   }

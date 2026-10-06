@@ -108,6 +108,7 @@ export class MainScene extends Phaser.Scene {
   public isWiping: boolean = false;
   public assignedSeed: number | null = null;
   public currentFloorSeed: number | null = null;
+  public bossesDefeatedThisRun: Set<string> = new Set();
 
   private wasdKeys!: {
     W: Phaser.Input.Keyboard.Key;
@@ -1827,18 +1828,51 @@ export class MainScene extends Phaser.Scene {
     }
   }
 
+  public onAreaBossDefeated(bossId: string): void {
+    if (!bossId) return;
+    this.bossesDefeatedThisRun.add(bossId);
+    console.log(`[MainScene] 🏆 Area boss ${bossId} defeated this run! Gate is now unlocked.`);
+  }
+
+  public isAreaGateLockedForFloor(floorNumber: number): { isLocked: boolean; bossName: string; bossId: string } | null {
+    const gateBosses: Record<number, { bossId: string; bossName: string }> = {
+      5: { bossId: 'bone_warden', bossName: 'Bone Warden' },
+      10: { bossId: 'abyssal_colossus', bossName: 'Abyssal Colossus' },
+      15: { bossId: 'magma_tyrant', bossName: 'Magma Tyrant' },
+      20: { bossId: 'glacial_sovereign', bossName: 'Glacial Sovereign' }
+    };
+
+    const gate = gateBosses[floorNumber];
+    if (!gate) return null;
+
+    const gameState = GameState.getInstance();
+    const isEverDefeated = gameState.isAreaBossDefeated(gate.bossId);
+    const isDefeatedThisRun = this.bossesDefeatedThisRun.has(gate.bossId);
+
+    const isLocked = !isEverDefeated && !isDefeatedThisRun;
+    return {
+      isLocked,
+      bossName: gate.bossName,
+      bossId: gate.bossId
+    };
+  }
+
   public openCrystalModal(): void {
     if (this.isTransitioning) return;
     if (this.hud?.isTeleporterCrystalModalOpen()) return;
     const currentFloor = GameState.getInstance().getDungeonFloorCount();
     const currentRegion = DataLoader.getInstance().getRegionForFloor(currentFloor);
     const nextRegion = DataLoader.getInstance().getRegionForFloor(currentFloor + 1);
+
+    const gateLock = this.isAreaGateLockedForFloor(currentFloor) ?? undefined;
+
     this.hud.showTeleporterCrystalModal(
       currentFloor,
       () => this.executeContinueDescent(),
       () => this.executeTransitionToOutpost(),
       currentRegion.name,
-      nextRegion.name !== currentRegion.name ? nextRegion.name : undefined
+      nextRegion.name !== currentRegion.name ? nextRegion.name : undefined,
+      gateLock
     );
   }
 
@@ -1896,6 +1930,15 @@ export class MainScene extends Phaser.Scene {
 
   public executeContinueDescent(): void {
     if (this.isTransitioning) return;
+
+    const currentFloor = GameState.getInstance().getDungeonFloorCount();
+    const gateLock = this.isAreaGateLockedForFloor(currentFloor);
+    if (gateLock?.isLocked) {
+      this.hud?.showToast(`The way down is sealed. Defeat the ${gateLock.bossName} to break the seal.`, 'warn', 4000);
+      console.warn(`[MainScene] 🔒 Descent blocked: Floor ${currentFloor} requires defeating ${gateLock.bossName}.`);
+      return;
+    }
+
     this.isTransitioning = true;
 
     console.log('[MainScene] Continuing descent deeper into dungeon...');

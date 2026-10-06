@@ -144,9 +144,10 @@ function simulateBand(
           }
         }
 
-        // Purity check for Band 1
+        // Purity check for Band 1 (common core enemies only on F1-4; Bone Warden boss on F5 milestone)
         if (bandIndex === 0) {
-          if (def.tier !== 'common' || !coreSet.has(def.id)) {
+          const isAllowedBoss = floorNumber === 5 && def.id === 'bone_warden';
+          if (!isAllowedBoss && (def.tier !== 'common' || !coreSet.has(def.id))) {
             illegalSpawnsOnBand1.push(`${def.id} (${def.tier}) on floor ${floorNumber} seed ${seed}`);
           }
         }
@@ -220,15 +221,15 @@ console.log('===================================================================
 console.log('      FLOOR-BAND SEGMENTATION HEADLESS SIMULATION (50 SEEDS)');
 console.log('========================================================================\n');
 
-// Simulate 20 floors per band across 50 seeds
-// Band 1: Floors 1-2 (2 floors repeated across seeds to reach 20 floor clears: 10 runs of 2 floors)
-const b1 = simulateBand(0, 1, 2, 50);
-// Band 2: Floors 3-5 (3 floors per run)
-const b2 = simulateBand(1, 3, 3, 50);
-// Band 3: Floors 6-10 (5 floors per run)
-const b3 = simulateBand(2, 6, 5, 50);
-// Band 4: Floors 11-15 (5 floors per run)
-const b4 = simulateBand(3, 11, 5, 50);
+// Simulate 5 floors per band across 50 seeds
+// Band 1: Floors 1-5 (5 floors per run)
+const b1 = simulateBand(0, 1, 5, 50);
+// Band 2: Floors 6-10 (5 floors per run)
+const b2 = simulateBand(1, 6, 5, 50);
+// Band 3: Floors 11-15 (5 floors per run)
+const b3 = simulateBand(2, 11, 5, 50);
+// Band 4: Floors 16-20 (5 floors per run)
+const b4 = simulateBand(3, 16, 5, 50);
 
 console.log('------------------------------------------------------------------------');
 console.log('SUMMARY TABLE: AVERAGE DROPS & YIELDS PER CLEARED FLOOR');

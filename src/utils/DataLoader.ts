@@ -278,47 +278,52 @@ export class DataLoader {
       id: 'ancient_crypts',
       name: 'Ancient Crypts',
       minFloor: 1,
-      maxFloor: 2,
+      maxFloor: 5,
       walkableTexture: 'tile-walkable',
       obstacleTexture: 'tile-obstacle',
       waterTexture: 'tile-water',
       accentColor: '#a78bfa',
-      tagline: 'The Upper Stone Chambers'
+      tagline: 'The Upper Stone Chambers',
+      bossEnemyId: 'bone_warden',
+      depthScalingOffset: 0
     },
     {
       id: 'abyssal_depths',
       name: 'Abyssal Depths',
-      minFloor: 3,
-      maxFloor: 5,
+      minFloor: 6,
+      maxFloor: 10,
       walkableTexture: 'tile-abyssal-walkable',
       obstacleTexture: 'tile-abyssal-obstacle',
       waterTexture: 'tile-abyssal-water',
       accentColor: '#c084fc',
       tagline: 'The Deep Void Stratum',
-      bossEnemyId: 'abyssal_colossus'
+      bossEnemyId: 'abyssal_colossus',
+      depthScalingOffset: 0
     },
     {
       id: 'infernal_caldera',
       name: 'Infernal Caldera',
-      minFloor: 6,
-      maxFloor: 10,
+      minFloor: 11,
+      maxFloor: 15,
       walkableTexture: 'tile-caldera-walkable',
       obstacleTexture: 'tile-caldera-obstacle',
       waterTexture: 'tile-caldera-water',
       accentColor: '#f97316',
       tagline: 'The Scorched Subterranean Core',
-      bossEnemyId: 'abyssal_colossus'
+      bossEnemyId: 'magma_tyrant',
+      depthScalingOffset: 5
     },
     {
       id: 'glacial_caverns',
       name: 'Glacial Caverns',
-      minFloor: 11,
+      minFloor: 16,
       walkableTexture: 'tile-glacial-walkable',
       obstacleTexture: 'tile-glacial-obstacle',
       waterTexture: 'tile-glacial-water',
       accentColor: '#06b6d4',
       tagline: 'The Sub-Zero Crystalline Depths',
-      bossEnemyId: 'glacial_sovereign'
+      bossEnemyId: 'glacial_sovereign',
+      depthScalingOffset: 10
     }
   ];
 

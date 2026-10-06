@@ -1653,6 +1653,11 @@ export class HUD {
     // Milestone 40: Teleporter Crystal Modal Button Handlers
     if (this.crystalBtnContinue) {
       this.crystalBtnContinue.onclick = () => {
+        if (this.crystalBtnContinue?.hasAttribute('disabled')) {
+          const title = this.crystalBtnContinue.title || 'The way down is sealed.';
+          HUD.activeInstance?.showToast(title, 'warn', 4000);
+          return;
+        }
         const active = HUD.activeInstance;
         const cb = active?.onCrystalContinueCallback;
         active?.closeTeleporterCrystalModal();
@@ -6261,7 +6266,8 @@ export class HUD {
     onContinue: () => void,
     onReturn: () => void,
     currentRegionName?: string,
-    nextRegionName?: string
+    nextRegionName?: string,
+    gateLock?: { isLocked: boolean; bossName: string; bossId: string }
   ): void {
     this.onCrystalContinueCallback = onContinue;
     this.onCrystalReturnCallback = onReturn;
@@ -6273,10 +6279,30 @@ export class HUD {
       this.crystalModalTitleEl.innerText = `Teleporter Crystal (${currentRegionLabel}Floor ${currentFloor})`;
     }
     if (this.crystalModalSubtitleEl) {
-      this.crystalModalSubtitleEl.innerText = `Current run depth: Floor ${currentFloor}. Reaching floor 5 will awaken the Boss chamber.`;
+      let bossFloorNotice = '';
+      if (currentFloor < 5) bossFloorNotice = 'Floor 5 holds the Bone Warden.';
+      else if (currentFloor < 10) bossFloorNotice = 'Floor 10 holds the Abyssal Colossus.';
+      else if (currentFloor < 15) bossFloorNotice = 'Floor 15 holds the Magma Tyrant.';
+      else if (currentFloor < 20) bossFloorNotice = 'Floor 20 holds the Glacial Sovereign.';
+      else bossFloorNotice = 'Deformation of glacial space continues deeper.';
+
+      this.crystalModalSubtitleEl.innerText = `Current run depth: Floor ${currentFloor}. ${bossFloorNotice}`;
     }
-    if (this.crystalContinueLabelEl) {
-      this.crystalContinueLabelEl.innerText = `Continue Descent (Floor ${currentFloor + 1}${nextRegionLabel})`;
+
+    if (this.crystalBtnContinue && this.crystalContinueLabelEl) {
+      if (gateLock?.isLocked) {
+        this.crystalContinueLabelEl.innerText = `🔒 Way Down Sealed (Defeat ${gateLock.bossName})`;
+        this.crystalBtnContinue.setAttribute('disabled', 'true');
+        this.crystalBtnContinue.style.opacity = '0.5';
+        this.crystalBtnContinue.style.cursor = 'not-allowed';
+        this.crystalBtnContinue.title = `The way down is sealed. Defeat the ${gateLock.bossName} to break the seal.`;
+      } else {
+        this.crystalContinueLabelEl.innerText = `Continue Descent (Floor ${currentFloor + 1}${nextRegionLabel})`;
+        this.crystalBtnContinue.removeAttribute('disabled');
+        this.crystalBtnContinue.style.opacity = '1';
+        this.crystalBtnContinue.style.cursor = 'pointer';
+        this.crystalBtnContinue.title = '';
+      }
     }
 
     if (this.teleporterCrystalModalEl) {

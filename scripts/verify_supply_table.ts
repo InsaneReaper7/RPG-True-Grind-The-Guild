@@ -149,15 +149,15 @@ function simulateFullBand(
   };
 }
 
-const simB1 = simulateFullBand(0, 1, 2, 50);
-const simB2 = simulateFullBand(1, 3, 3, 50);
-const simB3 = simulateFullBand(2, 6, 5, 50);
+const simB1 = simulateFullBand(0, 1, 5, 50);
+const simB2 = simulateFullBand(1, 6, 5, 50);
+const simB3 = simulateFullBand(2, 11, 5, 50);
 
 console.log('========================================================================================================');
 console.log('BAND 3 VOID KNIGHT HARVEST RATES (AFTER [2, 3] PLATE & [1, 2] ESSENCE BOOST)');
 console.log('========================================================================================================');
 const vkPerFlr = simB3.voidKnightSpawns / simB3.floorsSampled;
-console.log(`Band 3 Floors Sampled: ${simB3.floorsSampled} (50 runs of F6-F10) | Void Knight Spawns: ${simB3.voidKnightSpawns} (${(vkPerFlr * 100).toFixed(1)}% / floor)`);
+console.log(`Band 3 Floors Sampled: ${simB3.floorsSampled} (50 runs of F11-F15) | Void Knight Spawns: ${simB3.voidKnightSpawns} (${(vkPerFlr * 100).toFixed(1)}% / floor)`);
 console.log(`- void_plate:   ${(simB3.itemsPerFloor['void_plate'] ?? 0).toFixed(2)} / floor (~${(1 / (simB3.itemsPerFloor['void_plate'] || 0.001)).toFixed(2)} floors per plate)`);
 console.log(`- void_essence: ${(simB3.itemsPerFloor['void_essence'] ?? 0).toFixed(2)} / floor (~${(1 / (simB3.itemsPerFloor['void_essence'] || 0.001)).toFixed(2)} floors per essence)`);
 console.log(`- void_core:    ${(simB3.itemsPerFloor['void_core'] ?? 0).toFixed(2)} / floor (~${(1 / (simB3.itemsPerFloor['void_core'] || 0.001)).toFixed(2)} floors per core)`);

@@ -367,6 +367,7 @@ export interface PlayerSnapshot {
   tutorialCompleted?: boolean;
   tutorialDismissed?: boolean;
   hasReceivedTutorialSupplyCrate?: boolean;
+  defeatedAreaBosses?: string[];
   gearInstances?: Record<string, GearItemInstance>;
   quickSlots?: (string | null)[];
 }
@@ -919,6 +920,7 @@ export interface DungeonRegionDef {
   waterTexture?: string;
   accentColor: string;
   tagline?: string;
+  depthScalingOffset?: number;
   bossEnemyId?: string;
   eliteEnemyId?: string | null;
   epicEnemyId?: string | null;
