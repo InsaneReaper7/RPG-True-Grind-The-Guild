@@ -1208,5 +1208,39 @@ Never ask Antigravity to jump ahead in this list — each milestone assumes the 
   - Full test suite run: `npm test -- --quiet` passed (109/109 suites green).
   - Production build: `npm run build` succeeds cleanly.
 
+### Milestone: Abyssal Depths Expansion (F6–10): New Core Enemies (2026-10-06)
+
+**Resolved and shipped: Expanded Abyssal Depths core enemy roster with three new enemies (Deep Crawler, Abyssal Lurker, Void Thrall), wired status procs (Bleed, Blind, Slow), tuned pool weights, procedural avatars, bestiary entries, and verified Band 2 supply rates.**
+
+- **1. Three New Abyss Core Enemies**:
+  - `deep_crawler` (Fast Melee Fodder): 28 HP (14 crit HP), 6 melee damage, 950 ms interval, 105 move speed, 6 aggro radius, 15% Bleed proc (`bleedChance: 0.15`). Drops: bone (wt 2), steel_scrap (wt 1), spider_venom (wt 2, rare); skinning: 1 spider_silk.
+  - `abyssal_lurker` (Ranged Back-liner): 22 HP (11 crit HP), 5 damage, 1100 ms interval, 85 move speed, 7 aggro radius, 4-tile attack range (`attackRangeTiles: 4`), 15% Blind proc (`blindChance: 0.15`). Drops: bone (wt 2), ectoplasm (wt 2, rare).
+  - `void_thrall` (Slow Tanky Front-liner): 48 HP (24 crit HP), 7 melee damage, 1600 ms interval, 60 move speed, 5 aggro radius, 20% Slow proc (`slowChance: 0.20`). Drops: steel_scrap (wt 2), bone (wt 2).
+- **2. Status Effect Procs Wired**:
+  - Extended `EnemyDef` in `src/types/game.ts` with `bleedChance?: number; slowChance?: number; blindChance?: number;`.
+  - Wired on-hit application in `src/systems/CombatSystem.ts` (alongside existing Burn and Curse blocks) using canonical status definitions from `data/statusEffects.json`:
+    - Bleed: 6000ms duration, 3 dmg/s DoT (18 total dmg), floating `'BLEEDING!'` text.
+    - Slow: 3000ms duration, 50% movement speed penalty, floating `'SLOWED!'` text.
+    - Blind: 4000ms duration, 35% accuracy/hit penalty, floating `'BLINDED!'` text.
+- **3. Abyssal Depths Pool Configuration**:
+  - Maintained 70/30 Core/Carry-Over split in `data/dungeonConfig.json`.
+  - Core (70 weight total): `spider` (20), `deep_crawler` (16), `abyssal_lurker` (14), `void_thrall` (10), `undead` (10).
+  - Carry-Over (30 weight total): `skeleton` (10), `goblin_archer` (10), `wolf` (10).
+  - Elite (`orc_warrior`, 12%–15.2% depth scaling) and Elemental spawns (50% per floor) unchanged.
+- **4. Procedural Avatars & Knowledge Base**:
+  - Added procedural avatars in `src/utils/TextureGenerator.ts`: `deep_crawler-avatar` (multi-segmented violet carapace with glowing cyan cluster eyes), `abyssal_lurker-avatar` (spectral void shroud with radiant violet eye aperture), and `void_thrall-avatar` (dark-iron armored brute with glowing void runes and cold blue slitted eyes).
+  - Added bestiary descriptions to `data/enemies.json` for automatic discovery and rendering in the Knowledge Base modal.
+- **5. Supply Verification (F6–10)**:
+  - `spider_silk`: 3.556 -> 3.204 / floor (-9.9%, well within the 15% threshold).
+  - `steel_scrap`: +18.6% boost (0.752 -> 0.892 / floor), speeding up 10 Steel weapon/shield recipes from 2.7 to 2.2 floors/craft.
+  - `bone`: +35.3% boost (1.008 -> 1.364 / floor), speeding up Composite Bow from 2.0 to 1.5 floors/craft.
+  - `ectoplasm`: +15.3% boost (0.444 -> 0.512 / floor) with Lurker drops.
+  - `spider_venom`: -37.5% (1.504 -> 0.940 / floor), Venom Charm crafts at 2.1 flr (well under 4.0 flr threshold).
+- **6. Verification & Test Evidence**:
+  - Dedicated verification test suite: `test/milestone_abyssal_depths_expansion.test.ts` (all 4/4 suites pass: pool weights across 500 floors, 1,000 hit proc rates, 0 gemstones from new enemies, Crypts & Caldera unchanged).
+  - Full test suite run: `npm test -- --quiet` passed (110/110 suites green).
+  - Production build: `npm run build` succeeds cleanly.
+
+
 
 

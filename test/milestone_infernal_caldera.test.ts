@@ -46,8 +46,8 @@ async function runMilestoneInfernalCalderaTests() {
   assert.strictEqual(abyssal.eliteEnemyId, 'orc_warrior');
   assert.strictEqual(abyssal.epicEnemyId, null);
   const abyssalSpiders = abyssal.enemyPool.find((e: any) => e.enemyId === 'spider');
-  assert.strictEqual(abyssalSpiders?.weight, 40, 'Abyssal Depths spider weight must remain 40');
-  console.log('  ✓ Band 2 (Abyssal Depths) configuration confirmed: Floors 6-10, bossEnemyId: abyssal_colossus, spider weight: 40');
+  assert.strictEqual(abyssalSpiders?.weight, 20, 'Abyssal Depths spider weight is 20 in expanded pool');
+  console.log('  ✓ Band 2 (Abyssal Depths) configuration confirmed: Floors 6-10, bossEnemyId: abyssal_colossus, spider weight: 20');
   console.log('✓ PASS: Bands 1 and 2 pools and configurations verified.');
 
   // -------------------------------------------------------------------------------------------------

@@ -1221,6 +1221,130 @@
           "note": "Ancient pulsating void core (10% chase drop)"
         }
       ]
+    },
+    {
+      "id": "deep_crawler",
+      "name": "Deep Crawler",
+      "tier": "common",
+      "hp": 28,
+      "criticalHpMax": 14,
+      "meleeDamage": 6,
+      "aggroRadius": 6,
+      "attackIntervalMs": 950,
+      "moveSpeed": 105,
+      "attackRangeTiles": 1,
+      "dropChance": 0.4,
+      "bleedChance": 0.15,
+      "description": "A swift, multi-legged predator indigenous to the abyssal chasms. Its barbed mandibles rend flesh, causing grievous bleeding wounds.",
+      "harvest": [
+        {
+          "method": "salvage",
+          "item": "bone",
+          "weight": 2,
+          "tags": [
+            "bowyer",
+            "blacksmithing"
+          ]
+        },
+        {
+          "method": "salvage",
+          "item": "steel_scrap",
+          "weight": 1,
+          "tags": [
+            "blacksmithing"
+          ]
+        },
+        {
+          "method": "rare_drop",
+          "item": "spider_venom",
+          "weight": 2,
+          "tags": [
+            "alchemy"
+          ]
+        }
+      ],
+      "corpseHarvest": {
+        "skinning": {
+          "item": "spider_silk",
+          "name": "Spider Silk",
+          "count": 1,
+          "exp": 15,
+          "tags": [
+            "armorsmithing",
+            "tailoring",
+            "bowyer"
+          ]
+        }
+      }
+    },
+    {
+      "id": "abyssal_lurker",
+      "name": "Abyssal Lurker",
+      "tier": "common",
+      "hp": 22,
+      "criticalHpMax": 11,
+      "meleeDamage": 5,
+      "aggroRadius": 7,
+      "attackIntervalMs": 1100,
+      "moveSpeed": 85,
+      "attackRangeTiles": 4,
+      "dropChance": 0.4,
+      "blindChance": 0.15,
+      "description": "A shadowy wraith that lurks in the darkness of the Void Stratum. It hurls ethereal bolts from a distance that obscure vision with blinding planar shadow.",
+      "harvest": [
+        {
+          "method": "salvage",
+          "item": "bone",
+          "weight": 2,
+          "tags": [
+            "bowyer",
+            "blacksmithing"
+          ]
+        },
+        {
+          "method": "rare_drop",
+          "item": "ectoplasm",
+          "weight": 2,
+          "tags": [
+            "enchanting",
+            "alchemy"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "void_thrall",
+      "name": "Void Thrall",
+      "tier": "common",
+      "hp": 48,
+      "criticalHpMax": 24,
+      "meleeDamage": 7,
+      "aggroRadius": 5,
+      "attackIntervalMs": 1600,
+      "moveSpeed": 60,
+      "attackRangeTiles": 1,
+      "dropChance": 0.4,
+      "slowChance": 0.2,
+      "description": "A hulking, armor-bound humanoid husk bound by void iron. Its crushing blows release numbing abyssal cold that slows its quarry.",
+      "harvest": [
+        {
+          "method": "salvage",
+          "item": "steel_scrap",
+          "weight": 2,
+          "tags": [
+            "blacksmithing"
+          ]
+        },
+        {
+          "method": "salvage",
+          "item": "bone",
+          "weight": 2,
+          "tags": [
+            "bowyer",
+            "blacksmithing"
+          ]
+        }
+      ]
     }
   ]
 }

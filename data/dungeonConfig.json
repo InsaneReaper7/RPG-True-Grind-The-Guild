@@ -122,8 +122,11 @@
       "epicEnemyId": null,
       "depthScalingOffset": 0,
       "enemyPool": [
-        { "enemyId": "spider", "weight": 40, "type": "core" },
-        { "enemyId": "undead", "weight": 30, "type": "core" },
+        { "enemyId": "spider", "weight": 20, "type": "core" },
+        { "enemyId": "deep_crawler", "weight": 16, "type": "core" },
+        { "enemyId": "abyssal_lurker", "weight": 14, "type": "core" },
+        { "enemyId": "void_thrall", "weight": 10, "type": "core" },
+        { "enemyId": "undead", "weight": 10, "type": "core" },
         { "enemyId": "skeleton", "weight": 10, "type": "carry_over" },
         { "enemyId": "goblin_archer", "weight": 10, "type": "carry_over" },
         { "enemyId": "wolf", "weight": 10, "type": "carry_over" }

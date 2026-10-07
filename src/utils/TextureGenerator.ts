@@ -1137,6 +1137,110 @@ export class TextureGenerator {
       g.destroy();
     }
 
+    // 4o. Abyssal Depths Expansion Procedural Avatars (Milestone: Abyssal Depths Expansion)
+    // Deep Crawler Avatar
+    if (!scene.textures.exists('deep_crawler-avatar')) {
+      const size = 28;
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      const cx = size / 2;
+      const cy = size / 2;
+      // Multi-segmented violet carapace
+      g.fillStyle(0x2e1065, 1);
+      g.fillEllipse(cx, cy + 2, 14, 10);
+      g.fillStyle(0x3b0764, 1);
+      g.fillCircle(cx, cy - 3, 5);
+      // Spiny legs
+      g.lineStyle(1.5, 0x6b21a8, 0.95);
+      // Left legs
+      g.lineBetween(cx - 5, cy, 2, cy - 6);
+      g.lineBetween(cx - 6, cy + 2, 1, cy + 2);
+      g.lineBetween(cx - 5, cy + 4, 3, cy + 9);
+      // Right legs
+      g.lineBetween(cx + 5, cy, size - 2, cy - 6);
+      g.lineBetween(cx + 6, cy + 2, size - 1, cy + 2);
+      g.lineBetween(cx + 5, cy + 4, size - 3, cy + 9);
+      // Barbed mandibles
+      g.lineStyle(2, 0xa855f7, 1);
+      g.lineBetween(cx - 3, cy - 7, cx - 1, cy - 10);
+      g.lineBetween(cx + 3, cy - 7, cx + 1, cy - 10);
+      // Glowing cyan cluster eyes
+      g.fillStyle(0x06b6d4, 1);
+      g.fillCircle(cx - 2, cy - 4, 1.2);
+      g.fillCircle(cx + 2, cy - 4, 1.2);
+      g.fillStyle(0xa5f3fc, 1);
+      g.fillCircle(cx - 1, cy - 2, 0.8);
+      g.fillCircle(cx + 1, cy - 2, 0.8);
+
+      g.generateTexture('deep_crawler-avatar', size, size);
+      g.destroy();
+    }
+
+    // Abyssal Lurker Avatar
+    if (!scene.textures.exists('abyssal_lurker-avatar')) {
+      const size = 28;
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      const cx = size / 2;
+      const cy = size / 2;
+      // Spectral void shroud
+      g.fillStyle(0x1e1b4b, 0.9);
+      g.fillCircle(cx, cy - 3, 7);
+      // Trailing shadow wisps
+      g.beginPath();
+      g.moveTo(cx - 7, cy - 3);
+      g.lineTo(cx - 4, cy + 11);
+      g.lineTo(cx, cy + 7);
+      g.lineTo(cx + 4, cy + 11);
+      g.lineTo(cx + 7, cy - 3);
+      g.closePath();
+      g.fillStyle(0x312e81, 0.8);
+      g.fillPath();
+      // Inner planar shadow mantle
+      g.fillStyle(0x4338ca, 0.85);
+      g.fillCircle(cx, cy - 2, 4.5);
+      // Radiant void eye aperture
+      g.fillStyle(0xc084fc, 1);
+      g.fillCircle(cx, cy - 2, 2.2);
+      g.fillStyle(0xffffff, 1);
+      g.fillCircle(cx, cy - 2, 1);
+      // Ambient void embers
+      g.fillStyle(0x818cf8, 0.7);
+      g.fillCircle(cx - 6, cy + 4, 1);
+      g.fillCircle(cx + 6, cy + 3, 1);
+
+      g.generateTexture('abyssal_lurker-avatar', size, size);
+      g.destroy();
+    }
+
+    // Void Thrall Avatar
+    if (!scene.textures.exists('void_thrall-avatar')) {
+      const size = 32;
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      const cx = size / 2;
+      const cy = size / 2;
+      // Hulking dark-iron silhouette
+      g.fillStyle(0x0f172a, 1);
+      g.fillCircle(cx, cy, 11);
+      // Heavy iron shoulder plates
+      g.fillStyle(0x1e293b, 1);
+      g.fillCircle(cx - 9, cy - 3, 4.5);
+      g.fillCircle(cx + 9, cy - 3, 4.5);
+      // Armored cowl/brow
+      g.fillStyle(0x334155, 1);
+      g.fillRect(cx - 5, cy - 8, 10, 5);
+      // Glowing void shackles / chest fissures
+      g.lineStyle(1.5, 0x8b5cf6, 0.9);
+      g.lineBetween(cx - 5, cy - 2, cx + 5, cy - 2);
+      g.lineBetween(cx - 4, cy + 3, cx + 4, cy + 3);
+      g.lineBetween(cx, cy - 2, cx, cy + 7);
+      // Piercing cold eyes
+      g.fillStyle(0x38bdf8, 1);
+      g.fillCircle(cx - 2.5, cy - 5, 1.2);
+      g.fillCircle(cx + 2.5, cy - 5, 1.2);
+
+      g.generateTexture('void_thrall-avatar', size, size);
+      g.destroy();
+    }
+
     // 5. Target Selection Reticle
     if (!scene.textures.exists('target-reticle')) {
       const size = 32;

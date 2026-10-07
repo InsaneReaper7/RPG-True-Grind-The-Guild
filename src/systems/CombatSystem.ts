@@ -1007,6 +1007,45 @@ export class CombatSystem {
                     }
                   }
 
+                  // Milestone: Abyssal Depths Expansion - Bleed proc (Deep Crawler)
+                  // Uses standard Bleed definition from statusEffects.json (6000ms duration, 1000ms interval, 3 dmg/tick = 18 total DoT)
+                  if (enemy.enemyData.bleedChance && actualDamage > 0 && !targetDowned) {
+                    if (Math.random() < enemy.enemyData.bleedChance) {
+                      const bleedDef = DataLoader.getInstance().getStatusEffect('bleed');
+                      if (bleedDef) {
+                        target.applyStatusEffect(bleedDef);
+                        this.createFloatingText(target.x, target.y - 28, 'BLEEDING!', bleedDef.color || '#ef4444');
+                        console.log(`[Combat] 🩸 ${enemy.entityName} inflicts Bleed on ${target.entityName}!`);
+                      }
+                    }
+                  }
+
+                  // Milestone: Abyssal Depths Expansion - Slow proc (Void Thrall)
+                  // Uses standard Slow definition from statusEffects.json (3000ms duration, 50% move speed reduction)
+                  if (enemy.enemyData.slowChance && actualDamage > 0 && !targetDowned) {
+                    if (Math.random() < enemy.enemyData.slowChance) {
+                      const slowDef = DataLoader.getInstance().getStatusEffect('slow');
+                      if (slowDef) {
+                        target.applyStatusEffect(slowDef);
+                        this.createFloatingText(target.x, target.y - 28, 'SLOWED!', slowDef.color || '#67e8f9');
+                        console.log(`[Combat] ❄️ ${enemy.entityName} inflicts Slow on ${target.entityName}!`);
+                      }
+                    }
+                  }
+
+                  // Milestone: Abyssal Depths Expansion - Blind proc (Abyssal Lurker)
+                  // Uses standard Blind definition from statusEffects.json (4000ms duration, 35% miss penalty)
+                  if (enemy.enemyData.blindChance && actualDamage > 0 && !targetDowned) {
+                    if (Math.random() < enemy.enemyData.blindChance) {
+                      const blindDef = DataLoader.getInstance().getStatusEffect('blind');
+                      if (blindDef) {
+                        target.applyStatusEffect(blindDef);
+                        this.createFloatingText(target.x, target.y - 28, 'BLINDED!', blindDef.color || '#6b21a8');
+                        console.log(`[Combat] 👁️ ${enemy.entityName} inflicts Blind on ${target.entityName}!`);
+                      }
+                    }
+                  }
+
                   // Milestone: Magical Crafting - Elemental Enemy Status Effect Proc
                   if (enemy.enemyData.tier === 'elemental' && actualDamage > 0 && !targetDowned) {
                     this.applyElementalAttackStatus(enemy, target);

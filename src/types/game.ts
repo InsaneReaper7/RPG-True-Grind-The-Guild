@@ -185,6 +185,9 @@ export interface EnemyDef {
   burnChance?: number;
   stunChance?: number;
   curseChance?: number;
+  bleedChance?: number;
+  slowChance?: number;
+  blindChance?: number;
   description?: string;
   researchPoints?: number | { min: number; max: number };
 }
