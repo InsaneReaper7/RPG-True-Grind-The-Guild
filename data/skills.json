@@ -67,7 +67,14 @@
           "value": 20
         }
       ],
-      "description": "A guaranteed counter-strike usable only immediately after evading or parrying an attack, dealing 180% weapon damage."
+      "description": "A guaranteed counter-strike usable only immediately after evading or parrying an attack, dealing 180% weapon damage.",
+      "ai": {
+        "role": "rotation",
+        "priority": 65,
+        "condition": {
+          "requiresRiposteReady": true
+        }
+      }
     },
     {
       "id": "fleche",
@@ -106,7 +113,11 @@
           "value": 40
         }
       ],
-      "description": "The duelist's capstone: delivers 4 rapid strikes against the target dealing a total of 320% weapon damage."
+      "description": "The duelist's capstone: delivers 4 rapid strikes against the target dealing a total of 320% weapon damage.",
+      "ai": {
+        "role": "finisher",
+        "priority": 75
+      }
     },
     {
       "id": "first_aid",
@@ -259,7 +270,14 @@
           "value": 10
         }
       ],
-      "description": "Braces defense for 5s, mitigating 50% of all incoming damage."
+      "description": "Braces defense for 5s, mitigating 50% of all incoming damage.",
+      "ai": {
+        "role": "defensive",
+        "priority": 70,
+        "condition": {
+          "selfHpBelow": 0.5
+        }
+      }
     },
     {
       "id": "taunt",
@@ -296,7 +314,11 @@
           "value": 30
         }
       ],
-      "description": "Prepares a retaliatory stance; the next incoming attack taken triggers a guaranteed free counterattack."
+      "description": "Prepares a retaliatory stance; the next incoming attack taken triggers a guaranteed free counterattack.",
+      "ai": {
+        "role": "defensive",
+        "priority": 55
+      }
     },
     {
       "id": "unbreakable",
@@ -313,7 +335,14 @@
           "value": 40
         }
       ],
-      "description": "Hardens will and armor to become completely impervious to all damage for 4s."
+      "description": "Hardens will and armor to become completely impervious to all damage for 4s.",
+      "ai": {
+        "role": "defensive",
+        "priority": 90,
+        "condition": {
+          "selfHpBelow": 0.3
+        }
+      }
     },
     {
       "id": "crushing_blow",
@@ -890,7 +919,11 @@
           "value": 40
         }
       ],
-      "description": "Ronin capstone: unleashes 4 blindingly fast katana cuts dealing 320% total weapon damage and refreshing Bleed."
+      "description": "Ronin capstone: unleashes 4 blindingly fast katana cuts dealing 320% total weapon damage and refreshing Bleed.",
+      "ai": {
+        "role": "finisher",
+        "priority": 70
+      }
     },
     {
       "id": "overhead_cleave",
@@ -968,7 +1001,11 @@
           "value": 30
         }
       ],
-      "description": "An impenetrable blade guard absorbing 40 damage and deflecting incoming blows for 6s."
+      "description": "An impenetrable blade guard absorbing 40 damage and deflecting incoming blows for 6s.",
+      "ai": {
+        "role": "defensive",
+        "priority": 60
+      }
     },
     {
       "id": "heavenly_decapitation",
@@ -1048,7 +1085,11 @@
           "value": 20
         }
       ],
-      "description": "Vaults tactically up to 3 tiles away from incoming threats, creating distance and gaining +40% Evasion for 3s."
+      "description": "Vaults tactically up to 3 tiles away from incoming threats, creating distance and gaining +40% Evasion for 3s.",
+      "ai": {
+        "role": "defensive",
+        "priority": 55
+      }
     },
     {
       "id": "pinning_spear",
@@ -1194,7 +1235,11 @@
           "value": 40
         }
       ],
-      "description": "Loader capstone: winds the heavy tension spring to maximum mechanical tolerance, releasing a devastating armor-piercing projectile dealing 260% weapon damage up to 4 tiles away."
+      "description": "Loader capstone: winds the heavy tension spring to maximum mechanical tolerance, releasing a devastating armor-piercing projectile dealing 260% weapon damage up to 4 tiles away.",
+      "ai": {
+        "role": "finisher",
+        "priority": 65
+      }
     },
     {
       "id": "arcane_bolt",
@@ -1295,7 +1340,14 @@
           "value": 40
         }
       ],
-      "description": "Arcane Initiate capstone: releases an explosive burst of raw arcane energy in a 4-tile radius around the caster, dealing 260% magic damage to all enemies within range."
+      "description": "Arcane Initiate capstone: releases an explosive burst of raw arcane energy in a 4-tile radius around the caster, dealing 260% magic damage to all enemies within range.",
+      "ai": {
+        "role": "defensive",
+        "priority": 75,
+        "condition": {
+          "enemiesInRadius": 1
+        }
+      }
     },
     {
       "id": "arcane_strike",
@@ -1523,7 +1575,7 @@
           "value": 1
         }
       ],
-      "description": "Ember Adept baseline: casts a concentrated burst of flame dealing 110% spell damage with a 60% chance to Burn.",
+      "description": "Ember Adept baseline: casts a concentrated burst of flame dealing 110% spell damage with a 40% chance to Burn.",
       "ai": {
         "role": "rotation",
         "priority": 25
@@ -1537,7 +1589,7 @@
         {
           "type": "applyStatus",
           "status": "burn",
-          "chance": 0.6,
+          "chance": 0.4,
           "durationMs": 4000
         }
       ]

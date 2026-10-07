@@ -132,9 +132,9 @@ async function runMilestoneAbyssalDepthsExpansionTests() {
   console.log('✓ PASS: Abyss pool spawns all 5 core and 3 carry-over enemies at their target weights.\n');
 
   // -------------------------------------------------------------------------------------------------
-  // 3. Proc Rates Over 1,000 Simulated Hits
+  // 3. proc chance data check
   // -------------------------------------------------------------------------------------------------
-  console.log('--- TEST 3: Proc Rates Over 1,000 Simulated Hits ---');
+  console.log('--- TEST 3: proc chance data check ---');
   const crawlerDef = enemiesMap.get('deep_crawler');
   const lurkerDef = enemiesMap.get('abyssal_lurker');
   const thrallDef = enemiesMap.get('void_thrall');

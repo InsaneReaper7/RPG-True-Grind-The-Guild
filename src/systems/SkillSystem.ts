@@ -538,10 +538,16 @@ export class SkillSystem {
           continue;
         }
 
-        // Regenerate HoT
+        // Regenerate HoT (follows owner's 70% combined-HP rule)
         if (skillId === 'regenerate' || skillDef.effects?.some(e => e.type === 'healOverTime')) {
+          const threshold = cond?.allyHpBelow ?? 0.70;
           const hotCandidates = this.combatSystem.party.filter(
-            (m) => m.state !== 'dead' && m.state !== 'downed' && (m.hp < m.maxHp || m.criticalHp < m.maxCriticalHp) && !m.hasStatusEffect('regenerate')
+            (m) => {
+              if (m.state === 'dead' || m.state === 'downed') return false;
+              if (m.hasStatusEffect('regenerate') || m.hasStatusEffect(skillId)) return false;
+              const ratio = (m.hp + (m.criticalHp ?? 0)) / (m.maxHp + (m.maxCriticalHp ?? 0));
+              return ratio <= threshold;
+            }
           );
           if (hotCandidates.length > 0) {
             hotCandidates.sort((a, b) => {
@@ -580,15 +586,21 @@ export class SkillSystem {
         if (cond?.enemiesInRadius) {
           const radius = skillDef.radiusTiles ?? 4;
           const cTile = { x: Math.floor(member.x / member.tileSize), y: Math.floor(member.y / member.tileSize) };
-          const enemiesNearby = this.combatSystem.enemies.some((e) => {
+          const livingNearby = this.combatSystem.enemies.filter((e) => {
             if (e.state === 'dead' || e.state === 'downed') return false;
             const eTile = { x: Math.floor(e.x / e.tileSize), y: Math.floor(e.y / e.tileSize) };
             return Math.max(Math.abs(cTile.x - eTile.x), Math.abs(cTile.y - eTile.y)) <= radius;
-          });
-          if (enemiesNearby) {
+          }).length;
+          if (livingNearby >= cond.enemiesInRadius) {
             candidates.push({ skillDef, target: member, priority });
           }
           continue;
+        }
+
+        // Self HP threshold check if specified (e.g. guard_up, unbreakable)
+        if (cond?.selfHpBelow !== undefined) {
+          const ratio = (member.hp + (member.criticalHp ?? 0)) / (member.maxHp + (member.maxCriticalHp ?? 0));
+          if (ratio > cond.selfHpBelow) continue;
         }
 
         // Standard self buff / stance (don't recast if already active)
@@ -605,6 +617,38 @@ export class SkillSystem {
       } else if (context === 'rotation') {
         if (role !== 'rotation' && role !== 'opener' && role !== 'finisher') continue;
         if (!targetEnemy || targetEnemy.state === 'dead' || targetEnemy.state === 'downed') continue;
+
+        // Range check: skip skills whose rangeTiles is less than distanceTiles
+        const dist = distanceTiles !== undefined ? distanceTiles : (() => {
+          const cTile = { x: Math.floor(member.x / member.tileSize), y: Math.floor(member.y / member.tileSize) };
+          const tTile = { x: Math.floor(targetEnemy.x / (targetEnemy.tileSize || member.tileSize)), y: Math.floor(targetEnemy.y / (targetEnemy.tileSize || member.tileSize)) };
+          return Math.max(Math.abs(cTile.x - tTile.x), Math.abs(cTile.y - tTile.y));
+        })();
+        if (skillDef.rangeTiles !== undefined && dist > skillDef.rangeTiles) {
+          continue;
+        }
+
+        // AoE condition check: count living enemies within area radius around target
+        if (cond?.enemiesInRadius) {
+          const dmgEffect = skillDef.effects?.find((e): e is import('../types/game.ts').SkillEffectDamage => e.type === 'damage' && e.area?.radius !== undefined);
+          const areaRadius = dmgEffect?.area?.radius ?? skillDef.radiusTiles ?? 3;
+          const tTile = {
+            x: Math.floor(targetEnemy.x / (targetEnemy.tileSize || member.tileSize)),
+            y: Math.floor(targetEnemy.y / (targetEnemy.tileSize || member.tileSize))
+          };
+          let livingCount = 0;
+          for (const e of this.combatSystem.enemies) {
+            if (e.state === 'dead' || e.state === 'downed') continue;
+            const eTile = {
+              x: Math.floor(e.x / (e.tileSize || member.tileSize)),
+              y: Math.floor(e.y / (e.tileSize || member.tileSize))
+            };
+            if (Math.max(Math.abs(tTile.x - eTile.x), Math.abs(tTile.y - eTile.y)) <= areaRadius) {
+              livingCount++;
+            }
+          }
+          if (livingCount < cond.enemiesInRadius) continue;
+        }
 
         // Special HP condition check for skills like Dark Pact
         if (skillDef.hpCost || skillDef.effects?.some(e => e.type === 'resource' && e.hpCost)) {

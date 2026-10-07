@@ -1255,3 +1255,25 @@ Never ask Antigravity to jump ahead in this list — each milestone assumes the 
   - Dedicated unit tests: `test/skill_primitives.test.ts` (primitives + Ember Adept data execution), `test/evaluator_extensions.test.ts` (triggerCount, oneOf, anyOf), `test/skill_migration_golden_master.test.ts` (golden master damage & 14-kit companion AI equivalence).
   - Full test suite: `npm test -- --quiet` passed all 113/113 suites cleanly.
   - Production build: `npm run build` succeeds cleanly with zero TypeScript errors.
+
+### Class Program, Step 1 Follow-Up: Skill Engine Fixes & AI Equivalence (2026-10-07)
+
+**Resolved and shipped: Applied 4 code and data fixes to the Skill Engine, verified AI selector range/AoE/HoT logic, added explicit AI metadata to all 10 legacy fallback skills, retuned Scorch burn chance to 0.40, renamed Abyss proc check test block, and verified full 114-suite test pass.**
+
+- **1. Rotation enemiesInRadius AoE Filter (`SkillSystem.ts`)**:
+  - Implemented living-enemy count check within skill area radius around target using Chebyshev distance.
+  - AoE rotation skills (e.g. Firestorm, Flame Wave) now skip if living count < `condition.enemiesInRadius`.
+- **2. Rotation Range Filter (`SkillSystem.ts`)**:
+  - Companions in rotation now skip skills whose `rangeTiles` < `distanceTiles`. Prevents close-range skills (e.g. Flame Wave at range 2) from starving ranged fillers (e.g. Scorch at range 4).
+- **3. HoT 70% Combined-HP Rule (`SkillSystem.ts`)**:
+  - Gated HoT auto-selection (`regenerate` / `healOverTime`) behind `allyHpBelow ?? 0.70` combined HP threshold matching direct heals.
+- **4. Scorch Burn Chance Retune (`data/skills.json`)**:
+  - Retuned burn chance from 0.60 to 0.40, keeping filler damage at +11.5% (+12%) over basic fire cast per 22 EN (within +25% cap).
+- **5. Metadata for All 10 Fallback Skills (`data/skills.json`)**:
+  - Added explicit `ai` blocks for `riposte`, `blade_dance`, `guard_up` (selfHpBelow: 0.5), `retaliate`, `unbreakable` (selfHpBelow: 0.3), `dragons_flurry`, `kenjutsu_deflection`, `vaulting_leap`, `kinetic_overdraw`, and `arcane_nova` (enemiesInRadius: 1).
+- **6. Tests & Build Verification**:
+  - Added targeted test suite `test/skill_engine_fixes.test.ts` covering all 4 fixes + defensive HP gating.
+  - Renamed `test/milestone_abyssal_depths_expansion.test.ts` test 3 to "proc chance data check".
+  - Production build: `npm run build` succeeds with zero errors.
+  - Test suite: `npm test -- --quiet` passes all 114/114 test suites cleanly.
+
