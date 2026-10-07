@@ -1236,11 +1236,22 @@ Never ask Antigravity to jump ahead in this list — each milestone assumes the 
   - `bone`: +35.3% boost (1.008 -> 1.364 / floor), speeding up Composite Bow from 2.0 to 1.5 floors/craft.
   - `ectoplasm`: +15.3% boost (0.444 -> 0.512 / floor) with Lurker drops.
   - `spider_venom`: -37.5% (1.504 -> 0.940 / floor), Venom Charm crafts at 2.1 flr (well under 4.0 flr threshold).
-- **6. Verification & Test Evidence**:
-  - Dedicated verification test suite: `test/milestone_abyssal_depths_expansion.test.ts` (all 4/4 suites pass: pool weights across 500 floors, 1,000 hit proc rates, 0 gemstones from new enemies, Crypts & Caldera unchanged).
-  - Full test suite run: `npm test -- --quiet` passed (110/110 suites green).
-  - Production build: `npm run build` succeeds cleanly.
+### Class Program, Step 1: Skill Engine & Data-Driven Effects (2026-10-07)
 
+**Resolved and shipped: Built the generic, data-driven skill effect engine (`SkillSystem`), companion AI skill selector (`selectSkillForCompanion`), progression requirement evaluator extensions (`triggerCount`, `oneOf`, `anyOf`), Ember Adept pilot kit, and verified behavioural equivalence across existing combat companion kits.**
 
-
-
+- **1. Skill Engine Architecture (`SkillSystem.ts`)**:
+  - Implemented generic execution engine handling primitive effects (`damage`, `applyStatus`, `heal`, `healOverTime`, `shield`, `buff`/`debuff`, `cleanse`, `taunt`, `resource`, `reactive`).
+  - Added support for area shapes (`cleave` and `radius`), conditional modifiers (`lowHealthBonus`, `requiresTargetStatus`), spell overcharge interaction, and mood multipliers.
+  - Excluded physical knockback per owner instruction.
+  - Replaced hardcoded skill ID branches in companion AI (`checkAndAutocastAllyHeal`, `checkAndAutocastSelfBuffs`, gap-closer approach, and in-range rotation) with metadata-driven evaluation (`ai.role`, `ai.priority`, `ai.condition`).
+- **2. Evaluator Extensions (`ProgressionSystem.ts`)**:
+  - Implemented `triggerCount`, `oneOf`, and `anyOf` with nested recursive evaluation in `evaluateRequirement()`.
+  - Added tracking and helpers: `recordTrigger()`, `getTriggerCount()`, `triggerCounts` map.
+- **3. Pilot Kit: Ember Adept (`data/skills.json`)**:
+  - Defined full 5-skill kit via pure data: `scorch` (1.1x dmg, 60% burn), `firebolt` (1.6x dmg, 85% burn), `flame_wave` (1.4x cleave dmg, 70% burn), `ignite` (1.8x dmg, 100% burn 6s), `firestorm` (2.2x 3-tile radial aoe, 90% burn).
+  - Validated skill economy so basic cast efficiency is respected.
+- **4. Verification & Test Evidence**:
+  - Dedicated unit tests: `test/skill_primitives.test.ts` (primitives + Ember Adept data execution), `test/evaluator_extensions.test.ts` (triggerCount, oneOf, anyOf), `test/skill_migration_golden_master.test.ts` (golden master damage & 14-kit companion AI equivalence).
+  - Full test suite: `npm test -- --quiet` passed all 113/113 suites cleanly.
+  - Production build: `npm run build` succeeds cleanly with zero TypeScript errors.

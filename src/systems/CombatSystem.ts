@@ -8,19 +8,21 @@ import { DataLoader } from '../utils/DataLoader.ts';
 import type { GridPos, WeaponDef, PassiveImbuementDef, PassiveImbuementProcDef, EnemyDef } from '../types/game.ts';
 import { HiddenSkillSystem, type CombatContext, type CounterattackResult } from './HiddenSkillSystem.ts';
 import { GameState } from './GameState.ts';
+import { SkillSystem } from './SkillSystem.ts';
 
 export class CombatSystem {
   public static readonly DEBUG_AI: boolean = false;
 
   private scene: Phaser.Scene;
   public party: Player[];
-  private enemies: Enemy[];
+  public enemies: Enemy[];
   private pathfinder: Pathfinder;
   private onEnemyDeathCallback?: (enemy: Enemy) => void;
   private lastCombatTimeMs: number = 0;
   private lastPassiveTickTimeMs: number = 0;
   private enemyTargets: Map<Enemy, Player> = new Map();
   private casterRegrowthTargets: Map<string, Entity> = new Map();
+  public skillSystem: SkillSystem;
 
   constructor(
     scene: Phaser.Scene,
@@ -35,6 +37,7 @@ export class CombatSystem {
     this.enemies = enemies || [];
     this.pathfinder = pathfinder ?? (scene as any)?.pathfinder;
     this.onEnemyDeathCallback = onEnemyDeath;
+    this.skillSystem = new SkillSystem(this);
   }
 
   public get player(): Player {
@@ -696,17 +699,15 @@ export class CombatSystem {
                   ? (shieldDef?.baseMitigation ?? 1) + Math.floor(shieldLevel * (shieldDef?.levelBonus?.mitigationPerLevel ?? 0.2))
                   : 0;
 
-                const evasiveRollEffect = target.activeStatusEffects.get('evasive_roll');
-                const flowingStepEffect = target.activeStatusEffects.get('flowing_step');
-                const vaultingLeapEffect = target.activeStatusEffects.get('vaulting_leap');
-                const skirmishStepEffect = target.activeStatusEffects.get('skirmish_step');
-                const evasionBonus = evasiveRollEffect
-                  ? (evasiveRollEffect.def?.evasionBonus ?? 0.5)
-                  : (vaultingLeapEffect
-                    ? (vaultingLeapEffect.def?.evasionBonus ?? 0.4)
-                    : (skirmishStepEffect
-                      ? (skirmishStepEffect.def?.evasionBonus ?? 0.35)
-                      : (flowingStepEffect ? (flowingStepEffect.def?.evasionBonus ?? 0.25) : undefined)));
+                let maxEvasionBonus: number | undefined = undefined;
+                for (const activeEffect of target.activeStatusEffects.values()) {
+                  if (activeEffect.def?.evasionBonus !== undefined) {
+                    if (maxEvasionBonus === undefined || activeEffect.def.evasionBonus > maxEvasionBonus) {
+                      maxEvasionBonus = activeEffect.def.evasionBonus;
+                    }
+                  }
+                }
+                const evasionBonus = maxEvasionBonus;
 
                 const context: CombatContext = {
                   equippedWeapon: target.equippedWeapon,
@@ -1148,192 +1149,21 @@ export class CombatSystem {
       const dx = Math.abs(member.gridPos.x - target.gridPos.x);
       const dy = Math.abs(member.gridPos.y - target.gridPos.y);
       const distanceTiles = Math.max(dx, dy);
-      const dataLoader = DataLoader.getInstance();
 
-      // Milestone 22: Fleche approach gap-closer autocast (when outside melee range up to rangeTiles)
+      // Data-driven approach gap-closer and ranged autocast (when outside melee range up to skill range)
       if (distanceTiles > member.attackRangeTiles && member.targetEntity) {
-        if (member.equippedSkillIds.includes('fleche') && member.isAutocastEnabled('fleche')) {
-          const flecheDef = dataLoader.getSkill('fleche');
-          if (flecheDef && member.progression.isSkillUnlocked(flecheDef, member)) {
-            const isOffCd = !member.lastSkillUseTimes.has('fleche') || (time - member.lastSkillUseTimes.get('fleche')! >= flecheDef.cooldownMs);
-            const isAffordable = member.energy >= flecheDef.energyCost;
-            const maxRange = flecheDef.rangeTiles ?? 5;
-            if (isOffCd && isAffordable && distanceTiles <= maxRange) {
-              const castSuccess = this.castSkill(member, 'fleche', target, time);
-              if (castSuccess) {
-                continue;
-              }
-            }
+        const selectedApproach = this.skillSystem.selectSkillForCompanion(
+          member,
+          'gapCloser',
+          time,
+          target as Enemy,
+          distanceTiles
+        );
+        if (selectedApproach) {
+          const castSuccess = this.castSkill(member, selectedApproach.skillDef.id, selectedApproach.target, time);
+          if (castSuccess) {
+            continue;
           }
-        }
-        // Milestone 24: Smite ranged holy strike autocast (when outside melee range up to rangeTiles)
-        if (member.equippedSkillIds.includes('smite') && member.isAutocastEnabled('smite')) {
-          const smiteDef = dataLoader.getSkill('smite');
-          if (smiteDef && member.progression.isSkillUnlocked(smiteDef, member)) {
-            const isOffCd = !member.lastSkillUseTimes.has('smite') || (time - member.lastSkillUseTimes.get('smite')! >= smiteDef.cooldownMs);
-            const isAffordable = member.energy >= smiteDef.energyCost;
-            const maxRange = smiteDef.rangeTiles ?? 5;
-            if (isOffCd && isAffordable && distanceTiles <= maxRange) {
-              const castSuccess = this.castSkill(member, 'smite', target, time);
-              if (castSuccess) {
-                continue;
-              }
-            }
-          }
-        }
-
-        // Milestone 46: Scout ranged skills autocast during approach
-        let scoutApproachCast = false;
-        for (const scoutSkillId of ['kill_shot', 'mark_target', 'quickshot', 'trap_snare']) {
-          if (member.equippedSkillIds.includes(scoutSkillId) && member.isAutocastEnabled(scoutSkillId)) {
-            const scoutDef = dataLoader.getSkill(scoutSkillId);
-            if (scoutDef && member.progression.isSkillUnlocked(scoutDef, member)) {
-              const isOffCd = !member.lastSkillUseTimes.has(scoutSkillId) || (time - member.lastSkillUseTimes.get(scoutSkillId)! >= scoutDef.cooldownMs);
-              const isAffordable = member.energy >= scoutDef.energyCost;
-              const maxRange = scoutDef.rangeTiles ?? 5;
-              if (isOffCd && isAffordable && distanceTiles <= maxRange) {
-                const castSuccess = this.castSkill(member, scoutSkillId, target, time);
-                if (castSuccess) {
-                  scoutApproachCast = true;
-                  break;
-                }
-              }
-            }
-          }
-        }
-        if (scoutApproachCast) {
-          continue;
-        }
-
-        // Milestone 54: Javelin ranged skills autocast during approach
-        let javelinApproachCast = false;
-        for (const javSkillId of ['heartseeker_hurl', 'pinning_spear', 'piercing_throw']) {
-          if (member.equippedSkillIds.includes(javSkillId) && member.isAutocastEnabled(javSkillId)) {
-            const javDef = dataLoader.getSkill(javSkillId);
-            if (javDef && member.progression.isSkillUnlocked(javDef, member)) {
-              const isOffCd = !member.lastSkillUseTimes.has(javSkillId) || (time - member.lastSkillUseTimes.get(javSkillId)! >= javDef.cooldownMs);
-              const isAffordable = member.energy >= javDef.energyCost;
-              const maxRange = javDef.rangeTiles ?? 4;
-              if (isOffCd && isAffordable && distanceTiles <= maxRange) {
-                const castSuccess = this.castSkill(member, javSkillId, target, time);
-                if (castSuccess) {
-                  javelinApproachCast = true;
-                  break;
-                }
-              }
-            }
-          }
-        }
-        if (javelinApproachCast) {
-          continue;
-        }
-
-        // Milestone 55: Loader ranged skills autocast during approach
-        let loaderApproachCast = false;
-        for (const loaderSkillId of ['kinetic_overdraw', 'pinning_bolt', 'rapid_crank', 'primed_shot']) {
-          if (member.equippedSkillIds.includes(loaderSkillId) && member.isAutocastEnabled(loaderSkillId)) {
-            const lDef = dataLoader.getSkill(loaderSkillId);
-            if (lDef && member.progression.isSkillUnlocked(lDef, member)) {
-              const isOffCd = !member.lastSkillUseTimes.has(loaderSkillId) || (time - member.lastSkillUseTimes.get(loaderSkillId)! >= lDef.cooldownMs);
-              const isAffordable = member.energy >= lDef.energyCost;
-              const maxRange = lDef.rangeTiles ?? 4;
-              if (isOffCd && isAffordable && distanceTiles <= maxRange) {
-                const castSuccess = this.castSkill(member, loaderSkillId, target, time);
-                if (castSuccess) {
-                  loaderApproachCast = true;
-                  break;
-                }
-              }
-            }
-          }
-        }
-        if (loaderApproachCast) {
-          continue;
-        }
-
-        // Milestone 48: Umbral Step gap-closer autocast during approach
-        if (member.equippedSkillIds.includes('umbral_step') && member.isAutocastEnabled('umbral_step')) {
-          const umbralDef = dataLoader.getSkill('umbral_step');
-          if (umbralDef && member.progression.isSkillUnlocked(umbralDef, member)) {
-            const isOffCd = !member.lastSkillUseTimes.has('umbral_step') || (time - member.lastSkillUseTimes.get('umbral_step')! >= umbralDef.cooldownMs);
-            const isAffordable = member.energy >= umbralDef.energyCost;
-            const maxRange = umbralDef.rangeTiles ?? 5;
-            if (isOffCd && isAffordable && distanceTiles <= maxRange) {
-              const castSuccess = this.castSkill(member, 'umbral_step', target, time);
-              if (castSuccess) {
-                continue;
-              }
-            }
-          }
-        }
-
-        // Milestone 58: Arcane Bolt ranged skill autocast during approach
-        if (member.equippedSkillIds.includes('arcane_bolt') && member.isAutocastEnabled('arcane_bolt')) {
-          const boltDef = dataLoader.getSkill('arcane_bolt');
-          if (boltDef && member.progression.isSkillUnlocked(boltDef, member)) {
-            const isOffCd = !member.lastSkillUseTimes.has('arcane_bolt') || (time - member.lastSkillUseTimes.get('arcane_bolt')! >= boltDef.cooldownMs);
-            const isAffordable = member.energy >= boltDef.energyCost;
-            const maxRange = boltDef.rangeTiles ?? 5;
-            if (isOffCd && isAffordable && distanceTiles <= maxRange) {
-              const castSuccess = this.castSkill(member, 'arcane_bolt', target, time);
-              if (castSuccess) {
-                continue;
-              }
-            }
-          }
-        }
-
-        // Milestone — Spellsword ranged / gap-closer skills autocast during approach
-        if (member.equippedSkillIds.includes('dimensional_lunge') && member.isAutocastEnabled('dimensional_lunge')) {
-          const lungeDef = dataLoader.getSkill('dimensional_lunge');
-          if (lungeDef && member.progression.isSkillUnlocked(lungeDef, member)) {
-            const isOffCd = !member.lastSkillUseTimes.has('dimensional_lunge') || (time - member.lastSkillUseTimes.get('dimensional_lunge')! >= lungeDef.cooldownMs);
-            const isAffordable = member.energy >= lungeDef.energyCost;
-            const maxRange = lungeDef.rangeTiles ?? 4;
-            if (isOffCd && isAffordable && distanceTiles <= maxRange) {
-              const castSuccess = this.castSkill(member, 'dimensional_lunge', target, time);
-              if (castSuccess) {
-                continue;
-              }
-            }
-          }
-        }
-        if (member.equippedSkillIds.includes('blade_beam') && member.isAutocastEnabled('blade_beam')) {
-          const beamDef = dataLoader.getSkill('blade_beam');
-          if (beamDef && member.progression.isSkillUnlocked(beamDef, member)) {
-            const isOffCd = !member.lastSkillUseTimes.has('blade_beam') || (time - member.lastSkillUseTimes.get('blade_beam')! >= beamDef.cooldownMs);
-            const isAffordable = member.energy >= beamDef.energyCost;
-            const maxRange = beamDef.rangeTiles ?? 4;
-            if (isOffCd && isAffordable && distanceTiles <= maxRange) {
-              const castSuccess = this.castSkill(member, 'blade_beam', target, time);
-              if (castSuccess) {
-                continue;
-              }
-            }
-          }
-        }
-
-        // Milestone — Thrower ranged skills autocast during approach
-        let throwerApproachCast = false;
-        for (const throwerSkillId of ['blade_barrage', 'crippling_volley', 'fan_of_knives', 'quick_toss']) {
-          if (member.equippedSkillIds.includes(throwerSkillId) && member.isAutocastEnabled(throwerSkillId)) {
-            const tDef = dataLoader.getSkill(throwerSkillId);
-            if (tDef && member.progression.isSkillUnlocked(tDef, member)) {
-              const isOffCd = !member.lastSkillUseTimes.has(throwerSkillId) || (time - member.lastSkillUseTimes.get(throwerSkillId)! >= tDef.cooldownMs);
-              const isAffordable = member.energy >= tDef.energyCost;
-              const maxRange = tDef.rangeTiles ?? 3;
-              if (isOffCd && isAffordable && distanceTiles <= maxRange) {
-                const castSuccess = this.castSkill(member, throwerSkillId, target, time);
-                if (castSuccess) {
-                  throwerApproachCast = true;
-                  break;
-                }
-              }
-            }
-          }
-        }
-        if (throwerApproachCast) {
-          continue;
         }
       }
 
@@ -1376,284 +1206,22 @@ export class CombatSystem {
 
         let usedSkill = false;
 
-        // Check equipped skills
-        for (const skillId of member.equippedSkillIds) {
-          if (!member.isAutocastEnabled(skillId)) continue;
+        const isWeaponReady = time - member.lastAttackTime >= effectiveAttackInterval;
 
-          const skillDef = dataLoader.getSkill(skillId);
-          if (!skillDef || !member.progression.isSkillUnlocked(skillDef, member)) continue;
-
-          // Milestone 46: Scout skills in normal combat rotation
-          if (['kill_shot', 'mark_target', 'quickshot', 'trap_snare'].includes(skillId)) {
-            const isOffCooldown = !member.lastSkillUseTimes.has(skillId) || (time - member.lastSkillUseTimes.get(skillId)! >= skillDef.cooldownMs);
-            const isAffordable = member.energy >= skillDef.energyCost;
-            const isWeaponReady = time - member.lastAttackTime >= effectiveAttackInterval;
-            if (isOffCooldown && isAffordable && isWeaponReady) {
-              const success = this.castSkill(member, skillId, target as Enemy, time);
-              if (success) {
-                usedSkill = true;
-                this.lastCombatTimeMs = time;
-                break;
-              }
-            }
-            continue;
-          }
-
-          // Milestone 48: Dark Knight skills in normal combat rotation
-          if (['rending_cut', 'dark_pact', 'soul_drain', 'oblivion_strike', 'umbral_step'].includes(skillId)) {
-            const isOffCooldown = !member.lastSkillUseTimes.has(skillId) || (time - member.lastSkillUseTimes.get(skillId)! >= skillDef.cooldownMs);
-            const isAffordable = member.energy >= skillDef.energyCost;
-            const isHpAffordable = skillId !== 'dark_pact' || ((member.hp + (member.criticalHp ?? 0)) > (skillDef.hpCost ?? 10));
-            const isWeaponReady = time - member.lastAttackTime >= effectiveAttackInterval;
-            if (isOffCooldown && isAffordable && isHpAffordable && isWeaponReady) {
-              const success = this.castSkill(member, skillId, target as Enemy, time);
-              if (success) {
-                usedSkill = true;
-                this.lastCombatTimeMs = time;
-                break;
-              }
-            }
-            continue;
-          }
-
-          // Milestone 52: Swordsman, Ronin, and Samurai skills in normal combat rotation
-          if ([
-            'blade_strike', 'quick_cut', 'severing_slice', 'cross_cut',
-            'iaido_quickdraw', 'crimson_slash', 'flowing_step', 'bloodseeker_riposte', 'dragons_flurry',
-            'overhead_cleave', 'sweeping_hilt', 'heavenly_decapitation'
-          ].includes(skillId)) {
-            const isOffCooldown = !member.lastSkillUseTimes.has(skillId) || (time - member.lastSkillUseTimes.get(skillId)! >= skillDef.cooldownMs);
-            const isAffordable = member.energy >= skillDef.energyCost;
-            const isWeaponReady = time - member.lastAttackTime >= effectiveAttackInterval;
-            if (isOffCooldown && isAffordable && isWeaponReady) {
-              const success = this.castSkill(member, skillId, target as Enemy, time);
-              if (success) {
-                usedSkill = true;
-                this.lastCombatTimeMs = time;
-                break;
-              }
-            }
-            continue;
-          }
-
-          // Milestone 54: Javelin skills in normal combat rotation
-          if (['piercing_throw', 'impaling_thrust', 'pinning_spear', 'heartseeker_hurl'].includes(skillId)) {
-            const isOffCooldown = !member.lastSkillUseTimes.has(skillId) || (time - member.lastSkillUseTimes.get(skillId)! >= skillDef.cooldownMs);
-            const isAffordable = member.energy >= skillDef.energyCost;
-            const isWeaponReady = time - member.lastAttackTime >= effectiveAttackInterval;
-            if (isOffCooldown && isAffordable && isWeaponReady) {
-              const success = this.castSkill(member, skillId, target as Enemy, time);
-              if (success) {
-                usedSkill = true;
-                this.lastCombatTimeMs = time;
-                break;
-              }
-            }
-            continue;
-          }
-
-          // Milestone 55: Loader skills in normal combat rotation
-          if (['primed_shot', 'rapid_crank', 'arbalest_brace', 'pinning_bolt', 'kinetic_overdraw'].includes(skillId)) {
-            const isOffCooldown = !member.lastSkillUseTimes.has(skillId) || (time - member.lastSkillUseTimes.get(skillId)! >= skillDef.cooldownMs);
-            const isAffordable = member.energy >= skillDef.energyCost;
-            const isWeaponReady = time - member.lastAttackTime >= effectiveAttackInterval;
-            if (isOffCooldown && isAffordable && isWeaponReady) {
-              const success = this.castSkill(member, skillId, target as Enemy, time);
-              if (success) {
-                usedSkill = true;
-                this.lastCombatTimeMs = time;
-                break;
-              }
-            }
-            continue;
-          }
-
-          // Milestone 58: Arcane Initiate skills in normal combat rotation
-          if (['arcane_bolt'].includes(skillId)) {
-            const isOffCooldown = !member.lastSkillUseTimes.has(skillId) || (time - member.lastSkillUseTimes.get(skillId)! >= skillDef.cooldownMs);
-            const isAffordable = member.energy >= skillDef.energyCost;
-            const isWeaponReady = time - member.lastAttackTime >= effectiveAttackInterval;
-            if (isOffCooldown && isAffordable && isWeaponReady) {
-              const success = this.castSkill(member, skillId, target as Enemy, time);
-              if (success) {
-                usedSkill = true;
-                this.lastCombatTimeMs = time;
-                break;
-              }
-            }
-            continue;
-          }
-
-          // Milestone — Spellsword skills in normal combat rotation
-          if (['arcane_strike', 'dimensional_lunge', 'blade_beam'].includes(skillId)) {
-            const isOffCooldown = !member.lastSkillUseTimes.has(skillId) || (time - member.lastSkillUseTimes.get(skillId)! >= skillDef.cooldownMs);
-            const isAffordable = member.energy >= skillDef.energyCost;
-            const isWeaponReady = time - member.lastAttackTime >= effectiveAttackInterval;
-            if (isOffCooldown && isAffordable && isWeaponReady) {
-              const success = this.castSkill(member, skillId, target as Enemy, time);
-              if (success) {
-                usedSkill = true;
-                this.lastCombatTimeMs = time;
-                break;
-              }
-            }
-            continue;
-          }
-
-          // Milestone — Thrower skills in normal combat rotation
-          if (['quick_toss', 'fan_of_knives', 'crippling_volley', 'blade_barrage'].includes(skillId)) {
-            const isOffCooldown = !member.lastSkillUseTimes.has(skillId) || (time - member.lastSkillUseTimes.get(skillId)! >= skillDef.cooldownMs);
-            const isAffordable = member.energy >= skillDef.energyCost;
-            const isWeaponReady = time - member.lastAttackTime >= effectiveAttackInterval;
-            if (isOffCooldown && isAffordable && isWeaponReady) {
-              const success = this.castSkill(member, skillId, target as Enemy, time);
-              if (success) {
-                usedSkill = true;
-                this.lastCombatTimeMs = time;
-                break;
-              }
-            }
-            continue;
-          }
-
-          // Milestone 22: Riposte requires active riposte_window
-          if (skillId === 'riposte' && !member.hasStatusEffect('riposte_window')) continue;
-
-          const isOffCooldown = !member.lastSkillUseTimes.has(skillId) || (time - member.lastSkillUseTimes.get(skillId)! >= skillDef.cooldownMs);
-          const isAffordable = member.energy >= skillDef.energyCost;
-          const isWeaponReady = time - member.lastAttackTime >= effectiveAttackInterval;
-
-          if (isOffCooldown && isAffordable && isWeaponReady) {
-            usedSkill = true;
-            const preSkillEnergy = member.energy;
-            member.energy -= skillDef.energyCost;
-            member.lastSkillUseTimes.set(skillId, time);
-            member.lastAttackTime = time;
-            member.state = 'attacking';
-            if (target instanceof Enemy) {
-              this.recordBestiaryEncounter(target);
-            }
-
-            console.log(
-              `[DIAG:Combat] ⚡ ${member.entityName} casts skill ${skillDef.name}! inCombat: ${member.inCombat}, Pre-EN: ${preSkillEnergy.toFixed(1)}, Post-EN: ${member.energy.toFixed(1)} (cost: ${skillDef.energyCost})`
-            );
-
-            // Milestone 22: Riposte reactive counter-strike
-            if (skillId === 'riposte') {
-              member.removeStatusEffect('riposte_window');
-              this.executePlayerCounterattack(member, target as Enemy, {
-                procced: true,
-                damageMultiplier: skillDef.damageMultiplier ?? 1.8,
-                canCrit: true,
-                chainAttack: false
-              });
-              this.createFloatingText(member.x, member.y - 12, 'RIPOSTE!', '#eab308');
+        if (isWeaponReady) {
+          const selectedRotation = this.skillSystem.selectSkillForCompanion(
+            member,
+            'rotation',
+            time,
+            target as Enemy,
+            distanceTiles
+          );
+          if (selectedRotation) {
+            const success = this.castSkill(member, selectedRotation.skillDef.id, selectedRotation.target, time);
+            if (success) {
+              usedSkill = true;
               this.lastCombatTimeMs = time;
-              break;
             }
-
-            // Milestone 22: Blade Dance rapid multi-hit combo
-            if (skillId === 'blade_dance') {
-              const strikeCount = skillDef.strikeCount ?? 4;
-              const damagePerHit = skillDef.damagePerHitMultiplier ?? 0.8;
-              const strikeDamage = effectiveBaseDamage * damagePerHit;
-              console.log(
-                `[Skill] ${member.entityName} unleashes Blade Dance! (${strikeCount} strikes for ${strikeDamage.toFixed(1)} each)`
-              );
-              for (let i = 1; i <= strikeCount; i++) {
-                if (target.state === 'dead' || target.state === 'downed') break;
-                this.createSkillAttackEffect(member.x, member.y, target.x, target.y);
-                this.createFloatingText(target.x, target.y - 10 - (i * 6), `BLADE DANCE! -${strikeDamage.toFixed(1)}`, '#f59e0b');
-                this.checkAndApplyBleed(member, target);
-                const targetDowned = target.takeDamage(strikeDamage);
-                if (targetDowned) {
-                  this.handleTargetDefeated(member, target, weaponId);
-                  break;
-                }
-              }
-              const result = member.progression.addProficiencyExp(weaponId, 2);
-              member?.awardArmorWearExp?.('attack');
-              if (result.leveledUp) {
-                const newLevel = member.progression.getProficiencyLevel(weaponId);
-                this.createFloatingText(member.x, member.y - 20, `${effectiveWeapon.name} Level ${newLevel}!`, '#22c55e');
-              }
-              this.lastCombatTimeMs = time;
-              break;
-            }
-
-            this.createSkillAttackEffect(member.x, member.y, target.x, target.y);
-
-            // Milestone 22: Reconcile accuracyBonus (e.g. Thrust +30%)
-            const skillAccBonus = skillDef.accuracyBonus ?? 0;
-            const effectiveSkillAccuracy = Math.min(1.0, effectiveAccuracy + skillAccBonus);
-            const hitRoll = Math.random();
-            const isHit = hitRoll < effectiveSkillAccuracy;
-
-            if (!isHit) {
-              console.log(
-                `[Skill] ${member.entityName} casts ${skillDef.name} but MISSED! (Hit Chance: ${(effectiveSkillAccuracy * 100).toFixed(1)}%${isDW ? ` [DW Penalty -${(dwPenalty * 100).toFixed(0)}%]` : ''}, Roll: ${(hitRoll * 100).toFixed(1)}%)`
-              );
-              this.createFloatingText(target.x, target.y - 10, 'MISS', '#9ca3af');
-            } else {
-              const mult = skillDef.damageMultiplier ?? 1.0;
-              let skillDamage = effectiveBaseDamage * mult;
-              if (member.hasStatusEffect('blessed_weapons')) {
-                skillDamage += 5;
-                this.createFloatingText(target.x, target.y - 24, '+5 HOLY!', '#facc15');
-              }
-              console.log(
-                `[Skill] ${member.entityName} casts ${skillDef.name}! Dealt ${skillDamage.toFixed(1)} damage (${mult * 100}% of ${effectiveBaseDamage.toFixed(2)})${isDW ? ` [DW Penalty -${(dwPenalty * 100).toFixed(0)}%]` : ''}`
-              );
-              if (skillDef.id === 'normal_punch') {
-                this.createFloatingText(target.x, target.y - 10, `NORMAL PUNCH! -${skillDamage.toFixed(1)}`, '#ea580c');
-              } else {
-                this.createFloatingText(target.x, target.y - 10, `${skillDef.name.toUpperCase()}! -${skillDamage.toFixed(1)}`, '#f59e0b');
-              }
-
-              if (skillDef.id === 'smite') {
-                this.createHolySmiteEffect(member.x, member.y, target.x, target.y);
-                member.progression.addProficiencyExp('healing_magic', 2);
-              }
-
-              if (skillDef.id === 'shield_bash') {
-                const stunDef = dataLoader.getStatusEffect('stun') || {
-                  id: 'stun',
-                  name: 'Stun',
-                  durationMs: skillDef.stunDurationMs ?? 2000,
-                  tickIntervalMs: 2000,
-                  damagePerTick: 0,
-                  color: '#facc15'
-                };
-                target.applyStatusEffect(stunDef);
-                target.stopMovement();
-                this.createFloatingText(target.x, target.y - 25, 'STUNNED!', '#facc15');
-                console.log(`[Skill] Shield Bash STUNNED ${target.entityName} for 2s!`);
-              }
-
-              this.checkAndApplyBleed(member, target);
-              this.checkAndApplyBurn(member, target);
-              this.checkAndApplyStun(member, target);
-
-              const result = member.progression.addProficiencyExp(weaponId, 2);
-              if (result.leveledUp) {
-                const newLevel = member.progression.getProficiencyLevel(weaponId);
-                this.createFloatingText(member.x, member.y - 20, `${effectiveWeapon.name} Level ${newLevel}!`, '#22c55e');
-              }
-
-              if (isDW && this.isLegitimatelyDualWielding(member)) {
-                member.progression.addProficiencyExp('dual_wielding', 2);
-              }
-
-              member?.awardArmorWearExp?.('attack');
-
-              this.lastCombatTimeMs = time;
-              if (target.state !== 'dead' && target.state !== 'downed') (target as any).isAggroed = true;
-              const targetDowned = target.takeDamage(skillDamage);
-              if (targetDowned) {
-                this.handleTargetDefeated(member, target, weaponId);
-              }
-            }
-            break;
           }
         }
 
@@ -2853,7 +2421,7 @@ export class CombatSystem {
     }
   }
 
-  private handleTargetDefeated(killer: Player, target: Entity, weaponId: string): void {
+  public handleTargetDefeated(killer: Player, target: Entity, weaponId: string): void {
     console.log(`[Combat] ${target.entityName} defeated/downed by ${killer.entityName}!`);
     const result = killer.progression.addProficiencyExp(weaponId, 4);
     if (result.leveledUp) {
@@ -3573,96 +3141,9 @@ export class CombatSystem {
   }
 
   public checkAndAutocastAllyHeal(member: Player, time: number): boolean {
-    const dataLoader = DataLoader.getInstance();
-    for (const skillId of member.equippedSkillIds) {
-      if (!member.isAutocastEnabled(skillId)) continue;
-      const skillDef = dataLoader.getSkill(skillId);
-      if (!skillDef || !member.progression.isSkillUnlocked(skillDef, member)) continue;
-
-      const lastUsed = member.lastSkillUseTimes.get(skillId) || 0;
-      const isOffCooldown = time - lastUsed >= skillDef.cooldownMs;
-      const isAffordable = member.energy >= skillDef.energyCost;
-      if (!isOffCooldown || !isAffordable) continue;
-
-      // Milestone 24: Mass Revive autocast when downed allies in range
-      if (skillId === 'mass_revive') {
-        const radius = skillDef.radiusTiles ?? 6;
-        const cTile = { x: Math.floor(member.x / member.tileSize), y: Math.floor(member.y / member.tileSize) };
-        const downedInRadius = this.party.filter((m) => {
-          if (m === member || m.state !== 'downed') return false;
-          const mTile = { x: Math.floor(m.x / m.tileSize), y: Math.floor(m.y / m.tileSize) };
-          return Math.max(Math.abs(cTile.x - mTile.x), Math.abs(cTile.y - mTile.y)) <= radius;
-        });
-        if (downedInRadius.length > 0) {
-          return this.castSkill(member, skillId, member, time);
-        }
-        continue;
-      }
-
-      // Milestone 24: Cleanse autocast when any living ally has a harmful status effect (isHarmful === true)
-      if (skillId === 'cleanse') {
-        const debuffedMember = this.party.find(
-          (m) => m.state !== 'dead' && m.state !== 'downed' &&
-            Array.from(m.activeStatusEffects.values()).some((e) => e.def?.isHarmful === true)
-        );
-        if (debuffedMember) {
-          return this.castSkill(member, skillId, debuffedMember, time);
-        }
-        continue;
-      }
-
-      // Milestone 24: Guardian's Ward or Barrier damage absorption shields
-      if (skillId === 'guardian_ward' || skillId === 'barrier') {
-        const shieldTargets = this.party.filter(
-          (m) => m.state !== 'dead' && m.state !== 'downed' && !m.hasStatusEffect(skillId)
-        );
-        if (shieldTargets.length > 0) {
-          shieldTargets.sort((a, b) => {
-            const aInCombat = a.inCombat ? 1 : 0;
-            const bInCombat = b.inCombat ? 1 : 0;
-            if (aInCombat !== bInCombat) return bInCombat - aInCombat;
-            return (a.hp / a.maxHp) - (b.hp / b.maxHp);
-          });
-          return this.castSkill(member, skillId, shieldTargets[0], time);
-        }
-        continue;
-      }
-
-      // Milestone 24: Regenerate HoT autocast on damaged ally lacking HoT
-      if (skillId === 'regenerate') {
-        const hotCandidates = this.party.filter(
-          (m) => m.state !== 'dead' && m.state !== 'downed' && (m.hp < m.maxHp || m.criticalHp < m.maxCriticalHp) && !m.hasStatusEffect('regenerate')
-        );
-        if (hotCandidates.length > 0) {
-          hotCandidates.sort((a, b) => {
-            const aRatio = (a.hp + a.criticalHp) / (a.maxHp + a.maxCriticalHp);
-            const bRatio = (b.hp + b.criticalHp) / (b.maxHp + b.maxCriticalHp);
-            return aRatio - bRatio;
-          });
-          return this.castSkill(member, skillId, hotCandidates[0], time);
-        }
-        continue;
-      }
-
-      if (skillDef.targetType !== 'ally' && (!skillDef.healAmount || skillDef.healAmount <= 0)) continue;
-
-      // Find living damaged party members (prioritize other allies, then self)
-      const damagedMembers = this.party.filter(
-        (m) => m.state !== 'dead' && m.state !== 'downed' && (m.hp < m.maxHp || m.criticalHp < m.maxCriticalHp)
-      );
-      if (damagedMembers.length === 0) continue;
-
-      damagedMembers.sort((a, b) => {
-        const aSelf = a === member ? 1 : 0;
-        const bSelf = b === member ? 1 : 0;
-        if (aSelf !== bSelf) return aSelf - bSelf;
-        const aRatio = (a.hp + a.criticalHp) / (a.maxHp + a.maxCriticalHp);
-        const bRatio = (b.hp + b.criticalHp) / (b.maxHp + b.maxCriticalHp);
-        return aRatio - bRatio;
-      });
-
-      const targetAlly = damagedMembers[0];
-      return this.castSkill(member, skillId, targetAlly, time);
+    const selected = this.skillSystem.selectSkillForCompanion(member, 'support', time);
+    if (selected) {
+      return this.castSkill(member, selected.skillDef.id, selected.target, time);
     }
     return false;
   }
@@ -3672,66 +3153,9 @@ export class CombatSystem {
     const hasActiveThreat = member.targetEntity !== null || this.enemies.some((e) => e.isAggroed && e.state !== 'downed' && e.state !== 'dead');
     if (!hasActiveThreat) return false;
 
-    const dataLoader = DataLoader.getInstance();
-    for (const skillId of member.equippedSkillIds) {
-      if (!member.isAutocastEnabled(skillId)) continue;
-      const skillDef = dataLoader.getSkill(skillId);
-      if (!skillDef || !member.progression.isSkillUnlocked(skillDef, member)) continue;
-      if (skillDef.targetType !== 'self') continue;
-
-      // Milestone 24: Holy Nova autocast when threat/damaged allies nearby
-      if (skillId === 'holy_nova') {
-        const lastUsed = member.lastSkillUseTimes.get(skillId) || 0;
-        const isOffCooldown = time - lastUsed >= skillDef.cooldownMs;
-        const isAffordable = member.energy >= skillDef.energyCost;
-        if (!isOffCooldown || !isAffordable) continue;
-
-        const radius = skillDef.radiusTiles ?? 4;
-        const cTile = { x: Math.floor(member.x / member.tileSize), y: Math.floor(member.y / member.tileSize) };
-        const enemiesNearby = this.enemies.some((e) => {
-          if (e.state === 'dead' || e.state === 'downed') return false;
-          const eTile = { x: Math.floor(e.x / e.tileSize), y: Math.floor(e.y / e.tileSize) };
-          return Math.max(Math.abs(cTile.x - eTile.x), Math.abs(cTile.y - eTile.y)) <= radius;
-        });
-        const damagedAlliesNearby = this.party.some((a) => {
-          if (a.state === 'dead' || a.state === 'downed' || a.hp >= a.maxHp) return false;
-          const aTile = { x: Math.floor(a.x / a.tileSize), y: Math.floor(a.y / a.tileSize) };
-          return Math.max(Math.abs(cTile.x - aTile.x), Math.abs(cTile.y - aTile.y)) <= radius;
-        });
-        if (enemiesNearby || damagedAlliesNearby) {
-          return this.castSkill(member, skillId, member, time);
-        }
-        continue;
-      }
-
-      // Milestone 58: Arcane Nova autocast when threat enemies nearby
-      if (skillId === 'arcane_nova') {
-        const lastUsed = member.lastSkillUseTimes.get(skillId) || 0;
-        const isOffCooldown = time - lastUsed >= skillDef.cooldownMs;
-        const isAffordable = member.energy >= skillDef.energyCost;
-        if (!isOffCooldown || !isAffordable) continue;
-
-        const radius = skillDef.radiusTiles ?? 4;
-        const cTile = { x: Math.floor(member.x / member.tileSize), y: Math.floor(member.y / member.tileSize) };
-        const enemiesNearby = this.enemies.some((e) => {
-          if (e.state === 'dead' || e.state === 'downed') return false;
-          const eTile = { x: Math.floor(e.x / e.tileSize), y: Math.floor(e.y / e.tileSize) };
-          return Math.max(Math.abs(cTile.x - eTile.x), Math.abs(cTile.y - eTile.y)) <= radius;
-        });
-        if (enemiesNearby) {
-          return this.castSkill(member, skillId, member, time);
-        }
-        continue;
-      }
-
-      // Don't recast if buff is already active
-      if (member.hasStatusEffect(skillId)) continue;
-
-      const isOffCooldown = !member.lastSkillUseTimes.has(skillId) || (time - member.lastSkillUseTimes.get(skillId)! >= skillDef.cooldownMs);
-      const isAffordable = member.energy >= skillDef.energyCost;
-      if (isOffCooldown && isAffordable) {
-        return this.castSkill(member, skillId, member, time);
-      }
+    const selected = this.skillSystem.selectSkillForCompanion(member, 'defensive', time);
+    if (selected) {
+      return this.castSkill(member, selected.skillDef.id, selected.target, time);
     }
     return false;
   }
@@ -3761,6 +3185,12 @@ export class CombatSystem {
     if (caster.energy < skillDef.energyCost) {
       console.warn(`[Skill] Not enough energy to cast ${skillDef.name}! (${caster.energy}/${skillDef.energyCost})`);
       return false;
+    }
+
+    // Generic Skill Engine delegation:
+    // If skillDef has an effects array, execute via generic SkillSystem.
+    if (skillDef.effects && skillDef.effects.length > 0) {
+      return this.skillSystem.execute(caster, skillDef, target, time);
     }
 
     if (skillDef.targetType === 'self') {

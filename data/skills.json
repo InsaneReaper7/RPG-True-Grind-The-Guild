@@ -5,7 +5,7 @@
       "name": "Power Strike",
       "energyCost": 25,
       "cooldownMs": 4000,
-      "damageMultiplier": 2.0,
+      "damageMultiplier": 2,
       "requirements": [
         {
           "type": "classLevel",
@@ -13,7 +13,18 @@
           "value": 1
         }
       ],
-      "description": "Unleashes a powerful strike dealing 200% weapon damage."
+      "description": "Unleashes a powerful strike dealing 200% weapon damage.",
+      "ai": {
+        "role": "rotation",
+        "priority": 30
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 1.5,
+          "scaling": "weapon"
+        }
+      ]
     },
     {
       "id": "thrust",
@@ -29,7 +40,18 @@
           "value": 10
         }
       ],
-      "description": "A fast, high-accuracy piercing thrust dealing 150% weapon damage with an increased hit chance."
+      "description": "A fast, high-accuracy piercing thrust dealing 150% weapon damage with an increased hit chance.",
+      "ai": {
+        "role": "rotation",
+        "priority": 30
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 1.3,
+          "scaling": "weapon"
+        }
+      ]
     },
     {
       "id": "riposte",
@@ -62,7 +84,11 @@
           "value": 30
         }
       ],
-      "description": "A running lunge dash-strike that instantly closes distance to a target up to 5 tiles away and deals 160% weapon damage on arrival."
+      "description": "A running lunge dash-strike that instantly closes distance to a target up to 5 tiles away and deals 160% weapon damage on arrival.",
+      "ai": {
+        "role": "gapCloser",
+        "priority": 60
+      }
     },
     {
       "id": "blade_dance",
@@ -97,7 +123,14 @@
           "value": 1
         }
       ],
-      "description": "Quickly tends to wounds, restoring 20 HP to a damaged ally or self."
+      "description": "Quickly tends to wounds, restoring 20 HP to a damaged ally or self.",
+      "ai": {
+        "role": "support",
+        "priority": 70,
+        "condition": {
+          "allyHpBelow": 0.7
+        }
+      }
     },
     {
       "id": "smite",
@@ -114,7 +147,11 @@
           "value": 10
         }
       ],
-      "description": "A single-target offensive holy strike, dealing 180% damage to an enemy from up to 5 tiles away."
+      "description": "A single-target offensive holy strike, dealing 180% damage to an enemy from up to 5 tiles away.",
+      "ai": {
+        "role": "opener",
+        "priority": 50
+      }
     },
     {
       "id": "cleanse",
@@ -130,7 +167,14 @@
           "value": 20
         }
       ],
-      "description": "Purifies a targeted ally or self, removing all active harmful status effects (Bleed, Burn, Shock, etc.)."
+      "description": "Purifies a targeted ally or self, removing all active harmful status effects (Bleed, Burn, Shock, etc.).",
+      "ai": {
+        "role": "support",
+        "priority": 85,
+        "condition": {
+          "requiresHarmfulStatus": true
+        }
+      }
     },
     {
       "id": "guardian_ward",
@@ -148,7 +192,11 @@
           "value": 30
         }
       ],
-      "description": "Places a protective ward on an ally or self, absorbing up to 35 incoming damage for 8s."
+      "description": "Places a protective ward on an ally or self, absorbing up to 35 incoming damage for 8s.",
+      "ai": {
+        "role": "support",
+        "priority": 75
+      }
     },
     {
       "id": "holy_nova",
@@ -156,7 +204,7 @@
       "energyCost": 35,
       "cooldownMs": 15000,
       "radiusTiles": 4,
-      "damageMultiplier": 2.0,
+      "damageMultiplier": 2,
       "healAmount": 30,
       "targetType": "self",
       "requirements": [
@@ -166,7 +214,14 @@
           "value": 40
         }
       ],
-      "description": "Combat Medic capstone: unleashes an explosion of holy energy in a 4-tile radius that simultaneously damages enemies for 200% damage and heals allies for 30 HP."
+      "description": "Combat Medic capstone: unleashes an explosion of holy energy in a 4-tile radius that simultaneously damages enemies for 200% damage and heals allies for 30 HP.",
+      "ai": {
+        "role": "support",
+        "priority": 60,
+        "condition": {
+          "allyHpBelow": 0.7
+        }
+      }
     },
     {
       "id": "shield_bash",
@@ -183,7 +238,11 @@
           "value": 1
         }
       ],
-      "description": "Short-range shield strike dealing 120% weapon damage and stunning the target for 2s."
+      "description": "Short-range shield strike dealing 120% weapon damage and stunning the target for 2s.",
+      "ai": {
+        "role": "rotation",
+        "priority": 45
+      }
     },
     {
       "id": "guard_up",
@@ -217,7 +276,11 @@
           "value": 20
         }
       ],
-      "description": "Unleashes a commanding shout, forcing all nearby enemies within 5 tiles to target this character for 6s."
+      "description": "Unleashes a commanding shout, forcing all nearby enemies within 5 tiles to target this character for 6s.",
+      "ai": {
+        "role": "defensive",
+        "priority": 80
+      }
     },
     {
       "id": "retaliate",
@@ -267,7 +330,11 @@
           "value": 1
         }
       ],
-      "description": "A devastating overhead strike dealing 180% weapon damage and stunning the target for 2s."
+      "description": "A devastating overhead strike dealing 180% weapon damage and stunning the target for 2s.",
+      "ai": {
+        "role": "rotation",
+        "priority": 30
+      }
     },
     {
       "id": "heal",
@@ -284,7 +351,14 @@
           "value": 1
         }
       ],
-      "description": "Restoration Mage baseline: channels restorative magic to instantly heal an ally or self for 35 HP."
+      "description": "Restoration Mage baseline: channels restorative magic to instantly heal an ally or self for 35 HP.",
+      "ai": {
+        "role": "support",
+        "priority": 80,
+        "condition": {
+          "allyHpBelow": 0.7
+        }
+      }
     },
     {
       "id": "regenerate",
@@ -303,7 +377,14 @@
           "value": 10
         }
       ],
-      "description": "Applies a heal-over-time effect to an ally or self, restoring 6 HP every second for 8s (48 HP total)."
+      "description": "Applies a heal-over-time effect to an ally or self, restoring 6 HP every second for 8s (48 HP total).",
+      "ai": {
+        "role": "support",
+        "priority": 75,
+        "condition": {
+          "allyHpBelow": 0.7
+        }
+      }
     },
     {
       "id": "barrier",
@@ -321,7 +402,11 @@
           "value": 20
         }
       ],
-      "description": "Envelops an ally or self in a resilient magical barrier, absorbing up to 50 incoming damage for 10s."
+      "description": "Envelops an ally or self in a resilient magical barrier, absorbing up to 50 incoming damage for 10s.",
+      "ai": {
+        "role": "support",
+        "priority": 70
+      }
     },
     {
       "id": "blessed_weapons",
@@ -337,7 +422,11 @@
           "value": 30
         }
       ],
-      "description": "Enchants all living party members' weapons with holy power for 60s, granting +5 Holy bonus damage on each attack."
+      "description": "Enchants all living party members' weapons with holy power for 60s, granting +5 Holy bonus damage on each attack.",
+      "ai": {
+        "role": "buff",
+        "priority": 50
+      }
     },
     {
       "id": "mass_revive",
@@ -353,7 +442,14 @@
           "value": 40
         }
       ],
-      "description": "Restoration Mage capstone: calls upon divine grace to resurrect all downed allies within a 6-tile radius at once."
+      "description": "Restoration Mage capstone: calls upon divine grace to resurrect all downed allies within a 6-tile radius at once.",
+      "ai": {
+        "role": "support",
+        "priority": 90,
+        "condition": {
+          "requiresDownedAlly": true
+        }
+      }
     },
     {
       "id": "normal_punch",
@@ -369,7 +465,11 @@
           "value": 1
         }
       ],
-      "description": "An unassuming, basic punch thrown with terrifyingly disproportionate momentum, dealing 250% weapon damage."
+      "description": "An unassuming, basic punch thrown with terrifyingly disproportionate momentum, dealing 250% weapon damage.",
+      "ai": {
+        "role": "rotation",
+        "priority": 25
+      }
     },
     {
       "id": "quickshot",
@@ -386,7 +486,11 @@
           "value": 1
         }
       ],
-      "description": "Scout baseline: a fast, low-cost ranged attack (or swift throwing blade) dealing 140% weapon damage."
+      "description": "Scout baseline: a fast, low-cost ranged attack (or swift throwing blade) dealing 140% weapon damage.",
+      "ai": {
+        "role": "rotation",
+        "priority": 35
+      }
     },
     {
       "id": "mark_target",
@@ -403,7 +507,11 @@
           "value": 10
         }
       ],
-      "description": "Marks the target with Expose for 6s, causing it to take 25% increased damage from all incoming attacks."
+      "description": "Marks the target with Expose for 6s, causing it to take 25% increased damage from all incoming attacks.",
+      "ai": {
+        "role": "opener",
+        "priority": 55
+      }
     },
     {
       "id": "evasive_roll",
@@ -419,7 +527,11 @@
           "value": 20
         }
       ],
-      "description": "Rolls backward to create distance and grants a 2s dodge window with +50% Evasion, synergizing with Counterattack."
+      "description": "Rolls backward to create distance and grants a 2s dodge window with +50% Evasion, synergizing with Counterattack.",
+      "ai": {
+        "role": "defensive",
+        "priority": 50
+      }
     },
     {
       "id": "trap_snare",
@@ -437,16 +549,20 @@
           "value": 30
         }
       ],
-      "description": "Deploys a ground snare on the target, dealing 120% weapon damage and Slowing their movement by 50% for 4s."
+      "description": "Deploys a ground snare on the target, dealing 120% weapon damage and Slowing their movement by 50% for 4s.",
+      "ai": {
+        "role": "rotation",
+        "priority": 40
+      }
     },
     {
       "id": "kill_shot",
       "name": "Kill Shot",
       "energyCost": 30,
       "cooldownMs": 12000,
-      "damageMultiplier": 2.0,
+      "damageMultiplier": 2,
       "executeThreshold": 0.4,
-      "executeMultiplier": 2.0,
+      "executeMultiplier": 2,
       "rangeTiles": 5,
       "targetType": "enemy",
       "requirements": [
@@ -456,7 +572,14 @@
           "value": 40
         }
       ],
-      "description": "Scout capstone: executes a lethal strike dealing 200% weapon damage, doubled to 400% against targets below 40% health."
+      "description": "Scout capstone: executes a lethal strike dealing 200% weapon damage, doubled to 400% against targets below 40% health.",
+      "ai": {
+        "role": "finisher",
+        "priority": 70,
+        "condition": {
+          "enemyHpBelow": 0.4
+        }
+      }
     },
     {
       "id": "rending_cut",
@@ -464,7 +587,7 @@
       "energyCost": 20,
       "cooldownMs": 4000,
       "damageMultiplier": 1.5,
-      "bleedChance": 1.0,
+      "bleedChance": 1,
       "targetType": "enemy",
       "requirements": [
         {
@@ -473,7 +596,11 @@
           "value": 1
         }
       ],
-      "description": "Dark Knight baseline: a vicious strike infusing dark power into the blade, dealing 150% weapon damage and causing the target to Bleed."
+      "description": "Dark Knight baseline: a vicious strike infusing dark power into the blade, dealing 150% weapon damage and causing the target to Bleed.",
+      "ai": {
+        "role": "rotation",
+        "priority": 35
+      }
     },
     {
       "id": "dark_pact",
@@ -490,7 +617,11 @@
           "value": 10
         }
       ],
-      "description": "Sacrifices 10 HP to unleash a destructive dark surge, dealing 240% weapon damage to the target."
+      "description": "Sacrifices 10 HP to unleash a destructive dark surge, dealing 240% weapon damage to the target.",
+      "ai": {
+        "role": "buff",
+        "priority": 50
+      }
     },
     {
       "id": "umbral_step",
@@ -508,7 +639,11 @@
           "value": 20
         }
       ],
-      "description": "Dashes through shadow to instantly close distance to a target up to 5 tiles away, dealing 140% weapon damage and Blinding the target for 4s."
+      "description": "Dashes through shadow to instantly close distance to a target up to 5 tiles away, dealing 140% weapon damage and Blinding the target for 4s.",
+      "ai": {
+        "role": "gapCloser",
+        "priority": 60
+      }
     },
     {
       "id": "soul_drain",
@@ -525,7 +660,11 @@
           "value": 30
         }
       ],
-      "description": "Strikes the target for 180% weapon damage and siphons their life essence, healing the caster for 50% of the damage dealt."
+      "description": "Strikes the target for 180% weapon damage and siphons their life essence, healing the caster for 50% of the damage dealt.",
+      "ai": {
+        "role": "rotation",
+        "priority": 45
+      }
     },
     {
       "id": "oblivion_strike",
@@ -534,7 +673,7 @@
       "maxBonusEnergy": 25,
       "bonusDamagePerEnergy": 0.04,
       "cooldownMs": 15000,
-      "damageMultiplier": 3.0,
+      "damageMultiplier": 3,
       "targetType": "enemy",
       "requirements": [
         {
@@ -543,7 +682,11 @@
           "value": 40
         }
       ],
-      "description": "Dark Knight capstone: a cataclysmic blow dealing 300% weapon damage, consuming up to 25 bonus energy for +4% extra damage per point consumed."
+      "description": "Dark Knight capstone: a cataclysmic blow dealing 300% weapon damage, consuming up to 25 bonus energy for +4% extra damage per point consumed.",
+      "ai": {
+        "role": "finisher",
+        "priority": 65
+      }
     },
     {
       "id": "blade_strike",
@@ -559,7 +702,11 @@
           "value": 1
         }
       ],
-      "description": "Swordsman baseline: a fundamental katana cut dealing 140% weapon damage."
+      "description": "Swordsman baseline: a fundamental katana cut dealing 140% weapon damage.",
+      "ai": {
+        "role": "rotation",
+        "priority": 30
+      }
     },
     {
       "id": "quick_cut",
@@ -567,7 +714,7 @@
       "energyCost": 15,
       "cooldownMs": 3000,
       "damageMultiplier": 1.5,
-      "accuracyBonus": 0.20,
+      "accuracyBonus": 0.2,
       "targetType": "enemy",
       "requirements": [
         {
@@ -576,7 +723,11 @@
           "value": 10
         }
       ],
-      "description": "A swift, precise slash with +20% accuracy dealing 150% weapon damage."
+      "description": "A swift, precise slash with +20% accuracy dealing 150% weapon damage.",
+      "ai": {
+        "role": "rotation",
+        "priority": 35
+      }
     },
     {
       "id": "defensive_posture",
@@ -592,7 +743,11 @@
           "value": 20
         }
       ],
-      "description": "Braces the blade for incoming blows, reducing damage taken by 20% for 4s."
+      "description": "Braces the blade for incoming blows, reducing damage taken by 20% for 4s.",
+      "ai": {
+        "role": "defensive",
+        "priority": 60
+      }
     },
     {
       "id": "severing_slice",
@@ -600,7 +755,7 @@
       "energyCost": 25,
       "cooldownMs": 5000,
       "damageMultiplier": 1.7,
-      "bleedChance": 1.0,
+      "bleedChance": 1,
       "targetType": "enemy",
       "requirements": [
         {
@@ -609,7 +764,11 @@
           "value": 30
         }
       ],
-      "description": "A deep incision dealing 170% weapon damage and causing the enemy to Bleed."
+      "description": "A deep incision dealing 170% weapon damage and causing the enemy to Bleed.",
+      "ai": {
+        "role": "rotation",
+        "priority": 40
+      }
     },
     {
       "id": "cross_cut",
@@ -625,7 +784,11 @@
           "value": 40
         }
       ],
-      "description": "Swordsman capstone: delivers a devastating dual-diagonal katana cross cut dealing 260% weapon damage."
+      "description": "Swordsman capstone: delivers a devastating dual-diagonal katana cross cut dealing 260% weapon damage.",
+      "ai": {
+        "role": "finisher",
+        "priority": 50
+      }
     },
     {
       "id": "iaido_quickdraw",
@@ -633,7 +796,7 @@
       "energyCost": 15,
       "cooldownMs": 3000,
       "damageMultiplier": 1.5,
-      "accuracyBonus": 0.20,
+      "accuracyBonus": 0.2,
       "targetType": "enemy",
       "requirements": [
         {
@@ -642,7 +805,11 @@
           "value": 1
         }
       ],
-      "description": "Ronin baseline: a lightning-fast draw from the scabbard dealing 150% weapon damage with +20% accuracy."
+      "description": "Ronin baseline: a lightning-fast draw from the scabbard dealing 150% weapon damage with +20% accuracy.",
+      "ai": {
+        "role": "opener",
+        "priority": 60
+      }
     },
     {
       "id": "crimson_slash",
@@ -650,7 +817,7 @@
       "energyCost": 20,
       "cooldownMs": 4000,
       "damageMultiplier": 1.7,
-      "bleedChance": 1.0,
+      "bleedChance": 1,
       "targetType": "enemy",
       "requirements": [
         {
@@ -659,7 +826,11 @@
           "value": 10
         }
       ],
-      "description": "A wide arterial slash dealing 170% weapon damage and causing the target to Bleed for 6s."
+      "description": "A wide arterial slash dealing 170% weapon damage and causing the target to Bleed for 6s.",
+      "ai": {
+        "role": "rotation",
+        "priority": 40
+      }
     },
     {
       "id": "flowing_step",
@@ -677,14 +848,18 @@
           "value": 20
         }
       ],
-      "description": "An agile dash-strike closing up to 4 tiles, dealing 140% weapon damage and granting +25% Evasion for 4s."
+      "description": "An agile dash-strike closing up to 4 tiles, dealing 140% weapon damage and granting +25% Evasion for 4s.",
+      "ai": {
+        "role": "defensive",
+        "priority": 55
+      }
     },
     {
       "id": "bloodseeker_riposte",
       "name": "Bloodseeker Riposte",
       "energyCost": 25,
       "cooldownMs": 8000,
-      "damageMultiplier": 2.0,
+      "damageMultiplier": 2,
       "targetType": "enemy",
       "requirements": [
         {
@@ -693,7 +868,11 @@
           "value": 30
         }
       ],
-      "description": "A lethal counter-strike dealing 200% weapon damage, empowered to deal +50% bonus damage if the target is Bleeding."
+      "description": "A lethal counter-strike dealing 200% weapon damage, empowered to deal +50% bonus damage if the target is Bleeding.",
+      "ai": {
+        "role": "rotation",
+        "priority": 45
+      }
     },
     {
       "id": "dragons_flurry",
@@ -727,7 +906,11 @@
           "value": 1
         }
       ],
-      "description": "Samurai baseline: a heavy downward cut using disciplined posture, dealing 170% weapon damage."
+      "description": "Samurai baseline: a heavy downward cut using disciplined posture, dealing 170% weapon damage.",
+      "ai": {
+        "role": "rotation",
+        "priority": 40
+      }
     },
     {
       "id": "iron_posture",
@@ -743,7 +926,11 @@
           "value": 10
         }
       ],
-      "description": "The armored samurai braces their stance, granting 35% damage reduction for 5s."
+      "description": "The armored samurai braces their stance, granting 35% damage reduction for 5s.",
+      "ai": {
+        "role": "defensive",
+        "priority": 65
+      }
     },
     {
       "id": "sweeping_hilt",
@@ -751,7 +938,7 @@
       "energyCost": 20,
       "cooldownMs": 6000,
       "damageMultiplier": 1.8,
-      "stunChance": 0.30,
+      "stunChance": 0.3,
       "targetType": "enemy",
       "requirements": [
         {
@@ -760,7 +947,11 @@
           "value": 20
         }
       ],
-      "description": "Strikes the target with pommel and blade for 180% weapon damage with a 30% chance to Stun for 2s."
+      "description": "Strikes the target with pommel and blade for 180% weapon damage with a 30% chance to Stun for 2s.",
+      "ai": {
+        "role": "rotation",
+        "priority": 35
+      }
     },
     {
       "id": "kenjutsu_deflection",
@@ -795,7 +986,11 @@
           "value": 40
         }
       ],
-      "description": "Samurai capstone: channels crushing martial force into an execution strike dealing 320% weapon damage, consuming up to 25 bonus energy for +4% extra damage per point."
+      "description": "Samurai capstone: channels crushing martial force into an execution strike dealing 320% weapon damage, consuming up to 25 bonus energy for +4% extra damage per point.",
+      "ai": {
+        "role": "finisher",
+        "priority": 70
+      }
     },
     {
       "id": "piercing_throw",
@@ -812,7 +1007,11 @@
           "value": 1
         }
       ],
-      "description": "Javelin baseline: hurls a weighted spear or throwing blade up to 4 tiles away with piercing force, dealing 150% weapon damage."
+      "description": "Javelin baseline: hurls a weighted spear or throwing blade up to 4 tiles away with piercing force, dealing 150% weapon damage.",
+      "ai": {
+        "role": "opener",
+        "priority": 50
+      }
     },
     {
       "id": "impaling_thrust",
@@ -829,7 +1028,11 @@
           "value": 10
         }
       ],
-      "description": "A brutal thrust or close-range projectile strike penetrating defenses up to 2 tiles away, dealing 170% weapon damage and causing Bleed."
+      "description": "A brutal thrust or close-range projectile strike penetrating defenses up to 2 tiles away, dealing 170% weapon damage and causing Bleed.",
+      "ai": {
+        "role": "rotation",
+        "priority": 40
+      }
     },
     {
       "id": "vaulting_leap",
@@ -863,7 +1066,11 @@
           "value": 30
         }
       ],
-      "description": "Hurls a barbed spear or heavy throwing projectile up to 4 tiles away, dealing 180% weapon damage and Pinning the target with 50% Slow for 4s."
+      "description": "Hurls a barbed spear or heavy throwing projectile up to 4 tiles away, dealing 180% weapon damage and Pinning the target with 50% Slow for 4s.",
+      "ai": {
+        "role": "rotation",
+        "priority": 35
+      }
     },
     {
       "id": "heartseeker_hurl",
@@ -871,7 +1078,7 @@
       "energyCost": 35,
       "cooldownMs": 14000,
       "damageMultiplier": 2.8,
-      "distanceBonusMultiplier": 0.10,
+      "distanceBonusMultiplier": 0.1,
       "rangeTiles": 5,
       "targetType": "enemy",
       "requirements": [
@@ -881,7 +1088,11 @@
           "value": 40
         }
       ],
-      "description": "Javelin capstone: launches a devastating maximum-momentum projectile strike up to 5 tiles away, dealing 280% weapon damage plus +10% bonus damage per tile of distance."
+      "description": "Javelin capstone: launches a devastating maximum-momentum projectile strike up to 5 tiles away, dealing 280% weapon damage plus +10% bonus damage per tile of distance.",
+      "ai": {
+        "role": "finisher",
+        "priority": 65
+      }
     },
     {
       "id": "primed_shot",
@@ -898,7 +1109,11 @@
           "value": 1
         }
       ],
-      "description": "Loader baseline: carefully draws and locks the ratchet mechanism to loose a heavy primed bolt dealing 140% weapon damage up to 4 tiles away."
+      "description": "Loader baseline: carefully draws and locks the ratchet mechanism to loose a heavy primed bolt dealing 140% weapon damage up to 4 tiles away.",
+      "ai": {
+        "role": "opener",
+        "priority": 60
+      }
     },
     {
       "id": "rapid_crank",
@@ -906,7 +1121,7 @@
       "energyCost": 16,
       "cooldownMs": 4000,
       "damageMultiplier": 1.5,
-      "accuracyBonus": 0.20,
+      "accuracyBonus": 0.2,
       "rangeTiles": 4,
       "targetType": "enemy",
       "requirements": [
@@ -916,7 +1131,11 @@
           "value": 10
         }
       ],
-      "description": "Rapidly cranks the windlass mechanism for a swift follow-up shot with +20% accuracy dealing 150% weapon damage up to 4 tiles away."
+      "description": "Rapidly cranks the windlass mechanism for a swift follow-up shot with +20% accuracy dealing 150% weapon damage up to 4 tiles away.",
+      "ai": {
+        "role": "rotation",
+        "priority": 35
+      }
     },
     {
       "id": "arbalest_brace",
@@ -932,7 +1151,11 @@
           "value": 20
         }
       ],
-      "description": "Braces the heavy stock firmly against the ground, reinforcing firing posture and reducing damage taken by 20% for 4s."
+      "description": "Braces the heavy stock firmly against the ground, reinforcing firing posture and reducing damage taken by 20% for 4s.",
+      "ai": {
+        "role": "defensive",
+        "priority": 55
+      }
     },
     {
       "id": "pinning_bolt",
@@ -950,7 +1173,11 @@
           "value": 30
         }
       ],
-      "description": "Fires a heavy steel-headed bolt with brutal kinetic impact, dealing 180% weapon damage and slowing the target's movement by 50% for 3s."
+      "description": "Fires a heavy steel-headed bolt with brutal kinetic impact, dealing 180% weapon damage and slowing the target's movement by 50% for 3s.",
+      "ai": {
+        "role": "rotation",
+        "priority": 40
+      }
     },
     {
       "id": "kinetic_overdraw",
@@ -984,7 +1211,11 @@
           "value": 1
         }
       ],
-      "description": "Basic ranged spell, low cost, primary filler. Hurls a focused bolt of raw arcane energy up to 5 tiles away, dealing 140% magic damage."
+      "description": "Basic ranged spell, low cost, primary filler. Hurls a focused bolt of raw arcane energy up to 5 tiles away, dealing 140% magic damage.",
+      "ai": {
+        "role": "rotation",
+        "priority": 30
+      }
     },
     {
       "id": "mana_shield",
@@ -992,7 +1223,7 @@
       "energyCost": 20,
       "cooldownMs": 12000,
       "durationMs": 6000,
-      "damageToEnergyPercent": 0.50,
+      "damageToEnergyPercent": 0.5,
       "targetType": "self",
       "requirements": [
         {
@@ -1001,7 +1232,11 @@
           "value": 10
         }
       ],
-      "description": "Surrounds the caster in an oscillating barrier of force for 6s, converting 50% of incoming damage into energy cost instead of HP."
+      "description": "Surrounds the caster in an oscillating barrier of force for 6s, converting 50% of incoming damage into energy cost instead of HP.",
+      "ai": {
+        "role": "defensive",
+        "priority": 70
+      }
     },
     {
       "id": "overcharge",
@@ -1010,7 +1245,7 @@
       "cooldownMs": 10000,
       "durationMs": 10000,
       "spellDamageMultiplier": 1.75,
-      "spellEnergyCostMultiplier": 1.50,
+      "spellEnergyCostMultiplier": 1.5,
       "targetType": "self",
       "requirements": [
         {
@@ -1019,7 +1254,11 @@
           "value": 20
         }
       ],
-      "description": "Overcharges the caster's arcane conduits for 10s. The next spell cast consumes 50% more energy but deals 75% increased damage."
+      "description": "Overcharges the caster's arcane conduits for 10s. The next spell cast consumes 50% more energy but deals 75% increased damage.",
+      "ai": {
+        "role": "buff",
+        "priority": 50
+      }
     },
     {
       "id": "blink",
@@ -1035,7 +1274,11 @@
           "value": 30
         }
       ],
-      "description": "Short teleport, escape or reposition tool. Instantly blinks the caster 3 tiles away from the nearest enemy threat."
+      "description": "Short teleport, escape or reposition tool. Instantly blinks the caster 3 tiles away from the nearest enemy threat.",
+      "ai": {
+        "role": "gapCloser",
+        "priority": 65
+      }
     },
     {
       "id": "arcane_nova",
@@ -1069,7 +1312,11 @@
           "value": 1
         }
       ],
-      "description": "Spellsword hybrid strike: infuses the longsword with raw arcane energy, dealing 150% weapon damage plus unconditional bonus damage scaling from Arcane Magic level."
+      "description": "Spellsword hybrid strike: infuses the longsword with raw arcane energy, dealing 150% weapon damage plus unconditional bonus damage scaling from Arcane Magic level.",
+      "ai": {
+        "role": "rotation",
+        "priority": 35
+      }
     },
     {
       "id": "runic_infusion",
@@ -1087,7 +1334,11 @@
           "value": 10
         }
       ],
-      "description": "Enchants the caster's longsword with pulsing arcane runes for 8s. While infused, attacks deal +25% bonus magical damage and siphon 4 energy on hit."
+      "description": "Enchants the caster's longsword with pulsing arcane runes for 8s. While infused, attacks deal +25% bonus magical damage and siphon 4 energy on hit.",
+      "ai": {
+        "role": "buff",
+        "priority": 55
+      }
     },
     {
       "id": "spell_ward",
@@ -1096,7 +1347,7 @@
       "cooldownMs": 14000,
       "durationMs": 6000,
       "shieldAmount": 40,
-      "parryBonus": 0.20,
+      "parryBonus": 0.2,
       "targetType": "self",
       "requirements": [
         {
@@ -1105,7 +1356,11 @@
           "value": 20
         }
       ],
-      "description": "Weaves sword guard and protective sorcery into a kinetic ward for 6s, absorbing up to 40 incoming damage and granting +20% Parry chance."
+      "description": "Weaves sword guard and protective sorcery into a kinetic ward for 6s, absorbing up to 40 incoming damage and granting +20% Parry chance.",
+      "ai": {
+        "role": "defensive",
+        "priority": 60
+      }
     },
     {
       "id": "dimensional_lunge",
@@ -1122,7 +1377,11 @@
           "value": 30
         }
       ],
-      "description": "Warps through dimensional space directly adjacent to a target up to 4 tiles away and executes a piercing longsword thrust dealing 190% weapon damage plus unconditional bonus scaling from Arcane Magic level."
+      "description": "Warps through dimensional space directly adjacent to a target up to 4 tiles away and executes a piercing longsword thrust dealing 190% weapon damage plus unconditional bonus scaling from Arcane Magic level.",
+      "ai": {
+        "role": "gapCloser",
+        "priority": 65
+      }
     },
     {
       "id": "blade_beam",
@@ -1139,7 +1398,11 @@
           "value": 40
         }
       ],
-      "description": "Spellsword capstone: slashes the longsword with overwhelming force, unleashing a crescent wave of compressed arcane energy that strikes targets up to 4 tiles away for 260% weapon damage plus unconditional bonus scaling from Arcane Magic level. If Runic Infusion is active, refunds 10 energy and cleaves adjacent enemies."
+      "description": "Spellsword capstone: slashes the longsword with overwhelming force, unleashing a crescent wave of compressed arcane energy that strikes targets up to 4 tiles away for 260% weapon damage plus unconditional bonus scaling from Arcane Magic level. If Runic Infusion is active, refunds 10 energy and cleaves adjacent enemies.",
+      "ai": {
+        "role": "rotation",
+        "priority": 50
+      }
     },
     {
       "id": "quick_toss",
@@ -1156,7 +1419,11 @@
           "value": 1
         }
       ],
-      "description": "Thrower baseline: quick-handed flick of a balanced throwing weapon or dagger up to 3 tiles away, dealing 140% weapon damage with rapid recovery."
+      "description": "Thrower baseline: quick-handed flick of a balanced throwing weapon or dagger up to 3 tiles away, dealing 140% weapon damage with rapid recovery.",
+      "ai": {
+        "role": "rotation",
+        "priority": 35
+      }
     },
     {
       "id": "skirmish_step",
@@ -1172,7 +1439,11 @@
           "value": 10
         }
       ],
-      "description": "Quick-footed tactical maneuver granting +35% Evasion for 4s, reinforcing the hit-and-run skirmisher fantasy."
+      "description": "Quick-footed tactical maneuver granting +35% Evasion for 4s, reinforcing the hit-and-run skirmisher fantasy.",
+      "ai": {
+        "role": "defensive",
+        "priority": 60
+      }
     },
     {
       "id": "fan_of_knives",
@@ -1189,7 +1460,11 @@
           "value": 20
         }
       ],
-      "description": "Throws a spread of sharp blades at the target and nearby enemies up to 3 tiles away, dealing 160% weapon damage and cleaving adjacent foes."
+      "description": "Throws a spread of sharp blades at the target and nearby enemies up to 3 tiles away, dealing 160% weapon damage and cleaving adjacent foes.",
+      "ai": {
+        "role": "rotation",
+        "priority": 40
+      }
     },
     {
       "id": "crippling_volley",
@@ -1207,7 +1482,11 @@
           "value": 30
         }
       ],
-      "description": "Hurls a targeted projectile at the enemy's legs up to 4 tiles away, dealing 185% weapon damage and applying 50% Slow and Bleed for 4s."
+      "description": "Hurls a targeted projectile at the enemy's legs up to 4 tiles away, dealing 185% weapon damage and applying 50% Slow and Bleed for 4s.",
+      "ai": {
+        "role": "rotation",
+        "priority": 45
+      }
     },
     {
       "id": "blade_barrage",
@@ -1224,7 +1503,190 @@
           "value": 40
         }
       ],
-      "description": "Thrower capstone: unleashes a rapid, deadly barrage of thrown blades and daggers up to 4 tiles away, dealing 260% weapon damage plus +0.25 bonus damage per point of the hybrid partner proficiency."
+      "description": "Thrower capstone: unleashes a rapid, deadly barrage of thrown blades and daggers up to 4 tiles away, dealing 260% weapon damage plus +0.25 bonus damage per point of the hybrid partner proficiency.",
+      "ai": {
+        "role": "rotation",
+        "priority": 50
+      }
+    },
+    {
+      "id": "scorch",
+      "name": "Scorch",
+      "energyCost": 22,
+      "cooldownMs": 2000,
+      "rangeTiles": 4,
+      "targetType": "enemy",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "ember_adept",
+          "value": 1
+        }
+      ],
+      "description": "Ember Adept baseline: casts a concentrated burst of flame dealing 110% spell damage with a 60% chance to Burn.",
+      "ai": {
+        "role": "rotation",
+        "priority": 25
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 1.1,
+          "scaling": "spell"
+        },
+        {
+          "type": "applyStatus",
+          "status": "burn",
+          "chance": 0.6,
+          "durationMs": 4000
+        }
+      ]
+    },
+    {
+      "id": "firebolt",
+      "name": "Firebolt",
+      "energyCost": 26,
+      "cooldownMs": 5000,
+      "rangeTiles": 5,
+      "targetType": "enemy",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "ember_adept",
+          "value": 10
+        }
+      ],
+      "description": "Hurls a fiery projectile up to 5 tiles away, dealing 160% spell damage and reliably inflicting Burn.",
+      "ai": {
+        "role": "opener",
+        "priority": 60
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 1.6,
+          "scaling": "spell"
+        },
+        {
+          "type": "applyStatus",
+          "status": "burn",
+          "chance": 0.85,
+          "durationMs": 4000
+        }
+      ]
+    },
+    {
+      "id": "flame_wave",
+      "name": "Flame Wave",
+      "energyCost": 32,
+      "cooldownMs": 7000,
+      "rangeTiles": 2,
+      "targetType": "enemy",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "ember_adept",
+          "value": 20
+        }
+      ],
+      "description": "Sweeps a wave of fire across close-range foes, cleaving secondary enemies within 1.5 tiles.",
+      "ai": {
+        "role": "rotation",
+        "priority": 50,
+        "condition": {
+          "enemiesInRadius": 2
+        }
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 1.4,
+          "scaling": "spell",
+          "area": {
+            "shape": "cleave",
+            "radius": 1.5
+          }
+        },
+        {
+          "type": "applyStatus",
+          "status": "burn",
+          "chance": 0.7,
+          "durationMs": 4000
+        }
+      ]
+    },
+    {
+      "id": "ignite",
+      "name": "Ignite",
+      "energyCost": 28,
+      "cooldownMs": 8000,
+      "rangeTiles": 4,
+      "targetType": "enemy",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "ember_adept",
+          "value": 30
+        }
+      ],
+      "description": "Focuses scorching heat into a single foe, dealing 180% spell damage and guaranteeing a prolonged Burn.",
+      "ai": {
+        "role": "finisher",
+        "priority": 70
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 1.8,
+          "scaling": "spell"
+        },
+        {
+          "type": "applyStatus",
+          "status": "burn",
+          "chance": 1,
+          "durationMs": 6000
+        }
+      ]
+    },
+    {
+      "id": "firestorm",
+      "name": "Firestorm",
+      "energyCost": 40,
+      "cooldownMs": 14000,
+      "rangeTiles": 4,
+      "targetType": "enemy",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "ember_adept",
+          "value": 40
+        }
+      ],
+      "description": "Calls down an inferno erupting across a 3-tile radius, dealing 220% spell damage and igniting all caught in the blast.",
+      "ai": {
+        "role": "rotation",
+        "priority": 80,
+        "condition": {
+          "enemiesInRadius": 2
+        }
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 2.2,
+          "scaling": "spell",
+          "area": {
+            "shape": "radius",
+            "radius": 3
+          }
+        },
+        {
+          "type": "applyStatus",
+          "status": "burn",
+          "chance": 0.9,
+          "durationMs": 4000
+        }
+      ]
     }
   ]
 }

@@ -81,6 +81,7 @@ export class ProgressionSystem {
   private classStats: Map<string, TrainableStat> = new Map();
   private unlockedClasses: Set<string> = new Set();
   private activityCounts: Map<string, number> = new Map();
+  private triggerCounts: Map<string, number> = new Map();
   private dualWieldUnlocked: boolean = false;
   private classesData: ClassesData;
   private onUnlockCallbacks: ((event: UnlockEvent) => void)[] = [];
@@ -279,6 +280,19 @@ export class ProgressionSystem {
     return updated;
   }
 
+  public getTriggerCount(target: string): number {
+    return this.triggerCounts.get(target) ?? 0;
+  }
+
+  public recordTrigger(target: string, amount: number = 1): number {
+    const current = this.getTriggerCount(target);
+    const updated = current + amount;
+    this.triggerCounts.set(target, updated);
+    console.log(`[Progression] Trigger '${target}' count: ${current} -> ${updated} (+${amount})`);
+    this.checkClassUnlocks();
+    return updated;
+  }
+
   public isStatRevealed(statId: string): boolean {
     return this.getProficiencyLevel(statId) >= 1;
   }
@@ -341,6 +355,37 @@ export class ProgressionSystem {
     return result;
   }
 
+  public evaluateRequirement(req: Requirement): boolean {
+    if (req.type === 'proficiency') {
+      const currentLevel = this.getProficiencyLevel(req.target ?? '');
+      return currentLevel >= (req.value ?? 0);
+    } else if (req.type === 'classLevel') {
+      const currentLevel = this.getClassLevel(req.target ?? '');
+      return currentLevel >= (req.value ?? 0);
+    } else if (req.type === 'activityCount') {
+      const currentCount = this.getActivityCount(req.target ?? '');
+      return currentCount >= (req.value ?? 0);
+    } else if (req.type === 'triggerCount') {
+      const currentCount = this.getTriggerCount(req.target ?? '');
+      return currentCount >= (req.value ?? 0);
+    } else if (req.type === 'anyOf') {
+      const needed = req.count ?? 1;
+      const subReqs = req.of ?? [];
+      let met = 0;
+      for (const sub of subReqs) {
+        if (this.evaluateRequirement(sub)) {
+          met++;
+          if (met >= needed) return true;
+        }
+      }
+      return met >= needed;
+    } else if (req.type === 'oneOf') {
+      const subReqs = req.of ?? [];
+      return subReqs.some((sub) => this.evaluateRequirement(sub));
+    }
+    return false;
+  }
+
   /**
    * Generic Requirement Evaluator Engine
    * Evaluates any class definition's requirements array (ANDed) dynamically against level.
@@ -350,22 +395,11 @@ export class ProgressionSystem {
       return false; // Already unlocked
     }
 
-    return classDef.requirements.every((req: Requirement) => {
-      if (req.type === 'proficiency') {
-        const currentLevel = this.getProficiencyLevel(req.target);
-        return currentLevel >= req.value;
-      } else if (req.type === 'classLevel') {
-        const currentLevel = this.getClassLevel(req.target);
-        return currentLevel >= req.value;
-      } else if (req.type === 'activityCount') {
-        const currentCount = this.getActivityCount(req.target);
-        return currentCount >= req.value;
-      }
-      return false;
-    });
+    return classDef.requirements.every((req: Requirement) => this.evaluateRequirement(req));
   }
 
   public checkClassUnlocks(): void {
+    if (!this.classesData?.classes) return;
     for (const classDef of this.classesData.classes) {
       if (this.evaluateRequirements(classDef)) {
         this.unlockedClasses.add(classDef.id);
@@ -398,16 +432,7 @@ export class ProgressionSystem {
     if (player?.knownSkillIds && player.knownSkillIds.includes(skill.id)) {
       return true;
     }
-    return skill.requirements.every((req: Requirement) => {
-      if (req.type === 'classLevel') {
-        return this.getClassLevel(req.target) >= req.value;
-      } else if (req.type === 'proficiency') {
-        return this.getProficiencyLevel(req.target) >= req.value;
-      } else if (req.type === 'activityCount') {
-        return this.getActivityCount(req.target) >= req.value;
-      }
-      return false;
-    });
+    return skill.requirements.every((req: Requirement) => this.evaluateRequirement(req));
   }
 
   /**

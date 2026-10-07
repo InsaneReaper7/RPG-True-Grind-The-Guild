@@ -100,9 +100,11 @@ export interface WeaponsData {
 }
 
 export interface Requirement {
-  type: 'proficiency' | 'classLevel' | 'activityCount';
-  target: string;
-  value: number;
+  type: 'proficiency' | 'classLevel' | 'activityCount' | 'triggerCount' | 'anyOf' | 'oneOf';
+  target?: string;
+  value?: number;
+  count?: number;
+  of?: Requirement[];
 }
 
 export interface PassiveImbuementProcDef {
@@ -601,6 +603,122 @@ export interface ArmorsmithRecipesData {
   recipes: ArmorsmithRecipeDef[];
 }
 
+export type SkillRole = 'rotation' | 'opener' | 'gapCloser' | 'defensive' | 'support' | 'finisher';
+
+export interface SkillAiCondition {
+  selfHpBelow?: number;
+  allyHpBelow?: number;
+  enemiesInRadius?: number;
+  requiresHarmfulStatus?: boolean;
+  requiresDownedAlly?: boolean;
+  requiresRiposteReady?: boolean;
+}
+
+export interface SkillAiDef {
+  role: SkillRole;
+  priority: number;
+  condition?: SkillAiCondition;
+}
+
+export interface SkillEffectArea {
+  shape: 'single' | 'cleave' | 'radius' | 'line' | 'chain';
+  radius?: number;
+  falloff?: number;
+  maxTargets?: number;
+}
+
+export interface SkillEffectDamage {
+  type: 'damage';
+  multiplier: number;
+  scaling?: 'weapon' | 'spell';
+  hits?: number;
+  hitDelayMs?: number;
+  flatBonus?: number;
+  area?: SkillEffectArea;
+  lowHealthBonus?: { threshold: number; multiplier: number };
+  requiresTargetStatus?: { status: string; multiplier: number };
+  resourceDumpMultiplier?: number;
+}
+
+export interface SkillEffectApplyStatus {
+  type: 'applyStatus';
+  status: string;
+  chance?: number;
+  durationMs?: number;
+}
+
+export interface SkillEffectHeal {
+  type: 'heal';
+  amount?: number;
+  percent?: number;
+  target?: 'self' | 'lowestAlly' | 'party' | 'radius';
+}
+
+export interface SkillEffectHealOverTime {
+  type: 'healOverTime';
+  amountPerTick: number;
+  tickIntervalMs?: number;
+  durationMs: number;
+  target?: 'self' | 'lowestAlly';
+}
+
+export interface SkillEffectShield {
+  type: 'shield';
+  shieldAmount: number;
+  durationMs: number;
+  target?: 'self' | 'lowestAlly';
+}
+
+export interface SkillEffectBuffDebuff {
+  type: 'buff' | 'debuff';
+  stat: 'damageReductionPercent' | 'damageTakenMultiplier' | 'damageAmplificationPercent' | 'bonusDamagePercent' | 'evasionBonus' | 'moveSpeedMultiplier';
+  value: number;
+  durationMs: number;
+  target?: 'self' | 'enemy';
+}
+
+export interface SkillEffectCleanse {
+  type: 'cleanse';
+  target?: 'self' | 'lowestAlly' | 'party';
+}
+
+export interface SkillEffectTaunt {
+  type: 'taunt';
+  radiusTiles?: number;
+  durationMs?: number;
+}
+
+export interface SkillEffectMove {
+  type: 'move';
+  moveType: 'dash' | 'leap' | 'teleportBehind' | 'blink';
+  rangeTiles?: number;
+}
+
+export interface SkillEffectResource {
+  type: 'resource';
+  energyRestore?: number;
+  hpCost?: number;
+  siphon?: number;
+}
+
+export interface SkillEffectReactive {
+  type: 'reactive';
+  windowStatus: string;
+}
+
+export type SkillEffect =
+  | SkillEffectDamage
+  | SkillEffectApplyStatus
+  | SkillEffectHeal
+  | SkillEffectHealOverTime
+  | SkillEffectShield
+  | SkillEffectBuffDebuff
+  | SkillEffectCleanse
+  | SkillEffectTaunt
+  | SkillEffectMove
+  | SkillEffectResource
+  | SkillEffectReactive;
+
 export interface SkillDef {
   id: string;
   name: string;
@@ -611,6 +729,8 @@ export interface SkillDef {
   targetType?: 'enemy' | 'ally' | 'self';
   requirements: Requirement[];
   description?: string;
+  ai?: SkillAiDef;
+  effects?: SkillEffect[];
   stunDurationMs?: number;
   mitigationPercent?: number;
   durationMs?: number;

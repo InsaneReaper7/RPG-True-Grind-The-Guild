@@ -250,15 +250,14 @@ export class Entity extends Phaser.GameObjects.Container {
     if (this.state === 'downed' || this.state === 'dead') return false;
 
     let damageRemaining = amount;
-    const exposeEffect = this.activeStatusEffects.get('expose');
-    if (exposeEffect) {
-      const amp = exposeEffect.def?.damageAmplificationPercent ?? 0.25;
-      damageRemaining *= (1 + amp);
+    let totalAmp = 0;
+    for (const activeEffect of this.activeStatusEffects.values()) {
+      if (activeEffect.def?.damageAmplificationPercent !== undefined) {
+        totalAmp += activeEffect.def.damageAmplificationPercent;
+      }
     }
-    const arcaneVulnEffect = this.activeStatusEffects.get('arcane_vulnerability');
-    if (arcaneVulnEffect) {
-      const amp = arcaneVulnEffect.def?.damageAmplificationPercent ?? 0.15;
-      damageRemaining *= (1 + amp);
+    if (totalAmp > 0) {
+      damageRemaining *= (1 + totalAmp);
     }
     for (const activeEffect of this.activeStatusEffects.values()) {
       if (activeEffect.def?.damageTakenMultiplier !== undefined) {
