@@ -1289,3 +1289,39 @@ Never ask Antigravity to jump ahead in this list — each milestone assumes the 
   - Production build: `npm run build` succeeds cleanly.
   - Test suite: `npm test -- --quiet` passes all 114/114 test suites cleanly.
 
+### Class Program, Step 1: Director Decisions & Behavioural Changes
+
+The following three intentional behavioural changes were reviewed and accepted by the Director:
+
+1. **Skill Selection Order (Data Priority vs. Loadout Order)**:
+   - **Legacy behaviour**: The legacy loop cast the first eligible skill in equipped loadout order (`0ea77ea` L1380).
+   - **New behaviour**: The new AI selector casts the highest `ai.priority` among eligible skills. For example, a Swordsman at full energy opens with `cross_cut` (priority 65) rather than `blade_strike` (priority 55).
+   - **Rationale**: Required for data-driven priority selection, AoE filtering, openers, finishers, and execute conditions to function correctly.
+   - **Handoff mapping**: Column relabelled as *"new priority selection (intentional change from loadout order)"*.
+
+2. **Kill Shot Execution Gate**:
+   - **Legacy behaviour**: Scout cast Kill Shot whenever off cooldown, with 2× execute multiplier applying if target HP was < 40%.
+   - **New behaviour**: Gated behind `condition.enemyHpBelow: 0.4`, holding cast until execute threshold to maximize damage efficiency per energy spent.
+
+3. **Gap-Closer Default Range Standard**:
+   - **New behaviour**: Melee gap-closer range default standardized to 5 → 1 (`iaido_quickdraw`), ensuring melee gap-closers require closing to melee engagement distance.
+
+### Class Program, Step 1 Carry-Over Fix: Generic Fallback & Hit-Gated Proficiency EXP (2026-10-07)
+
+**Resolved and shipped: Closed the single carry-over fix from the Skill Engine milestone sign-off at `32bf2d5`. Wired `castSkill` generic fallback to `executeWeaponSkillAttack`, gated Shield Bash stun to hits only, restored Blessed Weapons +5 and `NORMAL PUNCH!` floating text, and made weapon proficiency EXP strictly hit-gated (+2 on hit, 0 on miss) while preserving EXP for spell and non-damage skills.**
+
+- **1. Generic Fallback Combat Parity (`CombatSystem.ts`)**:
+  - `castSkill`'s generic fallback for effect-less skills (`shield_bash`, `normal_punch`, `crushing_blow`) now computes damage using the effective weapon (`proficiencyId ?? id`) and mood multiplier, applies Blessed Weapons `+5 HOLY!` bonus, and delegates to `executeWeaponSkillAttack()`.
+  - Re-established hit rolls, weapon procs, `isAggroed`, and EXP on this branch.
+  - Added cosmetic check for `normal_punch` in `executeWeaponSkillAttack` displaying `NORMAL PUNCH! -<dmg>` in `#ea580c`.
+- **2. Hit-Gated Shield Bash Stun (`CombatSystem.ts`)**:
+  - Shield Bash 2-second Stun is now explicitly gated behind `isHit`: on a miss, 0 damage is dealt and no stun status is applied; on a hit, full damage is dealt and the 2s stun is applied.
+- **3. Hit-Gated Weapon EXP with Spell & Utility Preservation (`SkillSystem.ts`, `CombatSystem.ts`)**:
+  - Moved weapon proficiency EXP award into `executeWeaponSkillAttack`: exactly `+2` weapon EXP awarded on confirmed hit, `0` EXP awarded on a miss.
+  - In `SkillSystem.execute`, skipped the `+2` award only when `effects` contains a `scaling: "weapon"` damage effect (preventing double-awards on hits and granting nothing on misses).
+  - All other skills (spells, heals, buffs, shields, etc.) retain their unconditional `+2` proficiency EXP award.
+- **4. Verification & Build Evidence**:
+  - Targeted test suite: `npx tsx test/skill_engine_fixes.test.ts` passes all 6 tests, including Test 6 covering Shield Bash forced miss (0 dmg, no stun, 0 EXP), Shield Bash forced hit (88 HP, stun applied, exactly +2 EXP), Thrust forced miss (0 dmg, 0 EXP), Thrust forced hit (85 HP, exactly +2 EXP), and Scorch spell at roll 0.99 (guaranteed hit, retains +2 EXP).
+  - Production build: `npm run build` succeeds cleanly. Full test suite skipped per milestone instructions.
+
+

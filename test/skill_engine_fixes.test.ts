@@ -336,6 +336,149 @@ async function runTests() {
     console.log('  ✓ Stances on threat at full HP and selfHpBelow engine condition support verified.');
   }
 
+  // -------------------------------------------------------------------------------------------------
+  // 6. Fix 6: Carry-Over Fix - Generic fallback hit check, stun gating, and hit-gated EXP
+  // -------------------------------------------------------------------------------------------------
+  console.log('\n--- TEST 6: Generic Fallback & Hit-Gated Proficiency EXP ---');
+  {
+    const originalRandom = Math.random;
+
+    const testSword: any = {
+      id: 'test_fixed_sword',
+      proficiencyId: 'short_swords',
+      name: 'Test Fixed Sword',
+      type: 'melee',
+      tier: 'common',
+      baseDamage: 10,
+      baseAccuracy: 0.60,
+      attackSpeed: 1.0,
+      attackRangeTiles: 1,
+      energyCostPerAttack: 10,
+      levelBonus: { damagePerLevel: 0, accuracyPerLevel: 0 }
+    };
+
+    // 6A. Shield Bash via castSkill generic fallback on forced MISS (Math.random = 0.99)
+    {
+      const tank = new Player(scene, 10, 10, playerData, testSword, 32);
+      tank.progression.setClassLevel('vanguard', 40);
+      tank.mood = 50; // 1.0 combat damage multiplier
+      tank.energy = 100;
+      tank.equippedSkillIds = ['shield_bash'];
+
+      const enemy = createDummyEnemy(scene, 10, 11, 'Target', 100);
+      combat.party = [tank];
+      combat.enemies = [enemy];
+
+      Math.random = () => 0.99; // Forced miss
+
+      const expBefore = tank.progression.getProficiencyStat('short_swords').currentExp;
+      const ok = combat.castSkill(tank, 'shield_bash', enemy, 1000);
+      assert.strictEqual(ok, true, 'castSkill returns true');
+      assert.strictEqual(enemy.hp, 100, 'Enemy takes 0 damage on MISS');
+      assert.strictEqual(enemy.hasStatusEffect('stun'), false, 'Shield Bash stun does NOT land on a miss');
+      const expAfter = tank.progression.getProficiencyStat('short_swords').currentExp;
+      assert.strictEqual(expAfter, expBefore, 'No weapon EXP awarded on a miss');
+      console.log('  ✓ Shield Bash miss: 0 damage, no stun, 0 EXP awarded.');
+    }
+
+    // 6B. Shield Bash via castSkill generic fallback on forced HIT (Math.random = 0.1)
+    {
+      const tank = new Player(scene, 10, 10, playerData, testSword, 32);
+      tank.progression.setClassLevel('vanguard', 40);
+      tank.mood = 50; // 1.0 combat damage multiplier
+      tank.energy = 100;
+      tank.equippedSkillIds = ['shield_bash'];
+
+      const enemy = createDummyEnemy(scene, 10, 11, 'Target', 100);
+      combat.party = [tank];
+      combat.enemies = [enemy];
+
+      Math.random = () => 0.1; // Forced hit
+
+      const expBefore = tank.progression.getProficiencyStat('short_swords').currentExp;
+      const ok = combat.castSkill(tank, 'shield_bash', enemy, 1000);
+      assert.strictEqual(ok, true, 'castSkill returns true');
+      assert.strictEqual(enemy.hp, 88, 'Enemy takes exact damage (12.0 = 10 * 1.2) on HIT');
+      assert.strictEqual(enemy.hasStatusEffect('stun'), true, 'Shield Bash stun lands on a hit');
+      const expAfter = tank.progression.getProficiencyStat('short_swords').currentExp;
+      assert.strictEqual(expAfter - expBefore, 2, 'Exactly +2 weapon EXP awarded on hit (not +4)');
+      console.log('  ✓ Shield Bash hit: exact damage (88 HP), stun applied, exactly +2 EXP awarded.');
+    }
+
+    // 6C. Thrust via SkillSystem on forced MISS (Math.random = 0.99)
+    {
+      const fencer = new Player(scene, 10, 10, playerData, testSword, 32);
+      fencer.progression.setClassLevel('fencer', 40);
+      fencer.mood = 50;
+      fencer.energy = 100;
+      fencer.equippedSkillIds = ['thrust'];
+
+      const enemy = createDummyEnemy(scene, 10, 11, 'Target', 100);
+      combat.party = [fencer];
+      combat.enemies = [enemy];
+
+      Math.random = () => 0.99; // Forced miss
+
+      const expBefore = fencer.progression.getProficiencyStat('short_swords').currentExp;
+      const ok = combat.castSkill(fencer, 'thrust', enemy, 1000);
+      assert.strictEqual(ok, true, 'Thrust cast succeeds');
+      assert.strictEqual(enemy.hp, 100, 'Enemy takes 0 damage on miss');
+      const expAfter = fencer.progression.getProficiencyStat('short_swords').currentExp;
+      assert.strictEqual(expAfter, expBefore, 'SkillSystem weapon skill gives 0 EXP on a miss');
+      console.log('  ✓ Thrust miss: 0 damage, 0 weapon EXP awarded.');
+    }
+
+    // 6D. Thrust via SkillSystem on forced HIT (Math.random = 0.1)
+    {
+      const fencer = new Player(scene, 10, 10, playerData, testSword, 32);
+      fencer.progression.setClassLevel('fencer', 40);
+      fencer.mood = 50;
+      fencer.energy = 100;
+      fencer.equippedSkillIds = ['thrust'];
+
+      const enemy = createDummyEnemy(scene, 10, 11, 'Target', 100);
+      combat.party = [fencer];
+      combat.enemies = [enemy];
+
+      Math.random = () => 0.1; // Forced hit
+
+      const expBefore = fencer.progression.getProficiencyStat('short_swords').currentExp;
+      const ok = combat.castSkill(fencer, 'thrust', enemy, 1000);
+      assert.strictEqual(ok, true, 'Thrust cast succeeds');
+      assert.strictEqual(enemy.hp, 85, 'Thrust deals exact damage (15)');
+      const expAfter = fencer.progression.getProficiencyStat('short_swords').currentExp;
+      assert.strictEqual(expAfter - expBefore, 2, 'SkillSystem weapon skill gives exactly +2 EXP on hit (not +4)');
+      console.log('  ✓ Thrust hit: exact damage (85 HP), exactly +2 EXP awarded.');
+    }
+
+    // 6E. Scorch (spell damage via SkillSystem) on forced roll 0.99 still gives +2 EXP
+    {
+      const mage = new Player(scene, 10, 10, playerData, staff, 32);
+      mage.progression.setClassLevel('ember_adept', 40);
+      mage.mood = 50;
+      mage.energy = 100;
+      mage.equippedSkillIds = ['scorch'];
+
+      const enemy = createDummyEnemy(scene, 10, 11, 'Target', 100);
+      combat.party = [mage];
+      combat.enemies = [enemy];
+
+      Math.random = () => 0.99; // High roll
+
+      const effectiveWpn = combat.getEffectiveWeaponForAttack(mage);
+      const staffProf = effectiveWpn.proficiencyId ?? effectiveWpn.id;
+      const expBefore = mage.progression.getProficiencyStat(staffProf).currentExp;
+      const ok = combat.castSkill(mage, 'scorch', enemy, 1000);
+      assert.strictEqual(ok, true, 'Scorch cast succeeds');
+      assert.ok(enemy.hp < 100, 'Spell damage always lands');
+      const expAfter = mage.progression.getProficiencyStat(staffProf).currentExp;
+      assert.strictEqual(expAfter - expBefore, 2, 'Spell skills retain +2 EXP award even at roll 0.99');
+      console.log('  ✓ Scorch spell: guaranteed hit and retains +2 EXP at roll 0.99.');
+    }
+
+    Math.random = originalRandom;
+  }
+
   console.log('\n========================================================================');
   console.log('🎉 ALL SKILL ENGINE FIX TESTS PASSED SUCCESSFULLY');
   console.log('========================================================================\n');

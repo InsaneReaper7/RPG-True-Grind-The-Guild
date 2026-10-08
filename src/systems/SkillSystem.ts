@@ -95,8 +95,15 @@ export class SkillSystem {
     }
 
     // 8. Visual feedback and proficiency EXP
-    const profToAward = weaponId;
-    caster.progression.addProficiencyExp(profToAward, 2);
+    // Weapon damage skills award EXP on-hit via executeWeaponSkillAttack.
+    // Every other skill (spell damage, heal, shield, buff, etc.) retains the standard +2 award.
+    const hasWeaponDamageEffect = (skillDef.effects || []).some(
+      (e) => e.type === 'damage' && e.scaling === 'weapon'
+    );
+    if (!hasWeaponDamageEffect) {
+      const profToAward = weaponId;
+      caster.progression.addProficiencyExp(profToAward, 2);
+    }
 
     return true;
   }

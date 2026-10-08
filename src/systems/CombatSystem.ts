@@ -1741,7 +1741,11 @@ export class CombatSystem {
     const damagePerHit = hits > 1 ? skillDamage / hits : skillDamage;
     for (let h = 0; h < hits; h++) {
       if (target.state === 'dead' || target.state === 'downed') break;
-      this.createFloatingText(target.x, target.y - 10 - (h * 6), `${skillDef.name.toUpperCase()}! -${damagePerHit.toFixed(1)}`, '#f59e0b');
+      if (skillDef.id === 'normal_punch') {
+        this.createFloatingText(target.x, target.y - 10 - (h * 6), `NORMAL PUNCH! -${damagePerHit.toFixed(1)}`, '#ea580c');
+      } else {
+        this.createFloatingText(target.x, target.y - 10 - (h * 6), `${skillDef.name.toUpperCase()}! -${damagePerHit.toFixed(1)}`, '#f59e0b');
+      }
       const downed = target.takeDamage(damagePerHit);
       if (downed) {
         this.handleTargetDefeated(caster, target, weaponId);
@@ -1753,6 +1757,12 @@ export class CombatSystem {
     this.checkAndApplyBleed(caster, target, effectiveWeapon);
     this.checkAndApplyBurn(caster, target, effectiveWeapon);
     this.checkAndApplyStun(caster, target, effectiveWeapon);
+
+    const result = caster.progression.addProficiencyExp(weaponId, 2);
+    if (result.leveledUp) {
+      const newLevel = caster.progression.getProficiencyLevel(weaponId);
+      this.createFloatingText(caster.x, caster.y - 20, `${effectiveWeapon.name} Level ${newLevel}!`, '#22c55e');
+    }
 
     if (isDW && this.isLegitimatelyDualWielding(caster)) {
       caster.progression.addProficiencyExp('dual_wielding', 2);
@@ -5182,17 +5192,31 @@ export class CombatSystem {
       caster.state = 'attacking';
 
       this.createSkillAttackEffect(caster.x, caster.y, enemyTarget.x, enemyTarget.y);
-      const weapon = caster.equippedWeapon;
-      const weaponLevel = caster.progression.getProficiencyLevel(weapon.id);
-      const dmgBonus = weapon.levelBonus?.damagePerLevel ?? 0;
-      const rawBase = weapon.baseDamage + weaponLevel * dmgBonus;
+      const effectiveWeapon = this.getEffectiveWeaponForAttack(caster);
+      const weaponId = effectiveWeapon.proficiencyId ?? effectiveWeapon.id;
+      const weaponLevel = caster.progression.getProficiencyLevel(weaponId);
+      const dmgBonus = effectiveWeapon.levelBonus?.damagePerLevel ?? 0;
+      const rawBase = effectiveWeapon.baseDamage + weaponLevel * dmgBonus;
       const moodTier = dataLoader.getMoodTier(caster.mood);
       const effBase = rawBase * moodTier.combatDamageMultiplier;
-      const skillDamage = effBase * (skillDef.damageMultiplier ?? 1.0);
+      let skillDamage = effBase * (skillDef.damageMultiplier ?? 1.0);
 
-      this.createFloatingText(enemyTarget.x, enemyTarget.y - 10, `${skillDef.name.toUpperCase()}! -${skillDamage.toFixed(1)}`, '#f59e0b');
-      
-      if (skillId === 'shield_bash') {
+      if (caster.hasStatusEffect('blessed_weapons')) {
+        skillDamage += 5;
+        this.createFloatingText(enemyTarget.x, enemyTarget.y - 24, '+5 HOLY!', '#facc15');
+      }
+
+      const isHit = this.executeWeaponSkillAttack(
+        caster,
+        enemyTarget,
+        skillDef,
+        skillDamage,
+        weaponId,
+        time,
+        1
+      );
+
+      if (isHit && skillId === 'shield_bash') {
         const stunDef = dataLoader.getStatusEffect('stun') || {
           id: 'stun',
           name: 'Stun',
@@ -5207,10 +5231,6 @@ export class CombatSystem {
         console.log(`[Skill] Shield Bash STUNNED ${enemyTarget.entityName} for 2s!`);
       }
 
-      const downed = enemyTarget.takeDamage(skillDamage);
-      if (downed) {
-        this.handleTargetDefeated(caster, enemyTarget, weapon.id);
-      }
       return true;
     }
   }
