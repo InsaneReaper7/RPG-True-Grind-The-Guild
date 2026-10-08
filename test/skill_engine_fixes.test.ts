@@ -278,9 +278,10 @@ async function runTests() {
   }
 
   // -------------------------------------------------------------------------------------------------
-  // 5. Fix 6: AI Metadata and Conditions on Guard Up and Unbreakable
+  // 5. Follow-up 2 Fix 2: Guard Up and Unbreakable trigger on active threat without HP check,
+  // while selfHpBelow engine support is preserved in selector.
   // -------------------------------------------------------------------------------------------------
-  console.log('\n--- TEST 5: Defensive HP-gating (Guard Up at 50%, Unbreakable at 30%) ---');
+  console.log('\n--- TEST 5: Defensive Stances on Threat (Unbreakable / Guard Up trigger without HP gating) ---');
   {
     const tank = new Player(scene, 10, 10, playerData, staff, 32);
     tank.progression.setClassLevel('vanguard', 40);
@@ -296,22 +297,43 @@ async function runTests() {
     threat.isAggroed = true;
     combat.enemies = [threat];
 
-    // Case 5A: Full HP (100%) -> neither guard_up nor unbreakable chosen
+    // Case 5A: Full HP (100%) with active threat -> Unbreakable (priority 90 > guard_up 70) triggers
     const atFull = combat.skillSystem.selectSkillForCompanion(tank, 'defensive', 1000);
-    assert.strictEqual(atFull, null, 'At 100% HP, neither Guard Up nor Unbreakable should be cast');
+    assert.ok(atFull, 'At 100% HP with active threat, defensive stance must trigger');
+    assert.strictEqual(atFull.skillDef.id, 'unbreakable', 'Unbreakable (priority 90) triggers at full HP');
 
-    // Case 5B: 45% HP -> Guard Up (selfHpBelow 0.5) triggers
-    tank.hp = 45;
-    const at45 = combat.skillSystem.selectSkillForCompanion(tank, 'defensive', 1000);
-    assert.ok(at45, 'At 45% HP, a defensive skill should be cast');
-    assert.strictEqual(at45.skillDef.id, 'guard_up', 'Guard Up should trigger at 45% HP');
+    // Case 5B: When unbreakable is already active buff, Guard Up triggers next
+    const unbEff = dataLoader.getStatusEffect('unbreakable') || { id: 'unbreakable', name: 'Unbreakable', durationMs: 5000, color: '#fff' };
+    tank.applyStatusEffect(unbEff as any);
+    const nextStance = combat.skillSystem.selectSkillForCompanion(tank, 'defensive', 1000);
+    assert.ok(nextStance, 'Guard Up triggers when unbreakable is already active');
+    assert.strictEqual(nextStance.skillDef.id, 'guard_up', 'Guard Up triggers at full HP');
 
-    // Case 5C: 25% HP -> Unbreakable (selfHpBelow 0.3, priority 90) triggers over Guard Up
+    // Case 5C: Verify selfHpBelow engine support in selector with custom condition
+    const customHpGatedSkill: any = {
+      id: 'custom_last_stand',
+      name: 'Custom Last Stand',
+      energyCost: 10,
+      cooldownMs: 5000,
+      targetType: 'self',
+      ai: {
+        role: 'defensive',
+        priority: 95,
+        condition: { selfHpBelow: 0.3 }
+      },
+      requirements: []
+    };
+    (dataLoader as any).skillsData.skills.push(customHpGatedSkill);
+    tank.equippedSkillIds = ['custom_last_stand'];
+    tank.hp = 100;
+    const gatedAtFull = combat.skillSystem.selectSkillForCompanion(tank, 'defensive', 1000);
+    assert.strictEqual(gatedAtFull, null, 'selfHpBelow condition prevents cast at 100% HP');
+
     tank.hp = 25;
-    const at25 = combat.skillSystem.selectSkillForCompanion(tank, 'defensive', 1000);
-    assert.ok(at25, 'At 25% HP, a defensive skill should be cast');
-    assert.strictEqual(at25.skillDef.id, 'unbreakable', 'Unbreakable (priority 90) should trigger at 25% HP');
-    console.log('  ✓ Guard Up (50% HP threshold) and Unbreakable (30% HP threshold) HP-gating verified.');
+    const gatedAt25 = combat.skillSystem.selectSkillForCompanion(tank, 'defensive', 1000);
+    assert.ok(gatedAt25, 'selfHpBelow condition allows cast at 25% HP');
+    assert.strictEqual(gatedAt25.skillDef.id, 'custom_last_stand', 'selfHpBelow skill selected when below threshold');
+    console.log('  ✓ Stances on threat at full HP and selfHpBelow engine condition support verified.');
   }
 
   console.log('\n========================================================================');

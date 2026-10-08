@@ -1267,13 +1267,25 @@ Never ask Antigravity to jump ahead in this list — each milestone assumes the 
   - Companions in rotation now skip skills whose `rangeTiles` < `distanceTiles`. Prevents close-range skills (e.g. Flame Wave at range 2) from starving ranged fillers (e.g. Scorch at range 4).
 - **3. HoT 70% Combined-HP Rule (`SkillSystem.ts`)**:
   - Gated HoT auto-selection (`regenerate` / `healOverTime`) behind `allyHpBelow ?? 0.70` combined HP threshold matching direct heals.
-- **4. Scorch Burn Chance Retune (`data/skills.json`)**:
-  - Retuned burn chance from 0.60 to 0.40, keeping filler damage at +11.5% (+12%) over basic fire cast per 22 EN (within +25% cap).
-- **5. Metadata for All 10 Fallback Skills (`data/skills.json`)**:
-  - Added explicit `ai` blocks for `riposte`, `blade_dance`, `guard_up` (selfHpBelow: 0.5), `retaliate`, `unbreakable` (selfHpBelow: 0.3), `dragons_flurry`, `kenjutsu_deflection`, `vaulting_leap`, `kinetic_overdraw`, and `arcane_nova` (enemiesInRadius: 1).
+### Class Program, Step 1 Follow-Up 2: Restored Weapon Skill Combat Parity, AI Equivalence & Stacking Amplification (2026-10-07)
+
+**Resolved and shipped: Restored Power Strike & Thrust damage multipliers, added shared post-hit helper (`executeWeaponSkillAttack`) ensuring complete parity with legacy combat (accuracy roll, on-hit procs, aggro, EXP), removed `selfHpBelow` from `guard_up` and `unbreakable` (triggering on threat at 100% HP), built exhaustive 14-kit exact-ID equivalence test suite, added additive damage amplification stacking test, and created committed `scripts/skill_efficiency.ts`.**
+
+- **1. Weapon Skill Multipliers & Post-Hit Parity (`skills.json`, `CombatSystem.ts`, `SkillSystem.ts`)**:
+  - Restored `power_strike` multiplier to 2.0 and `thrust` to 1.5.
+  - Implemented shared `executeWeaponSkillAttack()` helper called by both legacy branch and `SkillSystem.execute` for `scaling: "weapon"`. Handles accuracy roll with `accuracyBonus`, dual-wield penalty, blind penalty, floating 'MISS' text, target aggro (`isAggroed`), floating damage numbers, target defeat, weapon on-hit procs (`bleed`, `burn`, `stun`), dual-wield EXP, and armor-wear EXP.
+  - Verified `scaling: "spell"` matches legacy spell behavior (e.g. `arcane_bolt`): guaranteed hit, no accuracy roll, no weapon on-hit procs.
+- **2. Guard Up & Unbreakable Threat Trigger (`skills.json`, `SkillSystem.ts`)**:
+  - Removed `condition.selfHpBelow` from `guard_up` and `unbreakable` in `skills.json` so they cast whenever there is active threat, off cooldown, and affordable, regardless of HP.
+  - Retained `selfHpBelow` engine condition support in `SkillSystem.selectSkillForCompanion` for future kits.
+- **3. Golden Master Literal Numeric & 14-Kit AI Equivalence Tests (`test/skill_migration_golden_master.test.ts`)**:
+  - Exact literal numeric comparisons: `power_strike` deals exactly 20 (2.0 × base 10), `thrust` deals exactly 15 (1.5 × base 10), +30% accuracy edge-case hit at roll 0.75, 0 damage on miss at roll 0.95, and forced bleed proc.
+  - Exact companion skill ID assertions across all 14 companion kits and 5 scenarios (out of range, in range, low-HP ally, harmful status ally, downed ally) plus defensive threat triggers.
+- **4. Additive Damage Amplification Stacking (`test/skill_migration_golden_master.test.ts`)**:
+  - Verified Expose (+25%) and Arcane Vulnerability (+15%) stack additively to exactly ×1.40 (100 base damage -> 140 damage dealt).
+- **5. Standalone Skill Efficiency Script (`scripts/skill_efficiency.ts`)**:
+  - Committed standalone script calculating dynamic efficiency table directly from `data/skills.json` and `data/statusEffects.json`.
 - **6. Tests & Build Verification**:
-  - Added targeted test suite `test/skill_engine_fixes.test.ts` covering all 4 fixes + defensive HP gating.
-  - Renamed `test/milestone_abyssal_depths_expansion.test.ts` test 3 to "proc chance data check".
-  - Production build: `npm run build` succeeds with zero errors.
+  - Production build: `npm run build` succeeds cleanly.
   - Test suite: `npm test -- --quiet` passes all 114/114 test suites cleanly.
 

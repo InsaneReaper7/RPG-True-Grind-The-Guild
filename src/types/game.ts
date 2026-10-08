@@ -608,6 +608,8 @@ export type SkillRole = 'rotation' | 'opener' | 'gapCloser' | 'defensive' | 'sup
 export interface SkillAiCondition {
   selfHpBelow?: number;
   allyHpBelow?: number;
+  enemyHpBelow?: number;
+  targetHpBelow?: number;
   enemiesInRadius?: number;
   requiresHarmfulStatus?: boolean;
   requiresDownedAlly?: boolean;

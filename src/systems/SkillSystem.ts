@@ -158,21 +158,38 @@ export class SkillSystem {
 
         // Visual animations
         this.combatSystem.createSkillAttackEffect(caster.x, caster.y, enemyTarget.x, enemyTarget.y);
-        const floatColor = effect.scaling === 'spell' ? '#f97316' : '#d97706';
 
-        for (let h = 0; h < hits; h++) {
-          if (enemyTarget.isDowned?.() || enemyTarget.state === 'dead' || enemyTarget.state === 'downed') break;
-          this.combatSystem.createFloatingText(enemyTarget.x, enemyTarget.y - 10 - (h * 6), `${skillDef.name.toUpperCase()}! -${damagePerHit.toFixed(1)}`, floatColor);
-          const downed = enemyTarget.takeDamage(damagePerHit);
-          if (downed) {
-            this.combatSystem.handleTargetDefeated(caster, enemyTarget, weaponId);
-            break;
+        if (effect.scaling === 'weapon') {
+          const isHit = this.combatSystem.executeWeaponSkillAttack(
+            caster,
+            enemyTarget,
+            skillDef,
+            hitDamage,
+            weaponId,
+            time,
+            hits
+          );
+          if (isHit && effect.area) {
+            this.executeAreaDamage(effect.area, caster, enemyTarget, hitDamage, weaponId, time);
           }
-        }
-
-        // Handle AoE / Area effect if present
-        if (effect.area) {
-          this.executeAreaDamage(effect.area, caster, enemyTarget, hitDamage, weaponId, time);
+        } else {
+          // Spell scaling (matches legacy spell behavior: guaranteed hit, no weapon procs)
+          if (enemyTarget.state !== 'dead' && enemyTarget.state !== 'downed') {
+            (enemyTarget as any).isAggroed = true;
+          }
+          const floatColor = '#f97316';
+          for (let h = 0; h < hits; h++) {
+            if (enemyTarget.isDowned?.() || enemyTarget.state === 'dead' || enemyTarget.state === 'downed') break;
+            this.combatSystem.createFloatingText(enemyTarget.x, enemyTarget.y - 10 - (h * 6), `${skillDef.name.toUpperCase()}! -${damagePerHit.toFixed(1)}`, floatColor);
+            const downed = enemyTarget.takeDamage(damagePerHit);
+            if (downed) {
+              this.combatSystem.handleTargetDefeated(caster, enemyTarget, weaponId);
+              break;
+            }
+          }
+          if (effect.area) {
+            this.executeAreaDamage(effect.area, caster, enemyTarget, hitDamage, weaponId, time);
+          }
         }
 
         break;
@@ -610,7 +627,7 @@ export class SkillSystem {
         if (role !== 'gapCloser' && role !== 'opener') continue;
         if (!targetEnemy || targetEnemy.state === 'dead' || targetEnemy.state === 'downed') continue;
 
-        const maxRange = skillDef.rangeTiles ?? 5;
+        const maxRange = skillDef.rangeTiles ?? 1;
         if (distanceTiles !== undefined && distanceTiles <= maxRange) {
           candidates.push({ skillDef, target: targetEnemy, priority });
         }
@@ -648,6 +665,15 @@ export class SkillSystem {
             }
           }
           if (livingCount < cond.enemiesInRadius) continue;
+        }
+
+        // Target HP threshold check (e.g. Kill Shot finisher requires enemy HP below threshold)
+        if (cond?.enemyHpBelow !== undefined || cond?.targetHpBelow !== undefined) {
+          const threshold = cond.enemyHpBelow ?? cond.targetHpBelow!;
+          const curCritical = targetEnemy.criticalHp ?? 0;
+          const maxCritical = (targetEnemy as any).maxCriticalHp ?? (targetEnemy as any).criticalHpMax ?? 0;
+          const ratio = (targetEnemy.hp + curCritical) / (targetEnemy.maxHp + maxCritical);
+          if (ratio > threshold) continue;
         }
 
         // Special HP condition check for skills like Dark Pact

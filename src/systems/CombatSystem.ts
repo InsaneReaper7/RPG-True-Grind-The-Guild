@@ -5,7 +5,7 @@ import { Enemy } from '../entities/Enemy.ts';
 import { Pathfinder } from '../utils/Pathfinder.ts';
 import { ProgressionSystem } from './ProgressionSystem.ts';
 import { DataLoader } from '../utils/DataLoader.ts';
-import type { GridPos, WeaponDef, PassiveImbuementDef, PassiveImbuementProcDef, EnemyDef } from '../types/game.ts';
+import type { GridPos, WeaponDef, PassiveImbuementDef, PassiveImbuementProcDef, EnemyDef, SkillDef } from '../types/game.ts';
 import { HiddenSkillSystem, type CombatContext, type CounterattackResult } from './HiddenSkillSystem.ts';
 import { GameState } from './GameState.ts';
 import { SkillSystem } from './SkillSystem.ts';
@@ -1685,6 +1685,83 @@ export class CombatSystem {
       this.createFloatingText(target.x, target.y - 25, 'POISONED!', '#16a34a');
       console.log(`[Combat:Nature] 🍃 Poison proc on ${target.entityName} (6s duration)!`);
     }
+  }
+
+  /**
+   * Shared helper for weapon skill attacks (legacy branch & SkillSystem).
+   * Resolves:
+   * - Accuracy roll (with skill accuracyBonus, DW penalty, blind penalty)
+   * - MISS floating text if missed
+   * - Target isAggroed on hit
+   * - Hit floating text
+   * - Weapon on-hit procs (bleed, burn, stun)
+   * - Dual-wield & armor-wear EXP
+   * - Damage application & handleTargetDefeated
+   */
+  public executeWeaponSkillAttack(
+    caster: Player,
+    target: Entity,
+    skillDef: SkillDef,
+    skillDamage: number,
+    weaponId: string,
+    time: number,
+    hits: number = 1
+  ): boolean {
+    const dataLoader = DataLoader.getInstance();
+    const effectiveWeapon = this.getEffectiveWeaponForAttack(caster);
+    const weaponLevel = caster.progression.getProficiencyLevel(weaponId);
+    const accuracyBonusPerLevel = effectiveWeapon.levelBonus?.accuracyPerLevel ?? 0;
+    const baseAccuracy = effectiveWeapon.baseAccuracy ?? 0.60;
+    const moodTier = dataLoader.getMoodTier(caster.mood);
+
+    const isDW = caster.isDualWielding();
+    const dwPenalty = isDW ? caster.progression.getDualWieldPenalty() : 0;
+    const blindPenalty = (typeof caster.hasStatusEffect === 'function' && caster.hasStatusEffect('blind'))
+      ? (caster.activeStatusEffects.get('blind')?.def?.accuracyReduction ?? 0.35)
+      : 0;
+    const effectiveAccuracy = baseAccuracy + weaponLevel * accuracyBonusPerLevel + moodTier.combatAccuracyBonus - dwPenalty - blindPenalty;
+
+    const skillAccBonus = skillDef.accuracyBonus ?? 0;
+    const effectiveSkillAccuracy = Math.min(1.0, effectiveAccuracy + skillAccBonus);
+    const hitRoll = Math.random();
+    const isHit = hitRoll < effectiveSkillAccuracy;
+
+    if (!isHit) {
+      console.log(
+        `[Skill] ${caster.entityName} casts ${skillDef.name} but MISSED! (Hit Chance: ${(effectiveSkillAccuracy * 100).toFixed(1)}%${isDW ? ` [DW Penalty -${(dwPenalty * 100).toFixed(0)}%]` : ''}, Roll: ${(hitRoll * 100).toFixed(1)}%)`
+      );
+      this.createFloatingText(target.x, target.y - 10, 'MISS', '#9ca3af');
+      return false;
+    }
+
+    if (target.state !== 'dead' && target.state !== 'downed') {
+      (target as any).isAggroed = true;
+    }
+
+    const damagePerHit = hits > 1 ? skillDamage / hits : skillDamage;
+    for (let h = 0; h < hits; h++) {
+      if (target.state === 'dead' || target.state === 'downed') break;
+      this.createFloatingText(target.x, target.y - 10 - (h * 6), `${skillDef.name.toUpperCase()}! -${damagePerHit.toFixed(1)}`, '#f59e0b');
+      const downed = target.takeDamage(damagePerHit);
+      if (downed) {
+        this.handleTargetDefeated(caster, target, weaponId);
+        break;
+      }
+    }
+
+    // Weapon on-hit procs
+    this.checkAndApplyBleed(caster, target, effectiveWeapon);
+    this.checkAndApplyBurn(caster, target, effectiveWeapon);
+    this.checkAndApplyStun(caster, target, effectiveWeapon);
+
+    if (isDW && this.isLegitimatelyDualWielding(caster)) {
+      caster.progression.addProficiencyExp('dual_wielding', 2);
+    }
+
+    caster?.awardArmorWearExp?.('attack');
+
+    this.lastCombatTimeMs = time;
+    return true;
   }
 
   public applyElementalAttackStatus(enemy: Enemy, target: Entity): void {
