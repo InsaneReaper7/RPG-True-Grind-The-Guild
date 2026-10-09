@@ -153,6 +153,19 @@ export class SkillSystem {
         const flatBonus = effect.flatBonus ?? 0;
         let hitDamage = (effBase * totalMultiplier * overchargeMult) + flatBonus;
 
+        // Generic status bonusDamagePercent across caster active statuses
+        let statusBonusDamagePercent = 0;
+        if (caster.activeStatusEffects) {
+          for (const activeEffect of caster.activeStatusEffects.values()) {
+            if (activeEffect.def?.bonusDamagePercent) {
+              statusBonusDamagePercent += activeEffect.def.bonusDamagePercent;
+            }
+          }
+        }
+        if (statusBonusDamagePercent > 0) {
+          hitDamage *= (1 + statusBonusDamagePercent);
+        }
+
         // Blessed weapons holy bonus if caster has it
         if (caster.hasStatusEffect('blessed_weapons')) {
           hitDamage += 5;

@@ -690,6 +690,38 @@
         }
       ],
       "fantasy": "Imbuing hardwood conduits with distilled elemental crystals and raw spell energy"
+    },
+    {
+      "id": "brute",
+      "name": "Brute",
+      "tier": "novice",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "greatswords",
+          "value": 10
+        }
+      ],
+      "fantasy": "Swinging something too heavy, badly",
+      "hiddenSkillBonuses": {
+        "resilience": 0.05
+      }
+    },
+    {
+      "id": "cutthroat",
+      "name": "Cutthroat",
+      "tier": "novice",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "daggers",
+          "value": 10
+        }
+      ],
+      "fantasy": "Back-alley opportunist",
+      "hiddenSkillBonuses": {
+        "evasion": 0.05
+      }
     }
   ]
 }

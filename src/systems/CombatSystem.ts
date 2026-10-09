@@ -2090,10 +2090,19 @@ export class CombatSystem {
     if (passiveImbuement?.bonusDamagePercent) {
       damage *= (1 + passiveImbuement.bonusDamagePercent);
     }
+    let statusBonusDamagePercent = 0;
+    if (member.activeStatusEffects) {
+      for (const activeEffect of member.activeStatusEffects.values()) {
+        if (activeEffect.def?.bonusDamagePercent) {
+          statusBonusDamagePercent += activeEffect.def.bonusDamagePercent;
+        }
+      }
+    }
+    if (statusBonusDamagePercent > 0) {
+      damage *= (1 + statusBonusDamagePercent);
+    }
     if (typeof member.hasStatusEffect === 'function' && member.hasStatusEffect('runic_infusion')) {
       const runicEffect = member.activeStatusEffects?.get?.('runic_infusion')?.def;
-      const runicBonus = runicEffect?.bonusDamagePercent ?? 0.25;
-      damage *= (1 + runicBonus);
       const siphon = runicEffect?.energySiphonOnHit ?? 4;
       const maxEnergy = member.maxEnergy ?? 100;
       member.energy = Math.min(maxEnergy, (member.energy ?? 0) + siphon);
@@ -4913,10 +4922,20 @@ export class CombatSystem {
 
         let skillDamage = (effBase * (skillDef.damageMultiplier ?? 1.5)) + arcaneBonus;
 
+        let statusBonusDamagePercent = 0;
+        if (caster.activeStatusEffects) {
+          for (const activeEffect of caster.activeStatusEffects.values()) {
+            if (activeEffect.def?.bonusDamagePercent) {
+              statusBonusDamagePercent += activeEffect.def.bonusDamagePercent;
+            }
+          }
+        }
+        if (statusBonusDamagePercent > 0) {
+          skillDamage *= (1 + statusBonusDamagePercent);
+        }
+
         if (caster.hasStatusEffect('runic_infusion')) {
           const runicEffect = caster.activeStatusEffects.get('runic_infusion')?.def;
-          const runicBonus = runicEffect?.bonusDamagePercent ?? 0.25;
-          skillDamage *= (1 + runicBonus);
           const siphon = runicEffect?.energySiphonOnHit ?? 4;
           const maxEnergy = caster.maxEnergy ?? 100;
           caster.energy = Math.min(maxEnergy, (caster.energy ?? 0) + siphon);
@@ -4975,10 +4994,20 @@ export class CombatSystem {
 
         let skillDamage = (effBase * (skillDef.damageMultiplier ?? 1.9)) + arcaneBonus;
 
+        let statusBonusDamagePercent = 0;
+        if (caster.activeStatusEffects) {
+          for (const activeEffect of caster.activeStatusEffects.values()) {
+            if (activeEffect.def?.bonusDamagePercent) {
+              statusBonusDamagePercent += activeEffect.def.bonusDamagePercent;
+            }
+          }
+        }
+        if (statusBonusDamagePercent > 0) {
+          skillDamage *= (1 + statusBonusDamagePercent);
+        }
+
         if (caster.hasStatusEffect('runic_infusion')) {
           const runicEffect = caster.activeStatusEffects.get('runic_infusion')?.def;
-          const runicBonus = runicEffect?.bonusDamagePercent ?? 0.25;
-          skillDamage *= (1 + runicBonus);
           const siphon = runicEffect?.energySiphonOnHit ?? 4;
           const maxEnergy = caster.maxEnergy ?? 100;
           caster.energy = Math.min(maxEnergy, (caster.energy ?? 0) + siphon);
@@ -5200,6 +5229,18 @@ export class CombatSystem {
       const moodTier = dataLoader.getMoodTier(caster.mood);
       const effBase = rawBase * moodTier.combatDamageMultiplier;
       let skillDamage = effBase * (skillDef.damageMultiplier ?? 1.0);
+
+      let statusBonusDamagePercent = 0;
+      if (caster.activeStatusEffects) {
+        for (const activeEffect of caster.activeStatusEffects.values()) {
+          if (activeEffect.def?.bonusDamagePercent) {
+            statusBonusDamagePercent += activeEffect.def.bonusDamagePercent;
+          }
+        }
+      }
+      if (statusBonusDamagePercent > 0) {
+        skillDamage *= (1 + statusBonusDamagePercent);
+      }
 
       if (caster.hasStatusEffect('blessed_weapons')) {
         skillDamage += 5;

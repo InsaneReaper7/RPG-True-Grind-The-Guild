@@ -458,15 +458,21 @@ async function runTests() {
     const bigGrid: number[][] = []; for(let r=0;r<25;r++) bigGrid.push(new Array(25).fill(0)); const pathfinder = new Pathfinder(bigGrid);
     const combat = new CombatSystem(scene, [player as any], [enemy as any], pathfinder);
 
-    const castSuccess = combat.castSkill(player as any, 'shield_bash', enemy as any);
-    assert.equal(castSuccess, true, 'Shield Bash cast successfully in melee range');
-    const shieldBashCost = dataLoader.getSkill('shield_bash')?.energyCost ?? 18;
-    assert.equal(player.energy, 100 - shieldBashCost, `Shield Bash consumed ${shieldBashCost} Energy`);
+    const origRandom = Math.random;
+    Math.random = () => 0.1;
+    try {
+      const castSuccess = combat.castSkill(player as any, 'shield_bash', enemy as any);
+      assert.equal(castSuccess, true, 'Shield Bash cast successfully in melee range');
+      const shieldBashCost = dataLoader.getSkill('shield_bash')?.energyCost ?? 18;
+      assert.equal(player.energy, 100 - shieldBashCost, `Shield Bash consumed ${shieldBashCost} Energy`);
 
-    assert.ok(enemy.hasStatusEffect('stun'), 'Enemy has stun status effect applied');
-    const stunEffect = enemy.getStatusEffect('stun');
-    assert.equal(stunEffect?.durationMs, 2000, 'Stun duration is 2000ms');
-    assert.equal(enemy.isStunned(), true, 'enemy.isStunned() returns true');
+      assert.ok(enemy.hasStatusEffect('stun'), 'Enemy has stun status effect applied');
+      const stunEffect = enemy.getStatusEffect('stun');
+      assert.equal(stunEffect?.durationMs, 2000, 'Stun duration is 2000ms');
+      assert.equal(enemy.isStunned(), true, 'enemy.isStunned() returns true');
+    } finally {
+      Math.random = origRandom;
+    }
   }
 
   // ============================================================================

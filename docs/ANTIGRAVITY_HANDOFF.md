@@ -1324,4 +1324,32 @@ The following three intentional behavioural changes were reviewed and accepted b
   - Targeted test suite: `npx tsx test/skill_engine_fixes.test.ts` passes all 6 tests, including Test 6 covering Shield Bash forced miss (0 dmg, no stun, 0 EXP), Shield Bash forced hit (88 HP, stun applied, exactly +2 EXP), Thrust forced miss (0 dmg, 0 EXP), Thrust forced hit (85 HP, exactly +2 EXP), and Scorch spell at roll 0.99 (guaranteed hit, retains +2 EXP).
   - Production build: `npm run build` succeeds cleanly. Full test suite skipped per milestone instructions.
 
+### Class Program, Wave 1: Tier 0 Weapon Classes (10 Kits, Data-Only) (2026-10-08)
+
+**Resolved and shipped: Built full 5-skill kits as data on the Skill Engine for all 10 Tier 0 weapon classes (Guardian, Squire, Brute, Cutthroat, Marksman, Bludgeoner, Lancer, Skirmisher, Staff Adept, Brawler), added Brute and Cutthroat class entries to `classes.json`, made `bonusDamagePercent` generic across caster active status effects, migrated `crushing_blow` to `effects` with full backward-compatibility and golden row validation, extended `scripts/skill_efficiency.ts` with bleed EV and filler audits, and verified 100% test pass across all 115 test suites.**
+
+- **1. Generic `bonusDamagePercent` Engine Support (`CombatSystem.ts`, `SkillSystem.ts`)**:
+  - Replaced ID-specific `runic_infusion` bonus damage lookups with a generic sum across all caster active status effects in player basic attacks, legacy skill damage, and the generic Skill Engine (`SkillSystem.execute`).
+  - Preserved gear passive imbuement calculations and Runic Infusion's energy siphon on-hit logic. Verified exact numeric equivalence (golden test: 32.3 damage and +4 EN siphoned).
+- **2. New Tier 0 Classes (`classes.json`)**:
+  - Added `brute` (Novice, Greatswords 10, hiddenSkillBonuses: `{ resilience: 0.05 }`).
+  - Added `cutthroat` (Novice, Daggers 10, hiddenSkillBonuses: `{ evasion: 0.05 }`).
+- **3. Full 5-Skill Weapon Kits (`skills.json`)**:
+  - **Guardian** (Shields 10): `shield_slam` (1.2×, 20% stun), `brace` (DT 0.75 for 5s), `challenge` (AoE taunt radius 3, 5s), `bulwark` (30 shield to lowest ally for 8s), `last_stand` (DT 0.5 for 6s + 15% self heal at HP < 35%).
+  - **Squire** (Longswords 10): `measured_cut` (1.4×), `sunder` (1.2× + Amp 0.10 for 6s), `wide_swing` (1.2× cleave 1.5), `second_wind` (heal self 20% at HP < 50%), `valiant_strike` (2.4× + 8% self heal).
+  - **Brute** (Greatswords 10): `heavy_swing` (1.6×), `cleaving_arc` (1.3× cleave 1.5), `skull_crack` (1.4×, 35% stun), `reckless_fury` (Dmg +0.25 for 6s), `earthshaker` (2.4× radius 2, 25% stun).
+  - **Cutthroat** (Daggers 10): `quick_stab` (1.3× across 2 hits), `lacerate` (1.0×, 80% bleed), `shadowstep` (teleportBehind range 4 + 1.5×), `dirty_trick` (0.8×, 100% blind), `eviscerate` (1.8×, ×1.5 if target bleeding).
+  - **Marksman** (Bows 10): `aimed_shot` (1.4×, range 4), `hobbling_shot` (1.1×, 100% slow), `volley` (1.1× radius 1.5), `steady_aim` (Dmg +0.20 for 8s), `deadeye` (2.6×, ×1.3 execute below 40% HP).
+  - **Bludgeoner** (Mace 10): `crushing_blow` (migrated to effects 1.8×, preserving golden row parity), `concuss` (1.2×, 30% stun), `armor_crack` (1.0× + Amp 0.20 for 6s), `bonebreaker` (1.5×, 100% slow), `judgment_hammer` (2.6×, 50% stun).
+  - **Lancer** (Spears 10): `jab` (1.4×), `charge` (dash range 4 + 1.4×), `sweep` (1.2× cleave 1.5), `hold_the_line` (DT 0.8 for 8s), `skewer` (2.4× + 100% expose).
+  - **Skirmisher** (Throwing 10): `hurl` (1.3×, range 3), `barbed_throw` (1.0×, 60% bleed), `hit_and_run` (Eva 0.30 for 6s), `scatter_throw` (1.0× radius 1.5), `opening_volley` (2.1× across 3 hits, 50% bleed).
+  - **Staff Adept** (Staff 10): `staff_strike` (1.4×), `rap_the_knuckles` (1.1× + Weaken 0.20 for 5s), `whirling_staff` (1.0× cleave 1.5, 50% slow), `focused_breath` (energyRestore 25, 0 EN cost), `pressure_point` (1.8×, 40% stun).
+  - **Brawler** (Fist 10): `normal_punch` (existing legacy fallback preserved), `jab_cross` (1.4× across 2 hits), `haymaker` (2.0×, 20% stun), `bob_and_weave` (Eva 0.35 for 5s), `consecutive_normal_punches` (2.4× across 6 hits).
+- **4. Tests & Economy Validation (`test/class_wave1.test.ts`, `scripts/skill_efficiency.ts`)**:
+  - `test/class_wave1.test.ts`: Data schema validation for all 50 skills, Crushing Blow golden row (exact 18 damage, miss 0 damage, hit-gated +2 EXP), and 10-class 60s simulated fight where all 10 companions cast 5/5 distinct skills.
+  - `scripts/skill_efficiency.ts`: Evaluated damage per EN including bleed and burn expected value; confirmed 0 filler skills (CD ≤ 3s) exceeded +25% above `blade_strike`.
+  - Production build: `npm run build` succeeds cleanly.
+  - Test suite: `npm test -- --quiet` passes all 115/115 test suites cleanly.
+
+
 
