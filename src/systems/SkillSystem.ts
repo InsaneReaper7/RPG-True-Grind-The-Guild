@@ -438,18 +438,28 @@ export class SkillSystem {
   }
 
   private executeAreaDamage(
-    area: { shape: string; radius?: number; falloff?: number; maxTargets?: number },
+    area: { shape: string; radius?: number; falloff?: number; maxTargets?: number; center?: 'target' | 'caster' },
     caster: Player,
     primaryTarget: any,
     baseDamage: number,
     weaponId: string,
     _time: number
   ): void {
+    const getTile = (u: any) => {
+      if (u.gridPos && typeof u.gridPos.x === 'number') {
+        return { x: u.gridPos.x, y: u.gridPos.y };
+      }
+      const ts = u.tileSize || caster.tileSize || 16;
+      return { x: Math.floor(u.x / ts), y: Math.floor(u.y / ts) };
+    };
+
     if (area.shape === 'cleave') {
       const radius = area.radius ?? 1.5;
+      const tTile = primaryTarget ? getTile(primaryTarget) : getTile(caster);
       for (const enemy of this.combatSystem.enemies) {
         if (enemy === primaryTarget || enemy.state === 'dead' || enemy.state === 'downed') continue;
-        const dist = Math.max(Math.abs(enemy.gridPos.x - primaryTarget.gridPos.x), Math.abs(enemy.gridPos.y - primaryTarget.gridPos.y));
+        const eTile = getTile(enemy);
+        const dist = Math.max(Math.abs(eTile.x - tTile.x), Math.abs(eTile.y - tTile.y));
         if (dist <= radius) {
           const cleaveDmg = baseDamage * (1 - (area.falloff ?? 0));
           this.combatSystem.createFloatingText(enemy.x, enemy.y - 10, `-${cleaveDmg.toFixed(1)} (Cleave)`, '#f97316');
@@ -461,10 +471,11 @@ export class SkillSystem {
       }
     } else if (area.shape === 'radius') {
       const radius = area.radius ?? 3;
-      const cTile = { x: Math.floor(caster.x / caster.tileSize), y: Math.floor(caster.y / caster.tileSize) };
+      const centerEntity = (area.center === 'caster' || !primaryTarget) ? caster : primaryTarget;
+      const cTile = getTile(centerEntity);
       for (const enemy of this.combatSystem.enemies) {
         if (enemy === primaryTarget || enemy.state === 'dead' || enemy.state === 'downed') continue;
-        const eTile = { x: Math.floor(enemy.x / enemy.tileSize), y: Math.floor(enemy.y / enemy.tileSize) };
+        const eTile = getTile(enemy);
         const dist = Math.max(Math.abs(cTile.x - eTile.x), Math.abs(cTile.y - eTile.y));
         if (dist <= radius) {
           const splashDmg = baseDamage * (1 - (area.falloff ?? 0));
@@ -665,13 +676,15 @@ export class SkillSystem {
           continue;
         }
 
-        // AoE condition check: count living enemies within area radius around target
+        // AoE condition check: count living enemies within area radius around target (or caster if center: "caster")
         if (cond?.enemiesInRadius) {
           const dmgEffect = skillDef.effects?.find((e): e is import('../types/game.ts').SkillEffectDamage => e.type === 'damage' && e.area?.radius !== undefined);
           const areaRadius = dmgEffect?.area?.radius ?? skillDef.radiusTiles ?? 3;
+          const isCasterCentered = dmgEffect?.area?.center === 'caster';
+          const centerObj = isCasterCentered ? member : targetEnemy;
           const tTile = {
-            x: Math.floor(targetEnemy.x / (targetEnemy.tileSize || member.tileSize)),
-            y: Math.floor(targetEnemy.y / (targetEnemy.tileSize || member.tileSize))
+            x: Math.floor(centerObj.x / (centerObj.tileSize || member.tileSize)),
+            y: Math.floor(centerObj.y / (centerObj.tileSize || member.tileSize))
           };
           let livingCount = 0;
           for (const e of this.combatSystem.enemies) {

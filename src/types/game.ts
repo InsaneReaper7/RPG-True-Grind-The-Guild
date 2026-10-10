@@ -627,6 +627,7 @@ export interface SkillEffectArea {
   radius?: number;
   falloff?: number;
   maxTargets?: number;
+  center?: 'target' | 'caster';
 }
 
 export interface SkillEffectDamage {

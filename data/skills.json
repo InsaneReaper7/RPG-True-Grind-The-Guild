@@ -2187,7 +2187,8 @@
           "multiplier": 2.4,
           "area": {
             "shape": "radius",
-            "radius": 2
+            "radius": 2,
+            "center": "caster"
           }
         },
         {

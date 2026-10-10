@@ -479,6 +479,100 @@ async function runTests() {
     Math.random = originalRandom;
   }
 
+  // ---------------------------------------------------------------------------
+  // TEST 7: Wave 2 Item 0 - Radius Area Centering (Target-centered default vs Caster-centered)
+  // ---------------------------------------------------------------------------
+  console.log('--- TEST 7: Radius Area Centering (Wave 2 Item 0) ---');
+  {
+    const scene = createMockScene();
+    const combat = new CombatSystem(scene);
+    const playerData = dataLoader.getPlayer();
+
+    // 7A. Volley: Range 4, Radius 1.5 (default center: target)
+    // Archer at (10, 10). Primary target at (14, 10) (distance 4).
+    // Target cluster:
+    // - Enemy 1 at (14, 11) (dist to target: 1 <= 1.5; dist to archer: 4)
+    // - Enemy 2 at (15, 10) (dist to target: 1 <= 1.5; dist to archer: 5)
+    // Distant enemy next to archer:
+    // - Enemy next to archer at (10, 11) (dist to archer: 1; dist to target: 4 > 1.5)
+    const bowWeapon = {
+      id: 'test_bow',
+      name: 'Test Hunting Bow',
+      category: 'ranged',
+      proficiencyId: 'bows',
+      baseDamage: 20,
+      attackIntervalMs: 1200,
+      attackRangeTiles: 4,
+      baseAccuracy: 0.90
+    };
+
+    const archer = new Player(scene, 10, 10, playerData, bowWeapon, 32);
+    archer.progression.setClassLevel('marksman', 40);
+    archer.mood = 50;
+    archer.energy = 100;
+    archer.equippedSkillIds = ['volley'];
+
+    const targetEnemy = createDummyEnemy(scene, 14, 10, 'Primary Target', 100);
+    const clusterEnemy1 = createDummyEnemy(scene, 14, 11, 'Cluster Enemy 1', 100);
+    const clusterEnemy2 = createDummyEnemy(scene, 15, 10, 'Cluster Enemy 2', 100);
+    const archerAdjacentEnemy = createDummyEnemy(scene, 10, 11, 'Archer Adjacent Enemy', 100);
+
+    combat.party = [archer];
+    combat.enemies = [targetEnemy, clusterEnemy1, clusterEnemy2, archerAdjacentEnemy];
+
+    const originalRandom = Math.random;
+    Math.random = () => 0.1; // Forced hit
+
+    try {
+      const ok = combat.castSkill(archer, 'volley', targetEnemy, 2000);
+      assert.strictEqual(ok, true, 'Volley cast succeeds');
+      assert.ok(targetEnemy.hp < 100, 'Primary target takes direct Volley damage');
+      assert.ok(clusterEnemy1.hp < 100, 'Enemy 1 within 1.5 of target takes splash damage');
+      assert.ok(clusterEnemy2.hp < 100, 'Enemy 2 within 1.5 of target takes splash damage');
+      assert.strictEqual(archerAdjacentEnemy.hp, 100, 'Enemy adjacent to archer but far from target takes no splash damage');
+      console.log('  ✓ Volley (target-centered radius): damages target + 2 cluster enemies within 1.5; enemy near caster unharmed.');
+    } finally {
+      Math.random = originalRandom;
+    }
+
+    // 7B. Earthshaker: Melee, Radius 2, center: "caster"
+    // Brute at (10, 10). Melee target at (10, 11) (dist 1).
+    // Enemy behind brute at (10, 8) (dist to brute: 2 <= 2; dist to target: 3 > 2).
+    const greatswordWeapon = {
+      id: 'test_greatsword',
+      name: 'Test Greatsword',
+      category: 'melee',
+      proficiencyId: 'greatswords',
+      baseDamage: 20,
+      attackIntervalMs: 1600,
+      attackRangeTiles: 1,
+      baseAccuracy: 0.90
+    };
+
+    const brute = new Player(scene, 10, 10, playerData, greatswordWeapon, 32);
+    brute.progression.setClassLevel('brute', 40);
+    brute.mood = 50;
+    brute.energy = 100;
+    brute.equippedSkillIds = ['earthshaker'];
+
+    const meleeTarget = createDummyEnemy(scene, 10, 11, 'Melee Target', 100);
+    const casterRadiusEnemy = createDummyEnemy(scene, 10, 8, 'Caster Radius Enemy', 100);
+
+    combat.party = [brute];
+    combat.enemies = [meleeTarget, casterRadiusEnemy];
+
+    Math.random = () => 0.1; // Forced hit
+    try {
+      const ok = combat.castSkill(brute, 'earthshaker', meleeTarget, 3000);
+      assert.strictEqual(ok, true, 'Earthshaker cast succeeds');
+      assert.ok(meleeTarget.hp < 100, 'Primary target takes direct Earthshaker damage');
+      assert.ok(casterRadiusEnemy.hp < 100, 'Enemy within 2 tiles of caster takes splash damage (center: "caster")');
+      console.log('  ✓ Earthshaker (caster-centered radius): hits primary target and enemy within radius 2 of caster.');
+    } finally {
+      Math.random = originalRandom;
+    }
+  }
+
   console.log('\n========================================================================');
   console.log('🎉 ALL SKILL ENGINE FIX TESTS PASSED SUCCESSFULLY');
   console.log('========================================================================\n');
