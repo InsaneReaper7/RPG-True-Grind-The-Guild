@@ -3218,6 +3218,1486 @@
         "role": "finisher",
         "priority": 75
       }
+    },
+    {
+      "id": "mend",
+      "name": "Mend",
+      "energyCost": 18,
+      "cooldownMs": 3000,
+      "targetType": "ally",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "medic",
+          "value": 1
+        }
+      ],
+      "description": "Channels healing power, instantly restoring 18 HP to the lowest health ally.",
+      "effects": [
+        {
+          "type": "heal",
+          "amount": 18,
+          "target": "lowestAlly"
+        }
+      ],
+      "ai": {
+        "role": "support",
+        "priority": 70,
+        "condition": {
+          "allyHpBelow": 0.7
+        }
+      }
+    },
+    {
+      "id": "soothing_touch",
+      "name": "Soothing Touch",
+      "energyCost": 18,
+      "cooldownMs": 8000,
+      "targetType": "ally",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "medic",
+          "value": 10
+        }
+      ],
+      "description": "Applies a soothing restorative charm to the lowest health ally, healing 4 HP per second for 6s.",
+      "effects": [
+        {
+          "type": "healOverTime",
+          "amountPerTick": 4,
+          "durationMs": 6000,
+          "tickIntervalMs": 1000,
+          "target": "lowestAlly"
+        }
+      ],
+      "ai": {
+        "role": "support",
+        "priority": 65,
+        "condition": {
+          "allyHpBelow": 0.7
+        }
+      }
+    },
+    {
+      "id": "purify",
+      "name": "Purify",
+      "energyCost": 15,
+      "cooldownMs": 8000,
+      "targetType": "ally",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "medic",
+          "value": 20
+        }
+      ],
+      "description": "Cleanses all harmful status ailments from the lowest health ally.",
+      "effects": [
+        {
+          "type": "cleanse",
+          "target": "lowestAlly"
+        }
+      ],
+      "ai": {
+        "role": "support",
+        "priority": 80,
+        "condition": {
+          "requiresHarmfulStatus": true
+        }
+      }
+    },
+    {
+      "id": "protective_ward",
+      "name": "Protective Ward",
+      "energyCost": 22,
+      "cooldownMs": 14000,
+      "targetType": "ally",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "medic",
+          "value": 30
+        }
+      ],
+      "description": "Conjures a protective barrier around the lowest health ally, absorbing up to 25 damage for 8s.",
+      "effects": [
+        {
+          "type": "shield",
+          "shieldAmount": 25,
+          "durationMs": 8000,
+          "target": "lowestAlly"
+        }
+      ],
+      "ai": {
+        "role": "support",
+        "priority": 60
+      }
+    },
+    {
+      "id": "healing_circle",
+      "name": "Healing Circle",
+      "energyCost": 35,
+      "cooldownMs": 18000,
+      "targetType": "ally",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "medic",
+          "value": 40
+        }
+      ],
+      "description": "Channels a soothing aura across the battlefield, restoring 15 HP to all party members.",
+      "effects": [
+        {
+          "type": "heal",
+          "amount": 15,
+          "target": "party"
+        }
+      ],
+      "ai": {
+        "role": "support",
+        "priority": 85,
+        "condition": {
+          "allyHpBelow": 0.6
+        }
+      }
+    },
+    {
+      "id": "sacred_spark",
+      "name": "Sacred Spark",
+      "energyCost": 20,
+      "cooldownMs": 3000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "acolyte",
+          "value": 1
+        }
+      ],
+      "description": "Strikes a foe with holy fire for 110% spell damage while radiating 3 HP to the lowest health ally.",
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "spell",
+          "multiplier": 1.1
+        },
+        {
+          "type": "heal",
+          "amount": 3,
+          "target": "lowestAlly"
+        }
+      ],
+      "ai": {
+        "role": "rotation",
+        "priority": 30
+      }
+    },
+    {
+      "id": "consecrate",
+      "name": "Consecrate",
+      "energyCost": 26,
+      "cooldownMs": 8000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "acolyte",
+          "value": 10
+        }
+      ],
+      "description": "Consecrates the ground around a foe for 120% spell damage in a 1.5-tile radius with a 40% chance to blind.",
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "spell",
+          "multiplier": 1.2,
+          "area": {
+            "shape": "radius",
+            "radius": 1.5
+          }
+        },
+        {
+          "type": "applyStatus",
+          "status": "blind",
+          "chance": 0.4
+        }
+      ],
+      "ai": {
+        "role": "rotation",
+        "priority": 55,
+        "condition": {
+          "enemiesInRadius": 2
+        }
+      }
+    },
+    {
+      "id": "prayer_of_mending",
+      "name": "Prayer of Mending",
+      "energyCost": 20,
+      "cooldownMs": 10000,
+      "targetType": "ally",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "acolyte",
+          "value": 20
+        }
+      ],
+      "description": "Offers a devout prayer, restoring 15 HP to the lowest health ally.",
+      "effects": [
+        {
+          "type": "heal",
+          "amount": 15,
+          "target": "lowestAlly"
+        }
+      ],
+      "ai": {
+        "role": "support",
+        "priority": 60,
+        "condition": {
+          "allyHpBelow": 0.7
+        }
+      }
+    },
+    {
+      "id": "judgment",
+      "name": "Judgment",
+      "energyCost": 26,
+      "cooldownMs": 10000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "acolyte",
+          "value": 30
+        }
+      ],
+      "description": "Calls down divine retribution for 160% spell damage, exposing the target to take 25% increased damage.",
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "spell",
+          "multiplier": 1.6
+        },
+        {
+          "type": "applyStatus",
+          "status": "expose",
+          "chance": 1.0
+        }
+      ],
+      "ai": {
+        "role": "opener",
+        "priority": 60
+      }
+    },
+    {
+      "id": "radiant_burst",
+      "name": "Radiant Burst",
+      "energyCost": 40,
+      "cooldownMs": 18000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "acolyte",
+          "value": 40
+        }
+      ],
+      "description": "Unleashes an explosion of pure radiance centered on the caster dealing 220% spell damage in a 2-tile radius and healing all allies for 10 HP.",
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "spell",
+          "multiplier": 2.2,
+          "area": {
+            "shape": "radius",
+            "radius": 2,
+            "center": "caster"
+          }
+        },
+        {
+          "type": "heal",
+          "amount": 10,
+          "target": "party"
+        }
+      ],
+      "ai": {
+        "role": "rotation",
+        "priority": 80,
+        "condition": {
+          "enemiesInRadius": 2
+        }
+      }
+    },
+    {
+      "id": "shadow_bolt",
+      "name": "Shadow Bolt",
+      "energyCost": 20,
+      "cooldownMs": 3000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "cultist",
+          "value": 1
+        }
+      ],
+      "description": "Fires a concentrated bolt of dark essence dealing 110% spell damage with a 45% chance to curse.",
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "spell",
+          "multiplier": 1.1
+        },
+        {
+          "type": "applyStatus",
+          "status": "curse",
+          "chance": 0.45
+        }
+      ],
+      "ai": {
+        "role": "rotation",
+        "priority": 30
+      }
+    },
+    {
+      "id": "hex",
+      "name": "Hex",
+      "energyCost": 18,
+      "cooldownMs": 8000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "cultist",
+          "value": 10
+        }
+      ],
+      "description": "Afflicts an enemy with a weakening hex for 60% spell damage, amplifying damage taken by 15% for 6s.",
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "spell",
+          "multiplier": 0.6
+        },
+        {
+          "type": "debuff",
+          "stat": "damageAmplificationPercent",
+          "value": 0.15,
+          "durationMs": 6000,
+          "target": "enemy"
+        }
+      ],
+      "ai": {
+        "role": "rotation",
+        "priority": 45
+      }
+    },
+    {
+      "id": "siphon_life",
+      "name": "Siphon Life",
+      "energyCost": 24,
+      "cooldownMs": 9000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "cultist",
+          "value": 20
+        }
+      ],
+      "description": "Drains life from an enemy for 130% spell damage, restoring 10% maximum HP to the caster.",
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "spell",
+          "multiplier": 1.3
+        },
+        {
+          "type": "heal",
+          "percent": 0.1,
+          "target": "self"
+        }
+      ],
+      "ai": {
+        "role": "rotation",
+        "priority": 50
+      }
+    },
+    {
+      "id": "shroud",
+      "name": "Shroud",
+      "energyCost": 18,
+      "cooldownMs": 14000,
+      "targetType": "self",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "cultist",
+          "value": 30
+        }
+      ],
+      "description": "Wraps the caster in dark mist, granting +25% evasion for 6s.",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "evasionBonus",
+          "value": 0.25,
+          "durationMs": 6000,
+          "target": "self"
+        }
+      ],
+      "ai": {
+        "role": "defensive",
+        "priority": 55
+      }
+    },
+    {
+      "id": "doom",
+      "name": "Doom",
+      "energyCost": 36,
+      "cooldownMs": 14000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "cultist",
+          "value": 40
+        }
+      ],
+      "description": "Pronounces ultimate doom dealing 240% spell damage, multiplied by 1.3x if the target is cursed.",
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "spell",
+          "multiplier": 2.4,
+          "requiresTargetStatus": {
+            "status": "curse",
+            "multiplier": 1.3
+          }
+        }
+      ],
+      "ai": {
+        "role": "finisher",
+        "priority": 70,
+        "condition": {
+          "requiresTargetStatus": "curse"
+        }
+      }
+    },
+    {
+      "id": "zap",
+      "name": "Zap",
+      "energyCost": 20,
+      "cooldownMs": 3000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "spark_adept",
+          "value": 1
+        }
+      ],
+      "description": "Zaps a target with crackling electricity for 110% spell damage with a 35% chance to shock.",
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "spell",
+          "multiplier": 1.1
+        },
+        {
+          "type": "applyStatus",
+          "status": "shock",
+          "chance": 0.35
+        }
+      ],
+      "ai": {
+        "role": "rotation",
+        "priority": 30
+      }
+    },
+    {
+      "id": "chain_lightning",
+      "name": "Chain Lightning",
+      "energyCost": 26,
+      "cooldownMs": 8000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "spark_adept",
+          "value": 10
+        }
+      ],
+      "description": "Discharges an electric bolt dealing 120% spell damage that arcs to up to 3 targets within 3 tiles with 30% damage falloff per hop.",
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "spell",
+          "multiplier": 1.2,
+          "area": {
+            "shape": "chain",
+            "maxTargets": 3,
+            "radius": 3,
+            "falloff": 0.3
+          }
+        }
+      ],
+      "ai": {
+        "role": "rotation",
+        "priority": 55,
+        "condition": {
+          "enemiesInRadius": 2
+        }
+      }
+    },
+    {
+      "id": "overload",
+      "name": "Overload",
+      "energyCost": 18,
+      "cooldownMs": 20000,
+      "targetType": "self",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "spark_adept",
+          "value": 20
+        }
+      ],
+      "description": "Overloads internal magical conduits, granting +20% bonus damage for 8s.",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "bonusDamagePercent",
+          "value": 0.2,
+          "durationMs": 8000,
+          "target": "self"
+        }
+      ],
+      "ai": {
+        "role": "defensive",
+        "priority": 55
+      }
+    },
+    {
+      "id": "thunderclap",
+      "name": "Thunderclap",
+      "energyCost": 28,
+      "cooldownMs": 10000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "spark_adept",
+          "value": 30
+        }
+      ],
+      "description": "Creates a deafening shockwave centered on the caster for 140% spell damage in a 1.5-tile radius with a 50% shock chance.",
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "spell",
+          "multiplier": 1.4,
+          "area": {
+            "shape": "radius",
+            "radius": 1.5,
+            "center": "caster"
+          }
+        },
+        {
+          "type": "applyStatus",
+          "status": "shock",
+          "chance": 0.5
+        }
+      ],
+      "ai": {
+        "role": "rotation",
+        "priority": 55,
+        "condition": {
+          "enemiesInRadius": 1
+        }
+      }
+    },
+    {
+      "id": "storm_call",
+      "name": "Storm Call",
+      "energyCost": 40,
+      "cooldownMs": 16000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "spark_adept",
+          "value": 40
+        }
+      ],
+      "description": "Summons a devastating thunderstorm dealing 240% spell damage that chains across up to 4 targets within 3 tiles with 20% falloff, shocking foes with a 40% chance.",
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "spell",
+          "multiplier": 2.4,
+          "area": {
+            "shape": "chain",
+            "maxTargets": 4,
+            "radius": 3,
+            "falloff": 0.2
+          }
+        },
+        {
+          "type": "applyStatus",
+          "status": "shock",
+          "chance": 0.4
+        }
+      ],
+      "ai": {
+        "role": "rotation",
+        "priority": 80,
+        "condition": {
+          "enemiesInRadius": 2
+        }
+      }
+    },
+    {
+      "id": "frost_shard",
+      "name": "Frost Shard",
+      "energyCost": 20,
+      "cooldownMs": 3000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "frost_initiate",
+          "value": 1
+        }
+      ],
+      "description": "Fires a sharp sliver of ice for 110% spell damage with a 10% chance to inflict frostbite.",
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "spell",
+          "multiplier": 1.1
+        },
+        {
+          "type": "applyStatus",
+          "status": "frostbite",
+          "chance": 0.1
+        }
+      ],
+      "ai": {
+        "role": "rotation",
+        "priority": 30
+      }
+    },
+    {
+      "id": "ice_lance",
+      "name": "Ice Lance",
+      "energyCost": 24,
+      "cooldownMs": 8000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "frost_initiate",
+          "value": 10
+        }
+      ],
+      "description": "Hurls a heavy lance of ice dealing 160% spell damage and slowing the target.",
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "spell",
+          "multiplier": 1.6
+        },
+        {
+          "type": "applyStatus",
+          "status": "slow",
+          "chance": 1.0
+        }
+      ],
+      "ai": {
+        "role": "opener",
+        "priority": 55
+      }
+    },
+    {
+      "id": "frost_nova",
+      "name": "Frost Nova",
+      "energyCost": 28,
+      "cooldownMs": 12000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "frost_initiate",
+          "value": 20
+        }
+      ],
+      "description": "Erupts in an icy blast centered on the caster dealing 100% spell damage in a 2-tile radius and inflicting frostbite on foes.",
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "spell",
+          "multiplier": 1.0,
+          "area": {
+            "shape": "radius",
+            "radius": 2,
+            "center": "caster"
+          }
+        },
+        {
+          "type": "applyStatus",
+          "status": "frostbite",
+          "chance": 1.0
+        }
+      ],
+      "ai": {
+        "role": "rotation",
+        "priority": 55,
+        "condition": {
+          "enemiesInRadius": 2
+        }
+      }
+    },
+    {
+      "id": "ice_armor",
+      "name": "Ice Armor",
+      "energyCost": 20,
+      "cooldownMs": 18000,
+      "targetType": "self",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "frost_initiate",
+          "value": 30
+        }
+      ],
+      "description": "Encases the caster in glaciated rime, reducing damage taken to 80% for 8s.",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "damageTakenMultiplier",
+          "value": 0.8,
+          "durationMs": 8000,
+          "target": "self"
+        }
+      ],
+      "ai": {
+        "role": "defensive",
+        "priority": 55
+      }
+    },
+    {
+      "id": "glacial_spike",
+      "name": "Glacial Spike",
+      "energyCost": 36,
+      "cooldownMs": 14000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "frost_initiate",
+          "value": 40
+        }
+      ],
+      "description": "Conjures a titanic spike of glacial ice dealing 260% spell damage, multiplied by 1.3x if the target is afflicted with frostbite.",
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "spell",
+          "multiplier": 2.6,
+          "requiresTargetStatus": {
+            "status": "frostbite",
+            "multiplier": 1.3
+          }
+        }
+      ],
+      "ai": {
+        "role": "finisher",
+        "priority": 70,
+        "condition": {
+          "requiresTargetStatus": "frostbite"
+        }
+      }
+    },
+    {
+      "id": "water_jet",
+      "name": "Water Jet",
+      "energyCost": 20,
+      "cooldownMs": 3000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "tide_adept",
+          "value": 1
+        }
+      ],
+      "description": "Shoots a high-pressure stream of water dealing 110% spell damage and healing the lowest health ally for 3 HP.",
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "spell",
+          "multiplier": 1.1
+        },
+        {
+          "type": "heal",
+          "amount": 3,
+          "target": "lowestAlly"
+        }
+      ],
+      "ai": {
+        "role": "rotation",
+        "priority": 30
+      }
+    },
+    {
+      "id": "riptide",
+      "name": "Riptide",
+      "energyCost": 22,
+      "cooldownMs": 8000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "tide_adept",
+          "value": 10
+        }
+      ],
+      "description": "Sweeps a target with surging undercurrents for 130% spell damage and slowing their movement.",
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "spell",
+          "multiplier": 1.3
+        },
+        {
+          "type": "applyStatus",
+          "status": "slow",
+          "chance": 1.0
+        }
+      ],
+      "ai": {
+        "role": "rotation",
+        "priority": 45
+      }
+    },
+    {
+      "id": "tidal_wave",
+      "name": "Tidal Wave",
+      "energyCost": 28,
+      "cooldownMs": 9000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "tide_adept",
+          "value": 20
+        }
+      ],
+      "description": "Surges a crashing wave in a line through up to 3 enemies for 120% spell damage with a 50% chance to slow.",
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "spell",
+          "multiplier": 1.2,
+          "area": {
+            "shape": "line",
+            "maxTargets": 3
+          }
+        },
+        {
+          "type": "applyStatus",
+          "status": "slow",
+          "chance": 0.5
+        }
+      ],
+      "ai": {
+        "role": "rotation",
+        "priority": 55
+      }
+    },
+    {
+      "id": "healing_rain",
+      "name": "Healing Rain",
+      "energyCost": 20,
+      "cooldownMs": 10000,
+      "targetType": "ally",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "tide_adept",
+          "value": 30
+        }
+      ],
+      "description": "Summons a gentle soothing downpour over the lowest health ally, restoring 3 HP per second for 6s.",
+      "effects": [
+        {
+          "type": "healOverTime",
+          "amountPerTick": 3,
+          "durationMs": 6000,
+          "tickIntervalMs": 1000,
+          "target": "lowestAlly"
+        }
+      ],
+      "ai": {
+        "role": "support",
+        "priority": 60,
+        "condition": {
+          "allyHpBelow": 0.7
+        }
+      }
+    },
+    {
+      "id": "maelstrom",
+      "name": "Maelstrom",
+      "energyCost": 40,
+      "cooldownMs": 16000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "tide_adept",
+          "value": 40
+        }
+      ],
+      "description": "Creates a roaring whirlpool dealing 220% spell damage in a 2-tile radius and slowing caught foes.",
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "spell",
+          "multiplier": 2.2,
+          "area": {
+            "shape": "radius",
+            "radius": 2
+          }
+        },
+        {
+          "type": "applyStatus",
+          "status": "slow",
+          "chance": 1.0
+        }
+      ],
+      "ai": {
+        "role": "rotation",
+        "priority": 80,
+        "condition": {
+          "enemiesInRadius": 2
+        }
+      }
+    },
+    {
+      "id": "thorn_dart",
+      "name": "Thorn Dart",
+      "energyCost": 20,
+      "cooldownMs": 3000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "sprout_keeper",
+          "value": 1
+        }
+      ],
+      "description": "Hurls a venomous briar dealing 110% spell damage with a 35% chance to inflict timed poison for 6s.",
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "spell",
+          "multiplier": 1.1
+        },
+        {
+          "type": "applyStatus",
+          "status": "poison",
+          "chance": 0.35,
+          "durationMs": 6000
+        }
+      ],
+      "ai": {
+        "role": "rotation",
+        "priority": 30
+      }
+    },
+    {
+      "id": "entangle",
+      "name": "Entangle",
+      "energyCost": 18,
+      "cooldownMs": 8000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "sprout_keeper",
+          "value": 10
+        }
+      ],
+      "description": "Commands wild vines to wrap around a foe dealing 80% spell damage and slowing their movement.",
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "spell",
+          "multiplier": 0.8
+        },
+        {
+          "type": "applyStatus",
+          "status": "slow",
+          "chance": 1.0
+        }
+      ],
+      "ai": {
+        "role": "rotation",
+        "priority": 45
+      }
+    },
+    {
+      "id": "bloom",
+      "name": "Bloom",
+      "energyCost": 18,
+      "cooldownMs": 10000,
+      "targetType": "ally",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "sprout_keeper",
+          "value": 20
+        }
+      ],
+      "description": "Causes soothing flora to bloom over the lowest health ally, restoring 3 HP per second for 6s.",
+      "effects": [
+        {
+          "type": "healOverTime",
+          "amountPerTick": 3,
+          "durationMs": 6000,
+          "tickIntervalMs": 1000,
+          "target": "lowestAlly"
+        }
+      ],
+      "ai": {
+        "role": "support",
+        "priority": 60,
+        "condition": {
+          "allyHpBelow": 0.7
+        }
+      }
+    },
+    {
+      "id": "bramble_patch",
+      "name": "Bramble Patch",
+      "energyCost": 26,
+      "cooldownMs": 9000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "sprout_keeper",
+          "value": 30
+        }
+      ],
+      "description": "Sprouts sharp thorns in a 1.5-tile radius for 100% spell damage with an 80% chance to poison foes for 6s.",
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "spell",
+          "multiplier": 1.0,
+          "area": {
+            "shape": "radius",
+            "radius": 1.5
+          }
+        },
+        {
+          "type": "applyStatus",
+          "status": "poison",
+          "chance": 0.8,
+          "durationMs": 6000
+        }
+      ],
+      "ai": {
+        "role": "rotation",
+        "priority": 55,
+        "condition": {
+          "enemiesInRadius": 2
+        }
+      }
+    },
+    {
+      "id": "wild_growth",
+      "name": "Wild Growth",
+      "energyCost": 36,
+      "cooldownMs": 18000,
+      "targetType": "ally",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "sprout_keeper",
+          "value": 40
+        }
+      ],
+      "description": "Summons flourishing nature energy across the entire battlefield, healing all party members for 12 HP.",
+      "effects": [
+        {
+          "type": "heal",
+          "amount": 12,
+          "target": "party"
+        }
+      ],
+      "ai": {
+        "role": "support",
+        "priority": 80,
+        "condition": {
+          "allyHpBelow": 0.6
+        }
+      }
+    },
+    {
+      "id": "gust",
+      "name": "Gust",
+      "energyCost": 14,
+      "cooldownMs": 3000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "gale_adept",
+          "value": 1
+        }
+      ],
+      "description": "Fires a swift gust of wind in a piercing line through up to 3 enemies for 110% spell damage.",
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "spell",
+          "multiplier": 1.1,
+          "area": {
+            "shape": "line",
+            "maxTargets": 3
+          }
+        }
+      ],
+      "ai": {
+        "role": "rotation",
+        "priority": 30
+      }
+    },
+    {
+      "id": "updraft",
+      "name": "Updraft",
+      "energyCost": 16,
+      "cooldownMs": 14000,
+      "targetType": "self",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "gale_adept",
+          "value": 10
+        }
+      ],
+      "description": "Rides an updraft into the air, increasing evasion by 30% for 6s.",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "evasionBonus",
+          "value": 0.3,
+          "durationMs": 6000,
+          "target": "self"
+        }
+      ],
+      "ai": {
+        "role": "defensive",
+        "priority": 55
+      }
+    },
+    {
+      "id": "razor_wind",
+      "name": "Razor Wind",
+      "energyCost": 22,
+      "cooldownMs": 8000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "gale_adept",
+          "value": 20
+        }
+      ],
+      "description": "Slices forward with razor gale winds in a line through up to 4 enemies for 130% spell damage with a 30% chance to bleed.",
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "spell",
+          "multiplier": 1.3,
+          "area": {
+            "shape": "line",
+            "maxTargets": 4
+          }
+        },
+        {
+          "type": "applyStatus",
+          "status": "bleed",
+          "chance": 0.3
+        }
+      ],
+      "ai": {
+        "role": "rotation",
+        "priority": 50
+      }
+    },
+    {
+      "id": "zephyr_step",
+      "name": "Zephyr Step",
+      "energyCost": 16,
+      "cooldownMs": 10000,
+      "targetType": "enemy",
+      "rangeTiles": 3,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "gale_adept",
+          "value": 30
+        }
+      ],
+      "description": "Dashes swiftly across up to 3 tiles to an enemy, striking for 100% spell damage.",
+      "effects": [
+        {
+          "type": "move",
+          "moveType": "dash",
+          "rangeTiles": 3
+        },
+        {
+          "type": "damage",
+          "scaling": "spell",
+          "multiplier": 1.0
+        }
+      ],
+      "ai": {
+        "role": "gapCloser",
+        "priority": 60
+      }
+    },
+    {
+      "id": "tempest_lance",
+      "name": "Tempest Lance",
+      "energyCost": 34,
+      "cooldownMs": 14000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "gale_adept",
+          "value": 40
+        }
+      ],
+      "description": "Releases a devastating lance of concentrated gale force through up to 5 enemies in a line for 260% spell damage.",
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "spell",
+          "multiplier": 2.6,
+          "area": {
+            "shape": "line",
+            "maxTargets": 5
+          }
+        }
+      ],
+      "ai": {
+        "role": "finisher",
+        "priority": 70
+      }
+    },
+    {
+      "id": "pebble_shot",
+      "name": "Pebble Shot",
+      "energyCost": 22,
+      "cooldownMs": 3000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "stoneheart_initiate",
+          "value": 1
+        }
+      ],
+      "description": "Slings a dense stone projectile for 110% spell damage with a 25% chance to stun.",
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "spell",
+          "multiplier": 1.1
+        },
+        {
+          "type": "applyStatus",
+          "status": "stun",
+          "chance": 0.25
+        }
+      ],
+      "ai": {
+        "role": "rotation",
+        "priority": 30
+      }
+    },
+    {
+      "id": "granite_skin",
+      "name": "Granite Skin",
+      "energyCost": 20,
+      "cooldownMs": 16000,
+      "targetType": "self",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "stoneheart_initiate",
+          "value": 10
+        }
+      ],
+      "description": "Hardens the caster's skin to granite, reducing damage taken to 80% for 8s.",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "damageTakenMultiplier",
+          "value": 0.8,
+          "durationMs": 8000,
+          "target": "self"
+        }
+      ],
+      "ai": {
+        "role": "defensive",
+        "priority": 55
+      }
+    },
+    {
+      "id": "tremor",
+      "name": "Tremor",
+      "energyCost": 28,
+      "cooldownMs": 10000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "stoneheart_initiate",
+          "value": 20
+        }
+      ],
+      "description": "Shatters the ground beneath a foe for 120% spell damage in a 1.5-tile radius with a 30% chance to stun.",
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "spell",
+          "multiplier": 1.2,
+          "area": {
+            "shape": "radius",
+            "radius": 1.5
+          }
+        },
+        {
+          "type": "applyStatus",
+          "status": "stun",
+          "chance": 0.3
+        }
+      ],
+      "ai": {
+        "role": "rotation",
+        "priority": 55,
+        "condition": {
+          "enemiesInRadius": 2
+        }
+      }
+    },
+    {
+      "id": "earthen_ward",
+      "name": "Earthen Ward",
+      "energyCost": 24,
+      "cooldownMs": 15000,
+      "targetType": "ally",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "stoneheart_initiate",
+          "value": 30
+        }
+      ],
+      "description": "Forms a protective earth barrier around the lowest health ally absorbing up to 30 damage for 8s.",
+      "effects": [
+        {
+          "type": "shield",
+          "shieldAmount": 30,
+          "durationMs": 8000,
+          "target": "lowestAlly"
+        }
+      ],
+      "ai": {
+        "role": "support",
+        "priority": 55
+      }
+    },
+    {
+      "id": "landslide",
+      "name": "Landslide",
+      "energyCost": 40,
+      "cooldownMs": 18000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "stoneheart_initiate",
+          "value": 40
+        }
+      ],
+      "description": "Brings down a crushing avalanche of stone for 260% spell damage with a 50% chance to stun.",
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "spell",
+          "multiplier": 2.6
+        },
+        {
+          "type": "applyStatus",
+          "status": "stun",
+          "chance": 0.5
+        }
+      ],
+      "ai": {
+        "role": "rotation",
+        "priority": 80
+      }
     }
   ]
 }

@@ -193,6 +193,70 @@
       }
     },
     {
+      "id": "tide_adept",
+      "name": "Tide Adept",
+      "tier": "novice",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "water_magic",
+          "value": 10
+        }
+      ],
+      "fantasy": "Basic control of water",
+      "hiddenSkillBonuses": {
+        "mana_regen": 0.05
+      }
+    },
+    {
+      "id": "sprout_keeper",
+      "name": "Sprout Keeper",
+      "tier": "novice",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "nature_magic",
+          "value": 10
+        }
+      ],
+      "fantasy": "Talks to plants; plants don't answer yet",
+      "hiddenSkillBonuses": {
+        "mana_regen": 0.05
+      }
+    },
+    {
+      "id": "gale_adept",
+      "name": "Gale Adept",
+      "tier": "novice",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "wind_magic",
+          "value": 10
+        }
+      ],
+      "fantasy": "Can ruin someone's hair from a distance",
+      "hiddenSkillBonuses": {
+        "mana_regen": 0.05
+      }
+    },
+    {
+      "id": "stoneheart_initiate",
+      "name": "Stoneheart Initiate",
+      "tier": "novice",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "earth_magic",
+          "value": 10
+        }
+      ],
+      "fantasy": "Can crack a rock. On purpose, mostly.",
+      "hiddenSkillBonuses": {
+        "mana_regen": 0.05
+      }
+    },
+    {
       "id": "restoration_mage",
       "name": "Restoration Mage",
       "tier": "expert",

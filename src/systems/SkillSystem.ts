@@ -485,6 +485,102 @@ export class SkillSystem {
           if (downed) this.combatSystem.handleTargetDefeated(caster, enemy, weaponId);
         }
       }
+    } else if (area.shape === 'line') {
+      if (!this.combatSystem.enemies || this.combatSystem.enemies.length === 0 || !primaryTarget) return;
+
+      const dx = primaryTarget.x - caster.x;
+      const dy = primaryTarget.y - caster.y;
+      const len = Math.sqrt(dx * dx + dy * dy);
+      if (len === 0) return;
+
+      const ux = dx / len;
+      const uy = dy / len;
+      const tileSize = primaryTarget.tileSize || caster.tileSize || 32;
+      const maxPastDist = 3.0 * tileSize + 4; // up to 3 tiles past primary target
+      const maxCorridorHalfWidth = 1.0 * tileSize; // 1-tile corridor
+
+      const candidates: { enemy: any; proj: number }[] = [];
+
+      for (const enemy of this.combatSystem.enemies) {
+        if (enemy === primaryTarget || enemy.state === 'dead' || enemy.state === 'downed') continue;
+
+        const ex = enemy.x - primaryTarget.x;
+        const ey = enemy.y - primaryTarget.y;
+
+        // Projection along the shot line (must be > 0, i.e., behind primary target)
+        const proj = ex * ux + ey * uy;
+        if (proj <= 0 || proj > maxPastDist) continue;
+
+        // Perpendicular distance from shot centerline
+        const perp = Math.abs(ex * uy - ey * ux);
+        if (perp > maxCorridorHalfWidth) continue;
+
+        candidates.push({ enemy, proj });
+      }
+
+      // Sort nearest to primary target first
+      candidates.sort((a, b) => a.proj - b.proj);
+
+      // Total maxTargets includes primary target, so extra targets = (maxTargets - 1)
+      const maxExtra = Math.max(0, (area.maxTargets ?? 3) - 1);
+      const hitList = candidates.slice(0, maxExtra);
+      const secondaryDmg = baseDamage * (1 - (area.falloff ?? 0));
+
+      for (let i = 0; i < hitList.length; i++) {
+        const { enemy } = hitList[i];
+        console.log(`[Combat:AreaLine] Line pierce hits ${enemy.entityName} for ${secondaryDmg.toFixed(1)} damage!`);
+        this.combatSystem.createAttackEffect(primaryTarget.x, primaryTarget.y, enemy.x, enemy.y, 0xa7f3d0);
+        this.combatSystem.createFloatingText(enemy.x, enemy.y - 10, `-${secondaryDmg.toFixed(1)} (Pierce)`, '#a7f3d0');
+        enemy.isAggroed = true;
+        const downed = enemy.takeDamage(secondaryDmg);
+        if (downed) {
+          this.combatSystem.handleTargetDefeated(caster, enemy, weaponId);
+        }
+      }
+    } else if (area.shape === 'chain') {
+      if (!this.combatSystem.enemies || this.combatSystem.enemies.length === 0 || !primaryTarget) return;
+
+      const maxExtraHops = Math.max(0, (area.maxTargets ?? 3) - 1);
+      const hopRange = area.radius ?? 3;
+      const falloff = area.falloff ?? 0.30;
+      const chainedEnemies = new Set<any>([primaryTarget]);
+      let currentSource: any = primaryTarget;
+      let currentDmg = baseDamage;
+
+      for (let hop = 1; hop <= maxExtraHops; hop++) {
+        let closestEnemy: any = null;
+        let closestDist = Infinity;
+
+        for (const candidate of this.combatSystem.enemies) {
+          if (candidate.state === 'dead' || candidate.state === 'downed') continue;
+          if (chainedEnemies.has(candidate)) continue;
+
+          const cTile = getTile(candidate);
+          const sTile = getTile(currentSource);
+          const dist = Math.max(Math.abs(cTile.x - sTile.x), Math.abs(cTile.y - sTile.y));
+
+          if (dist > 0 && dist <= hopRange && dist < closestDist) {
+            closestDist = dist;
+            closestEnemy = candidate;
+          }
+        }
+
+        if (!closestEnemy) {
+          break;
+        }
+
+        chainedEnemies.add(closestEnemy);
+        currentDmg = currentDmg * (1 - falloff);
+        console.log(`[Combat:AreaChain] ⚡ Chain hop ${hop} arcs to ${closestEnemy.entityName} for ${currentDmg.toFixed(1)} damage!`);
+        this.combatSystem.createLightningChainEffect(currentSource.x, currentSource.y, closestEnemy.x, closestEnemy.y);
+        this.combatSystem.createFloatingText(closestEnemy.x, closestEnemy.y - 10, `-${currentDmg.toFixed(1)} (Chain)`, '#38bdf8');
+        closestEnemy.isAggroed = true;
+        const chainDowned = closestEnemy.takeDamage(currentDmg);
+        if (chainDowned) {
+          this.combatSystem.handleTargetDefeated(caster, closestEnemy, weaponId);
+        }
+        currentSource = closestEnemy;
+      }
     }
   }
 
@@ -718,6 +814,11 @@ export class SkillSystem {
         // Special reactive condition check for Riposte
         if (skillId === 'riposte' || cond?.requiresRiposteReady) {
           if (!member.hasStatusEffect('riposte_window')) continue;
+        }
+
+        // Target status check (e.g. Doom requires curse, Glacial Spike requires frostbite)
+        if (cond?.requiresTargetStatus) {
+          if (!targetEnemy.hasStatusEffect(cond.requiresTargetStatus)) continue;
         }
 
         candidates.push({ skillDef, target: targetEnemy, priority });

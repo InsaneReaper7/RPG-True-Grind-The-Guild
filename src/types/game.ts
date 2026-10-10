@@ -614,6 +614,7 @@ export interface SkillAiCondition {
   requiresHarmfulStatus?: boolean;
   requiresDownedAlly?: boolean;
   requiresRiposteReady?: boolean;
+  requiresTargetStatus?: string;
 }
 
 export interface SkillAiDef {
