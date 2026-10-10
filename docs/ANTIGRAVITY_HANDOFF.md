@@ -1351,5 +1351,38 @@ The following three intentional behavioural changes were reviewed and accepted b
   - Production build: `npm run build` succeeds cleanly.
   - Test suite: `npm test -- --quiet` passes all 115/115 test suites cleanly.
 
+### Class Program, Wave 3: Utility Classes as Passive Perks (Excavator, Angler, Locksmith) (2026-10-10)
+
+**Resolved and shipped: Implemented Excavator, Angler, and Locksmith as passive perk classes without combat kits, matching the Crafting Mastery architecture. Categorized all three as `"crafting"` in `data/classes.json` to keep them out of combat systems (loadout selection, active class assignment, and combat kill EXP). Generalized `CraftingSystem.getCrafterPerks` and added sibling helper `getGatherPerks`. Wired Excavator's bonus yield to Digging harvests, Angler's bonus yield to Fishing catches, and Locksmith's Steady Hands perk to failed lockpick attempts, while preserving existing hidden skill bonuses and proficiency curves.**
+
+- **1. Data Categorization & Combat System Exclusion (`data/classes.json`, `src/utils/gearResolver.ts`)**:
+  - Added `"category": "crafting"` to `excavator`, `angler`, and `locksmith` in `data/classes.json`.
+  - Via `isCraftingClass()` in `gearResolver.ts`, all three classes are excluded from the active class loadout dropdown (`HUD.ts`) and cannot be assigned as `player.activeClass` (`Player.ts`).
+  - Combat kills grant class EXP only to `killer.activeClass`, keeping utility classes strictly out of combat systems.
+  - Preserved Locksmith's existing `hiddenSkillBonuses: { "evasion": 0.05 }`.
+- **2. Generalized Perk Helper (`CraftingSystem.ts`)**:
+  - Generalized `CraftingSystem.getCrafterPerks(crafterOrProgression, professionId)` to accept `Player`, `ProgressionSystem`, or `{ progression: ProgressionSystem }`.
+  - Added mappings in `getMatchingClassId()` for `digging` (`excavator`), `fishing` (`angler`), and `lockpicking` (`locksmith`).
+  - Formula: `perk% = min(15, classLevel)`, returning `0` if the class is locked or Lv 0.
+  - Formatted `perkDescription`:
+    - Excavator Lv 7: `"Excavator Lv 7: +7% bonus yield"`
+    - Angler Lv 7: `"Angler Lv 7: +7% bonus yield"`
+    - Locksmith Lv 7: `"Locksmith Lv 7: 7% chance to save a lockpick on a failed roll"`
+  - Added sibling alias `CraftingSystem.getGatherPerks(member, skillId)`.
+- **3. In-Game Harvesting & Lockpicking Perks (`MainScene.ts`, `LockpickingSystem.ts`)**:
+  - **Excavator (Digging)**: In `MainScene.harvestGatheringNode()`, when digging a spot, `perk%` chance to roll an extra drop from the loot table (or resource). Each completed dig awards `expGranted` (15) class EXP to the acting character's Excavator class only.
+  - **Angler (Fishing)**: In `MainScene.harvestGatheringNode()`, when catching fish, `perk%` chance to yield +1 extra fish/item (`awardedCount += 1`). Each completed catch awards `expGranted` (15) class EXP to the acting character's Angler class only.
+  - **Locksmith (Lockpicking)**: In `LockpickingSystem.attemptUnlock()`, `calculateSuccessRate()` is strictly unchanged. On a failed roll, `perk%` chance (Steady Hands) that the lockpick is saved intact (not consumed). Each successful pick awards `SUCCESS_EXP` (35) class EXP to the acting character's Locksmith class only.
+- **4. UI & Modal Display (`HUD.ts`)**:
+  - Party Overview Modal (`renderPartyOverviewModal`): Displays active perk description in each revealed proficiency row (e.g. `Lv 10 (0/90) — Excavator Lv 10: +10% bonus yield`).
+  - Inventory Locked Box Card: Displays active leader's Locksmith perk text alongside lockpick requirement.
+  - Cooking Modal: Displays Apprentice Cook perk description alongside cooking proficiency level.
+- **5. Validation Suite (`test/class_wave3.test.ts`)**:
+  - Verified no perk at Lv 0 (locked).
+  - Verified Lv 10 forced rolls below 10% trigger perk (extra yield or saved pick) and rolls above 10% do not.
+  - Verified Lv 40 perk caps at 15% (rolls at 12% trigger, rolls at 18% do not).
+  - Verified class EXP routes exclusively to the acting character.
+  - Verified Locksmith success rates are identical across all levels with and without the class.
+
 
 

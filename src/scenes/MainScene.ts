@@ -11,6 +11,7 @@ import { ProgressionSystem } from '../systems/ProgressionSystem';
 import { HUD } from '../ui/HUD';
 import { GameState } from '../systems/GameState';
 import { ResearchSystem } from '../systems/ResearchSystem';
+import { CraftingSystem } from '../systems/CraftingSystem';
 import { GridPos, EnemyDef, GeneratedDungeon, DungeonRoom, GatheringNodeDef, CharacterSnapshot, TrainableStat } from '../types/game';
 import { HiddenSkillSystem } from '../systems/HiddenSkillSystem';
 import { TileClaimDebugOverlay } from '../ui/TileClaimDebugOverlay';
@@ -3311,10 +3312,58 @@ export class MainScene extends Phaser.Scene {
       awardedCount = selected.count ?? (selected.yieldCount ?? yieldCount);
     }
 
+    let bonusDrop: { resourceId: string; itemName: string; count: number } | null = null;
+
+    if (node.nodeDef.skillId === 'digging') {
+      const perks = CraftingSystem.getCrafterPerks(character, 'digging');
+      if (perks.bonusYieldChance > 0) {
+        const perkRoll = lootRollFn ? lootRollFn() : Math.random();
+        if (perkRoll < perks.bonusYieldChance / 100) {
+          // Extra roll of its drop
+          if (node.nodeDef.lootTable && node.nodeDef.lootTable.length > 0) {
+            const totalWeight = node.nodeDef.lootTable.reduce((sum, e) => sum + (e.weight ?? 1), 0);
+            const rollVal = (lootRollFn ? lootRollFn() : Math.random()) * totalWeight;
+            let acc = 0;
+            let selected = node.nodeDef.lootTable[0];
+            for (const entry of node.nodeDef.lootTable) {
+              acc += (entry.weight ?? 1);
+              if (rollVal <= acc) {
+                selected = entry;
+                break;
+              }
+            }
+            const bonusId = selected.itemId || selected.resourceId || node.nodeDef.resourceId;
+            const bonusName = selected.name || bonusId.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+            const bonusCount = selected.count ?? (selected.yieldCount ?? yieldCount);
+            bonusDrop = { resourceId: bonusId, itemName: bonusName, count: bonusCount };
+          } else if (awardedResourceId) {
+            bonusDrop = { resourceId: awardedResourceId, itemName: awardedItemName, count: yieldCount };
+          }
+        }
+      }
+      if (character.progression.isClassUnlocked('excavator')) {
+        character.progression.addClassExp('excavator', expGranted);
+      }
+    } else if (node.nodeDef.skillId === 'fishing') {
+      const perks = CraftingSystem.getCrafterPerks(character, 'fishing');
+      if (perks.bonusYieldChance > 0) {
+        const perkRoll = lootRollFn ? lootRollFn() : Math.random();
+        if (perkRoll < perks.bonusYieldChance / 100) {
+          awardedCount += 1;
+        }
+      }
+      if (character.progression.isClassUnlocked('angler')) {
+        character.progression.addClassExp('angler', expGranted);
+      }
+    }
+
     // Grant resources exclusively to character personal inventory during runs (Milestone Item Flow Unification)
     if (awardedResourceId && awardedResourceId !== '') {
       const wasEncumbered = character.isEncumbered;
       character.addItem(awardedResourceId, awardedCount);
+      if (bonusDrop) {
+        character.addItem(bonusDrop.resourceId, bonusDrop.count);
+      }
       if (!wasEncumbered && character.isEncumbered) {
         this.hud?.showToast(`⚠️ ${character.entityName} is ENCUMBERED (-80% Movement Speed)!`, 'warn', 3000);
       }
@@ -3349,11 +3398,14 @@ export class MainScene extends Phaser.Scene {
     if (awardedResourceId && awardedResourceId !== '') {
       this.createFloatingText(posX, posY - 10, `+${awardedCount} ${awardedItemName}`, node.nodeDef.color);
     }
+    if (bonusDrop) {
+      this.createFloatingText(posX, posY - 20, `+${bonusDrop.count} ${bonusDrop.itemName} (Bonus)`, '#f59e0b');
+    }
     if (bonusSeeds > 0) {
-      this.createFloatingText(posX, posY - 20, `+${bonusSeeds} Seeds`, '#22c55e');
+      this.createFloatingText(posX, posY - 30, `+${bonusSeeds} Seeds`, '#22c55e');
     }
     const skillName = DataLoader.getInstance().getTrainableStatDef(node.nodeDef.skillId)?.name || node.nodeDef.skillId;
-    this.createFloatingText(posX, posY - 32, `+${expGranted} ${skillName} EXP`, '#60a5fa');
+    this.createFloatingText(posX, posY - 42, `+${expGranted} ${skillName} EXP`, '#60a5fa');
 
     GameState.getInstance().discoverGatheringNode(node.nodeDef.id);
     GameState.getInstance().discoverProficiency(node.nodeDef.skillId);
@@ -3379,10 +3431,11 @@ export class MainScene extends Phaser.Scene {
       ? '🎣 Caught'
       : '🌿 Harvested';
 
+    const bonusToastText = bonusDrop ? ` & Bonus ${bonusDrop.count}x ${bonusDrop.itemName}` : '';
     const seedBonusText = bonusSeeds > 0 ? ' & Seeds' : '';
     if (awardedResourceId && awardedResourceId !== '') {
-      console.log(`[Gathering] ${actionToast} ${awardedCount}x ${awardedItemName}${seedBonusText}! (+${expGranted} ${skillName} EXP)`);
-      this.hud?.showToast(`${actionToast} ${awardedItemName}${seedBonusText} (+${expGranted} ${skillName} EXP)`, 'success', 2500);
+      console.log(`[Gathering] ${actionToast} ${awardedCount}x ${awardedItemName}${bonusToastText}${seedBonusText}! (+${expGranted} ${skillName} EXP)`);
+      this.hud?.showToast(`${actionToast} ${awardedCount > 1 ? `${awardedCount}x ` : ''}${awardedItemName}${bonusToastText}${seedBonusText} (+${expGranted} ${skillName} EXP)`, 'success', 2500);
     } else {
       console.log(`[Gathering] ${actionToast} (+${expGranted} ${skillName} EXP)`);
       this.hud?.showToast(`${actionToast} (+${expGranted} ${skillName} EXP)`, 'info', 2500);

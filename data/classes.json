@@ -327,6 +327,7 @@
       "id": "excavator",
       "name": "Excavator",
       "tier": "novice",
+      "category": "crafting",
       "requirements": [
         {
           "type": "proficiency",
@@ -392,6 +393,7 @@
       "id": "locksmith",
       "name": "Locksmith",
       "tier": "novice",
+      "category": "crafting",
       "requirements": [
         {
           "type": "proficiency",
@@ -732,6 +734,7 @@
       "id": "angler",
       "name": "Angler",
       "tier": "novice",
+      "category": "crafting",
       "requirements": [
         {
           "type": "proficiency",

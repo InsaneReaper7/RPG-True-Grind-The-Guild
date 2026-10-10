@@ -8,6 +8,7 @@ import type {
   GearItemInstance
 } from '../types/game.ts';
 import type { Player } from '../entities/Player.ts';
+import { ProgressionSystem } from './ProgressionSystem.ts';
 import { GameState } from './GameState.ts';
 import { DataLoader } from '../utils/DataLoader.ts';
 import { getBaseItemId } from '../utils/gearResolver.ts';
@@ -81,47 +82,84 @@ export class CraftingSystem {
         return 'apprentice_cook';
       case 'enchanting':
         return 'apprentice_enchanter';
+      case 'digging':
+        return 'excavator';
+      case 'fishing':
+        return 'angler';
+      case 'lockpicking':
+        return 'locksmith';
       default:
         return null;
     }
   }
 
   public static getCrafterPerks(
-    crafter: Player,
+    crafter: Player | ProgressionSystem | { progression: ProgressionSystem },
     professionId: string
   ): {
     classId: string | null;
     className: string;
     classLevel: number;
+    perkPercent: number; // 0 to 15 (%)
     bonusYieldChance: number; // 0 to 15 (%)
     gearStatBonusPercent: number; // 0 to 15 (%)
+    savePickChance: number; // 0 to 15 (%)
     perkDescription?: string;
   } {
-    const classId = CraftingSystem.getMatchingClassId(professionId);
-    if (!classId || !crafter.progression.isClassUnlocked(classId)) {
+    const classId = CraftingSystem.getMatchingClassId(professionId) || (DataLoader.getInstance().getClass(professionId) ? professionId : null);
+    const progression: ProgressionSystem | undefined =
+      crafter instanceof ProgressionSystem
+        ? crafter
+        : (crafter && 'progression' in crafter && (crafter as any).progression instanceof ProgressionSystem)
+        ? (crafter as any).progression
+        : (crafter as any)?.progression;
+
+    if (!classId || !progression || !progression.isClassUnlocked(classId)) {
       return {
         classId,
         className: 'None',
         classLevel: 0,
+        perkPercent: 0,
         bonusYieldChance: 0,
-        gearStatBonusPercent: 0
+        gearStatBonusPercent: 0,
+        savePickChance: 0
       };
     }
 
-    const classLevel = crafter.progression.getClassLevel(classId);
+    const classLevel = progression.getClassLevel(classId);
     const clsDef = DataLoader.getInstance().getClass(classId);
     const cappedBonus = Math.min(15, Math.max(0, classLevel));
-    const perkType = professionId === 'alchemy' ? 'bonus yield' : (professionId === 'enchanting' ? 'bonus yield & gear stats' : 'gear stats');
-    const perkDescription = `${clsDef?.name ?? classId} Lv ${classLevel}: +${cappedBonus}% ${perkType}`;
+
+    let perkType = 'gear stats';
+    let perkDescription = `${clsDef?.name ?? classId} Lv ${classLevel}: +${cappedBonus}% ${perkType}`;
+
+    if (professionId === 'alchemy' || professionId === 'digging' || professionId === 'fishing' || classId === 'excavator' || classId === 'angler') {
+      perkType = 'bonus yield';
+      perkDescription = `${clsDef?.name ?? classId} Lv ${classLevel}: +${cappedBonus}% ${perkType}`;
+    } else if (professionId === 'enchanting') {
+      perkType = 'bonus yield & gear stats';
+      perkDescription = `${clsDef?.name ?? classId} Lv ${classLevel}: +${cappedBonus}% ${perkType}`;
+    } else if (professionId === 'lockpicking' || classId === 'locksmith') {
+      perkDescription = `${clsDef?.name ?? classId} Lv ${classLevel}: ${cappedBonus}% chance to save a lockpick on a failed roll`;
+    }
 
     return {
       classId,
       className: clsDef?.name ?? classId,
       classLevel,
+      perkPercent: cappedBonus,
       bonusYieldChance: cappedBonus,
       gearStatBonusPercent: cappedBonus,
+      savePickChance: cappedBonus,
       perkDescription
     };
+  }
+
+  public static getGatherPerks(
+    member: Player | ProgressionSystem | { progression: ProgressionSystem },
+    skillId: string
+  ) {
+    return CraftingSystem.getCrafterPerks(member, skillId);
   }
 
   public static canAfford(recipe: AnyRecipeDef, crafter?: Player): boolean {

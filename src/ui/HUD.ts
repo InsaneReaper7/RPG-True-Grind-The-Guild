@@ -3777,10 +3777,13 @@ export class HUD {
         else if (statId === 'daggers') legacyAttr = `data-party-prof-daggers="${i}"`;
         else if (statId === 'dual_wielding') legacyAttr = `data-party-prof-dw="${i}"`;
 
+        const perks = CraftingSystem.getCrafterPerks(member, statId);
+        const perkText = perks.perkDescription ? ` — ${perks.perkDescription}` : '';
+
         profRowsHtml += `
           <div class="party-stat-row" data-party-prof-row="${i}-${statId}" style="display: ${isRevealed ? 'flex' : 'none'};">
             <span>${displayName}:</span>
-            <span class="party-stat-val" data-party-prof-val="${i}-${statId}" ${legacyAttr} style="color: ${statColor};">Lv ${stat.level} (${stat.currentExp}/${nextExp})</span>
+            <span class="party-stat-val" data-party-prof-val="${i}-${statId}" ${legacyAttr} style="color: ${statColor};">Lv ${stat.level} (${stat.currentExp}/${nextExp})${perkText}</span>
           </div>
         `;
       }
@@ -4460,6 +4463,9 @@ export class HUD {
 
       const boxCount = getAvailableCount('locked_box');
       if (boxCount > 0 || this.partyInventoryFilter === 'items') {
+        const activeLeader = this.currentParty[0] || this.currentPlayer;
+        const locksmithPerks = activeLeader ? CraftingSystem.getCrafterPerks(activeLeader, 'lockpicking') : null;
+        const perkText = locksmithPerks?.perkDescription ? ` · ${locksmithPerks.perkDescription}` : '';
         items.push({
           id: 'locked_box',
           name: 'Locked Box',
@@ -4467,7 +4473,7 @@ export class HUD {
           slot: 'none',
           displaySlot: 'Locked Container',
           icon: '📦',
-          statText: `Requires Lockpick (${lockpickCount} on hand) · ${dataLoader.getItemWeight('locked_box')} kg`,
+          statText: `Requires Lockpick (${lockpickCount} on hand)${perkText} · ${dataLoader.getItemWeight('locked_box')} kg`,
           count: boxCount,
           isBox: true
         } as any);
@@ -6809,12 +6815,14 @@ export class HUD {
     // 1. Cooking proficiency
     const cookingStat = progression.getProficiencyStat('cooking');
     if (this.cookingModalProfEl) {
+      const perks = CraftingSystem.getCrafterPerks(player, 'cooking');
+      const perkText = perks.perkDescription ? ` — ${perks.perkDescription}` : '';
       if (cookingStat.level >= 1) {
         const nextExp = LevelingSystem.expForNextLevel(cookingStat.level);
-        this.cookingModalProfEl.innerText = `Lv ${cookingStat.level} (${cookingStat.currentExp}/${nextExp} EXP)`;
+        this.cookingModalProfEl.innerText = `Lv ${cookingStat.level} (${cookingStat.currentExp}/${nextExp} EXP)${perkText}`;
         this.cookingModalProfEl.style.color = '#f97316';
       } else {
-        this.cookingModalProfEl.innerText = `Untrained (${cookingStat.currentExp}/50 EXP)`;
+        this.cookingModalProfEl.innerText = `Untrained (${cookingStat.currentExp}/50 EXP)${perkText}`;
         this.cookingModalProfEl.style.color = '#9ca3af';
       }
     }

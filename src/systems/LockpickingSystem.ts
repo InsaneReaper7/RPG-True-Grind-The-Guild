@@ -2,6 +2,7 @@ import { GameState } from './GameState.ts';
 import { ProgressionSystem } from './ProgressionSystem.ts';
 import { DataLoader } from '../utils/DataLoader.ts';
 import { ResearchSystem } from './ResearchSystem.ts';
+import { CraftingSystem } from './CraftingSystem.ts';
 import type { LockedBoxReward, LockpickAttemptResult } from '../types/game.ts';
 
 export class LockpickingSystem {
@@ -265,6 +266,10 @@ export class LockpickingSystem {
         totalExpGained += LockpickingSystem.SUCCESS_EXP;
         if (expResult.leveledUp) leveledUp = true;
 
+        if (memberProgression.isClassUnlocked('locksmith')) {
+          memberProgression.addClassExp('locksmith', LockpickingSystem.SUCCESS_EXP);
+        }
+
         // Roll & dispense loot
         const rewards = this.rollLockedBoxLoot(rng);
         const dataLoader = DataLoader.getInstance();
@@ -331,13 +336,24 @@ export class LockpickingSystem {
           boxPreserved: false
         };
       } else {
-        // Failed roll: consume 1 lockpick immediately
-        if (playerEntity && typeof playerEntity.consumeCarriedConsumable === 'function') {
-          playerEntity.consumeCarriedConsumable('lockpick', 1);
-        } else {
-          gameState.consumeItem('lockpick', 1);
+        // Failed roll: check Locksmith perk (Steady hands: perk% chance a failed roll doesn't consume the lockpick)
+        const locksmithPerks = CraftingSystem.getCrafterPerks(memberProgression, 'lockpicking');
+        let pickSaved = false;
+        if (locksmithPerks.savePickChance > 0) {
+          const saveRoll = rng();
+          if (saveRoll < locksmithPerks.savePickChance / 100) {
+            pickSaved = true;
+          }
         }
-        lockpicksConsumed++;
+
+        if (!pickSaved) {
+          if (playerEntity && typeof playerEntity.consumeCarriedConsumable === 'function') {
+            playerEntity.consumeCarriedConsumable('lockpick', 1);
+          } else {
+            gameState.consumeItem('lockpick', 1);
+          }
+          lockpicksConsumed++;
+        }
 
         // Award standard token fail EXP (+5)
         const expResult = memberProgression.addProficiencyExp('lockpicking', LockpickingSystem.FAIL_EXP);
