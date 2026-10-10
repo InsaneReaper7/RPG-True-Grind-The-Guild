@@ -363,9 +363,10 @@ async function runTests() {
   assert.equal(acolyteClass.fantasy, 'Recently devout');
   assert.equal(acolyteClass.hiddenSkillBonuses?.mana_regen, 0.05, 'Acolyte grants mana_regen bonus per Tier 0 magic pattern');
 
-  // Verify Priest and Cleric are NOT prematurely registered as Tier 0
+  // Verify Priest is registered as Tier 1 (adept) and Cleric is NOT prematurely registered
   const priestClass = dataLoader.getClass('priest');
-  assert.equal(priestClass, undefined, 'Priest must NOT be registered as Tier 0 (reserved for Tier 1)');
+  assert.ok(priestClass, 'Priest must be registered in classes.json');
+  assert.equal(priestClass.tier, 'adept', 'Priest is Tier 1 (adept)');
   const clericClass = dataLoader.getClass('cleric');
   assert.equal(clericClass, undefined, 'Cleric must NOT be registered prematurely');
 

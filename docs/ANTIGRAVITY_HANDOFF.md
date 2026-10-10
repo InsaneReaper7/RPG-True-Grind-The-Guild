@@ -1412,6 +1412,36 @@ The following three intentional behavioural changes were reviewed and accepted b
   - Verified 60s simulated 3-enemy fight with ally at 60% HP: all 7 classes cast at least 4 of 5 skills (Hoplite 5/5, Duelist 5/5, Ranger 5/5, Reaver 5/5, Shadow Initiate 4/5, Sharpshooter 5/5, Battle Medic 5/5).
   - Full test suite: 118/118 suites pass cleanly (`npm test -- --quiet`).
 
+### Class Program, Tier 1 Wave B: Magic Classes (7 Kits, Data-Only) (2026-10-10)
+
+**Resolved and shipped: Implemented the 7 Tier 1 magic classes (Flamecaller, Frostcaller, Stormtouched, Windwalker, Naturalist, Priest, Warlock) with full 5-skill kits (35 skills total) as pure data in `data/skills.json` and added their adept class definitions with requirements (School 30) and `hiddenSkillBonuses: { mana_regen: 0.05 }` in `data/classes.json`. Normalized weapon-skill efficiency in `scripts/skill_efficiency.ts` using primary weapon baseDamage. Added comprehensive validation and smoke test suite in `test/class_t1_wave_b.test.ts`.**
+
+- **1. Class Entries (`data/classes.json`)**:
+  - `flamecaller`: Adept tier, requirements Fire Magic 30, hiddenSkillBonuses: `{ "mana_regen": 0.05 }`.
+  - `frostcaller`: Adept tier, requirements Water Magic 30, hiddenSkillBonuses: `{ "mana_regen": 0.05 }`.
+  - `stormtouched`: Adept tier, requirements Lightning Magic 30, hiddenSkillBonuses: `{ "mana_regen": 0.05 }`.
+  - `windwalker`: Adept tier, requirements Wind Magic 30, hiddenSkillBonuses: `{ "mana_regen": 0.05 }`.
+  - `naturalist`: Adept tier, requirements Nature Magic 30, hiddenSkillBonuses: `{ "mana_regen": 0.05 }`.
+  - `priest`: Adept tier, requirements Holy Magic 30, hiddenSkillBonuses: `{ "mana_regen": 0.05 }`.
+  - `warlock`: Adept tier, requirements Dark Magic 30, hiddenSkillBonuses: `{ "mana_regen": 0.05 }`.
+- **2. 35-Skill Magic Kits (`data/skills.json`)**:
+  - **Flamecaller**: `fireball` (1.1× radius 1, burn 40%), `combust` (1.6×, ×1.4 vs burn), `heat_wave` (1.4× line 4, burn 60%), `kindle` (Dmg +0.25 for 8s), `inferno` (3.0× radius 2.5, burn 100%).
+  - **Frostcaller**: `frost_tide` (1.1×, slow 40% + heal 4 lowest ally), `undertow` (1.4× + Weaken 0.20 for 5s), `tidal_surge` (1.4× line 4, slow 100%), `renewing_mist` (HoT 5/s for 6s lowest ally), `deluge` (2.8× radius 2, slow 100% + heal 12 party).
+  - **Stormtouched**: `arc_bolt` (1.1× chain 3, shock 35%), `static_charge` (Dmg +0.25 for 8s), `forked_lightning` (1.6× chain 4), `thunder_strike` (2.0×, shock 60%), `tempest` (3.0× chain 5, shock 50%).
+  - **Windwalker**: `cutting_gale` (1.1× line 4), `slipstream` (Eva 0.35 for 6s), `vacuum_blade` (1.6× line 4 + Weaken 0.20 for 5s), `squall` (1.3× radius 1.5, slow 100%), `hurricane` (3.0× line 6, bleed 60%).
+  - **Naturalist**: `venom_thorn` (1.1×, poison 40% for 6s), `rejuvenate` (HoT 5/s for 6s lowest ally), `strangling_vines` (1.2×, slow 100% + Weaken 0.20 for 5s), `toxic_bloom` (1.3× radius 1.5, poison 100% for 6s), `natures_wrath` (2.8×, ×1.4 vs poison + heal 10 party).
+  - **Priest**: `holy_light` (heal 22 lowest ally), `chastise` (1.5×, blind 40%), `sanctuary` (shield 35 lowest ally for 8s), `divine_grace` (heal 18 party), `holy_fire` (2.6× radius 2, expose 100%).
+  - **Warlock**: `eldritch_bolt` (1.1×, curse 45%), `drain_life` (1.4× + heal self 12% max HP), `agony` (1.0× + Amp 0.20 for 8s), `shadow_ward` (shield 30 self for 8s), `soul_rend` (3.0×, ×1.4 vs curse + heal self 10% max HP).
+- **3. Script & Efficiency Retune (`scripts/skill_efficiency.ts`)**:
+  - Normalized weapon skills using each class's primary weapon baseDamage (e.g. `short_swords` 5, `bows` 6, `greatswords` 16).
+  - Evaluated all 35 Tier 1 Wave B skills against magic school basic cast baselines; verified 0 filler skills (CD ≤ 3s) exceed the +25% cap.
+- **4. Test Suite (`test/class_t1_wave_b.test.ts`) & Milestone Test Updates**:
+  - Validated all 7 classes and 35 skills for effects, cadence, AI roles, generic buff stats, timed poison (6000ms), and status effect integrity.
+  - Verified 60s simulated 3-enemy fight with ally at 60% HP: all 7 classes cast 5 of 5 skills (Flamecaller 5/5, Frostcaller 5/5, Stormtouched 5/5, Windwalker 5/5, Naturalist 5/5, Priest 5/5, Warlock 5/5).
+  - Updated legacy placeholder assertions in `test/milestone37.test.ts` and `test/milestone47.test.ts` to assert Priest and Warlock are registered as Tier 1 (`adept`).
+  - Production build: `npm run build` succeeds cleanly.
+  - Full test suite: 119/119 suites pass cleanly (`node scripts/run_all_tests.mjs --quiet`).
+
 
 
 

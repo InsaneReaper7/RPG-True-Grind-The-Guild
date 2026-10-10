@@ -309,6 +309,7 @@ interface SchoolBaseline {
 }
 
 const magicSchools = [
+  'fire_magic',
   'healing_magic',
   'holy_magic',
   'dark_magic',
@@ -577,30 +578,37 @@ console.log('\n### Class Program Tier 1 Wave A: Weapon Classes Efficiency Check'
 const t1WaveAClasses = [
   {
     classId: 'hoplite',
+    primaryWeapon: 'spears',
     skills: ['phalanx_thrust', 'shield_wall', 'spear_wall', 'rallying_cry', 'impaling_charge']
   },
   {
     classId: 'duelist',
+    primaryWeapon: 'short_swords',
     skills: ['flurry_cut', 'sidestep', 'disarming_strike', 'exploit_opening', 'thousand_cuts']
   },
   {
     classId: 'ranger',
+    primaryWeapon: 'bows',
     skills: ['swift_shot', 'hunters_mark', 'multishot', 'tumble', 'barbed_arrow']
   },
   {
     classId: 'reaver',
+    primaryWeapon: 'greatswords',
     skills: ['rending_swing', 'bloodlust', 'whirlwind', 'savage_cleave', 'executioner']
   },
   {
     classId: 'shadow_initiate',
+    primaryWeapon: 'daggers',
     skills: ['shade_stab', 'veil', 'shadow_strike', 'cursed_blade', 'assassinate']
   },
   {
     classId: 'sharpshooter',
+    primaryWeapon: 'crossbows',
     skills: ['piercing_bolt', 'steady_breath', 'crippling_bolt', 'armor_piercer', 'headshot']
   },
   {
     classId: 'battle_medic',
+    primaryWeapon: 'mace',
     skills: ['mending_strike', 'field_dressing', 'concussive_blow', 'battle_triage', 'rallying_hammer']
   }
 ];
@@ -624,6 +632,9 @@ interface T1WaveARow {
 const t1WaveARows: T1WaveARow[] = [];
 
 for (const kit of t1WaveAClasses) {
+  const primaryWp = weaponsData.weapons.find((w: any) => w.id === kit.primaryWeapon);
+  const weaponBaseDmg = primaryWp?.baseDamage ?? basePower;
+
   for (const sid of kit.skills) {
     const skill = skillsData.skills.find((s: any) => s.id === sid);
     if (!skill) continue;
@@ -640,7 +651,7 @@ for (const kit of t1WaveAClasses) {
       mult = skill.damageMultiplier;
     }
 
-    const directDamage = mult * basePower;
+    const directDamage = mult * weaponBaseDmg;
 
     let dotInfo = 'None';
     let dotEV = 0;
@@ -716,5 +727,168 @@ if (flaggedT1.length > 0) {
     console.log(`  - ⚠️ Flagged: ${f.name} (${f.skillId}): ${f.damagePerEn.toFixed(3)} Dmg/EN (${f.vsBladeStrike})`);
   }
 }
+
+// ---------------------------------------------------------------------------
+// SECTION 6: Class Program Tier 1 Wave B: Magic Classes (7 Kits)
+// ---------------------------------------------------------------------------
+console.log('\n### Class Program Tier 1 Wave B: Magic Classes Efficiency Check');
+
+const t1WaveBClasses = [
+  { classId: 'flamecaller', school: 'fire_magic', skills: ['fireball', 'combust', 'heat_wave', 'kindle', 'inferno'] },
+  { classId: 'frostcaller', school: 'water_magic', skills: ['frost_tide', 'undertow', 'tidal_surge', 'renewing_mist', 'deluge'] },
+  { classId: 'stormtouched', school: 'lightning_magic', skills: ['arc_bolt', 'static_charge', 'forked_lightning', 'thunder_strike', 'tempest'] },
+  { classId: 'windwalker', school: 'wind_magic', skills: ['cutting_gale', 'slipstream', 'vacuum_blade', 'squall', 'hurricane'] },
+  { classId: 'naturalist', school: 'nature_magic', skills: ['venom_thorn', 'rejuvenate', 'strangling_vines', 'toxic_bloom', 'natures_wrath'] },
+  { classId: 'priest', school: 'holy_magic', skills: ['holy_light', 'chastise', 'sanctuary', 'divine_grace', 'holy_fire'] },
+  { classId: 'warlock', school: 'dark_magic', skills: ['eldritch_bolt', 'drain_life', 'agony', 'shadow_ward', 'soul_rend'] }
+];
+
+interface T1WaveBRow {
+  classId: string;
+  skillId: string;
+  name: string;
+  req: string;
+  cd: number;
+  energyCost: number;
+  directDamage: number;
+  dotInfo: string;
+  dotEV: number;
+  totalDamage: number;
+  damagePerEn: number;
+  vsBasic: string;
+  flag: string;
+}
+
+const t1WaveBRows: T1WaveBRow[] = [];
+
+for (const kit of t1WaveBClasses) {
+  const baseline = schoolBaselines[kit.school];
+
+  for (const sid of kit.skills) {
+    const skill = skillsData.skills.find((s: any) => s.id === sid);
+    if (!skill) continue;
+
+    const req = skill.requirements?.map((r: any) => `${r.target} ${r.value}`).join(', ') || 'none';
+    const cdSec = (skill.cooldownMs ?? 0) / 1000;
+    const energyCost = skill.energyCost ?? 0;
+
+    let mult = 0;
+    if (skill.effects) {
+      const dmgEff = skill.effects.find((e: any) => e.type === 'damage');
+      if (dmgEff) mult = dmgEff.multiplier;
+    }
+
+    const directDamage = mult * (baseline?.baseDamage ?? basePower);
+
+    let dotInfo = 'None';
+    let dotEV = 0;
+
+    if (skill.effects) {
+      const bleedEff = skill.effects.find((e: any) => e.type === 'applyStatus' && e.status === 'bleed');
+      const burnEff = skill.effects.find((e: any) => e.type === 'applyStatus' && e.status === 'burn');
+      const poisonEff = skill.effects.find((e: any) => e.type === 'applyStatus' && e.status === 'poison');
+
+      if (bleedEff) {
+        const chance = bleedEff.chance ?? 1.0;
+        const dur = bleedEff.durationMs ?? 6000;
+        const ticks = dur / bleedTickIntervalMs;
+        const totalBleedDmg = ticks * bleedDamagePerTick;
+        dotEV = chance * totalBleedDmg;
+        dotInfo = `Bleed ${(chance * 100).toFixed(0)}% (${dur / 1000}s = ${totalBleedDmg} dmg)`;
+      } else if (burnEff) {
+        const chance = burnEff.chance ?? 1.0;
+        const dur = burnEff.durationMs ?? 4000;
+        const ticks = dur / burnTickIntervalMs;
+        const totalBurnDmg = ticks * burnDamagePerTick;
+        dotEV = chance * totalBurnDmg;
+        dotInfo = `Burn ${(chance * 100).toFixed(0)}% (${dur / 1000}s = ${totalBurnDmg} dmg)`;
+      } else if (poisonEff) {
+        const chance = poisonEff.chance ?? 1.0;
+        const dur = poisonEff.durationMs ?? 6000;
+        const ticks = dur / poisonTickIntervalMs;
+        const totalPoisonDmg = ticks * poisonDamagePerTick;
+        dotEV = chance * totalPoisonDmg;
+        dotInfo = `Poison ${(chance * 100).toFixed(0)}% (${dur / 1000}s = ${totalPoisonDmg} dmg)`;
+      }
+    }
+
+    const totalDamage = directDamage + dotEV;
+    const damagePerEn = energyCost > 0 ? totalDamage / energyCost : 0;
+
+    let vsBasic = 'N/A';
+    let flag = '-';
+
+    if (baseline && baseline.totalEV > 0 && energyCost > 0 && totalDamage > 0) {
+      const basicDmgPerEn = baseline.dmgPerEn;
+      const diffPct = ((damagePerEn - basicDmgPerEn) / basicDmgPerEn) * 100;
+      vsBasic = `${diffPct >= 0 ? '+' : ''}${diffPct.toFixed(1)}%`;
+
+      const isFiller = cdSec <= 3;
+      if (isFiller && damagePerEn > basicDmgPerEn * 1.25) {
+        flag = '⚠️ FILLER > +25%';
+      }
+    }
+
+    t1WaveBRows.push({
+      classId: kit.classId,
+      skillId: skill.id,
+      name: skill.name,
+      req,
+      cd: cdSec,
+      energyCost,
+      directDamage,
+      dotInfo,
+      dotEV,
+      totalDamage,
+      damagePerEn,
+      vsBasic,
+      flag
+    });
+  }
+}
+
+console.log('| Class | Skill | Requirement | CD (s) | EN | Direct Dmg | DoT Info | DoT EV | Total EV | Dmg / EN | vs. Basic Cast | Flag |');
+console.log('|---|---|---|---|---|---|---|---|---|---|---|---|');
+
+for (const r of t1WaveBRows) {
+  const dmgEnStr = r.damagePerEn > 0 ? r.damagePerEn.toFixed(3) : '-';
+  console.log(
+    `| ${r.classId} | **${r.name}** (\`${r.skillId}\`) | ${r.req} | ${r.cd} | ${r.energyCost} | ${r.directDamage.toFixed(1)} | ${r.dotInfo} | ${r.dotEV.toFixed(1)} | ${r.totalDamage.toFixed(1)} | ${dmgEnStr} | ${r.vsBasic} | ${r.flag} |`
+  );
+}
+
+const flaggedT1B = t1WaveBRows.filter(r => r.flag.includes('FILLER'));
+console.log(`\n**Tier 1 Wave B Filler Audit Result:** ${flaggedT1B.length} filler skill(s) exceeded +25% above its school's basic cast.`);
+if (flaggedT1B.length > 0) {
+  for (const f of flaggedT1B) {
+    console.log(`  - ⚠️ Flagged: ${f.name} (${f.skillId}): ${f.damagePerEn.toFixed(3)} Dmg/EN (${f.vsBasic})`);
+  }
+}
+
+// Also audit Wave B heals
+const t1WaveBHeals: HealEntry[] = [
+  { id: 'frost_tide', name: 'Frost Tide', type: 'Heal Ally component (Frostcaller Lv 1)', hp: 4, en: 20 },
+  { id: 'renewing_mist', name: 'Renewing Mist', type: 'HoT 5/s × 6s (Frostcaller Lv 30)', hp: 30, en: 22 },
+  { id: 'deluge', name: 'Deluge', type: 'Party 12 (Frostcaller Lv 40, 3 allies)', hp: 36, en: 44 },
+  { id: 'rejuvenate', name: 'Rejuvenate', type: 'HoT 5/s × 6s (Naturalist Lv 10)', hp: 30, en: 20 },
+  { id: 'natures_wrath', name: 'Nature\'s Wrath', type: 'Party 10 (Naturalist Lv 40, 3 allies)', hp: 30, en: 40 },
+  { id: 'holy_light', name: 'Holy Light', type: 'Single Ally (Priest Lv 1)', hp: 22, en: 20 },
+  { id: 'divine_grace', name: 'Divine Grace', type: 'Party 18 (Priest Lv 30, 3 allies)', hp: 54, en: 36 },
+  { id: 'drain_life', name: 'Drain Life', type: 'Self 12% max HP (Warlock Lv 10, ~12 HP)', hp: 12, en: 24 },
+  { id: 'soul_rend', name: 'Soul Rend', type: 'Self 10% max HP (Warlock Lv 40, ~10 HP)', hp: 10, en: 42 }
+];
+
+console.log('\n### Tier 1 Wave B Heal Efficiency Comparison (HP per EN)');
+console.log('| Skill | Type | HP Restored | Energy Cost | HP / EN | Reference Comparison |');
+console.log('|---|---|---|---|---|---|');
+
+for (const h of t1WaveBHeals) {
+  const hpPerEn = h.hp / h.en;
+  const vsFirstAid = ((hpPerEn - (20 / 25)) / (20 / 25) * 100);
+  const vsHeal = ((hpPerEn - (35 / 22)) / (35 / 22) * 100);
+  const refComp = `${vsFirstAid >= 0 ? '+' : ''}${vsFirstAid.toFixed(1)}% vs first_aid | ${vsHeal >= 0 ? '+' : ''}${vsHeal.toFixed(1)}% vs heal`;
+  console.log(`| **${h.name}** (\`${h.id}\`) | ${h.type} | ${h.hp} | ${h.en} | ${hpPerEn.toFixed(3)} | ${refComp} |`);
+}
+
 
 

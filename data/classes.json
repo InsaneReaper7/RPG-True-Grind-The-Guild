@@ -915,6 +915,118 @@
       "hiddenSkillBonuses": {
         "health_regen": 0.05
       }
+    },
+    {
+      "id": "flamecaller",
+      "name": "Flamecaller",
+      "tier": "adept",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "fire_magic",
+          "value": 30
+        }
+      ],
+      "fantasy": "Apprentice pyromancer",
+      "hiddenSkillBonuses": {
+        "mana_regen": 0.05
+      }
+    },
+    {
+      "id": "frostcaller",
+      "name": "Frostcaller",
+      "tier": "adept",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "water_magic",
+          "value": 30
+        }
+      ],
+      "fantasy": "Apprentice aquamancer",
+      "hiddenSkillBonuses": {
+        "mana_regen": 0.05
+      }
+    },
+    {
+      "id": "stormtouched",
+      "name": "Stormtouched",
+      "tier": "adept",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "lightning_magic",
+          "value": 30
+        }
+      ],
+      "fantasy": "Apprentice storm mage",
+      "hiddenSkillBonuses": {
+        "mana_regen": 0.05
+      }
+    },
+    {
+      "id": "windwalker",
+      "name": "Windwalker",
+      "tier": "adept",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "wind_magic",
+          "value": 30
+        }
+      ],
+      "fantasy": "Apprentice air mage",
+      "hiddenSkillBonuses": {
+        "mana_regen": 0.05
+      }
+    },
+    {
+      "id": "naturalist",
+      "name": "Naturalist",
+      "tier": "adept",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "nature_magic",
+          "value": 30
+        }
+      ],
+      "fantasy": "Apprentice nature mage",
+      "hiddenSkillBonuses": {
+        "mana_regen": 0.05
+      }
+    },
+    {
+      "id": "priest",
+      "name": "Priest",
+      "tier": "adept",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "holy_magic",
+          "value": 30
+        }
+      ],
+      "fantasy": "Devout novice",
+      "hiddenSkillBonuses": {
+        "mana_regen": 0.05
+      }
+    },
+    {
+      "id": "warlock",
+      "name": "Warlock",
+      "tier": "adept",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "dark_magic",
+          "value": 30
+        }
+      ],
+      "fantasy": "Apprentice of forbidden power",
+      "hiddenSkillBonuses": {
+        "mana_regen": 0.05
+      }
     }
   ]
 }

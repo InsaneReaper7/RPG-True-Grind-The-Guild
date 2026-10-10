@@ -5794,6 +5794,1354 @@
         "role": "rotation",
         "priority": 75
       }
+    },
+    {
+      "id": "fireball",
+      "name": "Fireball",
+      "description": "Hurls an explosive sphere of flame dealing 1.1x spell damage with a 40% chance to burn nearby foes.",
+      "energyCost": 22,
+      "cooldownMs": 3000,
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "flamecaller",
+          "value": 1
+        },
+        {
+          "type": "proficiency",
+          "target": "fire_magic",
+          "value": 30
+        }
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "spell",
+          "multiplier": 1.1,
+          "area": {
+            "shape": "radius",
+            "radius": 1
+          }
+        },
+        {
+          "type": "applyStatus",
+          "status": "burn",
+          "chance": 0.4
+        }
+      ],
+      "ai": {
+        "role": "rotation",
+        "priority": 30
+      }
+    },
+    {
+      "id": "combust",
+      "name": "Combust",
+      "description": "Ignites the target for 1.6x spell damage, dealing 1.4x bonus damage if the target is burning.",
+      "energyCost": 26,
+      "cooldownMs": 7000,
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "flamecaller",
+          "value": 10
+        },
+        {
+          "type": "proficiency",
+          "target": "fire_magic",
+          "value": 30
+        }
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "spell",
+          "multiplier": 1.6,
+          "requiresTargetStatus": {
+            "status": "burn",
+            "multiplier": 1.4
+          }
+        }
+      ],
+      "ai": {
+        "role": "rotation",
+        "priority": 50
+      }
+    },
+    {
+      "id": "heat_wave",
+      "name": "Heat Wave",
+      "description": "Unleashes a rolling wave of searing heat dealing 1.4x spell damage to up to 4 enemies in a line with a 60% burn chance.",
+      "energyCost": 30,
+      "cooldownMs": 9000,
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "flamecaller",
+          "value": 20
+        },
+        {
+          "type": "proficiency",
+          "target": "fire_magic",
+          "value": 30
+        }
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "spell",
+          "multiplier": 1.4,
+          "area": {
+            "shape": "line",
+            "maxTargets": 4
+          }
+        },
+        {
+          "type": "applyStatus",
+          "status": "burn",
+          "chance": 0.6
+        }
+      ],
+      "ai": {
+        "role": "rotation",
+        "priority": 55
+      }
+    },
+    {
+      "id": "kindle",
+      "name": "Kindle",
+      "description": "Stokes inner arcane flames to increase damage by 25% for 8 seconds.",
+      "energyCost": 18,
+      "cooldownMs": 20000,
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "flamecaller",
+          "value": 30
+        },
+        {
+          "type": "proficiency",
+          "target": "fire_magic",
+          "value": 30
+        }
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "bonusDamagePercent",
+          "value": 0.25,
+          "durationMs": 8000,
+          "target": "self"
+        }
+      ],
+      "ai": {
+        "role": "defensive",
+        "priority": 55
+      }
+    },
+    {
+      "id": "inferno",
+      "name": "Inferno",
+      "description": "Calls down an apocalyptic inferno dealing 3.0x spell damage in a 2.5 tile radius, setting all foes ablaze.",
+      "energyCost": 44,
+      "cooldownMs": 18000,
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "flamecaller",
+          "value": 40
+        },
+        {
+          "type": "proficiency",
+          "target": "fire_magic",
+          "value": 30
+        }
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "spell",
+          "multiplier": 3,
+          "area": {
+            "shape": "radius",
+            "radius": 2.5
+          }
+        },
+        {
+          "type": "applyStatus",
+          "status": "burn",
+          "chance": 1
+        }
+      ],
+      "ai": {
+        "role": "rotation",
+        "priority": 85,
+        "condition": {
+          "enemiesInRadius": 2
+        }
+      }
+    },
+    {
+      "id": "frost_tide",
+      "name": "Frost Tide",
+      "description": "Surges chilling tides dealing 1.1x spell damage, slowing the target by 40% and restoring 4 HP to the lowest ally.",
+      "energyCost": 20,
+      "cooldownMs": 3000,
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "frostcaller",
+          "value": 1
+        },
+        {
+          "type": "proficiency",
+          "target": "water_magic",
+          "value": 30
+        }
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "spell",
+          "multiplier": 1.1
+        },
+        {
+          "type": "applyStatus",
+          "status": "slow",
+          "chance": 0.4
+        },
+        {
+          "type": "heal",
+          "amount": 4,
+          "target": "lowestAlly"
+        }
+      ],
+      "ai": {
+        "role": "rotation",
+        "priority": 30
+      }
+    },
+    {
+      "id": "undertow",
+      "name": "Undertow",
+      "description": "Drags the enemy down with 1.4x spell damage and weakens their damage output by 20% for 5 seconds.",
+      "energyCost": 22,
+      "cooldownMs": 8000,
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "frostcaller",
+          "value": 10
+        },
+        {
+          "type": "proficiency",
+          "target": "water_magic",
+          "value": 30
+        }
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "spell",
+          "multiplier": 1.4
+        },
+        {
+          "type": "debuff",
+          "stat": "damageReductionPercent",
+          "value": 0.2,
+          "durationMs": 5000,
+          "target": "enemy"
+        }
+      ],
+      "ai": {
+        "role": "rotation",
+        "priority": 50
+      }
+    },
+    {
+      "id": "tidal_surge",
+      "name": "Tidal Surge",
+      "description": "Unleashes a sweeping torrent in a line hitting up to 4 targets for 1.4x spell damage and slowing them by 100%.",
+      "energyCost": 28,
+      "cooldownMs": 9000,
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "frostcaller",
+          "value": 20
+        },
+        {
+          "type": "proficiency",
+          "target": "water_magic",
+          "value": 30
+        }
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "spell",
+          "multiplier": 1.4,
+          "area": {
+            "shape": "line",
+            "maxTargets": 4
+          }
+        },
+        {
+          "type": "applyStatus",
+          "status": "slow",
+          "chance": 1
+        }
+      ],
+      "ai": {
+        "role": "rotation",
+        "priority": 55
+      }
+    },
+    {
+      "id": "renewing_mist",
+      "name": "Renewing Mist",
+      "description": "Envelops the lowest health ally in soothing waters, restoring 5 HP per second for 6 seconds.",
+      "energyCost": 22,
+      "cooldownMs": 10000,
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "frostcaller",
+          "value": 30
+        },
+        {
+          "type": "proficiency",
+          "target": "water_magic",
+          "value": 30
+        }
+      ],
+      "effects": [
+        {
+          "type": "healOverTime",
+          "amountPerTick": 5,
+          "durationMs": 6000,
+          "tickIntervalMs": 1000,
+          "target": "lowestAlly"
+        }
+      ],
+      "ai": {
+        "role": "support",
+        "priority": 65,
+        "condition": {
+          "allyHpBelow": 0.7
+        }
+      }
+    },
+    {
+      "id": "deluge",
+      "name": "Deluge",
+      "description": "Calls down a crushing flood dealing 2.8x spell damage in a 2 tile radius, slowing enemies by 100% and healing the party for 12 HP.",
+      "energyCost": 44,
+      "cooldownMs": 18000,
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "frostcaller",
+          "value": 40
+        },
+        {
+          "type": "proficiency",
+          "target": "water_magic",
+          "value": 30
+        }
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "spell",
+          "multiplier": 2.8,
+          "area": {
+            "shape": "radius",
+            "radius": 2
+          }
+        },
+        {
+          "type": "applyStatus",
+          "status": "slow",
+          "chance": 1
+        },
+        {
+          "type": "heal",
+          "amount": 12,
+          "target": "party"
+        }
+      ],
+      "ai": {
+        "role": "rotation",
+        "priority": 85,
+        "condition": {
+          "enemiesInRadius": 2
+        }
+      }
+    },
+    {
+      "id": "arc_bolt",
+      "name": "Arc Bolt",
+      "description": "Discharges an electric bolt dealing 1.1x spell damage, chaining up to 3 targets with 35% shock chance.",
+      "energyCost": 20,
+      "cooldownMs": 3000,
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "stormtouched",
+          "value": 1
+        },
+        {
+          "type": "proficiency",
+          "target": "lightning_magic",
+          "value": 30
+        }
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "spell",
+          "multiplier": 1.1,
+          "area": {
+            "shape": "chain",
+            "maxTargets": 3,
+            "radius": 3,
+            "falloff": 0.3
+          }
+        },
+        {
+          "type": "applyStatus",
+          "status": "shock",
+          "chance": 0.35
+        }
+      ],
+      "ai": {
+        "role": "rotation",
+        "priority": 30
+      }
+    },
+    {
+      "id": "static_charge",
+      "name": "Static Charge",
+      "description": "Charges your body with crackling electricity, increasing bonus damage by 25% for 8 seconds.",
+      "energyCost": 18,
+      "cooldownMs": 20000,
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "stormtouched",
+          "value": 10
+        },
+        {
+          "type": "proficiency",
+          "target": "lightning_magic",
+          "value": 30
+        }
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "bonusDamagePercent",
+          "value": 0.25,
+          "durationMs": 8000,
+          "target": "self"
+        }
+      ],
+      "ai": {
+        "role": "defensive",
+        "priority": 55
+      }
+    },
+    {
+      "id": "forked_lightning",
+      "name": "Forked Lightning",
+      "description": "Strikes down with forked lightning dealing 1.6x spell damage, chaining up to 4 targets.",
+      "energyCost": 30,
+      "cooldownMs": 9000,
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "stormtouched",
+          "value": 20
+        },
+        {
+          "type": "proficiency",
+          "target": "lightning_magic",
+          "value": 30
+        }
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "spell",
+          "multiplier": 1.6,
+          "area": {
+            "shape": "chain",
+            "maxTargets": 4,
+            "radius": 3,
+            "falloff": 0.25
+          }
+        }
+      ],
+      "ai": {
+        "role": "rotation",
+        "priority": 55,
+        "condition": {
+          "enemiesInRadius": 2
+        }
+      }
+    },
+    {
+      "id": "thunder_strike",
+      "name": "Thunder Strike",
+      "description": "Strikes with concentrated thunder dealing 2.0x spell damage with a 60% chance to shock the target.",
+      "energyCost": 28,
+      "cooldownMs": 10000,
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "stormtouched",
+          "value": 30
+        },
+        {
+          "type": "proficiency",
+          "target": "lightning_magic",
+          "value": 30
+        }
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "spell",
+          "multiplier": 2
+        },
+        {
+          "type": "applyStatus",
+          "status": "shock",
+          "chance": 0.6
+        }
+      ],
+      "ai": {
+        "role": "opener",
+        "priority": 60
+      }
+    },
+    {
+      "id": "tempest",
+      "name": "Tempest",
+      "description": "Unleashes a fierce tempest dealing 3.0x spell damage chaining up to 5 targets with 50% shock chance.",
+      "energyCost": 44,
+      "cooldownMs": 18000,
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "stormtouched",
+          "value": 40
+        },
+        {
+          "type": "proficiency",
+          "target": "lightning_magic",
+          "value": 30
+        }
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "spell",
+          "multiplier": 3,
+          "area": {
+            "shape": "chain",
+            "maxTargets": 5,
+            "radius": 3,
+            "falloff": 0.2
+          }
+        },
+        {
+          "type": "applyStatus",
+          "status": "shock",
+          "chance": 0.5
+        }
+      ],
+      "ai": {
+        "role": "rotation",
+        "priority": 85,
+        "condition": {
+          "enemiesInRadius": 2
+        }
+      }
+    },
+    {
+      "id": "cutting_gale",
+      "name": "Cutting Gale",
+      "description": "Sends a razor-sharp wind blade through enemies in a line dealing 1.1x spell damage to up to 4 targets.",
+      "energyCost": 14,
+      "cooldownMs": 3000,
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "windwalker",
+          "value": 1
+        },
+        {
+          "type": "proficiency",
+          "target": "wind_magic",
+          "value": 30
+        }
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "spell",
+          "multiplier": 1.1,
+          "area": {
+            "shape": "line",
+            "maxTargets": 4
+          }
+        }
+      ],
+      "ai": {
+        "role": "rotation",
+        "priority": 30
+      }
+    },
+    {
+      "id": "slipstream",
+      "name": "Slipstream",
+      "description": "Rides surrounding wind currents, gaining 35% evasion bonus for 6 seconds.",
+      "energyCost": 16,
+      "cooldownMs": 14000,
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "windwalker",
+          "value": 10
+        },
+        {
+          "type": "proficiency",
+          "target": "wind_magic",
+          "value": 30
+        }
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "evasionBonus",
+          "value": 0.35,
+          "durationMs": 6000,
+          "target": "self"
+        }
+      ],
+      "ai": {
+        "role": "defensive",
+        "priority": 55
+      }
+    },
+    {
+      "id": "vacuum_blade",
+      "name": "Vacuum Blade",
+      "description": "Slices through up to 4 enemies in a line for 1.6x spell damage, weakening their damage by 20% for 5 seconds.",
+      "energyCost": 22,
+      "cooldownMs": 8000,
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "windwalker",
+          "value": 20
+        },
+        {
+          "type": "proficiency",
+          "target": "wind_magic",
+          "value": 30
+        }
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "spell",
+          "multiplier": 1.6,
+          "area": {
+            "shape": "line",
+            "maxTargets": 4
+          }
+        },
+        {
+          "type": "debuff",
+          "stat": "damageReductionPercent",
+          "value": 0.2,
+          "durationMs": 5000,
+          "target": "enemy"
+        }
+      ],
+      "ai": {
+        "role": "rotation",
+        "priority": 50
+      }
+    },
+    {
+      "id": "squall",
+      "name": "Squall",
+      "description": "Summons a localized squall dealing 1.3x spell damage in a 1.5 tile radius, slowing enemies by 100%.",
+      "energyCost": 24,
+      "cooldownMs": 9000,
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "windwalker",
+          "value": 30
+        },
+        {
+          "type": "proficiency",
+          "target": "wind_magic",
+          "value": 30
+        }
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "spell",
+          "multiplier": 1.3,
+          "area": {
+            "shape": "radius",
+            "radius": 1.5
+          }
+        },
+        {
+          "type": "applyStatus",
+          "status": "slow",
+          "chance": 1
+        }
+      ],
+      "ai": {
+        "role": "rotation",
+        "priority": 55,
+        "condition": {
+          "enemiesInRadius": 2
+        }
+      }
+    },
+    {
+      "id": "hurricane",
+      "name": "Hurricane",
+      "description": "Conjures a tempestuous hurricane piercing up to 6 targets in a line for 3.0x spell damage with a 60% bleed chance.",
+      "energyCost": 38,
+      "cooldownMs": 15000,
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "windwalker",
+          "value": 40
+        },
+        {
+          "type": "proficiency",
+          "target": "wind_magic",
+          "value": 30
+        }
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "spell",
+          "multiplier": 3,
+          "area": {
+            "shape": "line",
+            "maxTargets": 6
+          }
+        },
+        {
+          "type": "applyStatus",
+          "status": "bleed",
+          "chance": 0.6,
+          "durationMs": 6000
+        }
+      ],
+      "ai": {
+        "role": "finisher",
+        "priority": 75
+      }
+    },
+    {
+      "id": "venom_thorn",
+      "name": "Venom Thorn",
+      "description": "Shoots a toxic spine dealing 1.1x spell damage with a 40% chance to poison the target for 6 seconds.",
+      "energyCost": 20,
+      "cooldownMs": 3000,
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "naturalist",
+          "value": 1
+        },
+        {
+          "type": "proficiency",
+          "target": "nature_magic",
+          "value": 30
+        }
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "spell",
+          "multiplier": 1.1
+        },
+        {
+          "type": "applyStatus",
+          "status": "poison",
+          "chance": 0.4,
+          "durationMs": 6000
+        }
+      ],
+      "ai": {
+        "role": "rotation",
+        "priority": 30
+      }
+    },
+    {
+      "id": "rejuvenate",
+      "name": "Rejuvenate",
+      "description": "Channels nature energy into the lowest health ally, healing 5 HP per second for 6 seconds.",
+      "energyCost": 20,
+      "cooldownMs": 10000,
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "naturalist",
+          "value": 10
+        },
+        {
+          "type": "proficiency",
+          "target": "nature_magic",
+          "value": 30
+        }
+      ],
+      "effects": [
+        {
+          "type": "healOverTime",
+          "amountPerTick": 5,
+          "durationMs": 6000,
+          "tickIntervalMs": 1000,
+          "target": "lowestAlly"
+        }
+      ],
+      "ai": {
+        "role": "support",
+        "priority": 65,
+        "condition": {
+          "allyHpBelow": 0.7
+        }
+      }
+    },
+    {
+      "id": "strangling_vines",
+      "name": "Strangling Vines",
+      "description": "Constricts the foe with barbed vines dealing 1.2x spell damage, slowing by 100% and weakening damage by 20% for 5 seconds.",
+      "energyCost": 22,
+      "cooldownMs": 8000,
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "naturalist",
+          "value": 20
+        },
+        {
+          "type": "proficiency",
+          "target": "nature_magic",
+          "value": 30
+        }
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "spell",
+          "multiplier": 1.2
+        },
+        {
+          "type": "applyStatus",
+          "status": "slow",
+          "chance": 1
+        },
+        {
+          "type": "debuff",
+          "stat": "damageReductionPercent",
+          "value": 0.2,
+          "durationMs": 5000,
+          "target": "enemy"
+        }
+      ],
+      "ai": {
+        "role": "rotation",
+        "priority": 50
+      }
+    },
+    {
+      "id": "toxic_bloom",
+      "name": "Toxic Bloom",
+      "description": "Erupts noxious spores in a 1.5 tile radius dealing 1.3x spell damage and poisoning all enemies for 6 seconds.",
+      "energyCost": 28,
+      "cooldownMs": 9000,
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "naturalist",
+          "value": 30
+        },
+        {
+          "type": "proficiency",
+          "target": "nature_magic",
+          "value": 30
+        }
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "spell",
+          "multiplier": 1.3,
+          "area": {
+            "shape": "radius",
+            "radius": 1.5
+          }
+        },
+        {
+          "type": "applyStatus",
+          "status": "poison",
+          "chance": 1,
+          "durationMs": 6000
+        }
+      ],
+      "ai": {
+        "role": "rotation",
+        "priority": 55,
+        "condition": {
+          "enemiesInRadius": 2
+        }
+      }
+    },
+    {
+      "id": "natures_wrath",
+      "name": "Nature's Wrath",
+      "description": "Unleashes wrath of the wild for 2.8x spell damage, dealing 1.4x bonus damage if poisoned, and restoring 10 HP to party members.",
+      "energyCost": 40,
+      "cooldownMs": 16000,
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "naturalist",
+          "value": 40
+        },
+        {
+          "type": "proficiency",
+          "target": "nature_magic",
+          "value": 30
+        }
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "spell",
+          "multiplier": 2.8,
+          "requiresTargetStatus": {
+            "status": "poison",
+            "multiplier": 1.4
+          }
+        },
+        {
+          "type": "heal",
+          "amount": 10,
+          "target": "party"
+        }
+      ],
+      "ai": {
+        "role": "finisher",
+        "priority": 75
+      }
+    },
+    {
+      "id": "holy_light",
+      "name": "Holy Light",
+      "description": "Channels divine grace to heal the lowest health ally for 22 HP.",
+      "energyCost": 20,
+      "cooldownMs": 3000,
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "priest",
+          "value": 1
+        },
+        {
+          "type": "proficiency",
+          "target": "holy_magic",
+          "value": 30
+        }
+      ],
+      "effects": [
+        {
+          "type": "heal",
+          "amount": 22,
+          "target": "lowestAlly"
+        }
+      ],
+      "ai": {
+        "role": "support",
+        "priority": 70,
+        "condition": {
+          "allyHpBelow": 0.7
+        }
+      }
+    },
+    {
+      "id": "chastise",
+      "name": "Chastise",
+      "description": "Rebukes the adversary with holy energy dealing 1.5x spell damage with a 40% blind chance.",
+      "energyCost": 22,
+      "cooldownMs": 6000,
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "priest",
+          "value": 10
+        },
+        {
+          "type": "proficiency",
+          "target": "holy_magic",
+          "value": 30
+        }
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "spell",
+          "multiplier": 1.5
+        },
+        {
+          "type": "applyStatus",
+          "status": "blind",
+          "chance": 0.4
+        }
+      ],
+      "ai": {
+        "role": "rotation",
+        "priority": 45
+      }
+    },
+    {
+      "id": "sanctuary",
+      "name": "Sanctuary",
+      "description": "Erects a protective divine aegis granting 35 shield to the lowest health ally for 8 seconds.",
+      "energyCost": 26,
+      "cooldownMs": 14000,
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "priest",
+          "value": 20
+        },
+        {
+          "type": "proficiency",
+          "target": "holy_magic",
+          "value": 30
+        }
+      ],
+      "effects": [
+        {
+          "type": "shield",
+          "shieldAmount": 35,
+          "durationMs": 8000,
+          "target": "lowestAlly"
+        }
+      ],
+      "ai": {
+        "role": "support",
+        "priority": 60,
+        "condition": {
+          "allyHpBelow": 0.7
+        }
+      }
+    },
+    {
+      "id": "divine_grace",
+      "name": "Divine Grace",
+      "description": "Invokes miraculous holy radiance, restoring 18 HP to all party members when allies are injured.",
+      "energyCost": 36,
+      "cooldownMs": 16000,
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "priest",
+          "value": 30
+        },
+        {
+          "type": "proficiency",
+          "target": "holy_magic",
+          "value": 30
+        }
+      ],
+      "effects": [
+        {
+          "type": "heal",
+          "amount": 18,
+          "target": "party"
+        }
+      ],
+      "ai": {
+        "role": "support",
+        "priority": 80,
+        "condition": {
+          "allyHpBelow": 0.6
+        }
+      }
+    },
+    {
+      "id": "holy_fire",
+      "name": "Holy Fire",
+      "description": "Consecrates the area in sacred fire dealing 2.6x spell damage in a 2 tile radius, exposing all enemies.",
+      "energyCost": 40,
+      "cooldownMs": 16000,
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "priest",
+          "value": 40
+        },
+        {
+          "type": "proficiency",
+          "target": "holy_magic",
+          "value": 30
+        }
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "spell",
+          "multiplier": 2.6,
+          "area": {
+            "shape": "radius",
+            "radius": 2
+          }
+        },
+        {
+          "type": "applyStatus",
+          "status": "expose",
+          "chance": 1
+        }
+      ],
+      "ai": {
+        "role": "rotation",
+        "priority": 75,
+        "condition": {
+          "enemiesInRadius": 2
+        }
+      }
+    },
+    {
+      "id": "eldritch_bolt",
+      "name": "Eldritch Bolt",
+      "description": "Fires a streak of dark power dealing 1.1x spell damage with a 45% chance to curse the enemy.",
+      "energyCost": 20,
+      "cooldownMs": 3000,
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "warlock",
+          "value": 1
+        },
+        {
+          "type": "proficiency",
+          "target": "dark_magic",
+          "value": 30
+        }
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "spell",
+          "multiplier": 1.1
+        },
+        {
+          "type": "applyStatus",
+          "status": "curse",
+          "chance": 0.45
+        }
+      ],
+      "ai": {
+        "role": "rotation",
+        "priority": 30
+      }
+    },
+    {
+      "id": "drain_life",
+      "name": "Drain Life",
+      "description": "Siphons the target for 1.4x spell damage, restoring 12% of max HP to the caster.",
+      "energyCost": 24,
+      "cooldownMs": 8000,
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "warlock",
+          "value": 10
+        },
+        {
+          "type": "proficiency",
+          "target": "dark_magic",
+          "value": 30
+        }
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "spell",
+          "multiplier": 1.4
+        },
+        {
+          "type": "heal",
+          "percent": 0.12,
+          "target": "self"
+        }
+      ],
+      "ai": {
+        "role": "rotation",
+        "priority": 50
+      }
+    },
+    {
+      "id": "agony",
+      "name": "Agony",
+      "description": "Inflicts dark torment dealing 1.0x spell damage and amplifying damage taken by 20% for 8 seconds.",
+      "energyCost": 20,
+      "cooldownMs": 10000,
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "warlock",
+          "value": 20
+        },
+        {
+          "type": "proficiency",
+          "target": "dark_magic",
+          "value": 30
+        }
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "spell",
+          "multiplier": 1
+        },
+        {
+          "type": "debuff",
+          "stat": "damageAmplificationPercent",
+          "value": 0.2,
+          "durationMs": 8000,
+          "target": "enemy"
+        }
+      ],
+      "ai": {
+        "role": "rotation",
+        "priority": 50
+      }
+    },
+    {
+      "id": "shadow_ward",
+      "name": "Shadow Ward",
+      "description": "Envelops the caster in forbidden darkness, providing a 30 shield for 8 seconds.",
+      "energyCost": 22,
+      "cooldownMs": 16000,
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "warlock",
+          "value": 30
+        },
+        {
+          "type": "proficiency",
+          "target": "dark_magic",
+          "value": 30
+        }
+      ],
+      "effects": [
+        {
+          "type": "shield",
+          "shieldAmount": 30,
+          "durationMs": 8000,
+          "target": "self"
+        }
+      ],
+      "ai": {
+        "role": "defensive",
+        "priority": 55
+      }
+    },
+    {
+      "id": "soul_rend",
+      "name": "Soul Rend",
+      "description": "Rips the target's soul dealing 3.0x spell damage, dealing 1.4x bonus damage if cursed, and healing the caster for 10% max HP.",
+      "energyCost": 42,
+      "cooldownMs": 16000,
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "warlock",
+          "value": 40
+        },
+        {
+          "type": "proficiency",
+          "target": "dark_magic",
+          "value": 30
+        }
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "spell",
+          "multiplier": 3,
+          "requiresTargetStatus": {
+            "status": "curse",
+            "multiplier": 1.4
+          }
+        },
+        {
+          "type": "heal",
+          "percent": 0.1,
+          "target": "self"
+        }
+      ],
+      "ai": {
+        "role": "finisher",
+        "priority": 75
+      }
     }
   ]
 }

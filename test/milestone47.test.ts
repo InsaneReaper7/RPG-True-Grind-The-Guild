@@ -376,9 +376,10 @@ async function runMilestone47Tests() {
   assert.equal(cultistClass.fantasy, 'Recently indoctrinated');
   assert.equal(cultistClass.hiddenSkillBonuses?.mana_regen, 0.05, 'Cultist grants mana_regen bonus per Tier 0 magic pattern');
 
-  // Verify Warlock is NOT prematurely registered as Tier 0 (reserved for Tier 1)
+  // Verify Warlock is registered as Tier 1 (adept)
   const warlockClass = dataLoader.getClass('warlock');
-  assert.equal(warlockClass, undefined, 'Warlock must NOT be registered as Tier 0');
+  assert.ok(warlockClass, 'Warlock must be registered in classes.json');
+  assert.equal(warlockClass.tier, 'adept', 'Warlock is Tier 1 (adept)');
 
   // Verify Dark Knight requirement targets
   const darkKnightClass = dataLoader.getClass('dark_knight');
