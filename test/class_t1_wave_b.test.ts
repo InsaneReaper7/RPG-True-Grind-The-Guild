@@ -278,10 +278,9 @@ async function runTests() {
         `Skill ${skillId} classLevel requirement must be 1, 10, 20, 30, or 40 (got ${classLevelReq.value})`
       );
 
-      // Proficiency requirement check
-      const profReq = def.requirements.find((r: any) => r.type === 'proficiency' && r.target === kit.magicProf);
-      assert.ok(profReq, `Skill ${skillId} must have proficiency requirement for ${kit.magicProf}`);
-      assert.strictEqual(profReq.value, 30, `Skill ${skillId} proficiency requirement value must be 30`);
+      // Verify proficiency requirement is NOT present (classLevel only)
+      const profReq = def.requirements.find((r: any) => r.type === 'proficiency');
+      assert.strictEqual(profReq, undefined, `Skill ${skillId} must not have extra proficiency requirement (classLevel only)`);
 
       // Ranged check: rangeTiles: 4
       assert.strictEqual(def.rangeTiles, 4, `Skill ${skillId} must have rangeTiles: 4`);

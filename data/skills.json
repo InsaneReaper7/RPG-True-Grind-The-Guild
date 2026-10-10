@@ -5798,7 +5798,7 @@
     {
       "id": "fireball",
       "name": "Fireball",
-      "description": "Hurls an explosive sphere of flame dealing 1.1x spell damage with a 40% chance to burn nearby foes.",
+      "description": "Hurls an explosive sphere of flame dealing 1.1x spell damage in a 1-tile radius with a 40% chance to burn the main target.",
       "energyCost": 22,
       "cooldownMs": 3000,
       "rangeTiles": 4,
@@ -5807,11 +5807,6 @@
           "type": "classLevel",
           "target": "flamecaller",
           "value": 1
-        },
-        {
-          "type": "proficiency",
-          "target": "fire_magic",
-          "value": 30
         }
       ],
       "effects": [
@@ -5847,11 +5842,6 @@
           "type": "classLevel",
           "target": "flamecaller",
           "value": 10
-        },
-        {
-          "type": "proficiency",
-          "target": "fire_magic",
-          "value": 30
         }
       ],
       "effects": [
@@ -5882,11 +5872,6 @@
           "type": "classLevel",
           "target": "flamecaller",
           "value": 20
-        },
-        {
-          "type": "proficiency",
-          "target": "fire_magic",
-          "value": 30
         }
       ],
       "effects": [
@@ -5922,11 +5907,6 @@
           "type": "classLevel",
           "target": "flamecaller",
           "value": 30
-        },
-        {
-          "type": "proficiency",
-          "target": "fire_magic",
-          "value": 30
         }
       ],
       "effects": [
@@ -5946,7 +5926,7 @@
     {
       "id": "inferno",
       "name": "Inferno",
-      "description": "Calls down an apocalyptic inferno dealing 3.0x spell damage in a 2.5 tile radius, setting all foes ablaze.",
+      "description": "Calls down an apocalyptic inferno dealing 3.0x spell damage in a 2.5 tile radius, setting the main target ablaze.",
       "energyCost": 44,
       "cooldownMs": 18000,
       "rangeTiles": 4,
@@ -5955,11 +5935,6 @@
           "type": "classLevel",
           "target": "flamecaller",
           "value": 40
-        },
-        {
-          "type": "proficiency",
-          "target": "fire_magic",
-          "value": 30
         }
       ],
       "effects": [
@@ -5998,11 +5973,6 @@
           "type": "classLevel",
           "target": "frostcaller",
           "value": 1
-        },
-        {
-          "type": "proficiency",
-          "target": "water_magic",
-          "value": 30
         }
       ],
       "effects": [
@@ -6039,11 +6009,6 @@
           "type": "classLevel",
           "target": "frostcaller",
           "value": 10
-        },
-        {
-          "type": "proficiency",
-          "target": "water_magic",
-          "value": 30
         }
       ],
       "effects": [
@@ -6068,7 +6033,7 @@
     {
       "id": "tidal_surge",
       "name": "Tidal Surge",
-      "description": "Unleashes a sweeping torrent in a line hitting up to 4 targets for 1.4x spell damage and slowing them by 100%.",
+      "description": "Unleashes a sweeping torrent in a line hitting up to 4 targets for 1.4x spell damage and slowing the main target by 100%.",
       "energyCost": 28,
       "cooldownMs": 9000,
       "rangeTiles": 4,
@@ -6077,11 +6042,6 @@
           "type": "classLevel",
           "target": "frostcaller",
           "value": 20
-        },
-        {
-          "type": "proficiency",
-          "target": "water_magic",
-          "value": 30
         }
       ],
       "effects": [
@@ -6117,11 +6077,6 @@
           "type": "classLevel",
           "target": "frostcaller",
           "value": 30
-        },
-        {
-          "type": "proficiency",
-          "target": "water_magic",
-          "value": 30
         }
       ],
       "effects": [
@@ -6153,11 +6108,6 @@
           "type": "classLevel",
           "target": "frostcaller",
           "value": 40
-        },
-        {
-          "type": "proficiency",
-          "target": "water_magic",
-          "value": 30
         }
       ],
       "effects": [
@@ -6201,11 +6151,6 @@
           "type": "classLevel",
           "target": "stormtouched",
           "value": 1
-        },
-        {
-          "type": "proficiency",
-          "target": "lightning_magic",
-          "value": 30
         }
       ],
       "effects": [
@@ -6243,11 +6188,6 @@
           "type": "classLevel",
           "target": "stormtouched",
           "value": 10
-        },
-        {
-          "type": "proficiency",
-          "target": "lightning_magic",
-          "value": 30
         }
       ],
       "effects": [
@@ -6276,11 +6216,6 @@
           "type": "classLevel",
           "target": "stormtouched",
           "value": 20
-        },
-        {
-          "type": "proficiency",
-          "target": "lightning_magic",
-          "value": 30
         }
       ],
       "effects": [
@@ -6316,11 +6251,6 @@
           "type": "classLevel",
           "target": "stormtouched",
           "value": 30
-        },
-        {
-          "type": "proficiency",
-          "target": "lightning_magic",
-          "value": 30
         }
       ],
       "effects": [
@@ -6352,11 +6282,6 @@
           "type": "classLevel",
           "target": "stormtouched",
           "value": 40
-        },
-        {
-          "type": "proficiency",
-          "target": "lightning_magic",
-          "value": 30
         }
       ],
       "effects": [
@@ -6397,11 +6322,6 @@
           "type": "classLevel",
           "target": "windwalker",
           "value": 1
-        },
-        {
-          "type": "proficiency",
-          "target": "wind_magic",
-          "value": 30
         }
       ],
       "effects": [
@@ -6432,11 +6352,6 @@
           "type": "classLevel",
           "target": "windwalker",
           "value": 10
-        },
-        {
-          "type": "proficiency",
-          "target": "wind_magic",
-          "value": 30
         }
       ],
       "effects": [
@@ -6456,7 +6371,7 @@
     {
       "id": "vacuum_blade",
       "name": "Vacuum Blade",
-      "description": "Slices through up to 4 enemies in a line for 1.6x spell damage, weakening their damage by 20% for 5 seconds.",
+      "description": "Slices through up to 4 enemies in a line for 1.6x spell damage, weakening the main target's damage by 20% for 5 seconds.",
       "energyCost": 22,
       "cooldownMs": 8000,
       "rangeTiles": 4,
@@ -6465,11 +6380,6 @@
           "type": "classLevel",
           "target": "windwalker",
           "value": 20
-        },
-        {
-          "type": "proficiency",
-          "target": "wind_magic",
-          "value": 30
         }
       ],
       "effects": [
@@ -6507,11 +6417,6 @@
           "type": "classLevel",
           "target": "windwalker",
           "value": 30
-        },
-        {
-          "type": "proficiency",
-          "target": "wind_magic",
-          "value": 30
         }
       ],
       "effects": [
@@ -6541,7 +6446,7 @@
     {
       "id": "hurricane",
       "name": "Hurricane",
-      "description": "Conjures a tempestuous hurricane piercing up to 6 targets in a line for 3.0x spell damage with a 60% bleed chance.",
+      "description": "Conjures a tempestuous hurricane piercing up to 6 targets in a line for 3.0x spell damage with a 60% bleed chance on the main target.",
       "energyCost": 38,
       "cooldownMs": 15000,
       "rangeTiles": 4,
@@ -6550,11 +6455,6 @@
           "type": "classLevel",
           "target": "windwalker",
           "value": 40
-        },
-        {
-          "type": "proficiency",
-          "target": "wind_magic",
-          "value": 30
         }
       ],
       "effects": [
@@ -6591,11 +6491,6 @@
           "type": "classLevel",
           "target": "naturalist",
           "value": 1
-        },
-        {
-          "type": "proficiency",
-          "target": "nature_magic",
-          "value": 30
         }
       ],
       "effects": [
@@ -6628,11 +6523,6 @@
           "type": "classLevel",
           "target": "naturalist",
           "value": 10
-        },
-        {
-          "type": "proficiency",
-          "target": "nature_magic",
-          "value": 30
         }
       ],
       "effects": [
@@ -6664,11 +6554,6 @@
           "type": "classLevel",
           "target": "naturalist",
           "value": 20
-        },
-        {
-          "type": "proficiency",
-          "target": "nature_magic",
-          "value": 30
         }
       ],
       "effects": [
@@ -6698,7 +6583,7 @@
     {
       "id": "toxic_bloom",
       "name": "Toxic Bloom",
-      "description": "Erupts noxious spores in a 1.5 tile radius dealing 1.3x spell damage and poisoning all enemies for 6 seconds.",
+      "description": "Erupts noxious spores in a 1.5 tile radius dealing 1.3x spell damage and poisoning the main target for 6 seconds.",
       "energyCost": 28,
       "cooldownMs": 9000,
       "rangeTiles": 4,
@@ -6706,11 +6591,6 @@
         {
           "type": "classLevel",
           "target": "naturalist",
-          "value": 30
-        },
-        {
-          "type": "proficiency",
-          "target": "nature_magic",
           "value": 30
         }
       ],
@@ -6751,11 +6631,6 @@
           "type": "classLevel",
           "target": "naturalist",
           "value": 40
-        },
-        {
-          "type": "proficiency",
-          "target": "nature_magic",
-          "value": 30
         }
       ],
       "effects": [
@@ -6791,11 +6666,6 @@
           "type": "classLevel",
           "target": "priest",
           "value": 1
-        },
-        {
-          "type": "proficiency",
-          "target": "holy_magic",
-          "value": 30
         }
       ],
       "effects": [
@@ -6825,11 +6695,6 @@
           "type": "classLevel",
           "target": "priest",
           "value": 10
-        },
-        {
-          "type": "proficiency",
-          "target": "holy_magic",
-          "value": 30
         }
       ],
       "effects": [
@@ -6861,11 +6726,6 @@
           "type": "classLevel",
           "target": "priest",
           "value": 20
-        },
-        {
-          "type": "proficiency",
-          "target": "holy_magic",
-          "value": 30
         }
       ],
       "effects": [
@@ -6896,11 +6756,6 @@
           "type": "classLevel",
           "target": "priest",
           "value": 30
-        },
-        {
-          "type": "proficiency",
-          "target": "holy_magic",
-          "value": 30
         }
       ],
       "effects": [
@@ -6921,7 +6776,7 @@
     {
       "id": "holy_fire",
       "name": "Holy Fire",
-      "description": "Consecrates the area in sacred fire dealing 2.6x spell damage in a 2 tile radius, exposing all enemies.",
+      "description": "Consecrates the area in sacred fire dealing 2.6x spell damage in a 2 tile radius, exposing the main target.",
       "energyCost": 40,
       "cooldownMs": 16000,
       "rangeTiles": 4,
@@ -6930,11 +6785,6 @@
           "type": "classLevel",
           "target": "priest",
           "value": 40
-        },
-        {
-          "type": "proficiency",
-          "target": "holy_magic",
-          "value": 30
         }
       ],
       "effects": [
@@ -6973,11 +6823,6 @@
           "type": "classLevel",
           "target": "warlock",
           "value": 1
-        },
-        {
-          "type": "proficiency",
-          "target": "dark_magic",
-          "value": 30
         }
       ],
       "effects": [
@@ -7009,11 +6854,6 @@
           "type": "classLevel",
           "target": "warlock",
           "value": 10
-        },
-        {
-          "type": "proficiency",
-          "target": "dark_magic",
-          "value": 30
         }
       ],
       "effects": [
@@ -7045,11 +6885,6 @@
           "type": "classLevel",
           "target": "warlock",
           "value": 20
-        },
-        {
-          "type": "proficiency",
-          "target": "dark_magic",
-          "value": 30
         }
       ],
       "effects": [
@@ -7083,11 +6918,6 @@
           "type": "classLevel",
           "target": "warlock",
           "value": 30
-        },
-        {
-          "type": "proficiency",
-          "target": "dark_magic",
-          "value": 30
         }
       ],
       "effects": [
@@ -7115,11 +6945,6 @@
           "type": "classLevel",
           "target": "warlock",
           "value": 40
-        },
-        {
-          "type": "proficiency",
-          "target": "dark_magic",
-          "value": 30
         }
       ],
       "effects": [
