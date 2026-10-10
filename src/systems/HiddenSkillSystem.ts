@@ -15,6 +15,7 @@ export interface CombatContext {
   hasEnergyPotionBuff?: boolean;
   hasManaPotionBuff?: boolean;
   evasionBonus?: number;
+  parryBonus?: number;
 }
 
 export interface AvoidanceResult {
@@ -173,6 +174,9 @@ export class HiddenSkillSystem {
     }
     if (skillDef.id === 'evasion' && context.evasionBonus) {
       classBonus += context.evasionBonus;
+    }
+    if (skillDef.id === 'parry' && context.parryBonus) {
+      classBonus += context.parryBonus;
     }
     const procChance = this.calculateProcChance(skillDef, currentLevel, classBonus);
 

@@ -302,6 +302,11 @@ async function runMilestone54Tests() {
   console.log('🎯 RUNNING MILESTONE 54: JAVELIN, REACHABLE AND COMPLETE 🎯');
   console.log('================================================================\n');
 
+  const originalRandom = Math.random;
+  Math.random = () => 0.05;
+
+  try {
+
   await DataLoader.getInstance().loadAll();
   const { CombatSystem } = await import('../src/systems/CombatSystem.ts');
   const { Player } = await import('../src/entities/Player.ts');
@@ -729,6 +734,9 @@ async function runMilestone54Tests() {
   console.log('================================================================');
   console.log('🎉 ALL 10 MILESTONE 54 TESTS PASSED CLEANLY & SUCCESSFULLY! 🎉');
   console.log('================================================================\n');
+  } finally {
+    Math.random = originalRandom;
+  }
 }
 
 runMilestone54Tests().catch((err) => {

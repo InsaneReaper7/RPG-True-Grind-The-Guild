@@ -1070,21 +1070,36 @@ export class Player extends Entity {
     return super.heal(amount);
   }
 
-  public useSkill(skillId: string, target?: Entity | Player, time?: number): boolean {
+  public useSkill(skillId: string, target?: Entity | Player | number, time?: number): boolean {
+    let targetEntity: Entity | Player | undefined;
+    let effectiveTime: number | undefined = time;
+    if (typeof target === 'number') {
+      effectiveTime = target;
+      targetEntity = undefined;
+    } else {
+      targetEntity = target;
+    }
+
     const scene = this.scene as any;
     if (scene?.combatSystem && typeof scene.combatSystem.castSkill === 'function') {
-      return scene.combatSystem.castSkill(this, skillId, target, time);
+      return scene.combatSystem.castSkill(this, skillId, targetEntity, effectiveTime);
     }
     const dataLoader = DataLoader.getInstance();
     const skillDef = dataLoader.getSkill(skillId);
     if (!skillDef || !this.progression.isSkillUnlocked(skillDef, this)) return false;
-    const now = time ?? Date.now();
-    const lastUsed = this.lastSkillUseTimes.get(skillId) || 0;
-    if (now - lastUsed < skillDef.cooldownMs) return false;
+    const now = effectiveTime ?? Date.now();
+    const lastUsed = this.lastSkillUseTimes.get(skillId);
+    if (lastUsed !== undefined && now - lastUsed < skillDef.cooldownMs) return false;
     if (this.energy < skillDef.energyCost) return false;
 
     if (skillDef.effects && skillDef.effects.length > 0) {
-      const targetAlly = (target as Player) || this;
+      const hasSupportEffect = skillDef.effects.some(
+        (eff) => eff.type === 'cleanse' || eff.type === 'shield' || eff.type === 'healOverTime' || eff.type === 'heal'
+      );
+      if (!hasSupportEffect) {
+        return false;
+      }
+      const targetAlly = (targetEntity as Player) || this;
       this.energy -= skillDef.energyCost;
       this.lastSkillUseTimes.set(skillId, now);
       for (const eff of skillDef.effects) {

@@ -175,6 +175,10 @@ async function runMilestoneThrowerTests() {
   console.log('🎯 RUNNING MILESTONE: THROWER REACHABLE & COMPLETE 🎯');
   console.log('================================================================\n');
 
+  const originalRandom = Math.random;
+  Math.random = () => 0.05;
+
+  try {
   const dataLoader = DataLoader.getInstance();
   await dataLoader.loadAll();
 
@@ -507,6 +511,9 @@ async function runMilestoneThrowerTests() {
   console.log('================================================================');
   console.log('🎉 ALL 9 THROWER MILESTONE TESTS PASSED CLEANLY & SUCCESSFULLY! 🎉');
   console.log('================================================================');
+  } finally {
+    Math.random = originalRandom;
+  }
 }
 
 runMilestoneThrowerTests().catch((err) => {

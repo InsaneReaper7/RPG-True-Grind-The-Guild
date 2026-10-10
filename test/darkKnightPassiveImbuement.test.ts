@@ -406,8 +406,14 @@ async function runDarkKnightPassiveImbuementTests() {
     const enemyC = createMockEnemy('enemy-c', 'Target C', 6, 5, 200);
     const enemyD = createMockEnemy('enemy-d', 'Target D', 6, 5, 200);
 
-    combat.castSkill(playerNoClass, 'rending_cut', enemyC);
-    combat.castSkill(playerDK, 'rending_cut', enemyD);
+    const origRand = Math.random;
+    Math.random = () => 0.001;
+    try {
+      combat.castSkill(playerNoClass, 'rending_cut', enemyC);
+      combat.castSkill(playerDK, 'rending_cut', enemyD);
+    } finally {
+      Math.random = origRand;
+    }
 
     const skillDmgNoClass = 200 - enemyC.hp;
     const skillDmgDK = 200 - enemyD.hp;

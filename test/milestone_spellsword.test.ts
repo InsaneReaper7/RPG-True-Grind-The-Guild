@@ -175,6 +175,10 @@ async function runMilestoneSpellswordTests() {
   console.log('⚔️ RUNNING MILESTONE: SPELLSWORD REACHABLE & COMPLETE ⚔️');
   console.log('================================================================\n');
 
+  const originalRandom = Math.random;
+  Math.random = () => 0.05;
+
+  try {
   const dataLoader = DataLoader.getInstance();
   await dataLoader.loadAll();
 
@@ -543,6 +547,9 @@ async function runMilestoneSpellswordTests() {
   console.log('================================================================');
   console.log('🎉 ALL 7 SPELLSWORD TESTS PASSED CLEANLY & SUCCESSFULLY! 🎉');
   console.log('================================================================\n');
+  } finally {
+    Math.random = originalRandom;
+  }
 }
 
 runMilestoneSpellswordTests().catch((err) => {

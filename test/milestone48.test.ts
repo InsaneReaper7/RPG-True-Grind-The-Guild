@@ -307,6 +307,10 @@ async function runMilestone48Tests() {
   console.log('⚔️ RUNNING MILESTONE 48: DARK KNIGHT REACHABLE & COMPLETE TESTS 🌑');
   console.log('================================================================\n');
 
+  const originalRandom = Math.random;
+  Math.random = () => 0.05;
+
+  try {
   await DataLoader.getInstance().loadAll();
   const { CombatSystem } = await import('../src/systems/CombatSystem.ts');
   const dataLoader = DataLoader.getInstance();
@@ -753,9 +757,12 @@ async function runMilestone48Tests() {
     console.log('✓ PASS: Bidirectional cross-proficiency scaling verified for both Longswords and Dark Staff.\n');
   }
 
-  console.log('================================================================');
-  console.log('🎉 ALL 9 MILESTONE 48 TESTS PASSED CLEANLY & SUCCESSFULLY! 🎉');
-  console.log('================================================================');
+    console.log('================================================================');
+    console.log('🎉 ALL 9 MILESTONE 48 TESTS PASSED CLEANLY & SUCCESSFULLY! 🎉');
+    console.log('================================================================');
+  } finally {
+    Math.random = originalRandom;
+  }
 }
 
 runMilestone48Tests().catch((err) => {

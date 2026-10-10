@@ -638,6 +638,12 @@ export interface SkillEffectDamage {
   hits?: number;
   hitDelayMs?: number;
   flatBonus?: number;
+  minDamage?: number;
+  profBonus?: {
+    prof?: string;
+    partnerOf?: [string, string];
+    perLevel: number;
+  };
   area?: SkillEffectArea;
   lowHealthBonus?: { threshold: number; multiplier: number };
   requiresTargetStatus?: { status: string; multiplier: number };
@@ -675,10 +681,10 @@ export interface SkillEffectShield {
 
 export interface SkillEffectBuffDebuff {
   type: 'buff' | 'debuff';
-  stat: 'damageReductionPercent' | 'damageTakenMultiplier' | 'damageAmplificationPercent' | 'bonusDamagePercent' | 'evasionBonus' | 'moveSpeedMultiplier';
+  stat: 'damageReductionPercent' | 'damageTakenMultiplier' | 'damageAmplificationPercent' | 'bonusDamagePercent' | 'flatBonusDamage' | 'evasionBonus' | 'parryBonus' | 'moveSpeedMultiplier';
   value: number;
   durationMs: number;
-  target?: 'self' | 'enemy';
+  target?: 'self' | 'enemy' | 'party' | 'lowestAlly' | 'ally';
 }
 
 export interface SkillEffectCleanse {
@@ -694,8 +700,9 @@ export interface SkillEffectTaunt {
 
 export interface SkillEffectMove {
   type: 'move';
-  moveType: 'dash' | 'leap' | 'teleportBehind' | 'blink';
+  moveType: 'dash' | 'leap' | 'teleportBehind' | 'blink' | 'retreat';
   rangeTiles?: number;
+  distance?: number;
 }
 
 export interface SkillEffectResource {
@@ -766,6 +773,7 @@ export interface SkillDef {
   floatColor?: string;
   vfx?: string;
   proficiencyExp?: { proficiencyId: string; amount: number };
+  partnerExp?: number;
 }
 
 export interface SkillsData {
@@ -787,6 +795,7 @@ export interface StatusEffectDef {
   shieldAmount?: number;
   healPerTick?: number;
   holyBonusDamage?: number;
+  flatBonusDamage?: number;
   damageAmplificationPercent?: number;
   damageReductionPercent?: number;
   damageTakenMultiplier?: number;

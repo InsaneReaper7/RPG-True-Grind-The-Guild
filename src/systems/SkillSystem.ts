@@ -192,9 +192,52 @@ export class SkillSystem {
           overchargeMult = overcharge.multiplier;
         }
 
+        // Execute / low health bonus
+        if (enemyTarget && effect.lowHealthBonus) {
+          const maxTotal = (enemyTarget.maxHp ?? 0) + (enemyTarget.maxCriticalHp ?? 0);
+          const currentTotal = (enemyTarget.hp ?? 0) + (enemyTarget.criticalHp ?? 0);
+          const ratio = maxTotal > 0 ? currentTotal / maxTotal : (enemyTarget.maxHp > 0 ? enemyTarget.hp / enemyTarget.maxHp : 1.0);
+          if (ratio <= effect.lowHealthBonus.threshold) {
+            totalMultiplier *= effect.lowHealthBonus.multiplier;
+          }
+        }
+
+        // Status bonus (e.g. bleeding target takes bonus damage)
+        if (enemyTarget && effect.requiresTargetStatus) {
+          if (enemyTarget.hasStatusEffect(effect.requiresTargetStatus.status)) {
+            totalMultiplier *= effect.requiresTargetStatus.multiplier;
+          }
+        }
+
         // Calculate single hit damage
         const flatBonus = effect.flatBonus ?? 0;
-        let hitDamage = (effBase * totalMultiplier * overchargeMult) + flatBonus;
+        let profFlatBonus = 0;
+        if (effect.profBonus) {
+          let profId = effect.profBonus.prof;
+          if (!profId && effect.profBonus.partnerOf) {
+            const [p1, p2] = effect.profBonus.partnerOf;
+            const wpn = caster.equippedWeapon;
+            if (weaponId === p1 || wpn?.category === p1) {
+              profId = p2;
+            } else if (weaponId === p2 || wpn?.category === p2) {
+              profId = p1;
+            } else {
+              const lvl1 = caster.progression?.getProficiencyLevel(p1) ?? 0;
+              const lvl2 = caster.progression?.getProficiencyLevel(p2) ?? 0;
+              profId = lvl1 >= lvl2 ? p1 : p2;
+            }
+          }
+          if (profId && caster.progression) {
+            const pLvl = caster.progression.getProficiencyLevel(profId);
+            profFlatBonus = effect.profBonus.perLevel * pLvl;
+          }
+        }
+
+        let baseScaled = effBase * totalMultiplier * overchargeMult;
+        if (effect.minDamage !== undefined) {
+          baseScaled = Math.max(effect.minDamage, baseScaled);
+        }
+        let hitDamage = baseScaled + flatBonus + profFlatBonus;
 
         // Generic status bonusDamagePercent across caster active statuses
         let statusBonusDamagePercent = 0;
@@ -209,11 +252,19 @@ export class SkillSystem {
           hitDamage *= (1 + statusBonusDamagePercent);
         }
 
-        // Blessed weapons holy bonus if caster has it
-        if (caster.hasStatusEffect('blessed_weapons')) {
-          hitDamage += 5;
+        // Generic flatBonusDamage across caster active statuses (e.g. blessed_weapons +5)
+        let statusFlatBonusDamage = 0;
+        if (caster.activeStatusEffects) {
+          for (const activeEffect of caster.activeStatusEffects.values()) {
+            if (activeEffect.def?.flatBonusDamage) {
+              statusFlatBonusDamage += activeEffect.def.flatBonusDamage;
+            }
+          }
+        }
+        if (statusFlatBonusDamage > 0) {
+          hitDamage += statusFlatBonusDamage;
           if (enemyTarget) {
-            this.combatSystem.createFloatingText(enemyTarget.x, enemyTarget.y - 24, '+5 HOLY!', '#facc15');
+            this.combatSystem.createFloatingText(enemyTarget.x, enemyTarget.y - 24, `+${statusFlatBonusDamage} HOLY!`, '#facc15');
           }
         }
 
@@ -222,31 +273,6 @@ export class SkillSystem {
             this.executeAreaDamage(effect.area, caster, null, hitDamage, weaponId, time, skillDef);
           }
           return;
-        }
-
-        // Execute / low health bonus
-        if (effect.lowHealthBonus) {
-          const ratio = enemyTarget.hp / enemyTarget.maxHp;
-          if (ratio <= effect.lowHealthBonus.threshold) {
-            totalMultiplier *= effect.lowHealthBonus.multiplier;
-          }
-        }
-
-        // Status bonus (e.g. bleeding target takes bonus damage)
-        if (effect.requiresTargetStatus) {
-          if (enemyTarget.hasStatusEffect(effect.requiresTargetStatus.status)) {
-            totalMultiplier *= effect.requiresTargetStatus.multiplier;
-          }
-        }
-
-        if (effect.lowHealthBonus || effect.requiresTargetStatus) {
-          hitDamage = (effBase * totalMultiplier * overchargeMult) + flatBonus;
-          if (statusBonusDamagePercent > 0) {
-            hitDamage *= (1 + statusBonusDamagePercent);
-          }
-          if (caster.hasStatusEffect('blessed_weapons')) {
-            hitDamage += 5;
-          }
         }
 
         // Apply hit(s)
@@ -268,8 +294,20 @@ export class SkillSystem {
             time,
             hits
           );
-          if (isHit && effect.area) {
-            this.executeAreaDamage(effect.area, caster, enemyTarget, hitDamage, weaponId, time, skillDef);
+          if (isHit) {
+            if (skillDef.partnerExp && effect.profBonus) {
+              let profId = effect.profBonus.prof;
+              if (!profId && effect.profBonus.partnerOf) {
+                const [p1, p2] = effect.profBonus.partnerOf;
+                profId = (weaponId === p2) ? p1 : p2;
+              }
+              if (profId && caster.progression) {
+                caster.progression.addProficiencyExp(profId, skillDef.partnerExp);
+              }
+            }
+            if (effect.area) {
+              this.executeAreaDamage(effect.area, caster, enemyTarget, hitDamage, weaponId, time, skillDef);
+            }
           }
           return isHit;
         } else {
@@ -392,23 +430,44 @@ export class SkillSystem {
 
       case 'buff':
       case 'debuff': {
-        const isSelf = effect.target === 'self' || !effect.target;
-        const bTarget = isSelf ? caster : (target || caster);
-        if (!bTarget || bTarget.state === 'dead' || bTarget.state === 'downed') return;
+        const hasShield = (skillDef.effects || []).some((e) => e.type === 'shield');
+        const buffId = hasShield ? `${skillDef.id}_buff` : skillDef.id;
+        const baseDef = dataLoader.getStatusEffect(buffId);
 
-        const statObj: any = {
-          id: skillDef.id,
-          name: skillDef.name,
-          durationMs: effect.durationMs,
-          tickIntervalMs: effect.durationMs,
-          damagePerTick: 0,
-          color: effect.type === 'buff' ? '#38bdf8' : '#e11d48'
-        };
-        statObj[effect.stat] = effect.value;
+        const statObj: any = baseDef
+          ? { ...baseDef, durationMs: effect.durationMs ?? baseDef.durationMs }
+          : {
+              id: buffId,
+              name: skillDef.name,
+              durationMs: effect.durationMs,
+              tickIntervalMs: effect.durationMs,
+              damagePerTick: 0,
+              color: effect.type === 'buff' ? '#38bdf8' : '#e11d48'
+            };
+        if (effect.stat) {
+          statObj[effect.stat] = effect.value;
+        }
 
-        bTarget.applyStatusEffect(statObj);
-        const floatTxt = `${skillDef.name.toUpperCase()}!`;
-        this.combatSystem.createFloatingText(bTarget.x, bTarget.y - 12, floatTxt, statObj.color);
+        const targets: Player[] = [];
+        if (effect.target === 'party') {
+          for (const m of this.combatSystem.party) {
+            if (m.state !== 'dead' && m.state !== 'downed') {
+              targets.push(m);
+            }
+          }
+        } else {
+          const isSelf = effect.target === 'self' || !effect.target;
+          const bTarget = isSelf ? caster : (this.resolveAllyTarget(caster, target, effect.target) || target || caster);
+          if (bTarget && bTarget.state !== 'dead' && bTarget.state !== 'downed') {
+            targets.push(bTarget as Player);
+          }
+        }
+
+        for (const bTarget of targets) {
+          bTarget.applyStatusEffect(statObj);
+          const floatTxt = `${skillDef.name.toUpperCase()}!`;
+          this.combatSystem.createFloatingText(bTarget.x, bTarget.y - 12, floatTxt, statObj.color);
+        }
         break;
       }
 
@@ -486,6 +545,55 @@ export class SkillSystem {
               this.combatSystem.createAttackEffect(oldX, oldY, caster.x, caster.y, 0x60a5fa);
             }
           }
+        } else if (effect.moveType === 'retreat' || effect.moveType === 'blink') {
+          const casterTile = {
+            x: Math.floor(caster.x / caster.tileSize),
+            y: Math.floor(caster.y / caster.tileSize)
+          };
+          const activeEnemies = this.combatSystem.enemies.filter((e) => e.state !== 'dead' && e.state !== 'downed');
+          let nearestEnemy: any = null;
+          let minDist = Infinity;
+          for (const e of activeEnemies) {
+            const eTile = { x: Math.floor(e.x / e.tileSize), y: Math.floor(e.y / e.tileSize) };
+            const dist = Math.max(Math.abs(casterTile.x - eTile.x), Math.abs(casterTile.y - eTile.y));
+            if (dist < minDist) {
+              minDist = dist;
+              nearestEnemy = e;
+            }
+          }
+
+          const distance = effect.distance ?? effect.rangeTiles ?? 2;
+          const oldX = caster.x;
+          const oldY = caster.y;
+
+          if (nearestEnemy) {
+            const eTile = { x: Math.floor(nearestEnemy.x / nearestEnemy.tileSize), y: Math.floor(nearestEnemy.y / nearestEnemy.tileSize) };
+            const dirX = Math.sign(casterTile.x - eTile.x) || (Math.random() < 0.5 ? 1 : -1);
+            const dirY = Math.sign(casterTile.y - eTile.y) || (Math.random() < 0.5 ? 1 : -1);
+            const candidates: { x: number; y: number }[] = [];
+            for (let d = distance; d >= 1; d--) {
+              candidates.push({ x: casterTile.x + dirX * d, y: casterTile.y + dirY * d });
+              candidates.push({ x: casterTile.x + dirX * d, y: casterTile.y });
+              candidates.push({ x: casterTile.x, y: casterTile.y + dirY * d });
+            }
+            for (const cand of candidates) {
+              if (!this.combatSystem.isTileClaimedOrOccupiedByOther(cand.x, cand.y, caster)) {
+                caster.setGridPosition(cand.x, cand.y);
+                if (skillDef.id === 'blink') {
+                  this.combatSystem.createArcaneBoltEffect(oldX, oldY, caster.x, caster.y);
+                } else {
+                  this.combatSystem.createAttackEffect(oldX, oldY, caster.x, caster.y, 0x38bdf8);
+                }
+                break;
+              }
+            }
+          } else if (skillDef.id === 'blink') {
+            const cand = { x: casterTile.x + distance, y: casterTile.y };
+            if (!this.combatSystem.isTileClaimedOrOccupiedByOther(cand.x, cand.y, caster)) {
+              caster.setGridPosition(cand.x, cand.y);
+              this.combatSystem.createArcaneBoltEffect(oldX, oldY, caster.x, caster.y);
+            }
+          }
         }
         break;
       }
@@ -533,6 +641,8 @@ export class SkillSystem {
     if (area.shape === 'cleave') {
       const radius = area.radius ?? 1.5;
       const tTile = primaryTarget ? getTile(primaryTarget) : getTile(caster);
+      const maxTargets = area.maxTargets ?? 1;
+      let hitCount = 0;
       for (const enemy of this.combatSystem.enemies) {
         if (enemy === primaryTarget || enemy.state === 'dead' || enemy.state === 'downed') continue;
         const eTile = getTile(enemy);
@@ -543,7 +653,8 @@ export class SkillSystem {
           enemy.isAggroed = true;
           const downed = enemy.takeDamage(cleaveDmg);
           if (downed) this.combatSystem.handleTargetDefeated(caster, enemy, weaponId);
-          break; // cleaves 1 adjacent secondary target
+          hitCount++;
+          if (hitCount >= maxTargets) break;
         }
       }
     } else if (area.shape === 'radius') {

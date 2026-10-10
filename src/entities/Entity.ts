@@ -259,10 +259,19 @@ export class Entity extends Phaser.GameObjects.Container {
     if (totalAmp > 0) {
       damageRemaining *= (1 + totalAmp);
     }
+    let damageTakenMult = 1.0;
+    let hasDamageTakenMultiplier = false;
     for (const activeEffect of this.activeStatusEffects.values()) {
       if (activeEffect.def?.damageTakenMultiplier !== undefined) {
-        damageRemaining *= activeEffect.def.damageTakenMultiplier;
+        damageTakenMult *= activeEffect.def.damageTakenMultiplier;
+        hasDamageTakenMultiplier = true;
       }
+    }
+    if (hasDamageTakenMultiplier && damageTakenMult === 0 && damageRemaining > 0) {
+      damageRemaining = 0;
+      this.createFloatingText('IMMUNE!', '#f59e0b');
+    } else {
+      damageRemaining *= damageTakenMult;
     }
     if (damageRemaining > 0) {
       for (const [effectId, activeEffect] of this.activeStatusEffects.entries()) {

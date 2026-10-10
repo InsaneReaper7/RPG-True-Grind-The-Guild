@@ -302,6 +302,10 @@ async function runMilestone46Tests() {
   console.log('🏹 RUNNING MILESTONE 46: SCOUT FULL KIT UNIT TESTS 🗡️');
   console.log('================================================================\n');
 
+  const originalRandom = Math.random;
+  Math.random = () => 0.05;
+
+  try {
   await DataLoader.getInstance().loadAll();
   const { CombatSystem } = await import('../src/systems/CombatSystem.ts');
   const { Player } = await import('../src/entities/Player.ts');
@@ -666,6 +670,9 @@ async function runMilestone46Tests() {
   console.log('================================================================');
   console.log('🎉 ALL 8 MILESTONE 46 TESTS PASSED CLEANLY & SUCCESSFULLY! 🎉');
   console.log('================================================================\n');
+  } finally {
+    Math.random = originalRandom;
+  }
 }
 
 runMilestone46Tests().catch((err) => {

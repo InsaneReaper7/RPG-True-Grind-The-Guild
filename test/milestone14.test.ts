@@ -179,7 +179,13 @@ function createMockPlayer(
       return this.hp - oldHp;
     },
     takeDamage: function(amount: number) {
-      this.hp = Math.max(0, this.hp - amount);
+      let dmg = amount;
+      for (const active of this.activeStatusEffects.values()) {
+        if (active.def?.damageTakenMultiplier !== undefined) {
+          dmg *= active.def.damageTakenMultiplier;
+        }
+      }
+      this.hp = Math.max(0, this.hp - dmg);
       if (this.hp <= 0) {
         this.state = 'downed';
         this.clearTarget();

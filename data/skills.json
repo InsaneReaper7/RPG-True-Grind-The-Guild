@@ -194,7 +194,8 @@
         {
           "type": "damage",
           "multiplier": 1.8,
-          "scaling": "spell"
+          "scaling": "spell",
+          "minDamage": 8
         }
       ]
     },
@@ -292,6 +293,7 @@
           "type": "damage",
           "scaling": "spell",
           "multiplier": 2,
+          "minDamage": 12,
           "area": {
             "shape": "radius",
             "radius": 4,
@@ -353,7 +355,16 @@
       "ai": {
         "role": "defensive",
         "priority": 70
-      }
+      },
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "damageTakenMultiplier",
+          "value": 0.5,
+          "durationMs": 5000,
+          "target": "self"
+        }
+      ]
     },
     {
       "id": "taunt",
@@ -422,7 +433,16 @@
       "ai": {
         "role": "defensive",
         "priority": 90
-      }
+      },
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "damageTakenMultiplier",
+          "value": 0,
+          "durationMs": 4000,
+          "target": "self"
+        }
+      ]
     },
     {
       "id": "crushing_blow",
@@ -566,7 +586,16 @@
       "ai": {
         "role": "buff",
         "priority": 50
-      }
+      },
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "flatBonusDamage",
+          "value": 5,
+          "durationMs": 60000,
+          "target": "party"
+        }
+      ]
     },
     {
       "id": "mass_revive",
@@ -638,7 +667,21 @@
       "ai": {
         "role": "rotation",
         "priority": 35
-      }
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 1.4,
+          "scaling": "weapon",
+          "profBonus": {
+            "partnerOf": [
+              "bows",
+              "daggers"
+            ],
+            "perLevel": 0.15
+          }
+        }
+      ]
     },
     {
       "id": "mark_target",
@@ -687,7 +730,21 @@
       "ai": {
         "role": "defensive",
         "priority": 50
-      }
+      },
+      "effects": [
+        {
+          "type": "move",
+          "moveType": "retreat",
+          "distance": 2
+        },
+        {
+          "type": "buff",
+          "stat": "evasionBonus",
+          "value": 0.5,
+          "durationMs": 2000,
+          "target": "self"
+        }
+      ]
     },
     {
       "id": "trap_snare",
@@ -748,7 +805,25 @@
         "condition": {
           "enemyHpBelow": 0.4
         }
-      }
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 2,
+          "scaling": "weapon",
+          "lowHealthBonus": {
+            "threshold": 0.4,
+            "multiplier": 2
+          },
+          "profBonus": {
+            "partnerOf": [
+              "bows",
+              "daggers"
+            ],
+            "perLevel": 0.15
+          }
+        }
+      ]
     },
     {
       "id": "rending_cut",
@@ -769,7 +844,26 @@
       "ai": {
         "role": "rotation",
         "priority": 35
-      }
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 1.5,
+          "scaling": "weapon",
+          "profBonus": {
+            "partnerOf": [
+              "longswords",
+              "dark_magic"
+            ],
+            "perLevel": 0.15
+          }
+        },
+        {
+          "type": "applyStatus",
+          "status": "bleed",
+          "durationMs": 6000
+        }
+      ]
     },
     {
       "id": "dark_pact",
@@ -790,7 +884,25 @@
       "ai": {
         "role": "buff",
         "priority": 50
-      }
+      },
+      "effects": [
+        {
+          "type": "resource",
+          "hpCost": 10
+        },
+        {
+          "type": "damage",
+          "multiplier": 2.4,
+          "scaling": "weapon",
+          "profBonus": {
+            "partnerOf": [
+              "longswords",
+              "dark_magic"
+            ],
+            "perLevel": 0.15
+          }
+        }
+      ]
     },
     {
       "id": "umbral_step",
@@ -812,7 +924,30 @@
       "ai": {
         "role": "gapCloser",
         "priority": 60
-      }
+      },
+      "effects": [
+        {
+          "type": "move",
+          "moveType": "dash"
+        },
+        {
+          "type": "damage",
+          "multiplier": 1.4,
+          "scaling": "weapon",
+          "profBonus": {
+            "partnerOf": [
+              "longswords",
+              "dark_magic"
+            ],
+            "perLevel": 0.15
+          }
+        },
+        {
+          "type": "applyStatus",
+          "status": "blind",
+          "durationMs": 4000
+        }
+      ]
     },
     {
       "id": "soul_drain",
@@ -930,7 +1065,16 @@
       "ai": {
         "role": "defensive",
         "priority": 60
-      }
+      },
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "damageTakenMultiplier",
+          "value": 0.8,
+          "durationMs": 4000,
+          "target": "self"
+        }
+      ]
     },
     {
       "id": "severing_slice",
@@ -1207,7 +1351,16 @@
       "ai": {
         "role": "defensive",
         "priority": 65
-      }
+      },
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "damageTakenMultiplier",
+          "value": 0.65,
+          "durationMs": 5000,
+          "target": "self"
+        }
+      ]
     },
     {
       "id": "sweeping_hilt",
@@ -1305,7 +1458,22 @@
       "ai": {
         "role": "opener",
         "priority": 50
-      }
+      },
+      "partnerExp": 1,
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 1.5,
+          "scaling": "weapon",
+          "profBonus": {
+            "partnerOf": [
+              "spears",
+              "throwing_weapons"
+            ],
+            "perLevel": 0.15
+          }
+        }
+      ]
     },
     {
       "id": "impaling_thrust",
@@ -1326,7 +1494,27 @@
       "ai": {
         "role": "rotation",
         "priority": 40
-      }
+      },
+      "partnerExp": 1,
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 1.7,
+          "scaling": "weapon",
+          "profBonus": {
+            "partnerOf": [
+              "spears",
+              "throwing_weapons"
+            ],
+            "perLevel": 0.15
+          }
+        },
+        {
+          "type": "applyStatus",
+          "status": "bleed",
+          "durationMs": 6000
+        }
+      ]
     },
     {
       "id": "vaulting_leap",
@@ -1346,7 +1534,21 @@
       "ai": {
         "role": "defensive",
         "priority": 55
-      }
+      },
+      "effects": [
+        {
+          "type": "move",
+          "moveType": "retreat",
+          "distance": 3
+        },
+        {
+          "type": "buff",
+          "stat": "evasionBonus",
+          "value": 0.4,
+          "durationMs": 3000,
+          "target": "self"
+        }
+      ]
     },
     {
       "id": "pinning_spear",
@@ -1368,7 +1570,27 @@
       "ai": {
         "role": "rotation",
         "priority": 35
-      }
+      },
+      "partnerExp": 1,
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 1.8,
+          "scaling": "weapon",
+          "profBonus": {
+            "partnerOf": [
+              "spears",
+              "throwing_weapons"
+            ],
+            "perLevel": 0.15
+          }
+        },
+        {
+          "type": "applyStatus",
+          "status": "slow",
+          "durationMs": 4000
+        }
+      ]
     },
     {
       "id": "heartseeker_hurl",
@@ -1467,7 +1689,16 @@
       "ai": {
         "role": "defensive",
         "priority": 55
-      }
+      },
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "damageTakenMultiplier",
+          "value": 0.8,
+          "durationMs": 4000,
+          "target": "self"
+        }
+      ]
     },
     {
       "id": "pinning_bolt",
@@ -1614,7 +1845,14 @@
       "ai": {
         "role": "gapCloser",
         "priority": 65
-      }
+      },
+      "effects": [
+        {
+          "type": "move",
+          "moveType": "retreat",
+          "distance": 3
+        }
+      ]
     },
     {
       "id": "arcane_nova",
@@ -1659,7 +1897,19 @@
       "ai": {
         "role": "rotation",
         "priority": 35
-      }
+      },
+      "partnerExp": 1,
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 1.5,
+          "scaling": "weapon",
+          "profBonus": {
+            "prof": "arcane_magic",
+            "perLevel": 0.15
+          }
+        }
+      ]
     },
     {
       "id": "runic_infusion",
@@ -1703,7 +1953,22 @@
       "ai": {
         "role": "defensive",
         "priority": 60
-      }
+      },
+      "effects": [
+        {
+          "type": "shield",
+          "shieldAmount": 40,
+          "durationMs": 6000,
+          "target": "self"
+        },
+        {
+          "type": "buff",
+          "stat": "parryBonus",
+          "value": 0.2,
+          "durationMs": 6000,
+          "target": "self"
+        }
+      ]
     },
     {
       "id": "dimensional_lunge",
@@ -1724,7 +1989,23 @@
       "ai": {
         "role": "gapCloser",
         "priority": 65
-      }
+      },
+      "partnerExp": 1,
+      "effects": [
+        {
+          "type": "move",
+          "moveType": "dash"
+        },
+        {
+          "type": "damage",
+          "multiplier": 1.9,
+          "scaling": "weapon",
+          "profBonus": {
+            "prof": "arcane_magic",
+            "perLevel": 0.15
+          }
+        }
+      ]
     },
     {
       "id": "blade_beam",
@@ -1766,7 +2047,22 @@
       "ai": {
         "role": "rotation",
         "priority": 35
-      }
+      },
+      "partnerExp": 1,
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 1.4,
+          "scaling": "weapon",
+          "profBonus": {
+            "partnerOf": [
+              "throwing_weapons",
+              "daggers"
+            ],
+            "perLevel": 0.15
+          }
+        }
+      ]
     },
     {
       "id": "skirmish_step",
@@ -1816,7 +2112,28 @@
       "ai": {
         "role": "rotation",
         "priority": 40
-      }
+      },
+      "partnerExp": 1,
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 1.6,
+          "scaling": "weapon",
+          "profBonus": {
+            "partnerOf": [
+              "throwing_weapons",
+              "daggers"
+            ],
+            "perLevel": 0.15
+          },
+          "area": {
+            "shape": "cleave",
+            "radius": 1.5,
+            "falloff": 0.5,
+            "maxTargets": 8
+          }
+        }
+      ]
     },
     {
       "id": "crippling_volley",
@@ -1838,7 +2155,32 @@
       "ai": {
         "role": "rotation",
         "priority": 45
-      }
+      },
+      "partnerExp": 1,
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 1.85,
+          "scaling": "weapon",
+          "profBonus": {
+            "partnerOf": [
+              "throwing_weapons",
+              "daggers"
+            ],
+            "perLevel": 0.15
+          }
+        },
+        {
+          "type": "applyStatus",
+          "status": "slow",
+          "durationMs": 4000
+        },
+        {
+          "type": "applyStatus",
+          "status": "bleed",
+          "durationMs": 6000
+        }
+      ]
     },
     {
       "id": "blade_barrage",
