@@ -211,7 +211,7 @@ const wave2Classes: { classId: string; magicSchool: string; conduitWeaponId: str
     classId: 'gale_adept',
     magicSchool: 'wind_magic',
     conduitWeaponId: 'wind_staff',
-    skills: ['gust', 'updraft', 'razor_wind', 'zephyr_step', 'tempest_lance']
+    skills: ['gust', 'updraft', 'razor_wind', 'crosswind', 'tempest_lance']
   },
   {
     classId: 'stoneheart_initiate',
@@ -520,21 +520,6 @@ async function runTests() {
       // Reapply harmful status periodically if cured, so purify / cleanse continues to have target if needed
       if (!ally.hasStatusEffect('poison') && t < 30000) {
         ally.applyStatusEffect(poisonStatusDef);
-      }
-
-      // At t = 10s, move enemy1 away to 3 tiles to trigger Zephyr Step gap closer
-      if (t === 10000 && kit.skills.includes('zephyr_step')) {
-        companion.setGridPosition(10, 7);
-        companion.targetEntity = enemy1;
-      }
-
-      // If target status required for finisher (doom -> curse, glacial_spike -> frostbite),
-      // ensure primary target has that status occasionally if companion's rotation skill didn't just proc it
-      if (kit.classId === 'cultist' && t >= 12000 && !enemy1.hasStatusEffect('curse')) {
-        enemy1.applyStatusEffect(dataLoader.getStatusEffect('curse')!);
-      }
-      if (kit.classId === 'frost_initiate' && t >= 12000 && !enemy1.hasStatusEffect('frostbite')) {
-        enemy1.applyStatusEffect(dataLoader.getStatusEffect('frostbite')!);
       }
 
       combat.update(now, dt);

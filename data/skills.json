@@ -3695,10 +3695,7 @@
       ],
       "ai": {
         "role": "finisher",
-        "priority": 70,
-        "condition": {
-          "requiresTargetStatus": "curse"
-        }
+        "priority": 70
       }
     },
     {
@@ -4038,10 +4035,7 @@
       ],
       "ai": {
         "role": "finisher",
-        "priority": 70,
-        "condition": {
-          "requiresTargetStatus": "frostbite"
-        }
+        "priority": 70
       }
     },
     {
@@ -4478,12 +4472,12 @@
       }
     },
     {
-      "id": "zephyr_step",
-      "name": "Zephyr Step",
-      "energyCost": 16,
+      "id": "crosswind",
+      "name": "Crosswind",
+      "energyCost": 18,
       "cooldownMs": 10000,
       "targetType": "enemy",
-      "rangeTiles": 3,
+      "rangeTiles": 4,
       "requirements": [
         {
           "type": "classLevel",
@@ -4491,22 +4485,28 @@
           "value": 30
         }
       ],
-      "description": "Dashes swiftly across up to 3 tiles to an enemy, striking for 100% spell damage.",
+      "description": "Blasts a cutting crosswind through up to 3 enemies in a line for 100% spell damage, weakening their outgoing damage by 20% for 5s.",
       "effects": [
-        {
-          "type": "move",
-          "moveType": "dash",
-          "rangeTiles": 3
-        },
         {
           "type": "damage",
           "scaling": "spell",
-          "multiplier": 1.0
+          "multiplier": 1.0,
+          "area": {
+            "shape": "line",
+            "maxTargets": 3
+          }
+        },
+        {
+          "type": "debuff",
+          "stat": "damageReductionPercent",
+          "value": 0.2,
+          "durationMs": 5000,
+          "target": "enemy"
         }
       ],
       "ai": {
-        "role": "gapCloser",
-        "priority": 60
+        "role": "rotation",
+        "priority": 45
       }
     },
     {

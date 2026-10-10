@@ -384,7 +384,7 @@ const wave2Classes = [
   { classId: 'frost_initiate', school: 'ice_magic', skills: ['frost_shard', 'ice_lance', 'frost_nova', 'ice_armor', 'glacial_spike'] },
   { classId: 'tide_adept', school: 'water_magic', skills: ['water_jet', 'riptide', 'tidal_wave', 'healing_rain', 'maelstrom'] },
   { classId: 'sprout_keeper', school: 'nature_magic', skills: ['thorn_dart', 'entangle', 'bloom', 'bramble_patch', 'wild_growth'] },
-  { classId: 'gale_adept', school: 'wind_magic', skills: ['gust', 'updraft', 'razor_wind', 'zephyr_step', 'tempest_lance'] },
+  { classId: 'gale_adept', school: 'wind_magic', skills: ['gust', 'updraft', 'razor_wind', 'crosswind', 'tempest_lance'] },
   { classId: 'stoneheart_initiate', school: 'earth_magic', skills: ['pebble_shot', 'granite_skin', 'tremor', 'earthen_ward', 'landslide'] }
 ];
 
