@@ -423,8 +423,8 @@ for (const kit of wave2Classes) {
       if (dmgEff) mult = dmgEff.multiplier;
     }
 
-    // Direct damage evaluated against basePower (10) for comparison
-    const directDamage = mult * basePower;
+    // Direct damage evaluated against school's real baseDamage
+    const directDamage = mult * (baseline?.baseDamage ?? basePower);
 
     let dotInfo = 'None';
     let dotEV = 0;
@@ -474,9 +474,7 @@ for (const kit of wave2Classes) {
 
     // Baseline comparison for damaging skills
     if (baseline && baseline.totalEV > 0 && energyCost > 0 && totalDamage > 0) {
-      // Standardize baseline to basePower = 10 ratio:
-      // School basic damagePerEn using standard basePower vs weapon baseDamage
-      const basicDmgPerEn = (baseline.totalEV / (baseline.baseDamage || 10) * basePower) / baseline.energyCost;
+      const basicDmgPerEn = baseline.dmgPerEn;
       const diffPct = ((damagePerEn - basicDmgPerEn) / basicDmgPerEn) * 100;
       vsBasic = `${diffPct >= 0 ? '+' : ''}${diffPct.toFixed(1)}%`;
 
@@ -570,4 +568,153 @@ for (const h of healSkillsToAudit) {
   }
   console.log(`| **${h.name}** (\`${h.id}\`) | ${h.type} | ${h.hp} | ${h.en} | ${hpPerEn.toFixed(3)} | ${refComp} |`);
 }
+
+// ---------------------------------------------------------------------------
+// SECTION 5: Class Program Tier 1 Wave A: Weapon Classes (7 Kits)
+// ---------------------------------------------------------------------------
+console.log('\n### Class Program Tier 1 Wave A: Weapon Classes Efficiency Check');
+
+const t1WaveAClasses = [
+  {
+    classId: 'hoplite',
+    skills: ['phalanx_thrust', 'shield_wall', 'spear_wall', 'rallying_cry', 'impaling_charge']
+  },
+  {
+    classId: 'duelist',
+    skills: ['flurry_cut', 'sidestep', 'disarming_strike', 'exploit_opening', 'thousand_cuts']
+  },
+  {
+    classId: 'ranger',
+    skills: ['swift_shot', 'hunters_mark', 'multishot', 'tumble', 'barbed_arrow']
+  },
+  {
+    classId: 'reaver',
+    skills: ['rending_swing', 'bloodlust', 'whirlwind', 'savage_cleave', 'executioner']
+  },
+  {
+    classId: 'shadow_initiate',
+    skills: ['shade_stab', 'veil', 'shadow_strike', 'cursed_blade', 'assassinate']
+  },
+  {
+    classId: 'sharpshooter',
+    skills: ['piercing_bolt', 'steady_breath', 'crippling_bolt', 'armor_piercer', 'headshot']
+  },
+  {
+    classId: 'battle_medic',
+    skills: ['mending_strike', 'field_dressing', 'concussive_blow', 'battle_triage', 'rallying_hammer']
+  }
+];
+
+interface T1WaveARow {
+  classId: string;
+  skillId: string;
+  name: string;
+  req: string;
+  cd: number;
+  energyCost: number;
+  directDamage: number;
+  dotInfo: string;
+  dotEV: number;
+  totalDamage: number;
+  damagePerEn: number;
+  vsBladeStrike: string;
+  flag: string;
+}
+
+const t1WaveARows: T1WaveARow[] = [];
+
+for (const kit of t1WaveAClasses) {
+  for (const sid of kit.skills) {
+    const skill = skillsData.skills.find((s: any) => s.id === sid);
+    if (!skill) continue;
+
+    const req = skill.requirements?.map((r: any) => `${r.target} ${r.value}`).join(', ') || 'none';
+    const cdSec = (skill.cooldownMs ?? 0) / 1000;
+    const energyCost = skill.energyCost ?? 0;
+
+    let mult = 0;
+    if (skill.effects) {
+      const dmgEff = skill.effects.find((e: any) => e.type === 'damage');
+      if (dmgEff) mult = dmgEff.multiplier;
+    } else if (skill.damageMultiplier) {
+      mult = skill.damageMultiplier;
+    }
+
+    const directDamage = mult * basePower;
+
+    let dotInfo = 'None';
+    let dotEV = 0;
+
+    if (skill.effects) {
+      const bleedEff = skill.effects.find((e: any) => e.type === 'applyStatus' && e.status === 'bleed');
+      const burnEff = skill.effects.find((e: any) => e.type === 'applyStatus' && e.status === 'burn');
+
+      if (bleedEff) {
+        const chance = bleedEff.chance ?? 1.0;
+        const dur = bleedEff.durationMs ?? bleedDef?.durationMs ?? 6000;
+        const ticks = dur / bleedTickIntervalMs;
+        const totalBleedDmg = ticks * bleedDamagePerTick;
+        dotEV = chance * totalBleedDmg;
+        dotInfo = `Bleed ${(chance * 100).toFixed(0)}% (${dur / 1000}s = ${totalBleedDmg} dmg)`;
+      } else if (burnEff) {
+        const chance = burnEff.chance ?? 1.0;
+        const dur = burnEff.durationMs ?? burnDef?.durationMs ?? 4000;
+        const ticks = dur / burnTickIntervalMs;
+        const totalBurnDmg = ticks * burnDamagePerTick;
+        dotEV = chance * totalBurnDmg;
+        dotInfo = `Burn ${(chance * 100).toFixed(0)}% (${dur / 1000}s = ${totalBurnDmg} dmg)`;
+      }
+    }
+
+    const totalDamage = directDamage + dotEV;
+    const damagePerEn = energyCost > 0 ? totalDamage / energyCost : 0;
+
+    let vsBladeStrike = 'N/A';
+    if (totalDamage > 0 && energyCost > 0) {
+      const diffPct = ((damagePerEn - bladeStrikeDmgPerEn) / bladeStrikeDmgPerEn) * 100;
+      vsBladeStrike = `${diffPct >= 0 ? '+' : ''}${diffPct.toFixed(1)}%`;
+    }
+
+    let flag = '-';
+    const isFiller = cdSec <= 3;
+    if (isFiller && energyCost > 0 && damagePerEn > bladeStrikeDmgPerEn * 1.25) {
+      flag = '⚠️ FILLER > +25%';
+    }
+
+    t1WaveARows.push({
+      classId: kit.classId,
+      skillId: skill.id,
+      name: skill.name,
+      req,
+      cd: cdSec,
+      energyCost,
+      directDamage,
+      dotInfo,
+      dotEV,
+      totalDamage,
+      damagePerEn,
+      vsBladeStrike,
+      flag
+    });
+  }
+}
+
+console.log('| Class | Skill | Requirement | CD (s) | EN | Direct Dmg | DoT Info | DoT EV | Total EV | Dmg / EN | vs. Blade Strike | Flag |');
+console.log('|---|---|---|---|---|---|---|---|---|---|---|---|');
+
+for (const r of t1WaveARows) {
+  const dmgEnStr = r.damagePerEn > 0 ? r.damagePerEn.toFixed(3) : '-';
+  console.log(
+    `| ${r.classId} | **${r.name}** (\`${r.skillId}\`) | ${r.req} | ${r.cd} | ${r.energyCost} | ${r.directDamage.toFixed(1)} | ${r.dotInfo} | ${r.dotEV.toFixed(1)} | ${r.totalDamage.toFixed(1)} | ${dmgEnStr} | ${r.vsBladeStrike} | ${r.flag} |`
+  );
+}
+
+const flaggedT1 = t1WaveARows.filter(r => r.flag.includes('FILLER'));
+console.log(`\n**Tier 1 Wave A Filler Audit Result:** ${flaggedT1.length} filler skill(s) exceeded +25% above blade_strike.`);
+if (flaggedT1.length > 0) {
+  for (const f of flaggedT1) {
+    console.log(`  - ⚠️ Flagged: ${f.name} (${f.skillId}): ${f.damagePerEn.toFixed(3)} Dmg/EN (${f.vsBladeStrike})`);
+  }
+}
+
 

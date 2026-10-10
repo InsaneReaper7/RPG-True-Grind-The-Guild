@@ -1384,5 +1384,34 @@ The following three intentional behavioural changes were reviewed and accepted b
   - Verified class EXP routes exclusively to the acting character.
   - Verified Locksmith success rates are identical across all levels with and without the class.
 
+### Class Program, Tier 1 Wave A: Weapon Classes (7 Kits, Data-Only) (2026-10-10)
+
+**Resolved and shipped: Implemented the 7 Tier 1 weapon classes without kits (Hoplite, Duelist, Ranger, Reaver, Shadow Initiate, Sharpshooter, Battle Medic) with full 5-skill kits (35 skills total) as pure data in `data/skills.json` and added their adept class definitions with requirements and hiddenSkillBonuses in `data/classes.json`. Fixed `scripts/skill_efficiency.ts` to compute direct damage from each magic school's real baseDamage, aligning DoT expected values. Added comprehensive validation and smoke test suite in `test/class_t1_wave_a.test.ts`.**
+
+- **1. Class Entries (`data/classes.json`)**:
+  - `hoplite`: Existing entry preserved; given 5-skill kit in `data/skills.json`.
+  - `duelist`: Adept tier, requirements Short Swords 30 + Daggers 10, hiddenSkillBonuses: `{ "evasion": 0.05 }`.
+  - `ranger`: Adept tier, requirements Bows 30 + Daggers 10, hiddenSkillBonuses: `{ "evasion": 0.05 }`.
+  - `reaver`: Adept tier, requirements Greatswords 30 + Brute Lv 5, hiddenSkillBonuses: `{ "resilience": 0.05 }`.
+  - `shadow_initiate`: Adept tier, requirements Daggers 30 + Dark Magic 10, hiddenSkillBonuses: `{ "counterattack": 0.05 }`.
+  - `sharpshooter`: Adept tier, requirements Crossbows 30 + Bows 10, hiddenSkillBonuses: `{ "parry": 0.05 }`.
+  - `battle_medic`: Adept tier, requirements Mace 30 + Healing Magic 10, hiddenSkillBonuses: `{ "health_regen": 0.05 }`.
+- **2. 35-Skill Weapon Kits (`data/skills.json`)**:
+  - **Hoplite**: `phalanx_thrust` (1.5×), `shield_wall` (DT 0.7 for 6s), `spear_wall` (1.4× cleave 1.5, 100% slow), `rallying_cry` (taunt radius 3 for 5s + shield 20 self for 6s), `impaling_charge` (move dash range 4 + 2.8×, 40% stun).
+  - **Duelist**: `flurry_cut` (1.5× hits: 2), `sidestep` (Eva 0.35 for 6s), `disarming_strike` (1.2× + Weaken 0.25 for 5s), `exploit_opening` (1.8×, ×1.4 vs bleed), `thousand_cuts` (3.0× hits: 6, 80% bleed).
+  - **Ranger**: `swift_shot` (1.5×, range 4), `hunters_mark` (0.8× + Amp 0.15 for 8s, range 4), `multishot` (1.3× radius 1.5, range 4), `tumble` (Eva 0.35 for 6s), `barbed_arrow` (2.8×, 100% bleed, range 4).
+  - **Reaver**: `rending_swing` (1.8×), `bloodlust` (Dmg +0.30 for 6s), `whirlwind` (1.6× radius 1.5 center: "caster", 50% bleed), `savage_cleave` (1.6× cleave 1.5 + Amp 0.15 for 6s), `executioner` (3.2×, ×1.5 below 35% HP).
+  - **Shadow Initiate**: `shade_stab` (1.5× hits: 2), `veil` (Eva 0.40 for 4s), `shadow_strike` (move teleportBehind range 4 + 1.8×), `cursed_blade` (1.2×, 100% curse for 5s), `assassinate` (3.0×, ×1.5 vs curse).
+  - **Sharpshooter**: `piercing_bolt` (1.5× line maxTargets: 2, range 4), `steady_breath` (Dmg +0.25 for 8s), `crippling_bolt` (1.3×, 100% slow, range 4), `armor_piercer` (1.6×, 100% expose, range 4), `headshot` (3.2×, ×1.4 below 40% HP, range 4).
+  - **Battle Medic**: `mending_strike` (1.4× + heal 6 lowest ally), `field_dressing` (heal 25 lowest ally, range 4), `concussive_blow` (1.3×, 35% stun), `battle_triage` (HoT 5/s for 6s lowest ally, range 4), `rallying_hammer` (2.4× + heal 15 party).
+- **3. Script & Efficiency Retune (`scripts/skill_efficiency.ts`)**:
+  - Updated magic schools baseline calculation to compute direct damage from school baseDamage, bringing Frost Shard to +22.9% and Thorn Dart to +11.4%.
+  - Added Tier 1 Wave A audit section; verified 0 filler skills exceed the +25% cap against `blade_strike`.
+- **4. Test Suite (`test/class_t1_wave_a.test.ts`)**:
+  - Validated all 7 classes and 35 skills for effects, cadence, AI roles, and status effect integrity.
+  - Verified 60s simulated 3-enemy fight with ally at 60% HP: all 7 classes cast at least 4 of 5 skills (Hoplite 5/5, Duelist 5/5, Ranger 5/5, Reaver 5/5, Shadow Initiate 4/5, Sharpshooter 5/5, Battle Medic 5/5).
+  - Full test suite: 118/118 suites pass cleanly (`npm test -- --quiet`).
+
+
 
 

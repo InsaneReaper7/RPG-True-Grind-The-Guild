@@ -3493,7 +3493,7 @@
         {
           "type": "applyStatus",
           "status": "expose",
-          "chance": 1.0
+          "chance": 1
         }
       ],
       "ai": {
@@ -3931,7 +3931,7 @@
         {
           "type": "applyStatus",
           "status": "slow",
-          "chance": 1.0
+          "chance": 1
         }
       ],
       "ai": {
@@ -3958,7 +3958,7 @@
         {
           "type": "damage",
           "scaling": "spell",
-          "multiplier": 1.0,
+          "multiplier": 1,
           "area": {
             "shape": "radius",
             "radius": 2,
@@ -3968,7 +3968,7 @@
         {
           "type": "applyStatus",
           "status": "frostbite",
-          "chance": 1.0
+          "chance": 1
         }
       ],
       "ai": {
@@ -4094,7 +4094,7 @@
         {
           "type": "applyStatus",
           "status": "slow",
-          "chance": 1.0
+          "chance": 1
         }
       ],
       "ai": {
@@ -4198,7 +4198,7 @@
         {
           "type": "applyStatus",
           "status": "slow",
-          "chance": 1.0
+          "chance": 1
         }
       ],
       "ai": {
@@ -4266,7 +4266,7 @@
         {
           "type": "applyStatus",
           "status": "slow",
-          "chance": 1.0
+          "chance": 1
         }
       ],
       "ai": {
@@ -4325,7 +4325,7 @@
         {
           "type": "damage",
           "scaling": "spell",
-          "multiplier": 1.0,
+          "multiplier": 1,
           "area": {
             "shape": "radius",
             "radius": 1.5
@@ -4490,7 +4490,7 @@
         {
           "type": "damage",
           "scaling": "spell",
-          "multiplier": 1.0,
+          "multiplier": 1,
           "area": {
             "shape": "line",
             "maxTargets": 3
@@ -4697,6 +4697,1102 @@
       "ai": {
         "role": "rotation",
         "priority": 80
+      }
+    },
+    {
+      "id": "phalanx_thrust",
+      "name": "Phalanx Thrust",
+      "energyCost": 16,
+      "cooldownMs": 3000,
+      "targetType": "enemy",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "hoplite",
+          "value": 1
+        }
+      ],
+      "description": "A disciplined spear thrust delivering 150% weapon damage.",
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "weapon",
+          "multiplier": 1.5
+        }
+      ],
+      "ai": {
+        "role": "rotation",
+        "priority": 30
+      }
+    },
+    {
+      "id": "shield_wall",
+      "name": "Shield Wall",
+      "energyCost": 22,
+      "cooldownMs": 14000,
+      "targetType": "self",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "hoplite",
+          "value": 10
+        }
+      ],
+      "description": "Locks into a defensive phalanx stance, reducing incoming damage by 30% for 6s.",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "damageTakenMultiplier",
+          "value": 0.7,
+          "durationMs": 6000,
+          "target": "self"
+        }
+      ],
+      "ai": {
+        "role": "defensive",
+        "priority": 60
+      }
+    },
+    {
+      "id": "spear_wall",
+      "name": "Spear Wall",
+      "energyCost": 24,
+      "cooldownMs": 7000,
+      "targetType": "enemy",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "hoplite",
+          "value": 20
+        }
+      ],
+      "description": "Braces and thrusts against advancing enemies, cleaving for 140% weapon damage and slowing targets by 100% for 3s.",
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "weapon",
+          "multiplier": 1.4,
+          "area": {
+            "shape": "cleave",
+            "radius": 1.5
+          }
+        },
+        {
+          "type": "applyStatus",
+          "status": "slow",
+          "chance": 1,
+          "durationMs": 3000
+        }
+      ],
+      "ai": {
+        "role": "rotation",
+        "priority": 55,
+        "condition": {
+          "enemiesInRadius": 2
+        }
+      }
+    },
+    {
+      "id": "rallying_cry",
+      "name": "Rallying Cry",
+      "energyCost": 20,
+      "cooldownMs": 12000,
+      "targetType": "self",
+      "radiusTiles": 3,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "hoplite",
+          "value": 30
+        }
+      ],
+      "description": "Issues a commanding challenge, taunting all enemies within 3 tiles for 5s and granting self a 20 damage shield for 6s.",
+      "effects": [
+        {
+          "type": "taunt",
+          "radiusTiles": 3,
+          "durationMs": 5000
+        },
+        {
+          "type": "shield",
+          "shieldAmount": 20,
+          "durationMs": 6000,
+          "target": "self"
+        }
+      ],
+      "ai": {
+        "role": "defensive",
+        "priority": 65,
+        "condition": {
+          "enemiesInRadius": 1
+        }
+      }
+    },
+    {
+      "id": "impaling_charge",
+      "name": "Impaling Charge",
+      "energyCost": 36,
+      "cooldownMs": 15000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "hoplite",
+          "value": 40
+        }
+      ],
+      "description": "Dashes up to 4 tiles and drives spear forward for 280% weapon damage with a 40% chance to stun for 2s.",
+      "effects": [
+        {
+          "type": "move",
+          "moveType": "dash",
+          "rangeTiles": 4
+        },
+        {
+          "type": "damage",
+          "scaling": "weapon",
+          "multiplier": 2.8
+        },
+        {
+          "type": "applyStatus",
+          "status": "stun",
+          "chance": 0.4,
+          "durationMs": 2000
+        }
+      ],
+      "ai": {
+        "role": "opener",
+        "priority": 70
+      }
+    },
+    {
+      "id": "flurry_cut",
+      "name": "Flurry Cut",
+      "energyCost": 15,
+      "cooldownMs": 3000,
+      "targetType": "enemy",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "duelist",
+          "value": 1
+        }
+      ],
+      "description": "Delivers two rapid strikes for 150% total weapon damage.",
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "weapon",
+          "multiplier": 1.5,
+          "hits": 2
+        }
+      ],
+      "ai": {
+        "role": "rotation",
+        "priority": 30
+      }
+    },
+    {
+      "id": "sidestep",
+      "name": "Sidestep",
+      "energyCost": 18,
+      "cooldownMs": 14000,
+      "targetType": "self",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "duelist",
+          "value": 10
+        }
+      ],
+      "description": "Shifts footwork gracefully, gaining +35% evasion for 6s.",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "evasionBonus",
+          "value": 0.35,
+          "durationMs": 6000,
+          "target": "self"
+        }
+      ],
+      "ai": {
+        "role": "defensive",
+        "priority": 55
+      }
+    },
+    {
+      "id": "disarming_strike",
+      "name": "Disarming Strike",
+      "energyCost": 20,
+      "cooldownMs": 8000,
+      "targetType": "enemy",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "duelist",
+          "value": 20
+        }
+      ],
+      "description": "Strikes the foe weapon hand for 120% weapon damage, weakening their outgoing damage by 25% for 5s.",
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "weapon",
+          "multiplier": 1.2
+        },
+        {
+          "type": "debuff",
+          "stat": "damageReductionPercent",
+          "value": 0.25,
+          "durationMs": 5000,
+          "target": "enemy"
+        }
+      ],
+      "ai": {
+        "role": "rotation",
+        "priority": 50
+      }
+    },
+    {
+      "id": "exploit_opening",
+      "name": "Exploit Opening",
+      "energyCost": 26,
+      "cooldownMs": 9000,
+      "targetType": "enemy",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "duelist",
+          "value": 30
+        }
+      ],
+      "description": "Exploits a momentary vulnerability for 180% weapon damage, dealing 1.4x damage against bleeding targets.",
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "weapon",
+          "multiplier": 1.8,
+          "requiresTargetStatus": {
+            "status": "bleed",
+            "multiplier": 1.4
+          }
+        }
+      ],
+      "ai": {
+        "role": "rotation",
+        "priority": 55
+      }
+    },
+    {
+      "id": "thousand_cuts",
+      "name": "Thousand Cuts",
+      "energyCost": 38,
+      "cooldownMs": 15000,
+      "targetType": "enemy",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "duelist",
+          "value": 40
+        }
+      ],
+      "description": "Unleashes a blinding flurry of 6 strikes for 300% total weapon damage with an 80% chance to cause bleed for 6s.",
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "weapon",
+          "multiplier": 3,
+          "hits": 6
+        },
+        {
+          "type": "applyStatus",
+          "status": "bleed",
+          "chance": 0.8,
+          "durationMs": 6000
+        }
+      ],
+      "ai": {
+        "role": "finisher",
+        "priority": 75
+      }
+    },
+    {
+      "id": "swift_shot",
+      "name": "Swift Shot",
+      "energyCost": 16,
+      "cooldownMs": 3000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "ranger",
+          "value": 1
+        }
+      ],
+      "description": "Fires a quick arrow at up to 4 tiles for 150% weapon damage.",
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "weapon",
+          "multiplier": 1.5
+        }
+      ],
+      "ai": {
+        "role": "rotation",
+        "priority": 30
+      }
+    },
+    {
+      "id": "hunters_mark",
+      "name": "Hunter's Mark",
+      "energyCost": 18,
+      "cooldownMs": 10000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "ranger",
+          "value": 10
+        }
+      ],
+      "description": "Marks a quarry with an arrow for 80% weapon damage, amplifying damage taken by 15% for 8s.",
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "weapon",
+          "multiplier": 0.8
+        },
+        {
+          "type": "debuff",
+          "stat": "damageAmplificationPercent",
+          "value": 0.15,
+          "durationMs": 8000,
+          "target": "enemy"
+        }
+      ],
+      "ai": {
+        "role": "rotation",
+        "priority": 50
+      }
+    },
+    {
+      "id": "multishot",
+      "name": "Multishot",
+      "energyCost": 26,
+      "cooldownMs": 8000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "ranger",
+          "value": 20
+        }
+      ],
+      "description": "Nocks multiple arrows striking targets in a 1.5 tile radius for 130% weapon damage.",
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "weapon",
+          "multiplier": 1.3,
+          "area": {
+            "shape": "radius",
+            "radius": 1.5
+          }
+        }
+      ],
+      "ai": {
+        "role": "rotation",
+        "priority": 55,
+        "condition": {
+          "enemiesInRadius": 2
+        }
+      }
+    },
+    {
+      "id": "tumble",
+      "name": "Tumble",
+      "energyCost": 18,
+      "cooldownMs": 14000,
+      "targetType": "self",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "ranger",
+          "value": 30
+        }
+      ],
+      "description": "Dives and rolls away from danger, granting +35% evasion for 6s.",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "evasionBonus",
+          "value": 0.35,
+          "durationMs": 6000,
+          "target": "self"
+        }
+      ],
+      "ai": {
+        "role": "defensive",
+        "priority": 55
+      }
+    },
+    {
+      "id": "barbed_arrow",
+      "name": "Barbed Arrow",
+      "energyCost": 36,
+      "cooldownMs": 14000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "ranger",
+          "value": 40
+        }
+      ],
+      "description": "Looses a cruel barbed arrow for 280% weapon damage, inflicting bleed for 6s.",
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "weapon",
+          "multiplier": 2.8
+        },
+        {
+          "type": "applyStatus",
+          "status": "bleed",
+          "chance": 1,
+          "durationMs": 6000
+        }
+      ],
+      "ai": {
+        "role": "finisher",
+        "priority": 70
+      }
+    },
+    {
+      "id": "rending_swing",
+      "name": "Rending Swing",
+      "energyCost": 22,
+      "cooldownMs": 4000,
+      "targetType": "enemy",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "reaver",
+          "value": 1
+        }
+      ],
+      "description": "Heaves greatsword into the target for 180% weapon damage.",
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "weapon",
+          "multiplier": 1.8
+        }
+      ],
+      "ai": {
+        "role": "rotation",
+        "priority": 30
+      }
+    },
+    {
+      "id": "bloodlust",
+      "name": "Bloodlust",
+      "energyCost": 22,
+      "cooldownMs": 20000,
+      "targetType": "self",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "reaver",
+          "value": 10
+        }
+      ],
+      "description": "Taps into savage fury, increasing outgoing damage by 30% for 6s.",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "bonusDamagePercent",
+          "value": 0.3,
+          "durationMs": 6000,
+          "target": "self"
+        }
+      ],
+      "ai": {
+        "role": "defensive",
+        "priority": 60
+      }
+    },
+    {
+      "id": "whirlwind",
+      "name": "Whirlwind",
+      "energyCost": 30,
+      "cooldownMs": 8000,
+      "targetType": "enemy",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "reaver",
+          "value": 20
+        }
+      ],
+      "description": "Spins in a violent circle around the caster for 160% weapon damage to all nearby enemies within 1.5 tiles, with a 50% chance to bleed for 6s.",
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "weapon",
+          "multiplier": 1.6,
+          "area": {
+            "shape": "radius",
+            "radius": 1.5,
+            "center": "caster"
+          }
+        },
+        {
+          "type": "applyStatus",
+          "status": "bleed",
+          "chance": 0.5,
+          "durationMs": 6000
+        }
+      ],
+      "ai": {
+        "role": "rotation",
+        "priority": 60,
+        "condition": {
+          "enemiesInRadius": 2
+        }
+      }
+    },
+    {
+      "id": "savage_cleave",
+      "name": "Savage Cleave",
+      "energyCost": 26,
+      "cooldownMs": 9000,
+      "targetType": "enemy",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "reaver",
+          "value": 30
+        }
+      ],
+      "description": "Cleaves through targets for 160% weapon damage, amplifying damage taken by 15% for 6s.",
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "weapon",
+          "multiplier": 1.6,
+          "area": {
+            "shape": "cleave",
+            "radius": 1.5
+          }
+        },
+        {
+          "type": "debuff",
+          "stat": "damageAmplificationPercent",
+          "value": 0.15,
+          "durationMs": 6000,
+          "target": "enemy"
+        }
+      ],
+      "ai": {
+        "role": "rotation",
+        "priority": 50
+      }
+    },
+    {
+      "id": "executioner",
+      "name": "Executioner",
+      "energyCost": 40,
+      "cooldownMs": 16000,
+      "targetType": "enemy",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "reaver",
+          "value": 40
+        }
+      ],
+      "description": "Delivers a crushing execution strike for 320% weapon damage, dealing 1.5x damage if target is below 35% HP.",
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "weapon",
+          "multiplier": 3.2,
+          "lowHealthBonus": {
+            "threshold": 0.35,
+            "multiplier": 1.5
+          }
+        }
+      ],
+      "ai": {
+        "role": "finisher",
+        "priority": 75
+      }
+    },
+    {
+      "id": "shade_stab",
+      "name": "Shade Stab",
+      "energyCost": 15,
+      "cooldownMs": 3000,
+      "targetType": "enemy",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "shadow_initiate",
+          "value": 1
+        }
+      ],
+      "description": "Strikes twice from the dark for 150% total weapon damage.",
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "weapon",
+          "multiplier": 1.5,
+          "hits": 2
+        }
+      ],
+      "ai": {
+        "role": "rotation",
+        "priority": 30
+      }
+    },
+    {
+      "id": "veil",
+      "name": "Veil",
+      "energyCost": 18,
+      "cooldownMs": 14000,
+      "targetType": "self",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "shadow_initiate",
+          "value": 10
+        }
+      ],
+      "description": "Shrouds self in shadows, gaining +40% evasion for 4s.",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "evasionBonus",
+          "value": 0.4,
+          "durationMs": 4000,
+          "target": "self"
+        }
+      ],
+      "ai": {
+        "role": "defensive",
+        "priority": 55
+      }
+    },
+    {
+      "id": "shadow_strike",
+      "name": "Shadow Strike",
+      "energyCost": 22,
+      "cooldownMs": 10000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "shadow_initiate",
+          "value": 20
+        }
+      ],
+      "description": "Teleports behind an enemy within 4 tiles and strikes for 180% weapon damage.",
+      "effects": [
+        {
+          "type": "move",
+          "moveType": "teleportBehind",
+          "rangeTiles": 4
+        },
+        {
+          "type": "damage",
+          "scaling": "weapon",
+          "multiplier": 1.8
+        }
+      ],
+      "ai": {
+        "role": "gapCloser",
+        "priority": 60
+      }
+    },
+    {
+      "id": "cursed_blade",
+      "name": "Cursed Blade",
+      "energyCost": 22,
+      "cooldownMs": 9000,
+      "targetType": "enemy",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "shadow_initiate",
+          "value": 30
+        }
+      ],
+      "description": "Slices foe with an eldritch blade for 120% weapon damage, inflicting curse for 5s.",
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "weapon",
+          "multiplier": 1.2
+        },
+        {
+          "type": "applyStatus",
+          "status": "curse",
+          "chance": 1,
+          "durationMs": 5000
+        }
+      ],
+      "ai": {
+        "role": "rotation",
+        "priority": 50
+      }
+    },
+    {
+      "id": "assassinate",
+      "name": "Assassinate",
+      "energyCost": 38,
+      "cooldownMs": 15000,
+      "targetType": "enemy",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "shadow_initiate",
+          "value": 40
+        }
+      ],
+      "description": "Strikes a lethal blow for 300% weapon damage, dealing 1.5x damage against cursed targets.",
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "weapon",
+          "multiplier": 3,
+          "requiresTargetStatus": {
+            "status": "curse",
+            "multiplier": 1.5
+          }
+        }
+      ],
+      "ai": {
+        "role": "finisher",
+        "priority": 75
+      }
+    },
+    {
+      "id": "piercing_bolt",
+      "name": "Piercing Bolt",
+      "energyCost": 18,
+      "cooldownMs": 3000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "sharpshooter",
+          "value": 1
+        }
+      ],
+      "description": "Looses a penetrating bolt piercing up to 2 enemies in a line for 150% weapon damage.",
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "weapon",
+          "multiplier": 1.5,
+          "area": {
+            "shape": "line",
+            "maxTargets": 2
+          }
+        }
+      ],
+      "ai": {
+        "role": "rotation",
+        "priority": 30
+      }
+    },
+    {
+      "id": "steady_breath",
+      "name": "Steady Breath",
+      "energyCost": 18,
+      "cooldownMs": 20000,
+      "targetType": "self",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "sharpshooter",
+          "value": 10
+        }
+      ],
+      "description": "Calms breathing and steadies aim, increasing outgoing damage by 25% for 8s.",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "bonusDamagePercent",
+          "value": 0.25,
+          "durationMs": 8000,
+          "target": "self"
+        }
+      ],
+      "ai": {
+        "role": "defensive",
+        "priority": 55
+      }
+    },
+    {
+      "id": "crippling_bolt",
+      "name": "Crippling Bolt",
+      "energyCost": 20,
+      "cooldownMs": 8000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "sharpshooter",
+          "value": 20
+        }
+      ],
+      "description": "Fires a heavy bolt at the target for 130% weapon damage, slowing them by 100% for 3s.",
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "weapon",
+          "multiplier": 1.3
+        },
+        {
+          "type": "applyStatus",
+          "status": "slow",
+          "chance": 1,
+          "durationMs": 3000
+        }
+      ],
+      "ai": {
+        "role": "rotation",
+        "priority": 50
+      }
+    },
+    {
+      "id": "armor_piercer",
+      "name": "Armor Piercer",
+      "energyCost": 26,
+      "cooldownMs": 10000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "sharpshooter",
+          "value": 30
+        }
+      ],
+      "description": "Fires an armor-shattering bolt for 160% weapon damage, exposing the target for 6s.",
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "weapon",
+          "multiplier": 1.6
+        },
+        {
+          "type": "applyStatus",
+          "status": "expose",
+          "chance": 1,
+          "durationMs": 6000
+        }
+      ],
+      "ai": {
+        "role": "opener",
+        "priority": 60
+      }
+    },
+    {
+      "id": "headshot",
+      "name": "Headshot",
+      "energyCost": 40,
+      "cooldownMs": 16000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "sharpshooter",
+          "value": 40
+        }
+      ],
+      "description": "Precise lethal bolt for 320% weapon damage, dealing 1.4x damage if target is below 40% HP.",
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "weapon",
+          "multiplier": 3.2,
+          "lowHealthBonus": {
+            "threshold": 0.4,
+            "multiplier": 1.4
+          }
+        }
+      ],
+      "ai": {
+        "role": "finisher",
+        "priority": 75
+      }
+    },
+    {
+      "id": "mending_strike",
+      "name": "Mending Strike",
+      "energyCost": 18,
+      "cooldownMs": 3000,
+      "targetType": "enemy",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "battle_medic",
+          "value": 1
+        }
+      ],
+      "description": "Strikes an enemy for 140% weapon damage while channelling 6 healing to the lowest health ally.",
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "weapon",
+          "multiplier": 1.4
+        },
+        {
+          "type": "heal",
+          "amount": 6,
+          "target": "lowestAlly"
+        }
+      ],
+      "ai": {
+        "role": "rotation",
+        "priority": 30
+      }
+    },
+    {
+      "id": "field_dressing",
+      "name": "Field Dressing",
+      "energyCost": 22,
+      "cooldownMs": 6000,
+      "targetType": "ally",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "battle_medic",
+          "value": 10
+        }
+      ],
+      "description": "Applies swift frontline bandages, restoring 25 HP to the lowest health ally.",
+      "effects": [
+        {
+          "type": "heal",
+          "amount": 25,
+          "target": "lowestAlly"
+        }
+      ],
+      "ai": {
+        "role": "support",
+        "priority": 70,
+        "condition": {
+          "allyHpBelow": 0.7
+        }
+      }
+    },
+    {
+      "id": "concussive_blow",
+      "name": "Concussive Blow",
+      "energyCost": 22,
+      "cooldownMs": 8000,
+      "targetType": "enemy",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "battle_medic",
+          "value": 20
+        }
+      ],
+      "description": "Strikes a concussive blow for 130% weapon damage with a 35% chance to stun for 2s.",
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "weapon",
+          "multiplier": 1.3
+        },
+        {
+          "type": "applyStatus",
+          "status": "stun",
+          "chance": 0.35,
+          "durationMs": 2000
+        }
+      ],
+      "ai": {
+        "role": "rotation",
+        "priority": 50
+      }
+    },
+    {
+      "id": "battle_triage",
+      "name": "Battle Triage",
+      "energyCost": 22,
+      "cooldownMs": 10000,
+      "targetType": "ally",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "battle_medic",
+          "value": 30
+        }
+      ],
+      "description": "Channels sustaining triage to the lowest health ally, restoring 5 HP per second for 6s.",
+      "effects": [
+        {
+          "type": "healOverTime",
+          "amountPerTick": 5,
+          "durationMs": 6000,
+          "tickIntervalMs": 1000,
+          "target": "lowestAlly"
+        }
+      ],
+      "ai": {
+        "role": "support",
+        "priority": 65,
+        "condition": {
+          "allyHpBelow": 0.7
+        }
+      }
+    },
+    {
+      "id": "rallying_hammer",
+      "name": "Rallying Hammer",
+      "energyCost": 40,
+      "cooldownMs": 18000,
+      "targetType": "enemy",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "battle_medic",
+          "value": 40
+        }
+      ],
+      "description": "Slams weapon into enemy for 240% weapon damage while inspiring the party with 15 healing.",
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "weapon",
+          "multiplier": 2.4
+        },
+        {
+          "type": "heal",
+          "amount": 15,
+          "target": "party"
+        }
+      ],
+      "ai": {
+        "role": "rotation",
+        "priority": 75
       }
     }
   ]

@@ -789,6 +789,132 @@
       "hiddenSkillBonuses": {
         "evasion": 0.05
       }
+    },
+    {
+      "id": "duelist",
+      "name": "Duelist",
+      "tier": "adept",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "short_swords",
+          "value": 30
+        },
+        {
+          "type": "proficiency",
+          "target": "daggers",
+          "value": 10
+        }
+      ],
+      "fantasy": "Fast, evasive close-range fighter",
+      "hiddenSkillBonuses": {
+        "evasion": 0.05
+      }
+    },
+    {
+      "id": "ranger",
+      "name": "Ranger",
+      "tier": "adept",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "bows",
+          "value": 30
+        },
+        {
+          "type": "proficiency",
+          "target": "daggers",
+          "value": 10
+        }
+      ],
+      "fantasy": "Mobile wilderness scout",
+      "hiddenSkillBonuses": {
+        "evasion": 0.05
+      }
+    },
+    {
+      "id": "reaver",
+      "name": "Reaver",
+      "tier": "adept",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "greatswords",
+          "value": 30
+        },
+        {
+          "type": "classLevel",
+          "target": "brute",
+          "value": 5
+        }
+      ],
+      "fantasy": "Heavy-hitting brawler",
+      "hiddenSkillBonuses": {
+        "resilience": 0.05
+      }
+    },
+    {
+      "id": "shadow_initiate",
+      "name": "Shadow Initiate",
+      "tier": "adept",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "daggers",
+          "value": 30
+        },
+        {
+          "type": "proficiency",
+          "target": "dark_magic",
+          "value": 10
+        }
+      ],
+      "fantasy": "Apprentice assassin",
+      "hiddenSkillBonuses": {
+        "counterattack": 0.05
+      }
+    },
+    {
+      "id": "sharpshooter",
+      "name": "Sharpshooter",
+      "tier": "adept",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "crossbows",
+          "value": 30
+        },
+        {
+          "type": "proficiency",
+          "target": "bows",
+          "value": 10
+        }
+      ],
+      "fantasy": "Precision trainee",
+      "hiddenSkillBonuses": {
+        "parry": 0.05
+      }
+    },
+    {
+      "id": "battle_medic",
+      "name": "Battle Medic",
+      "tier": "adept",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "mace",
+          "value": 30
+        },
+        {
+          "type": "proficiency",
+          "target": "healing_magic",
+          "value": 10
+        }
+      ],
+      "fantasy": "Frontline healer-in-training",
+      "hiddenSkillBonuses": {
+        "health_regen": 0.05
+      }
     }
   ]
 }
