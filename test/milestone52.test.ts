@@ -586,6 +586,8 @@ async function runMilestone52Tests() {
   // TEST 5: Combat Execution — Swordsman Skills
   // ============================================================================
   console.log('--- TEST 5: Combat Execution — Swordsman Skills ---');
+  const origRandom = Math.random;
+  Math.random = () => 0.01; // Deterministic hit rolls under D2 accuracy rules
   {
     const scene = createMockScene();
     const combat = new CombatSystem(scene);
@@ -750,6 +752,7 @@ async function runMilestone52Tests() {
     assert.ok(enemy.hp < hpBeforeDecap, 'Enemy took massive execution damage from Heavenly Decapitation');
 
     console.log('✓ PASS: All 5 Samurai skills execute with damage mitigation, deflection, and capped bonus energy.\n');
+    Math.random = origRandom;
   }
 
   // ============================================================================

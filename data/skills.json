@@ -95,7 +95,18 @@
       "ai": {
         "role": "gapCloser",
         "priority": 60
-      }
+      },
+      "effects": [
+        {
+          "type": "move",
+          "moveType": "dash"
+        },
+        {
+          "type": "damage",
+          "multiplier": 1.6,
+          "scaling": "weapon"
+        }
+      ]
     },
     {
       "id": "blade_dance",
@@ -117,7 +128,15 @@
       "ai": {
         "role": "finisher",
         "priority": 75
-      }
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 3.2,
+          "hits": 4,
+          "scaling": "weapon"
+        }
+      ]
     },
     {
       "id": "first_aid",
@@ -141,7 +160,14 @@
         "condition": {
           "allyHpBelow": 0.7
         }
-      }
+      },
+      "effects": [
+        {
+          "type": "heal",
+          "amount": 20,
+          "target": "lowestAlly"
+        }
+      ]
     },
     {
       "id": "smite",
@@ -162,7 +188,15 @@
       "ai": {
         "role": "opener",
         "priority": 50
-      }
+      },
+      "vfx": "holy_smite",
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 1.8,
+          "scaling": "spell"
+        }
+      ]
     },
     {
       "id": "cleanse",
@@ -185,7 +219,13 @@
         "condition": {
           "requiresHarmfulStatus": true
         }
-      }
+      },
+      "effects": [
+        {
+          "type": "cleanse",
+          "target": "lowestAlly"
+        }
+      ]
     },
     {
       "id": "guardian_ward",
@@ -207,7 +247,15 @@
       "ai": {
         "role": "support",
         "priority": 75
-      }
+      },
+      "effects": [
+        {
+          "type": "shield",
+          "shieldAmount": 35,
+          "durationMs": 8000,
+          "target": "lowestAlly"
+        }
+      ]
     },
     {
       "id": "holy_nova",
@@ -232,7 +280,25 @@
         "condition": {
           "allyHpBelow": 0.7
         }
-      }
+      },
+      "vfx": "holy_nova",
+      "effects": [
+        {
+          "type": "heal",
+          "amount": 30,
+          "target": "party"
+        },
+        {
+          "type": "damage",
+          "scaling": "spell",
+          "multiplier": 2,
+          "area": {
+            "shape": "radius",
+            "radius": 4,
+            "center": "caster"
+          }
+        }
+      ]
     },
     {
       "id": "shield_bash",
@@ -253,7 +319,20 @@
       "ai": {
         "role": "rotation",
         "priority": 45
-      }
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 1.2,
+          "scaling": "weapon"
+        },
+        {
+          "type": "applyStatus",
+          "status": "stun",
+          "chance": 1,
+          "durationMs": 2000
+        }
+      ]
     },
     {
       "id": "guard_up",
@@ -295,7 +374,14 @@
       "ai": {
         "role": "defensive",
         "priority": 80
-      }
+      },
+      "effects": [
+        {
+          "type": "taunt",
+          "radiusTiles": 5,
+          "durationMs": 6000
+        }
+      ]
     },
     {
       "id": "retaliate",
@@ -388,7 +474,14 @@
         "condition": {
           "allyHpBelow": 0.7
         }
-      }
+      },
+      "effects": [
+        {
+          "type": "heal",
+          "amount": 35,
+          "target": "lowestAlly"
+        }
+      ]
     },
     {
       "id": "regenerate",
@@ -414,7 +507,16 @@
         "condition": {
           "allyHpBelow": 0.7
         }
-      }
+      },
+      "effects": [
+        {
+          "type": "healOverTime",
+          "amountPerTick": 6,
+          "durationMs": 8000,
+          "tickIntervalMs": 1000,
+          "target": "lowestAlly"
+        }
+      ]
     },
     {
       "id": "barrier",
@@ -436,7 +538,15 @@
       "ai": {
         "role": "support",
         "priority": 70
-      }
+      },
+      "effects": [
+        {
+          "type": "shield",
+          "shieldAmount": 50,
+          "durationMs": 10000,
+          "target": "lowestAlly"
+        }
+      ]
     },
     {
       "id": "blessed_weapons",
@@ -499,7 +609,15 @@
       "ai": {
         "role": "rotation",
         "priority": 25
-      }
+      },
+      "floatColor": "#ea580c",
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 2.5,
+          "scaling": "weapon"
+        }
+      ]
     },
     {
       "id": "quickshot",
@@ -541,7 +659,15 @@
       "ai": {
         "role": "opener",
         "priority": 55
-      }
+      },
+      "effects": [
+        {
+          "type": "applyStatus",
+          "status": "expose",
+          "chance": 1,
+          "durationMs": 6000
+        }
+      ]
     },
     {
       "id": "evasive_roll",
@@ -583,7 +709,20 @@
       "ai": {
         "role": "rotation",
         "priority": 40
-      }
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 1.2,
+          "scaling": "weapon"
+        },
+        {
+          "type": "applyStatus",
+          "status": "slow",
+          "chance": 1,
+          "durationMs": 4000
+        }
+      ]
     },
     {
       "id": "kill_shot",
@@ -736,7 +875,14 @@
       "ai": {
         "role": "rotation",
         "priority": 30
-      }
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 1.4,
+          "scaling": "weapon"
+        }
+      ]
     },
     {
       "id": "quick_cut",
@@ -757,7 +903,14 @@
       "ai": {
         "role": "rotation",
         "priority": 35
-      }
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 1.5,
+          "scaling": "weapon"
+        }
+      ]
     },
     {
       "id": "defensive_posture",
@@ -798,7 +951,20 @@
       "ai": {
         "role": "rotation",
         "priority": 40
-      }
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 1.7,
+          "scaling": "weapon"
+        },
+        {
+          "type": "applyStatus",
+          "status": "bleed",
+          "chance": 1,
+          "durationMs": 6000
+        }
+      ]
     },
     {
       "id": "cross_cut",
@@ -818,7 +984,14 @@
       "ai": {
         "role": "finisher",
         "priority": 50
-      }
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 2.6,
+          "scaling": "weapon"
+        }
+      ]
     },
     {
       "id": "iaido_quickdraw",
@@ -839,7 +1012,14 @@
       "ai": {
         "role": "opener",
         "priority": 60
-      }
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 1.5,
+          "scaling": "weapon"
+        }
+      ]
     },
     {
       "id": "crimson_slash",
@@ -860,7 +1040,20 @@
       "ai": {
         "role": "rotation",
         "priority": 40
-      }
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 1.7,
+          "scaling": "weapon"
+        },
+        {
+          "type": "applyStatus",
+          "status": "bleed",
+          "chance": 1,
+          "durationMs": 6000
+        }
+      ]
     },
     {
       "id": "flowing_step",
@@ -882,7 +1075,25 @@
       "ai": {
         "role": "defensive",
         "priority": 55
-      }
+      },
+      "effects": [
+        {
+          "type": "move",
+          "moveType": "dash"
+        },
+        {
+          "type": "damage",
+          "multiplier": 1.4,
+          "scaling": "weapon"
+        },
+        {
+          "type": "buff",
+          "stat": "evasionBonus",
+          "value": 0.25,
+          "durationMs": 4000,
+          "target": "self"
+        }
+      ]
     },
     {
       "id": "bloodseeker_riposte",
@@ -902,7 +1113,18 @@
       "ai": {
         "role": "rotation",
         "priority": 45
-      }
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 2,
+          "scaling": "weapon",
+          "requiresTargetStatus": {
+            "status": "bleed",
+            "multiplier": 1.5
+          }
+        }
+      ]
     },
     {
       "id": "dragons_flurry",
@@ -924,7 +1146,21 @@
       "ai": {
         "role": "finisher",
         "priority": 70
-      }
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 3.2,
+          "hits": 4,
+          "scaling": "weapon"
+        },
+        {
+          "type": "applyStatus",
+          "status": "bleed",
+          "chance": 1,
+          "durationMs": 6000
+        }
+      ]
     },
     {
       "id": "overhead_cleave",
@@ -944,7 +1180,14 @@
       "ai": {
         "role": "rotation",
         "priority": 40
-      }
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 1.7,
+          "scaling": "weapon"
+        }
+      ]
     },
     {
       "id": "iron_posture",
@@ -985,7 +1228,20 @@
       "ai": {
         "role": "rotation",
         "priority": 35
-      }
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 1.8,
+          "scaling": "weapon"
+        },
+        {
+          "type": "applyStatus",
+          "status": "stun",
+          "chance": 0.3,
+          "durationMs": 2000
+        }
+      ]
     },
     {
       "id": "kenjutsu_deflection",
@@ -1155,7 +1411,14 @@
       "ai": {
         "role": "opener",
         "priority": 60
-      }
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 1.4,
+          "scaling": "weapon"
+        }
+      ]
     },
     {
       "id": "rapid_crank",
@@ -1177,7 +1440,14 @@
       "ai": {
         "role": "rotation",
         "priority": 35
-      }
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 1.5,
+          "scaling": "weapon"
+        }
+      ]
     },
     {
       "id": "arbalest_brace",
@@ -1219,7 +1489,20 @@
       "ai": {
         "role": "rotation",
         "priority": 40
-      }
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 1.8,
+          "scaling": "weapon"
+        },
+        {
+          "type": "applyStatus",
+          "status": "slow",
+          "chance": 1,
+          "durationMs": 3000
+        }
+      ]
     },
     {
       "id": "kinetic_overdraw",
@@ -1240,7 +1523,14 @@
       "ai": {
         "role": "finisher",
         "priority": 65
-      }
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 2.6,
+          "scaling": "weapon"
+        }
+      ]
     },
     {
       "id": "arcane_bolt",
@@ -1496,7 +1786,16 @@
       "ai": {
         "role": "defensive",
         "priority": 60
-      }
+      },
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "evasionBonus",
+          "value": 0.35,
+          "durationMs": 4000,
+          "target": "self"
+        }
+      ]
     },
     {
       "id": "fan_of_knives",
@@ -1715,7 +2014,7 @@
           "value": 40
         }
       ],
-      "description": "Calls down an inferno erupting across a 3-tile radius, dealing 220% spell damage and igniting all caught in the blast.",
+      "description": "Calls down an inferno erupting across a 3-tile radius, dealing 220% spell damage and igniting the main target.",
       "ai": {
         "role": "rotation",
         "priority": 80,
@@ -2179,7 +2478,7 @@
           "value": 40
         }
       ],
-      "description": "Crash the greatsword into the ground dealing 240% weapon damage to all enemies within 2 tiles with a 25% chance to stun for 2s.",
+      "description": "Crash the greatsword into the ground dealing 240% weapon damage to all enemies within 2 tiles with a 25% chance to stun the main target for 2s.",
       "effects": [
         {
           "type": "damage",
@@ -5240,7 +5539,7 @@
           "value": 20
         }
       ],
-      "description": "Spins in a violent circle around the caster for 160% weapon damage to all nearby enemies within 1.5 tiles, with a 50% chance to bleed for 6s.",
+      "description": "Spins in a violent circle around the caster for 160% weapon damage to all nearby enemies within 1.5 tiles, with a 50% chance to bleed the main target for 6s.",
       "effects": [
         {
           "type": "damage",

@@ -438,6 +438,9 @@ async function runMilestone22Tests() {
 
     const enemyHpBefore = enemy.hp;
 
+    const origRandom = Math.random;
+    Math.random = () => 0.01; // Deterministic hit roll under D2 accuracy rules
+
     // Cast Fleche from 4 tiles away
     const castSuccess = combat.castSkill(player, 'fleche', enemy);
     assert.equal(castSuccess, true, 'Fleche successfully cast from 4 tiles away');
@@ -460,6 +463,7 @@ async function runMilestone22Tests() {
     assert.equal(outOfRangeCast, false, 'Fleche cast fails when enemy is beyond max range (5 tiles)');
 
     console.log('✓ PASS: Fleche instantly closes distance up to 5 tiles and deals damage on arrival.');
+    Math.random = origRandom;
   }
 
   // ============================================================================
@@ -480,6 +484,9 @@ async function runMilestone22Tests() {
     // Case A: High-HP enemy takes full 4 strikes
     const beefyEnemy = createMockEnemy('boss', 'Boss Golem', 10, 11, 500);
     const combatA = new CombatSystem(scene, [player], [beefyEnemy], pathfinder);
+
+    const origRand6 = Math.random;
+    Math.random = () => 0.01; // Deterministic hit rolls under D2 accuracy rules
 
     let hitsReceived = 0;
     const origTakeDamage = beefyEnemy.takeDamage;
@@ -514,6 +521,7 @@ async function runMilestone22Tests() {
     assert.equal(frailEnemy.state, 'dead', 'Frail enemy was killed mid-combo');
 
     console.log('✓ PASS: Blade Dance delivers 4 distinct hits and cleanly terminates combo if target dies.');
+    Math.random = origRand6;
   }
 
   // ============================================================================

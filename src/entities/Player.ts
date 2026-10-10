@@ -1083,20 +1083,22 @@ export class Player extends Entity {
     if (now - lastUsed < skillDef.cooldownMs) return false;
     if (this.energy < skillDef.energyCost) return false;
 
-    if (skillDef.targetType === 'ally' || (skillDef.healAmount && skillDef.healAmount > 0)) {
+    if (skillDef.effects && skillDef.effects.length > 0) {
       const targetAlly = (target as Player) || this;
       this.energy -= skillDef.energyCost;
       this.lastSkillUseTimes.set(skillId, now);
-      if (skillId === 'cleanse') {
-        targetAlly.removeHarmfulStatusEffects();
-      } else if (skillId === 'guardian_ward' || skillId === 'barrier') {
-        const effDef = dataLoader.getStatusEffect(skillId);
-        if (effDef) targetAlly.applyStatusEffect(effDef);
-      } else if (skillId === 'regenerate') {
-        const effDef = dataLoader.getStatusEffect('regenerate');
-        if (effDef) targetAlly.applyStatusEffect(effDef);
-      } else {
-        targetAlly.heal(skillDef.healAmount || 20);
+      for (const eff of skillDef.effects) {
+        if (eff.type === 'cleanse') {
+          targetAlly.removeHarmfulStatusEffects();
+        } else if (eff.type === 'shield') {
+          const effDef = dataLoader.getStatusEffect(skillId);
+          if (effDef) targetAlly.applyStatusEffect(effDef);
+        } else if (eff.type === 'healOverTime') {
+          const effDef = dataLoader.getStatusEffect(skillId) || dataLoader.getStatusEffect('regenerate');
+          if (effDef) targetAlly.applyStatusEffect(effDef);
+        } else if (eff.type === 'heal') {
+          targetAlly.heal(eff.amount || 20);
+        }
       }
       return true;
     }

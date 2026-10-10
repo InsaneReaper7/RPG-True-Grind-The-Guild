@@ -552,6 +552,9 @@ async function runMilestone55Tests() {
     const enemy = createMockEnemy('wolf', 'Forest Wolf', 5, 1, 1000); // 4 tiles away
     const combatSystem = new CombatSystem(scene, [player], [enemy], scene.pathfinder);
 
+    const origRandom = Math.random;
+    Math.random = () => 0.1; // Deterministic hit rolls under D2 accuracy rules
+
     // 1. Primed Shot (140% damage at range)
     player.energy = 100;
     const hpBeforePrimed = enemy.hp;
@@ -595,6 +598,7 @@ async function runMilestone55Tests() {
     assert.equal(player.energy, 70, 'Kinetic Overdraw deducted 30 energy');
 
     console.log('✓ PASS: All 5 Loader skills cast successfully with authentic mechanical effects, damage, and statuses.\n');
+    Math.random = origRandom;
   }
 
   console.log('================================================================');

@@ -763,6 +763,9 @@ export interface SkillDef {
   bonusDamagePercent?: number;
   energySiphonOnHit?: number;
   parryBonus?: number;
+  floatColor?: string;
+  vfx?: string;
+  proficiencyExp?: { proficiencyId: string; amount: number };
 }
 
 export interface SkillsData {

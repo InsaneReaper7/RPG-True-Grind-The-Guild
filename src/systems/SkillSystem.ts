@@ -90,8 +90,16 @@ export class SkillSystem {
     const effBase = rawBase * moodTier.combatDamageMultiplier;
 
     // 7. Execute effects in order
+    if (skillDef.vfx) {
+      this.playVfx(skillDef.vfx, caster, target, skillDef);
+    }
+
+    let lastWeaponAttackHit: boolean | null = null;
     for (const effect of skillDef.effects || []) {
-      this.executeEffect(effect, caster, skillDef, target, effBase, weaponId, time);
+      const res = this.executeEffect(effect, caster, skillDef, target, effBase, weaponId, time, lastWeaponAttackHit);
+      if (typeof res === 'boolean') {
+        lastWeaponAttackHit = res;
+      }
     }
 
     // 8. Visual feedback and proficiency EXP
@@ -101,11 +109,61 @@ export class SkillSystem {
       (e) => e.type === 'damage' && e.scaling === 'weapon'
     );
     if (!hasWeaponDamageEffect) {
-      const profToAward = weaponId;
-      caster.progression.addProficiencyExp(profToAward, 2);
+      let profToAward = weaponId;
+      let expAmount = 2;
+      if (skillDef.proficiencyExp) {
+        profToAward = skillDef.proficiencyExp.proficiencyId;
+        expAmount = skillDef.proficiencyExp.amount;
+      } else {
+        const reqClass = skillDef.requirements?.find((r) => r.type === 'classLevel')?.target;
+        if (reqClass === 'combat_medic' || reqClass === 'restoration_mage' || reqClass === 'medic') {
+          profToAward = 'healing_magic';
+          if (skillDef.id === 'holy_nova') expAmount = 3;
+        } else if (reqClass === 'arcane_initiate') {
+          profToAward = 'arcane_magic';
+          if (skillDef.id === 'arcane_nova') expAmount = 4;
+        }
+      }
+      caster.progression.addProficiencyExp(profToAward, expAmount);
     }
 
     return true;
+  }
+
+  private playVfx(
+    vfx: string,
+    caster: Player,
+    target?: Entity | Player,
+    skillDef?: SkillDef
+  ): void {
+    const isEnemyLike = (t: any): boolean => !!(t && (t instanceof Enemy || (t.gridPos && typeof t.takeDamage === 'function')));
+    const enemyTarget: any = isEnemyLike(target) ? target : (isEnemyLike(caster.targetEntity) ? caster.targetEntity : null);
+
+    switch (vfx) {
+      case 'holy_smite':
+        if (enemyTarget) {
+          this.combatSystem.createHolySmiteEffect(caster.x, caster.y, enemyTarget.x, enemyTarget.y);
+        }
+        break;
+      case 'holy_nova': {
+        const radius = (skillDef?.radiusTiles ?? 4) * caster.tileSize;
+        this.combatSystem.createHolyNovaEffect(caster.x, caster.y, radius);
+        this.combatSystem.createFloatingText(caster.x, caster.y - 15, 'HOLY NOVA!', '#facc15');
+        break;
+      }
+      case 'arcane_bolt':
+        if (enemyTarget) {
+          this.combatSystem.createArcaneBoltEffect(caster.x, caster.y, enemyTarget.x, enemyTarget.y);
+        }
+        break;
+      case 'arcane_nova': {
+        const radius = (skillDef?.radiusTiles ?? 4) * caster.tileSize;
+        this.combatSystem.createArcaneNovaEffect(caster.x, caster.y, radius);
+        break;
+      }
+      default:
+        break;
+    }
   }
 
   private executeEffect(
@@ -115,32 +173,17 @@ export class SkillSystem {
     target: Entity | Player | undefined,
     effBase: number,
     weaponId: string,
-    time: number
-  ): void {
+    time: number,
+    lastWeaponAttackHit?: boolean | null
+  ): boolean | void {
     const dataLoader = DataLoader.getInstance();
 
     switch (effect.type) {
       case 'damage': {
         const enemyTarget: any = (target && typeof (target as any).takeDamage === 'function' ? target : null) ||
           (caster.targetEntity && typeof (caster.targetEntity as any).takeDamage === 'function' ? caster.targetEntity : null);
-        if (!enemyTarget || enemyTarget.isDowned?.() || enemyTarget.state === 'dead' || enemyTarget.state === 'downed') return;
 
         let totalMultiplier = effect.multiplier;
-
-        // Execute / low health bonus
-        if (effect.lowHealthBonus) {
-          const ratio = enemyTarget.hp / enemyTarget.maxHp;
-          if (ratio <= effect.lowHealthBonus.threshold) {
-            totalMultiplier *= effect.lowHealthBonus.multiplier;
-          }
-        }
-
-        // Status bonus (e.g. bleeding target takes bonus damage)
-        if (effect.requiresTargetStatus) {
-          if (enemyTarget.hasStatusEffect(effect.requiresTargetStatus.status)) {
-            totalMultiplier *= effect.requiresTargetStatus.multiplier;
-          }
-        }
 
         // Overcharge multiplier if spell
         let overchargeMult = 1.0;
@@ -169,7 +212,41 @@ export class SkillSystem {
         // Blessed weapons holy bonus if caster has it
         if (caster.hasStatusEffect('blessed_weapons')) {
           hitDamage += 5;
-          this.combatSystem.createFloatingText(enemyTarget.x, enemyTarget.y - 24, '+5 HOLY!', '#facc15');
+          if (enemyTarget) {
+            this.combatSystem.createFloatingText(enemyTarget.x, enemyTarget.y - 24, '+5 HOLY!', '#facc15');
+          }
+        }
+
+        if (!enemyTarget || enemyTarget.isDowned?.() || enemyTarget.state === 'dead' || enemyTarget.state === 'downed') {
+          if (effect.area && effect.area.center === 'caster') {
+            this.executeAreaDamage(effect.area, caster, null, hitDamage, weaponId, time, skillDef);
+          }
+          return;
+        }
+
+        // Execute / low health bonus
+        if (effect.lowHealthBonus) {
+          const ratio = enemyTarget.hp / enemyTarget.maxHp;
+          if (ratio <= effect.lowHealthBonus.threshold) {
+            totalMultiplier *= effect.lowHealthBonus.multiplier;
+          }
+        }
+
+        // Status bonus (e.g. bleeding target takes bonus damage)
+        if (effect.requiresTargetStatus) {
+          if (enemyTarget.hasStatusEffect(effect.requiresTargetStatus.status)) {
+            totalMultiplier *= effect.requiresTargetStatus.multiplier;
+          }
+        }
+
+        if (effect.lowHealthBonus || effect.requiresTargetStatus) {
+          hitDamage = (effBase * totalMultiplier * overchargeMult) + flatBonus;
+          if (statusBonusDamagePercent > 0) {
+            hitDamage *= (1 + statusBonusDamagePercent);
+          }
+          if (caster.hasStatusEffect('blessed_weapons')) {
+            hitDamage += 5;
+          }
         }
 
         // Apply hit(s)
@@ -177,7 +254,9 @@ export class SkillSystem {
         const damagePerHit = hits > 1 ? hitDamage / hits : hitDamage;
 
         // Visual animations
-        this.combatSystem.createSkillAttackEffect(caster.x, caster.y, enemyTarget.x, enemyTarget.y);
+        if (!skillDef.vfx || (skillDef.vfx !== 'holy_smite' && skillDef.vfx !== 'arcane_bolt')) {
+          this.combatSystem.createSkillAttackEffect(caster.x, caster.y, enemyTarget.x, enemyTarget.y);
+        }
 
         if (effect.scaling === 'weapon') {
           const isHit = this.combatSystem.executeWeaponSkillAttack(
@@ -190,14 +269,15 @@ export class SkillSystem {
             hits
           );
           if (isHit && effect.area) {
-            this.executeAreaDamage(effect.area, caster, enemyTarget, hitDamage, weaponId, time);
+            this.executeAreaDamage(effect.area, caster, enemyTarget, hitDamage, weaponId, time, skillDef);
           }
+          return isHit;
         } else {
           // Spell scaling (matches legacy spell behavior: guaranteed hit, no weapon procs)
           if (enemyTarget.state !== 'dead' && enemyTarget.state !== 'downed') {
             (enemyTarget as any).isAggroed = true;
           }
-          const floatColor = '#f97316';
+          const floatColor = skillDef.floatColor || '#f97316';
           for (let h = 0; h < hits; h++) {
             if (enemyTarget.isDowned?.() || enemyTarget.state === 'dead' || enemyTarget.state === 'downed') break;
             this.combatSystem.createFloatingText(enemyTarget.x, enemyTarget.y - 10 - (h * 6), `${skillDef.name.toUpperCase()}! -${damagePerHit.toFixed(1)}`, floatColor);
@@ -208,8 +288,9 @@ export class SkillSystem {
             }
           }
           if (effect.area) {
-            this.executeAreaDamage(effect.area, caster, enemyTarget, hitDamage, weaponId, time);
+            this.executeAreaDamage(effect.area, caster, enemyTarget, hitDamage, weaponId, time, skillDef);
           }
+          return true;
         }
 
         break;
@@ -218,6 +299,11 @@ export class SkillSystem {
       case 'applyStatus': {
         const effTarget = target || (caster.targetEntity instanceof Enemy ? caster.targetEntity : caster);
         if (!effTarget || effTarget.state === 'dead' || effTarget.state === 'downed') return;
+
+        // If a preceding weapon attack was executed and missed, on-hit enemy statuses do not apply.
+        if (lastWeaponAttackHit === false && effTarget !== caster) {
+          return;
+        }
 
         const chance = effect.chance ?? 1.0;
         if (Math.random() <= chance) {
@@ -251,12 +337,7 @@ export class SkillSystem {
           }
           return;
         } else {
-          // lowestAlly or target
-          if (target instanceof Player && target.state !== 'dead' && target.state !== 'downed') {
-            healTarget = target;
-          } else {
-            healTarget = this.findLowestHealthAlly(caster);
-          }
+          healTarget = this.resolveAllyTarget(caster, target, effect.target);
         }
 
         if (healTarget && healTarget.state !== 'dead' && healTarget.state !== 'downed') {
@@ -272,10 +353,7 @@ export class SkillSystem {
       }
 
       case 'healOverTime': {
-        let hotTarget: Player | null = target instanceof Player ? target : caster;
-        if (effect.target === 'lowestAlly') {
-          hotTarget = this.findLowestHealthAlly(caster) || caster;
-        }
+        const hotTarget = this.resolveAllyTarget(caster, target, effect.target);
         if (hotTarget && hotTarget.state !== 'dead' && hotTarget.state !== 'downed') {
           const hotDef = {
             id: skillDef.id,
@@ -294,10 +372,7 @@ export class SkillSystem {
       }
 
       case 'shield': {
-        let shieldTarget: any = target || caster;
-        if (effect.target === 'lowestAlly') {
-          shieldTarget = this.findLowestHealthAlly(caster) || caster;
-        }
+        const shieldTarget = this.resolveAllyTarget(caster, target, effect.target);
         if (shieldTarget && shieldTarget.state !== 'dead' && shieldTarget.state !== 'downed') {
           const shieldDef = {
             id: skillDef.id,
@@ -399,7 +474,8 @@ export class SkillSystem {
       }
 
       case 'move': {
-        const enemyTarget = (target instanceof Enemy ? target : null) || (caster.targetEntity instanceof Enemy ? caster.targetEntity : null);
+        const isEnemyLike = (t: any): boolean => !!(t && (t instanceof Enemy || (t.gridPos && typeof t.takeDamage === 'function')));
+        const enemyTarget: any = isEnemyLike(target) ? target : (isEnemyLike(caster.targetEntity) ? caster.targetEntity : null);
         if (effect.moveType === 'dash' || effect.moveType === 'leap' || effect.moveType === 'teleportBehind') {
           if (enemyTarget) {
             const openTile = this.combatSystem.findOpenAttackTileForMember(enemyTarget, caster);
@@ -443,7 +519,8 @@ export class SkillSystem {
     primaryTarget: any,
     baseDamage: number,
     weaponId: string,
-    _time: number
+    _time: number,
+    skillDef?: SkillDef
   ): void {
     const getTile = (u: any) => {
       if (u.gridPos && typeof u.gridPos.x === 'number') {
@@ -479,7 +556,9 @@ export class SkillSystem {
         const dist = Math.max(Math.abs(cTile.x - eTile.x), Math.abs(cTile.y - eTile.y));
         if (dist <= radius) {
           const splashDmg = baseDamage * (1 - (area.falloff ?? 0));
-          this.combatSystem.createFloatingText(enemy.x, enemy.y - 10, `-${splashDmg.toFixed(1)} (Splash)`, '#f97316');
+          const floatText = skillDef ? `${skillDef.name.toUpperCase()}! -${splashDmg.toFixed(1)}` : `-${splashDmg.toFixed(1)} (Splash)`;
+          const floatColor = skillDef?.floatColor || '#f97316';
+          this.combatSystem.createFloatingText(enemy.x, enemy.y - 10, floatText, floatColor);
           enemy.isAggroed = true;
           const downed = enemy.takeDamage(splashDmg);
           if (downed) this.combatSystem.handleTargetDefeated(caster, enemy, weaponId);
@@ -654,7 +733,7 @@ export class SkillSystem {
         }
 
         // Cleanse check
-        if (skillId === 'cleanse' || cond?.requiresHarmfulStatus) {
+        if (cond?.requiresHarmfulStatus || skillDef.effects?.some(e => e.type === 'cleanse')) {
           const debuffed = this.combatSystem.party.find(
             (m) => m.state !== 'dead' && m.state !== 'downed' &&
               Array.from(m.activeStatusEffects.values()).some((e) => e.def?.isHarmful === true)
@@ -665,8 +744,8 @@ export class SkillSystem {
           continue;
         }
 
-        // Shields (Guardian's Ward, Barrier)
-        if (skillId === 'guardian_ward' || skillId === 'barrier' || skillDef.effects?.some(e => e.type === 'shield')) {
+        // Shields
+        if (skillDef.effects?.some(e => e.type === 'shield')) {
           const shieldTargets = this.combatSystem.party.filter(
             (m) => m.state !== 'dead' && m.state !== 'downed' && !m.hasStatusEffect(skillId)
           );
@@ -683,7 +762,7 @@ export class SkillSystem {
         }
 
         // Regenerate HoT (follows owner's 70% combined-HP rule)
-        if (skillId === 'regenerate' || skillDef.effects?.some(e => e.type === 'healOverTime')) {
+        if (skillDef.effects?.some(e => e.type === 'healOverTime')) {
           const threshold = cond?.allyHpBelow ?? 0.70;
           const hotCandidates = this.combatSystem.party.filter(
             (m) => {
@@ -830,6 +909,23 @@ export class SkillSystem {
     // Pick highest priority matching candidate
     candidates.sort((a, b) => b.priority - a.priority);
     return { skillDef: candidates[0].skillDef, target: candidates[0].target };
+  }
+
+  private resolveAllyTarget(caster: Player, target: Entity | Player | undefined, targetMode?: string): any {
+    const isAllyLike = (t: any): boolean => {
+      if (!t || t.state === 'dead' || t.state === 'downed') return false;
+      if (t instanceof Player) return true;
+      if (t instanceof Enemy || (t as any).enemyDef) return false;
+      return typeof (t as any).heal === 'function' || typeof (t as any).hasShield === 'function' || typeof (t as any).applyStatusEffect === 'function';
+    };
+
+    if (target && isAllyLike(target)) {
+      return target;
+    }
+    if (targetMode === 'lowestAlly') {
+      return this.findLowestHealthAlly(caster) || caster;
+    }
+    return caster;
   }
 
   private inferFallbackRole(skillDef: SkillDef): SkillRole {

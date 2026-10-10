@@ -1741,11 +1741,8 @@ export class CombatSystem {
     const damagePerHit = hits > 1 ? skillDamage / hits : skillDamage;
     for (let h = 0; h < hits; h++) {
       if (target.state === 'dead' || target.state === 'downed') break;
-      if (skillDef.id === 'normal_punch') {
-        this.createFloatingText(target.x, target.y - 10 - (h * 6), `NORMAL PUNCH! -${damagePerHit.toFixed(1)}`, '#ea580c');
-      } else {
-        this.createFloatingText(target.x, target.y - 10 - (h * 6), `${skillDef.name.toUpperCase()}! -${damagePerHit.toFixed(1)}`, '#f59e0b');
-      }
+      const floatColor = skillDef.floatColor || '#f59e0b';
+      this.createFloatingText(target.x, target.y - 10 - (h * 6), `${skillDef.name.toUpperCase()}! -${damagePerHit.toFixed(1)}`, floatColor);
       const downed = target.takeDamage(damagePerHit);
       if (downed) {
         this.handleTargetDefeated(caster, target, weaponId);
@@ -3306,44 +3303,6 @@ export class CombatSystem {
         caster.applyStatusEffect(effDef);
         this.createFloatingText(caster.x, caster.y - 12, 'GUARD UP!', '#38bdf8');
         console.log(`[Skill] ${caster.entityName} casts Guard Up! (50% damage reduction for 5s)`);
-        return true;
-      } else if (skillId === 'taunt') {
-        const effDef = dataLoader.getStatusEffect('taunted') || {
-          id: 'taunted',
-          name: 'Taunted',
-          durationMs: skillDef.durationMs ?? 6000,
-          tickIntervalMs: 6000,
-          damagePerTick: 0,
-          color: '#f97316'
-        };
-        const casterTile = {
-          x: Math.floor(caster.x / caster.tileSize),
-          y: Math.floor(caster.y / caster.tileSize)
-        };
-        const radius = skillDef.radiusTiles ?? 5;
-        let affectedCount = 0;
-        for (const enemy of this.enemies) {
-          if (enemy.state === 'dead' || enemy.state === 'downed') continue;
-          const enemyTile = {
-            x: Math.floor(enemy.x / enemy.tileSize),
-            y: Math.floor(enemy.y / enemy.tileSize)
-          };
-          const dist = Math.max(Math.abs(casterTile.x - enemyTile.x), Math.abs(casterTile.y - enemyTile.y));
-          if (dist <= radius && this.pathfinder.hasLineOfSight(casterTile, enemyTile)) {
-            enemy.applyStatusEffect(effDef);
-            enemy.tauntSource = caster;
-            this.enemyTargets.set(enemy, caster);
-            enemy.targetEntity = caster;
-            enemy.isAggroed = true;
-            enemy.outOfAggroTimerMs = 0;
-            enemy.state = 'chasing';
-            this.createFloatingText(enemy.x, enemy.y - 20, 'TAUNTED!', '#f97316');
-            affectedCount++;
-          }
-        }
-        this.createFloatingText(caster.x, caster.y - 12, 'TAUNT!', '#f97316');
-        console.log(`[Skill] ${caster.entityName} casts Taunt! Forced ${affectedCount} enemies within ${radius} tiles to target them.`);
-        return true;
       } else if (skillId === 'retaliate') {
         const effDef = dataLoader.getStatusEffect('retaliate') || {
           id: 'retaliate',
@@ -3538,22 +3497,6 @@ export class CombatSystem {
         this.createFloatingText(caster.x, caster.y - 12, 'VAULTING LEAP!', '#38bdf8');
         console.log(`[Skill] ${caster.entityName} casts Vaulting Leap! (+40% Evasion for 3s)`);
         return true;
-      } else if (skillId === 'skirmish_step') {
-        const effDef = dataLoader.getStatusEffect('skirmish_step') || {
-          id: 'skirmish_step',
-          name: 'Skirmish Step',
-          durationMs: skillDef.durationMs ?? 4000,
-          tickIntervalMs: 4000,
-          damagePerTick: 0,
-          evasionBonus: 0.35,
-          color: '#38bdf8'
-        };
-        caster.applyStatusEffect(effDef);
-        this.createFloatingText(caster.x, caster.y - 12, 'SKIRMISH STEP!', '#38bdf8');
-        console.log(`[Skill] ${caster.entityName} activates Skirmish Step! (+35% Evasion for 4s)`);
-        caster.progression.addProficiencyExp('throwing_weapons', 1);
-        caster.progression.addProficiencyExp('daggers', 1);
-        return true;
       } else if (skillId === 'blessed_weapons') {
         const effDef = dataLoader.getStatusEffect('blessed_weapons') || {
           id: 'blessed_weapons',
@@ -3572,65 +3515,6 @@ export class CombatSystem {
         }
         caster.progression.addProficiencyExp('healing_magic', 2);
         console.log(`[Skill] ${caster.entityName} casts Blessed Weapons! All living allies' weapons infused with Holy power.`);
-        return true;
-      } else if (skillId === 'holy_nova') {
-        const radius = skillDef.radiusTiles ?? 4;
-        const casterTile = {
-          x: Math.floor(caster.x / caster.tileSize),
-          y: Math.floor(caster.y / caster.tileSize)
-        };
-        let alliesHealed = 0;
-        const healAmt = skillDef.healAmount ?? 30;
-        for (const ally of this.party) {
-          if (ally.state === 'dead' || ally.state === 'downed') continue;
-          const aTile = {
-            x: Math.floor(ally.x / ally.tileSize),
-            y: Math.floor(ally.y / ally.tileSize)
-          };
-          if (Math.max(Math.abs(casterTile.x - aTile.x), Math.abs(casterTile.y - aTile.y)) <= radius) {
-            const restored = ally.heal(healAmt);
-            this.createHealEffect(ally.x, ally.y);
-            this.createFloatingText(ally.x, ally.y - 12, `+${restored} HP`, '#22c55e');
-            alliesHealed++;
-          }
-        }
-
-        let enemiesDamaged = 0;
-        const effectiveWeapon = this.getEffectiveWeaponForAttack(caster);
-        const weaponId = effectiveWeapon.proficiencyId ?? effectiveWeapon.id;
-        const weaponLevel = caster.progression.getProficiencyLevel(weaponId);
-        const dmgBonus = effectiveWeapon.levelBonus?.damagePerLevel ?? 0;
-        const rawBase = effectiveWeapon.baseDamage + weaponLevel * dmgBonus;
-        const moodTier = dataLoader.getMoodTier(caster.mood);
-        const effBase = rawBase * moodTier.combatDamageMultiplier;
-        const mult = skillDef.damageMultiplier ?? 2.0;
-        let holyDamage = Math.max(12, effBase * mult);
-        if (caster.hasStatusEffect('blessed_weapons')) {
-          holyDamage += 5;
-        }
-
-        for (const enemy of this.enemies) {
-          if (enemy.state === 'dead' || enemy.state === 'downed') continue;
-          const eTile = {
-            x: Math.floor(enemy.x / enemy.tileSize),
-            y: Math.floor(enemy.y / enemy.tileSize)
-          };
-          if (Math.max(Math.abs(casterTile.x - eTile.x), Math.abs(casterTile.y - eTile.y)) <= radius &&
-              this.pathfinder.hasLineOfSight(casterTile, eTile)) {
-            this.createSkillAttackEffect(caster.x, caster.y, enemy.x, enemy.y);
-            this.createFloatingText(enemy.x, enemy.y - 10, `HOLY NOVA! -${holyDamage.toFixed(1)}`, '#facc15');
-            const downed = enemy.takeDamage(holyDamage);
-            if (downed) {
-              this.handleTargetDefeated(caster, enemy, weaponId);
-            }
-            enemiesDamaged++;
-          }
-        }
-
-        this.createHolyNovaEffect(caster.x, caster.y, radius * caster.tileSize);
-        this.createFloatingText(caster.x, caster.y - 15, 'HOLY NOVA!', '#facc15');
-        caster.progression.addProficiencyExp('healing_magic', 3);
-        console.log(`[Skill] ${caster.entityName} casts Holy Nova! Simultaneously healed ${alliesHealed} allies and damaged ${enemiesDamaged} enemies.`);
         return true;
       } else if (skillId === 'mass_revive') {
         const radius = skillDef.radiusTiles ?? 6;
@@ -3829,162 +3713,10 @@ export class CombatSystem {
         return true;
       }
       return true;
-    } else if (skillDef.targetType === 'ally' || (skillDef.healAmount && skillDef.healAmount > 0)) {
-      let targetAlly = target as Player | undefined;
-      if (!targetAlly || targetAlly.state === 'dead' || targetAlly.state === 'downed') {
-        if (skillId === 'cleanse') {
-          targetAlly = this.party.find(
-            (m) => m.state !== 'dead' && m.state !== 'downed' &&
-              Array.from(m.activeStatusEffects.values()).some((e) => e.def?.isHarmful === true)
-          ) || caster;
-        } else if (skillId === 'guardian_ward' || skillId === 'barrier') {
-          const candidates = this.party.filter(
-            (m) => m.state !== 'dead' && m.state !== 'downed' && !m.hasStatusEffect(skillId)
-          );
-          candidates.sort((a, b) => {
-            const aInCombat = a.inCombat ? 1 : 0;
-            const bInCombat = b.inCombat ? 1 : 0;
-            if (aInCombat !== bInCombat) return bInCombat - aInCombat;
-            const aRatio = (a.hp + a.criticalHp) / (a.maxHp + a.maxCriticalHp);
-            const bRatio = (b.hp + b.criticalHp) / (b.maxHp + b.maxCriticalHp);
-            return aRatio - bRatio;
-          });
-          targetAlly = candidates[0] || caster;
-        } else if (skillId === 'regenerate') {
-          const candidates = this.party.filter(
-            (m) => m.state !== 'dead' && m.state !== 'downed' && (m.hp < m.maxHp || m.criticalHp < m.maxCriticalHp) && !m.hasStatusEffect('regenerate')
-          );
-          candidates.sort((a, b) => {
-            const aRatio = (a.hp + a.criticalHp) / (a.maxHp + a.maxCriticalHp);
-            const bRatio = (b.hp + b.criticalHp) / (b.maxHp + b.maxCriticalHp);
-            return aRatio - bRatio;
-          });
-          targetAlly = candidates[0] || caster;
-        } else {
-          const candidates = this.party.filter(
-            (m) => m.state !== 'dead' && m.state !== 'downed' && (m.hp < m.maxHp || m.criticalHp < m.maxCriticalHp)
-          );
-          candidates.sort((a, b) => {
-            const aSelf = a === caster ? 1 : 0;
-            const bSelf = b === caster ? 1 : 0;
-            if (aSelf !== bSelf) return aSelf - bSelf;
-            const aRatio = (a.hp + a.criticalHp) / (a.maxHp + a.maxCriticalHp);
-            const bRatio = (b.hp + b.criticalHp) / (b.maxHp + b.maxCriticalHp);
-            return aRatio - bRatio;
-          });
-          targetAlly = candidates[0] || caster;
-        }
-      }
-
-      caster.energy -= skillDef.energyCost;
-      caster.lastSkillUseTimes.set(skillId, time);
-      caster.lastAttackTime = time;
-
-      if (skillId === 'cleanse') {
-        const removed = targetAlly.removeHarmfulStatusEffects();
-        this.createCleanseEffect(targetAlly.x, targetAlly.y);
-        this.createFloatingText(targetAlly.x, targetAlly.y - 12, 'CLEANSED!', '#38bdf8');
-        console.log(`[Skill] ${caster.entityName} casts Cleanse on ${targetAlly.entityName}! Removed: ${removed.join(', ') || 'None'}`);
-        caster.progression.addProficiencyExp('healing_magic', 2);
-        return true;
-      } else if (skillId === 'guardian_ward' || skillId === 'barrier') {
-        const effDef = dataLoader.getStatusEffect(skillId) || {
-          id: skillId,
-          name: skillDef.name,
-          durationMs: skillDef.durationMs ?? (skillId === 'barrier' ? 10000 : 8000),
-          tickIntervalMs: skillDef.durationMs ?? (skillId === 'barrier' ? 10000 : 8000),
-          damagePerTick: 0,
-          shieldAmount: skillDef.shieldAmount ?? (skillId === 'barrier' ? 50 : 35),
-          color: skillId === 'barrier' ? '#818cf8' : '#38bdf8'
-        };
-        targetAlly.applyStatusEffect(effDef);
-        this.createCleanseEffect(targetAlly.x, targetAlly.y);
-        this.createFloatingText(targetAlly.x, targetAlly.y - 12, `${skillDef.name.toUpperCase()}!`, effDef.color || '#38bdf8');
-        console.log(`[Skill] ${caster.entityName} casts ${skillDef.name} on ${targetAlly.entityName}! Absorbs up to ${effDef.shieldAmount} damage.`);
-        caster.progression.addProficiencyExp('healing_magic', 2);
-        return true;
-      } else if (skillId === 'regenerate') {
-        const effDef = dataLoader.getStatusEffect('regenerate') || {
-          id: 'regenerate',
-          name: 'Regenerate',
-          durationMs: skillDef.durationMs ?? 8000,
-          tickIntervalMs: skillDef.tickIntervalMs ?? 1000,
-          damagePerTick: 0,
-          healPerTick: skillDef.healPerTick ?? 6,
-          color: '#22c55e'
-        };
-        targetAlly.applyStatusEffect(effDef);
-        this.createHealEffect(targetAlly.x, targetAlly.y);
-        this.createFloatingText(targetAlly.x, targetAlly.y - 12, 'REGENERATE!', '#22c55e');
-        console.log(`[Skill] ${caster.entityName} casts Regenerate on ${targetAlly.entityName}! Ticking ${effDef.healPerTick} HP/s.`);
-        caster.progression.addProficiencyExp('healing_magic', 2);
-        return true;
-      } else {
-        const restored = targetAlly.heal(skillDef.healAmount || (skillId === 'heal' ? 35 : 20));
-        this.createHealEffect(targetAlly.x, targetAlly.y);
-        this.createFloatingText(targetAlly.x, targetAlly.y - 12, `+${restored} HP`, '#22c55e');
-        console.log(
-          `[Skill] ${caster.entityName} casts ${skillDef.name} on ${targetAlly.entityName}! Restored ${restored} HP. (Energy: ${caster.energy}/${caster.maxEnergy})`
-        );
-        caster.progression.addProficiencyExp('healing_magic', 2);
-        return true;
-      }
     } else {
       const enemyTarget = (target as Enemy) || (caster.targetEntity instanceof Enemy ? caster.targetEntity : null);
       if (!enemyTarget || enemyTarget.state === 'dead' || enemyTarget.state === 'downed') {
         return false;
-      }
-
-      if (skillId === 'smite') {
-        const curDist = Math.max(
-          Math.abs(Math.floor(caster.x / caster.tileSize) - Math.floor(enemyTarget.x / enemyTarget.tileSize)),
-          Math.abs(Math.floor(caster.y / caster.tileSize) - Math.floor(enemyTarget.y / enemyTarget.tileSize))
-        );
-        const maxRange = skillDef.rangeTiles ?? 5;
-        if (curDist > maxRange) {
-          console.warn(`[Skill] Cannot cast Smite: target is outside range (${curDist} > ${maxRange})`);
-          return false;
-        }
-
-        caster.energy -= skillDef.energyCost;
-        caster.lastSkillUseTimes.set(skillId, time);
-        caster.lastAttackTime = time;
-        caster.state = 'attacking';
-
-        this.createHolySmiteEffect(caster.x, caster.y, enemyTarget.x, enemyTarget.y);
-        const effectiveWeapon = this.getEffectiveWeaponForAttack(caster);
-        const weaponId = effectiveWeapon.proficiencyId ?? effectiveWeapon.id;
-        const weaponLevel = caster.progression.getProficiencyLevel(weaponId);
-        const dmgBonus = effectiveWeapon.levelBonus?.damagePerLevel ?? 0;
-        const rawBase = effectiveWeapon.baseDamage + weaponLevel * dmgBonus;
-        const moodTier = dataLoader.getMoodTier(caster.mood);
-        const effBase = rawBase * moodTier.combatDamageMultiplier;
-        const mult = skillDef.damageMultiplier ?? 1.8;
-        let skillDamage = Math.max(8, effBase * mult);
-
-        if (caster.hasStatusEffect('blessed_weapons')) {
-          skillDamage += 5;
-          this.createFloatingText(enemyTarget.x, enemyTarget.y - 24, '+5 HOLY!', '#facc15');
-        }
-
-        this.createFloatingText(enemyTarget.x, enemyTarget.y - 10, `SMITE! -${skillDamage.toFixed(1)}`, '#facc15');
-        const downed = enemyTarget.takeDamage(skillDamage);
-        if (downed) {
-          this.handleTargetDefeated(caster, enemyTarget, weaponId);
-        }
-        caster.progression.addProficiencyExp('healing_magic', 2);
-        return true;
-      }
-
-      if (skillId === 'shield_bash') {
-        const curDist = Math.max(
-          Math.abs(Math.floor(caster.x / caster.tileSize) - Math.floor(enemyTarget.x / enemyTarget.tileSize)),
-          Math.abs(Math.floor(caster.y / caster.tileSize) - Math.floor(enemyTarget.y / enemyTarget.tileSize))
-        );
-        if (curDist > 1) {
-          console.warn(`[Skill] Cannot cast Shield Bash: target is outside melee range (${curDist} > 1)`);
-          return false;
-        }
       }
 
       // Milestone 22: Riposte reactive counter-strike
@@ -4006,176 +3738,6 @@ export class CombatSystem {
           chainAttack: false
         });
         this.createFloatingText(caster.x, caster.y - 12, 'RIPOSTE!', '#eab308');
-        return true;
-      }
-
-      // Milestone 22: Fleche gap-closing dash-strike
-      if (skillId === 'fleche') {
-        const curDist = Math.max(
-          Math.abs(Math.floor(caster.x / caster.tileSize) - Math.floor(enemyTarget.x / enemyTarget.tileSize)),
-          Math.abs(Math.floor(caster.y / caster.tileSize) - Math.floor(enemyTarget.y / enemyTarget.tileSize))
-        );
-        const maxRange = skillDef.rangeTiles ?? 5;
-        if (curDist > maxRange) {
-          console.warn(`[Skill] Cannot cast Fleche: target is outside range (${curDist} > ${maxRange})`);
-          return false;
-        }
-
-        if (curDist > 1) {
-          const openTile = this.findOpenAttackTileForMember(enemyTarget, caster);
-          if (openTile) {
-            const oldX = caster.x;
-            const oldY = caster.y;
-            caster.setGridPosition(openTile.x, openTile.y);
-            this.createAttackEffect(oldX, oldY, caster.x, caster.y, 0x60a5fa);
-          }
-        }
-
-        caster.energy -= skillDef.energyCost;
-        caster.lastSkillUseTimes.set(skillId, time);
-        caster.lastAttackTime = time;
-        caster.state = 'attacking';
-
-        this.createSkillAttackEffect(caster.x, caster.y, enemyTarget.x, enemyTarget.y);
-        const weapon = caster.equippedWeapon;
-        const weaponLevel = caster.progression.getProficiencyLevel(weapon.id);
-        const dmgBonus = weapon.levelBonus?.damagePerLevel ?? 0;
-        const rawBase = weapon.baseDamage + weaponLevel * dmgBonus;
-        const moodTier = dataLoader.getMoodTier(caster.mood);
-        const effBase = rawBase * moodTier.combatDamageMultiplier;
-        const skillDamage = effBase * (skillDef.damageMultiplier ?? 1.6);
-
-        this.createFloatingText(enemyTarget.x, enemyTarget.y - 10, `FLECHE! -${skillDamage.toFixed(1)}`, '#38bdf8');
-        this.checkAndApplyBleed(caster, enemyTarget);
-        const downed = enemyTarget.takeDamage(skillDamage);
-        if (downed) {
-          this.handleTargetDefeated(caster, enemyTarget, weapon.id);
-        }
-        return true;
-      }
-
-      // Milestone 22: Blade Dance multi-hit capstone combo
-      if (skillId === 'blade_dance') {
-        const curDist = Math.max(
-          Math.abs(Math.floor(caster.x / caster.tileSize) - Math.floor(enemyTarget.x / enemyTarget.tileSize)),
-          Math.abs(Math.floor(caster.y / caster.tileSize) - Math.floor(enemyTarget.y / enemyTarget.tileSize))
-        );
-        if (curDist > 1) {
-          console.warn(`[Skill] Cannot cast Blade Dance: target is outside melee range (${curDist} > 1)`);
-          return false;
-        }
-
-        caster.energy -= skillDef.energyCost;
-        caster.lastSkillUseTimes.set(skillId, time);
-        caster.lastAttackTime = time;
-        caster.state = 'attacking';
-
-        const strikeCount = skillDef.strikeCount ?? 4;
-        const damagePerHit = skillDef.damagePerHitMultiplier ?? 0.8;
-        const weapon = caster.equippedWeapon;
-        const weaponLevel = caster.progression.getProficiencyLevel(weapon.id);
-        const dmgBonus = weapon.levelBonus?.damagePerLevel ?? 0;
-        const rawBase = weapon.baseDamage + weaponLevel * dmgBonus;
-        const moodTier = dataLoader.getMoodTier(caster.mood);
-        const effBase = rawBase * moodTier.combatDamageMultiplier;
-        const strikeDamage = effBase * damagePerHit;
-
-        for (let i = 1; i <= strikeCount; i++) {
-          if ((enemyTarget.state as string) === 'dead' || (enemyTarget.state as string) === 'downed') {
-            break;
-          }
-          this.createSkillAttackEffect(caster.x, caster.y, enemyTarget.x, enemyTarget.y);
-          this.createFloatingText(
-            enemyTarget.x,
-            enemyTarget.y - 10 - (i * 6),
-            `BLADE DANCE! -${strikeDamage.toFixed(1)}`,
-            '#f59e0b'
-          );
-          this.checkAndApplyBleed(caster, enemyTarget);
-          const downed = enemyTarget.takeDamage(strikeDamage);
-          if (downed) {
-            this.handleTargetDefeated(caster, enemyTarget, weapon.id);
-            break;
-          }
-        }
-        return true;
-      }
-
-      // Milestone 46: Mark Target (Lv 10) - applies Expose to target
-      if (skillId === 'mark_target') {
-        const curDist = Math.max(
-          Math.abs(Math.floor(caster.x / caster.tileSize) - Math.floor(enemyTarget.x / enemyTarget.tileSize)),
-          Math.abs(Math.floor(caster.y / caster.tileSize) - Math.floor(enemyTarget.y / enemyTarget.tileSize))
-        );
-        const maxRange = skillDef.rangeTiles ?? 5;
-        if (curDist > maxRange) {
-          console.warn(`[Skill] Cannot cast Mark Target: target is outside range (${curDist} > ${maxRange})`);
-          return false;
-        }
-
-        caster.energy -= skillDef.energyCost;
-        caster.lastSkillUseTimes.set(skillId, time);
-        caster.lastAttackTime = time;
-
-        const effDef = dataLoader.getStatusEffect('expose') || {
-          id: 'expose',
-          name: 'Expose',
-          durationMs: skillDef.durationMs ?? 6000,
-          tickIntervalMs: 6000,
-          damagePerTick: 0,
-          damageAmplificationPercent: 0.25,
-          color: '#e11d48'
-        };
-        enemyTarget.applyStatusEffect(effDef);
-        this.createSkillAttackEffect(caster.x, caster.y, enemyTarget.x, enemyTarget.y);
-        this.createFloatingText(enemyTarget.x, enemyTarget.y - 25, 'MARKED! (EXPOSED)', '#e11d48');
-        console.log(`[Skill] ${caster.entityName} casts Mark Target on ${enemyTarget.entityName}! (+25% damage taken for 6s)`);
-        return true;
-      }
-
-      // Milestone 46: Trap Snare (Lv 30) - places a ground trap that deals damage and Slows target
-      if (skillId === 'trap_snare') {
-        const curDist = Math.max(
-          Math.abs(Math.floor(caster.x / caster.tileSize) - Math.floor(enemyTarget.x / enemyTarget.tileSize)),
-          Math.abs(Math.floor(caster.y / caster.tileSize) - Math.floor(enemyTarget.y / enemyTarget.tileSize))
-        );
-        const maxRange = skillDef.rangeTiles ?? 4;
-        if (curDist > maxRange) {
-          console.warn(`[Skill] Cannot cast Trap Snare: target is outside range (${curDist} > ${maxRange})`);
-          return false;
-        }
-
-        caster.energy -= skillDef.energyCost;
-        caster.lastSkillUseTimes.set(skillId, time);
-        caster.lastAttackTime = time;
-        caster.state = 'attacking';
-
-        this.createSkillAttackEffect(caster.x, caster.y, enemyTarget.x, enemyTarget.y);
-        const weapon = caster.equippedWeapon;
-        const weaponId = weapon.proficiencyId ?? weapon.id;
-        const weaponLevel = caster.progression.getProficiencyLevel(weaponId);
-        const dmgBonus = weapon.levelBonus?.damagePerLevel ?? 0;
-        const rawBase = weapon.baseDamage + weaponLevel * dmgBonus;
-        const moodTier = dataLoader.getMoodTier(caster.mood);
-        const effBase = rawBase * moodTier.combatDamageMultiplier;
-        const skillDamage = effBase * (skillDef.damageMultiplier ?? 1.2);
-
-        const slowDef = dataLoader.getStatusEffect('slow') || {
-          id: 'slow',
-          name: 'Slow',
-          durationMs: skillDef.durationMs ?? 4000,
-          tickIntervalMs: 1000,
-          damagePerTick: 0,
-          moveSpeedMultiplier: 0.5,
-          color: '#67e8f9'
-        };
-        enemyTarget.applyStatusEffect(slowDef);
-        this.createFloatingText(enemyTarget.x, enemyTarget.y - 10, `TRAP SNARE! -${skillDamage.toFixed(1)}`, '#67e8f9');
-        this.createFloatingText(enemyTarget.x, enemyTarget.y - 25, 'SNARED! (SLOW)', '#67e8f9');
-        const downed = enemyTarget.takeDamage(skillDamage);
-        if (downed) {
-          this.handleTargetDefeated(caster, enemyTarget, weaponId);
-        }
         return true;
       }
 
@@ -4515,9 +4077,7 @@ export class CombatSystem {
       // Milestone 52: Swordsman, Ronin & Samurai Full 12-Offensive-Skill Kits
       // ========================================================================
       const katanaSkillIds = [
-        'blade_strike', 'quick_cut', 'severing_slice', 'cross_cut',
-        'iaido_quickdraw', 'crimson_slash', 'flowing_step', 'bloodseeker_riposte', 'dragons_flurry',
-        'overhead_cleave', 'sweeping_hilt', 'heavenly_decapitation'
+        'heavenly_decapitation'
       ];
       if (katanaSkillIds.includes(skillId)) {
         const curDist = Math.max(
@@ -4538,19 +4098,6 @@ export class CombatSystem {
         const moodTier = dataLoader.getMoodTier(caster.mood);
         const effBase = rawBase * moodTier.combatDamageMultiplier;
 
-        // Gap-closer handling for Flowing Step
-        if (skillId === 'flowing_step') {
-          if (curDist > 1) {
-            const openTile = this.findOpenAttackTileForMember(enemyTarget, caster);
-            if (openTile) {
-              const oldX = caster.x;
-              const oldY = caster.y;
-              caster.setGridPosition(openTile.x, openTile.y);
-              this.createAttackEffect(oldX, oldY, caster.x, caster.y, 0xe11d48);
-            }
-          }
-        }
-
         // Energy handling
         let energyCostToDeduct = skillDef.energyCost;
         let bonusEnergyConsumed = 0;
@@ -4570,105 +4117,7 @@ export class CombatSystem {
 
         let skillDamage = effBase * (skillDef.damageMultiplier ?? 1.0);
 
-        if (skillId === 'blade_strike') {
-          this.createFloatingText(enemyTarget.x, enemyTarget.y - 10, `BLADE STRIKE! -${skillDamage.toFixed(1)}`, '#94a3b8');
-        } else if (skillId === 'quick_cut') {
-          this.createFloatingText(enemyTarget.x, enemyTarget.y - 10, `QUICK CUT! -${skillDamage.toFixed(1)}`, '#38bdf8');
-        } else if (skillId === 'severing_slice') {
-          const bleedDef = dataLoader.getStatusEffect('bleed') || {
-            id: 'bleed',
-            name: 'Bleed',
-            durationMs: 6000,
-            tickIntervalMs: 1000,
-            damagePerTick: 3,
-            isHarmful: true,
-            color: '#ef4444'
-          };
-          enemyTarget.applyStatusEffect(bleedDef);
-          this.createFloatingText(enemyTarget.x, enemyTarget.y - 10, `SEVERING SLICE! -${skillDamage.toFixed(1)}`, '#ef4444');
-          this.createFloatingText(enemyTarget.x, enemyTarget.y - 25, 'BLEEDING!', '#ef4444');
-        } else if (skillId === 'cross_cut') {
-          this.createFloatingText(enemyTarget.x, enemyTarget.y - 10, `CROSS CUT! -${skillDamage.toFixed(1)}`, '#f59e0b');
-        } else if (skillId === 'iaido_quickdraw') {
-          this.createFloatingText(enemyTarget.x, enemyTarget.y - 10, `IAIDO QUICKDRAW! -${skillDamage.toFixed(1)}`, '#f43f5e');
-        } else if (skillId === 'crimson_slash') {
-          const bleedDef = dataLoader.getStatusEffect('bleed') || {
-            id: 'bleed',
-            name: 'Bleed',
-            durationMs: 6000,
-            tickIntervalMs: 1000,
-            damagePerTick: 3,
-            isHarmful: true,
-            color: '#ef4444'
-          };
-          enemyTarget.applyStatusEffect(bleedDef);
-          this.createFloatingText(enemyTarget.x, enemyTarget.y - 10, `CRIMSON SLASH! -${skillDamage.toFixed(1)}`, '#e11d48');
-          this.createFloatingText(enemyTarget.x, enemyTarget.y - 25, 'BLEEDING!', '#ef4444');
-        } else if (skillId === 'flowing_step') {
-          const flowingStepDef = dataLoader.getStatusEffect('flowing_step') || {
-            id: 'flowing_step',
-            name: 'Flowing Step',
-            durationMs: skillDef.durationMs ?? 4000,
-            tickIntervalMs: 4000,
-            damagePerTick: 0,
-            evasionBonus: 0.25,
-            color: '#e11d48'
-          };
-          caster.applyStatusEffect(flowingStepDef);
-          this.createFloatingText(caster.x, caster.y - 12, 'FLOWING STEP! (+25% EVASION)', '#e11d48');
-          this.createFloatingText(enemyTarget.x, enemyTarget.y - 10, `FLOWING STEP! -${skillDamage.toFixed(1)}`, '#e11d48');
-        } else if (skillId === 'bloodseeker_riposte') {
-          if (enemyTarget.hasStatusEffect('bleed')) {
-            skillDamage *= 1.5;
-            this.createFloatingText(enemyTarget.x, enemyTarget.y - 10, `BLOODSEEKER CRITICAL! -${skillDamage.toFixed(1)}`, '#be123c');
-          } else {
-            this.createFloatingText(enemyTarget.x, enemyTarget.y - 10, `BLOODSEEKER! -${skillDamage.toFixed(1)}`, '#be123c');
-          }
-        } else if (skillId === 'dragons_flurry') {
-          const strikeCount = skillDef.strikeCount ?? 4;
-          const dmgPerHit = effBase * (skillDef.damagePerHitMultiplier ?? 0.8);
-          let totalDealt = 0;
-          let downed = false;
-          for (let s = 0; s < strikeCount; s++) {
-            totalDealt += dmgPerHit;
-            downed = enemyTarget.takeDamage(dmgPerHit);
-            if (downed) break;
-          }
-          const bleedDef = dataLoader.getStatusEffect('bleed') || {
-            id: 'bleed',
-            name: 'Bleed',
-            durationMs: 6000,
-            tickIntervalMs: 1000,
-            damagePerTick: 3,
-            isHarmful: true,
-            color: '#ef4444'
-          };
-          enemyTarget.applyStatusEffect(bleedDef);
-          this.createFloatingText(enemyTarget.x, enemyTarget.y - 10, `DRAGON'S FLURRY! -${totalDealt.toFixed(1)} (${strikeCount} HITS)`, '#e11d48');
-          this.createFloatingText(enemyTarget.x, enemyTarget.y - 25, 'BLEEDING!', '#ef4444');
-          if (downed) {
-            this.handleTargetDefeated(caster, enemyTarget, wpnProfId);
-          }
-          return true;
-        } else if (skillId === 'overhead_cleave') {
-          this.createFloatingText(enemyTarget.x, enemyTarget.y - 10, `OVERHEAD CLEAVE! -${skillDamage.toFixed(1)}`, '#d97706');
-        } else if (skillId === 'sweeping_hilt') {
-          const stunChance = skillDef.stunChance ?? 0.30;
-          if (Math.random() < stunChance) {
-            const stunDef = dataLoader.getStatusEffect('stun') || {
-              id: 'stun',
-              name: 'Stun',
-              durationMs: 2000,
-              tickIntervalMs: 2000,
-              damagePerTick: 0,
-              color: '#facc15'
-            };
-            enemyTarget.applyStatusEffect(stunDef);
-            enemyTarget.stopMovement();
-            this.createFloatingText(enemyTarget.x, enemyTarget.y - 25, 'STUNNED!', '#facc15');
-          }
-          this.createFloatingText(enemyTarget.x, enemyTarget.y - 10, `SWEEPING HILT! -${skillDamage.toFixed(1)}`, '#d97706');
-        } else if (skillId === 'heavenly_decapitation') {
+        if (skillId === 'heavenly_decapitation') {
           const bonusPerPoint = skillDef.bonusDamagePerEnergy ?? 0.04;
           const bonusMult = bonusEnergyConsumed * bonusPerPoint;
           const totalMult = (skillDef.damageMultiplier ?? 3.2) + bonusMult;
@@ -4776,68 +4225,6 @@ export class CombatSystem {
         return true;
       }
 
-      // ========================================================================
-      // Milestone 55: Loader Full 5-Skill Kit
-      // Mechanically minded shooter archetype using heavy crossbows & arbalests
-      // ========================================================================
-      const loaderSkillIds = ['primed_shot', 'rapid_crank', 'pinning_bolt', 'kinetic_overdraw'];
-      if (loaderSkillIds.includes(skillId)) {
-        const curDist = Math.max(
-          Math.abs(Math.floor(caster.x / caster.tileSize) - Math.floor(enemyTarget.x / enemyTarget.tileSize)),
-          Math.abs(Math.floor(caster.y / caster.tileSize) - Math.floor(enemyTarget.y / enemyTarget.tileSize))
-        );
-        const maxRange = skillDef.rangeTiles ?? 4;
-        if (curDist > maxRange) {
-          console.warn(`[Skill] Cannot cast ${skillDef.name}: target is outside range (${curDist} > ${maxRange})`);
-          return false;
-        }
-
-        caster.energy -= skillDef.energyCost;
-        caster.lastSkillUseTimes.set(skillId, time);
-        caster.lastAttackTime = time;
-        caster.state = 'attacking';
-
-        this.createSkillAttackEffect(caster.x, caster.y, enemyTarget.x, enemyTarget.y);
-
-        const weapon = this.getEffectiveWeaponForAttack(caster);
-        const weaponId = weapon.proficiencyId ?? weapon.id;
-        const weaponLevel = caster.progression.getProficiencyLevel(weaponId);
-        const dmgBonus = weapon.levelBonus?.damagePerLevel ?? 0;
-        const rawBase = weapon.baseDamage + weaponLevel * dmgBonus;
-        const moodTier = dataLoader.getMoodTier(caster.mood);
-        const effBase = rawBase * moodTier.combatDamageMultiplier;
-
-        let skillDamage = effBase * (skillDef.damageMultiplier ?? 1.0);
-
-        if (skillId === 'primed_shot') {
-          this.createFloatingText(enemyTarget.x, enemyTarget.y - 10, `PRIMED SHOT! -${skillDamage.toFixed(1)}`, '#94a3b8');
-        } else if (skillId === 'rapid_crank') {
-          this.createFloatingText(enemyTarget.x, enemyTarget.y - 10, `RAPID CRANK! -${skillDamage.toFixed(1)}`, '#38bdf8');
-        } else if (skillId === 'pinning_bolt') {
-          const slowDef = dataLoader.getStatusEffect('slow') || {
-            id: 'slow',
-            name: 'Slow',
-            durationMs: skillDef.durationMs ?? 3000,
-            tickIntervalMs: 1000,
-            damagePerTick: 0,
-            moveSpeedMultiplier: 0.5,
-            isHarmful: true,
-            color: '#67e8f9'
-          };
-          enemyTarget.applyStatusEffect(slowDef);
-          this.createFloatingText(enemyTarget.x, enemyTarget.y - 10, `PINNING BOLT! -${skillDamage.toFixed(1)}`, '#f59e0b');
-          this.createFloatingText(enemyTarget.x, enemyTarget.y - 25, 'SLOWED (50%)!', '#67e8f9');
-          console.log(`[Skill] Pinning Bolt slowed ${enemyTarget.entityName} by 50% for 3s!`);
-        } else if (skillId === 'kinetic_overdraw') {
-          this.createFloatingText(enemyTarget.x, enemyTarget.y - 10, `KINETIC OVERDRAW! -${skillDamage.toFixed(1)}`, '#ef4444');
-        }
-
-        const downed = enemyTarget.takeDamage(skillDamage);
-        if (downed) {
-          this.handleTargetDefeated(caster, enemyTarget, weaponId);
-        }
-        return true;
-      }
 
       // ========================================================================
       // Milestone 58: Arcane Initiate Full 5-Skill Kit
@@ -5247,7 +4634,7 @@ export class CombatSystem {
         this.createFloatingText(enemyTarget.x, enemyTarget.y - 24, '+5 HOLY!', '#facc15');
       }
 
-      const isHit = this.executeWeaponSkillAttack(
+      this.executeWeaponSkillAttack(
         caster,
         enemyTarget,
         skillDef,
@@ -5256,21 +4643,6 @@ export class CombatSystem {
         time,
         1
       );
-
-      if (isHit && skillId === 'shield_bash') {
-        const stunDef = dataLoader.getStatusEffect('stun') || {
-          id: 'stun',
-          name: 'Stun',
-          durationMs: skillDef.stunDurationMs ?? 2000,
-          tickIntervalMs: 2000,
-          damagePerTick: 0,
-          color: '#facc15'
-        };
-        enemyTarget.applyStatusEffect(stunDef);
-        enemyTarget.stopMovement();
-        this.createFloatingText(enemyTarget.x, enemyTarget.y - 25, 'STUNNED!', '#facc15');
-        console.log(`[Skill] Shield Bash STUNNED ${enemyTarget.entityName} for 2s!`);
-      }
 
       return true;
     }
