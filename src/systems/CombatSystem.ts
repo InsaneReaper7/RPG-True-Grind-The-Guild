@@ -738,11 +738,19 @@ export class CombatSystem {
                   this.createAttackEffect(enemy.x, enemy.y, target.x, target.y, 0x60a5fa);
                   this.createFloatingText(target.x, target.y - 12, 'EVADED!', '#60a5fa');
                   this.openRiposteWindow(target, enemy);
-                  if (target.hasStatusEffect('retaliate')) {
-                    target.removeStatusEffect('retaliate');
-                    this.executePlayerCounterattack(target, enemy, { procced: true, damageMultiplier: 1.0, canCrit: true, chainAttack: false });
-                    this.createFloatingText(target.x, target.y - 12, 'RETALIATE!', '#eab308');
-                  } else {
+                  let triggeredCounter = false;
+                  for (const [effId, eff] of target.activeStatusEffects.entries()) {
+                    if (eff.def?.counterOnHit || effId === 'retaliate') {
+                      if (eff.def?.counterOnHit?.consume !== false) {
+                        target.removeStatusEffect(effId);
+                      }
+                      this.executePlayerCounterattack(target, enemy, { procced: true, damageMultiplier: 1.0, canCrit: true, chainAttack: false });
+                      this.createFloatingText(target.x, target.y - 12, 'RETALIATE!', '#eab308');
+                      triggeredCounter = true;
+                      break;
+                    }
+                  }
+                  if (!triggeredCounter) {
                     const counterRes = hiddenSystem.resolveCounterattack(context, target.progression);
                     if (counterRes.procced) {
                       this.executePlayerCounterattack(target, enemy, counterRes);
@@ -753,11 +761,19 @@ export class CombatSystem {
                   this.createAttackEffect(enemy.x, enemy.y, target.x, target.y, 0xfacc15);
                   this.createFloatingText(target.x, target.y - 12, 'PARRIED!', '#facc15');
                   this.openRiposteWindow(target, enemy);
-                  if (target.hasStatusEffect('retaliate')) {
-                    target.removeStatusEffect('retaliate');
-                    this.executePlayerCounterattack(target, enemy, { procced: true, damageMultiplier: 1.0, canCrit: true, chainAttack: false });
-                    this.createFloatingText(target.x, target.y - 12, 'RETALIATE!', '#eab308');
-                  } else {
+                  let triggeredCounter = false;
+                  for (const [effId, eff] of target.activeStatusEffects.entries()) {
+                    if (eff.def?.counterOnHit || effId === 'retaliate') {
+                      if (eff.def?.counterOnHit?.consume !== false) {
+                        target.removeStatusEffect(effId);
+                      }
+                      this.executePlayerCounterattack(target, enemy, { procced: true, damageMultiplier: 1.0, canCrit: true, chainAttack: false });
+                      this.createFloatingText(target.x, target.y - 12, 'RETALIATE!', '#eab308');
+                      triggeredCounter = true;
+                      break;
+                    }
+                  }
+                  if (!triggeredCounter) {
                     const counterRes = hiddenSystem.resolveCounterattack(context, target.progression);
                     if (counterRes.procced) {
                       this.executePlayerCounterattack(target, enemy, counterRes);
@@ -769,11 +785,19 @@ export class CombatSystem {
                   this.createFloatingText(target.x, target.y - 12, 'BLOCKED!', '#38bdf8');
                   target.progression.addProficiencyExp('shields', 2);
                   target?.awardArmorWearExp?.('hit');
-                  if (target.hasStatusEffect('retaliate')) {
-                    target.removeStatusEffect('retaliate');
-                    this.executePlayerCounterattack(target, enemy, { procced: true, damageMultiplier: 1.0, canCrit: true, chainAttack: false });
-                    this.createFloatingText(target.x, target.y - 12, 'RETALIATE!', '#eab308');
-                  } else {
+                  let triggeredCounter = false;
+                  for (const [effId, eff] of target.activeStatusEffects.entries()) {
+                    if (eff.def?.counterOnHit || effId === 'retaliate') {
+                      if (eff.def?.counterOnHit?.consume !== false) {
+                        target.removeStatusEffect(effId);
+                      }
+                      this.executePlayerCounterattack(target, enemy, { procced: true, damageMultiplier: 1.0, canCrit: true, chainAttack: false });
+                      this.createFloatingText(target.x, target.y - 12, 'RETALIATE!', '#eab308');
+                      triggeredCounter = true;
+                      break;
+                    }
+                  }
+                  if (!triggeredCounter) {
                     const counterRes = hiddenSystem.resolveCounterattack(context, target.progression);
                     if (counterRes.procced) {
                       this.executePlayerCounterattack(target, enemy, counterRes);
@@ -802,25 +826,41 @@ export class CombatSystem {
                     console.log(`[Combat] ${enemy.entityName} hits ${target.entityName} for ${actualDamage} damage!`);
                   }
 
-                    if (target.hasStatusEffect('kenjutsu_deflection') && actualDamage > 0) {
-                      const eff = target.activeStatusEffects.get('kenjutsu_deflection') as any;
-                      const shieldRemain = eff?.currentShield ?? eff?.def?.shieldAmount ?? 40;
-                      const absorbed = Math.min(shieldRemain, actualDamage);
-                      actualDamage -= absorbed;
-                      if (eff) eff.currentShield = shieldRemain - absorbed;
-                      if ((eff?.currentShield ?? 0) <= 0) {
-                        target.removeStatusEffect('kenjutsu_deflection');
+                  // Generic shield status reflectPercent (e.g. Kenjutsu Deflection)
+                  if (actualDamage > 0) {
+                    for (const [effId, eff] of target.activeStatusEffects.entries()) {
+                      const effAny = eff as any;
+                      const reflectRate = effAny?.def?.reflectPercent;
+                      if (reflectRate && effAny?.def?.shieldAmount) {
+                        const shieldRemain = effAny.currentShield ?? effAny.shieldHp ?? effAny.def.shieldAmount;
+                        const absorbed = Math.min(shieldRemain, actualDamage);
+                        if (absorbed > 0) {
+                          actualDamage -= absorbed;
+                          const newShield = shieldRemain - absorbed;
+                          effAny.currentShield = newShield;
+                          effAny.shieldHp = newShield;
+                          if (newShield <= 0) {
+                            target.removeStatusEffect(effId);
+                          }
+                          const reflected = Math.max(1, Math.round(absorbed * reflectRate));
+                          enemy.takeDamage(reflected);
+                          this.createFloatingText(target.x, target.y - 32, `ABSORBED ${absorbed}!`, effAny.def.color || '#e11d48');
+                          this.createFloatingText(enemy.x, enemy.y - 12, `REFLECT! -${reflected}`, effAny.def.color || '#e11d48');
+                        }
                       }
-                      const reflected = Math.max(1, Math.round(absorbed * 0.5));
-                      enemy.takeDamage(reflected);
-                      this.createFloatingText(target.x, target.y - 32, `ABSORBED ${absorbed}!`, '#e11d48');
-                      this.createFloatingText(enemy.x, enemy.y - 12, `REFLECT! -${reflected}`, '#e11d48');
                     }
+                  }
 
-                  if (target.hasStatusEffect('retaliate')) {
-                    target.removeStatusEffect('retaliate');
-                    this.executePlayerCounterattack(target, enemy, { procced: true, damageMultiplier: 1.0, canCrit: true, chainAttack: false });
-                    this.createFloatingText(target.x, target.y - 12, 'RETALIATE!', '#eab308');
+                  // Generic counterOnHit status trigger (e.g. Retaliate)
+                  for (const [effId, eff] of target.activeStatusEffects.entries()) {
+                    if (eff.def?.counterOnHit || effId === 'retaliate') {
+                      if (eff.def?.counterOnHit?.consume !== false) {
+                        target.removeStatusEffect(effId);
+                      }
+                      this.executePlayerCounterattack(target, enemy, { procced: true, damageMultiplier: 1.0, canCrit: true, chainAttack: false });
+                      this.createFloatingText(target.x, target.y - 12, 'RETALIATE!', '#eab308');
+                      break;
+                    }
                   }
 
                   const wasUnengaged = target.targetEntity === null;
@@ -1452,7 +1492,7 @@ export class CombatSystem {
     }
   }
 
-  private executePlayerCounterattack(
+  public executePlayerCounterattack(
     counterAttacker: Player,
     enemy: Enemy,
     counterResult: CounterattackResult
@@ -1748,6 +1788,20 @@ export class CombatSystem {
     this.checkAndApplyBleed(caster, target, effectiveWeapon);
     this.checkAndApplyBurn(caster, target, effectiveWeapon);
     this.checkAndApplyStun(caster, target, effectiveWeapon);
+
+    let totalSiphon = 0;
+    if (caster.activeStatusEffects) {
+      for (const activeEffect of caster.activeStatusEffects.values()) {
+        if (activeEffect.def?.energySiphonOnHit) {
+          totalSiphon += activeEffect.def.energySiphonOnHit;
+        }
+      }
+    }
+    if (totalSiphon > 0) {
+      const maxEnergy = caster.maxEnergy ?? 100;
+      caster.energy = Math.min(maxEnergy, (caster.energy ?? 0) + totalSiphon);
+      this.createFloatingText(caster.x, caster.y - 20, `RUNIC SIPHON! +${totalSiphon} EN`, '#818cf8');
+    }
 
     const result = caster.progression.addProficiencyExp(weaponId, 2);
     if (result.leveledUp) {
@@ -2100,12 +2154,18 @@ export class CombatSystem {
     if (statusBonusDamagePercent > 0) {
       damage *= (1 + statusBonusDamagePercent);
     }
-    if (typeof member.hasStatusEffect === 'function' && member.hasStatusEffect('runic_infusion')) {
-      const runicEffect = member.activeStatusEffects?.get?.('runic_infusion')?.def;
-      const siphon = runicEffect?.energySiphonOnHit ?? 4;
+    let totalSiphon = 0;
+    if (member.activeStatusEffects) {
+      for (const activeEffect of member.activeStatusEffects.values()) {
+        if (activeEffect.def?.energySiphonOnHit) {
+          totalSiphon += activeEffect.def.energySiphonOnHit;
+        }
+      }
+    }
+    if (totalSiphon > 0) {
       const maxEnergy = member.maxEnergy ?? 100;
-      member.energy = Math.min(maxEnergy, (member.energy ?? 0) + siphon);
-      this.createFloatingText(member.x, member.y - 20, `RUNIC SIPHON! +${siphon} EN`, '#818cf8');
+      member.energy = Math.min(maxEnergy, (member.energy ?? 0) + totalSiphon);
+      this.createFloatingText(member.x, member.y - 20, `RUNIC SIPHON! +${totalSiphon} EN`, '#818cf8');
     }
     console.log(
       `[Combat] ${member.entityName} attacks ${target.entityName} with ${effectiveWeapon.name} for ${damage.toFixed(1)} damage! (Base: ${effectiveWeapon.baseDamage}, Lv ${weaponLevel} Bonus: +${(weaponLevel * damageBonusPerLevel).toFixed(1)}, Accuracy: ${(effectiveAccuracy * 100).toFixed(1)}%${isDW ? ` [DW Penalty -${(dwPenalty * 100).toFixed(0)}%]` : ''}${passiveImbuement?.bonusDamagePercent ? ` [Passive Imbuement: +${(passiveImbuement.bonusDamagePercent * 100).toFixed(0)}%]` : ''})`
@@ -3088,20 +3148,33 @@ export class CombatSystem {
     caster: Player,
     baseEnergyCost: number
   ): { multiplier: number; extraEnergyCost: number; isOvercharged: boolean } {
-    if (!caster.hasStatusEffect('overcharge')) {
+    let nextSpellStatusId: string | null = null;
+    let nextSpellDef: any = null;
+
+    if (caster.activeStatusEffects) {
+      for (const [effId, eff] of caster.activeStatusEffects.entries()) {
+        if (eff.def?.nextSpell) {
+          nextSpellStatusId = effId;
+          nextSpellDef = eff.def;
+          break;
+        }
+      }
+    }
+
+    if (!nextSpellStatusId || !nextSpellDef) {
       return { multiplier: 1.0, extraEnergyCost: 0, isOvercharged: false };
     }
-    const effDef = caster.activeStatusEffects.get('overcharge')?.def;
-    const dmgMult = effDef?.spellDamageMultiplier ?? 1.75;
-    const costMult = effDef?.spellEnergyCostMultiplier ?? 1.50;
+
+    const dmgMult = nextSpellDef.nextSpell?.damageMultiplier ?? nextSpellDef.spellDamageMultiplier ?? 1.75;
+    const costMult = nextSpellDef.nextSpell?.energyCostMultiplier ?? nextSpellDef.spellEnergyCostMultiplier ?? 1.50;
     const extraCost = Math.round(baseEnergyCost * (costMult - 1.0));
 
     const actualExtraDeducted = Math.min(extraCost, caster.energy);
     caster.energy -= actualExtraDeducted;
-    caster.removeStatusEffect('overcharge');
+    caster.removeStatusEffect(nextSpellStatusId);
 
     console.log(
-      `[Skill:Overcharge] ⚡ ${caster.entityName} consumed Overcharge! (${dmgMult}x damage, +${actualExtraDeducted} EN consumed)`
+      `[Skill:NextSpell] ⚡ ${caster.entityName} consumed ${nextSpellDef.name}! (${dmgMult}x damage, +${actualExtraDeducted} EN consumed)`
     );
 
     return {
@@ -3283,666 +3356,11 @@ export class CombatSystem {
     }
 
     // Generic Skill Engine delegation:
-    // If skillDef has an effects array, execute via generic SkillSystem.
     if (skillDef.effects && skillDef.effects.length > 0) {
       return this.skillSystem.execute(caster, skillDef, target, time);
     }
 
-    if (skillDef.targetType === 'self') {
-      caster.energy -= skillDef.energyCost;
-      caster.lastSkillUseTimes.set(skillId, time);
-      caster.lastAttackTime = time;
-
-      if (skillId === 'retaliate') {
-        const effDef = dataLoader.getStatusEffect('retaliate') || {
-          id: 'retaliate',
-          name: 'Retaliate',
-          durationMs: skillDef.durationMs ?? 15000,
-          tickIntervalMs: 15000,
-          damagePerTick: 0,
-          color: '#eab308'
-        };
-        caster.applyStatusEffect(effDef);
-        this.createFloatingText(caster.x, caster.y - 12, 'RETALIATE READY!', '#eab308');
-        console.log(`[Skill] ${caster.entityName} casts Retaliate! Next hit taken triggers free counterattack.`);
-        return true;
-      } else if (skillId === 'kenjutsu_deflection') {
-        const effDef = dataLoader.getStatusEffect('kenjutsu_deflection') || {
-          id: 'kenjutsu_deflection',
-          name: 'Kenjutsu Deflection',
-          durationMs: skillDef.durationMs ?? 6000,
-          tickIntervalMs: 6000,
-          damagePerTick: 0,
-          shieldAmount: skillDef.shieldAmount ?? 40,
-          reflectPercent: 0.50,
-          color: '#e11d48'
-        };
-        caster.applyStatusEffect(effDef);
-        this.createFloatingText(caster.x, caster.y - 12, 'KENJUTSU DEFLECTION!', '#e11d48');
-        console.log(`[Skill] ${caster.entityName} activates Kenjutsu Deflection! (40 shield + 50% reflect for 6s)`);
-        return true;
-      } else if (skillId === 'mass_revive') {
-        const radius = skillDef.radiusTiles ?? 6;
-        const casterTile = {
-          x: Math.floor(caster.x / caster.tileSize),
-          y: Math.floor(caster.y / caster.tileSize)
-        };
-        const downedAllies = this.party.filter((m) => {
-          if (m === caster || m.state !== 'downed') return false;
-          const mTile = {
-            x: Math.floor(m.x / m.tileSize),
-            y: Math.floor(m.y / m.tileSize)
-          };
-          return Math.max(Math.abs(casterTile.x - mTile.x), Math.abs(casterTile.y - mTile.y)) <= radius;
-        });
-
-        if (downedAllies.length === 0) {
-          console.warn(`[Skill] Cannot cast Mass Revive: no downed allies within ${radius} tiles!`);
-          return false;
-        }
-
-        for (const downedAlly of downedAllies) {
-          downedAlly.revive(caster);
-          this.createHealEffect(downedAlly.x, downedAlly.y);
-          this.createFloatingText(downedAlly.x, downedAlly.y - 12, 'MASS REVIVED!', '#facc15');
-        }
-
-        this.createHolyNovaEffect(caster.x, caster.y, radius * caster.tileSize);
-        this.createFloatingText(caster.x, caster.y - 15, `MASS REVIVE! (${downedAllies.length})`, '#facc15');
-        caster.progression.addProficiencyExp('healing_magic', 4);
-        console.log(`[Skill] ${caster.entityName} casts Mass Revive! Revived ${downedAllies.length} downed allies at once.`);
-        return true;
-      } else if (skillId === 'mana_shield') {
-        const effDef = dataLoader.getStatusEffect('mana_shield') || {
-          id: 'mana_shield',
-          name: 'Mana Shield',
-          durationMs: skillDef.durationMs ?? 6000,
-          tickIntervalMs: 6000,
-          damagePerTick: 0,
-          damageToEnergyPercent: skillDef.damageToEnergyPercent ?? 0.50,
-          color: '#38bdf8'
-        };
-        caster.applyStatusEffect(effDef);
-        this.createFloatingText(caster.x, caster.y - 12, 'MANA SHIELD!', '#38bdf8');
-        console.log(`[Skill] ${caster.entityName} casts Mana Shield! Converts 50% damage to energy for 6s.`);
-        return true;
-      } else if (skillId === 'overcharge') {
-        const effDef = dataLoader.getStatusEffect('overcharge') || {
-          id: 'overcharge',
-          name: 'Overcharge',
-          durationMs: skillDef.durationMs ?? 10000,
-          tickIntervalMs: 10000,
-          damagePerTick: 0,
-          spellDamageMultiplier: skillDef.spellDamageMultiplier ?? 1.75,
-          spellEnergyCostMultiplier: skillDef.spellEnergyCostMultiplier ?? 1.50,
-          color: '#c084fc'
-        };
-        caster.applyStatusEffect(effDef);
-        this.createFloatingText(caster.x, caster.y - 12, 'OVERCHARGE READY!', '#c084fc');
-        console.log(`[Skill] ${caster.entityName} activates Overcharge! Next spell deals +75% damage.`);
-        return true;
-      } else if (skillId === 'arcane_nova') {
-        const radius = skillDef.radiusTiles ?? 4;
-        const casterTile = {
-          x: Math.floor(caster.x / caster.tileSize),
-          y: Math.floor(caster.y / caster.tileSize)
-        };
-
-        const overcharge = this.consumeOverchargeIfActive(caster, skillDef.energyCost);
-
-        const effectiveWeapon = this.getEffectiveWeaponForAttack(caster);
-        const weaponId = effectiveWeapon.proficiencyId ?? effectiveWeapon.id;
-        const weaponLevel = caster.progression.getProficiencyLevel(weaponId);
-        const dmgBonus = effectiveWeapon.levelBonus?.damagePerLevel ?? 0;
-        const rawBase = effectiveWeapon.baseDamage + weaponLevel * dmgBonus;
-        const moodTier = dataLoader.getMoodTier(caster.mood);
-        const effBase = rawBase * moodTier.combatDamageMultiplier;
-        const baseMult = skillDef.damageMultiplier ?? 2.6;
-        const totalMult = baseMult * overcharge.multiplier;
-        const novaDamage = Math.max(12, effBase * totalMult);
-
-        let enemiesDamaged = 0;
-        for (const enemy of this.enemies) {
-          if (enemy.state === 'dead' || enemy.state === 'downed') continue;
-          const eTile = {
-            x: Math.floor(enemy.x / enemy.tileSize),
-            y: Math.floor(enemy.y / enemy.tileSize)
-          };
-          if (Math.max(Math.abs(casterTile.x - eTile.x), Math.abs(casterTile.y - eTile.y)) <= radius &&
-              this.pathfinder.hasLineOfSight(casterTile, eTile)) {
-            this.createSkillAttackEffect(caster.x, caster.y, enemy.x, enemy.y);
-            const text = overcharge.isOvercharged
-              ? `OVERCHARGED NOVA! -${novaDamage.toFixed(1)}`
-              : `ARCANE NOVA! -${novaDamage.toFixed(1)}`;
-            this.createFloatingText(enemy.x, enemy.y - 10, text, '#c084fc');
-            const downed = enemy.takeDamage(novaDamage);
-            if (downed) {
-              this.handleTargetDefeated(caster, enemy, weaponId);
-            }
-            enemiesDamaged++;
-          }
-        }
-
-        this.createArcaneNovaEffect(caster.x, caster.y, radius * caster.tileSize);
-        const headerText = overcharge.isOvercharged ? 'OVERCHARGED ARCANE NOVA!' : 'ARCANE NOVA!';
-        this.createFloatingText(caster.x, caster.y - 15, headerText, '#c084fc');
-        caster.progression.addProficiencyExp('arcane_magic', 4);
-        console.log(`[Skill] ${caster.entityName} casts Arcane Nova! Damaged ${enemiesDamaged} enemies.`);
-        return true;
-      } else if (skillId === 'runic_infusion') {
-        const effDef = dataLoader.getStatusEffect('runic_infusion') || {
-          id: 'runic_infusion',
-          name: 'Runic Infusion',
-          durationMs: skillDef.durationMs ?? 8000,
-          tickIntervalMs: 8000,
-          damagePerTick: 0,
-          bonusDamagePercent: skillDef.bonusDamagePercent ?? 0.25,
-          energySiphonOnHit: skillDef.energySiphonOnHit ?? 4,
-          color: '#818cf8'
-        };
-        caster.applyStatusEffect(effDef);
-        this.createFloatingText(caster.x, caster.y - 12, 'RUNIC INFUSION!', '#818cf8');
-        console.log(`[Skill] ${caster.entityName} activates Runic Infusion! Weapon imbued with +25% magic damage & energy siphon for 8s.`);
-        caster.progression.addProficiencyExp('longswords', 2);
-        caster.progression.addProficiencyExp('arcane_magic', 1);
-        return true;
-      }
-      return true;
-    } else {
-      const enemyTarget = (target as Enemy) || (caster.targetEntity instanceof Enemy ? caster.targetEntity : null);
-      if (!enemyTarget || enemyTarget.state === 'dead' || enemyTarget.state === 'downed') {
-        return false;
-      }
-
-      // Milestone 22: Riposte reactive counter-strike
-      if (skillId === 'riposte') {
-        if (!caster.hasStatusEffect('riposte_window')) {
-          console.warn(`[Skill] Cannot cast Riposte: must immediately follow an evasion or parry proc!`);
-          return false;
-        }
-        caster.removeStatusEffect('riposte_window');
-        caster.energy -= skillDef.energyCost;
-        caster.lastSkillUseTimes.set(skillId, time);
-        caster.lastAttackTime = time;
-        caster.state = 'attacking';
-
-        this.executePlayerCounterattack(caster, enemyTarget, {
-          procced: true,
-          damageMultiplier: skillDef.damageMultiplier ?? 1.8,
-          canCrit: true,
-          chainAttack: false
-        });
-        this.createFloatingText(caster.x, caster.y - 12, 'RIPOSTE!', '#eab308');
-        return true;
-      }
-
-      // ========================================================================
-      // Milestone 48: Dark Knight Full 5-Skill Kit
-      // Sourced directly from docs/true_grind_gdd (2).md Section 12.2
-      // ========================================================================
-
-      // Dark Knight Hybrid cross-proficiency scaling helper
-      const dkWeapon = this.getEffectiveWeaponForAttack(caster);
-      const dkWpnId = dkWeapon.proficiencyId ?? dkWeapon.id;
-      const isDkMelee = dkWeapon.category !== 'magic' && dkWpnId !== 'dark_magic';
-      const dkPartnerProfId = isDkMelee ? 'dark_magic' : 'longswords';
-      const dkPartnerLevel = caster.progression.getProficiencyLevel(dkPartnerProfId);
-      const dkHybridBonus = dkPartnerLevel * 0.15;
-
-      const dkWpnLevel = caster.progression.getProficiencyLevel(dkWpnId);
-      const dkDmgBonus = dkWeapon.levelBonus?.damagePerLevel ?? 0;
-      const dkRawBase = dkWeapon.baseDamage + dkWpnLevel * dkDmgBonus;
-      const dkMoodTier = dataLoader.getMoodTier(caster.mood);
-      const dkEffBase = dkRawBase * dkMoodTier.combatDamageMultiplier;
-
-      // 4. Soul Drain (Lv 30) - attack heals for a % of damage dealt (Life Steal)
-      if (skillId === 'soul_drain') {
-        const curDist = Math.max(
-          Math.abs(Math.floor(caster.x / caster.tileSize) - Math.floor(enemyTarget.x / enemyTarget.tileSize)),
-          Math.abs(Math.floor(caster.y / caster.tileSize) - Math.floor(enemyTarget.y / enemyTarget.tileSize))
-        );
-        const maxRange = skillDef.rangeTiles ?? (dkWeapon.attackRangeTiles ?? 1);
-        if (curDist > maxRange) {
-          console.warn(`[Skill] Cannot cast Soul Drain: target is outside range (${curDist} > ${maxRange})`);
-          return false;
-        }
-
-        caster.energy -= skillDef.energyCost;
-        caster.lastSkillUseTimes.set(skillId, time);
-        caster.lastAttackTime = time;
-        caster.state = 'attacking';
-
-        this.createSkillAttackEffect(caster.x, caster.y, enemyTarget.x, enemyTarget.y);
-        const skillDamage = (dkEffBase * (skillDef.damageMultiplier ?? 1.8)) + dkHybridBonus;
-
-        const drainRatio = skillDef.drainPercent ?? 0.5;
-        const healedAmount = Math.max(1, Math.round(skillDamage * drainRatio));
-        const actualHealed = caster.heal(healedAmount);
-
-        this.createHealEffect(caster.x, caster.y);
-        this.createFloatingText(caster.x, caster.y - 12, `+${actualHealed} HP (DRAIN)`, '#22c55e');
-        this.createFloatingText(enemyTarget.x, enemyTarget.y - 10, `SOUL DRAIN! -${skillDamage.toFixed(1)}`, '#10b981');
-
-        const downed = enemyTarget.takeDamage(skillDamage);
-        if (downed) {
-          this.handleTargetDefeated(caster, enemyTarget, dkWpnId);
-        }
-        return true;
-      }
-
-      // 5. Oblivion Strike (Lv 40 capstone) - massive single-target hit, consumes bonus energy for bonus damage
-      if (skillId === 'oblivion_strike') {
-        const curDist = Math.max(
-          Math.abs(Math.floor(caster.x / caster.tileSize) - Math.floor(enemyTarget.x / enemyTarget.tileSize)),
-          Math.abs(Math.floor(caster.y / caster.tileSize) - Math.floor(enemyTarget.y / enemyTarget.tileSize))
-        );
-        const maxRange = skillDef.rangeTiles ?? (dkWeapon.attackRangeTiles ?? 1);
-        if (curDist > maxRange) {
-          console.warn(`[Skill] Cannot cast Oblivion Strike: target is outside range (${curDist} > ${maxRange})`);
-          return false;
-        }
-
-        const baseCost = skillDef.energyCost ?? 35;
-        const maxBonusEnergy = skillDef.maxBonusEnergy ?? 25; // Hard cap at 25 bonus energy
-        const surplusEnergy = Math.max(0, caster.energy - baseCost);
-        const bonusEnergyConsumed = Math.min(maxBonusEnergy, surplusEnergy);
-
-        caster.energy -= (baseCost + bonusEnergyConsumed);
-        caster.lastSkillUseTimes.set(skillId, time);
-        caster.lastAttackTime = time;
-        caster.state = 'attacking';
-
-        this.createSkillAttackEffect(caster.x, caster.y, enemyTarget.x, enemyTarget.y);
-
-        const bonusPerPoint = skillDef.bonusDamagePerEnergy ?? 0.04;
-        const bonusMult = bonusEnergyConsumed * bonusPerPoint;
-        const totalMult = (skillDef.damageMultiplier ?? 3.0) + bonusMult;
-        const skillDamage = (dkEffBase * totalMult) + dkHybridBonus;
-
-        if (bonusEnergyConsumed > 0) {
-          this.createFloatingText(enemyTarget.x, enemyTarget.y - 10, `OBLIVION STRIKE! -${skillDamage.toFixed(1)} (+${bonusEnergyConsumed} EN)`, '#7c3aed');
-        } else {
-          this.createFloatingText(enemyTarget.x, enemyTarget.y - 10, `OBLIVION STRIKE! -${skillDamage.toFixed(1)}`, '#7c3aed');
-        }
-
-        const downed = enemyTarget.takeDamage(skillDamage);
-        if (downed) {
-          this.handleTargetDefeated(caster, enemyTarget, dkWpnId);
-        }
-        return true;
-      }
-
-      // ========================================================================
-      // Milestone 52: Swordsman, Ronin & Samurai Full 12-Offensive-Skill Kits
-      // ========================================================================
-      const katanaSkillIds = [
-        'heavenly_decapitation'
-      ];
-      if (katanaSkillIds.includes(skillId)) {
-        const curDist = Math.max(
-          Math.abs(Math.floor(caster.x / caster.tileSize) - Math.floor(enemyTarget.x / enemyTarget.tileSize)),
-          Math.abs(Math.floor(caster.y / caster.tileSize) - Math.floor(enemyTarget.y / enemyTarget.tileSize))
-        );
-        const wpn = this.getEffectiveWeaponForAttack(caster);
-        const maxRange = skillDef.rangeTiles ?? (wpn.attackRangeTiles ?? 1);
-        if (curDist > maxRange) {
-          console.warn(`[Skill] Cannot cast ${skillDef.name}: target is outside range (${curDist} > ${maxRange})`);
-          return false;
-        }
-
-        const wpnProfId = wpn.proficiencyId ?? wpn.id;
-        const wpnLevel = caster.progression.getProficiencyLevel(wpnProfId);
-        const dmgBonus = wpn.levelBonus?.damagePerLevel ?? 0;
-        const rawBase = wpn.baseDamage + wpnLevel * dmgBonus;
-        const moodTier = dataLoader.getMoodTier(caster.mood);
-        const effBase = rawBase * moodTier.combatDamageMultiplier;
-
-        // Energy handling
-        let energyCostToDeduct = skillDef.energyCost;
-        let bonusEnergyConsumed = 0;
-        if (skillId === 'heavenly_decapitation') {
-          const maxBonusEnergy = skillDef.maxBonusEnergy ?? 25;
-          const surplus = Math.max(0, caster.energy - energyCostToDeduct);
-          bonusEnergyConsumed = Math.min(maxBonusEnergy, surplus);
-          energyCostToDeduct += bonusEnergyConsumed;
-        }
-
-        caster.energy -= energyCostToDeduct;
-        caster.lastSkillUseTimes.set(skillId, time);
-        caster.lastAttackTime = time;
-        caster.state = 'attacking';
-
-        this.createSkillAttackEffect(caster.x, caster.y, enemyTarget.x, enemyTarget.y);
-
-        let skillDamage = effBase * (skillDef.damageMultiplier ?? 1.0);
-
-        if (skillId === 'heavenly_decapitation') {
-          const bonusPerPoint = skillDef.bonusDamagePerEnergy ?? 0.04;
-          const bonusMult = bonusEnergyConsumed * bonusPerPoint;
-          const totalMult = (skillDef.damageMultiplier ?? 3.2) + bonusMult;
-          skillDamage = effBase * totalMult;
-          if (bonusEnergyConsumed > 0) {
-            this.createFloatingText(enemyTarget.x, enemyTarget.y - 10, `HEAVENLY DECAPITATION! -${skillDamage.toFixed(1)} (+${bonusEnergyConsumed} EN)`, '#b45309');
-          } else {
-            this.createFloatingText(enemyTarget.x, enemyTarget.y - 10, `HEAVENLY DECAPITATION! -${skillDamage.toFixed(1)}`, '#b45309');
-          }
-        }
-
-        const downed = enemyTarget.takeDamage(skillDamage);
-        if (downed) {
-          this.handleTargetDefeated(caster, enemyTarget, wpnProfId);
-        }
-        return true;
-      }
-
-      // ========================================================================
-      // Milestone 54: Javelin Full 5-Skill Kit
-      // Hybrid archetype bridging Spears and Throwing Weapons
-      // ========================================================================
-      const javelinSkillIds = ['heartseeker_hurl'];
-      if (javelinSkillIds.includes(skillId)) {
-        const curDist = Math.max(
-          Math.abs(Math.floor(caster.x / caster.tileSize) - Math.floor(enemyTarget.x / enemyTarget.tileSize)),
-          Math.abs(Math.floor(caster.y / caster.tileSize) - Math.floor(enemyTarget.y / enemyTarget.tileSize))
-        );
-        const maxRange = skillDef.rangeTiles ?? 4;
-        if (curDist > maxRange) {
-          console.warn(`[Skill] Cannot cast ${skillDef.name}: target is outside range (${curDist} > ${maxRange})`);
-          return false;
-        }
-
-        caster.energy -= skillDef.energyCost;
-        caster.lastSkillUseTimes.set(skillId, time);
-        caster.lastAttackTime = time;
-        caster.state = 'attacking';
-
-        this.createSkillAttackEffect(caster.x, caster.y, enemyTarget.x, enemyTarget.y);
-
-        const weapon = this.getEffectiveWeaponForAttack(caster);
-        const weaponId = weapon.proficiencyId ?? weapon.id;
-        const weaponLevel = caster.progression.getProficiencyLevel(weaponId);
-        const dmgBonus = weapon.levelBonus?.damagePerLevel ?? 0;
-        const rawBase = weapon.baseDamage + weaponLevel * dmgBonus;
-        const moodTier = dataLoader.getMoodTier(caster.mood);
-        const effBase = rawBase * moodTier.combatDamageMultiplier;
-
-        // Partner proficiency calculation:
-        // If wielding spears (1H or 2H), partner is throwing_weapons; if wielding throwing_weapons, partner is spears
-        const isSpear = weaponId === 'spears' || weapon.id === 'spears' || weapon.id === 'spears_2h';
-        const partnerProfId = isSpear ? 'throwing_weapons' : 'spears';
-        const partnerLevel = caster.progression.getProficiencyLevel(partnerProfId);
-        const hybridBonus = partnerLevel * 0.15;
-
-        let skillDamage = (effBase * (skillDef.damageMultiplier ?? 1.0)) + hybridBonus;
-
-        const distBonusMult = skillDef.distanceBonusMultiplier ?? 0.10;
-        const distanceMultiplier = 1.0 + (curDist * distBonusMult);
-        skillDamage = (effBase * (skillDef.damageMultiplier ?? 2.8) * distanceMultiplier) + hybridBonus;
-        this.createFloatingText(
-          enemyTarget.x,
-          enemyTarget.y - 10,
-          `HEARTSEEKER HURL! -${skillDamage.toFixed(1)} (${curDist} TILES)`,
-          '#dc2626'
-        );
-        this.checkAndApplyBleed(caster, enemyTarget);
-
-
-        const downed = enemyTarget.takeDamage(skillDamage);
-        if (downed) {
-          this.handleTargetDefeated(caster, enemyTarget, weaponId);
-        }
-        return true;
-      }
-
-
-      // ========================================================================
-      // Milestone 58: Arcane Initiate Full 5-Skill Kit
-      // Generic caster template & first spark of raw magic
-      // ========================================================================
-      if (skillId === 'arcane_bolt') {
-        const curDist = Math.max(
-          Math.abs(Math.floor(caster.x / caster.tileSize) - Math.floor(enemyTarget.x / enemyTarget.tileSize)),
-          Math.abs(Math.floor(caster.y / caster.tileSize) - Math.floor(enemyTarget.y / enemyTarget.tileSize))
-        );
-        const maxRange = skillDef.rangeTiles ?? 5;
-        if (curDist > maxRange) {
-          console.warn(`[Skill] Cannot cast Arcane Bolt: target is outside range (${curDist} > ${maxRange})`);
-          return false;
-        }
-
-        caster.energy -= skillDef.energyCost;
-        caster.lastSkillUseTimes.set(skillId, time);
-        caster.lastAttackTime = time;
-        caster.state = 'attacking';
-
-        const overcharge = this.consumeOverchargeIfActive(caster, skillDef.energyCost);
-
-        this.createArcaneBoltEffect(caster.x, caster.y, enemyTarget.x, enemyTarget.y);
-        const effectiveWeapon = this.getEffectiveWeaponForAttack(caster);
-        const weaponId = effectiveWeapon.proficiencyId ?? effectiveWeapon.id;
-        const weaponLevel = caster.progression.getProficiencyLevel(weaponId);
-        const dmgBonus = effectiveWeapon.levelBonus?.damagePerLevel ?? 0;
-        const rawBase = effectiveWeapon.baseDamage + weaponLevel * dmgBonus;
-        const moodTier = dataLoader.getMoodTier(caster.mood);
-        const effBase = rawBase * moodTier.combatDamageMultiplier;
-        const mult = (skillDef.damageMultiplier ?? 1.4) * overcharge.multiplier;
-        const skillDamage = Math.max(8, effBase * mult);
-
-        const floatText = overcharge.isOvercharged
-          ? `OVERCHARGED BOLT! -${skillDamage.toFixed(1)}`
-          : `ARCANE BOLT! -${skillDamage.toFixed(1)}`;
-        this.createFloatingText(enemyTarget.x, enemyTarget.y - 10, floatText, '#c084fc');
-
-        const downed = enemyTarget.takeDamage(skillDamage);
-        if (downed) {
-          this.handleTargetDefeated(caster, enemyTarget, weaponId);
-        }
-        caster.progression.addProficiencyExp('arcane_magic', 2);
-        return true;
-      }
-
-      // ========================================================================
-      // Milestone — Spellsword Full 5-Skill Kit
-      // Longswords-only pure melee specialist with unconditional Arcane Magic scaling
-      // ========================================================================
-
-      // 5. Blade Beam (Lv 40 capstone) - ranged wave / cleave
-      if (skillId === 'blade_beam') {
-        const curDist = Math.max(
-          Math.abs(Math.floor(caster.x / caster.tileSize) - Math.floor(enemyTarget.x / enemyTarget.tileSize)),
-          Math.abs(Math.floor(caster.y / caster.tileSize) - Math.floor(enemyTarget.y / enemyTarget.tileSize))
-        );
-        const maxRange = skillDef.rangeTiles ?? 4;
-        if (curDist > maxRange) {
-          console.warn(`[Skill] Cannot cast Blade Beam: target is outside range (${curDist} > ${maxRange})`);
-          return false;
-        }
-
-        caster.energy -= skillDef.energyCost;
-        caster.lastSkillUseTimes.set(skillId, time);
-        caster.lastAttackTime = time;
-        caster.state = 'attacking';
-
-        this.createSkillAttackEffect(caster.x, caster.y, enemyTarget.x, enemyTarget.y);
-        const effectiveWeapon = this.getEffectiveWeaponForAttack(caster);
-        const weaponId = effectiveWeapon.proficiencyId ?? effectiveWeapon.id;
-        const weaponLevel = caster.progression.getProficiencyLevel(weaponId);
-        const dmgBonus = effectiveWeapon.levelBonus?.damagePerLevel ?? 0;
-        const rawBase = effectiveWeapon.baseDamage + weaponLevel * dmgBonus;
-        const moodTier = dataLoader.getMoodTier(caster.mood);
-        const effBase = rawBase * moodTier.combatDamageMultiplier;
-
-        // Unconditional Arcane Magic scaling
-        const arcaneLevel = caster.progression.getProficiencyLevel('arcane_magic');
-        const arcaneBonus = arcaneLevel * 0.15;
-
-        let skillDamage = (effBase * (skillDef.damageMultiplier ?? 2.6)) + arcaneBonus;
-
-        const isInfused = caster.hasStatusEffect('runic_infusion');
-        if (isInfused) {
-          // Capstone synergy: refund 10 energy & +20% damage
-          const maxEnergy = caster.maxEnergy ?? 100;
-          caster.energy = Math.min(maxEnergy, (caster.energy ?? 0) + 10);
-          skillDamage *= 1.20;
-          this.createFloatingText(caster.x, caster.y - 20, 'RUNIC RESONANCE! +10 EN', '#818cf8');
-        }
-
-        this.createFloatingText(enemyTarget.x, enemyTarget.y - 10, `BLADE BEAM! -${skillDamage.toFixed(1)}`, '#818cf8');
-        const downed = enemyTarget.takeDamage(skillDamage);
-        if (downed) {
-          this.handleTargetDefeated(caster, enemyTarget, weaponId);
-        }
-
-        // Cleave adjacent enemies if Runic Infusion is active
-        if (isInfused && this.enemies) {
-          const cleaveDamage = skillDamage * 0.60;
-          const eTile = { x: Math.floor(enemyTarget.x / enemyTarget.tileSize), y: Math.floor(enemyTarget.y / enemyTarget.tileSize) };
-          for (const otherEnemy of this.enemies) {
-            if (otherEnemy === enemyTarget || otherEnemy.state === 'dead' || otherEnemy.state === 'downed') continue;
-            const oTile = { x: Math.floor(otherEnemy.x / otherEnemy.tileSize), y: Math.floor(otherEnemy.y / otherEnemy.tileSize) };
-            if (Math.max(Math.abs(eTile.x - oTile.x), Math.abs(eTile.y - oTile.y)) <= 1) {
-              this.createFloatingText(otherEnemy.x, otherEnemy.y - 10, `CLEAVE! -${cleaveDamage.toFixed(1)}`, '#818cf8');
-              const oDowned = otherEnemy.takeDamage(cleaveDamage);
-              if (oDowned) {
-                this.handleTargetDefeated(caster, otherEnemy, weaponId);
-              }
-            }
-          }
-        }
-
-        caster.progression.addProficiencyExp('longswords', 2);
-        caster.progression.addProficiencyExp('arcane_magic', 2);
-        return true;
-      }
-
-      // ========================================================================
-      // Milestone — Thrower Full 5-Skill Kit
-      // Hybrid archetype bridging Throwing Weapons and Daggers
-      // ========================================================================
-      const throwerSkillIds = ['blade_barrage'];
-      if (throwerSkillIds.includes(skillId)) {
-        const curDist = Math.max(
-          Math.abs(Math.floor(caster.x / caster.tileSize) - Math.floor(enemyTarget.x / enemyTarget.tileSize)),
-          Math.abs(Math.floor(caster.y / caster.tileSize) - Math.floor(enemyTarget.y / enemyTarget.tileSize))
-        );
-        const maxRange = skillDef.rangeTiles ?? 3;
-        if (curDist > maxRange) {
-          console.warn(`[Skill] Cannot cast ${skillDef.name}: target is outside range (${curDist} > ${maxRange})`);
-          return false;
-        }
-
-        caster.energy -= skillDef.energyCost;
-        caster.lastSkillUseTimes.set(skillId, time);
-        caster.lastAttackTime = time;
-        caster.state = 'attacking';
-
-        this.createSkillAttackEffect(caster.x, caster.y, enemyTarget.x, enemyTarget.y);
-
-        const weapon = this.getEffectiveWeaponForAttack(caster);
-        const weaponId = weapon.proficiencyId ?? weapon.id;
-        const weaponLevel = caster.progression.getProficiencyLevel(weaponId);
-        const dmgBonus = weapon.levelBonus?.damagePerLevel ?? 0;
-        const rawBase = weapon.baseDamage + weaponLevel * dmgBonus;
-        const moodTier = dataLoader.getMoodTier(caster.mood);
-        const effBase = rawBase * moodTier.combatDamageMultiplier;
-
-        // Partner proficiency calculation:
-        // If wielding throwing_weapons, partner is daggers.
-        // If wielding daggers, partner is throwing_weapons.
-        // Otherwise, whichever of throwing_weapons or daggers has the higher level.
-        const isThrowing = weaponId === 'throwing_weapons' || weapon.id === 'throwing_weapons';
-        const isDagger = weaponId === 'daggers' || weapon.id === 'daggers';
-        let partnerProfId = 'throwing_weapons';
-        if (isThrowing) {
-          partnerProfId = 'daggers';
-        } else if (isDagger) {
-          partnerProfId = 'throwing_weapons';
-        } else {
-          const twLvl = caster.progression.getProficiencyLevel('throwing_weapons');
-          const dagLvl = caster.progression.getProficiencyLevel('daggers');
-          partnerProfId = twLvl >= dagLvl ? 'daggers' : 'throwing_weapons';
-        }
-        const partnerLevel = caster.progression.getProficiencyLevel(partnerProfId);
-        const hybridRate = 0.25;
-        const hybridBonus = partnerLevel * hybridRate;
-
-        let skillDamage = (effBase * (skillDef.damageMultiplier ?? 1.0)) + hybridBonus;
-
-        const hasSkirmishStep = caster.hasStatusEffect('skirmish_step');
-        if (hasSkirmishStep) {
-          const maxEnergy = caster.maxEnergy ?? 100;
-          caster.energy = Math.min(maxEnergy, (caster.energy ?? 0) + 10);
-          skillDamage *= 1.25;
-          this.createFloatingText(caster.x, caster.y - 20, 'SKIRMISH MOMENTUM! +10 EN', '#38bdf8');
-        }
-        this.createFloatingText(enemyTarget.x, enemyTarget.y - 10, `BLADE BARRAGE! -${skillDamage.toFixed(1)}`, '#ef4444');
-        this.checkAndApplyBleed(caster, enemyTarget);
-
-        const downed = enemyTarget.takeDamage(skillDamage);
-        if (downed) {
-          this.handleTargetDefeated(caster, enemyTarget, weaponId);
-        }
-
-        const partnerExp = skillId === 'blade_barrage' ? 2 : 1;
-        const primaryProf = weaponId === 'daggers' ? 'daggers' : 'throwing_weapons';
-        const partnerProf = primaryProf === 'daggers' ? 'throwing_weapons' : 'daggers';
-        caster.progression.addProficiencyExp(primaryProf, 2);
-        caster.progression.addProficiencyExp(partnerProf, partnerExp);
-        return true;
-      }
-
-      caster.energy -= skillDef.energyCost;
-      caster.lastSkillUseTimes.set(skillId, time);
-      caster.lastAttackTime = time;
-      caster.state = 'attacking';
-
-      this.createSkillAttackEffect(caster.x, caster.y, enemyTarget.x, enemyTarget.y);
-      const effectiveWeapon = this.getEffectiveWeaponForAttack(caster);
-      const weaponId = effectiveWeapon.proficiencyId ?? effectiveWeapon.id;
-      const weaponLevel = caster.progression.getProficiencyLevel(weaponId);
-      const dmgBonus = effectiveWeapon.levelBonus?.damagePerLevel ?? 0;
-      const rawBase = effectiveWeapon.baseDamage + weaponLevel * dmgBonus;
-      const moodTier = dataLoader.getMoodTier(caster.mood);
-      const effBase = rawBase * moodTier.combatDamageMultiplier;
-      let skillDamage = effBase * (skillDef.damageMultiplier ?? 1.0);
-
-      let statusBonusDamagePercent = 0;
-      if (caster.activeStatusEffects) {
-        for (const activeEffect of caster.activeStatusEffects.values()) {
-          if (activeEffect.def?.bonusDamagePercent) {
-            statusBonusDamagePercent += activeEffect.def.bonusDamagePercent;
-          }
-        }
-      }
-      if (statusBonusDamagePercent > 0) {
-        skillDamage *= (1 + statusBonusDamagePercent);
-      }
-
-      let flatBonusDmg = 0;
-      if (caster.activeStatusEffects) {
-        for (const activeEffect of caster.activeStatusEffects.values()) {
-          if (activeEffect.def?.flatBonusDamage) {
-            flatBonusDmg += activeEffect.def.flatBonusDamage;
-          }
-        }
-      }
-      if (flatBonusDmg > 0) {
-        skillDamage += flatBonusDmg;
-        this.createFloatingText(enemyTarget.x, enemyTarget.y - 24, `+${flatBonusDmg} HOLY!`, '#facc15');
-      }
-
-      this.executeWeaponSkillAttack(
-        caster,
-        enemyTarget,
-        skillDef,
-        skillDamage,
-        weaponId,
-        time,
-        1
-      );
-
-      return true;
-    }
+    return false;
   }
 
   public triggerRetaliation(attacker: Enemy, victim: Player): void {

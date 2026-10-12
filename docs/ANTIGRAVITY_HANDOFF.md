@@ -1442,6 +1442,34 @@ The following three intentional behavioural changes were reviewed and accepted b
   - Production build: `npm run build` succeeds cleanly.
   - Full test suite: 119/119 suites pass cleanly (`node scripts/run_all_tests.mjs --quiet`).
 
+### Legacy Skill Migration: Batch C (Final 15 Skills & Full Removal of Per-Skill Branches) (2026-10-12)
+
+**Resolved and shipped: Completed Batch C of the Legacy Skill Migration, migrating the final 15 skills (`retaliate`, `kenjutsu_deflection`, `mass_revive`, `mana_shield`, `overcharge`, `arcane_nova`, `runic_infusion`, `riposte`, `soul_drain`, `oblivion_strike`, `heavenly_decapitation`, `heartseeker_hurl`, `arcane_bolt`, `blade_beam`, `blade_barrage`) to data-driven `effects` in `data/skills.json`. Fully removed the legacy switch/fallback from `CombatSystem.castSkill` (zero per-skill `skillId ===` branches remain across CombatSystem and SkillSystem).**
+
+- **1. Status Effects & Generic Fields**:
+  - `data/statusEffects.json`: Removed unused `holyBonusDamage: 5` from `blessed_weapons`.
+  - Generic status properties implemented:
+    - `energySiphonOnHit`: Summed across active status effects and awarded on every basic weapon and skill hit.
+    - `damageToEnergyPercent`: Generic in `Entity.takeDamage` replacing hardcoded `mana_shield` ID check.
+    - `reflectPercent`: Generic on shield statuses in `CombatSystem.ts` replacing hardcoded `kenjutsu_deflection` check.
+    - `counterOnHit`: `{ consume: true }` generic on-hit/evade/parry/block counter trigger in `CombatSystem.ts` replacing `retaliate` check.
+    - `nextSpell`: `{ damageMultiplier, energyCostMultiplier }` generic spell modification consumed on next spell cast.
+- **2. Skill Effects & SkillSystem Engine Extensions**:
+  - `lifesteal`: Heals caster for a fraction of actual damage dealt (e.g. `soul_drain` 0.5).
+  - `resourceDump`: Consumes up to `maxBonusEnergy` surplus EN for `perEnergy` bonus damage (e.g. `oblivion_strike`, `heavenly_decapitation`).
+  - `distanceBonus`: Adds distance multiplier per tile between caster and target (e.g. `heartseeker_hurl` 0.1).
+  - `requiresSelfStatus`: Conditional synergy granting bonus damage multiplier, energy refund, and/or area cleave if caster has status (e.g. `blade_beam`, `blade_barrage`).
+  - `revive`: Revives downed allies within radius tiles via `ally.revive(caster)` (e.g. `mass_revive`).
+  - `consumeStatus`: Removes active status from caster upon execution (e.g. `riposte`).
+  - `asCounterattack`: Routes counterattack damage execution through `executePlayerCounterattack` to preserve crit and weapon logic.
+- **3. Complete Elimination of Legacy Fallback**:
+  - Deleted legacy fallback blocks in `CombatSystem.castSkill`. Every single skill now executes through data-driven `SkillSystem.execute`.
+  - Data test verifies all 240 skills in `skills.json` have non-empty `effects` and an `ai` configuration.
+- **4. Verification & Testing**:
+  - Comprehensive unit test suite `test/legacy_batch_c.test.ts` covering literal golden rows for all 15 skills.
+  - All 122 test suites pass cleanly (`node scripts/run_all_tests.mjs --quiet`).
+  - Production build: `npm run build` succeeds cleanly.
+
 
 
 

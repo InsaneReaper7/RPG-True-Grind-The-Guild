@@ -510,7 +510,8 @@ async function runMilestoneSpellswordTests() {
   assert.equal(beamSuccess, true, 'Blade Beam cast succeeds from 4 tiles away');
 
   // Energy cost is 35, synergy refunds 10 -> net cost 25
-  assert.equal(playerHybrid.energy, preBeamEnergy - 35 + 10, 'Blade Beam consumed 35 EN and refunded 10 EN via Runic resonance');
+  // Blade Beam costs 35 EN, synergy refunds 10 EN, and weapon hit siphons +4 EN under Runic Infusion
+  assert.equal(playerHybrid.energy, preBeamEnergy - 35 + 10 + 4, 'Blade Beam consumed 35 EN, refunded 10 EN via Runic resonance, and siphoned 4 EN');
   assert.ok(wavePrimary.hp < 200, `Primary target took Blade Beam damage (${wavePrimary.hp})`);
   assert.ok(waveAdjacent.hp < 200, `Adjacent target took cleave damage (${waveAdjacent.hp})`);
   assert.equal(waveDistant.hp, 200, 'Distant enemy took zero damage');

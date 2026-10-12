@@ -648,6 +648,19 @@ export interface SkillEffectDamage {
   lowHealthBonus?: { threshold: number; multiplier: number };
   requiresTargetStatus?: { status: string; multiplier: number };
   resourceDumpMultiplier?: number;
+  lifesteal?: number;
+  resourceDump?: {
+    maxBonusEnergy: number;
+    perEnergy: number;
+  };
+  distanceBonus?: number;
+  requiresSelfStatus?: {
+    status: string;
+    multiplier?: number;
+    energyRefund?: number;
+    area?: SkillEffectArea;
+  };
+  asCounterattack?: boolean;
 }
 
 export interface SkillEffectApplyStatus {
@@ -717,6 +730,16 @@ export interface SkillEffectReactive {
   windowStatus: string;
 }
 
+export interface SkillEffectRevive {
+  type: 'revive';
+  radiusTiles: number;
+}
+
+export interface SkillEffectConsumeStatus {
+  type: 'consumeStatus';
+  status: string;
+}
+
 export type SkillEffect =
   | SkillEffectDamage
   | SkillEffectApplyStatus
@@ -728,7 +751,9 @@ export type SkillEffect =
   | SkillEffectTaunt
   | SkillEffectMove
   | SkillEffectResource
-  | SkillEffectReactive;
+  | SkillEffectReactive
+  | SkillEffectRevive
+  | SkillEffectConsumeStatus;
 
 export interface SkillDef {
   id: string;
@@ -807,6 +832,11 @@ export interface StatusEffectDef {
   spellEnergyCostMultiplier?: number;
   bonusDamagePercent?: number;
   energySiphonOnHit?: number;
+  counterOnHit?: { consume?: boolean };
+  nextSpell?: {
+    damageMultiplier: number;
+    energyCostMultiplier: number;
+  };
   parryBonus?: number;
   persistent?: boolean;
 }

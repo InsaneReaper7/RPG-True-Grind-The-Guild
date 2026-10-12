@@ -84,6 +84,9 @@
       "durationMs": 15000,
       "tickIntervalMs": 15000,
       "damagePerTick": 0,
+      "counterOnHit": {
+        "consume": true
+      },
       "color": "#eab308"
     },
     {
@@ -137,7 +140,6 @@
       "tickIntervalMs": 60000,
       "damagePerTick": 0,
       "flatBonusDamage": 5,
-      "holyBonusDamage": 5,
       "color": "#facc15"
     },
     {
@@ -251,6 +253,10 @@
       "damagePerTick": 0,
       "spellDamageMultiplier": 1.75,
       "spellEnergyCostMultiplier": 1.50,
+      "nextSpell": {
+        "damageMultiplier": 1.75,
+        "energyCostMultiplier": 1.50
+      },
       "color": "#c084fc"
     },
     {

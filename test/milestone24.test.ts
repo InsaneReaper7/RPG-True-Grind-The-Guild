@@ -144,6 +144,9 @@ function createMockPlayer(
       if (def.holyBonusDamage && def.holyBonusDamage > 0) {
         active.holyBonusDamage = def.holyBonusDamage;
       }
+      if (def.flatBonusDamage && def.flatBonusDamage > 0) {
+        active.flatBonusDamage = def.flatBonusDamage;
+      }
       statusEffects.set(def.id, active);
     },
     removeStatusEffect: (effId: string) => {
@@ -404,7 +407,7 @@ async function runMilestone24Tests() {
 
   const bwEff = dataLoader.getStatusEffect('blessed_weapons');
   assert.ok(bwEff, 'blessed_weapons effect must be registered');
-  assert.equal(bwEff.holyBonusDamage, 5);
+  assert.equal(bwEff.flatBonusDamage, 5);
 
   console.log('✓ PASS: Data definitions and schema validation passed.\n');
 
@@ -632,7 +635,7 @@ async function runMilestone24Tests() {
 
   // Compute expected damage with holy bonus
   const effect = partyWarrior.getStatusEffect('blessed_weapons');
-  assert.equal(effect.holyBonusDamage, 5, 'Blessed Weapons gives +5 holy bonus damage');
+  assert.equal(effect.flatBonusDamage, 5, 'Blessed Weapons gives +5 flat bonus damage');
 
   console.log('✓ PASS: Blessed Weapons applies party-wide buff with +5 holy damage.\n');
 

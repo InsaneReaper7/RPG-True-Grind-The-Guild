@@ -53,6 +53,25 @@ export class SkillSystem {
           return false;
         }
       }
+      if (effect.type === 'revive') {
+        const radius = effect.radiusTiles ?? 6;
+        const cTile = {
+          x: Math.floor(caster.x / caster.tileSize),
+          y: Math.floor(caster.y / caster.tileSize)
+        };
+        const hasDowned = this.combatSystem.party.some((m) => {
+          if (m === caster || m.state !== 'downed') return false;
+          const mTile = {
+            x: Math.floor(m.x / m.tileSize),
+            y: Math.floor(m.y / m.tileSize)
+          };
+          return Math.max(Math.abs(cTile.x - mTile.x), Math.abs(cTile.y - mTile.y)) <= radius;
+        });
+        if (!hasDowned) {
+          console.warn(`[SkillSystem] Cannot cast ${skillDef.name}: no downed allies within ${radius} tiles!`);
+          return false;
+        }
+      }
     }
 
     // 3. Range check if applicable
@@ -209,6 +228,45 @@ export class SkillSystem {
           }
         }
 
+        // Distance bonus (e.g. Heartseeker Hurl: +0.10 per tile)
+        if (enemyTarget && effect.distanceBonus) {
+          const cTile = { x: Math.floor(caster.x / caster.tileSize), y: Math.floor(caster.y / caster.tileSize) };
+          const tTile = { x: Math.floor(enemyTarget.x / enemyTarget.tileSize), y: Math.floor(enemyTarget.y / enemyTarget.tileSize) };
+          const dist = Math.max(Math.abs(cTile.x - tTile.x), Math.abs(cTile.y - tTile.y));
+          totalMultiplier *= (1.0 + dist * effect.distanceBonus);
+        }
+
+        // Requires self status bonus (e.g. Blade Beam with Runic Infusion, Blade Barrage with Skirmish Step)
+        let selfStatusArea: any = null;
+        if (effect.requiresSelfStatus) {
+          if (caster.hasStatusEffect(effect.requiresSelfStatus.status)) {
+            if (effect.requiresSelfStatus.multiplier) {
+              totalMultiplier *= effect.requiresSelfStatus.multiplier;
+            }
+            if (effect.requiresSelfStatus.energyRefund) {
+              const maxEnergy = caster.maxEnergy ?? 100;
+              caster.energy = Math.min(maxEnergy, (caster.energy ?? 0) + effect.requiresSelfStatus.energyRefund);
+              const label = effect.requiresSelfStatus.status === 'skirmish_step' ? 'SKIRMISH MOMENTUM!' : 'RUNIC RESONANCE!';
+              const color = effect.requiresSelfStatus.status === 'skirmish_step' ? '#38bdf8' : '#818cf8';
+              this.combatSystem.createFloatingText(caster.x, caster.y - 20, `${label} +${effect.requiresSelfStatus.energyRefund} EN`, color);
+            }
+            if (effect.requiresSelfStatus.area) {
+              selfStatusArea = effect.requiresSelfStatus.area;
+            }
+          }
+        }
+
+        // Resource dump (e.g. Oblivion Strike, Heavenly Decapitation: spend up to N surplus EN for +perEnergy damage)
+        if (effect.resourceDump) {
+          const maxBonusEnergy = effect.resourceDump.maxBonusEnergy ?? 25;
+          const surplus = Math.max(0, caster.energy);
+          const bonusEnergyConsumed = Math.min(maxBonusEnergy, surplus);
+          if (bonusEnergyConsumed > 0) {
+            caster.energy -= bonusEnergyConsumed;
+            totalMultiplier += bonusEnergyConsumed * effect.resourceDump.perEnergy;
+          }
+        }
+
         // Calculate single hit damage
         const flatBonus = effect.flatBonus ?? 0;
         let profFlatBonus = 0;
@@ -284,6 +342,16 @@ export class SkillSystem {
           this.combatSystem.createSkillAttackEffect(caster.x, caster.y, enemyTarget.x, enemyTarget.y);
         }
 
+        if (effect.asCounterattack) {
+          this.combatSystem.executePlayerCounterattack(caster, enemyTarget, {
+            procced: true,
+            damageMultiplier: effect.multiplier,
+            canCrit: true,
+            chainAttack: false
+          });
+          return true;
+        }
+
         if (effect.scaling === 'weapon') {
           const isHit = this.combatSystem.executeWeaponSkillAttack(
             caster,
@@ -295,6 +363,12 @@ export class SkillSystem {
             hits
           );
           if (isHit) {
+            if (effect.lifesteal && hitDamage > 0) {
+              const healedAmount = Math.max(1, Math.round(hitDamage * effect.lifesteal));
+              const actualHealed = caster.heal(healedAmount);
+              this.combatSystem.createHealEffect(caster.x, caster.y);
+              this.combatSystem.createFloatingText(caster.x, caster.y - 12, `+${actualHealed} HP (DRAIN)`, '#22c55e');
+            }
             if (skillDef.partnerExp && effect.profBonus) {
               let profId = effect.profBonus.prof;
               if (!profId && effect.profBonus.partnerOf) {
@@ -307,6 +381,9 @@ export class SkillSystem {
             }
             if (effect.area) {
               this.executeAreaDamage(effect.area, caster, enemyTarget, hitDamage, weaponId, time, skillDef);
+            }
+            if (selfStatusArea) {
+              this.executeAreaDamage(selfStatusArea, caster, enemyTarget, hitDamage, weaponId, time, skillDef);
             }
           }
           return isHit;
@@ -325,8 +402,17 @@ export class SkillSystem {
               break;
             }
           }
+          if (effect.lifesteal && hitDamage > 0) {
+            const healedAmount = Math.max(1, Math.round(hitDamage * effect.lifesteal));
+            const actualHealed = caster.heal(healedAmount);
+            this.combatSystem.createHealEffect(caster.x, caster.y);
+            this.combatSystem.createFloatingText(caster.x, caster.y - 12, `+${actualHealed} HP (DRAIN)`, '#22c55e');
+          }
           if (effect.area) {
             this.executeAreaDamage(effect.area, caster, enemyTarget, hitDamage, weaponId, time, skillDef);
+          }
+          if (selfStatusArea) {
+            this.executeAreaDamage(selfStatusArea, caster, enemyTarget, hitDamage, weaponId, time, skillDef);
           }
           return true;
         }
@@ -615,6 +701,40 @@ export class SkillSystem {
           const maxEn = caster.maxEnergy ?? 100;
           caster.energy = Math.min(maxEn, caster.energy + effect.energyRestore);
           this.combatSystem.createFloatingText(caster.x, caster.y - 12, `+${effect.energyRestore} EN`, '#38bdf8');
+        }
+        break;
+      }
+
+      case 'revive': {
+        const radius = effect.radiusTiles ?? 6;
+        const cTile = {
+          x: Math.floor(caster.x / caster.tileSize),
+          y: Math.floor(caster.y / caster.tileSize)
+        };
+        const downedAllies = this.combatSystem.party.filter((m) => {
+          if (m === caster || m.state !== 'downed') return false;
+          const mTile = {
+            x: Math.floor(m.x / m.tileSize),
+            y: Math.floor(m.y / m.tileSize)
+          };
+          return Math.max(Math.abs(cTile.x - mTile.x), Math.abs(cTile.y - mTile.y)) <= radius;
+        });
+
+        for (const downedAlly of downedAllies) {
+          downedAlly.revive(caster);
+          this.combatSystem.createHealEffect(downedAlly.x, downedAlly.y);
+          this.combatSystem.createFloatingText(downedAlly.x, downedAlly.y - 12, 'MASS REVIVED!', '#facc15');
+        }
+
+        this.combatSystem.createHolyNovaEffect(caster.x, caster.y, radius * caster.tileSize);
+        this.combatSystem.createFloatingText(caster.x, caster.y - 15, `MASS REVIVE! (${downedAllies.length})`, '#facc15');
+        console.log(`[SkillSystem] ${caster.entityName} casts Mass Revive! Revived ${downedAllies.length} downed allies.`);
+        break;
+      }
+
+      case 'consumeStatus': {
+        if (effect.status) {
+          caster.removeStatusEffect(effect.status);
         }
         break;
       }

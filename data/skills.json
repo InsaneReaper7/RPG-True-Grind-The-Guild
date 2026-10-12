@@ -74,7 +74,23 @@
         "condition": {
           "requiresRiposteReady": true
         }
-      }
+      },
+      "effects": [
+        {
+          "type": "reactive",
+          "windowStatus": "riposte_window"
+        },
+        {
+          "type": "consumeStatus",
+          "status": "riposte_window"
+        },
+        {
+          "type": "damage",
+          "multiplier": 1.8,
+          "scaling": "weapon",
+          "asCounterattack": true
+        }
+      ]
     },
     {
       "id": "fleche",
@@ -412,7 +428,16 @@
       "ai": {
         "role": "defensive",
         "priority": 55
-      }
+      },
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "damageTakenMultiplier",
+          "value": 1,
+          "durationMs": 15000,
+          "target": "self"
+        }
+      ]
     },
     {
       "id": "unbreakable",
@@ -618,7 +643,13 @@
         "condition": {
           "requiresDownedAlly": true
         }
-      }
+      },
+      "effects": [
+        {
+          "type": "revive",
+          "radiusTiles": 6
+        }
+      ]
     },
     {
       "id": "normal_punch",
@@ -968,7 +999,22 @@
       "ai": {
         "role": "rotation",
         "priority": 45
-      }
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 1.8,
+          "scaling": "weapon",
+          "lifesteal": 0.5,
+          "profBonus": {
+            "partnerOf": [
+              "dark_magic",
+              "longswords"
+            ],
+            "perLevel": 0.15
+          }
+        }
+      ]
     },
     {
       "id": "oblivion_strike",
@@ -990,7 +1036,25 @@
       "ai": {
         "role": "finisher",
         "priority": 65
-      }
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 3,
+          "scaling": "weapon",
+          "resourceDump": {
+            "maxBonusEnergy": 25,
+            "perEnergy": 0.04
+          },
+          "profBonus": {
+            "partnerOf": [
+              "dark_magic",
+              "longswords"
+            ],
+            "perLevel": 0.15
+          }
+        }
+      ]
     },
     {
       "id": "blade_strike",
@@ -1415,7 +1479,15 @@
       "ai": {
         "role": "defensive",
         "priority": 60
-      }
+      },
+      "effects": [
+        {
+          "type": "shield",
+          "shieldAmount": 40,
+          "durationMs": 6000,
+          "target": "self"
+        }
+      ]
     },
     {
       "id": "heavenly_decapitation",
@@ -1437,7 +1509,18 @@
       "ai": {
         "role": "finisher",
         "priority": 70
-      }
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 3.2,
+          "scaling": "weapon",
+          "resourceDump": {
+            "maxBonusEnergy": 25,
+            "perEnergy": 0.04
+          }
+        }
+      ]
     },
     {
       "id": "piercing_throw",
@@ -1612,7 +1695,22 @@
       "ai": {
         "role": "finisher",
         "priority": 65
-      }
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 2.8,
+          "scaling": "weapon",
+          "distanceBonus": 0.1,
+          "profBonus": {
+            "partnerOf": [
+              "throwing_weapons",
+              "spears"
+            ],
+            "perLevel": 0.15
+          }
+        }
+      ]
     },
     {
       "id": "primed_shot",
@@ -1782,7 +1880,16 @@
       "ai": {
         "role": "rotation",
         "priority": 30
-      }
+      },
+      "vfx": "arcane_bolt",
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 1.4,
+          "scaling": "spell",
+          "minDamage": 8
+        }
+      ]
     },
     {
       "id": "mana_shield",
@@ -1803,7 +1910,16 @@
       "ai": {
         "role": "defensive",
         "priority": 70
-      }
+      },
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "damageTakenMultiplier",
+          "value": 1,
+          "durationMs": 6000,
+          "target": "self"
+        }
+      ]
     },
     {
       "id": "overcharge",
@@ -1825,7 +1941,16 @@
       "ai": {
         "role": "buff",
         "priority": 50
-      }
+      },
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "damageTakenMultiplier",
+          "value": 1,
+          "durationMs": 10000,
+          "target": "self"
+        }
+      ]
     },
     {
       "id": "blink",
@@ -1876,7 +2001,22 @@
         "condition": {
           "enemiesInRadius": 1
         }
-      }
+      },
+      "vfx": "arcane_nova",
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 2.6,
+          "scaling": "spell",
+          "minDamage": 12,
+          "area": {
+            "shape": "radius",
+            "radius": 4,
+            "falloff": 0,
+            "center": "caster"
+          }
+        }
+      ]
     },
     {
       "id": "arcane_strike",
@@ -1931,7 +2071,16 @@
       "ai": {
         "role": "buff",
         "priority": 55
-      }
+      },
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "bonusDamagePercent",
+          "value": 0.25,
+          "durationMs": 8000,
+          "target": "self"
+        }
+      ]
     },
     {
       "id": "spell_ward",
@@ -2026,7 +2175,29 @@
       "ai": {
         "role": "rotation",
         "priority": 50
-      }
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 2.6,
+          "scaling": "weapon",
+          "profBonus": {
+            "prof": "arcane_magic",
+            "perLevel": 0.15
+          },
+          "requiresSelfStatus": {
+            "status": "runic_infusion",
+            "multiplier": 1.2,
+            "energyRefund": 10,
+            "area": {
+              "shape": "cleave",
+              "radius": 1.5,
+              "falloff": 0.4,
+              "maxTargets": 3
+            }
+          }
+        }
+      ]
     },
     {
       "id": "quick_toss",
@@ -2201,7 +2372,27 @@
       "ai": {
         "role": "rotation",
         "priority": 50
-      }
+      },
+      "partnerExp": 2,
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 2.6,
+          "scaling": "weapon",
+          "profBonus": {
+            "partnerOf": [
+              "throwing_weapons",
+              "daggers"
+            ],
+            "perLevel": 0.25
+          },
+          "requiresSelfStatus": {
+            "status": "skirmish_step",
+            "multiplier": 1.25,
+            "energyRefund": 10
+          }
+        }
+      ]
     },
     {
       "id": "scorch",

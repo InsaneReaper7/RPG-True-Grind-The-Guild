@@ -298,16 +298,21 @@ export class Entity extends Phaser.GameObjects.Container {
       }
     }
 
-    if (this.hasStatusEffect('mana_shield') && damageRemaining > 0 && typeof (this as any).energy === 'number') {
+    if (damageRemaining > 0 && typeof (this as any).energy === 'number') {
       const p = this as any;
-      const convertPercent = this.activeStatusEffects.get('mana_shield')?.def?.damageToEnergyPercent ?? 0.50;
-      const damageToConvert = Math.floor(damageRemaining * convertPercent);
-      const converted = Math.min(damageToConvert, p.energy);
-      if (converted > 0) {
-        p.energy -= converted;
-        damageRemaining -= converted;
-        this.createFloatingText(`MANA SHIELD! -${converted} EN`, '#38bdf8');
-        console.log(`[Mana Shield] ${this.entityName}'s Mana Shield converted ${converted} damage to Energy! (${p.energy.toFixed(1)} Energy remaining)`);
+      for (const [_effId, activeEffect] of this.activeStatusEffects.entries()) {
+        const convertPercent = activeEffect.def?.damageToEnergyPercent;
+        if (convertPercent !== undefined && convertPercent > 0) {
+          const damageToConvert = Math.floor(damageRemaining * convertPercent);
+          const converted = Math.min(damageToConvert, p.energy);
+          if (converted > 0) {
+            p.energy -= converted;
+            damageRemaining -= converted;
+            this.createFloatingText(`MANA SHIELD! -${converted} EN`, '#38bdf8');
+            console.log(`[DamageToEnergy] ${this.entityName}'s ${activeEffect.def.name} converted ${converted} damage to Energy! (${p.energy.toFixed(1)} Energy remaining)`);
+          }
+          if (damageRemaining <= 0) break;
+        }
       }
     }
 
