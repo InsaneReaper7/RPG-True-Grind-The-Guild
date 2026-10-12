@@ -365,9 +365,13 @@ async function runMilestone20Tests() {
   assert.equal(archer.gridPos.x, 10, 'Archer X position should remain at 10');
   assert.equal(archer.gridPos.y, 14, 'Archer Y position should remain at 14 (did NOT close to melee distance 1)');
 
-  // Advance time past attack interval to trigger attack
+  // Advance time past attack interval to trigger attack (loop if an attack happens to be evaded by base evasion)
   const preHp = hero.hp;
-  combat.update(1500 + archerDef.attackIntervalMs + 50, 100);
+  let attackTime = 1500;
+  for (let i = 0; i < 5 && hero.hp >= preHp; i++) {
+    attackTime += archerDef.attackIntervalMs + 50;
+    combat.update(attackTime, 100);
+  }
   assert.ok(hero.hp < preHp, `Hero HP should decrease from ranged attack (pre: ${preHp}, post: ${hero.hp})`);
   console.log(`✓ PASS: Ranged enemy attacks cleanly from 4 tiles away without closing to melee adjacency.`);
 

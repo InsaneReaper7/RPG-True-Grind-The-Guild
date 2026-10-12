@@ -1027,6 +1027,297 @@
       "hiddenSkillBonuses": {
         "mana_regen": 0.05
       }
+    },
+    {
+      "id": "blademaster",
+      "name": "Blademaster",
+      "tier": "expert",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "katana",
+          "value": 60
+        },
+        {
+          "type": "proficiency",
+          "target": "longswords",
+          "value": 30
+        },
+        {
+          "type": "classLevel",
+          "target": "ronin",
+          "value": 15
+        }
+      ],
+      "fantasy": "Master of multiple sword styles",
+      "hiddenSkillBonuses": {
+        "parry": 0.05
+      }
+    },
+    {
+      "id": "assassin",
+      "name": "Assassin",
+      "tier": "expert",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "daggers",
+          "value": 60
+        },
+        {
+          "type": "proficiency",
+          "target": "dark_magic",
+          "value": 30
+        },
+        {
+          "type": "classLevel",
+          "target": "shadow_initiate",
+          "value": 15
+        }
+      ],
+      "fantasy": "Stealth and lethal precision",
+      "hiddenSkillBonuses": {
+        "evasion": 0.05
+      }
+    },
+    {
+      "id": "shadowblade",
+      "name": "Shadowblade",
+      "tier": "expert",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "daggers",
+          "value": 30
+        },
+        {
+          "type": "proficiency",
+          "target": "dark_magic",
+          "value": 30
+        },
+        {
+          "type": "classLevel",
+          "target": "shadow_initiate",
+          "value": 15
+        }
+      ],
+      "fantasy": "Assassin empowered by darkness",
+      "hiddenSkillBonuses": {
+        "counterattack": 0.05
+      }
+    },
+    {
+      "id": "arcane_archer",
+      "name": "Arcane Archer",
+      "tier": "expert",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "bows",
+          "value": 30
+        },
+        {
+          "type": "proficiency",
+          "target": "arcane_magic",
+          "value": 30
+        },
+        {
+          "type": "classLevel",
+          "target": "ranger",
+          "value": 15
+        }
+      ],
+      "fantasy": "Magic-infused archer",
+      "hiddenSkillBonuses": {
+        "evasion": 0.05
+      }
+    },
+    {
+      "id": "storm_archer",
+      "name": "Storm Archer",
+      "tier": "expert",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "bows",
+          "value": 30
+        },
+        {
+          "type": "proficiency",
+          "target": "lightning_magic",
+          "value": 30
+        },
+        {
+          "type": "classLevel",
+          "target": "ranger",
+          "value": 15
+        }
+      ],
+      "fantasy": "Lightning-infused ranged fighter",
+      "hiddenSkillBonuses": {
+        "evasion": 0.05
+      }
+    },
+    {
+      "id": "witch_hunter",
+      "name": "Witch Hunter",
+      "tier": "expert",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "crossbows",
+          "value": 30
+        },
+        {
+          "type": "proficiency",
+          "target": "holy_magic",
+          "value": 30
+        },
+        {
+          "type": "classLevel",
+          "target": "sharpshooter",
+          "value": 15
+        }
+      ],
+      "fantasy": "Monster and magic hunter",
+      "hiddenSkillBonuses": {
+        "parry": 0.05
+      }
+    },
+    {
+      "id": "knight",
+      "name": "Knight",
+      "tier": "expert",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "short_swords",
+          "value": 60
+        },
+        {
+          "type": "proficiency",
+          "target": "shields",
+          "value": 60
+        },
+        {
+          "type": "classLevel",
+          "target": "vanguard",
+          "value": 20
+        }
+      ],
+      "fantasy": "Traditional armored warrior",
+      "hiddenSkillBonuses": {
+        "block": 0.05
+      }
+    },
+    {
+      "id": "paladin",
+      "name": "Paladin",
+      "tier": "expert",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "shields",
+          "value": 30
+        },
+        {
+          "type": "proficiency",
+          "target": "holy_magic",
+          "value": 30
+        },
+        {
+          "type": "classLevel",
+          "target": "vanguard",
+          "value": 15
+        }
+      ],
+      "fantasy": "Holy warrior",
+      "hiddenSkillBonuses": {
+        "block": 0.05
+      }
+    },
+    {
+      "id": "juggernaut",
+      "name": "Juggernaut",
+      "tier": "expert",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "greatswords",
+          "value": 60
+        },
+        {
+          "type": "proficiency",
+          "target": "shields",
+          "value": 30
+        },
+        {
+          "type": "classLevel",
+          "target": "reaver",
+          "value": 15
+        }
+      ],
+      "fantasy": "Nearly unstoppable tank",
+      "hiddenSkillBonuses": {
+        "resilience": 0.05
+      }
+    },
+    {
+      "id": "battlemage",
+      "name": "Battlemage",
+      "tier": "expert",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "longswords",
+          "value": 30
+        },
+        {
+          "type": "proficiency",
+          "target": "fire_magic",
+          "value": 30
+        },
+        {
+          "type": "proficiency",
+          "target": "arcane_magic",
+          "value": 10
+        },
+        {
+          "type": "classLevel",
+          "target": "spellsword",
+          "value": 15
+        }
+      ],
+      "fantasy": "Aggressive magic warrior",
+      "hiddenSkillBonuses": {
+        "parry": 0.05
+      }
+    },
+    {
+      "id": "storm_lancer",
+      "name": "Storm Lancer",
+      "tier": "expert",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "spears",
+          "value": 30
+        },
+        {
+          "type": "proficiency",
+          "target": "lightning_magic",
+          "value": 30
+        },
+        {
+          "type": "classLevel",
+          "target": "hoplite",
+          "value": 15
+        }
+      ],
+      "fantasy": "Lightning-infused spear warrior",
+      "hiddenSkillBonuses": {
+        "counterattack": 0.05
+      }
     }
   ]
 }

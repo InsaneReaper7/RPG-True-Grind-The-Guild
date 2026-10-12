@@ -326,6 +326,29 @@
       "healPerTick": 1,
       "isHarmful": false,
       "color": "#22c55e"
+    },
+    {
+      "id": "runic_quiver",
+      "name": "Runic Quiver",
+      "durationMs": 10000,
+      "tickIntervalMs": 10000,
+      "damagePerTick": 0,
+      "bonusDamagePercent": 0.15,
+      "energySiphonOnHit": 3,
+      "isHarmful": false,
+      "color": "#38bdf8"
+    },
+    {
+      "id": "retaliation_stance",
+      "name": "Retaliation Stance",
+      "durationMs": 5000,
+      "tickIntervalMs": 5000,
+      "damagePerTick": 0,
+      "counterOnHit": {
+        "consume": false
+      },
+      "isHarmful": false,
+      "color": "#f59e0b"
     }
   ]
 }

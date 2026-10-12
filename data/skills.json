@@ -1965,9 +1965,13 @@
         }
       ],
       "description": "Short teleport, escape or reposition tool. Instantly blinks the caster 3 tiles away from the nearest enemy threat.",
+      "radiusTiles": 1,
       "ai": {
-        "role": "gapCloser",
-        "priority": 65
+        "role": "defensive",
+        "priority": 65,
+        "condition": {
+          "enemiesInRadius": 1
+        }
       },
       "effects": [
         {
@@ -7802,6 +7806,1834 @@
         "role": "finisher",
         "priority": 75
       }
+    },
+    {
+      "id": "twin_style_cut",
+      "name": "Twin Style Cut",
+      "energyCost": 16,
+      "cooldownMs": 3000,
+      "targetType": "enemy",
+      "rangeTiles": 1,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "blademaster",
+          "value": 1
+        }
+      ],
+      "description": "A swift dual-stance combination dealing 160% weapon damage split across 2 hits to the main target.",
+      "ai": {
+        "role": "rotation",
+        "priority": 30
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 1.6,
+          "scaling": "weapon",
+          "hits": 2
+        }
+      ]
+    },
+    {
+      "id": "sword_dance_stance",
+      "name": "Sword Dance Stance",
+      "energyCost": 20,
+      "cooldownMs": 18000,
+      "targetType": "self",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "blademaster",
+          "value": 10
+        }
+      ],
+      "description": "Adopts an offensive sword dance stance granting +25% bonus damage to the caster for 8s.",
+      "ai": {
+        "role": "defensive",
+        "priority": 55
+      },
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "bonusDamagePercent",
+          "value": 0.25,
+          "durationMs": 8000,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "crescent_sweep",
+      "name": "Crescent Sweep",
+      "energyCost": 26,
+      "cooldownMs": 7000,
+      "targetType": "enemy",
+      "rangeTiles": 1,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "blademaster",
+          "value": 20
+        }
+      ],
+      "description": "Sweeps the blade in a wide arc dealing 160% weapon damage to the main target and cleaving up to 3 targets in a 1.5 tile radius.",
+      "ai": {
+        "role": "rotation",
+        "priority": 55,
+        "condition": {
+          "enemiesInRadius": 2
+        }
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 1.6,
+          "scaling": "weapon",
+          "area": {
+            "shape": "cleave",
+            "radius": 1.5,
+            "maxTargets": 3
+          }
+        }
+      ]
+    },
+    {
+      "id": "iaijutsu",
+      "name": "Iaijutsu",
+      "energyCost": 28,
+      "cooldownMs": 9000,
+      "targetType": "enemy",
+      "rangeTiles": 1,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "blademaster",
+          "value": 30
+        }
+      ],
+      "description": "A lightning-fast draw slash dealing 240% weapon damage (x1.4 vs bleeding targets) and inflicting bleed for 6s on the main target.",
+      "ai": {
+        "role": "rotation",
+        "priority": 60
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 2.4,
+          "scaling": "weapon",
+          "requiresTargetStatus": {
+            "status": "bleed",
+            "multiplier": 1.4
+          }
+        },
+        {
+          "type": "applyStatus",
+          "status": "bleed",
+          "chance": 1,
+          "durationMs": 6000
+        }
+      ]
+    },
+    {
+      "id": "thousand_blade_storm",
+      "name": "Thousand Blade Storm",
+      "energyCost": 42,
+      "cooldownMs": 16000,
+      "targetType": "enemy",
+      "rangeTiles": 1,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "blademaster",
+          "value": 40
+        }
+      ],
+      "description": "Unleashes an overwhelming tempest of slashes dealing 360% weapon damage split across 6 hits and causing bleed for 6s on the main target.",
+      "ai": {
+        "role": "finisher",
+        "priority": 80
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 3.6,
+          "scaling": "weapon",
+          "hits": 6
+        },
+        {
+          "type": "applyStatus",
+          "status": "bleed",
+          "chance": 1,
+          "durationMs": 6000
+        }
+      ]
+    },
+    {
+      "id": "shiv",
+      "name": "Shiv",
+      "energyCost": 15,
+      "cooldownMs": 3000,
+      "targetType": "enemy",
+      "rangeTiles": 1,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "assassin",
+          "value": 1
+        }
+      ],
+      "description": "A vicious double stab dealing 160% weapon damage split across 2 hits to the main target.",
+      "ai": {
+        "role": "rotation",
+        "priority": 30
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 1.6,
+          "scaling": "weapon",
+          "hits": 2
+        }
+      ]
+    },
+    {
+      "id": "vanish",
+      "name": "Vanish",
+      "energyCost": 20,
+      "cooldownMs": 16000,
+      "targetType": "self",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "assassin",
+          "value": 10
+        }
+      ],
+      "description": "Melts into the shadows granting +50% evasion bonus for 3s to the caster.",
+      "ai": {
+        "role": "defensive",
+        "priority": 60,
+        "condition": {
+          "selfHpBelow": 0.6
+        }
+      },
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "evasionBonus",
+          "value": 0.5,
+          "durationMs": 3000,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "ambush",
+      "name": "Ambush",
+      "energyCost": 26,
+      "cooldownMs": 10000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "assassin",
+          "value": 20
+        }
+      ],
+      "description": "Teleports behind an enemy within 4 tiles and strikes for 200% weapon damage, exposing the main target for 6s.",
+      "ai": {
+        "role": "gapCloser",
+        "priority": 65
+      },
+      "effects": [
+        {
+          "type": "move",
+          "moveType": "teleportBehind",
+          "rangeTiles": 4
+        },
+        {
+          "type": "damage",
+          "multiplier": 2,
+          "scaling": "weapon"
+        },
+        {
+          "type": "applyStatus",
+          "status": "expose",
+          "chance": 1,
+          "durationMs": 6000
+        }
+      ]
+    },
+    {
+      "id": "toxin_blade",
+      "name": "Toxin Blade",
+      "energyCost": 22,
+      "cooldownMs": 9000,
+      "targetType": "enemy",
+      "rangeTiles": 1,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "assassin",
+          "value": 30
+        }
+      ],
+      "description": "Coat daggers with deadly poison dealing 130% weapon damage and poisoning the main target for 6s.",
+      "ai": {
+        "role": "rotation",
+        "priority": 50
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 1.3,
+          "scaling": "weapon"
+        },
+        {
+          "type": "applyStatus",
+          "status": "poison",
+          "chance": 1,
+          "durationMs": 6000
+        }
+      ]
+    },
+    {
+      "id": "death_mark",
+      "name": "Death Mark",
+      "energyCost": 42,
+      "cooldownMs": 16000,
+      "targetType": "enemy",
+      "rangeTiles": 1,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "assassin",
+          "value": 40
+        }
+      ],
+      "description": "Marks target for death dealing 360% weapon damage with x1.6 execution bonus below 30% HP to the main target.",
+      "ai": {
+        "role": "finisher",
+        "priority": 80
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 3.6,
+          "scaling": "weapon",
+          "lowHealthBonus": {
+            "threshold": 0.3,
+            "multiplier": 1.6
+          }
+        }
+      ]
+    },
+    {
+      "id": "umbral_slash",
+      "name": "Umbral Slash",
+      "energyCost": 16,
+      "cooldownMs": 3000,
+      "targetType": "enemy",
+      "rangeTiles": 1,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "shadowblade",
+          "value": 1
+        }
+      ],
+      "description": "Strikes with a shadow-wreathed blade dealing 140% weapon damage plus Dark Magic scaling and a 30% chance to curse the main target.",
+      "ai": {
+        "role": "rotation",
+        "priority": 30
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 1.4,
+          "scaling": "weapon",
+          "profBonus": {
+            "prof": "dark_magic",
+            "perLevel": 0.15
+          }
+        },
+        {
+          "type": "applyStatus",
+          "status": "curse",
+          "chance": 0.3,
+          "durationMs": 5000
+        }
+      ]
+    },
+    {
+      "id": "shadow_siphon",
+      "name": "Shadow Siphon",
+      "energyCost": 22,
+      "cooldownMs": 8000,
+      "targetType": "enemy",
+      "rangeTiles": 1,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "shadowblade",
+          "value": 10
+        }
+      ],
+      "description": "Drains life essence from the shadows dealing 160% weapon damage to the main target with 30% lifesteal.",
+      "ai": {
+        "role": "rotation",
+        "priority": 50
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 1.6,
+          "scaling": "weapon",
+          "lifesteal": 0.3
+        }
+      ]
+    },
+    {
+      "id": "night_veil",
+      "name": "Night Veil",
+      "energyCost": 20,
+      "cooldownMs": 16000,
+      "targetType": "self",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "shadowblade",
+          "value": 20
+        }
+      ],
+      "description": "Shrouds the caster in umbral ward reducing damage taken to 75% (DT 0.75) for 6s.",
+      "ai": {
+        "role": "defensive",
+        "priority": 55
+      },
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "damageTakenMultiplier",
+          "value": 0.75,
+          "durationMs": 6000,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "hex_blade",
+      "name": "Hex Blade",
+      "energyCost": 22,
+      "cooldownMs": 9000,
+      "targetType": "enemy",
+      "rangeTiles": 1,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "shadowblade",
+          "value": 30
+        }
+      ],
+      "description": "Strikes with hexed darkness dealing 140% weapon damage and amplifying damage taken by 20% (Amp 0.20) for 6s on the main target.",
+      "ai": {
+        "role": "rotation",
+        "priority": 50
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 1.4,
+          "scaling": "weapon"
+        },
+        {
+          "type": "debuff",
+          "stat": "damageAmplificationPercent",
+          "value": 0.2,
+          "durationMs": 6000,
+          "target": "enemy"
+        }
+      ]
+    },
+    {
+      "id": "eclipse",
+      "name": "Eclipse",
+      "energyCost": 42,
+      "cooldownMs": 16000,
+      "targetType": "self",
+      "radiusTiles": 2,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "shadowblade",
+          "value": 40
+        }
+      ],
+      "description": "Summons a shroud of pure darkness centered on caster dealing 320% weapon damage to all enemies in a 2-tile radius and cursing the main target for 5s.",
+      "ai": {
+        "role": "rotation",
+        "priority": 80,
+        "condition": {
+          "enemiesInRadius": 2
+        }
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 3.2,
+          "scaling": "weapon",
+          "area": {
+            "shape": "radius",
+            "radius": 2,
+            "center": "caster"
+          }
+        },
+        {
+          "type": "applyStatus",
+          "status": "curse",
+          "chance": 1,
+          "durationMs": 5000
+        }
+      ]
+    },
+    {
+      "id": "arcane_arrow",
+      "name": "Arcane Arrow",
+      "energyCost": 16,
+      "cooldownMs": 3000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "arcane_archer",
+          "value": 1
+        }
+      ],
+      "description": "Fires an arrow infused with arcane power dealing 150% weapon damage plus Arcane Magic scaling to the main target.",
+      "ai": {
+        "role": "rotation",
+        "priority": 30
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 1.5,
+          "scaling": "weapon",
+          "profBonus": {
+            "prof": "arcane_magic",
+            "perLevel": 0.15
+          }
+        }
+      ]
+    },
+    {
+      "id": "seeking_volley",
+      "name": "Seeking Volley",
+      "energyCost": 24,
+      "cooldownMs": 8000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "arcane_archer",
+          "value": 10
+        }
+      ],
+      "description": "Looses seeking arrows dealing 130% weapon damage and chaining across up to 3 targets in a 3-tile radius (25% falloff).",
+      "ai": {
+        "role": "rotation",
+        "priority": 55,
+        "condition": {
+          "enemiesInRadius": 2
+        }
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 1.3,
+          "scaling": "weapon",
+          "area": {
+            "shape": "chain",
+            "maxTargets": 3,
+            "radius": 3,
+            "falloff": 0.25
+          }
+        }
+      ]
+    },
+    {
+      "id": "runic_quiver",
+      "name": "Runic Quiver",
+      "energyCost": 22,
+      "cooldownMs": 20000,
+      "targetType": "self",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "arcane_archer",
+          "value": 20
+        }
+      ],
+      "description": "Enchants arrows with runic power for 10s granting +15% bonus damage and siphoning 3 energy on hit.",
+      "ai": {
+        "role": "defensive",
+        "priority": 55
+      },
+      "effects": [
+        {
+          "type": "buff",
+          "target": "self",
+          "durationMs": 10000
+        }
+      ]
+    },
+    {
+      "id": "piercing_ray",
+      "name": "Piercing Ray",
+      "energyCost": 28,
+      "cooldownMs": 10000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "arcane_archer",
+          "value": 30
+        }
+      ],
+      "description": "Fires a concentrated beam dealing 180% weapon damage piercing up to 4 targets in a line and applying arcane vulnerability for 6s on the main target.",
+      "ai": {
+        "role": "rotation",
+        "priority": 55
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 1.8,
+          "scaling": "weapon",
+          "area": {
+            "shape": "line",
+            "maxTargets": 4
+          }
+        },
+        {
+          "type": "applyStatus",
+          "status": "arcane_vulnerability",
+          "chance": 1,
+          "durationMs": 6000
+        }
+      ]
+    },
+    {
+      "id": "starfall",
+      "name": "Starfall",
+      "energyCost": 44,
+      "cooldownMs": 18000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "arcane_archer",
+          "value": 40
+        }
+      ],
+      "description": "Calls down arcane stars dealing 340% weapon damage to all enemies in a 2-tile radius around the main target.",
+      "ai": {
+        "role": "rotation",
+        "priority": 85,
+        "condition": {
+          "enemiesInRadius": 2
+        }
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 3.4,
+          "scaling": "weapon",
+          "area": {
+            "shape": "radius",
+            "radius": 2
+          }
+        }
+      ]
+    },
+    {
+      "id": "static_arrow",
+      "name": "Static Arrow",
+      "energyCost": 16,
+      "cooldownMs": 3000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "storm_archer",
+          "value": 1
+        }
+      ],
+      "description": "Fires an electrified arrow dealing 150% weapon damage with a 25% chance to shock the main target.",
+      "ai": {
+        "role": "rotation",
+        "priority": 30
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 1.5,
+          "scaling": "weapon"
+        },
+        {
+          "type": "applyStatus",
+          "status": "shock",
+          "chance": 0.25,
+          "durationMs": 4000
+        }
+      ]
+    },
+    {
+      "id": "chain_shot",
+      "name": "Chain Shot",
+      "energyCost": 24,
+      "cooldownMs": 8000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "storm_archer",
+          "value": 10
+        }
+      ],
+      "description": "Shoots a lightning-linked arrow dealing 140% weapon damage chaining across up to 3 targets in a 3-tile radius (30% falloff).",
+      "ai": {
+        "role": "rotation",
+        "priority": 55,
+        "condition": {
+          "enemiesInRadius": 2
+        }
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 1.4,
+          "scaling": "weapon",
+          "area": {
+            "shape": "chain",
+            "maxTargets": 3,
+            "radius": 3,
+            "falloff": 0.3
+          }
+        }
+      ]
+    },
+    {
+      "id": "tailwind_draw",
+      "name": "Tailwind Draw",
+      "energyCost": 18,
+      "cooldownMs": 18000,
+      "targetType": "self",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "storm_archer",
+          "value": 20
+        }
+      ],
+      "description": "Harnesses a swift tailwind granting +20% bonus damage for 8s to the caster.",
+      "ai": {
+        "role": "defensive",
+        "priority": 55
+      },
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "bonusDamagePercent",
+          "value": 0.2,
+          "durationMs": 8000,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "thunder_arrow",
+      "name": "Thunder Arrow",
+      "energyCost": 28,
+      "cooldownMs": 10000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "storm_archer",
+          "value": 30
+        }
+      ],
+      "description": "Fires a booming thunder arrow dealing 220% weapon damage with a 60% chance to shock the main target.",
+      "ai": {
+        "role": "opener",
+        "priority": 60
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 2.2,
+          "scaling": "weapon"
+        },
+        {
+          "type": "applyStatus",
+          "status": "shock",
+          "chance": 0.6,
+          "durationMs": 4000
+        }
+      ]
+    },
+    {
+      "id": "storm_barrage",
+      "name": "Storm Barrage",
+      "energyCost": 44,
+      "cooldownMs": 18000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "storm_archer",
+          "value": 40
+        }
+      ],
+      "description": "Unleashes a furious storm barrage dealing 340% weapon damage chaining across up to 5 targets in a 3-tile radius (20% falloff) with a 40% chance to shock the main target.",
+      "ai": {
+        "role": "rotation",
+        "priority": 85,
+        "condition": {
+          "enemiesInRadius": 2
+        }
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 3.4,
+          "scaling": "weapon",
+          "area": {
+            "shape": "chain",
+            "maxTargets": 5,
+            "radius": 3,
+            "falloff": 0.2
+          }
+        },
+        {
+          "type": "applyStatus",
+          "status": "shock",
+          "chance": 0.4,
+          "durationMs": 4000
+        }
+      ]
+    },
+    {
+      "id": "silver_bolt",
+      "name": "Silver Bolt",
+      "energyCost": 18,
+      "cooldownMs": 3000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "witch_hunter",
+          "value": 1
+        }
+      ],
+      "description": "Fires a sanctified silver bolt dealing 160% weapon damage plus Holy Magic scaling to the main target.",
+      "ai": {
+        "role": "rotation",
+        "priority": 30
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 1.6,
+          "scaling": "weapon",
+          "profBonus": {
+            "prof": "holy_magic",
+            "perLevel": 0.15
+          }
+        }
+      ]
+    },
+    {
+      "id": "purging_shot",
+      "name": "Purging Shot",
+      "energyCost": 22,
+      "cooldownMs": 8000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "witch_hunter",
+          "value": 10
+        }
+      ],
+      "description": "Fires a radiant bolt dealing 140% weapon damage with a 50% chance to blind the main target for 5s.",
+      "ai": {
+        "role": "rotation",
+        "priority": 50
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 1.4,
+          "scaling": "weapon"
+        },
+        {
+          "type": "applyStatus",
+          "status": "blind",
+          "chance": 0.5,
+          "durationMs": 5000
+        }
+      ]
+    },
+    {
+      "id": "consecrated_ward",
+      "name": "Consecrated Ward",
+      "energyCost": 24,
+      "cooldownMs": 16000,
+      "targetType": "self",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "witch_hunter",
+          "value": 20
+        }
+      ],
+      "description": "Erects a consecrated barrier granting self a 40 damage shield for 8s.",
+      "ai": {
+        "role": "defensive",
+        "priority": 55
+      },
+      "effects": [
+        {
+          "type": "shield",
+          "shieldAmount": 40,
+          "durationMs": 8000,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "judgment_bolt",
+      "name": "Judgment Bolt",
+      "energyCost": 28,
+      "cooldownMs": 10000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "witch_hunter",
+          "value": 30
+        }
+      ],
+      "description": "Fires a holy execution bolt dealing 220% weapon damage and exposing the main target for 6s.",
+      "ai": {
+        "role": "opener",
+        "priority": 60
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 2.2,
+          "scaling": "weapon"
+        },
+        {
+          "type": "applyStatus",
+          "status": "expose",
+          "chance": 1,
+          "durationMs": 6000
+        }
+      ]
+    },
+    {
+      "id": "inquisition",
+      "name": "Inquisition",
+      "energyCost": 44,
+      "cooldownMs": 16000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "witch_hunter",
+          "value": 40
+        }
+      ],
+      "description": "Condemns the target dealing 360% weapon damage with x1.4 execution bonus below 40% HP to the main target.",
+      "ai": {
+        "role": "finisher",
+        "priority": 80
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 3.6,
+          "scaling": "weapon",
+          "lowHealthBonus": {
+            "threshold": 0.4,
+            "multiplier": 1.4
+          }
+        }
+      ]
+    },
+    {
+      "id": "shield_strike",
+      "name": "Shield Strike",
+      "energyCost": 16,
+      "cooldownMs": 3000,
+      "targetType": "enemy",
+      "rangeTiles": 1,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "knight",
+          "value": 1
+        }
+      ],
+      "description": "Bashes target with heavy shield dealing 140% weapon damage with a 15% chance to stun the main target.",
+      "ai": {
+        "role": "rotation",
+        "priority": 30
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 1.4,
+          "scaling": "weapon"
+        },
+        {
+          "type": "applyStatus",
+          "status": "stun",
+          "chance": 0.15,
+          "durationMs": 2000
+        }
+      ]
+    },
+    {
+      "id": "bulwark_stance",
+      "name": "Bulwark Stance",
+      "energyCost": 24,
+      "cooldownMs": 15000,
+      "targetType": "self",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "knight",
+          "value": 10
+        }
+      ],
+      "description": "Takes a fortified bulwark stance reducing damage taken to 60% (DT 0.6) for 6s on the caster.",
+      "ai": {
+        "role": "defensive",
+        "priority": 65
+      },
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "damageTakenMultiplier",
+          "value": 0.6,
+          "durationMs": 6000,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "valorous_strike",
+      "name": "Valorous Strike",
+      "energyCost": 30,
+      "cooldownMs": 10000,
+      "targetType": "enemy",
+      "rangeTiles": 1,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "knight",
+          "value": 20
+        }
+      ],
+      "description": "Strikes with righteous valor dealing 240% weapon damage and weakening the main target by 25% (Weaken 0.25) for 6s.",
+      "ai": {
+        "role": "rotation",
+        "priority": 55
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 2.4,
+          "scaling": "weapon"
+        },
+        {
+          "type": "debuff",
+          "stat": "damageReductionPercent",
+          "value": 0.25,
+          "durationMs": 6000,
+          "target": "enemy"
+        }
+      ]
+    },
+    {
+      "id": "provoke",
+      "name": "Provoke",
+      "energyCost": 24,
+      "cooldownMs": 12000,
+      "targetType": "self",
+      "radiusTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "knight",
+          "value": 30
+        }
+      ],
+      "description": "Issues a roaring challenge taunting enemies within a 4-tile radius for 6s and granting self a 40 damage shield for 8s.",
+      "ai": {
+        "role": "defensive",
+        "priority": 70,
+        "condition": {
+          "enemiesInRadius": 1
+        }
+      },
+      "effects": [
+        {
+          "type": "taunt",
+          "radiusTiles": 4,
+          "durationMs": 6000
+        },
+        {
+          "type": "shield",
+          "shieldAmount": 40,
+          "durationMs": 8000,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "last_bastion",
+      "name": "Last Bastion",
+      "energyCost": 40,
+      "cooldownMs": 40000,
+      "targetType": "self",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "knight",
+          "value": 40
+        }
+      ],
+      "description": "Becomes an unbreakable bastion reducing damage taken to 30% (DT 0.3) for 6s and healing self for 20% max HP.",
+      "ai": {
+        "role": "defensive",
+        "priority": 95,
+        "condition": {
+          "selfHpBelow": 0.35
+        }
+      },
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "damageTakenMultiplier",
+          "value": 0.3,
+          "durationMs": 6000,
+          "target": "self"
+        },
+        {
+          "type": "heal",
+          "percent": 0.2,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "holy_strike",
+      "name": "Holy Strike",
+      "energyCost": 18,
+      "cooldownMs": 3000,
+      "targetType": "enemy",
+      "rangeTiles": 1,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "paladin",
+          "value": 1
+        }
+      ],
+      "description": "Strikes with holy light dealing 140% weapon damage plus Holy Magic scaling to the main target and healing lowest ally for 5 HP.",
+      "ai": {
+        "role": "rotation",
+        "priority": 30
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 1.4,
+          "scaling": "weapon",
+          "profBonus": {
+            "prof": "holy_magic",
+            "perLevel": 0.15
+          }
+        },
+        {
+          "type": "heal",
+          "amount": 5,
+          "target": "lowestAlly"
+        }
+      ]
+    },
+    {
+      "id": "lay_on_hands",
+      "name": "Lay on Hands",
+      "energyCost": 30,
+      "cooldownMs": 20000,
+      "targetType": "ally",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "paladin",
+          "value": 10
+        }
+      ],
+      "description": "Channels divine grace to heal 40 HP to the lowest ally.",
+      "ai": {
+        "role": "support",
+        "priority": 85,
+        "condition": {
+          "allyHpBelow": 0.4
+        }
+      },
+      "effects": [
+        {
+          "type": "heal",
+          "amount": 40,
+          "target": "lowestAlly"
+        }
+      ]
+    },
+    {
+      "id": "aura_of_protection",
+      "name": "Aura of Protection",
+      "energyCost": 26,
+      "cooldownMs": 20000,
+      "targetType": "self",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "paladin",
+          "value": 20
+        }
+      ],
+      "description": "Projects a protective aura reducing damage taken to 85% (DT 0.85) for 8s for the entire party.",
+      "ai": {
+        "role": "defensive",
+        "priority": 60
+      },
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "damageTakenMultiplier",
+          "value": 0.85,
+          "durationMs": 8000,
+          "target": "party"
+        }
+      ]
+    },
+    {
+      "id": "consecration",
+      "name": "Consecration",
+      "energyCost": 28,
+      "cooldownMs": 10000,
+      "targetType": "self",
+      "radiusTiles": 1.5,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "paladin",
+          "value": 30
+        }
+      ],
+      "description": "Consecrates the ground centered on caster dealing 160% weapon damage in a 1.5 tile radius with a 30% chance to blind the main target for 5s.",
+      "ai": {
+        "role": "rotation",
+        "priority": 55,
+        "condition": {
+          "enemiesInRadius": 2
+        }
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 1.6,
+          "scaling": "weapon",
+          "area": {
+            "shape": "radius",
+            "radius": 1.5,
+            "center": "caster"
+          }
+        },
+        {
+          "type": "applyStatus",
+          "status": "blind",
+          "chance": 0.3,
+          "durationMs": 5000
+        }
+      ]
+    },
+    {
+      "id": "divine_judgment",
+      "name": "Divine Judgment",
+      "energyCost": 44,
+      "cooldownMs": 18000,
+      "targetType": "enemy",
+      "rangeTiles": 1,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "paladin",
+          "value": 40
+        }
+      ],
+      "description": "Invokes divine judgment dealing 320% weapon damage to the main target and healing all party members for 15 HP.",
+      "ai": {
+        "role": "finisher",
+        "priority": 80
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 3.2,
+          "scaling": "weapon"
+        },
+        {
+          "type": "heal",
+          "amount": 15,
+          "target": "party"
+        }
+      ]
+    },
+    {
+      "id": "crushing_swing",
+      "name": "Crushing Swing",
+      "energyCost": 22,
+      "cooldownMs": 4000,
+      "targetType": "enemy",
+      "rangeTiles": 1,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "juggernaut",
+          "value": 1
+        }
+      ],
+      "description": "A tremendous overhead cleave dealing 190% weapon damage to the main target.",
+      "ai": {
+        "role": "rotation",
+        "priority": 30
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 1.9,
+          "scaling": "weapon"
+        }
+      ]
+    },
+    {
+      "id": "iron_hide",
+      "name": "Iron Hide",
+      "energyCost": 24,
+      "cooldownMs": 18000,
+      "targetType": "self",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "juggernaut",
+          "value": 10
+        }
+      ],
+      "description": "Hardens skin into iron reducing damage taken to 65% (DT 0.65) for 8s on the caster.",
+      "ai": {
+        "role": "defensive",
+        "priority": 60
+      },
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "damageTakenMultiplier",
+          "value": 0.65,
+          "durationMs": 8000,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "earthquake_slam",
+      "name": "Earthquake Slam",
+      "energyCost": 34,
+      "cooldownMs": 10000,
+      "targetType": "self",
+      "radiusTiles": 1.5,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "juggernaut",
+          "value": 20
+        }
+      ],
+      "description": "Slams greatsword into ground centered on caster dealing 200% weapon damage in a 1.5 tile radius with a 40% chance to stun the main target.",
+      "ai": {
+        "role": "rotation",
+        "priority": 60,
+        "condition": {
+          "enemiesInRadius": 2
+        }
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 2,
+          "scaling": "weapon",
+          "area": {
+            "shape": "radius",
+            "radius": 1.5,
+            "center": "caster"
+          }
+        },
+        {
+          "type": "applyStatus",
+          "status": "stun",
+          "chance": 0.4,
+          "durationMs": 2000
+        }
+      ]
+    },
+    {
+      "id": "retaliation_stance",
+      "name": "Retaliation Stance",
+      "energyCost": 26,
+      "cooldownMs": 20000,
+      "targetType": "self",
+      "radiusTiles": 1,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "juggernaut",
+          "value": 30
+        }
+      ],
+      "description": "Adopts retaliation stance for 5s causing every hit taken while active to trigger an immediate counterattack.",
+      "ai": {
+        "role": "defensive",
+        "priority": 65,
+        "condition": {
+          "enemiesInRadius": 1
+        }
+      },
+      "effects": [
+        {
+          "type": "buff",
+          "target": "self",
+          "durationMs": 5000
+        }
+      ]
+    },
+    {
+      "id": "cataclysm",
+      "name": "Cataclysm",
+      "energyCost": 44,
+      "cooldownMs": 18000,
+      "targetType": "enemy",
+      "rangeTiles": 1,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "juggernaut",
+          "value": 40
+        }
+      ],
+      "description": "A catastrophic strike dealing 380% weapon damage dumping up to 25 bonus energy (+4% damage per energy dumped) to the main target.",
+      "ai": {
+        "role": "finisher",
+        "priority": 80
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 3.8,
+          "scaling": "weapon",
+          "resourceDump": {
+            "maxBonusEnergy": 25,
+            "perEnergy": 0.04
+          }
+        }
+      ]
+    },
+    {
+      "id": "flame_blade",
+      "name": "Flame Blade",
+      "energyCost": 18,
+      "cooldownMs": 3000,
+      "targetType": "enemy",
+      "rangeTiles": 1,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "battlemage",
+          "value": 1
+        }
+      ],
+      "description": "Ignites blade with roaring fire dealing 150% weapon damage plus Fire Magic scaling with a 30% chance to burn the main target for 4s.",
+      "ai": {
+        "role": "rotation",
+        "priority": 30
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 1.5,
+          "scaling": "weapon",
+          "profBonus": {
+            "prof": "fire_magic",
+            "perLevel": 0.15
+          }
+        },
+        {
+          "type": "applyStatus",
+          "status": "burn",
+          "chance": 0.3,
+          "durationMs": 4000
+        }
+      ]
+    },
+    {
+      "id": "pyre_stance",
+      "name": "Pyre Stance",
+      "energyCost": 20,
+      "cooldownMs": 18000,
+      "targetType": "self",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "battlemage",
+          "value": 10
+        }
+      ],
+      "description": "Surrounds the caster in flame stance granting +25% bonus damage for 8s.",
+      "ai": {
+        "role": "defensive",
+        "priority": 55
+      },
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "bonusDamagePercent",
+          "value": 0.25,
+          "durationMs": 8000,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "fire_lunge",
+      "name": "Fire Lunge",
+      "energyCost": 24,
+      "cooldownMs": 10000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "battlemage",
+          "value": 20
+        }
+      ],
+      "description": "Dashes forward up to 4 tiles striking for 180% weapon damage with a 60% chance to burn the main target for 4s.",
+      "ai": {
+        "role": "gapCloser",
+        "priority": 60
+      },
+      "effects": [
+        {
+          "type": "move",
+          "moveType": "dash"
+        },
+        {
+          "type": "damage",
+          "multiplier": 1.8,
+          "scaling": "weapon"
+        },
+        {
+          "type": "applyStatus",
+          "status": "burn",
+          "chance": 0.6,
+          "durationMs": 4000
+        }
+      ]
+    },
+    {
+      "id": "blazing_arc",
+      "name": "Blazing Arc",
+      "energyCost": 28,
+      "cooldownMs": 8000,
+      "targetType": "enemy",
+      "rangeTiles": 1,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "battlemage",
+          "value": 30
+        }
+      ],
+      "description": "Sweeps an arc of fire dealing 160% weapon damage to the main target and cleaving up to 3 targets in a 1.5 tile radius with a 60% chance to burn the main target for 4s.",
+      "ai": {
+        "role": "rotation",
+        "priority": 55,
+        "condition": {
+          "enemiesInRadius": 2
+        }
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 1.6,
+          "scaling": "weapon",
+          "area": {
+            "shape": "cleave",
+            "radius": 1.5,
+            "maxTargets": 3
+          }
+        },
+        {
+          "type": "applyStatus",
+          "status": "burn",
+          "chance": 0.6,
+          "durationMs": 4000
+        }
+      ]
+    },
+    {
+      "id": "meteor_strike",
+      "name": "Meteor Strike",
+      "energyCost": 44,
+      "cooldownMs": 18000,
+      "targetType": "enemy",
+      "rangeTiles": 1,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "battlemage",
+          "value": 40
+        }
+      ],
+      "description": "Brings down a fiery meteor dealing 360% weapon damage in a 1.5 tile radius around target and burning the main target for 4s.",
+      "ai": {
+        "role": "finisher",
+        "priority": 80
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 3.6,
+          "scaling": "weapon",
+          "area": {
+            "shape": "radius",
+            "radius": 1.5
+          }
+        },
+        {
+          "type": "applyStatus",
+          "status": "burn",
+          "chance": 1,
+          "durationMs": 4000
+        }
+      ]
+    },
+    {
+      "id": "charged_thrust",
+      "name": "Charged Thrust",
+      "energyCost": 16,
+      "cooldownMs": 3000,
+      "targetType": "enemy",
+      "rangeTiles": 1,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "storm_lancer",
+          "value": 1
+        }
+      ],
+      "description": "A lightning-charged thrust dealing 150% weapon damage plus Lightning Magic scaling with a 20% chance to shock the main target.",
+      "ai": {
+        "role": "rotation",
+        "priority": 30
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 1.5,
+          "scaling": "weapon",
+          "profBonus": {
+            "prof": "lightning_magic",
+            "perLevel": 0.15
+          }
+        },
+        {
+          "type": "applyStatus",
+          "status": "shock",
+          "chance": 0.2,
+          "durationMs": 4000
+        }
+      ]
+    },
+    {
+      "id": "lightning_charge",
+      "name": "Lightning Charge",
+      "energyCost": 24,
+      "cooldownMs": 10000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "storm_lancer",
+          "value": 10
+        }
+      ],
+      "description": "Dashes forward up to 4 tiles with charged spear dealing 180% weapon damage with a 50% chance to shock the main target.",
+      "ai": {
+        "role": "gapCloser",
+        "priority": 60
+      },
+      "effects": [
+        {
+          "type": "move",
+          "moveType": "dash"
+        },
+        {
+          "type": "damage",
+          "multiplier": 1.8,
+          "scaling": "weapon"
+        },
+        {
+          "type": "applyStatus",
+          "status": "shock",
+          "chance": 0.5,
+          "durationMs": 4000
+        }
+      ]
+    },
+    {
+      "id": "arc_sweep",
+      "name": "Arc Sweep",
+      "energyCost": 24,
+      "cooldownMs": 8000,
+      "targetType": "enemy",
+      "rangeTiles": 1,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "storm_lancer",
+          "value": 20
+        }
+      ],
+      "description": "Sweeps spear discharging lightning dealing 140% weapon damage chaining across up to 3 targets in a 2-tile radius (30% falloff).",
+      "ai": {
+        "role": "rotation",
+        "priority": 55,
+        "condition": {
+          "enemiesInRadius": 2
+        }
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 1.4,
+          "scaling": "weapon",
+          "area": {
+            "shape": "chain",
+            "maxTargets": 3,
+            "radius": 2,
+            "falloff": 0.3
+          }
+        }
+      ]
+    },
+    {
+      "id": "static_guard",
+      "name": "Static Guard",
+      "energyCost": 20,
+      "cooldownMs": 16000,
+      "targetType": "self",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "storm_lancer",
+          "value": 30
+        }
+      ],
+      "description": "Surrounds the caster in an electrostatic barrier reducing damage taken to 75% (DT 0.75) for 6s.",
+      "ai": {
+        "role": "defensive",
+        "priority": 55
+      },
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "damageTakenMultiplier",
+          "value": 0.75,
+          "durationMs": 6000,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "thunder_impale",
+      "name": "Thunder Impale",
+      "energyCost": 42,
+      "cooldownMs": 16000,
+      "targetType": "enemy",
+      "rangeTiles": 1,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "storm_lancer",
+          "value": 40
+        }
+      ],
+      "description": "Impales enemies with lightning piercing up to 3 targets in a line for 340% weapon damage with a 60% chance to shock the main target.",
+      "ai": {
+        "role": "finisher",
+        "priority": 80
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 3.4,
+          "scaling": "weapon",
+          "area": {
+            "shape": "line",
+            "maxTargets": 3
+          }
+        },
+        {
+          "type": "applyStatus",
+          "status": "shock",
+          "chance": 0.6,
+          "durationMs": 4000
+        }
+      ]
     }
   ]
 }

@@ -890,5 +890,145 @@ for (const h of t1WaveBHeals) {
   console.log(`| **${h.name}** (\`${h.id}\`) | ${h.type} | ${h.hp} | ${h.en} | ${hpPerEn.toFixed(3)} | ${refComp} |`);
 }
 
+// ---------------------------------------------------------------------------
+// SECTION 7: Class Program Tier 2 Wave A: Expert Classes (11 Kits, 55 Skills)
+// ---------------------------------------------------------------------------
+console.log('\n### Class Program Tier 2 Wave A: Expert Classes Efficiency Check');
+
+const t2WaveAClasses = [
+  { classId: 'blademaster', primaryWeapon: 'katana', skills: ['twin_style_cut', 'sword_dance_stance', 'crescent_sweep', 'iaijutsu', 'thousand_blade_storm'] },
+  { classId: 'assassin', primaryWeapon: 'daggers', skills: ['shiv', 'vanish', 'ambush', 'toxin_blade', 'death_mark'] },
+  { classId: 'shadowblade', primaryWeapon: 'daggers', skills: ['umbral_slash', 'shadow_siphon', 'night_veil', 'hex_blade', 'eclipse'] },
+  { classId: 'arcane_archer', primaryWeapon: 'bows', skills: ['arcane_arrow', 'seeking_volley', 'runic_quiver', 'piercing_ray', 'starfall'] },
+  { classId: 'storm_archer', primaryWeapon: 'bows', skills: ['static_arrow', 'chain_shot', 'tailwind_draw', 'thunder_arrow', 'storm_barrage'] },
+  { classId: 'witch_hunter', primaryWeapon: 'crossbows', skills: ['silver_bolt', 'purging_shot', 'consecrated_ward', 'judgment_bolt', 'inquisition'] },
+  { classId: 'knight', primaryWeapon: 'short_swords', skills: ['shield_strike', 'bulwark_stance', 'valorous_strike', 'provoke', 'last_bastion'] },
+  { classId: 'paladin', primaryWeapon: 'short_swords', skills: ['holy_strike', 'lay_on_hands', 'aura_of_protection', 'consecration', 'divine_judgment'] },
+  { classId: 'juggernaut', primaryWeapon: 'greatswords', skills: ['crushing_swing', 'iron_hide', 'earthquake_slam', 'retaliation_stance', 'cataclysm'] },
+  { classId: 'battlemage', primaryWeapon: 'longswords', skills: ['flame_blade', 'pyre_stance', 'fire_lunge', 'blazing_arc', 'meteor_strike'] },
+  { classId: 'storm_lancer', primaryWeapon: 'spears', skills: ['charged_thrust', 'lightning_charge', 'arc_sweep', 'static_guard', 'thunder_impale'] }
+];
+
+interface T2WaveARow {
+  classId: string;
+  skillId: string;
+  name: string;
+  req: string;
+  cd: number;
+  energyCost: number;
+  mult: number;
+  directDamage: number;
+  dotInfo: string;
+  dotEV: number;
+  totalDamage: number;
+  damagePerEn: number;
+  vsBladeStrike: string;
+  flag: string;
+}
+
+const t2WaveARows: T2WaveARow[] = [];
+
+for (const kit of t2WaveAClasses) {
+  for (const sid of kit.skills) {
+    const skill = skillsData.skills.find((s: any) => s.id === sid);
+    if (!skill) continue;
+
+    const req = skill.requirements?.map((r: any) => `${r.target} ${r.value}`).join(', ') || 'none';
+    const cdSec = (skill.cooldownMs ?? 0) / 1000;
+    const energyCost = skill.energyCost ?? 0;
+
+    let mult = 0;
+    if (skill.effects) {
+      const dmgEff = skill.effects.find((e: any) => e.type === 'damage');
+      if (dmgEff) mult = dmgEff.multiplier;
+    }
+
+    const directDamage = mult * basePower;
+
+    let dotInfo = 'None';
+    let dotEV = 0;
+
+    if (skill.effects) {
+      const bleedEff = skill.effects.find((e: any) => e.type === 'applyStatus' && e.status === 'bleed');
+      const burnEff = skill.effects.find((e: any) => e.type === 'applyStatus' && e.status === 'burn');
+      const poisonEff = skill.effects.find((e: any) => e.type === 'applyStatus' && e.status === 'poison');
+
+      if (bleedEff) {
+        const chance = bleedEff.chance ?? 1.0;
+        const dur = bleedEff.durationMs ?? 6000;
+        const ticks = dur / bleedTickIntervalMs;
+        const totalBleedDmg = ticks * bleedDamagePerTick;
+        dotEV = chance * totalBleedDmg;
+        dotInfo = `Bleed ${(chance * 100).toFixed(0)}% (${dur / 1000}s = ${totalBleedDmg} dmg)`;
+      } else if (burnEff) {
+        const chance = burnEff.chance ?? 1.0;
+        const dur = burnEff.durationMs ?? 4000;
+        const ticks = dur / burnTickIntervalMs;
+        const totalBurnDmg = ticks * burnDamagePerTick;
+        dotEV = chance * totalBurnDmg;
+        dotInfo = `Burn ${(chance * 100).toFixed(0)}% (${dur / 1000}s = ${totalBurnDmg} dmg)`;
+      } else if (poisonEff) {
+        const chance = poisonEff.chance ?? 1.0;
+        const dur = poisonEff.durationMs ?? 6000;
+        const ticks = dur / poisonTickIntervalMs;
+        const totalPoisonDmg = ticks * poisonDamagePerTick;
+        dotEV = chance * totalPoisonDmg;
+        dotInfo = `Poison ${(chance * 100).toFixed(0)}% (${dur / 1000}s = ${totalPoisonDmg} dmg)`;
+      }
+    }
+
+    const totalDamage = directDamage + dotEV;
+    const damagePerEn = energyCost > 0 ? totalDamage / energyCost : 0;
+
+    let vsBladeStrike = 'N/A';
+    if (totalDamage > 0 && energyCost > 0) {
+      const diffPct = ((damagePerEn - bladeStrikeDmgPerEn) / bladeStrikeDmgPerEn) * 100;
+      vsBladeStrike = `${diffPct >= 0 ? '+' : ''}${diffPct.toFixed(1)}%`;
+    }
+
+    let flag = '-';
+    const isFiller = cdSec <= 3;
+    if (isFiller && energyCost > 0 && damagePerEn > bladeStrikeDmgPerEn * 1.25) {
+      flag = '⚠️ FILLER > +25%';
+    }
+
+    t2WaveARows.push({
+      classId: kit.classId,
+      skillId: skill.id,
+      name: skill.name,
+      req,
+      cd: cdSec,
+      energyCost,
+      mult,
+      directDamage,
+      dotInfo,
+      dotEV,
+      totalDamage,
+      damagePerEn,
+      vsBladeStrike,
+      flag
+    });
+  }
+}
+
+console.log('| Class | Skill | Requirement | CD (s) | EN | Mult | Direct Dmg | DoT Info | DoT EV | Total EV | Dmg / EN | vs. Blade Strike | Flag |');
+console.log('|---|---|---|---|---|---|---|---|---|---|---|---|---|');
+
+for (const r of t2WaveARows) {
+  const dmgEnStr = r.damagePerEn > 0 ? r.damagePerEn.toFixed(3) : '-';
+  const multStr = r.mult > 0 ? `${r.mult.toFixed(1)}×` : '-';
+  console.log(
+    `| ${r.classId} | **${r.name}** (\`${r.skillId}\`) | ${r.req} | ${r.cd} | ${r.energyCost} | ${multStr} | ${r.directDamage.toFixed(1)} | ${r.dotInfo} | ${r.dotEV.toFixed(1)} | ${r.totalDamage.toFixed(1)} | ${dmgEnStr} | ${r.vsBladeStrike} | ${r.flag} |`
+  );
+}
+
+const flaggedT2A = t2WaveARows.filter(r => r.flag.includes('FILLER'));
+console.log(`\n**Tier 2 Wave A Filler Audit Result:** ${flaggedT2A.length} filler skill(s) exceeded +25% above blade_strike.`);
+if (flaggedT2A.length > 0) {
+  for (const f of flaggedT2A) {
+    console.log(`  - ⚠️ Flagged: ${f.name} (${f.skillId}): ${f.damagePerEn.toFixed(3)} Dmg/EN (${f.vsBladeStrike})`);
+  }
+}
+
 
 

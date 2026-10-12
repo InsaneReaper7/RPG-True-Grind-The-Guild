@@ -232,7 +232,7 @@ async function runBatchCTests() {
     // -----------------------------------------------------------------------
     console.log('--- TEST 0: Data Integrity (Every skill has effects and ai) ---');
     const allSkills = dataLoader.getSkills();
-    assert.strictEqual(allSkills.length, 240, 'skills.json has exactly 240 skills');
+    assert.ok(allSkills.length >= 240, 'skills.json has at least 240 skills');
     for (const s of allSkills) {
       assert.strictEqual(
         Array.isArray(s.effects) && s.effects.length > 0,

@@ -1470,6 +1470,55 @@ The following three intentional behavioural changes were reviewed and accepted b
   - All 122 test suites pass cleanly (`node scripts/run_all_tests.mjs --quiet`).
   - Production build: `npm run build` succeeds cleanly.
 
+### Class Program, Tier 2 Wave A: Weapon and Hybrid Expert Classes (11 Kits, Data-Only) (2026-10-12)
+
+**Resolved and shipped: Implemented the 11 Tier 2 (Expert) classes (Blademaster, Assassin, Shadowblade, Arcane Archer, Storm Archer, Witch Hunter, Knight, Paladin, Juggernaut, Battlemage, Storm Lancer) with full 5-skill kits (55 skills total) as pure data in `data/skills.json` and registered their expert class entries with requirements and `hiddenSkillBonuses` in `data/classes.json`. Added generic data-only status effects `runic_quiver` and `retaliation_stance` in `data/statusEffects.json`. Fixed `blink` AI role to defensive with `enemiesInRadius: 1` and `radiusTiles: 1`. Added comprehensive test suite `test/class_t2_wave_a.test.ts`.**
+
+- **0. Carry-over (`data/skills.json`)**:
+  - `blink`: Changed AI role from `gapCloser` to `defensive`, priority `65`, `condition: { enemiesInRadius: 1 }` with `radiusTiles: 1`.
+- **1. Class Entries (`data/classes.json`)**:
+  - `blademaster`: Expert tier, requirements Katana 60 + Longswords 30 + Ronin Lv 15, `hiddenSkillBonuses: { parry: 0.05 }`.
+  - `assassin`: Expert tier, requirements Daggers 60 + Dark Magic 30 + Shadow Initiate Lv 15, `hiddenSkillBonuses: { evasion: 0.05 }`.
+  - `shadowblade`: Expert tier, requirements Daggers 30 + Dark Magic 30 + Shadow Initiate Lv 15, `hiddenSkillBonuses: { counterattack: 0.05 }`.
+  - `arcane_archer`: Expert tier, requirements Bows 30 + Arcane 30 + Ranger Lv 15, `hiddenSkillBonuses: { evasion: 0.05 }`.
+  - `storm_archer`: Expert tier, requirements Bows 30 + Lightning Magic 30 + Ranger Lv 15, `hiddenSkillBonuses: { evasion: 0.05 }`.
+  - `witch_hunter`: Expert tier, requirements Crossbows 30 + Holy Magic 30 + Sharpshooter Lv 15, `hiddenSkillBonuses: { parry: 0.05 }`.
+  - `knight`: Expert tier, requirements Short Swords 60 + Shields 60 + Vanguard Lv 20, `hiddenSkillBonuses: { block: 0.05 }`.
+  - `paladin`: Expert tier, requirements Shields 30 + Holy Magic 30 + Vanguard Lv 15, `hiddenSkillBonuses: { block: 0.05 }`.
+  - `juggernaut`: Expert tier, requirements Greatswords 60 + Shields 30 + Reaver Lv 15, `hiddenSkillBonuses: { resilience: 0.05 }`.
+  - `battlemage`: Expert tier, requirements Longswords 30 + Fire Magic 30 + Arcane 10 + Spellsword Lv 15, `hiddenSkillBonuses: { parry: 0.05 }`.
+  - `storm_lancer`: Expert tier, requirements Spears 30 + Lightning Magic 30 + Hoplite Lv 15, `hiddenSkillBonuses: { counterattack: 0.05 }`.
+- **2. New Data-Only Statuses (`data/statusEffects.json`)**:
+  - `runic_quiver`: `bonusDamagePercent: 0.15`, `energySiphonOnHit: 3`, duration 10s.
+  - `retaliation_stance`: `counterOnHit: { consume: false }`, duration 5s (triggers counterattack on every hit taken).
+- **3. 55-Skill Expert Kits (`data/skills.json`)**:
+  - **Blademaster**: `twin_style_cut` (1.6× hits: 2), `sword_dance_stance` (Dmg +0.25 for 8s), `crescent_sweep` (1.6× cleave 1.5 maxTargets: 3), `iaijutsu` (2.4×, ×1.4 vs bleed, 100% bleed), `thousand_blade_storm` (3.6× hits: 6, 100% bleed).
+  - **Assassin**: `shiv` (1.6× hits: 2), `vanish` (Eva 0.50 for 3s), `ambush` (move teleportBehind range 4 + 2.0×, 100% expose), `toxin_blade` (1.3×, 100% poison for 6s), `death_mark` (3.6×, exec ×1.6 below 30%).
+  - **Shadowblade**: `umbral_slash` (1.4× + PB dark_magic, 30% curse), `shadow_siphon` (1.6×, lifesteal: 0.3), `night_veil` (DT 0.75 for 6s), `hex_blade` (1.4× + Amp 0.20 for 6s), `eclipse` (3.2× radius 2 center: "caster", 100% curse).
+  - **Arcane Archer**: `arcane_arrow` (1.5× + PB arcane_magic, range 4), `seeking_volley` (1.3× chain maxTargets: 3 radius 3 falloff 0.25, range 4), `runic_quiver` (buff status `runic_quiver`), `piercing_ray` (1.8× line maxTargets: 4, 100% arcane_vulnerability, range 4), `starfall` (3.4× radius 2, range 4).
+  - **Storm Archer**: `static_arrow` (1.5×, 25% shock, range 4), `chain_shot` (1.4× chain maxTargets: 3 radius 3 falloff 0.3, range 4), `tailwind_draw` (Dmg +0.20 for 8s), `thunder_arrow` (2.2×, 60% shock, range 4), `storm_barrage` (3.4× chain maxTargets: 5 radius 3 falloff 0.2, 40% shock, range 4).
+  - **Witch Hunter**: `silver_bolt` (1.6× + PB holy_magic, range 4), `purging_shot` (1.4×, 50% blind, range 4), `consecrated_ward` (shield 40 self for 8s), `judgment_bolt` (2.2×, 100% expose, range 4), `inquisition` (3.6×, exec ×1.4 below 40%, range 4).
+  - **Knight**: `shield_strike` (1.4×, 15% stun), `bulwark_stance` (DT 0.6 for 6s), `valorous_strike` (2.4× + Weaken 0.25 for 6s), `provoke` (taunt radius 4 for 6s + shield 40 self for 8s), `last_bastion` (DT 0.3 for 6s + heal self 20%).
+  - **Paladin**: `holy_strike` (1.4× + PB holy_magic + heal 5 lowest ally), `lay_on_hands` (heal 40 lowest ally, range 4), `aura_of_protection` (party DT 0.85 for 8s), `consecration` (1.6× radius 1.5 center: "caster", 30% blind), `divine_judgment` (3.2× + heal 15 party).
+  - **Juggernaut**: `crushing_swing` (1.9×), `iron_hide` (DT 0.65 for 8s), `earthquake_slam` (2.0× radius 1.5 center: "caster", 40% stun), `retaliation_stance` (buff status `retaliation_stance`), `cataclysm` (3.8×, resourceDump maxBonusEnergy: 25 perEnergy: 0.04).
+  - **Battlemage**: `flame_blade` (1.5× + PB fire_magic, 30% burn), `pyre_stance` (Dmg +0.25 for 8s), `fire_lunge` (move dash range 4 + 1.8×, 60% burn), `blazing_arc` (1.6× cleave 1.5 maxTargets: 3, 60% burn), `meteor_strike` (3.6× radius 1.5, 100% burn).
+  - **Storm Lancer**: `charged_thrust` (1.5× + PB lightning_magic, 20% shock), `lightning_charge` (move dash range 4 + 1.8×, 50% shock), `arc_sweep` (1.4× chain maxTargets: 3 radius 2 falloff 0.3), `static_guard` (DT 0.75 for 6s), `thunder_impale` (3.4× line maxTargets: 3, 60% shock).
+  - All status descriptions explicitly state status effects land on the main target only.
+- **4. Efficiency Audit (`scripts/skill_efficiency.ts`)**:
+  - Evaluated all 55 Tier 2 Wave A skills against `blade_strike` baseline; 0 filler skills (CD ≤ 3s) exceed the +25% cap.
+  - Level 40 skills range within 3.2×–3.8× weapon scaling.
+- **5. Test Suite (`test/class_t2_wave_a.test.ts`) & Milestone Updates**:
+  - Data validation verified all 11 classes (tier: expert, requirements, fantasy, hiddenSkillBonuses) and 55 skills (requirements, ai, cadence 1/10/20/30/40, valid generic statuses, range 4 for ranged, status wording).
+  - Smoke test: All 11 classes at Lv 40 in 3-enemy fight with ally at 60% HP cast at least 4 of 5 skills within 60s.
+  - Cast-based tests:
+    - `runic_quiver` -> +3 EN per hit verified on basic attacks and skill casts.
+    - `retaliation_stance` -> verified 2 hits in 5s trigger 2 counterattacks without consuming stance.
+    - `aura_of_protection` -> verified all party members take ×0.85 damage.
+    - `cataclysm` -> verified resource dump spends up to 25 bonus EN (+4% per EN) and caps appropriately.
+  - Fixed pre-existing evasion flakiness in `test/milestone20.test.ts` by advancing attack ticks until un-evaded hit lands.
+  - Full test suite: 123/123 suites pass cleanly (`npm test -- --quiet`).
+  - Production build: `npm run build` succeeds cleanly.
+
 
 
 
