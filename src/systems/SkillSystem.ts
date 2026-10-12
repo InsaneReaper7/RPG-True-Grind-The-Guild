@@ -137,10 +137,8 @@ export class SkillSystem {
         const reqClass = skillDef.requirements?.find((r) => r.type === 'classLevel')?.target;
         if (reqClass === 'combat_medic' || reqClass === 'restoration_mage' || reqClass === 'medic') {
           profToAward = 'healing_magic';
-          if (skillDef.id === 'holy_nova') expAmount = 3;
         } else if (reqClass === 'arcane_initiate') {
           profToAward = 'arcane_magic';
-          if (skillDef.id === 'arcane_nova') expAmount = 4;
         }
       }
       caster.progression.addProficiencyExp(profToAward, expAmount);
@@ -498,18 +496,26 @@ export class SkillSystem {
       case 'shield': {
         const shieldTarget = this.resolveAllyTarget(caster, target, effect.target);
         if (shieldTarget && shieldTarget.state !== 'dead' && shieldTarget.state !== 'downed') {
-          const shieldDef = {
-            id: skillDef.id,
-            name: skillDef.name,
-            durationMs: effect.durationMs,
-            tickIntervalMs: effect.durationMs,
-            damagePerTick: 0,
-            shieldAmount: effect.shieldAmount,
-            color: '#38bdf8'
-          };
+          const baseDef = dataLoader.getStatusEffect(skillDef.id);
+          const shieldDef = baseDef
+            ? {
+                ...baseDef,
+                shieldAmount: effect.shieldAmount,
+                durationMs: effect.durationMs ?? baseDef.durationMs,
+                tickIntervalMs: effect.durationMs ?? baseDef.tickIntervalMs ?? effect.durationMs
+              }
+            : {
+                id: skillDef.id,
+                name: skillDef.name,
+                durationMs: effect.durationMs,
+                tickIntervalMs: effect.durationMs,
+                damagePerTick: 0,
+                shieldAmount: effect.shieldAmount,
+                color: '#38bdf8'
+              };
           shieldTarget.applyStatusEffect(shieldDef);
           this.combatSystem.createCleanseEffect(shieldTarget.x, shieldTarget.y);
-          this.combatSystem.createFloatingText(shieldTarget.x, shieldTarget.y - 12, `+${effect.shieldAmount} SHIELD!`, '#38bdf8');
+          this.combatSystem.createFloatingText(shieldTarget.x, shieldTarget.y - 12, `+${effect.shieldAmount} SHIELD!`, shieldDef.color || '#38bdf8');
         }
         break;
       }
@@ -665,7 +671,7 @@ export class SkillSystem {
             for (const cand of candidates) {
               if (!this.combatSystem.isTileClaimedOrOccupiedByOther(cand.x, cand.y, caster)) {
                 caster.setGridPosition(cand.x, cand.y);
-                if (skillDef.id === 'blink') {
+                if (skillDef.vfx === 'arcane_bolt') {
                   this.combatSystem.createArcaneBoltEffect(oldX, oldY, caster.x, caster.y);
                 } else {
                   this.combatSystem.createAttackEffect(oldX, oldY, caster.x, caster.y, 0x38bdf8);
@@ -673,7 +679,7 @@ export class SkillSystem {
                 break;
               }
             }
-          } else if (skillDef.id === 'blink') {
+          } else if (skillDef.vfx === 'arcane_bolt' || effect.moveType === 'blink') {
             const cand = { x: casterTile.x + distance, y: casterTile.y };
             if (!this.combatSystem.isTileClaimedOrOccupiedByOther(cand.x, cand.y, caster)) {
               caster.setGridPosition(cand.x, cand.y);
@@ -949,7 +955,7 @@ export class SkillSystem {
         if (role !== 'support') continue;
 
         // Mass Revive check
-        if (skillId === 'mass_revive' || cond?.requiresDownedAlly) {
+        if (cond?.requiresDownedAlly) {
           const radius = skillDef.radiusTiles ?? 6;
           const cTile = { x: Math.floor(member.x / member.tileSize), y: Math.floor(member.y / member.tileSize) };
           const hasDowned = this.combatSystem.party.some((m) => {
@@ -1122,7 +1128,7 @@ export class SkillSystem {
         }
 
         // Special reactive condition check for Riposte
-        if (skillId === 'riposte' || cond?.requiresRiposteReady) {
+        if (cond?.requiresRiposteReady) {
           if (!member.hasStatusEffect('riposte_window')) continue;
         }
 

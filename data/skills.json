@@ -316,7 +316,11 @@
             "center": "caster"
           }
         }
-      ]
+      ],
+      "proficiencyExp": {
+        "proficiencyId": "healing_magic",
+        "amount": 3
+      }
     },
     {
       "id": "shield_bash",
@@ -432,8 +436,6 @@
       "effects": [
         {
           "type": "buff",
-          "stat": "damageTakenMultiplier",
-          "value": 1,
           "durationMs": 15000,
           "target": "self"
         }
@@ -1914,8 +1916,6 @@
       "effects": [
         {
           "type": "buff",
-          "stat": "damageTakenMultiplier",
-          "value": 1,
           "durationMs": 6000,
           "target": "self"
         }
@@ -1945,8 +1945,6 @@
       "effects": [
         {
           "type": "buff",
-          "stat": "damageTakenMultiplier",
-          "value": 1,
           "durationMs": 10000,
           "target": "self"
         }
@@ -1977,7 +1975,8 @@
           "moveType": "retreat",
           "distance": 3
         }
-      ]
+      ],
+      "vfx": "arcane_bolt"
     },
     {
       "id": "arcane_nova",
@@ -2016,7 +2015,11 @@
             "center": "caster"
           }
         }
-      ]
+      ],
+      "proficiencyExp": {
+        "proficiencyId": "arcane_magic",
+        "amount": 4
+      }
     },
     {
       "id": "arcane_strike",

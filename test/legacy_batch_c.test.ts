@@ -217,6 +217,7 @@ async function runBatchCTests() {
     tester.energy = 100;
     tester.hp = 100;
     tester.maxHp = 100;
+    tester.knownSkillIds = [skillId];
     tester.equippedSkillIds = [skillId];
     tester.setGridPosition(x, y);
     return tester;
@@ -447,22 +448,29 @@ async function runBatchCTests() {
     // -----------------------------------------------------------------------
     console.log('--- TEST 6: energySiphonOnHit (+4 EN on basic attack & skill) ---');
     {
-      const tester = createTester('blade_strike');
+      const tester = createTester('runic_infusion');
+      tester.knownSkillIds = ['runic_infusion', 'blade_strike'];
+      tester.equippedSkillIds = ['runic_infusion', 'blade_strike'];
       tester.energy = 50;
-      const runic = dataLoader.getStatusEffect('runic_infusion');
-      tester.applyStatusEffect(runic);
+
+      // Cast runic_infusion: cost 18 EN -> 50 - 18 = 32 EN
+      const castOk = combat.castSkill(tester, 'runic_infusion', tester, 500);
+      assert.strictEqual(castOk, true, 'runic_infusion cast succeeded');
+      assert.strictEqual(tester.hasStatusEffect('runic_infusion'), true, 'runic_infusion status active');
+      assert.strictEqual(tester.energy, 32, 'Energy is 50 - 18 = 32 after casting runic_infusion');
+
       const enemy = createDummyEnemy(scene, 10, 11, 'Target', 200);
       combat.party = [tester];
       combat.enemies = [enemy];
 
-      // Basic attack: cost 0 EN -> 50 + 4 siphon = 54 EN.
+      // Basic attack: cost 0 EN -> 32 + 4 siphon = 36 EN.
       combat.executePlayerBasicAttack(tester, enemy);
-      assert.strictEqual(tester.energy, 54, `Basic attack with siphon resulted in 54 EN: ${tester.energy}`);
+      assert.strictEqual(tester.energy, 36, `Basic attack with siphon resulted in 36 EN: ${tester.energy}`);
 
-      // Skill attack (blade_strike): cost 15 EN -> 54 - 15 = 39 + 4 siphon = 43 EN.
+      // Skill attack (blade_strike): cost 15 EN -> 36 - 15 = 21 + 4 siphon = 25 EN.
       const okSkill = combat.castSkill(tester, 'blade_strike', enemy, 1000);
       assert.strictEqual(okSkill, true);
-      assert.strictEqual(tester.energy, 43, `Skill attack with siphon resulted in 43 EN: ${tester.energy}`);
+      assert.strictEqual(tester.energy, 25, `Skill attack with siphon resulted in 25 EN: ${tester.energy}`);
     }
     console.log('  ✓ energySiphonOnHit restores EN on basic attacks and skill attacks.');
 
@@ -471,11 +479,14 @@ async function runBatchCTests() {
     // -----------------------------------------------------------------------
     console.log('--- TEST 7: mana_shield (damageToEnergyPercent) ---');
     {
-      const player = createTester('none');
+      const player = createTester('mana_shield');
       player.hp = 100;
-      player.energy = 20;
-      const manaShield = dataLoader.getStatusEffect('mana_shield');
-      player.applyStatusEffect(manaShield);
+      player.energy = 40; // 20 cost + 20 surplus for absorb
+
+      const castOk = combat.castSkill(player, 'mana_shield', player, 1000);
+      assert.strictEqual(castOk, true, 'mana_shield cast succeeded');
+      assert.strictEqual(player.hasStatusEffect('mana_shield'), true, 'mana_shield status active');
+      assert.strictEqual(player.energy, 20, 'Energy is 40 - 20 = 20 after cast');
 
       // Incoming damage 40: 50% converted to energy deduction (-20 EN), remaining 20 dealt to HP (100 -> 80)
       player.takeDamage(40);
@@ -489,10 +500,10 @@ async function runBatchCTests() {
     // -----------------------------------------------------------------------
     console.log('--- TEST 8: kenjutsu_deflection (reflectPercent) ---');
     {
-      const player = createTester('none', fixedTestWeapon, 10, 10, true);
+      const player = createTester('kenjutsu_deflection', fixedTestWeapon, 10, 10, true);
       player.hp = 100;
-      const kenjutsu = dataLoader.getStatusEffect('kenjutsu_deflection');
-      player.applyStatusEffect(kenjutsu);
+      const castOk = combat.castSkill(player, 'kenjutsu_deflection', player, 1000);
+      assert.strictEqual(castOk, true, 'kenjutsu_deflection cast succeeded');
       const attacker = createDummyEnemy(scene, 10, 11, 'Attacker', 100);
       attacker.enemyData.meleeDamage = 30;
       attacker.enemyData.attackIntervalMs = 100;
@@ -516,9 +527,10 @@ async function runBatchCTests() {
     // -----------------------------------------------------------------------
     console.log('--- TEST 9: retaliate (counterOnHit) ---');
     {
-      const player = createTester('none', fixedTestWeapon, 10, 10, true);
-      const retaliateDef = dataLoader.getStatusEffect('retaliate');
-      player.applyStatusEffect(retaliateDef);
+      const player = createTester('retaliate', fixedTestWeapon, 10, 10, true);
+      const castOk = combat.castSkill(player, 'retaliate', player, 1000);
+      assert.strictEqual(castOk, true, 'retaliate cast succeeded');
+
       const attacker = createDummyEnemy(scene, 10, 11, 'Attacker', 100);
       attacker.enemyData.baseDamage = 10;
       attacker.enemyData.attackIntervalMs = 100;
@@ -547,10 +559,16 @@ async function runBatchCTests() {
     // -----------------------------------------------------------------------
     console.log('--- TEST 10: overcharge (nextSpell) ---');
     {
-      const tester = createTester('arcane_bolt');
-      tester.energy = 80;
-      const overchargeDef = dataLoader.getStatusEffect('overcharge');
-      tester.applyStatusEffect(overchargeDef);
+      const tester = createTester('overcharge');
+      tester.knownSkillIds = ['overcharge', 'arcane_bolt'];
+      tester.equippedSkillIds = ['overcharge', 'arcane_bolt'];
+      tester.energy = 95; // 15 for overcharge + 80 for tests
+
+      const castOk = combat.castSkill(tester, 'overcharge', tester, 500);
+      assert.strictEqual(castOk, true, 'overcharge cast succeeded');
+      assert.strictEqual(tester.hasStatusEffect('overcharge'), true, 'overcharge status active');
+      assert.strictEqual(tester.energy, 80, 'Energy is 95 - 15 = 80 after casting overcharge');
+
       const enemy1 = createDummyEnemy(scene, 10, 11, 'Target 1', 200);
       combat.party = [tester];
       combat.enemies = [enemy1];

@@ -694,8 +694,8 @@ export interface SkillEffectShield {
 
 export interface SkillEffectBuffDebuff {
   type: 'buff' | 'debuff';
-  stat: 'damageReductionPercent' | 'damageTakenMultiplier' | 'damageAmplificationPercent' | 'bonusDamagePercent' | 'flatBonusDamage' | 'evasionBonus' | 'parryBonus' | 'moveSpeedMultiplier';
-  value: number;
+  stat?: 'damageReductionPercent' | 'damageTakenMultiplier' | 'damageAmplificationPercent' | 'bonusDamagePercent' | 'flatBonusDamage' | 'evasionBonus' | 'parryBonus' | 'moveSpeedMultiplier';
+  value?: number;
   durationMs: number;
   target?: 'self' | 'enemy' | 'party' | 'lowestAlly' | 'ally';
 }
