@@ -244,8 +244,8 @@ export class SkillSystem {
             if (effect.requiresSelfStatus.energyRefund) {
               const maxEnergy = caster.maxEnergy ?? 100;
               caster.energy = Math.min(maxEnergy, (caster.energy ?? 0) + effect.requiresSelfStatus.energyRefund);
-              const label = effect.requiresSelfStatus.status === 'skirmish_step' ? 'SKIRMISH MOMENTUM!' : 'RUNIC RESONANCE!';
-              const color = effect.requiresSelfStatus.status === 'skirmish_step' ? '#38bdf8' : '#818cf8';
+              const label = effect.requiresSelfStatus.label ?? 'RESONANCE!';
+              const color = effect.requiresSelfStatus.color ?? '#818cf8';
               this.combatSystem.createFloatingText(caster.x, caster.y - 20, `${label} +${effect.requiresSelfStatus.energyRefund} EN`, color);
             }
             if (effect.requiresSelfStatus.area) {
@@ -970,7 +970,10 @@ export class SkillSystem {
         }
 
         // Cleanse check
-        if (cond?.requiresHarmfulStatus || skillDef.effects?.some(e => e.type === 'cleanse')) {
+        if (
+          cond?.requiresHarmfulStatus ||
+          (skillDef.effects?.some(e => e.type === 'cleanse') && cond?.allyHpBelow === undefined)
+        ) {
           const debuffed = this.combatSystem.party.find(
             (m) => m.state !== 'dead' && m.state !== 'downed' &&
               Array.from(m.activeStatusEffects.values()).some((e) => e.def?.isHarmful === true)

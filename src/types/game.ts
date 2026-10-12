@@ -658,6 +658,8 @@ export interface SkillEffectDamage {
     status: string;
     multiplier?: number;
     energyRefund?: number;
+    label?: string;
+    color?: string;
     area?: SkillEffectArea;
   };
   asCounterattack?: boolean;

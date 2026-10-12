@@ -2195,6 +2195,8 @@
             "status": "runic_infusion",
             "multiplier": 1.2,
             "energyRefund": 10,
+            "label": "RUNIC RESONANCE!",
+            "color": "#818cf8",
             "area": {
               "shape": "cleave",
               "radius": 1.5,
@@ -2395,7 +2397,9 @@
           "requiresSelfStatus": {
             "status": "skirmish_step",
             "multiplier": 1.25,
-            "energyRefund": 10
+            "energyRefund": 10,
+            "label": "SKIRMISH MOMENTUM!",
+            "color": "#38bdf8"
           }
         }
       ]
@@ -10766,7 +10770,7 @@
           "value": 40
         }
       ],
-      "description": "Erupts cataclysmic death energy in a 2-tile radius around the caster for 400% weapon damage with 25% lifesteal.",
+      "description": "Erupts cataclysmic death energy in a 2-tile radius around the caster for 400% weapon damage, and heals for 25% of the damage dealt to the main target.",
       "ai": {
         "role": "rotation",
         "priority": 85,
@@ -11390,6 +11394,8 @@
             "status": "mana_blade",
             "multiplier": 1.3,
             "energyRefund": 15,
+            "label": "MANA SURGE!",
+            "color": "#818cf8",
             "area": {
               "shape": "cleave",
               "radius": 1.5,

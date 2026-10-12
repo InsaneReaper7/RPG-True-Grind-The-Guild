@@ -752,6 +752,74 @@ async function runTests() {
       );
       console.log('    ✓ astral_annihilation dumps up to 30 surplus EN (+0.04x per EN, 4.4x -> 5.6x).');
     }
+
+    // 3E: seraphic_restoration AI -> poisoned ally at 90% HP must NOT pick it; at 45% HP MUST pick it
+    {
+      console.log('  3E: seraphic_restoration AI -> waits for allyHpBelow: 0.5 even when ally is poisoned');
+      const scene = createMockScene();
+      const combat = new CombatSystem(scene);
+      const playerData = dataLoader.getPlayer();
+      const swordDef = dataLoader.getWeapon('longsword_1h');
+      const bowDef = dataLoader.getWeapon('bows');
+
+      const celestialKnight = new Player(scene, 10, 10, playerData, swordDef, 32);
+      celestialKnight.progression.setClassLevel('celestial_knight', 40);
+      celestialKnight.progression.getProficiencyStat('longswords').level = 90;
+      celestialKnight.progression.getProficiencyStat('holy_magic').level = 60;
+      celestialKnight.progression.getProficiencyStat('healing_magic').level = 30;
+      celestialKnight.maxHp = 100;
+      celestialKnight.hp = 100;
+      celestialKnight.maxCriticalHp = 0;
+      celestialKnight.criticalHp = 0;
+      celestialKnight.energy = 100;
+      celestialKnight.equippedSkillIds = [
+        'radiant_blade',
+        'celestial_ward',
+        'judgment_of_light',
+        'seraphic_restoration',
+        'heavens_verdict'
+      ];
+
+      const ally = new Player(scene, 10, 11, playerData, bowDef, 32);
+      ally.progression.setClassLevel('tempest', 40);
+      ally.maxHp = 100;
+      ally.hp = 100;
+      ally.maxCriticalHp = 0;
+      ally.criticalHp = 0;
+
+      // Apply poison to ally by casting toxin_blade from an Assassin
+      const assassin = new Player(scene, 11, 11, playerData, dataLoader.getWeapon('daggers'), 32);
+      assassin.progression.setClassLevel('assassin', 40);
+      assassin.progression.getProficiencyStat('daggers').level = 60;
+      assassin.energy = 50;
+      combat.party = [assassin];
+      combat.enemies = [ally as any];
+      const toxinOk = combat.castSkill(assassin, 'toxin_blade', ally as any, 500);
+      assert.strictEqual(toxinOk, true, 'toxin_blade cast to poison ally');
+      assert.strictEqual(ally.hasStatusEffect('poison'), true, 'Ally is poisoned via toxin_blade');
+
+      // 1. Set poisoned ally to 90% HP -> selectSkillForCompanion must NOT pick seraphic_restoration
+      ally.hp = 90;
+      combat.party = [celestialKnight, ally];
+      combat.enemies = [];
+
+      const pickAt90 = combat.skillSystem.selectSkillForCompanion(celestialKnight, 'support', 1000);
+      assert.notStrictEqual(
+        pickAt90?.skillDef.id,
+        'seraphic_restoration',
+        `Expected selectSkillForCompanion NOT to pick seraphic_restoration at 90% HP (got ${pickAt90?.skillDef.id ?? 'null'})`
+      );
+
+      // 2. Bring the same poisoned ally to 45% HP -> selectSkillForCompanion MUST pick seraphic_restoration
+      ally.hp = 45;
+      const pickAt45 = combat.skillSystem.selectSkillForCompanion(celestialKnight, 'support', 1000);
+      assert.strictEqual(
+        pickAt45?.skillDef.id,
+        'seraphic_restoration',
+        `Expected selectSkillForCompanion to pick seraphic_restoration at 45% HP (got ${pickAt45?.skillDef.id ?? 'null'})`
+      );
+      console.log('    ✓ seraphic_restoration AI verified: skipped at 90% HP despite poison, selected at 45% HP.');
+    }
   } finally {
     Math.random = originalRandom;
   }
