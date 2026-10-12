@@ -10454,6 +10454,1338 @@
           "radiusTiles": 8
         }
       ]
+    },
+    {
+      "id": "heavenly_cut",
+      "name": "Heavenly Cut",
+      "energyCost": 16,
+      "cooldownMs": 3000,
+      "targetType": "enemy",
+      "rangeTiles": 1,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "sword_saint",
+          "value": 1
+        }
+      ],
+      "description": "Delivers two transcendent sword strikes for 170% total weapon damage across 2 hits.",
+      "ai": {
+        "role": "rotation",
+        "priority": 30
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "weapon",
+          "multiplier": 1.7,
+          "hits": 2
+        }
+      ]
+    },
+    {
+      "id": "mirror_stance",
+      "name": "Mirror Stance",
+      "energyCost": 26,
+      "cooldownMs": 18000,
+      "targetType": "self",
+      "radiusTiles": 1,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "sword_saint",
+          "value": 10
+        }
+      ],
+      "description": "Enters Mirror Stance for 4s, granting +20% evasion and countering every incoming attack without consuming the stance.",
+      "ai": {
+        "role": "defensive",
+        "priority": 65,
+        "condition": {
+          "enemiesInRadius": 1
+        }
+      },
+      "effects": [
+        {
+          "type": "buff",
+          "target": "self",
+          "durationMs": 4000
+        }
+      ]
+    },
+    {
+      "id": "thousand_petal_slash",
+      "name": "Thousand Petal Slash",
+      "energyCost": 30,
+      "cooldownMs": 8000,
+      "targetType": "enemy",
+      "rangeTiles": 1,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "sword_saint",
+          "value": 20
+        }
+      ],
+      "description": "Sweeps the blade in a storm of petals dealing 200% weapon damage in a 1.5-tile cleave (up to 4 targets) and inflicting bleed (100%) on the main target.",
+      "ai": {
+        "role": "rotation",
+        "priority": 60,
+        "condition": {
+          "enemiesInRadius": 2
+        }
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "weapon",
+          "multiplier": 2.0,
+          "area": {
+            "shape": "cleave",
+            "radius": 1.5,
+            "maxTargets": 4
+          }
+        },
+        {
+          "type": "applyStatus",
+          "status": "bleed",
+          "chance": 1
+        }
+      ]
+    },
+    {
+      "id": "void_step",
+      "name": "Void Step",
+      "energyCost": 28,
+      "cooldownMs": 10000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "sword_saint",
+          "value": 30
+        }
+      ],
+      "description": "Teleports behind an enemy within 4 tiles and strikes for 240% weapon damage, amplified by x1.5 against bleeding targets.",
+      "ai": {
+        "role": "gapCloser",
+        "priority": 65
+      },
+      "effects": [
+        {
+          "type": "move",
+          "moveType": "teleportBehind",
+          "rangeTiles": 4
+        },
+        {
+          "type": "damage",
+          "scaling": "weapon",
+          "multiplier": 2.4,
+          "requiresTargetStatus": {
+            "status": "bleed",
+            "multiplier": 1.5
+          }
+        }
+      ]
+    },
+    {
+      "id": "final_form_flash",
+      "name": "Final Form: Flash",
+      "energyCost": 48,
+      "cooldownMs": 18000,
+      "targetType": "enemy",
+      "rangeTiles": 1,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "sword_saint",
+          "value": 40
+        }
+      ],
+      "description": "Unleashes an 8-hit flash of absolute swordsmanship dealing 420% weapon damage, amplified by x1.3 against targets below 40% HP.",
+      "ai": {
+        "role": "finisher",
+        "priority": 85
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "weapon",
+          "multiplier": 4.2,
+          "hits": 8,
+          "lowHealthBonus": {
+            "threshold": 0.4,
+            "multiplier": 1.3
+          }
+        }
+      ]
+    },
+    {
+      "id": "grave_cleave",
+      "name": "Grave Cleave",
+      "energyCost": 22,
+      "cooldownMs": 4000,
+      "targetType": "enemy",
+      "rangeTiles": 1,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "death_knight",
+          "value": 1
+        }
+      ],
+      "description": "Swings a death-infused greatsword for 200% weapon damage, draining 15% of damage dealt as HP.",
+      "ai": {
+        "role": "rotation",
+        "priority": 30
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "weapon",
+          "multiplier": 2.0,
+          "lifesteal": 0.15
+        }
+      ]
+    },
+    {
+      "id": "unholy_armor",
+      "name": "Unholy Armor",
+      "energyCost": 26,
+      "cooldownMs": 18000,
+      "targetType": "self",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "death_knight",
+          "value": 10
+        }
+      ],
+      "description": "Shrouds the caster in necrotic plate, multiplying damage taken by 0.60 for 8s.",
+      "ai": {
+        "role": "defensive",
+        "priority": 60
+      },
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "damageTakenMultiplier",
+          "value": 0.6,
+          "durationMs": 8000,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "death_grip",
+      "name": "Death Grip",
+      "energyCost": 28,
+      "cooldownMs": 14000,
+      "targetType": "self",
+      "radiusTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "death_knight",
+          "value": 20
+        }
+      ],
+      "description": "Commands the attention of all enemies within 4 tiles, taunting them for 5s and granting the caster a 50 shield for 8s.",
+      "ai": {
+        "role": "defensive",
+        "priority": 70,
+        "condition": {
+          "enemiesInRadius": 1
+        }
+      },
+      "effects": [
+        {
+          "type": "taunt",
+          "radiusTiles": 4,
+          "durationMs": 5000
+        },
+        {
+          "type": "shield",
+          "shieldAmount": 50,
+          "durationMs": 8000,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "plague_strike",
+      "name": "Plague Strike",
+      "energyCost": 30,
+      "cooldownMs": 9000,
+      "targetType": "enemy",
+      "rangeTiles": 1,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "death_knight",
+          "value": 30
+        }
+      ],
+      "description": "Strikes with virulent blight for 180% weapon damage, inflicting curse (100%) on the main target and amplifying damage taken by 20% for 6s.",
+      "ai": {
+        "role": "rotation",
+        "priority": 55
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "weapon",
+          "multiplier": 1.8
+        },
+        {
+          "type": "applyStatus",
+          "status": "curse",
+          "chance": 1
+        },
+        {
+          "type": "debuff",
+          "stat": "damageAmplificationPercent",
+          "value": 0.2,
+          "durationMs": 6000,
+          "target": "enemy"
+        }
+      ]
+    },
+    {
+      "id": "army_of_ruin",
+      "name": "Army of Ruin",
+      "energyCost": 50,
+      "cooldownMs": 20000,
+      "targetType": "enemy",
+      "rangeTiles": 1,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "death_knight",
+          "value": 40
+        }
+      ],
+      "description": "Erupts cataclysmic death energy in a 2-tile radius around the caster for 400% weapon damage with 25% lifesteal.",
+      "ai": {
+        "role": "rotation",
+        "priority": 85,
+        "condition": {
+          "enemiesInRadius": 2
+        }
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "weapon",
+          "multiplier": 4.0,
+          "lifesteal": 0.25,
+          "area": {
+            "shape": "radius",
+            "radius": 2,
+            "center": "caster"
+          }
+        }
+      ]
+    },
+    {
+      "id": "radiant_blade",
+      "name": "Radiant Blade",
+      "energyCost": 18,
+      "cooldownMs": 3000,
+      "targetType": "enemy",
+      "rangeTiles": 1,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "celestial_knight",
+          "value": 1
+        }
+      ],
+      "description": "Strikes with a sun-blessed longsword for 160% weapon damage plus Holy Magic proficiency bonus and heals the lowest health ally for 6 HP.",
+      "ai": {
+        "role": "rotation",
+        "priority": 30
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "weapon",
+          "multiplier": 1.6,
+          "profBonus": {
+            "prof": "holy_magic",
+            "perLevel": 0.15
+          }
+        },
+        {
+          "type": "heal",
+          "amount": 6,
+          "target": "lowestAlly"
+        }
+      ]
+    },
+    {
+      "id": "celestial_ward",
+      "name": "Celestial Ward",
+      "energyCost": 30,
+      "cooldownMs": 20000,
+      "targetType": "self",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "celestial_knight",
+          "value": 10
+        }
+      ],
+      "description": "Surrounds the entire party in celestial light, multiplying damage taken by 0.80 for 8s.",
+      "ai": {
+        "role": "defensive",
+        "priority": 65
+      },
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "damageTakenMultiplier",
+          "value": 0.8,
+          "durationMs": 8000,
+          "target": "party"
+        }
+      ]
+    },
+    {
+      "id": "judgment_of_light",
+      "name": "Judgment of Light",
+      "energyCost": 32,
+      "cooldownMs": 10000,
+      "targetType": "enemy",
+      "rangeTiles": 1,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "celestial_knight",
+          "value": 20
+        }
+      ],
+      "description": "Calls down searing radiance dealing 240% weapon damage in a 1.5-tile radius with a 50% chance to blind the main target.",
+      "ai": {
+        "role": "rotation",
+        "priority": 60,
+        "condition": {
+          "enemiesInRadius": 2
+        }
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "weapon",
+          "multiplier": 2.4,
+          "area": {
+            "shape": "radius",
+            "radius": 1.5
+          }
+        },
+        {
+          "type": "applyStatus",
+          "status": "blind",
+          "chance": 0.5
+        }
+      ]
+    },
+    {
+      "id": "seraphic_restoration",
+      "name": "Seraphic Restoration",
+      "energyCost": 44,
+      "cooldownMs": 20000,
+      "targetType": "ally",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "celestial_knight",
+          "value": 30
+        }
+      ],
+      "description": "Invokes seraphic grace to restore 30 HP to all party members and cleanse all harmful status effects from the party.",
+      "ai": {
+        "role": "support",
+        "priority": 85,
+        "condition": {
+          "allyHpBelow": 0.5
+        }
+      },
+      "effects": [
+        {
+          "type": "heal",
+          "amount": 30,
+          "target": "party"
+        },
+        {
+          "type": "cleanse",
+          "target": "party"
+        }
+      ]
+    },
+    {
+      "id": "heavens_verdict",
+      "name": "Heaven's Verdict",
+      "energyCost": 50,
+      "cooldownMs": 20000,
+      "targetType": "enemy",
+      "rangeTiles": 1,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "celestial_knight",
+          "value": 40
+        }
+      ],
+      "description": "Delivers Heaven's Verdict for 400% weapon damage and restores 25 HP to the entire party.",
+      "ai": {
+        "role": "finisher",
+        "priority": 85
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "weapon",
+          "multiplier": 4.0
+        },
+        {
+          "type": "heal",
+          "amount": 25,
+          "target": "party"
+        }
+      ]
+    },
+    {
+      "id": "shadow_palm",
+      "name": "Shadow Palm",
+      "energyCost": 16,
+      "cooldownMs": 3000,
+      "targetType": "enemy",
+      "rangeTiles": 1,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "shadow_monk",
+          "value": 1
+        }
+      ],
+      "description": "Unleashes a rapid 3-hit shadow combination dealing 170% total weapon damage.",
+      "ai": {
+        "role": "rotation",
+        "priority": 30
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "weapon",
+          "multiplier": 1.7,
+          "hits": 3
+        }
+      ]
+    },
+    {
+      "id": "phantom_step",
+      "name": "Phantom Step",
+      "energyCost": 22,
+      "cooldownMs": 16000,
+      "targetType": "self",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "shadow_monk",
+          "value": 10
+        }
+      ],
+      "description": "Melds into shifting shadows, granting +50% evasion for 5s.",
+      "ai": {
+        "role": "defensive",
+        "priority": 60
+      },
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "evasionBonus",
+          "value": 0.5,
+          "durationMs": 5000,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "nerve_strike",
+      "name": "Nerve Strike",
+      "energyCost": 26,
+      "cooldownMs": 9000,
+      "targetType": "enemy",
+      "rangeTiles": 1,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "shadow_monk",
+          "value": 20
+        }
+      ],
+      "description": "Targets vital nerve clusters for 180% weapon damage with a 50% chance to stun the main target.",
+      "ai": {
+        "role": "rotation",
+        "priority": 55
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "weapon",
+          "multiplier": 1.8
+        },
+        {
+          "type": "applyStatus",
+          "status": "stun",
+          "chance": 0.5
+        }
+      ]
+    },
+    {
+      "id": "umbral_flurry",
+      "name": "Umbral Flurry",
+      "energyCost": 30,
+      "cooldownMs": 10000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "shadow_monk",
+          "value": 30
+        }
+      ],
+      "description": "Teleports behind an enemy within 4 tiles and strikes 4 times for 260% weapon damage, inflicting bleed (100%) on the main target.",
+      "ai": {
+        "role": "gapCloser",
+        "priority": 65
+      },
+      "effects": [
+        {
+          "type": "move",
+          "moveType": "teleportBehind",
+          "rangeTiles": 4
+        },
+        {
+          "type": "damage",
+          "scaling": "weapon",
+          "multiplier": 2.6,
+          "hits": 4
+        },
+        {
+          "type": "applyStatus",
+          "status": "bleed",
+          "chance": 1
+        }
+      ]
+    },
+    {
+      "id": "thousand_shadows",
+      "name": "Thousand Shadows",
+      "energyCost": 48,
+      "cooldownMs": 18000,
+      "targetType": "enemy",
+      "rangeTiles": 1,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "shadow_monk",
+          "value": 40
+        }
+      ],
+      "description": "Assails the foe from every angle with 10 strikes dealing 420% weapon damage and inflicting curse (100%) on the main target.",
+      "ai": {
+        "role": "finisher",
+        "priority": 85
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "weapon",
+          "multiplier": 4.2,
+          "hits": 10
+        },
+        {
+          "type": "applyStatus",
+          "status": "curse",
+          "chance": 1
+        }
+      ]
+    },
+    {
+      "id": "blessed_bolt",
+      "name": "Blessed Bolt",
+      "energyCost": 18,
+      "cooldownMs": 3000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "demon_hunter",
+          "value": 1
+        }
+      ],
+      "description": "Fires a consecrated bolt dealing 160% weapon damage plus Holy Magic proficiency bonus.",
+      "ai": {
+        "role": "rotation",
+        "priority": 30
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "weapon",
+          "multiplier": 1.6,
+          "profBonus": {
+            "prof": "holy_magic",
+            "perLevel": 0.15
+          }
+        }
+      ]
+    },
+    {
+      "id": "hunters_brand",
+      "name": "Hunter's Brand",
+      "energyCost": 20,
+      "cooldownMs": 10000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "demon_hunter",
+          "value": 10
+        }
+      ],
+      "description": "Marks the quarry with a searing brand dealing 100% weapon damage and inflicting expose (100%) on the main target.",
+      "ai": {
+        "role": "rotation",
+        "priority": 50
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "weapon",
+          "multiplier": 1.0
+        },
+        {
+          "type": "applyStatus",
+          "status": "expose",
+          "chance": 1
+        }
+      ]
+    },
+    {
+      "id": "consecrated_volley",
+      "name": "Consecrated Volley",
+      "energyCost": 30,
+      "cooldownMs": 9000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "demon_hunter",
+          "value": 20
+        }
+      ],
+      "description": "Looses a volley of sanctified bolts dealing 180% weapon damage that chains up to 4 targets within 3 tiles (20% falloff per hop).",
+      "ai": {
+        "role": "rotation",
+        "priority": 55,
+        "condition": {
+          "enemiesInRadius": 2
+        }
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "weapon",
+          "multiplier": 1.8,
+          "area": {
+            "shape": "chain",
+            "maxTargets": 4,
+            "radius": 3,
+            "falloff": 0.2
+          }
+        }
+      ]
+    },
+    {
+      "id": "holy_ward",
+      "name": "Holy Ward",
+      "energyCost": 28,
+      "cooldownMs": 18000,
+      "targetType": "self",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "demon_hunter",
+          "value": 30
+        }
+      ],
+      "description": "Errects a ward of sacred geometry around the caster, absorbing up to 60 damage for 8s.",
+      "ai": {
+        "role": "defensive",
+        "priority": 60
+      },
+      "effects": [
+        {
+          "type": "shield",
+          "shieldAmount": 60,
+          "durationMs": 8000,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "banishment",
+      "name": "Banishment",
+      "energyCost": 50,
+      "cooldownMs": 18000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "demon_hunter",
+          "value": 40
+        }
+      ],
+      "description": "Delivers a judgment bolt of banishment for 420% weapon damage, amplified by x1.5 against targets below 40% HP.",
+      "ai": {
+        "role": "finisher",
+        "priority": 85
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "weapon",
+          "multiplier": 4.2,
+          "lowHealthBonus": {
+            "threshold": 0.4,
+            "multiplier": 1.5
+          }
+        }
+      ]
+    },
+    {
+      "id": "arcane_edge",
+      "name": "Arcane Edge",
+      "energyCost": 18,
+      "cooldownMs": 3000,
+      "targetType": "enemy",
+      "rangeTiles": 1,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "arcane_knight",
+          "value": 1
+        }
+      ],
+      "description": "Slashes with an arcane-charged blade for 160% weapon damage plus Arcane Magic proficiency bonus.",
+      "ai": {
+        "role": "rotation",
+        "priority": 30
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "weapon",
+          "multiplier": 1.6,
+          "profBonus": {
+            "prof": "arcane_magic",
+            "perLevel": 0.15
+          }
+        }
+      ]
+    },
+    {
+      "id": "mana_blade",
+      "name": "Mana Blade",
+      "energyCost": 26,
+      "cooldownMs": 20000,
+      "targetType": "self",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "arcane_knight",
+          "value": 10
+        }
+      ],
+      "description": "Imbues the caster's weapon with pure mana for 10s, granting +30% bonus damage and siphoning 4 EN per hit.",
+      "ai": {
+        "role": "defensive",
+        "priority": 60
+      },
+      "effects": [
+        {
+          "type": "buff",
+          "target": "self",
+          "durationMs": 10000
+        }
+      ]
+    },
+    {
+      "id": "spell_breaker",
+      "name": "Spell Breaker",
+      "energyCost": 28,
+      "cooldownMs": 9000,
+      "targetType": "enemy",
+      "rangeTiles": 1,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "arcane_knight",
+          "value": 20
+        }
+      ],
+      "description": "Shatters enemy defenses for 220% weapon damage and inflicts arcane vulnerability (100%) on the main target.",
+      "ai": {
+        "role": "rotation",
+        "priority": 55
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "weapon",
+          "multiplier": 2.2
+        },
+        {
+          "type": "applyStatus",
+          "status": "arcane_vulnerability",
+          "chance": 1
+        }
+      ]
+    },
+    {
+      "id": "arcane_overload",
+      "name": "Arcane Overload",
+      "energyCost": 34,
+      "cooldownMs": 12000,
+      "targetType": "enemy",
+      "rangeTiles": 1,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "arcane_knight",
+          "value": 30
+        }
+      ],
+      "description": "Releases a surge of weapon-channeled energy for 280% weapon damage; while Mana Blade is active, deals x1.3 damage, refunds 15 EN, and cleaves up to 3 targets within 1.5 tiles.",
+      "ai": {
+        "role": "rotation",
+        "priority": 65
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "weapon",
+          "multiplier": 2.8,
+          "requiresSelfStatus": {
+            "status": "mana_blade",
+            "multiplier": 1.3,
+            "energyRefund": 15,
+            "area": {
+              "shape": "cleave",
+              "radius": 1.5,
+              "maxTargets": 3
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "astral_annihilation",
+      "name": "Astral Annihilation",
+      "energyCost": 52,
+      "cooldownMs": 20000,
+      "targetType": "enemy",
+      "rangeTiles": 1,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "arcane_knight",
+          "value": 40
+        }
+      ],
+      "description": "Channels astral devastation for 440% weapon damage, consuming up to 30 surplus EN for +0.04x multiplier per EN.",
+      "ai": {
+        "role": "finisher",
+        "priority": 85
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "weapon",
+          "multiplier": 4.4,
+          "resourceDump": {
+            "maxBonusEnergy": 30,
+            "perEnergy": 0.04
+          }
+        }
+      ]
+    },
+    {
+      "id": "elemental_strike",
+      "name": "Elemental Strike",
+      "energyCost": 18,
+      "cooldownMs": 3000,
+      "targetType": "enemy",
+      "rangeTiles": 1,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "elemental_knight",
+          "value": 1
+        }
+      ],
+      "description": "Strikes with an element-imbued blade for 160% weapon damage plus Fire Magic proficiency bonus, with a 20% chance to burn the main target.",
+      "ai": {
+        "role": "rotation",
+        "priority": 30
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "weapon",
+          "multiplier": 1.6,
+          "profBonus": {
+            "prof": "fire_magic",
+            "perLevel": 0.15
+          }
+        },
+        {
+          "type": "applyStatus",
+          "status": "burn",
+          "chance": 0.2
+        }
+      ]
+    },
+    {
+      "id": "frost_brand",
+      "name": "Frost Brand",
+      "energyCost": 24,
+      "cooldownMs": 8000,
+      "targetType": "enemy",
+      "rangeTiles": 1,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "elemental_knight",
+          "value": 10
+        }
+      ],
+      "description": "Slashes with freezing rime for 180% weapon damage, slowing the main target (100%) and weakening its damage by 20% for 6s.",
+      "ai": {
+        "role": "rotation",
+        "priority": 50
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "weapon",
+          "multiplier": 1.8
+        },
+        {
+          "type": "applyStatus",
+          "status": "slow",
+          "chance": 1
+        },
+        {
+          "type": "debuff",
+          "stat": "damageReductionPercent",
+          "value": 0.2,
+          "durationMs": 6000,
+          "target": "enemy"
+        }
+      ]
+    },
+    {
+      "id": "storm_edge",
+      "name": "Storm Edge",
+      "energyCost": 30,
+      "cooldownMs": 9000,
+      "targetType": "enemy",
+      "rangeTiles": 1,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "elemental_knight",
+          "value": 20
+        }
+      ],
+      "description": "Cleaves with crackling lightning for 200% weapon damage chaining up to 3 targets within 2 tiles (30% falloff) and a 40% chance to shock the main target.",
+      "ai": {
+        "role": "rotation",
+        "priority": 55,
+        "condition": {
+          "enemiesInRadius": 2
+        }
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "weapon",
+          "multiplier": 2.0,
+          "area": {
+            "shape": "chain",
+            "maxTargets": 3,
+            "radius": 2,
+            "falloff": 0.3
+          }
+        },
+        {
+          "type": "applyStatus",
+          "status": "shock",
+          "chance": 0.4
+        }
+      ]
+    },
+    {
+      "id": "elemental_aegis",
+      "name": "Elemental Aegis",
+      "energyCost": 24,
+      "cooldownMs": 18000,
+      "targetType": "self",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "elemental_knight",
+          "value": 30
+        }
+      ],
+      "description": "Wreathes the caster in a tri-elemental barrier, multiplying damage taken by 0.70 for 8s.",
+      "ai": {
+        "role": "defensive",
+        "priority": 55
+      },
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "damageTakenMultiplier",
+          "value": 0.7,
+          "durationMs": 8000,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "trinity_slash",
+      "name": "Trinity Slash",
+      "energyCost": 50,
+      "cooldownMs": 18000,
+      "targetType": "enemy",
+      "rangeTiles": 1,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "elemental_knight",
+          "value": 40
+        }
+      ],
+      "description": "Unleashes three elemental slashes for 400% weapon damage across 3 hits, inflicting burn (100%) and shock (50%) on the main target.",
+      "ai": {
+        "role": "finisher",
+        "priority": 85
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "weapon",
+          "multiplier": 4.0,
+          "hits": 3
+        },
+        {
+          "type": "applyStatus",
+          "status": "burn",
+          "chance": 1
+        },
+        {
+          "type": "applyStatus",
+          "status": "shock",
+          "chance": 0.5
+        }
+      ]
+    },
+    {
+      "id": "gale_arrow",
+      "name": "Gale Arrow",
+      "energyCost": 16,
+      "cooldownMs": 3000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "tempest",
+          "value": 1
+        }
+      ],
+      "description": "Looses a wind-sheathed arrow piercing up to 3 targets in a line for 150% weapon damage.",
+      "ai": {
+        "role": "rotation",
+        "priority": 30
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "weapon",
+          "multiplier": 1.5,
+          "area": {
+            "shape": "line",
+            "maxTargets": 3
+          }
+        }
+      ]
+    },
+    {
+      "id": "storm_shroud",
+      "name": "Storm Shroud",
+      "energyCost": 22,
+      "cooldownMs": 16000,
+      "targetType": "self",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "tempest",
+          "value": 10
+        }
+      ],
+      "description": "Envelops the caster in swirling gale winds, granting +40% evasion for 6s.",
+      "ai": {
+        "role": "defensive",
+        "priority": 55
+      },
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "evasionBonus",
+          "value": 0.4,
+          "durationMs": 6000,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "thunderstorm",
+      "name": "Thunderstorm",
+      "energyCost": 34,
+      "cooldownMs": 10000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "tempest",
+          "value": 20
+        }
+      ],
+      "description": "Fires a storm-charged shot dealing 200% weapon damage that chains up to 5 targets within 3 tiles (20% falloff) with a 40% chance to shock the main target.",
+      "ai": {
+        "role": "rotation",
+        "priority": 60,
+        "condition": {
+          "enemiesInRadius": 2
+        }
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "weapon",
+          "multiplier": 2.0,
+          "area": {
+            "shape": "chain",
+            "maxTargets": 5,
+            "radius": 3,
+            "falloff": 0.2
+          }
+        },
+        {
+          "type": "applyStatus",
+          "status": "shock",
+          "chance": 0.4
+        }
+      ]
+    },
+    {
+      "id": "cyclone_shot",
+      "name": "Cyclone Shot",
+      "energyCost": 30,
+      "cooldownMs": 10000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "tempest",
+          "value": 30
+        }
+      ],
+      "description": "Unleashes a spiraling cyclone arrow piercing up to 5 targets in a line for 240% weapon damage and slowing the main target (100%).",
+      "ai": {
+        "role": "rotation",
+        "priority": 55
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "weapon",
+          "multiplier": 2.4,
+          "area": {
+            "shape": "line",
+            "maxTargets": 5
+          }
+        },
+        {
+          "type": "applyStatus",
+          "status": "slow",
+          "chance": 1
+        }
+      ]
+    },
+    {
+      "id": "eye_of_the_storm",
+      "name": "Eye of the Storm",
+      "energyCost": 52,
+      "cooldownMs": 20000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "tempest",
+          "value": 40
+        }
+      ],
+      "description": "Calls down the Eye of the Storm in a 2.5-tile radius dealing 420% weapon damage with a 60% chance to shock the main target.",
+      "ai": {
+        "role": "rotation",
+        "priority": 90,
+        "condition": {
+          "enemiesInRadius": 2
+        }
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "weapon",
+          "multiplier": 4.2,
+          "area": {
+            "shape": "radius",
+            "radius": 2.5
+          }
+        },
+        {
+          "type": "applyStatus",
+          "status": "shock",
+          "chance": 0.6
+        }
+      ]
     }
   ]
 }

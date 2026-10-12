@@ -1433,6 +1433,259 @@
       "hiddenSkillBonuses": {
         "mana_regen": 0.05
       }
+    },
+    {
+      "id": "sword_saint",
+      "name": "Sword Saint",
+      "tier": "master",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "katana",
+          "value": 90
+        },
+        {
+          "type": "proficiency",
+          "target": "longswords",
+          "value": 60
+        },
+        {
+          "type": "classLevel",
+          "target": "blademaster",
+          "value": 25
+        }
+      ],
+      "fantasy": "Legendary master of swordsmanship",
+      "hiddenSkillBonuses": {
+        "parry": 0.05
+      }
+    },
+    {
+      "id": "death_knight",
+      "name": "Death Knight",
+      "tier": "master",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "greatswords",
+          "value": 90
+        },
+        {
+          "type": "proficiency",
+          "target": "dark_magic",
+          "value": 60
+        },
+        {
+          "type": "classLevel",
+          "target": "juggernaut",
+          "value": 25
+        },
+        {
+          "type": "classLevel",
+          "target": "dark_knight",
+          "value": 20
+        }
+      ],
+      "fantasy": "Terrifying heavy warrior infused with death magic",
+      "hiddenSkillBonuses": {
+        "resilience": 0.05
+      }
+    },
+    {
+      "id": "celestial_knight",
+      "name": "Celestial Knight",
+      "tier": "master",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "longswords",
+          "value": 90
+        },
+        {
+          "type": "proficiency",
+          "target": "holy_magic",
+          "value": 60
+        },
+        {
+          "type": "proficiency",
+          "target": "healing_magic",
+          "value": 30
+        },
+        {
+          "type": "classLevel",
+          "target": "knight",
+          "value": 25
+        },
+        {
+          "type": "classLevel",
+          "target": "paladin",
+          "value": 20
+        }
+      ],
+      "fantasy": "Legendary holy swordsman",
+      "hiddenSkillBonuses": {
+        "parry": 0.05
+      }
+    },
+    {
+      "id": "shadow_monk",
+      "name": "Shadow Monk",
+      "tier": "master",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "short_swords",
+          "value": 60
+        },
+        {
+          "type": "proficiency",
+          "target": "daggers",
+          "value": 60
+        },
+        {
+          "type": "proficiency",
+          "target": "dark_magic",
+          "value": 30
+        },
+        {
+          "type": "classLevel",
+          "target": "assassin",
+          "value": 20
+        }
+      ],
+      "fantasy": "Extremely mobile melee assassin",
+      "hiddenSkillBonuses": {
+        "evasion": 0.05
+      }
+    },
+    {
+      "id": "demon_hunter",
+      "name": "Demon Hunter",
+      "tier": "master",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "short_swords",
+          "value": 60
+        },
+        {
+          "type": "proficiency",
+          "target": "crossbows",
+          "value": 60
+        },
+        {
+          "type": "proficiency",
+          "target": "holy_magic",
+          "value": 30
+        },
+        {
+          "type": "classLevel",
+          "target": "witch_hunter",
+          "value": 20
+        }
+      ],
+      "fantasy": "Specialist in hunting supernatural creatures",
+      "hiddenSkillBonuses": {
+        "evasion": 0.05
+      }
+    },
+    {
+      "id": "arcane_knight",
+      "name": "Arcane Knight",
+      "tier": "master",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "longswords",
+          "value": 90
+        },
+        {
+          "type": "proficiency",
+          "target": "arcane_magic",
+          "value": 90
+        },
+        {
+          "type": "classLevel",
+          "target": "battlemage",
+          "value": 25
+        }
+      ],
+      "fantasy": "Channels raw magical energy through weapons",
+      "hiddenSkillBonuses": {
+        "parry": 0.05
+      }
+    },
+    {
+      "id": "elemental_knight",
+      "name": "Elemental Knight",
+      "tier": "master",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "longswords",
+          "value": 30
+        },
+        {
+          "type": "proficiency",
+          "target": "fire_magic",
+          "value": 30
+        },
+        {
+          "type": "proficiency",
+          "target": "water_magic",
+          "value": 30
+        },
+        {
+          "type": "proficiency",
+          "target": "lightning_magic",
+          "value": 30
+        },
+        {
+          "type": "classLevel",
+          "target": "battlemage",
+          "value": 20
+        },
+        {
+          "type": "classLevel",
+          "target": "elementalist",
+          "value": 20
+        }
+      ],
+      "fantasy": "Imbues weapon with different elements",
+      "hiddenSkillBonuses": {
+        "parry": 0.05
+      }
+    },
+    {
+      "id": "tempest",
+      "name": "Tempest",
+      "tier": "master",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "bows",
+          "value": 30
+        },
+        {
+          "type": "proficiency",
+          "target": "lightning_magic",
+          "value": 30
+        },
+        {
+          "type": "proficiency",
+          "target": "wind_magic",
+          "value": 60
+        },
+        {
+          "type": "classLevel",
+          "target": "storm_archer",
+          "value": 20
+        }
+      ],
+      "fantasy": "Ranged warrior who fights alongside storms",
+      "hiddenSkillBonuses": {
+        "evasion": 0.05
+      }
     }
   ]
 }

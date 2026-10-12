@@ -1578,3 +1578,37 @@ The following three intentional behavioural changes were reviewed and accepted b
   - Updated `test/milestone37.test.ts` where an old check asserted `cleric` was `undefined` ("not registered prematurely") to assert that `cleric` is registered with tier `expert`.
   - Full test suite: 124/124 suites pass cleanly (`npm test -- --quiet`).
   - Production build: `npm run build` succeeds cleanly.
+
+### Class Program, Tier 3: Master Classes (8 Kits, Data-Only) (2026-10-12)
+
+**Resolved and shipped: Implemented the 8 Tier 3 (Master) classes (Sword Saint, Death Knight, Celestial Knight, Shadow Monk, Demon Hunter, Arcane Knight, Elemental Knight, Tempest) with full 5-skill kits (40 skills total) as pure data in `data/skills.json`, added their `master` tier entries with requirements and `hiddenSkillBonuses` in `data/classes.json`, and added the 2 generic status effects (`mirror_stance`, `mana_blade`) in `data/statusEffects.json`. Added validation, expected-table guard, 60s smoke test, and 4 cast-based tests in `test/class_t3.test.ts`, and updated `scripts/skill_efficiency.ts`.**
+
+- **1. Class Entries (`data/classes.json`)**:
+  - `sword_saint`: Master tier, requirements Katana 90 + Longswords 60 + Blademaster Lv 25, `hiddenSkillBonuses: { parry: 0.05 }`.
+  - `death_knight`: Master tier, requirements Greatswords 90 + Dark Magic 60 + Juggernaut Lv 25 + Dark Knight Lv 20, `hiddenSkillBonuses: { resilience: 0.05 }`.
+  - `celestial_knight`: Master tier, requirements Longswords 90 + Holy Magic 60 + Healing Magic 30 + Knight Lv 25 + Paladin Lv 20, `hiddenSkillBonuses: { parry: 0.05 }`.
+  - `shadow_monk`: Master tier, requirements Short Swords 60 + Daggers 60 + Dark Magic 30 + Assassin Lv 20, `hiddenSkillBonuses: { evasion: 0.05 }`.
+  - `demon_hunter`: Master tier, requirements Short Swords 60 + Crossbows 60 + Holy Magic 30 + Witch Hunter Lv 20, `hiddenSkillBonuses: { evasion: 0.05 }`.
+  - `arcane_knight`: Master tier, requirements Longswords 90 + Arcane 90 + Battlemage Lv 25, `hiddenSkillBonuses: { parry: 0.05 }`.
+  - `elemental_knight`: Master tier, requirements Longswords 30 + Fire Magic 30 + Water Magic 30 + Lightning Magic 30 + Battlemage Lv 20 + Elementalist Lv 20, `hiddenSkillBonuses: { parry: 0.05 }`.
+  - `tempest`: Master tier, requirements Bows 30 + Lightning Magic 30 + Wind Magic 60 + Storm Archer Lv 20, `hiddenSkillBonuses: { evasion: 0.05 }`.
+- **2. New Data-Only Statuses (`data/statusEffects.json`)**:
+  - `mirror_stance`: `counterOnHit: { consume: false }`, `evasionBonus: 0.2`, duration 4s.
+  - `mana_blade`: `bonusDamagePercent: 0.3`, `energySiphonOnHit: 4`, duration 10s.
+- **3. 40 Master Class Skills (`data/skills.json`)**:
+  - **Sword Saint**: `heavenly_cut` (1.7× hits: 2), `mirror_stance` (buff status `mirror_stance`), `thousand_petal_slash` (2.0× cleave 1.5 maxTargets: 4, bleed 100%), `void_step` (teleportBehind 4 + 2.4×, ×1.5 vs bleed), `final_form_flash` (4.2× hits: 8, exec ×1.3 below 40%).
+  - **Death Knight**: `grave_cleave` (2.0×, lifesteal: 0.15), `unholy_armor` (DT 0.6 for 8s), `death_grip` (taunt radius 4 for 5s + shield 50 self for 8s), `plague_strike` (1.8×, curse 100% + Amp 0.20 for 6s), `army_of_ruin` (4.0× radius 2 center: "caster", lifesteal: 0.25).
+  - **Celestial Knight**: `radiant_blade` (1.6× + PB holy_magic + heal 6 lowest ally), `celestial_ward` (party DT 0.8 for 8s), `judgment_of_light` (2.4× radius 1.5, blind 50%), `seraphic_restoration` (heal 30 party + cleanse party), `heavens_verdict` (4.0× + heal 25 party).
+  - **Shadow Monk**: `shadow_palm` (1.7× hits: 3), `phantom_step` (Eva 0.50 for 5s), `nerve_strike` (1.8×, stun 50%), `umbral_flurry` (teleportBehind 4 + 2.6× hits: 4, bleed 100%), `thousand_shadows` (4.2× hits: 10, curse 100%).
+  - **Demon Hunter**: `blessed_bolt` (1.6× + PB holy_magic, range 4), `hunters_brand` (1.0×, expose 100%, range 4), `consecrated_volley` (1.8× chain maxTargets: 4 radius 3 falloff 0.2, range 4), `holy_ward` (shield 60 self for 8s), `banishment` (4.2×, exec ×1.5 below 40%, range 4).
+  - **Arcane Knight**: `arcane_edge` (1.6× + PB arcane_magic), `mana_blade` (buff status `mana_blade`), `spell_breaker` (2.2×, arcane_vulnerability 100%), `arcane_overload` (2.8× + `requiresSelfStatus: { status: "mana_blade", multiplier: 1.3, energyRefund: 15, area: cleave 1.5 maxTargets 3 }`), `astral_annihilation` (4.4×, `resourceDump: { maxBonusEnergy: 30, perEnergy: 0.04 }`).
+  - **Elemental Knight**: `elemental_strike` (1.6× + PB fire_magic, burn 20%), `frost_brand` (1.8×, slow 100% + Weaken 0.20 for 6s), `storm_edge` (2.0× chain maxTargets: 3 radius 2 falloff 0.3, shock 40%), `elemental_aegis` (DT 0.7 for 8s), `trinity_slash` (4.0× hits: 3, burn 100%, shock 50%).
+  - **Tempest**: `gale_arrow` (1.5× line maxTargets: 3, range 4), `storm_shroud` (Eva 0.40 for 6s), `thunderstorm` (2.0× chain maxTargets: 5 radius 3 falloff 0.2, shock 40%, range 4), `cyclone_shot` (2.4× line maxTargets: 5, slow 100%, range 4), `eye_of_the_storm` (4.2× radius 2.5, shock 60%, range 4).
+- **4. Efficiency Audit (`scripts/skill_efficiency.ts`)**:
+  - Added Section 9 evaluating all 40 Tier 3 skills against `blade_strike` baseline; verified 0 filler skills (CD ≤ 3s) exceed the +25% cap (`heavenly_cut` +13.8%, `radiant_blade` -4.8%, `shadow_palm` +13.8%, `blessed_bolt` -4.8%, `arcane_edge` -4.8%, `elemental_strike` +14.3%, `gale_arrow` +0.4%).
+- **5. Test Suite (`test/class_t3.test.ts`)**:
+  - Data validation + expected-table guard across all 8 Master classes, 2 status effects, and 40 skills.
+  - Smoke test: All 8 classes at Lv 40 in 3-enemy fight with ally at 60% HP + timed poison cast at least 4 of 5 skills within 60s.
+  - Cast-based tests verified `mirror_stance` (2 hits -> 2 counters), `mana_blade` + `arcane_overload` (+15 EN refund, ×1.3 multiplier, cleave), `seraphic_restoration` (party cleanse + 30 party heal), and `astral_annihilation` (up to 30 EN dump).
+  - Full test suite: 125/125 suites pass cleanly (`npm test -- --quiet`).
+  - Production build: `npm run build` succeeds cleanly.

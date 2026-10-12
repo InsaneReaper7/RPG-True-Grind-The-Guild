@@ -1228,5 +1228,122 @@ if (flaggedT2B.length > 0) {
   }
 }
 
+// ============================================================================
+// SECTION 9: CLASS PROGRAM TIER 3: MASTER CLASSES (8 KITS, 40 SKILLS)
+// ============================================================================
+console.log('\n### Class Program Tier 3: Master Classes Efficiency Check');
 
+const t3Classes = [
+  { classId: 'sword_saint', primaryWeapon: 'katana', skills: ['heavenly_cut', 'mirror_stance', 'thousand_petal_slash', 'void_step', 'final_form_flash'] },
+  { classId: 'death_knight', primaryWeapon: 'greatswords', skills: ['grave_cleave', 'unholy_armor', 'death_grip', 'plague_strike', 'army_of_ruin'] },
+  { classId: 'celestial_knight', primaryWeapon: 'longswords', skills: ['radiant_blade', 'celestial_ward', 'judgment_of_light', 'seraphic_restoration', 'heavens_verdict'] },
+  { classId: 'shadow_monk', primaryWeapon: 'short_swords', skills: ['shadow_palm', 'phantom_step', 'nerve_strike', 'umbral_flurry', 'thousand_shadows'] },
+  { classId: 'demon_hunter', primaryWeapon: 'crossbows', skills: ['blessed_bolt', 'hunters_brand', 'consecrated_volley', 'holy_ward', 'banishment'] },
+  { classId: 'arcane_knight', primaryWeapon: 'longswords', skills: ['arcane_edge', 'mana_blade', 'spell_breaker', 'arcane_overload', 'astral_annihilation'] },
+  { classId: 'elemental_knight', primaryWeapon: 'longswords', skills: ['elemental_strike', 'frost_brand', 'storm_edge', 'elemental_aegis', 'trinity_slash'] },
+  { classId: 'tempest', primaryWeapon: 'bows', skills: ['gale_arrow', 'storm_shroud', 'thunderstorm', 'cyclone_shot', 'eye_of_the_storm'] }
+];
 
+const t3Rows: T2WaveARow[] = [];
+
+for (const kit of t3Classes) {
+  for (const sid of kit.skills) {
+    const skill = skillsData.skills.find((s: any) => s.id === sid);
+    if (!skill) continue;
+
+    const req = skill.requirements?.map((r: any) => `${r.target} ${r.value}`).join(', ') || 'none';
+    const cdSec = (skill.cooldownMs ?? 0) / 1000;
+    const energyCost = skill.energyCost ?? 0;
+
+    let mult = 0;
+    if (skill.effects) {
+      const dmgEff = skill.effects.find((e: any) => e.type === 'damage');
+      if (dmgEff) mult = dmgEff.multiplier;
+    }
+
+    const directDamage = mult * basePower;
+
+    let dotInfo = 'None';
+    let dotEV = 0;
+
+    if (skill.effects) {
+      const bleedEff = skill.effects.find((e: any) => e.type === 'applyStatus' && e.status === 'bleed');
+      const burnEff = skill.effects.find((e: any) => e.type === 'applyStatus' && e.status === 'burn');
+      const poisonEff = skill.effects.find((e: any) => e.type === 'applyStatus' && e.status === 'poison');
+
+      if (bleedEff) {
+        const chance = bleedEff.chance ?? 1.0;
+        const dur = bleedEff.durationMs ?? 6000;
+        const ticks = dur / bleedTickIntervalMs;
+        const totalBleedDmg = ticks * bleedDamagePerTick;
+        dotEV = chance * totalBleedDmg;
+        dotInfo = `Bleed ${(chance * 100).toFixed(0)}% (${dur / 1000}s = ${totalBleedDmg} dmg)`;
+      } else if (burnEff) {
+        const chance = burnEff.chance ?? 1.0;
+        const dur = burnEff.durationMs ?? 4000;
+        const ticks = dur / burnTickIntervalMs;
+        const totalBurnDmg = ticks * burnDamagePerTick;
+        dotEV = chance * totalBurnDmg;
+        dotInfo = `Burn ${(chance * 100).toFixed(0)}% (${dur / 1000}s = ${totalBurnDmg} dmg)`;
+      } else if (poisonEff) {
+        const chance = poisonEff.chance ?? 1.0;
+        const dur = poisonEff.durationMs ?? 6000;
+        const ticks = dur / poisonTickIntervalMs;
+        const totalPoisonDmg = ticks * poisonDamagePerTick;
+        dotEV = chance * totalPoisonDmg;
+        dotInfo = `Poison ${(chance * 100).toFixed(0)}% (${dur / 1000}s = ${totalPoisonDmg} dmg)`;
+      }
+    }
+
+    const totalDamage = directDamage + dotEV;
+    const damagePerEn = energyCost > 0 ? totalDamage / energyCost : 0;
+
+    let vsBladeStrike = 'N/A';
+    if (totalDamage > 0 && energyCost > 0) {
+      const diffPct = ((damagePerEn - bladeStrikeDmgPerEn) / bladeStrikeDmgPerEn) * 100;
+      vsBladeStrike = `${diffPct >= 0 ? '+' : ''}${diffPct.toFixed(1)}%`;
+    }
+
+    let flag = '-';
+    const isFiller = cdSec <= 3;
+    if (isFiller && energyCost > 0 && damagePerEn > bladeStrikeDmgPerEn * 1.25) {
+      flag = '⚠️ FILLER > +25%';
+    }
+
+    t3Rows.push({
+      classId: kit.classId,
+      skillId: skill.id,
+      name: skill.name,
+      req,
+      cd: cdSec,
+      energyCost,
+      mult,
+      directDamage,
+      dotInfo,
+      dotEV,
+      totalDamage,
+      damagePerEn,
+      vsBladeStrike,
+      flag
+    });
+  }
+}
+
+console.log('| Class | Skill | Requirement | CD (s) | EN | Mult | Direct Dmg | DoT Info | DoT EV | Total EV | Dmg / EN | vs. Blade Strike | Flag |');
+console.log('|---|---|---|---|---|---|---|---|---|---|---|---|---|');
+
+for (const r of t3Rows) {
+  const dmgEnStr = r.damagePerEn > 0 ? r.damagePerEn.toFixed(3) : '-';
+  const multStr = r.mult > 0 ? `${r.mult.toFixed(1)}×` : '-';
+  console.log(
+    `| ${r.classId} | **${r.name}** (\`${r.skillId}\`) | ${r.req} | ${r.cd} | ${r.energyCost} | ${multStr} | ${r.directDamage.toFixed(1)} | ${r.dotInfo} | ${r.dotEV.toFixed(1)} | ${r.totalDamage.toFixed(1)} | ${dmgEnStr} | ${r.vsBladeStrike} | ${r.flag} |`
+  );
+}
+
+const flaggedT3 = t3Rows.filter(r => r.flag.includes('FILLER'));
+console.log(`\n**Tier 3 Filler Audit Result:** ${flaggedT3.length} filler skill(s) exceeded +25% above blade_strike.`);
+if (flaggedT3.length > 0) {
+  for (const f of flaggedT3) {
+    console.log(`  - ⚠️ Flagged: ${f.name} (${f.skillId}): ${f.damagePerEn.toFixed(3)} Dmg/EN (${f.vsBladeStrike})`);
+  }
+}

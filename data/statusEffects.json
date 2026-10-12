@@ -349,6 +349,30 @@
       },
       "isHarmful": false,
       "color": "#f59e0b"
+    },
+    {
+      "id": "mirror_stance",
+      "name": "Mirror Stance",
+      "durationMs": 4000,
+      "tickIntervalMs": 4000,
+      "damagePerTick": 0,
+      "counterOnHit": {
+        "consume": false
+      },
+      "evasionBonus": 0.2,
+      "isHarmful": false,
+      "color": "#38bdf8"
+    },
+    {
+      "id": "mana_blade",
+      "name": "Mana Blade",
+      "durationMs": 10000,
+      "tickIntervalMs": 10000,
+      "damagePerTick": 0,
+      "bonusDamagePercent": 0.3,
+      "energySiphonOnHit": 4,
+      "isHarmful": false,
+      "color": "#818cf8"
     }
   ]
 }
