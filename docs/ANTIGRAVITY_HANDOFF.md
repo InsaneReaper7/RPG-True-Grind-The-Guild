@@ -1546,30 +1546,30 @@ The following three intentional behavioural changes were reviewed and accepted b
     - `tidal_barrier` (Lv 30, EN 28, CD 14s, AI support 60): shield 45 on lowest ally for 8s.
     - `tsunami` (Lv 40, EN 46, CD 18s, AI rotation 85): 3.2× spell damage in a line (`maxTargets: 6`), 100% slow + heal 15 party.
   - **Cryomancer**:
-    - `ice_shard_volley` (Lv 1, EN 18, CD 3s, AI rotation 30): 1.1× spell damage, 10% frostbite.
-    - `deep_freeze` (Lv 10, EN 26, CD 8s, AI rotation 55): 1.6× spell damage, ×1.3 vs frostbite (`requiresTargetStatus: { status: "frostbite", multiplier: 1.3 }`), 40% stun.
-    - `blizzard` (Lv 20, EN 32, CD 11s, AI rotation 60 condition `enemiesInRadius: 2`): 1.4× spell damage in 2.0 radius, 100% frostbite.
-    - `frozen_armor` (Lv 30, EN 20, CD 18s, AI defensive 55): DT 0.70 (`damageTakenMultiplier: 0.70`) for 8s.
-    - `absolute_zero` (Lv 40, EN 46, CD 18s, AI rotation 85): 3.4× spell damage, ×1.4 vs frostbite, 50% stun.
+    - `ice_shard_volley` (Lv 1, EN 20, CD 3s, AI rotation 30): 1.1× spell damage, 10% frostbite.
+    - `deep_freeze` (Lv 10, EN 26, CD 9s, AI rotation 55): 1.6× spell damage, ×1.3 vs frostbite (`requiresTargetStatus: { status: "frostbite", multiplier: 1.3 }`), 40% stun.
+    - `blizzard` (Lv 20, EN 30, CD 10s, AI rotation 60 condition `enemiesInRadius: 2`): 1.4× spell damage in 2.0 radius, 100% frostbite.
+    - `frozen_armor` (Lv 30, EN 22, CD 18s, AI defensive 55): DT 0.70 (`damageTakenMultiplier: 0.70`) for 8s.
+    - `absolute_zero` (Lv 40, EN 46, CD 18s, AI finisher 80): 3.4× spell damage, ×1.4 vs frostbite, 50% stun.
   - **Geomancer**:
-    - `stone_spike` (Lv 1, EN 18, CD 3s, AI rotation 30): 1.1× spell damage, 25% stun.
-    - `earthen_bulwark` (Lv 10, EN 26, CD 18s, AI defensive 55): party DT 0.85 (`damageTakenMultiplier: 0.85`, target `party`) for 8s.
-    - `rockslide` (Lv 20, EN 28, CD 9s, AI rotation 55): 1.6× spell damage in a line (`maxTargets: 4`), 100% slow.
+    - `stone_spike` (Lv 1, EN 22, CD 3s, AI rotation 30): 1.1× spell damage, 25% stun.
+    - `earthen_bulwark` (Lv 10, EN 26, CD 20s, AI defensive 60): party DT 0.85 (`damageTakenMultiplier: 0.85`, target `party`) for 8s.
+    - `rockslide` (Lv 20, EN 30, CD 9s, AI rotation 55): 1.6× spell damage in a line (`maxTargets: 4`), 100% slow.
     - `seismic_shock` (Lv 30, EN 32, CD 11s, AI rotation 60 condition `enemiesInRadius: 2`): 1.8× spell damage in 2.0 radius, 40% stun.
-    - `tectonic_rupture` (Lv 40, EN 46, CD 18s, AI rotation 85 condition `enemiesInRadius: 2`): 3.4× spell damage in 2.0 radius, 60% stun.
+    - `tectonic_rupture` (Lv 40, EN 46, CD 20s, AI rotation 85 condition `enemiesInRadius: 2`): 3.4× spell damage in 2.0 radius, 60% stun.
   - **Cleric**:
-    - `greater_heal` (Lv 1, EN 26, CD 6s, AI support 80 condition `allyHpBelow: 0.70`): heal 30 lowest ally.
-    - `renew` (Lv 10, EN 20, CD 8s, AI support 70 condition `allyHpBelow: 0.85`): HoT 7/s for 6s (42 total, `tickIntervalMs: 1000`) on lowest ally.
-    - `holy_word_shield` (Lv 20, EN 28, CD 14s, AI support 60): shield 50 on lowest ally for 8s.
-    - `sanctified_ground` (Lv 30, EN 38, CD 14s, AI support 75 condition `allyHpBelow: 0.75`): heal 22 party.
-    - `resurrection` (Lv 40, EN 45, CD 45s, radiusTiles 8, AI support 90 condition `requiresDownedAlly: true`): revive downed allies within 8 tiles.
+    - `greater_heal` (Lv 1, EN 22, CD 3s, AI support 75 condition `allyHpBelow: 0.70`): heal 30 lowest ally.
+    - `renew` (Lv 10, EN 24, CD 9s, AI support 70): HoT 7/s for 6s (42 total, `tickIntervalMs: 1000`) on lowest ally.
+    - `holy_word_shield` (Lv 20, EN 30, CD 14s, AI support 60): shield 50 on lowest ally for 8s.
+    - `sanctified_ground` (Lv 30, EN 40, CD 16s, AI support 85 condition `allyHpBelow: 0.60`): heal 22 party.
+    - `resurrection` (Lv 40, EN 50, CD 60s, radiusTiles 8, AI support 95 condition `requiresDownedAlly: true`): revive downed allies within 8 tiles.
   - All status descriptions state that status effects land on the main target only.
 - **3. Efficiency Audit (`scripts/skill_efficiency.ts`)**:
-  - Added Section 8 evaluating the 25 Wave B skills against their schools' basic casts (`scorch`, `water_jet`, `frost_shard`, `pebble_shot`, `holy_light`).
-  - Audited filler skills: 0 fillers exceeded the +25% cap above their school basic cast.
-  - Reported heal efficiency in HP/EN: `greater_heal` (1.154 HP/EN), `renew` (2.100 HP/EN), `sanctified_ground` (1.737 HP/EN party), `tidal_lash` (0.250 HP/EN), `cleansing_wave` (0.625 HP/EN).
-- **4. Test Suite (`test/class_t2_wave_b.test.ts`) & Milestone 37 Test Fix**:
-  - Data validation: All 5 classes and 25 skills validated cleanly (requirements, effects, ai, cadence 1/10/20/30/40, generic buff stats, valid status IDs, and no invalid `durationMs`).
+  - Added Section 8 evaluating the 25 Wave B skills against their schools' basic casts from `weapons.json` (`fire_magic`, `water_magic`, `ice_magic`, `earth_magic`, `holy_magic`).
+  - Audited filler skills: 0 fillers exceeded the +25% cap above their school basic cast (`prismatic_bolt` +0.1% w/ proc / +10% direct + burn EV; `tidal_lash` +10.0%; `ice_shard_volley` +22.9%; `stone_spike` +10.0%).
+  - Reported heal efficiency in HP/EN: `greater_heal` (1.364 HP/EN), `renew` (1.750 HP/EN), `holy_word_shield` (1.667 Shield/EN), `sanctified_ground` (1.650 HP/EN party), `tidal_lash` (0.250 HP/EN), `cleansing_wave` (0.625 HP/EN).
+- **4. Test Suite (`test/class_t2_wave_b.test.ts`, `test/class_t2_wave_a.test.ts`) & Milestone 37 Test Fix**:
+  - Data validation: All 5 classes and 25 skills validated cleanly, including exact expected-table verification (`en`, `cd`, `role`, `priority`, `condition`) in both `test/class_t2_wave_b.test.ts` (25 skills) and `test/class_t2_wave_a.test.ts` (55 skills).
   - Smoke test: All 5 classes at Lv 40 in 3-enemy fight with ally at 60% HP + timed poison cast at least 4 of 5 skills within 60s.
   - Cast-based tests:
     - `earthen_bulwark` -> verified every party member takes ×0.85 damage.

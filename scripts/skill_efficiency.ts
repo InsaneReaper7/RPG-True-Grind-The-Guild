@@ -1040,37 +1040,37 @@ console.log('===================================================================
 const t2WaveBKits: {
   classId: string;
   name: string;
-  schoolBasicSkillId: string;
+  school: string;
   skills: string[];
 }[] = [
   {
     classId: 'elementalist',
     name: 'Elementalist',
-    schoolBasicSkillId: 'scorch',
+    school: 'fire_magic',
     skills: ['prismatic_bolt', 'elemental_attunement', 'steam_burst', 'cyclone_flame', 'elemental_convergence']
   },
   {
     classId: 'aquamancer',
     name: 'Aquamancer',
-    schoolBasicSkillId: 'water_jet',
+    school: 'water_magic',
     skills: ['tidal_lash', 'cleansing_wave', 'riptide_current', 'tidal_barrier', 'tsunami']
   },
   {
     classId: 'cryomancer',
     name: 'Cryomancer',
-    schoolBasicSkillId: 'frost_shard',
+    school: 'ice_magic',
     skills: ['ice_shard_volley', 'deep_freeze', 'blizzard', 'frozen_armor', 'absolute_zero']
   },
   {
     classId: 'geomancer',
     name: 'Geomancer',
-    schoolBasicSkillId: 'pebble_shot',
+    school: 'earth_magic',
     skills: ['stone_spike', 'earthen_bulwark', 'rockslide', 'seismic_shock', 'tectonic_rupture']
   },
   {
     classId: 'cleric',
     name: 'Cleric',
-    schoolBasicSkillId: 'holy_light',
+    school: 'holy_magic',
     skills: ['greater_heal', 'renew', 'holy_word_shield', 'sanctified_ground', 'resurrection']
   }
 ];
@@ -1090,6 +1090,7 @@ interface T2WaveBRow {
   damagePerEn: number;
   healOrShieldInfo: string;
   healPerEn: number;
+  vsDirectBasic: string;
   vsSchoolBasic: string;
   flag: string;
 }
@@ -1097,20 +1098,10 @@ interface T2WaveBRow {
 const t2WaveBRows: T2WaveBRow[] = [];
 
 for (const kit of t2WaveBKits) {
-  const schoolSkill = skillsData.skills.find((s: any) => s.id === kit.schoolBasicSkillId);
-  let schoolDmgPerEn = 0;
-  if (schoolSkill) {
-    const sMult = schoolSkill.effects?.find((e: any) => e.type === 'damage')?.multiplier ?? 0;
-    const sDmg = sMult * basePower;
-    let sDotEV = 0;
-    const sBurn = schoolSkill.effects?.find((e: any) => e.type === 'applyStatus' && e.status === 'burn');
-    if (sBurn) {
-      const sChance = sBurn.chance ?? 1.0;
-      const sDur = sBurn.durationMs ?? 4000;
-      sDotEV = sChance * (sDur / burnTickIntervalMs) * burnDamagePerTick;
-    }
-    schoolDmgPerEn = (sDmg + sDotEV) / (schoolSkill.energyCost || 1);
-  }
+  const baseline = schoolBaselines[kit.school];
+  const schoolBaseDmg = baseline?.baseDamage ?? basePower;
+  const schoolDirectDmgPerEn = baseline && baseline.energyCost > 0 ? baseline.baseDamage / baseline.energyCost : 0;
+  const schoolTotalDmgPerEn = baseline?.dmgPerEn ?? 0;
 
   for (const skillId of kit.skills) {
     const skill = skillsData.skills.find((s: any) => s.id === skillId);
@@ -1172,20 +1163,26 @@ for (const kit of t2WaveBKits) {
       }
     }
 
-    const directDamage = mult * basePower;
+    const directDamage = mult * schoolBaseDmg;
     const totalDamage = directDamage + dotEV;
     const damagePerEn = energyCost > 0 ? totalDamage / energyCost : 0;
     const healPerEn = energyCost > 0 ? totalHealOrShield / energyCost : 0;
 
+    let vsDirectBasic = 'N/A';
+    if (totalDamage > 0 && schoolDirectDmgPerEn > 0) {
+      const diffDirectPct = ((damagePerEn - schoolDirectDmgPerEn) / schoolDirectDmgPerEn) * 100;
+      vsDirectBasic = `${diffDirectPct >= 0 ? '+' : ''}${diffDirectPct.toFixed(1)}%`;
+    }
+
     let vsSchoolBasic = 'N/A';
-    if (totalDamage > 0 && schoolDmgPerEn > 0) {
-      const diffPct = ((damagePerEn - schoolDmgPerEn) / schoolDmgPerEn) * 100;
+    if (totalDamage > 0 && schoolTotalDmgPerEn > 0) {
+      const diffPct = ((damagePerEn - schoolTotalDmgPerEn) / schoolTotalDmgPerEn) * 100;
       vsSchoolBasic = `${diffPct >= 0 ? '+' : ''}${diffPct.toFixed(1)}%`;
     }
 
     let flag = '-';
     const isFiller = cdSec <= 3 && totalDamage > 0;
-    if (isFiller && schoolDmgPerEn > 0 && damagePerEn > schoolDmgPerEn * 1.25) {
+    if (isFiller && schoolTotalDmgPerEn > 0 && damagePerEn > schoolTotalDmgPerEn * 1.25) {
       flag = '⚠️ FILLER > +25%';
     }
 
@@ -1204,21 +1201,22 @@ for (const kit of t2WaveBKits) {
       damagePerEn,
       healOrShieldInfo,
       healPerEn,
+      vsDirectBasic,
       vsSchoolBasic,
       flag
     });
   }
 }
 
-console.log('| Class | Skill | Requirement | CD (s) | EN | Mult | Direct Dmg | DoT Info | Total Dmg EV | Dmg / EN | Heal / Shield | HP/EN | vs. School Basic | Flag |');
-console.log('|---|---|---|---|---|---|---|---|---|---|---|---|---|---|');
+console.log('| Class | Skill | Requirement | CD (s) | EN | Mult | Direct Dmg | DoT Info | Total Dmg EV | Dmg / EN | Heal / Shield | HP/EN | vs. Direct Basic | vs. School Basic (w/ Proc) | Flag |');
+console.log('|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|');
 
 for (const r of t2WaveBRows) {
   const dmgEnStr = r.damagePerEn > 0 ? r.damagePerEn.toFixed(3) : '-';
   const healEnStr = r.healPerEn > 0 ? r.healPerEn.toFixed(3) : '-';
   const multStr = r.mult > 0 ? `${r.mult.toFixed(1)}×` : '-';
   console.log(
-    `| ${r.classId} | **${r.name}** (\`${r.skillId}\`) | ${r.req} | ${r.cd} | ${r.energyCost} | ${multStr} | ${r.directDamage.toFixed(1)} | ${r.dotInfo} | ${r.totalDamage.toFixed(1)} | ${dmgEnStr} | ${r.healOrShieldInfo} | ${healEnStr} | ${r.vsSchoolBasic} | ${r.flag} |`
+    `| ${r.classId} | **${r.name}** (\`${r.skillId}\`) | ${r.req} | ${r.cd} | ${r.energyCost} | ${multStr} | ${r.directDamage.toFixed(1)} | ${r.dotInfo} | ${r.totalDamage.toFixed(1)} | ${dmgEnStr} | ${r.healOrShieldInfo} | ${healEnStr} | ${r.vsDirectBasic} | ${r.vsSchoolBasic} | ${r.flag} |`
   );
 }
 

@@ -9966,7 +9966,7 @@
     {
       "id": "ice_shard_volley",
       "name": "Ice Shard Volley",
-      "energyCost": 18,
+      "energyCost": 20,
       "cooldownMs": 3000,
       "targetType": "enemy",
       "rangeTiles": 4,
@@ -9999,7 +9999,7 @@
       "id": "deep_freeze",
       "name": "Deep Freeze",
       "energyCost": 26,
-      "cooldownMs": 8000,
+      "cooldownMs": 9000,
       "targetType": "enemy",
       "rangeTiles": 4,
       "requirements": [
@@ -10034,8 +10034,8 @@
     {
       "id": "blizzard",
       "name": "Blizzard",
-      "energyCost": 32,
-      "cooldownMs": 11000,
+      "energyCost": 30,
+      "cooldownMs": 10000,
       "targetType": "enemy",
       "rangeTiles": 4,
       "requirements": [
@@ -10073,7 +10073,7 @@
     {
       "id": "frozen_armor",
       "name": "Frozen Armor",
-      "energyCost": 20,
+      "energyCost": 22,
       "cooldownMs": 18000,
       "targetType": "self",
       "rangeTiles": 0,
@@ -10114,8 +10114,8 @@
       ],
       "description": "Plunges the target into absolute zero dealing 340% spell damage (amplified by x1.4 against targets afflicted with frostbite) with a 50% chance to stun the main target.",
       "ai": {
-        "role": "rotation",
-        "priority": 85
+        "role": "finisher",
+        "priority": 80
       },
       "effects": [
         {
@@ -10137,7 +10137,7 @@
     {
       "id": "stone_spike",
       "name": "Stone Spike",
-      "energyCost": 18,
+      "energyCost": 22,
       "cooldownMs": 3000,
       "targetType": "enemy",
       "rangeTiles": 4,
@@ -10170,7 +10170,7 @@
       "id": "earthen_bulwark",
       "name": "Earthen Bulwark",
       "energyCost": 26,
-      "cooldownMs": 18000,
+      "cooldownMs": 20000,
       "targetType": "self",
       "rangeTiles": 0,
       "requirements": [
@@ -10183,7 +10183,7 @@
       "description": "Raises earthen shields around all party members, multiplying damage taken by 0.85 for 8s.",
       "ai": {
         "role": "defensive",
-        "priority": 55
+        "priority": 60
       },
       "effects": [
         {
@@ -10198,7 +10198,7 @@
     {
       "id": "rockslide",
       "name": "Rockslide",
-      "energyCost": 28,
+      "energyCost": 30,
       "cooldownMs": 9000,
       "targetType": "enemy",
       "rangeTiles": 4,
@@ -10274,7 +10274,7 @@
       "id": "tectonic_rupture",
       "name": "Tectonic Rupture",
       "energyCost": 46,
-      "cooldownMs": 18000,
+      "cooldownMs": 20000,
       "targetType": "enemy",
       "rangeTiles": 4,
       "requirements": [
@@ -10312,8 +10312,8 @@
     {
       "id": "greater_heal",
       "name": "Greater Heal",
-      "energyCost": 26,
-      "cooldownMs": 6000,
+      "energyCost": 22,
+      "cooldownMs": 3000,
       "targetType": "ally",
       "rangeTiles": 4,
       "requirements": [
@@ -10326,7 +10326,7 @@
       "description": "Channels concentrated radiant energy into the lowest health ally, immediately restoring 30 HP.",
       "ai": {
         "role": "support",
-        "priority": 80,
+        "priority": 75,
         "condition": {
           "allyHpBelow": 0.7
         }
@@ -10342,8 +10342,8 @@
     {
       "id": "renew",
       "name": "Renew",
-      "energyCost": 20,
-      "cooldownMs": 8000,
+      "energyCost": 24,
+      "cooldownMs": 9000,
       "targetType": "ally",
       "rangeTiles": 4,
       "requirements": [
@@ -10356,10 +10356,7 @@
       "description": "Blesses the lowest health ally with rejuvenating warmth, restoring 7 HP every second for 6s (42 HP total).",
       "ai": {
         "role": "support",
-        "priority": 70,
-        "condition": {
-          "allyHpBelow": 0.85
-        }
+        "priority": 70
       },
       "effects": [
         {
@@ -10374,7 +10371,7 @@
     {
       "id": "holy_word_shield",
       "name": "Holy Word: Shield",
-      "energyCost": 28,
+      "energyCost": 30,
       "cooldownMs": 14000,
       "targetType": "ally",
       "rangeTiles": 4,
@@ -10402,8 +10399,8 @@
     {
       "id": "sanctified_ground",
       "name": "Sanctified Ground",
-      "energyCost": 38,
-      "cooldownMs": 14000,
+      "energyCost": 40,
+      "cooldownMs": 16000,
       "targetType": "ally",
       "rangeTiles": 4,
       "requirements": [
@@ -10416,9 +10413,9 @@
       "description": "Consecrates the field with divine grace, restoring 22 HP to all party members.",
       "ai": {
         "role": "support",
-        "priority": 75,
+        "priority": 85,
         "condition": {
-          "allyHpBelow": 0.75
+          "allyHpBelow": 0.6
         }
       },
       "effects": [
@@ -10432,8 +10429,8 @@
     {
       "id": "resurrection",
       "name": "Resurrection",
-      "energyCost": 45,
-      "cooldownMs": 45000,
+      "energyCost": 50,
+      "cooldownMs": 60000,
       "targetType": "self",
       "radiusTiles": 8,
       "requirements": [
@@ -10446,7 +10443,7 @@
       "description": "Cleric capstone: channels miraculous power to resurrect any fallen ally within an 8-tile radius back to life.",
       "ai": {
         "role": "support",
-        "priority": 90,
+        "priority": 95,
         "condition": {
           "requiresDownedAlly": true
         }

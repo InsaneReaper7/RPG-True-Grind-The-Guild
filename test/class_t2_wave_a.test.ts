@@ -250,6 +250,81 @@ const t2WaveAClasses: {
   }
 ];
 
+const expectedWaveATable: Record<string, {
+  en: number;
+  cd: number;
+  role: string;
+  priority: number;
+  condition?: Record<string, any>;
+}> = {
+  // Blademaster
+  twin_style_cut: { en: 16, cd: 3000, role: 'rotation', priority: 30 },
+  sword_dance_stance: { en: 20, cd: 18000, role: 'defensive', priority: 55 },
+  crescent_sweep: { en: 26, cd: 7000, role: 'rotation', priority: 55, condition: { enemiesInRadius: 2 } },
+  iaijutsu: { en: 28, cd: 9000, role: 'rotation', priority: 60 },
+  thousand_blade_storm: { en: 42, cd: 16000, role: 'finisher', priority: 80 },
+  // Assassin
+  shiv: { en: 15, cd: 3000, role: 'rotation', priority: 30 },
+  vanish: { en: 20, cd: 16000, role: 'defensive', priority: 60, condition: { selfHpBelow: 0.6 } },
+  ambush: { en: 26, cd: 10000, role: 'gapCloser', priority: 65 },
+  toxin_blade: { en: 22, cd: 9000, role: 'rotation', priority: 50 },
+  death_mark: { en: 42, cd: 16000, role: 'finisher', priority: 80 },
+  // Shadowblade
+  umbral_slash: { en: 16, cd: 3000, role: 'rotation', priority: 30 },
+  shadow_siphon: { en: 22, cd: 8000, role: 'rotation', priority: 50 },
+  night_veil: { en: 20, cd: 16000, role: 'defensive', priority: 55 },
+  hex_blade: { en: 22, cd: 9000, role: 'rotation', priority: 50 },
+  eclipse: { en: 42, cd: 16000, role: 'rotation', priority: 80, condition: { enemiesInRadius: 2 } },
+  // Arcane Archer
+  arcane_arrow: { en: 16, cd: 3000, role: 'rotation', priority: 30 },
+  seeking_volley: { en: 24, cd: 8000, role: 'rotation', priority: 55, condition: { enemiesInRadius: 2 } },
+  runic_quiver: { en: 22, cd: 20000, role: 'defensive', priority: 55 },
+  piercing_ray: { en: 28, cd: 10000, role: 'rotation', priority: 55 },
+  starfall: { en: 44, cd: 18000, role: 'rotation', priority: 85, condition: { enemiesInRadius: 2 } },
+  // Storm Archer
+  static_arrow: { en: 16, cd: 3000, role: 'rotation', priority: 30 },
+  chain_shot: { en: 24, cd: 8000, role: 'rotation', priority: 55, condition: { enemiesInRadius: 2 } },
+  tailwind_draw: { en: 18, cd: 18000, role: 'defensive', priority: 55 },
+  thunder_arrow: { en: 28, cd: 10000, role: 'opener', priority: 60 },
+  storm_barrage: { en: 44, cd: 18000, role: 'rotation', priority: 85, condition: { enemiesInRadius: 2 } },
+  // Witch Hunter
+  silver_bolt: { en: 18, cd: 3000, role: 'rotation', priority: 30 },
+  purging_shot: { en: 22, cd: 8000, role: 'rotation', priority: 50 },
+  consecrated_ward: { en: 24, cd: 16000, role: 'defensive', priority: 55 },
+  judgment_bolt: { en: 28, cd: 10000, role: 'opener', priority: 60 },
+  inquisition: { en: 44, cd: 16000, role: 'finisher', priority: 80 },
+  // Knight
+  shield_strike: { en: 16, cd: 3000, role: 'rotation', priority: 30 },
+  bulwark_stance: { en: 24, cd: 15000, role: 'defensive', priority: 65 },
+  valorous_strike: { en: 30, cd: 10000, role: 'rotation', priority: 55 },
+  provoke: { en: 24, cd: 12000, role: 'defensive', priority: 70, condition: { enemiesInRadius: 1 } },
+  last_bastion: { en: 40, cd: 40000, role: 'defensive', priority: 95, condition: { selfHpBelow: 0.35 } },
+  // Paladin
+  holy_strike: { en: 18, cd: 3000, role: 'rotation', priority: 30 },
+  lay_on_hands: { en: 30, cd: 20000, role: 'support', priority: 85, condition: { allyHpBelow: 0.4 } },
+  aura_of_protection: { en: 26, cd: 20000, role: 'defensive', priority: 60 },
+  consecration: { en: 28, cd: 10000, role: 'rotation', priority: 55, condition: { enemiesInRadius: 2 } },
+  divine_judgment: { en: 44, cd: 18000, role: 'finisher', priority: 80 },
+  // Juggernaut
+  crushing_swing: { en: 22, cd: 4000, role: 'rotation', priority: 30 },
+  iron_hide: { en: 24, cd: 18000, role: 'defensive', priority: 60 },
+  earthquake_slam: { en: 34, cd: 10000, role: 'rotation', priority: 60, condition: { enemiesInRadius: 2 } },
+  retaliation_stance: { en: 26, cd: 20000, role: 'defensive', priority: 65, condition: { enemiesInRadius: 1 } },
+  cataclysm: { en: 44, cd: 18000, role: 'finisher', priority: 80 },
+  // Battlemage
+  flame_blade: { en: 18, cd: 3000, role: 'rotation', priority: 30 },
+  pyre_stance: { en: 20, cd: 18000, role: 'defensive', priority: 55 },
+  fire_lunge: { en: 24, cd: 10000, role: 'gapCloser', priority: 60 },
+  blazing_arc: { en: 28, cd: 8000, role: 'rotation', priority: 55, condition: { enemiesInRadius: 2 } },
+  meteor_strike: { en: 44, cd: 18000, role: 'finisher', priority: 80 },
+  // Storm Lancer
+  charged_thrust: { en: 16, cd: 3000, role: 'rotation', priority: 30 },
+  lightning_charge: { en: 24, cd: 10000, role: 'gapCloser', priority: 60 },
+  arc_sweep: { en: 24, cd: 8000, role: 'rotation', priority: 55, condition: { enemiesInRadius: 2 } },
+  static_guard: { en: 20, cd: 16000, role: 'defensive', priority: 55 },
+  thunder_impale: { en: 42, cd: 16000, role: 'finisher', priority: 80 }
+};
+
 async function runTests() {
   console.log('========================================================================');
   console.log('RUNNING CLASS PROGRAM TIER 2 WAVE A: EXPERT CLASSES VALIDATION SUITE');
@@ -290,6 +365,15 @@ async function runTests() {
     for (const skillId of kit.skills) {
       const def = dataLoader.getSkill(skillId);
       assert.ok(def, `Skill ${skillId} must exist in skills.json`);
+
+      const exp = expectedWaveATable[skillId];
+      assert.ok(exp, `Skill ${skillId} must exist in expectedWaveATable`);
+      assert.strictEqual(def.energyCost, exp.en, `Skill ${skillId} energyCost must be ${exp.en} (got ${def.energyCost})`);
+      assert.strictEqual(def.cooldownMs, exp.cd, `Skill ${skillId} cooldownMs must be ${exp.cd} (got ${def.cooldownMs})`);
+      assert.ok(def.ai, `Skill ${skillId} must have ai object`);
+      assert.strictEqual(def.ai.role, exp.role, `Skill ${skillId} ai.role must be ${exp.role} (got ${def.ai.role})`);
+      assert.strictEqual(def.ai.priority, exp.priority, `Skill ${skillId} ai.priority must be ${exp.priority} (got ${def.ai.priority})`);
+      assert.deepStrictEqual(def.ai.condition, exp.condition, `Skill ${skillId} ai.condition must match spec`);
 
       // Description check: status effects land on main target only
       assert.ok(def.description && def.description.length > 0, `Skill ${skillId} must have non-empty description`);

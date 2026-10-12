@@ -208,6 +208,45 @@ const t2WaveBClasses: {
   }
 ];
 
+const expectedWaveBTable: Record<string, {
+  en: number;
+  cd: number;
+  role: string;
+  priority: number;
+  condition?: Record<string, any>;
+}> = {
+  // Elementalist
+  prismatic_bolt: { en: 20, cd: 3000, role: 'rotation', priority: 30 },
+  elemental_attunement: { en: 20, cd: 18000, role: 'defensive', priority: 55 },
+  steam_burst: { en: 28, cd: 9000, role: 'rotation', priority: 55, condition: { enemiesInRadius: 2 } },
+  cyclone_flame: { en: 30, cd: 10000, role: 'rotation', priority: 55 },
+  elemental_convergence: { en: 44, cd: 18000, role: 'rotation', priority: 85, condition: { enemiesInRadius: 2 } },
+  // Aquamancer
+  tidal_lash: { en: 20, cd: 3000, role: 'rotation', priority: 30 },
+  cleansing_wave: { en: 24, cd: 10000, role: 'support', priority: 75, condition: { requiresHarmfulStatus: true } },
+  riptide_current: { en: 28, cd: 9000, role: 'rotation', priority: 55 },
+  tidal_barrier: { en: 28, cd: 14000, role: 'support', priority: 60 },
+  tsunami: { en: 46, cd: 18000, role: 'rotation', priority: 85 },
+  // Cryomancer
+  ice_shard_volley: { en: 20, cd: 3000, role: 'rotation', priority: 30 },
+  deep_freeze: { en: 26, cd: 9000, role: 'rotation', priority: 55 },
+  blizzard: { en: 30, cd: 10000, role: 'rotation', priority: 60, condition: { enemiesInRadius: 2 } },
+  frozen_armor: { en: 22, cd: 18000, role: 'defensive', priority: 55 },
+  absolute_zero: { en: 46, cd: 18000, role: 'finisher', priority: 80 },
+  // Geomancer
+  stone_spike: { en: 22, cd: 3000, role: 'rotation', priority: 30 },
+  earthen_bulwark: { en: 26, cd: 20000, role: 'defensive', priority: 60 },
+  rockslide: { en: 30, cd: 9000, role: 'rotation', priority: 55 },
+  seismic_shock: { en: 32, cd: 11000, role: 'rotation', priority: 60, condition: { enemiesInRadius: 2 } },
+  tectonic_rupture: { en: 46, cd: 20000, role: 'rotation', priority: 85, condition: { enemiesInRadius: 2 } },
+  // Cleric
+  greater_heal: { en: 22, cd: 3000, role: 'support', priority: 75, condition: { allyHpBelow: 0.7 } },
+  renew: { en: 24, cd: 9000, role: 'support', priority: 70 },
+  holy_word_shield: { en: 30, cd: 14000, role: 'support', priority: 60 },
+  sanctified_ground: { en: 40, cd: 16000, role: 'support', priority: 85, condition: { allyHpBelow: 0.6 } },
+  resurrection: { en: 50, cd: 60000, role: 'support', priority: 95, condition: { requiresDownedAlly: true } }
+};
+
 async function runTests() {
   console.log('========================================================================');
   console.log('RUNNING CLASS PROGRAM TIER 2 WAVE B: MAGIC EXPERT CLASSES VALIDATION SUITE');
@@ -249,6 +288,15 @@ async function runTests() {
     for (const skillId of kit.skills) {
       const def = dataLoader.getSkill(skillId);
       assert.ok(def, `Skill ${skillId} must exist in skills.json`);
+
+      const exp = expectedWaveBTable[skillId];
+      assert.ok(exp, `Skill ${skillId} must exist in expectedWaveBTable`);
+      assert.strictEqual(def.energyCost, exp.en, `Skill ${skillId} energyCost must be ${exp.en} (got ${def.energyCost})`);
+      assert.strictEqual(def.cooldownMs, exp.cd, `Skill ${skillId} cooldownMs must be ${exp.cd} (got ${def.cooldownMs})`);
+      assert.ok(def.ai, `Skill ${skillId} must have ai object`);
+      assert.strictEqual(def.ai.role, exp.role, `Skill ${skillId} ai.role must be ${exp.role} (got ${def.ai.role})`);
+      assert.strictEqual(def.ai.priority, exp.priority, `Skill ${skillId} ai.priority must be ${exp.priority} (got ${def.ai.priority})`);
+      assert.deepStrictEqual(def.ai.condition, exp.condition, `Skill ${skillId} ai.condition must match spec`);
 
       // Description check: status effects land on main target only
       assert.ok(def.description && def.description.length > 0, `Skill ${skillId} must have non-empty description`);
