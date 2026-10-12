@@ -977,8 +977,7 @@
         },
         {
           "type": "applyStatus",
-          "status": "blind",
-          "durationMs": 4000
+          "status": "blind"
         }
       ]
     },
@@ -3159,8 +3158,7 @@
         {
           "type": "applyStatus",
           "status": "blind",
-          "chance": 1,
-          "durationMs": 4000
+          "chance": 1
         }
       ],
       "ai": {
@@ -7930,8 +7928,7 @@
         {
           "type": "applyStatus",
           "status": "bleed",
-          "chance": 1,
-          "durationMs": 6000
+          "chance": 1
         }
       ]
     },
@@ -7964,8 +7961,7 @@
         {
           "type": "applyStatus",
           "status": "bleed",
-          "chance": 1,
-          "durationMs": 6000
+          "chance": 1
         }
       ]
     },
@@ -8061,8 +8057,7 @@
         {
           "type": "applyStatus",
           "status": "expose",
-          "chance": 1,
-          "durationMs": 6000
+          "chance": 1
         }
       ]
     },
@@ -8162,8 +8157,7 @@
         {
           "type": "applyStatus",
           "status": "curse",
-          "chance": 0.3,
-          "durationMs": 5000
+          "chance": 0.3
         }
       ]
     },
@@ -8293,8 +8287,7 @@
         {
           "type": "applyStatus",
           "status": "curse",
-          "chance": 1,
-          "durationMs": 5000
+          "chance": 1
         }
       ]
     },
@@ -8423,8 +8416,7 @@
         {
           "type": "applyStatus",
           "status": "arcane_vulnerability",
-          "chance": 1,
-          "durationMs": 6000
+          "chance": 1
         }
       ]
     },
@@ -8490,8 +8482,7 @@
         {
           "type": "applyStatus",
           "status": "shock",
-          "chance": 0.25,
-          "durationMs": 4000
+          "chance": 0.25
         }
       ]
     },
@@ -8587,8 +8578,7 @@
         {
           "type": "applyStatus",
           "status": "shock",
-          "chance": 0.6,
-          "durationMs": 4000
+          "chance": 0.6
         }
       ]
     },
@@ -8629,8 +8619,7 @@
         {
           "type": "applyStatus",
           "status": "shock",
-          "chance": 0.4,
-          "durationMs": 4000
+          "chance": 0.4
         }
       ]
     },
@@ -8693,8 +8682,7 @@
         {
           "type": "applyStatus",
           "status": "blind",
-          "chance": 0.5,
-          "durationMs": 5000
+          "chance": 0.5
         }
       ]
     },
@@ -8753,8 +8741,7 @@
         {
           "type": "applyStatus",
           "status": "expose",
-          "chance": 1,
-          "durationMs": 6000
+          "chance": 1
         }
       ]
     },
@@ -8817,8 +8804,7 @@
         {
           "type": "applyStatus",
           "status": "stun",
-          "chance": 0.15,
-          "durationMs": 2000
+          "chance": 0.15
         }
       ]
     },
@@ -9086,8 +9072,7 @@
         {
           "type": "applyStatus",
           "status": "blind",
-          "chance": 0.3,
-          "durationMs": 5000
+          "chance": 0.3
         }
       ]
     },
@@ -9214,8 +9199,7 @@
         {
           "type": "applyStatus",
           "status": "stun",
-          "chance": 0.4,
-          "durationMs": 2000
+          "chance": 0.4
         }
       ]
     },
@@ -9312,8 +9296,7 @@
         {
           "type": "applyStatus",
           "status": "burn",
-          "chance": 0.3,
-          "durationMs": 4000
+          "chance": 0.3
         }
       ]
     },
@@ -9377,8 +9360,7 @@
         {
           "type": "applyStatus",
           "status": "burn",
-          "chance": 0.6,
-          "durationMs": 4000
+          "chance": 0.6
         }
       ]
     },
@@ -9418,8 +9400,7 @@
         {
           "type": "applyStatus",
           "status": "burn",
-          "chance": 0.6,
-          "durationMs": 4000
+          "chance": 0.6
         }
       ]
     },
@@ -9455,8 +9436,7 @@
         {
           "type": "applyStatus",
           "status": "burn",
-          "chance": 1,
-          "durationMs": 4000
+          "chance": 1
         }
       ]
     },
@@ -9492,8 +9472,7 @@
         {
           "type": "applyStatus",
           "status": "shock",
-          "chance": 0.2,
-          "durationMs": 4000
+          "chance": 0.2
         }
       ]
     },
@@ -9529,8 +9508,7 @@
         {
           "type": "applyStatus",
           "status": "shock",
-          "chance": 0.5,
-          "durationMs": 4000
+          "chance": 0.5
         }
       ]
     },
@@ -9630,8 +9608,853 @@
         {
           "type": "applyStatus",
           "status": "shock",
-          "chance": 0.6,
-          "durationMs": 4000
+          "chance": 0.6
+        }
+      ]
+    },
+    {
+      "id": "prismatic_bolt",
+      "name": "Prismatic Bolt",
+      "energyCost": 20,
+      "cooldownMs": 3000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "elementalist",
+          "value": 1
+        }
+      ],
+      "description": "Channels tri-elemental forces into a bolt dealing 110% spell damage with a 20% chance to burn the main target.",
+      "ai": {
+        "role": "rotation",
+        "priority": 30
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "spell",
+          "multiplier": 1.1
+        },
+        {
+          "type": "applyStatus",
+          "status": "burn",
+          "chance": 0.2
+        }
+      ]
+    },
+    {
+      "id": "elemental_attunement",
+      "name": "Elemental Attunement",
+      "energyCost": 20,
+      "cooldownMs": 18000,
+      "targetType": "self",
+      "rangeTiles": 0,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "elementalist",
+          "value": 10
+        }
+      ],
+      "description": "Attunes the caster with ambient elemental energy, granting +25% bonus damage for 8s.",
+      "ai": {
+        "role": "defensive",
+        "priority": 55
+      },
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "bonusDamagePercent",
+          "value": 0.25,
+          "durationMs": 8000
+        }
+      ]
+    },
+    {
+      "id": "steam_burst",
+      "name": "Steam Burst",
+      "energyCost": 28,
+      "cooldownMs": 9000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "elementalist",
+          "value": 20
+        }
+      ],
+      "description": "Blasts superheated steam dealing 160% spell damage in a 1.5-tile radius and slowing targets by 100%. Status effects land on the main target.",
+      "ai": {
+        "role": "rotation",
+        "priority": 55,
+        "condition": {
+          "enemiesInRadius": 2
+        }
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "spell",
+          "multiplier": 1.6,
+          "area": {
+            "shape": "radius",
+            "radius": 1.5
+          }
+        },
+        {
+          "type": "applyStatus",
+          "status": "slow",
+          "chance": 1
+        }
+      ]
+    },
+    {
+      "id": "cyclone_flame",
+      "name": "Cyclone Flame",
+      "energyCost": 30,
+      "cooldownMs": 10000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "elementalist",
+          "value": 30
+        }
+      ],
+      "description": "Unleashes a spiraling flame vortex in a line hitting up to 4 enemies for 180% spell damage with a 60% chance to burn the main target.",
+      "ai": {
+        "role": "rotation",
+        "priority": 55
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "spell",
+          "multiplier": 1.8,
+          "area": {
+            "shape": "line",
+            "maxTargets": 4
+          }
+        },
+        {
+          "type": "applyStatus",
+          "status": "burn",
+          "chance": 0.6
+        }
+      ]
+    },
+    {
+      "id": "elemental_convergence",
+      "name": "Elemental Convergence",
+      "energyCost": 44,
+      "cooldownMs": 18000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "elementalist",
+          "value": 40
+        }
+      ],
+      "description": "Converges pure elemental power in a 2-tile radius dealing 340% spell damage and burning targets for 100%. Status effects land on the main target.",
+      "ai": {
+        "role": "rotation",
+        "priority": 85,
+        "condition": {
+          "enemiesInRadius": 2
+        }
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "spell",
+          "multiplier": 3.4,
+          "area": {
+            "shape": "radius",
+            "radius": 2
+          }
+        },
+        {
+          "type": "applyStatus",
+          "status": "burn",
+          "chance": 1
+        }
+      ]
+    },
+    {
+      "id": "tidal_lash",
+      "name": "Tidal Lash",
+      "energyCost": 20,
+      "cooldownMs": 3000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "aquamancer",
+          "value": 1
+        }
+      ],
+      "description": "Strikes an enemy with a whip of pressurized water dealing 110% spell damage, slowing the target by 40% and restoring 5 HP to the lowest ally.",
+      "ai": {
+        "role": "rotation",
+        "priority": 30
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "spell",
+          "multiplier": 1.1
+        },
+        {
+          "type": "applyStatus",
+          "status": "slow",
+          "chance": 0.4
+        },
+        {
+          "type": "heal",
+          "amount": 5,
+          "target": "lowestAlly"
+        }
+      ]
+    },
+    {
+      "id": "cleansing_wave",
+      "name": "Cleansing Wave",
+      "energyCost": 24,
+      "cooldownMs": 10000,
+      "targetType": "ally",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "aquamancer",
+          "value": 10
+        }
+      ],
+      "description": "Washes over the lowest health ally, cleansing all harmful status effects and restoring 15 HP.",
+      "ai": {
+        "role": "support",
+        "priority": 75,
+        "condition": {
+          "requiresHarmfulStatus": true
+        }
+      },
+      "effects": [
+        {
+          "type": "cleanse",
+          "target": "lowestAlly"
+        },
+        {
+          "type": "heal",
+          "amount": 15,
+          "target": "lowestAlly"
+        }
+      ]
+    },
+    {
+      "id": "riptide_current",
+      "name": "Riptide Current",
+      "energyCost": 28,
+      "cooldownMs": 9000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "aquamancer",
+          "value": 20
+        }
+      ],
+      "description": "Channels an undertow current in a line hitting up to 4 enemies for 180% spell damage and weakening the main target by 25% for 6s.",
+      "ai": {
+        "role": "rotation",
+        "priority": 55
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "spell",
+          "multiplier": 1.8,
+          "area": {
+            "shape": "line",
+            "maxTargets": 4
+          }
+        },
+        {
+          "type": "debuff",
+          "stat": "damageReductionPercent",
+          "value": 0.25,
+          "durationMs": 6000
+        }
+      ]
+    },
+    {
+      "id": "tidal_barrier",
+      "name": "Tidal Barrier",
+      "energyCost": 28,
+      "cooldownMs": 14000,
+      "targetType": "ally",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "aquamancer",
+          "value": 30
+        }
+      ],
+      "description": "Forms a protective aquatic barrier around the lowest health ally, absorbing up to 45 incoming damage for 8s.",
+      "ai": {
+        "role": "support",
+        "priority": 60
+      },
+      "effects": [
+        {
+          "type": "shield",
+          "shieldAmount": 45,
+          "durationMs": 8000,
+          "target": "lowestAlly"
+        }
+      ]
+    },
+    {
+      "id": "tsunami",
+      "name": "Tsunami",
+      "energyCost": 46,
+      "cooldownMs": 18000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "aquamancer",
+          "value": 40
+        }
+      ],
+      "description": "Unleashes a massive tidal wave in a line hitting up to 6 enemies for 320% spell damage, slowing targets by 100% and restoring 15 HP to the entire party. Status effects land on the main target.",
+      "ai": {
+        "role": "rotation",
+        "priority": 85
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "spell",
+          "multiplier": 3.2,
+          "area": {
+            "shape": "line",
+            "maxTargets": 6
+          }
+        },
+        {
+          "type": "applyStatus",
+          "status": "slow",
+          "chance": 1
+        },
+        {
+          "type": "heal",
+          "amount": 15,
+          "target": "party"
+        }
+      ]
+    },
+    {
+      "id": "ice_shard_volley",
+      "name": "Ice Shard Volley",
+      "energyCost": 18,
+      "cooldownMs": 3000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "cryomancer",
+          "value": 1
+        }
+      ],
+      "description": "Fires sharp shards of ice dealing 110% spell damage with a 10% chance to inflict frostbite on the main target.",
+      "ai": {
+        "role": "rotation",
+        "priority": 30
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "spell",
+          "multiplier": 1.1
+        },
+        {
+          "type": "applyStatus",
+          "status": "frostbite",
+          "chance": 0.1
+        }
+      ]
+    },
+    {
+      "id": "deep_freeze",
+      "name": "Deep Freeze",
+      "energyCost": 26,
+      "cooldownMs": 8000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "cryomancer",
+          "value": 10
+        }
+      ],
+      "description": "Encases an enemy in rime dealing 160% spell damage (amplified by x1.3 against targets afflicted with frostbite) with a 40% chance to stun the main target.",
+      "ai": {
+        "role": "rotation",
+        "priority": 55
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "spell",
+          "multiplier": 1.6,
+          "requiresTargetStatus": {
+            "status": "frostbite",
+            "multiplier": 1.3
+          }
+        },
+        {
+          "type": "applyStatus",
+          "status": "stun",
+          "chance": 0.4
+        }
+      ]
+    },
+    {
+      "id": "blizzard",
+      "name": "Blizzard",
+      "energyCost": 32,
+      "cooldownMs": 11000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "cryomancer",
+          "value": 20
+        }
+      ],
+      "description": "Summons a freezing blizzard dealing 140% spell damage in a 2-tile radius and inflicting frostbite on targets for 100%. Status effects land on the main target.",
+      "ai": {
+        "role": "rotation",
+        "priority": 60,
+        "condition": {
+          "enemiesInRadius": 2
+        }
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "spell",
+          "multiplier": 1.4,
+          "area": {
+            "shape": "radius",
+            "radius": 2
+          }
+        },
+        {
+          "type": "applyStatus",
+          "status": "frostbite",
+          "chance": 1
+        }
+      ]
+    },
+    {
+      "id": "frozen_armor",
+      "name": "Frozen Armor",
+      "energyCost": 20,
+      "cooldownMs": 18000,
+      "targetType": "self",
+      "rangeTiles": 0,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "cryomancer",
+          "value": 30
+        }
+      ],
+      "description": "Coats the caster in dense permafrost armor, multiplying damage taken by 0.70 for 8s.",
+      "ai": {
+        "role": "defensive",
+        "priority": 55
+      },
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "damageTakenMultiplier",
+          "value": 0.7,
+          "durationMs": 8000
+        }
+      ]
+    },
+    {
+      "id": "absolute_zero",
+      "name": "Absolute Zero",
+      "energyCost": 46,
+      "cooldownMs": 18000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "cryomancer",
+          "value": 40
+        }
+      ],
+      "description": "Plunges the target into absolute zero dealing 340% spell damage (amplified by x1.4 against targets afflicted with frostbite) with a 50% chance to stun the main target.",
+      "ai": {
+        "role": "rotation",
+        "priority": 85
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "spell",
+          "multiplier": 3.4,
+          "requiresTargetStatus": {
+            "status": "frostbite",
+            "multiplier": 1.4
+          }
+        },
+        {
+          "type": "applyStatus",
+          "status": "stun",
+          "chance": 0.5
+        }
+      ]
+    },
+    {
+      "id": "stone_spike",
+      "name": "Stone Spike",
+      "energyCost": 18,
+      "cooldownMs": 3000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "geomancer",
+          "value": 1
+        }
+      ],
+      "description": "Impales the enemy with a jutting spike of jagged stone dealing 110% spell damage with a 25% chance to stun the main target.",
+      "ai": {
+        "role": "rotation",
+        "priority": 30
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "spell",
+          "multiplier": 1.1
+        },
+        {
+          "type": "applyStatus",
+          "status": "stun",
+          "chance": 0.25
+        }
+      ]
+    },
+    {
+      "id": "earthen_bulwark",
+      "name": "Earthen Bulwark",
+      "energyCost": 26,
+      "cooldownMs": 18000,
+      "targetType": "self",
+      "rangeTiles": 0,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "geomancer",
+          "value": 10
+        }
+      ],
+      "description": "Raises earthen shields around all party members, multiplying damage taken by 0.85 for 8s.",
+      "ai": {
+        "role": "defensive",
+        "priority": 55
+      },
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "damageTakenMultiplier",
+          "value": 0.85,
+          "durationMs": 8000,
+          "target": "party"
+        }
+      ]
+    },
+    {
+      "id": "rockslide",
+      "name": "Rockslide",
+      "energyCost": 28,
+      "cooldownMs": 9000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "geomancer",
+          "value": 20
+        }
+      ],
+      "description": "Hurls an avalanche of boulders along a line hitting up to 4 enemies for 160% spell damage and slowing targets by 100%. Status effects land on the main target.",
+      "ai": {
+        "role": "rotation",
+        "priority": 55
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "spell",
+          "multiplier": 1.6,
+          "area": {
+            "shape": "line",
+            "maxTargets": 4
+          }
+        },
+        {
+          "type": "applyStatus",
+          "status": "slow",
+          "chance": 1
+        }
+      ]
+    },
+    {
+      "id": "seismic_shock",
+      "name": "Seismic Shock",
+      "energyCost": 32,
+      "cooldownMs": 11000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "geomancer",
+          "value": 30
+        }
+      ],
+      "description": "Sends heavy seismic shockwaves radiating outward dealing 180% spell damage in a 2-tile radius with a 40% chance to stun the main target.",
+      "ai": {
+        "role": "rotation",
+        "priority": 60,
+        "condition": {
+          "enemiesInRadius": 2
+        }
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "spell",
+          "multiplier": 1.8,
+          "area": {
+            "shape": "radius",
+            "radius": 2
+          }
+        },
+        {
+          "type": "applyStatus",
+          "status": "stun",
+          "chance": 0.4
+        }
+      ]
+    },
+    {
+      "id": "tectonic_rupture",
+      "name": "Tectonic Rupture",
+      "energyCost": 46,
+      "cooldownMs": 18000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "geomancer",
+          "value": 40
+        }
+      ],
+      "description": "Fractures the tectonic bedrock in a 2-tile radius dealing 340% spell damage with a 60% chance to stun the main target.",
+      "ai": {
+        "role": "rotation",
+        "priority": 85,
+        "condition": {
+          "enemiesInRadius": 2
+        }
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "spell",
+          "multiplier": 3.4,
+          "area": {
+            "shape": "radius",
+            "radius": 2
+          }
+        },
+        {
+          "type": "applyStatus",
+          "status": "stun",
+          "chance": 0.6
+        }
+      ]
+    },
+    {
+      "id": "greater_heal",
+      "name": "Greater Heal",
+      "energyCost": 26,
+      "cooldownMs": 6000,
+      "targetType": "ally",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "cleric",
+          "value": 1
+        }
+      ],
+      "description": "Channels concentrated radiant energy into the lowest health ally, immediately restoring 30 HP.",
+      "ai": {
+        "role": "support",
+        "priority": 80,
+        "condition": {
+          "allyHpBelow": 0.7
+        }
+      },
+      "effects": [
+        {
+          "type": "heal",
+          "amount": 30,
+          "target": "lowestAlly"
+        }
+      ]
+    },
+    {
+      "id": "renew",
+      "name": "Renew",
+      "energyCost": 20,
+      "cooldownMs": 8000,
+      "targetType": "ally",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "cleric",
+          "value": 10
+        }
+      ],
+      "description": "Blesses the lowest health ally with rejuvenating warmth, restoring 7 HP every second for 6s (42 HP total).",
+      "ai": {
+        "role": "support",
+        "priority": 70,
+        "condition": {
+          "allyHpBelow": 0.85
+        }
+      },
+      "effects": [
+        {
+          "type": "healOverTime",
+          "amountPerTick": 7,
+          "durationMs": 6000,
+          "tickIntervalMs": 1000,
+          "target": "lowestAlly"
+        }
+      ]
+    },
+    {
+      "id": "holy_word_shield",
+      "name": "Holy Word: Shield",
+      "energyCost": 28,
+      "cooldownMs": 14000,
+      "targetType": "ally",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "cleric",
+          "value": 20
+        }
+      ],
+      "description": "Pronounces a holy word of shielding around the lowest health ally, absorbing up to 50 incoming damage for 8s.",
+      "ai": {
+        "role": "support",
+        "priority": 60
+      },
+      "effects": [
+        {
+          "type": "shield",
+          "shieldAmount": 50,
+          "durationMs": 8000,
+          "target": "lowestAlly"
+        }
+      ]
+    },
+    {
+      "id": "sanctified_ground",
+      "name": "Sanctified Ground",
+      "energyCost": 38,
+      "cooldownMs": 14000,
+      "targetType": "ally",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "cleric",
+          "value": 30
+        }
+      ],
+      "description": "Consecrates the field with divine grace, restoring 22 HP to all party members.",
+      "ai": {
+        "role": "support",
+        "priority": 75,
+        "condition": {
+          "allyHpBelow": 0.75
+        }
+      },
+      "effects": [
+        {
+          "type": "heal",
+          "amount": 22,
+          "target": "party"
+        }
+      ]
+    },
+    {
+      "id": "resurrection",
+      "name": "Resurrection",
+      "energyCost": 45,
+      "cooldownMs": 45000,
+      "targetType": "self",
+      "radiusTiles": 8,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "cleric",
+          "value": 40
+        }
+      ],
+      "description": "Cleric capstone: channels miraculous power to resurrect any fallen ally within an 8-tile radius back to life.",
+      "ai": {
+        "role": "support",
+        "priority": 90,
+        "condition": {
+          "requiresDownedAlly": true
+        }
+      },
+      "effects": [
+        {
+          "type": "revive",
+          "radiusTiles": 8
         }
       ]
     }

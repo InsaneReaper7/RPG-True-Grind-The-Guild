@@ -317,6 +317,12 @@ async function runTests() {
             validStatusIds.has(eff.status),
             `Skill ${skillId} references unknown status "${eff.status}" in applyStatus`
           );
+          if (eff.durationMs !== undefined) {
+            assert.ok(
+              eff.status === 'poison' || (def as any).durationOverrideReason !== undefined,
+              `Skill ${skillId} has applyStatus.durationMs (${eff.durationMs}ms) for "${eff.status}", but durationMs is only allowed for poison or with durationOverrideReason`
+            );
+          }
         }
         if (eff.type === 'damage') {
           assert.strictEqual(eff.scaling, 'weapon', `Damage effect in skill ${skillId} must have scaling: "weapon"`);

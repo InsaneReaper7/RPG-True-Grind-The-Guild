@@ -1517,8 +1517,64 @@ The following three intentional behavioural changes were reviewed and accepted b
     - `cataclysm` -> verified resource dump spends up to 25 bonus EN (+4% per EN) and caps appropriately.
   - Fixed pre-existing evasion flakiness in `test/milestone20.test.ts` by advancing attack ticks until un-evaded hit lands.
   - Full test suite: 123/123 suites pass cleanly (`npm test -- --quiet`).
+  
+### Class Program Tier 2 Wave B: Magic Expert Classes (5 kits, data-only) + Item 0 Data Fix
+
+**Resolved and shipped: Implemented the 5 magic Tier 2 (Expert) classes (Elementalist, Aquamancer, Cryomancer, Geomancer, Cleric) with full 5-skill kits (25 skills total) as pure data in `data/skills.json` and registered their class entries with requirements and `hiddenSkillBonuses: { mana_regen: 0.05 }` in `data/classes.json`. Cleaned up `applyStatus.durationMs` across `skills.json` per Item 0 rules (shock and blind now strictly use statusEffects.json default durations; only poison is allowed durationMs unless durationOverrideReason is set). Added test suite `test/class_t2_wave_b.test.ts` and updated `scripts/skill_efficiency.ts`.**
+
+- **Item 0 Data Fix (`data/skills.json`, `test/class_t2_wave_a.test.ts`, `test/class_t2_wave_b.test.ts`)**:
+  - Removed `durationMs` from all `applyStatus` entries across Tier 2 Wave A skills except `poison` (`static_arrow`, `thunder_arrow`, `storm_barrage`, `charged_thrust`, `lightning_charge`, `thunder_impale` no longer specify 4000ms shock; `purging_shot` and `consecration` no longer specify 5000ms blind; non-poison bleed/stun/expose/curse/burn entries stripped).
+  - Also cleaned legacy skills `umbral_step` and `dirty_trick` so zero skills in `skills.json` apply `shock` or `blind` with an explicit `durationMs`.
+  - Added strict assertion in `test/class_t2_wave_a.test.ts` and `test/class_t2_wave_b.test.ts`: `applyStatus.durationMs` is forbidden except for `poison` or where a skill explicitly provides `durationOverrideReason`.
+- **1. Class Entries (`data/classes.json`)**:
+  - `elementalist`: Expert tier, requirements Fire Magic 30 + Water Magic 30 + Wind Magic 30, `hiddenSkillBonuses: { mana_regen: 0.05 }`.
+  - `aquamancer`: Expert tier, requirements Water Magic 60 + Frostcaller Lv 15, `hiddenSkillBonuses: { mana_regen: 0.05 }`.
+  - `cryomancer`: Expert tier, requirements Ice Magic 60 + Frost Initiate Lv 15, `hiddenSkillBonuses: { mana_regen: 0.05 }`.
+  - `geomancer`: Expert tier, requirements Earth Magic 60 + Stoneheart Initiate Lv 15, `hiddenSkillBonuses: { mana_regen: 0.05 }`.
+  - `cleric`: Expert tier, requirements Holy Magic 30 + Healing Magic 30 + Priest Lv 15, `hiddenSkillBonuses: { mana_regen: 0.05 }`.
+- **2. 25 Magic Expert Skills (`data/skills.json`)**:
+  - **Elementalist**:
+    - `prismatic_bolt` (Lv 1, EN 20, CD 3s, AI rotation 30): 1.1× spell damage, 20% chance to burn.
+    - `elemental_attunement` (Lv 10, EN 20, CD 18s, AI defensive 55): Dmg +0.25 (`bonusDamagePercent: 0.25`) for 8s.
+    - `steam_burst` (Lv 20, EN 28, CD 9s, AI rotation 55 condition `enemiesInRadius: 2`): 1.6× spell damage in 1.5 radius, 100% slow.
+    - `cyclone_flame` (Lv 30, EN 30, CD 10s, AI rotation 55): 1.8× spell damage in a line (`maxTargets: 4`), 60% burn.
+    - `elemental_convergence` (Lv 40, EN 44, CD 18s, AI rotation 85 condition `enemiesInRadius: 2`): 3.4× spell damage in 2.0 radius, 100% burn.
+  - **Aquamancer**:
+    - `tidal_lash` (Lv 1, EN 20, CD 3s, AI rotation 30): 1.1× spell damage, 40% slow + heal 5 lowest ally.
+    - `cleansing_wave` (Lv 10, EN 24, CD 10s, AI support 75 condition `requiresHarmfulStatus: true`): cleanse lowest ally + heal 15 lowest ally.
+    - `riptide_current` (Lv 20, EN 28, CD 9s, AI rotation 55): 1.8× spell damage in a line (`maxTargets: 4`) + Weaken 0.25 (`damageReductionPercent: 0.25`) for 6s.
+    - `tidal_barrier` (Lv 30, EN 28, CD 14s, AI support 60): shield 45 on lowest ally for 8s.
+    - `tsunami` (Lv 40, EN 46, CD 18s, AI rotation 85): 3.2× spell damage in a line (`maxTargets: 6`), 100% slow + heal 15 party.
+  - **Cryomancer**:
+    - `ice_shard_volley` (Lv 1, EN 18, CD 3s, AI rotation 30): 1.1× spell damage, 10% frostbite.
+    - `deep_freeze` (Lv 10, EN 26, CD 8s, AI rotation 55): 1.6× spell damage, ×1.3 vs frostbite (`requiresTargetStatus: { status: "frostbite", multiplier: 1.3 }`), 40% stun.
+    - `blizzard` (Lv 20, EN 32, CD 11s, AI rotation 60 condition `enemiesInRadius: 2`): 1.4× spell damage in 2.0 radius, 100% frostbite.
+    - `frozen_armor` (Lv 30, EN 20, CD 18s, AI defensive 55): DT 0.70 (`damageTakenMultiplier: 0.70`) for 8s.
+    - `absolute_zero` (Lv 40, EN 46, CD 18s, AI rotation 85): 3.4× spell damage, ×1.4 vs frostbite, 50% stun.
+  - **Geomancer**:
+    - `stone_spike` (Lv 1, EN 18, CD 3s, AI rotation 30): 1.1× spell damage, 25% stun.
+    - `earthen_bulwark` (Lv 10, EN 26, CD 18s, AI defensive 55): party DT 0.85 (`damageTakenMultiplier: 0.85`, target `party`) for 8s.
+    - `rockslide` (Lv 20, EN 28, CD 9s, AI rotation 55): 1.6× spell damage in a line (`maxTargets: 4`), 100% slow.
+    - `seismic_shock` (Lv 30, EN 32, CD 11s, AI rotation 60 condition `enemiesInRadius: 2`): 1.8× spell damage in 2.0 radius, 40% stun.
+    - `tectonic_rupture` (Lv 40, EN 46, CD 18s, AI rotation 85 condition `enemiesInRadius: 2`): 3.4× spell damage in 2.0 radius, 60% stun.
+  - **Cleric**:
+    - `greater_heal` (Lv 1, EN 26, CD 6s, AI support 80 condition `allyHpBelow: 0.70`): heal 30 lowest ally.
+    - `renew` (Lv 10, EN 20, CD 8s, AI support 70 condition `allyHpBelow: 0.85`): HoT 7/s for 6s (42 total, `tickIntervalMs: 1000`) on lowest ally.
+    - `holy_word_shield` (Lv 20, EN 28, CD 14s, AI support 60): shield 50 on lowest ally for 8s.
+    - `sanctified_ground` (Lv 30, EN 38, CD 14s, AI support 75 condition `allyHpBelow: 0.75`): heal 22 party.
+    - `resurrection` (Lv 40, EN 45, CD 45s, radiusTiles 8, AI support 90 condition `requiresDownedAlly: true`): revive downed allies within 8 tiles.
+  - All status descriptions state that status effects land on the main target only.
+- **3. Efficiency Audit (`scripts/skill_efficiency.ts`)**:
+  - Added Section 8 evaluating the 25 Wave B skills against their schools' basic casts (`scorch`, `water_jet`, `frost_shard`, `pebble_shot`, `holy_light`).
+  - Audited filler skills: 0 fillers exceeded the +25% cap above their school basic cast.
+  - Reported heal efficiency in HP/EN: `greater_heal` (1.154 HP/EN), `renew` (2.100 HP/EN), `sanctified_ground` (1.737 HP/EN party), `tidal_lash` (0.250 HP/EN), `cleansing_wave` (0.625 HP/EN).
+- **4. Test Suite (`test/class_t2_wave_b.test.ts`) & Milestone 37 Test Fix**:
+  - Data validation: All 5 classes and 25 skills validated cleanly (requirements, effects, ai, cadence 1/10/20/30/40, generic buff stats, valid status IDs, and no invalid `durationMs`).
+  - Smoke test: All 5 classes at Lv 40 in 3-enemy fight with ally at 60% HP + timed poison cast at least 4 of 5 skills within 60s.
+  - Cast-based tests:
+    - `earthen_bulwark` -> verified every party member takes ×0.85 damage.
+    - `resurrection` -> verified downed ally within 8 tiles revives, downed ally beyond 8 tiles remains downed, and caster's `Ally Revived` progression stat increments.
+    - `cleansing_wave` -> verified poisoned ally is cleansed AND healed 15 HP.
+  - Updated `test/milestone37.test.ts` where an old check asserted `cleric` was `undefined` ("not registered prematurely") to assert that `cleric` is registered with tier `expert`.
+  - Full test suite: 124/124 suites pass cleanly (`npm test -- --quiet`).
   - Production build: `npm run build` succeeds cleanly.
-
-
-
-

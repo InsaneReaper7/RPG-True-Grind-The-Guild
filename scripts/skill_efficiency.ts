@@ -1030,5 +1030,205 @@ if (flaggedT2A.length > 0) {
   }
 }
 
+// ============================================================================
+// SECTION 8: CLASS PROGRAM TIER 2 WAVE B (5 MAGIC EXPERT CLASSES)
+// ============================================================================
+console.log('\n================================================================================');
+console.log('8. CLASS PROGRAM TIER 2 WAVE B: MAGIC EXPERT CLASSES EFFICIENCY & FILLER AUDIT');
+console.log('================================================================================\n');
+
+const t2WaveBKits: {
+  classId: string;
+  name: string;
+  schoolBasicSkillId: string;
+  skills: string[];
+}[] = [
+  {
+    classId: 'elementalist',
+    name: 'Elementalist',
+    schoolBasicSkillId: 'scorch',
+    skills: ['prismatic_bolt', 'elemental_attunement', 'steam_burst', 'cyclone_flame', 'elemental_convergence']
+  },
+  {
+    classId: 'aquamancer',
+    name: 'Aquamancer',
+    schoolBasicSkillId: 'water_jet',
+    skills: ['tidal_lash', 'cleansing_wave', 'riptide_current', 'tidal_barrier', 'tsunami']
+  },
+  {
+    classId: 'cryomancer',
+    name: 'Cryomancer',
+    schoolBasicSkillId: 'frost_shard',
+    skills: ['ice_shard_volley', 'deep_freeze', 'blizzard', 'frozen_armor', 'absolute_zero']
+  },
+  {
+    classId: 'geomancer',
+    name: 'Geomancer',
+    schoolBasicSkillId: 'pebble_shot',
+    skills: ['stone_spike', 'earthen_bulwark', 'rockslide', 'seismic_shock', 'tectonic_rupture']
+  },
+  {
+    classId: 'cleric',
+    name: 'Cleric',
+    schoolBasicSkillId: 'holy_light',
+    skills: ['greater_heal', 'renew', 'holy_word_shield', 'sanctified_ground', 'resurrection']
+  }
+];
+
+interface T2WaveBRow {
+  classId: string;
+  skillId: string;
+  name: string;
+  req: string;
+  cd: number;
+  energyCost: number;
+  mult: number;
+  directDamage: number;
+  dotInfo: string;
+  dotEV: number;
+  totalDamage: number;
+  damagePerEn: number;
+  healOrShieldInfo: string;
+  healPerEn: number;
+  vsSchoolBasic: string;
+  flag: string;
+}
+
+const t2WaveBRows: T2WaveBRow[] = [];
+
+for (const kit of t2WaveBKits) {
+  const schoolSkill = skillsData.skills.find((s: any) => s.id === kit.schoolBasicSkillId);
+  let schoolDmgPerEn = 0;
+  if (schoolSkill) {
+    const sMult = schoolSkill.effects?.find((e: any) => e.type === 'damage')?.multiplier ?? 0;
+    const sDmg = sMult * basePower;
+    let sDotEV = 0;
+    const sBurn = schoolSkill.effects?.find((e: any) => e.type === 'applyStatus' && e.status === 'burn');
+    if (sBurn) {
+      const sChance = sBurn.chance ?? 1.0;
+      const sDur = sBurn.durationMs ?? 4000;
+      sDotEV = sChance * (sDur / burnTickIntervalMs) * burnDamagePerTick;
+    }
+    schoolDmgPerEn = (sDmg + sDotEV) / (schoolSkill.energyCost || 1);
+  }
+
+  for (const skillId of kit.skills) {
+    const skill = skillsData.skills.find((s: any) => s.id === skillId);
+    if (!skill) continue;
+
+    const req = skill.requirements?.map((r: any) => `${r.target} ${r.value}`).join(', ') || 'none';
+    const cdSec = (skill.cooldownMs ?? 0) / 1000;
+    const energyCost = skill.energyCost ?? 0;
+
+    let mult = 0;
+    let dotInfo = 'None';
+    let dotEV = 0;
+    let healOrShieldInfo = '-';
+    let totalHealOrShield = 0;
+
+    if (skill.effects) {
+      const dmgEff = skill.effects.find((e: any) => e.type === 'damage');
+      if (dmgEff) mult = dmgEff.multiplier;
+
+      const burnEff = skill.effects.find((e: any) => e.type === 'applyStatus' && e.status === 'burn');
+      const frostbiteEff = skill.effects.find((e: any) => e.type === 'applyStatus' && e.status === 'frostbite');
+
+      if (burnEff) {
+        const chance = burnEff.chance ?? 1.0;
+        const dur = burnEff.durationMs ?? 4000;
+        const totalBurnDmg = (dur / burnTickIntervalMs) * burnDamagePerTick;
+        dotEV = chance * totalBurnDmg;
+        dotInfo = `Burn ${(chance * 100).toFixed(0)}% (${dur / 1000}s = ${totalBurnDmg} dmg)`;
+      } else if (frostbiteEff) {
+        const chance = frostbiteEff.chance ?? 1.0;
+        const dur = frostbiteEff.durationMs ?? 4500;
+        const totalFrostDmg = (dur / frostbiteTickIntervalMs) * frostbiteDamagePerTick;
+        dotEV = chance * totalFrostDmg;
+        dotInfo = `Frostbite ${(chance * 100).toFixed(0)}% (${dur / 1000}s = ${totalFrostDmg} dmg)`;
+      }
+
+      const healEff = skill.effects.find((e: any) => e.type === 'heal');
+      const hotEff = skill.effects.find((e: any) => e.type === 'healOverTime');
+      const shieldEff = skill.effects.find((e: any) => e.type === 'shield');
+
+      if (healEff) {
+        const amt = healEff.amount ?? 0;
+        if (healEff.target === 'party') {
+          totalHealOrShield = amt * 3;
+          healOrShieldInfo = `Heal ${amt} party (${totalHealOrShield} total)`;
+        } else {
+          totalHealOrShield = amt;
+          healOrShieldInfo = `Heal ${amt} ally`;
+        }
+      } else if (hotEff) {
+        const amtPerTick = hotEff.amountPerTick ?? 0;
+        const dur = hotEff.durationMs ?? 6000;
+        const tickInt = hotEff.tickIntervalMs ?? 1000;
+        totalHealOrShield = (dur / tickInt) * amtPerTick;
+        healOrShieldInfo = `HoT ${amtPerTick}/s (${totalHealOrShield} total)`;
+      } else if (shieldEff) {
+        totalHealOrShield = shieldEff.shieldAmount ?? 0;
+        healOrShieldInfo = `Shield ${totalHealOrShield}`;
+      }
+    }
+
+    const directDamage = mult * basePower;
+    const totalDamage = directDamage + dotEV;
+    const damagePerEn = energyCost > 0 ? totalDamage / energyCost : 0;
+    const healPerEn = energyCost > 0 ? totalHealOrShield / energyCost : 0;
+
+    let vsSchoolBasic = 'N/A';
+    if (totalDamage > 0 && schoolDmgPerEn > 0) {
+      const diffPct = ((damagePerEn - schoolDmgPerEn) / schoolDmgPerEn) * 100;
+      vsSchoolBasic = `${diffPct >= 0 ? '+' : ''}${diffPct.toFixed(1)}%`;
+    }
+
+    let flag = '-';
+    const isFiller = cdSec <= 3 && totalDamage > 0;
+    if (isFiller && schoolDmgPerEn > 0 && damagePerEn > schoolDmgPerEn * 1.25) {
+      flag = '⚠️ FILLER > +25%';
+    }
+
+    t2WaveBRows.push({
+      classId: kit.classId,
+      skillId: skill.id,
+      name: skill.name,
+      req,
+      cd: cdSec,
+      energyCost,
+      mult,
+      directDamage,
+      dotInfo,
+      dotEV,
+      totalDamage,
+      damagePerEn,
+      healOrShieldInfo,
+      healPerEn,
+      vsSchoolBasic,
+      flag
+    });
+  }
+}
+
+console.log('| Class | Skill | Requirement | CD (s) | EN | Mult | Direct Dmg | DoT Info | Total Dmg EV | Dmg / EN | Heal / Shield | HP/EN | vs. School Basic | Flag |');
+console.log('|---|---|---|---|---|---|---|---|---|---|---|---|---|---|');
+
+for (const r of t2WaveBRows) {
+  const dmgEnStr = r.damagePerEn > 0 ? r.damagePerEn.toFixed(3) : '-';
+  const healEnStr = r.healPerEn > 0 ? r.healPerEn.toFixed(3) : '-';
+  const multStr = r.mult > 0 ? `${r.mult.toFixed(1)}×` : '-';
+  console.log(
+    `| ${r.classId} | **${r.name}** (\`${r.skillId}\`) | ${r.req} | ${r.cd} | ${r.energyCost} | ${multStr} | ${r.directDamage.toFixed(1)} | ${r.dotInfo} | ${r.totalDamage.toFixed(1)} | ${dmgEnStr} | ${r.healOrShieldInfo} | ${healEnStr} | ${r.vsSchoolBasic} | ${r.flag} |`
+  );
+}
+
+const flaggedT2B = t2WaveBRows.filter(r => r.flag.includes('FILLER'));
+console.log(`\n**Tier 2 Wave B Filler Audit Result:** ${flaggedT2B.length} filler skill(s) exceeded +25% above school basic cast.`);
+if (flaggedT2B.length > 0) {
+  for (const f of flaggedT2B) {
+    console.log(`  - ⚠️ Flagged: ${f.name} (${f.skillId}): ${f.damagePerEn.toFixed(3)} Dmg/EN (${f.vsSchoolBasic})`);
+  }
+}
+
 
 
