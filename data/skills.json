@@ -11792,6 +11792,887 @@
           "chance": 0.6
         }
       ]
+    },
+    {
+      "id": "bark_lash",
+      "name": "Bark Lash",
+      "energyCost": 20,
+      "cooldownMs": 3000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "grove_walker",
+          "value": 1
+        }
+      ],
+      "description": "Whips a lash of living bark at an enemy within 4 tiles for 100% spell damage (damage grows with Druid Staff skill), with a 30% chance to poison the main target for 6s.",
+      "ai": {
+        "role": "rotation",
+        "priority": 30
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "spell",
+          "multiplier": 1.0,
+          "profBonus": {
+            "prof": "druid_staff",
+            "perLevel": 0.15
+          }
+        },
+        {
+          "type": "applyStatus",
+          "status": "poison",
+          "chance": 0.3,
+          "durationMs": 6000
+        }
+      ]
+    },
+    {
+      "id": "barkskin",
+      "name": "Barkskin",
+      "energyCost": 18,
+      "cooldownMs": 16000,
+      "targetType": "self",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "grove_walker",
+          "value": 10
+        }
+      ],
+      "description": "Hardens the caster's skin like ancient oak bark, multiplying damage taken by 0.80 for 6s.",
+      "ai": {
+        "role": "defensive",
+        "priority": 55
+      },
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "damageTakenMultiplier",
+          "value": 0.8,
+          "durationMs": 6000,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "sapling_mend",
+      "name": "Sapling Mend",
+      "energyCost": 18,
+      "cooldownMs": 10000,
+      "targetType": "ally",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "grove_walker",
+          "value": 20
+        }
+      ],
+      "description": "Wraps the lowest health ally in tender green shoots, restoring 3 HP every second for 6s (18 HP total).",
+      "ai": {
+        "role": "support",
+        "priority": 60
+      },
+      "effects": [
+        {
+          "type": "healOverTime",
+          "amountPerTick": 3,
+          "durationMs": 6000,
+          "tickIntervalMs": 1000,
+          "target": "lowestAlly"
+        }
+      ]
+    },
+    {
+      "id": "thicket",
+      "name": "Thicket",
+      "energyCost": 24,
+      "cooldownMs": 9000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "grove_walker",
+          "value": 30
+        }
+      ],
+      "description": "Sprouts a dense bramble thicket in a 1.5-tile radius dealing 100% spell damage and slowing the main target (100%).",
+      "ai": {
+        "role": "rotation",
+        "priority": 55,
+        "condition": {
+          "enemiesInRadius": 2
+        }
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "spell",
+          "multiplier": 1.0,
+          "area": {
+            "shape": "radius",
+            "radius": 1.5
+          }
+        },
+        {
+          "type": "applyStatus",
+          "status": "slow",
+          "chance": 1
+        }
+      ]
+    },
+    {
+      "id": "verdant_surge",
+      "name": "Verdant Surge",
+      "energyCost": 36,
+      "cooldownMs": 16000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "grove_walker",
+          "value": 40
+        }
+      ],
+      "description": "Unleashes a surge of wild vitality dealing 240% spell damage (damage grows with Druid Staff skill), poisoning the main target for 6s (100%), and restoring 10 HP to all party members.",
+      "ai": {
+        "role": "finisher",
+        "priority": 75
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "spell",
+          "multiplier": 2.4,
+          "profBonus": {
+            "prof": "druid_staff",
+            "perLevel": 0.15
+          }
+        },
+        {
+          "type": "applyStatus",
+          "status": "poison",
+          "chance": 1,
+          "durationMs": 6000
+        },
+        {
+          "type": "heal",
+          "amount": 10,
+          "target": "party"
+        }
+      ]
+    },
+    {
+      "id": "herbal_dart",
+      "name": "Herbal Dart",
+      "energyCost": 20,
+      "cooldownMs": 3000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "herbalist",
+          "value": 1
+        }
+      ],
+      "description": "Flings a resin-coated dart at an enemy within 4 tiles for 110% spell damage (damage grows with Druid Staff skill), with a 40% chance to poison the main target for 6s.",
+      "ai": {
+        "role": "rotation",
+        "priority": 30
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "spell",
+          "multiplier": 1.1,
+          "profBonus": {
+            "prof": "druid_staff",
+            "perLevel": 0.15
+          }
+        },
+        {
+          "type": "applyStatus",
+          "status": "poison",
+          "chance": 0.4,
+          "durationMs": 6000
+        }
+      ]
+    },
+    {
+      "id": "soothing_herbs",
+      "name": "Soothing Herbs",
+      "energyCost": 20,
+      "cooldownMs": 6000,
+      "targetType": "ally",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "herbalist",
+          "value": 10
+        }
+      ],
+      "description": "Applies a poultice of soothing grove herbs, restoring 20 HP to the lowest health ally.",
+      "ai": {
+        "role": "support",
+        "priority": 70
+      },
+      "effects": [
+        {
+          "type": "heal",
+          "amount": 20,
+          "target": "lowestAlly"
+        }
+      ]
+    },
+    {
+      "id": "antidote_brew",
+      "name": "Antidote Brew",
+      "energyCost": 22,
+      "cooldownMs": 10000,
+      "targetType": "ally",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "herbalist",
+          "value": 20
+        }
+      ],
+      "description": "Administers a purifying herbal draught that cleanses all harmful status effects from an ally and restores 12 HP to the lowest health ally.",
+      "ai": {
+        "role": "support",
+        "priority": 75,
+        "condition": {
+          "requiresHarmfulStatus": true
+        }
+      },
+      "effects": [
+        {
+          "type": "cleanse",
+          "target": "lowestAlly"
+        },
+        {
+          "type": "heal",
+          "amount": 12,
+          "target": "lowestAlly"
+        }
+      ]
+    },
+    {
+      "id": "noxious_cloud",
+      "name": "Noxious Cloud",
+      "energyCost": 28,
+      "cooldownMs": 9000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "herbalist",
+          "value": 30
+        }
+      ],
+      "description": "Releases a cloud of toxic spores in a 1.5-tile radius dealing 130% spell damage and poisoning the main target for 6s (100%).",
+      "ai": {
+        "role": "rotation",
+        "priority": 55,
+        "condition": {
+          "enemiesInRadius": 2
+        }
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "spell",
+          "multiplier": 1.3,
+          "area": {
+            "shape": "radius",
+            "radius": 1.5
+          }
+        },
+        {
+          "type": "applyStatus",
+          "status": "poison",
+          "chance": 1,
+          "durationMs": 6000
+        }
+      ]
+    },
+    {
+      "id": "panacea",
+      "name": "Panacea",
+      "energyCost": 40,
+      "cooldownMs": 18000,
+      "targetType": "ally",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "herbalist",
+          "value": 40
+        }
+      ],
+      "description": "Disperses a universal herbal panacea across the battlefield, restoring 16 HP to all party members and cleansing all harmful status effects from the party.",
+      "ai": {
+        "role": "support",
+        "priority": 85,
+        "condition": {
+          "allyHpBelow": 0.6
+        }
+      },
+      "effects": [
+        {
+          "type": "heal",
+          "amount": 16,
+          "target": "party"
+        },
+        {
+          "type": "cleanse",
+          "target": "party"
+        }
+      ]
+    },
+    {
+      "id": "thornlash",
+      "name": "Thornlash",
+      "energyCost": 20,
+      "cooldownMs": 3000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "druid",
+          "value": 1
+        }
+      ],
+      "description": "Lashes a foe within 4 tiles with razor-sharp thorns for 110% spell damage (damage grows with Druid Staff skill), with a 40% chance to poison the main target for 6s.",
+      "ai": {
+        "role": "rotation",
+        "priority": 30
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "spell",
+          "multiplier": 1.1,
+          "profBonus": {
+            "prof": "druid_staff",
+            "perLevel": 0.15
+          }
+        },
+        {
+          "type": "applyStatus",
+          "status": "poison",
+          "chance": 0.4,
+          "durationMs": 6000
+        }
+      ]
+    },
+    {
+      "id": "barkskin_ward",
+      "name": "Barkskin Ward",
+      "energyCost": 28,
+      "cooldownMs": 20000,
+      "targetType": "self",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "druid",
+          "value": 10
+        }
+      ],
+      "description": "Sheathes the entire party in living heartwood bark, multiplying damage taken by 0.85 for 8s.",
+      "ai": {
+        "role": "defensive",
+        "priority": 60
+      },
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "damageTakenMultiplier",
+          "value": 0.85,
+          "durationMs": 8000,
+          "target": "party"
+        }
+      ]
+    },
+    {
+      "id": "rejuvenation_grove",
+      "name": "Rejuvenation Grove",
+      "energyCost": 22,
+      "cooldownMs": 9000,
+      "targetType": "ally",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "druid",
+          "value": 20
+        }
+      ],
+      "description": "Surrounds the lowest health ally with a blooming grove aura, restoring 6 HP every second for 6s (36 HP total).",
+      "ai": {
+        "role": "support",
+        "priority": 70
+      },
+      "effects": [
+        {
+          "type": "healOverTime",
+          "amountPerTick": 6,
+          "durationMs": 6000,
+          "tickIntervalMs": 1000,
+          "target": "lowestAlly"
+        }
+      ]
+    },
+    {
+      "id": "entangling_roots",
+      "name": "Entangling Roots",
+      "energyCost": 32,
+      "cooldownMs": 11000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "druid",
+          "value": 30
+        }
+      ],
+      "description": "Erupts grasping roots in a 2-tile radius dealing 180% spell damage, slowing the main target (100%) and weakening its damage by 20% for 6s.",
+      "ai": {
+        "role": "rotation",
+        "priority": 60,
+        "condition": {
+          "enemiesInRadius": 2
+        }
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "spell",
+          "multiplier": 1.8,
+          "area": {
+            "shape": "radius",
+            "radius": 2
+          }
+        },
+        {
+          "type": "applyStatus",
+          "status": "slow",
+          "chance": 1
+        },
+        {
+          "type": "debuff",
+          "stat": "damageReductionPercent",
+          "value": 0.2,
+          "durationMs": 6000,
+          "target": "enemy"
+        }
+      ]
+    },
+    {
+      "id": "wrath_of_the_wild",
+      "name": "Wrath of the Wild",
+      "energyCost": 46,
+      "cooldownMs": 18000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "druid",
+          "value": 40
+        }
+      ],
+      "description": "Calls down the full fury of the untamed wilds in a 2-tile radius for 330% spell damage (damage grows with Druid Staff skill), amplified by x1.3 against poisoned targets.",
+      "ai": {
+        "role": "rotation",
+        "priority": 85,
+        "condition": {
+          "enemiesInRadius": 2
+        }
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "spell",
+          "multiplier": 3.3,
+          "profBonus": {
+            "prof": "druid_staff",
+            "perLevel": 0.15
+          },
+          "area": {
+            "shape": "radius",
+            "radius": 2
+          },
+          "requiresTargetStatus": {
+            "status": "poison",
+            "multiplier": 1.3
+          }
+        }
+      ]
+    },
+    {
+      "id": "grave_bolt",
+      "name": "Grave Bolt",
+      "energyCost": 20,
+      "cooldownMs": 3000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "necromancer",
+          "value": 1
+        }
+      ],
+      "description": "Hurls a bolt of sepulchral energy at an enemy within 4 tiles for 110% spell damage, with a 45% chance to curse the main target.",
+      "ai": {
+        "role": "rotation",
+        "priority": 30
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "spell",
+          "multiplier": 1.1
+        },
+        {
+          "type": "applyStatus",
+          "status": "curse",
+          "chance": 0.45
+        }
+      ]
+    },
+    {
+      "id": "bone_armor",
+      "name": "Bone Armor",
+      "energyCost": 26,
+      "cooldownMs": 18000,
+      "targetType": "self",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "necromancer",
+          "value": 10
+        }
+      ],
+      "description": "Encases the caster in swirling ossuary plates, absorbing up to 60 incoming damage for 8s.",
+      "ai": {
+        "role": "defensive",
+        "priority": 60
+      },
+      "effects": [
+        {
+          "type": "shield",
+          "shieldAmount": 60,
+          "durationMs": 8000,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "plague_of_decay",
+      "name": "Plague of Decay",
+      "energyCost": 32,
+      "cooldownMs": 10000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "necromancer",
+          "value": 20
+        }
+      ],
+      "description": "Unleashes a necrotic plague in a 2-tile radius dealing 180% spell damage, poisoning the main target for 6s (100%) and amplifying its damage taken by 20% for 6s.",
+      "ai": {
+        "role": "rotation",
+        "priority": 60,
+        "condition": {
+          "enemiesInRadius": 2
+        }
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "spell",
+          "multiplier": 1.8,
+          "area": {
+            "shape": "radius",
+            "radius": 2
+          }
+        },
+        {
+          "type": "applyStatus",
+          "status": "poison",
+          "chance": 1,
+          "durationMs": 6000
+        },
+        {
+          "type": "debuff",
+          "stat": "damageAmplificationPercent",
+          "value": 0.2,
+          "durationMs": 6000,
+          "target": "enemy"
+        }
+      ]
+    },
+    {
+      "id": "raise_the_fallen",
+      "name": "Raise the Fallen",
+      "energyCost": 46,
+      "cooldownMs": 60000,
+      "targetType": "self",
+      "radiusTiles": 6,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "necromancer",
+          "value": 30
+        }
+      ],
+      "description": "Commands death itself to release its grip, reviving any downed ally within a 6-tile radius.",
+      "ai": {
+        "role": "support",
+        "priority": 95,
+        "condition": {
+          "requiresDownedAlly": true
+        }
+      },
+      "effects": [
+        {
+          "type": "revive",
+          "radiusTiles": 6
+        }
+      ]
+    },
+    {
+      "id": "death_toll",
+      "name": "Death Toll",
+      "energyCost": 50,
+      "cooldownMs": 20000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "necromancer",
+          "value": 40
+        }
+      ],
+      "description": "Tolls the bell of death upon a target within 4 tiles for 420% spell damage, amplified by x1.4 against cursed targets and x1.3 against targets below 40% HP.",
+      "ai": {
+        "role": "finisher",
+        "priority": 85
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "spell",
+          "multiplier": 4.2,
+          "requiresTargetStatus": {
+            "status": "curse",
+            "multiplier": 1.4
+          },
+          "lowHealthBonus": {
+            "threshold": 0.4,
+            "multiplier": 1.3
+          }
+        }
+      ]
+    },
+    {
+      "id": "avatar_thorns",
+      "name": "Avatar Thorns",
+      "energyCost": 20,
+      "cooldownMs": 3000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "natures_avatar",
+          "value": 1
+        }
+      ],
+      "description": "Projects primal ironwood thorns at an enemy within 4 tiles for 120% spell damage (damage grows with Druid Staff skill), with a 30% chance to poison the main target for 6s.",
+      "ai": {
+        "role": "rotation",
+        "priority": 30
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "spell",
+          "multiplier": 1.2,
+          "profBonus": {
+            "prof": "druid_staff",
+            "perLevel": 0.15
+          }
+        },
+        {
+          "type": "applyStatus",
+          "status": "poison",
+          "chance": 0.3,
+          "durationMs": 6000
+        }
+      ]
+    },
+    {
+      "id": "ironbark",
+      "name": "Ironbark",
+      "energyCost": 26,
+      "cooldownMs": 18000,
+      "targetType": "self",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "natures_avatar",
+          "value": 10
+        }
+      ],
+      "description": "Transforms the caster's form into unyielding ironbark, multiplying damage taken by 0.60 for 8s.",
+      "ai": {
+        "role": "defensive",
+        "priority": 60
+      },
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "damageTakenMultiplier",
+          "value": 0.6,
+          "durationMs": 8000,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "lifebloom",
+      "name": "Lifebloom",
+      "energyCost": 30,
+      "cooldownMs": 8000,
+      "targetType": "ally",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "natures_avatar",
+          "value": 20
+        }
+      ],
+      "description": "Cradles the lowest health ally in radiant blossoms, immediately restoring 20 HP and healing 5 HP every second for 6s (30 HP over time).",
+      "ai": {
+        "role": "support",
+        "priority": 75
+      },
+      "effects": [
+        {
+          "type": "heal",
+          "amount": 20,
+          "target": "lowestAlly"
+        },
+        {
+          "type": "healOverTime",
+          "amountPerTick": 5,
+          "durationMs": 6000,
+          "tickIntervalMs": 1000,
+          "target": "lowestAlly"
+        }
+      ]
+    },
+    {
+      "id": "gaias_embrace",
+      "name": "Gaia's Embrace",
+      "energyCost": 44,
+      "cooldownMs": 20000,
+      "targetType": "ally",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "natures_avatar",
+          "value": 30
+        }
+      ],
+      "description": "Enfolds the party in Gaia's restorative embrace, restoring 30 HP to all party members and cleansing all harmful status effects from the party.",
+      "ai": {
+        "role": "support",
+        "priority": 85,
+        "condition": {
+          "allyHpBelow": 0.5
+        }
+      },
+      "effects": [
+        {
+          "type": "heal",
+          "amount": 30,
+          "target": "party"
+        },
+        {
+          "type": "cleanse",
+          "target": "party"
+        }
+      ]
+    },
+    {
+      "id": "wrath_of_gaia",
+      "name": "Wrath of Gaia",
+      "energyCost": 52,
+      "cooldownMs": 20000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "natures_avatar",
+          "value": 40
+        }
+      ],
+      "description": "Unleashes the primordial Wrath of Gaia in a 2.5-tile radius dealing 420% spell damage (damage grows with Druid Staff skill), poisoning the main target for 6s (100%), and restoring 20 HP to all party members.",
+      "ai": {
+        "role": "rotation",
+        "priority": 90,
+        "condition": {
+          "enemiesInRadius": 2
+        }
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "spell",
+          "multiplier": 4.2,
+          "profBonus": {
+            "prof": "druid_staff",
+            "perLevel": 0.15
+          },
+          "area": {
+            "shape": "radius",
+            "radius": 2.5
+          }
+        },
+        {
+          "type": "applyStatus",
+          "status": "poison",
+          "chance": 1,
+          "durationMs": 6000
+        },
+        {
+          "type": "heal",
+          "amount": 20,
+          "target": "party"
+        }
+      ]
     }
   ]
 }

@@ -1638,3 +1638,29 @@ The following three intentional behavioural changes were reviewed and accepted b
   - Full test suite: 126/126 suites pass cleanly (`npm test -- --quiet`).
   - Production build: `npm run build` succeeds cleanly.
 
+### Druid Staff Class Kits (5 Classes, 25 Skills, Data-Only) (2026-10-12)
+
+**Resolved and shipped: Implemented the 5 Druid Staff class kits (`grove_walker`, `herbalist`, `druid`, `necromancer`, `natures_avatar`) with their class entries in `data/classes.json` and full 5-skill kits (25 skills total) in `data/skills.json`, added Section 10 to `scripts/skill_efficiency.ts`, and added `test/class_druid.test.ts` covering data validation, the expected-table guard, the 60s smoke test, and all 5 cast-based tests.**
+
+- **1. Class Entries (`data/classes.json`)**:
+  - `grove_walker` (Grove Walker): Novice tier, requirements Druid Staff 10 (`druid_staff: 10`), fantasy `"Wandering nature novice"`, `hiddenSkillBonuses: { mana_regen: 0.05 }`.
+  - `herbalist` (Herbalist): Adept tier, requirements Druid Staff 30 + Nature Magic 10 (`druid_staff: 30`, `nature_magic: 10`), fantasy `"Nature's apprentice"`, `hiddenSkillBonuses: { mana_regen: 0.05 }`.
+  - `druid` (Druid): Expert tier, requirements Druid Staff 30 + Nature Magic 60 + Herbalist Lv 15, fantasy `"Master of nature"`, `hiddenSkillBonuses: { mana_regen: 0.05 }`.
+  - `necromancer` (Necromancer): Master tier, requirements Druid Staff 10 + Dark Magic 90 + Warlock Lv 25, fantasy `"Death magic specialist"`, `hiddenSkillBonuses: { mana_regen: 0.05 }`.
+  - `natures_avatar` (Nature's Avatar): Master tier, requirements Druid Staff 60 + Nature Magic 90 + Healing Magic 30 + Druid Lv 25, fantasy `"Near-mythical champion of nature"`, `hiddenSkillBonuses: { mana_regen: 0.05 }`.
+- **2. 25 Class Skills (`data/skills.json`)**:
+  - **Grove Walker**: `bark_lash` (1.0× + PB DS, poison 30% 6s, 20 EN, 3s CD, rotation 30), `barkskin` (DT 0.8 for 6s self, 18 EN, 16s CD, defensive 55), `sapling_mend` (HoT 3/s for 6s lowestAlly, 18 EN, 10s CD, support 60), `thicket` (1.0× radius 1.5, slow 100%, 24 EN, 9s CD, rotation 55 ≥2), `verdant_surge` (2.4× + PB DS, poison 100% 6s + heal 10 party, 36 EN, 16s CD, finisher 75).
+  - **Herbalist**: `herbal_dart` (1.1× + PB DS, poison 40% 6s, 20 EN, 3s CD, rotation 30), `soothing_herbs` (heal 20 lowestAlly, 20 EN, 6s CD, support 70), `antidote_brew` (cleanse lowestAlly + heal 12 lowestAlly, 22 EN, 10s CD, support 75 `requiresHarmfulStatus`), `noxious_cloud` (1.3× radius 1.5, poison 100% 6s, 28 EN, 9s CD, rotation 55 ≥2), `panacea` (heal 16 party + cleanse party, 40 EN, 18s CD, support 85 `allyHpBelow: 0.6`).
+  - **Druid**: `thornlash` (1.1× + PB DS, poison 40% 6s, 20 EN, 3s CD, rotation 30), `barkskin_ward` (party DT 0.85 for 8s, 28 EN, 20s CD, defensive 60), `rejuvenation_grove` (HoT 6/s for 6s lowestAlly, 22 EN, 9s CD, support 70), `entangling_roots` (1.8× radius 2, slow 100% + Weaken 0.20 for 6s, 32 EN, 11s CD, rotation 60 ≥2), `wrath_of_the_wild` (3.3× + PB DS, radius 2, ×1.3 vs poison, 46 EN, 18s CD, rotation 85 ≥2).
+  - **Necromancer**: `grave_bolt` (1.1×, curse 45%, 20 EN, 3s CD, rotation 30), `bone_armor` (shield 60 self for 8s, 26 EN, 18s CD, defensive 60), `plague_of_decay` (1.8× radius 2, poison 100% 6s + Amp 0.20 for 6s, 32 EN, 10s CD, rotation 60 ≥2), `raise_the_fallen` (`revive` `radiusTiles: 6`, 46 EN, 60s CD, support 95 `requiresDownedAlly`), `death_toll` (4.2×, ×1.4 vs curse, exec ×1.3 below 40%, 50 EN, 20s CD, finisher 85).
+  - **Nature's Avatar**: `avatar_thorns` (1.2× + PB DS, poison 30% 6s, 20 EN, 3s CD, rotation 30), `ironbark` (DT 0.6 for 8s self, 26 EN, 18s CD, defensive 60), `lifebloom` (heal 20 lowestAlly + HoT 5/s for 6s lowestAlly, 30 EN, 8s CD, support 75), `gaias_embrace` (heal 30 party + cleanse party, 44 EN, 20s CD, support 85 `allyHpBelow: 0.5`), `wrath_of_gaia` (4.2× + PB DS, radius 2.5, poison 100% 6s + heal 20 party, 52 EN, 20s CD, rotation 90 ≥2).
+- **3. Efficiency Audit (`scripts/skill_efficiency.ts`)**:
+  - Added Section 10 evaluating all 25 skills against their school's basic cast (`nature_magic` for Druid line, `dark_magic` for Necromancer); 0 fillers exceeded the +25% cap (`bark_lash` +0.0%, `herbal_dart` +14.8%, `thornlash` +14.8%, `avatar_thorns` +15.9%, `grave_bolt` +10.0%).
+- **4. Verification (`test/class_druid.test.ts`)**:
+  - Data validation + expected-table guard + `durationMs` rule across all 5 classes and 25 skills.
+  - Smoke test: All 5 classes at Lv 40 (Druid line with `druid_staff`, Necromancer with `dark_staff`) in a 3-enemy fight with ally at 60% HP + timed poison cast at least 4 of 5 skills within 60s.
+  - Cast-based tests verified `bark_lash` PB (+7.5 damage at Druid Staff 60 vs 10), `thornlash` cross-training (+2 `nature_magic` EXP and +1 `druid_staff` EXP), `raise_the_fallen` (downed ally within 6 tiles revives), `panacea` (heals party +16 HP and cleanses poison from `toxin_blade`), and `gaias_embrace` AI (not picked at 90% HP despite poison; picked at 45% HP).
+  - Full test suite: 127/127 suites pass cleanly (`npm test -- --quiet`).
+  - Production build: `npm run build` succeeds cleanly.
+
+

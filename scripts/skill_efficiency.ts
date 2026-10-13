@@ -1347,3 +1347,182 @@ if (flaggedT3.length > 0) {
     console.log(`  - ⚠️ Flagged: ${f.name} (${f.skillId}): ${f.damagePerEn.toFixed(3)} Dmg/EN (${f.vsBladeStrike})`);
   }
 }
+
+// ============================================================================
+// SECTION 10: DRUID STAFF CLASS KITS (5 KITS, 25 SKILLS)
+// ============================================================================
+console.log('\n================================================================================');
+console.log('10. DRUID STAFF CLASS KITS: 5 CLASSES (25 SKILLS) EFFICIENCY & FILLER AUDIT');
+console.log('================================================================================\n');
+
+const druidStaffKits: {
+  classId: string;
+  name: string;
+  school: string;
+  skills: string[];
+}[] = [
+  {
+    classId: 'grove_walker',
+    name: 'Grove Walker',
+    school: 'nature_magic',
+    skills: ['bark_lash', 'barkskin', 'sapling_mend', 'thicket', 'verdant_surge']
+  },
+  {
+    classId: 'herbalist',
+    name: 'Herbalist',
+    school: 'nature_magic',
+    skills: ['herbal_dart', 'soothing_herbs', 'antidote_brew', 'noxious_cloud', 'panacea']
+  },
+  {
+    classId: 'druid',
+    name: 'Druid',
+    school: 'nature_magic',
+    skills: ['thornlash', 'barkskin_ward', 'rejuvenation_grove', 'entangling_roots', 'wrath_of_the_wild']
+  },
+  {
+    classId: 'necromancer',
+    name: 'Necromancer',
+    school: 'dark_magic',
+    skills: ['grave_bolt', 'bone_armor', 'plague_of_decay', 'raise_the_fallen', 'death_toll']
+  },
+  {
+    classId: 'natures_avatar',
+    name: "Nature's Avatar",
+    school: 'nature_magic',
+    skills: ['avatar_thorns', 'ironbark', 'lifebloom', 'gaias_embrace', 'wrath_of_gaia']
+  }
+];
+
+const druidStaffRows: T2WaveBRow[] = [];
+
+for (const kit of druidStaffKits) {
+  const baseline = schoolBaselines[kit.school];
+  const schoolBaseDmg = baseline?.baseDamage ?? basePower;
+  const schoolDirectDmgPerEn = baseline && baseline.energyCost > 0 ? baseline.baseDamage / baseline.energyCost : 0;
+  const schoolTotalDmgPerEn = baseline?.dmgPerEn ?? 0;
+
+  for (const skillId of kit.skills) {
+    const skill = skillsData.skills.find((s: any) => s.id === skillId);
+    if (!skill) continue;
+
+    const req = skill.requirements?.map((r: any) => `${r.target} ${r.value}`).join(', ') || 'none';
+    const cdSec = (skill.cooldownMs ?? 0) / 1000;
+    const energyCost = skill.energyCost ?? 0;
+
+    let mult = 0;
+    let dotInfo = 'None';
+    let dotEV = 0;
+    let healOrShieldInfo = '-';
+    let totalHealOrShield = 0;
+
+    if (skill.effects) {
+      const dmgEff = skill.effects.find((e: any) => e.type === 'damage');
+      if (dmgEff) mult = dmgEff.multiplier;
+
+      const poisonEff = skill.effects.find((e: any) => e.type === 'applyStatus' && e.status === 'poison');
+      if (poisonEff) {
+        const chance = poisonEff.chance ?? 1.0;
+        const dur = poisonEff.durationMs ?? 6000;
+        const totalPoisonDmg = (dur / poisonTickIntervalMs) * poisonDamagePerTick;
+        dotEV = chance * totalPoisonDmg;
+        dotInfo = `Poison ${(chance * 100).toFixed(0)}% (${dur / 1000}s = ${totalPoisonDmg} dmg)`;
+      }
+
+      const healEff = skill.effects.find((e: any) => e.type === 'heal');
+      const hotEff = skill.effects.find((e: any) => e.type === 'healOverTime');
+      const shieldEff = skill.effects.find((e: any) => e.type === 'shield');
+
+      const parts: string[] = [];
+      if (healEff) {
+        const amt = healEff.amount ?? 0;
+        if (healEff.target === 'party') {
+          totalHealOrShield += amt * 3;
+          parts.push(`Heal ${amt} party (${amt * 3} total)`);
+        } else {
+          totalHealOrShield += amt;
+          parts.push(`Heal ${amt} ally`);
+        }
+      }
+      if (hotEff) {
+        const amtPerTick = hotEff.amountPerTick ?? 0;
+        const dur = hotEff.durationMs ?? 6000;
+        const tickInt = hotEff.tickIntervalMs ?? 1000;
+        const hotTotal = (dur / tickInt) * amtPerTick;
+        totalHealOrShield += hotTotal;
+        parts.push(`HoT ${amtPerTick}/s (${hotTotal} total)`);
+      }
+      if (shieldEff) {
+        const shAmt = shieldEff.shieldAmount ?? 0;
+        totalHealOrShield += shAmt;
+        parts.push(`Shield ${shAmt}`);
+      }
+      if (parts.length > 0) {
+        healOrShieldInfo = parts.join(' + ');
+      }
+    }
+
+    const directDamage = mult * schoolBaseDmg;
+    const totalDamage = directDamage + dotEV;
+    const damagePerEn = energyCost > 0 ? totalDamage / energyCost : 0;
+    const healPerEn = energyCost > 0 ? totalHealOrShield / energyCost : 0;
+
+    let vsDirectBasic = 'N/A';
+    if (totalDamage > 0 && schoolDirectDmgPerEn > 0) {
+      const diffDirectPct = ((damagePerEn - schoolDirectDmgPerEn) / schoolDirectDmgPerEn) * 100;
+      vsDirectBasic = `${diffDirectPct >= 0 ? '+' : ''}${diffDirectPct.toFixed(1)}%`;
+    }
+
+    let vsSchoolBasic = 'N/A';
+    if (totalDamage > 0 && schoolTotalDmgPerEn > 0) {
+      const diffPct = ((damagePerEn - schoolTotalDmgPerEn) / schoolTotalDmgPerEn) * 100;
+      vsSchoolBasic = `${diffPct >= 0 ? '+' : ''}${diffPct.toFixed(1)}%`;
+    }
+
+    let flag = '-';
+    const isFiller = cdSec <= 3 && totalDamage > 0;
+    if (isFiller && schoolTotalDmgPerEn > 0 && damagePerEn > schoolTotalDmgPerEn * 1.25) {
+      flag = '⚠️ FILLER > +25%';
+    }
+
+    druidStaffRows.push({
+      classId: kit.classId,
+      skillId: skill.id,
+      name: skill.name,
+      req,
+      cd: cdSec,
+      energyCost,
+      mult,
+      directDamage,
+      dotInfo,
+      dotEV,
+      totalDamage,
+      damagePerEn,
+      healOrShieldInfo,
+      healPerEn,
+      vsDirectBasic,
+      vsSchoolBasic,
+      flag
+    });
+  }
+}
+
+console.log('| Class | Skill | Requirement | CD (s) | EN | Mult | Direct Dmg | DoT Info | Total Dmg EV | Dmg / EN | Heal / Shield | HP/EN | vs. Direct Basic | vs. School Basic (w/ Proc) | Flag |');
+console.log('|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|');
+
+for (const r of druidStaffRows) {
+  const dmgEnStr = r.damagePerEn > 0 ? r.damagePerEn.toFixed(3) : '-';
+  const healEnStr = r.healPerEn > 0 ? r.healPerEn.toFixed(3) : '-';
+  const multStr = r.mult > 0 ? `${r.mult.toFixed(1)}×` : '-';
+  console.log(
+    `| ${r.classId} | **${r.name}** (\`${r.skillId}\`) | ${r.req} | ${r.cd} | ${r.energyCost} | ${multStr} | ${r.directDamage.toFixed(1)} | ${r.dotInfo} | ${r.totalDamage.toFixed(1)} | ${dmgEnStr} | ${r.healOrShieldInfo} | ${healEnStr} | ${r.vsDirectBasic} | ${r.vsSchoolBasic} | ${r.flag} |`
+  );
+}
+
+const flaggedDruidStaff = druidStaffRows.filter(r => r.flag.includes('FILLER'));
+console.log(`\n**Druid Staff Kits Filler Audit Result:** ${flaggedDruidStaff.length} filler skill(s) exceeded +25% above school basic cast.`);
+if (flaggedDruidStaff.length > 0) {
+  for (const f of flaggedDruidStaff) {
+    console.log(`  - ⚠️ Flagged: ${f.name} (${f.skillId}): ${f.damagePerEn.toFixed(3)} Dmg/EN (${f.vsSchoolBasic})`);
+  }
+}
+
