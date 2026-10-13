@@ -12,6 +12,7 @@ import { CraftingSystem } from '../systems/CraftingSystem.ts';
 import { ConsumableSystem } from '../systems/ConsumableSystem.ts';
 import { isCraftingClass, getBaseItemId, canEquipBowDaggerSidearm, resolvePartyGearSource, getPartyGearOwnership } from '../utils/gearResolver.ts';
 import { isTypingInTextField, disableGameKeyboard, enableGameKeyboard, initKeyboardGuards } from '../utils/inputGuard.ts';
+import { formatRequirement } from '../utils/formatRequirement.ts';
 
 export interface AnnouncementItem {
   type: 'class' | 'skill';
@@ -8644,7 +8645,7 @@ export class HUD {
         ];
         if (c.requirements && c.requirements.length > 0) {
           const reqStr = c.requirements
-            .map((r: any) => `${r.target.replace('_', ' ')} Lv${r.value}`)
+            .map(formatRequirement)
             .join(', ');
           stats.push({ label: 'Prerequisites', value: reqStr });
         }

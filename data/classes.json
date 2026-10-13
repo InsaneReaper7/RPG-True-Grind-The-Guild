@@ -1806,6 +1806,288 @@
       "hiddenSkillBonuses": {
         "mana_regen": 0.05
       }
+    },
+    {
+      "id": "swordmaster",
+      "name": "Swordmaster",
+      "tier": "prestige",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "katana",
+          "value": 100
+        },
+        {
+          "type": "proficiency",
+          "target": "short_swords",
+          "value": 60
+        },
+        {
+          "type": "proficiency",
+          "target": "longswords",
+          "value": 60
+        },
+        {
+          "type": "classLevel",
+          "target": "sword_saint",
+          "value": 30
+        }
+      ],
+      "fantasy": "Peerless blade master",
+      "hiddenSkillBonuses": {
+        "parry": 0.08
+      }
+    },
+    {
+      "id": "weaponmaster",
+      "name": "Weaponmaster",
+      "tier": "prestige",
+      "requirements": [
+        {
+          "type": "anyOf",
+          "count": 5,
+          "of": [
+            { "type": "proficiency", "target": "katana", "value": 60 },
+            { "type": "proficiency", "target": "short_swords", "value": 60 },
+            { "type": "proficiency", "target": "longswords", "value": 60 },
+            { "type": "proficiency", "target": "greatswords", "value": 60 },
+            { "type": "proficiency", "target": "daggers", "value": 60 },
+            { "type": "proficiency", "target": "mace", "value": 60 },
+            { "type": "proficiency", "target": "spears", "value": 60 },
+            { "type": "proficiency", "target": "bows", "value": 60 },
+            { "type": "proficiency", "target": "crossbows", "value": 60 },
+            { "type": "proficiency", "target": "throwing_weapons", "value": 60 },
+            { "type": "proficiency", "target": "staff", "value": 60 },
+            { "type": "proficiency", "target": "fist", "value": 60 }
+          ]
+        },
+        {
+          "type": "anyOf",
+          "count": 2,
+          "of": [
+            { "type": "classLevel", "target": "blademaster", "value": 20 },
+            { "type": "classLevel", "target": "assassin", "value": 20 },
+            { "type": "classLevel", "target": "shadowblade", "value": 20 },
+            { "type": "classLevel", "target": "knight", "value": 20 },
+            { "type": "classLevel", "target": "paladin", "value": 20 },
+            { "type": "classLevel", "target": "dark_knight", "value": 20 },
+            { "type": "classLevel", "target": "juggernaut", "value": 20 },
+            { "type": "classLevel", "target": "battlemage", "value": 20 },
+            { "type": "classLevel", "target": "storm_lancer", "value": 20 },
+            { "type": "classLevel", "target": "sword_saint", "value": 20 },
+            { "type": "classLevel", "target": "death_knight", "value": 20 },
+            { "type": "classLevel", "target": "celestial_knight", "value": 20 },
+            { "type": "classLevel", "target": "shadow_monk", "value": 20 },
+            { "type": "classLevel", "target": "demon_hunter", "value": 20 },
+            { "type": "classLevel", "target": "arcane_knight", "value": 20 },
+            { "type": "classLevel", "target": "elemental_knight", "value": 20 }
+          ]
+        }
+      ],
+      "fantasy": "Refuses to specialize, and doesn't need to",
+      "hiddenSkillBonuses": {
+        "parry": 0.08
+      }
+    },
+    {
+      "id": "archmage",
+      "name": "Archmage",
+      "tier": "prestige",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "arcane_magic",
+          "value": 100
+        },
+        {
+          "type": "anyOf",
+          "count": 3,
+          "of": [
+            { "type": "proficiency", "target": "fire_magic", "value": 30 },
+            { "type": "proficiency", "target": "water_magic", "value": 30 },
+            { "type": "proficiency", "target": "ice_magic", "value": 30 },
+            { "type": "proficiency", "target": "earth_magic", "value": 30 },
+            { "type": "proficiency", "target": "nature_magic", "value": 30 },
+            { "type": "proficiency", "target": "lightning_magic", "value": 30 },
+            { "type": "proficiency", "target": "wind_magic", "value": 30 }
+          ]
+        },
+        {
+          "type": "oneOf",
+          "of": [
+            { "type": "classLevel", "target": "arcane_knight", "value": 25 },
+            { "type": "classLevel", "target": "elementalist", "value": 25 }
+          ]
+        }
+      ],
+      "fantasy": "Master of pure magical theory",
+      "hiddenSkillBonuses": {
+        "mana_regen": 0.08
+      }
+    },
+    {
+      "id": "grand_paladin",
+      "name": "Grand Paladin",
+      "tier": "prestige",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "short_swords",
+          "value": 100
+        },
+        {
+          "type": "proficiency",
+          "target": "shields",
+          "value": 100
+        },
+        {
+          "type": "proficiency",
+          "target": "holy_magic",
+          "value": 90
+        },
+        {
+          "type": "proficiency",
+          "target": "healing_magic",
+          "value": 60
+        },
+        {
+          "type": "classLevel",
+          "target": "celestial_knight",
+          "value": 30
+        }
+      ],
+      "fantasy": "Pinnacle holy warrior",
+      "hiddenSkillBonuses": {
+        "parry": 0.08
+      }
+    },
+    {
+      "id": "dark_lord",
+      "name": "Dark Lord",
+      "tier": "prestige",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "greatswords",
+          "value": 100
+        },
+        {
+          "type": "proficiency",
+          "target": "dark_magic",
+          "value": 100
+        },
+        {
+          "type": "classLevel",
+          "target": "death_knight",
+          "value": 30
+        }
+      ],
+      "fantasy": "Apex of destructive darkness",
+      "hiddenSkillBonuses": {
+        "resilience": 0.08
+      }
+    },
+    {
+      "id": "archdruid",
+      "name": "Archdruid",
+      "tier": "prestige",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "druid_staff",
+          "value": 100
+        },
+        {
+          "type": "proficiency",
+          "target": "nature_magic",
+          "value": 100
+        },
+        {
+          "type": "proficiency",
+          "target": "healing_magic",
+          "value": 30
+        },
+        {
+          "type": "classLevel",
+          "target": "natures_avatar",
+          "value": 30
+        }
+      ],
+      "fantasy": "Mythical guardian of nature",
+      "hiddenSkillBonuses": {
+        "mana_regen": 0.08
+      }
+    },
+    {
+      "id": "elemental_sovereign",
+      "name": "Elemental Sovereign",
+      "tier": "prestige",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "fire_magic",
+          "value": 100
+        },
+        {
+          "type": "proficiency",
+          "target": "water_magic",
+          "value": 100
+        },
+        {
+          "type": "proficiency",
+          "target": "lightning_magic",
+          "value": 100
+        },
+        {
+          "type": "proficiency",
+          "target": "wind_magic",
+          "value": 100
+        },
+        {
+          "type": "oneOf",
+          "of": [
+            { "type": "classLevel", "target": "elemental_knight", "value": 25 },
+            { "type": "classLevel", "target": "tempest", "value": 25 }
+          ]
+        }
+      ],
+      "fantasy": "Commands all elements at once",
+      "hiddenSkillBonuses": {
+        "mana_regen": 0.08
+      }
+    },
+    {
+      "id": "deathbringer",
+      "name": "Deathbringer",
+      "tier": "prestige",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "dark_magic",
+          "value": 100
+        },
+        {
+          "type": "proficiency",
+          "target": "greatswords",
+          "value": 100
+        },
+        {
+          "type": "proficiency",
+          "target": "daggers",
+          "value": 60
+        },
+        {
+          "type": "oneOf",
+          "of": [
+            { "type": "classLevel", "target": "necromancer", "value": 30 },
+            { "type": "classLevel", "target": "death_knight", "value": 30 }
+          ]
+        }
+      ],
+      "fantasy": "Harbinger of death itself",
+      "hiddenSkillBonuses": {
+        "resilience": 0.08
+      }
     }
   ]
 }

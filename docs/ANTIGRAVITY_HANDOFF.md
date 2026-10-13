@@ -1663,4 +1663,41 @@ The following three intentional behavioural changes were reviewed and accepted b
   - Full test suite: 127/127 suites pass cleanly (`npm test -- --quiet`).
   - Production build: `npm run build` succeeds cleanly.
 
+### Class Program, Tier 4: Prestige Classes (8 Kits + HUD Prerequisite Formatter Fix) (2026-10-12)
+
+**Resolved and shipped: Implemented `formatRequirement(req)` in `src/utils/formatRequirement.ts` and wired it into `HUD.ts` (~L8646) to format simple and nested (`anyOf`, `oneOf`) class prerequisites without throwing, added the 8 Tier 4 (`prestige`) classes (`swordmaster`, `weaponmaster`, `archmage`, `grand_paladin`, `dark_lord`, `archdruid`, `elemental_sovereign`, `deathbringer`) with `hiddenSkillBonuses` at `0.08` in `data/classes.json` and their 40 skills in `data/skills.json`, added Section 11 to `scripts/skill_efficiency.ts`, and added `test/class_t4.test.ts` covering unit tests for `formatRequirement`, data validation + expected-table guard + `durationMs` rule, unlock tests (`evaluateRequirements`), the 60s smoke test, and 3 cast-based tests.**
+
+- **0. UI Fix (`src/utils/formatRequirement.ts`, `src/ui/HUD.ts`)**:
+  - Replaced `r.target.replace('_', ' ') Lv${r.value}` in `HUD.ts` (which threw on `anyOf`/`oneOf` requirements lacking `target` and only replaced the first underscore) with pure recursive helper `formatRequirement(req)`.
+  - Formats `proficiency` as `"Katana 100"`, `classLevel` using the class definition's display name (falling back to title-cased ID) as `"Sword Saint Lv 30"`, `anyOf` with `count: N` as `"Any N of: (A, B, C)"`, and `anyOf` without `count` or `oneOf` as `"One of: (A, B)"`.
+- **1. Class Entries (`data/classes.json`)**:
+  - `swordmaster` (Swordmaster): `tier: "prestige"`, Katana 100 + Short Swords 60 + Longswords 60 + Sword Saint Lv 30, `hiddenSkillBonuses: { parry: 0.08 }`.
+  - `weaponmaster` (Weaponmaster): `tier: "prestige"`, `anyOf` count 5 of 12 physical weapon proficiencies ≥ 60 (katana, short_swords, longswords, greatswords, daggers, mace, spears, bows, crossbows, throwing_weapons, staff, fist; excluding shields and druid_staff) + `anyOf` count 2 of 16 melee classes ≥ 20, `hiddenSkillBonuses: { parry: 0.08 }`.
+  - `archmage` (Archmage): `tier: "prestige"`, Arcane Magic 100 + `anyOf` count 3 of 7 elemental/nature schools ≥ 30 + `oneOf` (Arcane Knight Lv 25 or Elementalist Lv 25), `hiddenSkillBonuses: { mana_regen: 0.08 }`.
+  - `grand_paladin` (Grand Paladin): `tier: "prestige"`, Short Swords 100 + Shields 100 + Holy Magic 90 + Healing Magic 60 + Celestial Knight Lv 30, `hiddenSkillBonuses: { parry: 0.08 }`.
+  - `dark_lord` (Dark Lord): `tier: "prestige"`, Greatswords 100 + Dark Magic 100 + Death Knight Lv 30, `hiddenSkillBonuses: { resilience: 0.08 }`.
+  - `archdruid` (Archdruid): `tier: "prestige"`, Druid Staff 100 + Nature Magic 100 + Healing Magic 30 + Nature's Avatar Lv 30, `hiddenSkillBonuses: { mana_regen: 0.08 }`.
+  - `elemental_sovereign` (Elemental Sovereign): `tier: "prestige"`, Fire Magic 100 + Water Magic 100 + Lightning Magic 100 + Wind Magic 100 + `oneOf` (Elemental Knight Lv 25 or Tempest Lv 25), `hiddenSkillBonuses: { mana_regen: 0.08 }`.
+  - `deathbringer` (Deathbringer): `tier: "prestige"`, Dark Magic 100 + Greatswords 100 + Daggers 60 + `oneOf` (Necromancer Lv 30 or Death Knight Lv 30), `hiddenSkillBonuses: { resilience: 0.08 }`.
+- **2. 40 Prestige Class Skills (`data/skills.json`)**:
+  - **Swordmaster**: `peerless_cut` (1.7× hits: 3, 16 EN, 3s CD), `sword_aura` (Dmg +0.30 for 8s self, 28 EN, 20s CD), `crescent_storm` (2.4× cleave 1.5 maxTargets: 5, bleed 100%, 32 EN, 8s CD, ≥2), `flash_step` (teleportBehind 4 + 2.8×, ×1.5 vs bleed, 30 EN, 10s CD), `ten_thousand_blades` (5.0× hits: 10, exec ×1.4 below 40%, 50 EN, 18s CD).
+  - **Weaponmaster**: `adaptive_strike` (2.0×, 22 EN, 4s CD), `battle_hardened` (DT 0.65 for 8s self, 26 EN, 18s CD), `arsenal_sweep` (2.4× cleave 1.5 maxTargets: 4, expose 100%, 32 EN, 9s CD, ≥2), `titan_breaker` (3.0×, stun 50%, 30 EN, 10s CD), `masters_onslaught` (4.8× hits: 6, ×1.3 vs expose, 50 EN, 18s CD).
+  - **Archmage**: `arcane_torrent` (1.1× spell, 20 EN, 3s CD), `arcane_aegis` (shield 70 self for 8s, 28 EN, 18s CD), `prismatic_storm` (2.4× spell radius 2, arcane_vulnerability 100%, 34 EN, 10s CD, ≥2), `time_warp` (party Dmg +0.20 for 8s, 32 EN, 22s CD), `arcane_cataclysm` (5.0× spell radius 2.5, resourceDump maxBonusEnergy: 30 perEnergy: 0.04, 56 EN, 22s CD, ≥2).
+  - **Grand Paladin**: `sacred_strike` (1.6× + PB holy_magic + heal 6 lowestAlly, 18 EN, 3s CD), `aegis_of_faith` (party DT 0.75 for 8s, 32 EN, 22s CD), `hammer_of_justice` (2.4×, stun 60%, 30 EN, 10s CD), `divine_intervention` (heal 40 party + cleanse party, 48 EN, 24s CD, ally<0.5), `judgment_day` (4.8× + PB holy_magic, radius 2 center: "caster", blind 100% + heal 30 party, 56 EN, 22s CD, ≥2).
+  - **Dark Lord**: `ruinous_cleave` (2.0×, lifesteal: 0.2, 22 EN, 4s CD), `shroud_of_dread` (taunt radius 4 for 5s + shield 70 self for 8s, 30 EN, 14s CD, enemiesInRadius: 1), `abyssal_rend` (2.4×, curse 100% + Amp 0.25 for 6s, 32 EN, 9s CD), `soul_harvest` (3.0× radius 2 center: "caster", lifesteal: 0.3, 36 EN, 12s CD, ≥2), `apocalypse` (5.0× radius 2.5 center: "caster", ×1.3 vs curse, curse 100%, 56 EN, 22s CD, ≥2).
+  - **Archdruid**: `elder_thorn` (1.2× spell + PB druid_staff, poison 30% 6s, 20 EN, 3s CD), `heartwood_ward` (party DT 0.8 for 8s, 32 EN, 22s CD), `overgrowth` (heal 25 lowestAlly + HoT 6/s for 6s lowestAlly, 32 EN, 8s CD), `world_tree` (heal 45 party + cleanse party, 52 EN, 24s CD, ally<0.5), `primal_cataclysm` (5.0× spell + PB druid_staff, radius 2.5, ×1.3 vs poison, poison 100% 6s + heal 25 party, 58 EN, 22s CD, ≥2).
+  - **Elemental Sovereign**: `sovereign_bolt` (1.1× spell, burn 20%, 20 EN, 3s CD), `elemental_ward` (shield 70 self for 8s, 28 EN, 18s CD), `tempest_chain` (2.4× spell chain maxTargets: 5 radius 3 falloff 0.2, shock 40%, 34 EN, 10s CD, ≥2), `sovereign_maelstrom` (2.8× spell radius 2, slow 100% + Weaken 0.25 for 6s, 36 EN, 12s CD, ≥2), `elemental_apotheosis` (5.0× spell radius 3, burn 100%, shock 60%, 58 EN, 22s CD, ≥2).
+  - **Deathbringer**: `reaping_strike` (2.0×, curse 30%, 22 EN, 4s CD), `deaths_embrace` (DT 0.6 for 8s self, 26 EN, 18s CD), `harvest_of_souls` (2.6× cleave 1.5 maxTargets: 4, lifesteal: 0.2, 32 EN, 9s CD, ≥2), `shadow_execution` (teleportBehind 4 + 3.0×, exec ×1.5 below 40%, 32 EN, 10s CD), `final_reckoning` (5.2×, ×1.4 vs curse, exec ×1.3 below 30%, 56 EN, 22s CD).
+- **3. Efficiency Audit (`scripts/skill_efficiency.ts`)**:
+  - Added Section 11 evaluating all 40 Tier 4 Prestige skills; 0 fillers exceeded the +25% cap (`peerless_cut` +13.8%, `adaptive_strike` -2.6%, `sacred_strike` -4.8%, `ruinous_cleave` -2.6%, `reaping_strike` -2.6%, `arcane_torrent` +10.0% vs Arcane, `elder_thorn` +15.9% vs Nature, `sovereign_bolt` +0.1% vs Fire).
+- **4. Verification (`test/class_t4.test.ts`)**:
+  - Verified `formatRequirement(req)` across all 4 requirement shapes and the real Weaponmaster entry.
+  - Validated all 8 Prestige classes and 40 skills against `expectedT4Table` and the `durationMs` rule.
+  - Verified unlock paths via `evaluateRequirements` for Archmage, Weaponmaster (including Shields 60 exclusion), and Deathbringer.
+  - Verified all 8 classes cast at least 4 of 5 skills in the 60s 3-enemy + poisoned ally smoke test.
+  - Verified cast-based mechanics for `time_warp` (every party member deals ×1.20), `divine_intervention` (cleanses poison from `toxin_blade` + heals party 40), and `final_reckoning` (cursed target below 30% HP takes ×1.4 × ×1.3 = ×1.82 base damage).
+  - Full test suite: 128/128 suites pass cleanly (`npm test -- --quiet`).
+  - Production build: `npm run build` succeeds cleanly.
+
+
 

@@ -318,7 +318,8 @@ const magicSchools = [
   'water_magic',
   'nature_magic',
   'wind_magic',
-  'earth_magic'
+  'earth_magic',
+  'arcane_magic'
 ];
 
 const schoolBaselines: Record<string, SchoolBaseline> = {};
@@ -1525,4 +1526,275 @@ if (flaggedDruidStaff.length > 0) {
     console.log(`  - ⚠️ Flagged: ${f.name} (${f.skillId}): ${f.damagePerEn.toFixed(3)} Dmg/EN (${f.vsSchoolBasic})`);
   }
 }
+
+// ============================================================================
+// SECTION 11: CLASS PROGRAM TIER 4: PRESTIGE CLASSES (8 KITS, 40 SKILLS)
+// ============================================================================
+console.log('\n================================================================================');
+console.log('11. CLASS PROGRAM TIER 4: PRESTIGE CLASSES (8 KITS, 40 SKILLS) EFFICIENCY CHECK');
+console.log('================================================================================\n');
+
+const t4WeaponClasses = [
+  { classId: 'swordmaster', primaryWeapon: 'katana', skills: ['peerless_cut', 'sword_aura', 'crescent_storm', 'flash_step', 'ten_thousand_blades'] },
+  { classId: 'weaponmaster', primaryWeapon: 'longswords', skills: ['adaptive_strike', 'battle_hardened', 'arsenal_sweep', 'titan_breaker', 'masters_onslaught'] },
+  { classId: 'grand_paladin', primaryWeapon: 'short_swords', skills: ['sacred_strike', 'aegis_of_faith', 'hammer_of_justice', 'divine_intervention', 'judgment_day'] },
+  { classId: 'dark_lord', primaryWeapon: 'greatswords', skills: ['ruinous_cleave', 'shroud_of_dread', 'abyssal_rend', 'soul_harvest', 'apocalypse'] },
+  { classId: 'deathbringer', primaryWeapon: 'greatswords', skills: ['reaping_strike', 'deaths_embrace', 'harvest_of_souls', 'shadow_execution', 'final_reckoning'] }
+];
+
+const t4WeaponRows: T2WaveARow[] = [];
+
+for (const kit of t4WeaponClasses) {
+  for (const sid of kit.skills) {
+    const skill = skillsData.skills.find((s: any) => s.id === sid);
+    if (!skill) continue;
+
+    const req = skill.requirements?.map((r: any) => `${r.target} ${r.value}`).join(', ') || 'none';
+    const cdSec = (skill.cooldownMs ?? 0) / 1000;
+    const energyCost = skill.energyCost ?? 0;
+
+    let mult = 0;
+    if (skill.effects) {
+      const dmgEff = skill.effects.find((e: any) => e.type === 'damage');
+      if (dmgEff) mult = dmgEff.multiplier;
+    }
+
+    const directDamage = mult * basePower;
+
+    let dotInfo = 'None';
+    let dotEV = 0;
+
+    if (skill.effects) {
+      const bleedEff = skill.effects.find((e: any) => e.type === 'applyStatus' && e.status === 'bleed');
+      const burnEff = skill.effects.find((e: any) => e.type === 'applyStatus' && e.status === 'burn');
+      const poisonEff = skill.effects.find((e: any) => e.type === 'applyStatus' && e.status === 'poison');
+
+      if (bleedEff) {
+        const chance = bleedEff.chance ?? 1.0;
+        const dur = bleedEff.durationMs ?? 6000;
+        const ticks = dur / bleedTickIntervalMs;
+        const totalBleedDmg = ticks * bleedDamagePerTick;
+        dotEV = chance * totalBleedDmg;
+        dotInfo = `Bleed ${(chance * 100).toFixed(0)}% (${dur / 1000}s = ${totalBleedDmg} dmg)`;
+      } else if (burnEff) {
+        const chance = burnEff.chance ?? 1.0;
+        const dur = burnEff.durationMs ?? 4000;
+        const ticks = dur / burnTickIntervalMs;
+        const totalBurnDmg = ticks * burnDamagePerTick;
+        dotEV = chance * totalBurnDmg;
+        dotInfo = `Burn ${(chance * 100).toFixed(0)}% (${dur / 1000}s = ${totalBurnDmg} dmg)`;
+      } else if (poisonEff) {
+        const chance = poisonEff.chance ?? 1.0;
+        const dur = poisonEff.durationMs ?? 6000;
+        const ticks = dur / poisonTickIntervalMs;
+        const totalPoisonDmg = ticks * poisonDamagePerTick;
+        dotEV = chance * totalPoisonDmg;
+        dotInfo = `Poison ${(chance * 100).toFixed(0)}% (${dur / 1000}s = ${totalPoisonDmg} dmg)`;
+      }
+    }
+
+    const totalDamage = directDamage + dotEV;
+    const damagePerEn = energyCost > 0 ? totalDamage / energyCost : 0;
+
+    let vsBladeStrike = 'N/A';
+    if (totalDamage > 0 && energyCost > 0) {
+      const diffPct = ((damagePerEn - bladeStrikeDmgPerEn) / bladeStrikeDmgPerEn) * 100;
+      vsBladeStrike = `${diffPct >= 0 ? '+' : ''}${diffPct.toFixed(1)}%`;
+    }
+
+    let flag = '-';
+    const isFiller = cdSec <= 4 && skill.requirements?.[0]?.value === 1;
+    if (isFiller && energyCost > 0 && damagePerEn > bladeStrikeDmgPerEn * 1.25) {
+      flag = '⚠️ FILLER > +25%';
+    }
+
+    t4WeaponRows.push({
+      classId: kit.classId,
+      skillId: skill.id,
+      name: skill.name,
+      req,
+      cd: cdSec,
+      energyCost,
+      mult,
+      directDamage,
+      dotInfo,
+      dotEV,
+      totalDamage,
+      damagePerEn,
+      vsBladeStrike,
+      flag
+    });
+  }
+}
+
+console.log('### 11A. Tier 4 Weapon Prestige Classes (5 Kits, 25 Skills)');
+console.log('| Class | Skill | Requirement | CD (s) | EN | Mult | Direct Dmg | DoT Info | DoT EV | Total EV | Dmg / EN | vs. Blade Strike | Flag |');
+console.log('|---|---|---|---|---|---|---|---|---|---|---|---|---|');
+
+for (const r of t4WeaponRows) {
+  const dmgEnStr = r.damagePerEn > 0 ? r.damagePerEn.toFixed(3) : '-';
+  const multStr = r.mult > 0 ? `${r.mult.toFixed(1)}×` : '-';
+  console.log(
+    `| ${r.classId} | **${r.name}** (\`${r.skillId}\`) | ${r.req} | ${r.cd} | ${r.energyCost} | ${multStr} | ${r.directDamage.toFixed(1)} | ${r.dotInfo} | ${r.dotEV.toFixed(1)} | ${r.totalDamage.toFixed(1)} | ${dmgEnStr} | ${r.vsBladeStrike} | ${r.flag} |`
+  );
+}
+
+const t4SpellKits = [
+  {
+    classId: 'archmage',
+    name: 'Archmage',
+    school: 'arcane_magic',
+    skills: ['arcane_torrent', 'arcane_aegis', 'prismatic_storm', 'time_warp', 'arcane_cataclysm']
+  },
+  {
+    classId: 'archdruid',
+    name: 'Archdruid',
+    school: 'nature_magic',
+    skills: ['elder_thorn', 'heartwood_ward', 'overgrowth', 'world_tree', 'primal_cataclysm']
+  },
+  {
+    classId: 'elemental_sovereign',
+    name: 'Elemental Sovereign',
+    school: 'fire_magic',
+    skills: ['sovereign_bolt', 'elemental_ward', 'tempest_chain', 'sovereign_maelstrom', 'elemental_apotheosis']
+  }
+];
+
+const t4SpellRows: T2WaveBRow[] = [];
+
+for (const kit of t4SpellKits) {
+  const baseline = schoolBaselines[kit.school];
+  const schoolBaseDmg = baseline?.baseDamage ?? basePower;
+  const schoolDirectDmgPerEn = baseline && baseline.energyCost > 0 ? baseline.baseDamage / baseline.energyCost : 0;
+  const schoolTotalDmgPerEn = baseline?.dmgPerEn ?? 0;
+
+  for (const skillId of kit.skills) {
+    const skill = skillsData.skills.find((s: any) => s.id === skillId);
+    if (!skill) continue;
+
+    const req = skill.requirements?.map((r: any) => `${r.target} ${r.value}`).join(', ') || 'none';
+    const cdSec = (skill.cooldownMs ?? 0) / 1000;
+    const energyCost = skill.energyCost ?? 0;
+
+    let mult = 0;
+    let dotInfo = 'None';
+    let dotEV = 0;
+    let healOrShieldInfo = '-';
+    let totalHealOrShield = 0;
+
+    if (skill.effects) {
+      const dmgEff = skill.effects.find((e: any) => e.type === 'damage');
+      if (dmgEff) mult = dmgEff.multiplier;
+
+      const burnEff = skill.effects.find((e: any) => e.type === 'applyStatus' && e.status === 'burn');
+      const poisonEff = skill.effects.find((e: any) => e.type === 'applyStatus' && e.status === 'poison');
+
+      if (burnEff) {
+        const chance = burnEff.chance ?? 1.0;
+        const dur = burnEff.durationMs ?? 4000;
+        const totalBurnDmg = (dur / burnTickIntervalMs) * burnDamagePerTick;
+        dotEV = chance * totalBurnDmg;
+        dotInfo = `Burn ${(chance * 100).toFixed(0)}% (${dur / 1000}s = ${totalBurnDmg} dmg)`;
+      } else if (poisonEff) {
+        const chance = poisonEff.chance ?? 1.0;
+        const dur = poisonEff.durationMs ?? 6000;
+        const totalPoisonDmg = (dur / poisonTickIntervalMs) * poisonDamagePerTick;
+        dotEV = chance * totalPoisonDmg;
+        dotInfo = `Poison ${(chance * 100).toFixed(0)}% (${dur / 1000}s = ${totalPoisonDmg} dmg)`;
+      }
+
+      const healEff = skill.effects.find((e: any) => e.type === 'heal');
+      const hotEff = skill.effects.find((e: any) => e.type === 'healOverTime');
+      const shieldEff = skill.effects.find((e: any) => e.type === 'shield');
+
+      const parts: string[] = [];
+      if (healEff) {
+        const amt = healEff.amount ?? 0;
+        if (healEff.target === 'party') {
+          totalHealOrShield += amt * 3;
+          parts.push(`Heal ${amt} party (${amt * 3} total)`);
+        } else {
+          totalHealOrShield += amt;
+          parts.push(`Heal ${amt} ally`);
+        }
+      }
+      if (hotEff) {
+        const amtPerTick = hotEff.amountPerTick ?? 0;
+        const dur = hotEff.durationMs ?? 6000;
+        const tickInt = hotEff.tickIntervalMs ?? 1000;
+        const hotTotal = (dur / tickInt) * amtPerTick;
+        totalHealOrShield += hotTotal;
+        parts.push(`HoT ${amtPerTick}/s (${hotTotal} total)`);
+      }
+      if (shieldEff) {
+        const shAmt = shieldEff.shieldAmount ?? 0;
+        totalHealOrShield += shAmt;
+        parts.push(`Shield ${shAmt}`);
+      }
+      if (parts.length > 0) {
+        healOrShieldInfo = parts.join(' + ');
+      }
+    }
+
+    const directDamage = mult * schoolBaseDmg;
+    const totalDamage = directDamage + dotEV;
+    const damagePerEn = energyCost > 0 ? totalDamage / energyCost : 0;
+    const healPerEn = energyCost > 0 ? totalHealOrShield / energyCost : 0;
+
+    let vsDirectBasic = 'N/A';
+    if (totalDamage > 0 && schoolDirectDmgPerEn > 0) {
+      const diffDirectPct = ((damagePerEn - schoolDirectDmgPerEn) / schoolDirectDmgPerEn) * 100;
+      vsDirectBasic = `${diffDirectPct >= 0 ? '+' : ''}${diffDirectPct.toFixed(1)}%`;
+    }
+
+    let vsSchoolBasic = 'N/A';
+    if (totalDamage > 0 && schoolTotalDmgPerEn > 0) {
+      const diffPct = ((damagePerEn - schoolTotalDmgPerEn) / schoolTotalDmgPerEn) * 100;
+      vsSchoolBasic = `${diffPct >= 0 ? '+' : ''}${diffPct.toFixed(1)}%`;
+    }
+
+    let flag = '-';
+    const isFiller = cdSec <= 3 && totalDamage > 0;
+    if (isFiller && schoolTotalDmgPerEn > 0 && damagePerEn > schoolTotalDmgPerEn * 1.25) {
+      flag = '⚠️ FILLER > +25%';
+    }
+
+    t4SpellRows.push({
+      classId: kit.classId,
+      skillId: skill.id,
+      name: skill.name,
+      req,
+      cd: cdSec,
+      energyCost,
+      mult,
+      directDamage,
+      dotInfo,
+      dotEV,
+      totalDamage,
+      damagePerEn,
+      healOrShieldInfo,
+      healPerEn,
+      vsDirectBasic,
+      vsSchoolBasic,
+      flag
+    });
+  }
+}
+
+console.log('\n### 11B. Tier 4 Spell Prestige Classes (3 Kits, 15 Skills)');
+console.log('| Class | Skill | Requirement | CD (s) | EN | Mult | Direct Dmg | DoT Info | Total Dmg EV | Dmg / EN | Heal / Shield | HP/EN | vs. Direct Basic | vs. School Basic (w/ Proc) | Flag |');
+console.log('|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|');
+
+for (const r of t4SpellRows) {
+  const dmgEnStr = r.damagePerEn > 0 ? r.damagePerEn.toFixed(3) : '-';
+  const healEnStr = r.healPerEn > 0 ? r.healPerEn.toFixed(3) : '-';
+  const multStr = r.mult > 0 ? `${r.mult.toFixed(1)}×` : '-';
+  console.log(
+    `| ${r.classId} | **${r.name}** (\`${r.skillId}\`) | ${r.req} | ${r.cd} | ${r.energyCost} | ${multStr} | ${r.directDamage.toFixed(1)} | ${r.dotInfo} | ${r.totalDamage.toFixed(1)} | ${dmgEnStr} | ${r.healOrShieldInfo} | ${healEnStr} | ${r.vsDirectBasic} | ${r.vsSchoolBasic} | ${r.flag} |`
+  );
+}
+
+const flaggedT4Weapon = t4WeaponRows.filter(r => r.flag.includes('FILLER'));
+const flaggedT4Spell = t4SpellRows.filter(r => r.flag.includes('FILLER'));
+console.log(`\n**Tier 4 Prestige Filler Audit Result:** ${flaggedT4Weapon.length + flaggedT4Spell.length} filler skill(s) exceeded +25% above baseline.`);
 
