@@ -1345,6 +1345,70 @@
           ]
         }
       ]
+    },
+    {
+      "id": "ancient_treant",
+      "name": "Ancient Treant",
+      "tier": "elite",
+      "school": "nature",
+      "hp": 130,
+      "criticalHpMax": 65,
+      "meleeDamage": 13,
+      "aggroRadius": 5,
+      "attackIntervalMs": 1600,
+      "moveSpeed": 60,
+      "attackRangeTiles": 1,
+      "researchPoints": {
+        "min": 8,
+        "max": 12
+      },
+      "bandStats": {
+        "1": { "hp": 130, "criticalHpMax": 65, "meleeDamage": 13, "attackIntervalMs": 1600 },
+        "2": { "hp": 180, "criticalHpMax": 90, "meleeDamage": 16, "attackIntervalMs": 1550 },
+        "3": { "hp": 240, "criticalHpMax": 120, "meleeDamage": 20, "attackIntervalMs": 1500 },
+        "4": { "hp": 300, "criticalHpMax": 150, "meleeDamage": 24, "attackIntervalMs": 1450 }
+      },
+      "description": "A colossal elder tree, roused to guard the grove. Its heartwood is said to make a staff unlike any other.",
+      "harvest": [
+        {
+          "method": "guaranteed",
+          "item": "nature_gemstone",
+          "amount": [2, 3],
+          "tags": [
+            "enchanting"
+          ]
+        },
+        {
+          "method": "guaranteed",
+          "item": "wood",
+          "amount": 3,
+          "tags": [
+            "construction",
+            "bowyer"
+          ]
+        },
+        {
+          "method": "rare_drop",
+          "item": "wild_herbs",
+          "amount": 1,
+          "chance": 0.5,
+          "tags": [
+            "alchemy"
+          ]
+        },
+        {
+          "method": "firstKillGuaranteed",
+          "item": "druid_staff",
+          "amount": 1,
+          "chance": 0.15,
+          "flag": "druidStaffObtained",
+          "floatText": "🌿 DRUID STAFF!",
+          "floatColor": "#16a34a",
+          "tags": [
+            "equipment"
+          ]
+        }
+      ]
     }
   ]
 }

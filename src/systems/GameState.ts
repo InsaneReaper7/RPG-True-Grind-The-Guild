@@ -79,6 +79,48 @@ export class GameState {
   // Milestone: Use Buttons + 4-Slot Consumable Quick Bar
   private quickSlots: (string | null)[] = ['revive_potion', 'bandage', 'energy_potion', 'antidote'];
 
+  // Milestone: Druid Staff & Overgrown Grove Event
+  private worldFlags: Record<string, boolean> = {};
+  private grovePityCounter: number = 0;
+
+  public getWorldFlag(flag: string): boolean {
+    return Boolean(this.worldFlags[flag]);
+  }
+
+  public setWorldFlag(flag: string, value: boolean = true): void {
+    this.worldFlags[flag] = value;
+    if (this.snapshot) {
+      this.snapshot.worldFlags = { ...this.worldFlags };
+    }
+  }
+
+  public hasObtainedDruidStaff(): boolean {
+    return this.getWorldFlag('druidStaffObtained');
+  }
+
+  public setDruidStaffObtained(value: boolean = true): void {
+    this.setWorldFlag('druidStaffObtained', value);
+  }
+
+  public getGrovePityCounter(): number {
+    return this.grovePityCounter;
+  }
+
+  public setGrovePityCounter(count: number): void {
+    this.grovePityCounter = Math.max(0, Math.floor(count));
+    if (this.snapshot) {
+      this.snapshot.grovePityCounter = this.grovePityCounter;
+    }
+  }
+
+  public applyGroveGenerationResult(dungeon: { overgrownGrove?: unknown | null; groveEligible?: boolean }): void {
+    if (dungeon.overgrownGrove) {
+      this.setGrovePityCounter(0);
+    } else if (dungeon.groveEligible) {
+      this.setGrovePityCounter(this.grovePityCounter + 1);
+    }
+  }
+
   public getQuickSlots(): (string | null)[] {
     return [...this.quickSlots];
   }
@@ -253,7 +295,9 @@ export class GameState {
       discoveredStatusEffects: Array.from(this.discoveredStatusEffects),
       discoveredGatheringNodes: Array.from(this.discoveredGatheringNodes),
       defeatedAreaBosses: Array.from(this.defeatedAreaBosses),
-      quickSlots: ['revive_potion', 'bandage', 'energy_potion', 'antidote']
+      quickSlots: ['revive_potion', 'bandage', 'energy_potion', 'antidote'],
+      worldFlags: { ...this.worldFlags },
+      grovePityCounter: this.grovePityCounter
     };
 
     const startingConsumableKit: Record<string, number> = {
@@ -1607,7 +1651,9 @@ export class GameState {
       discoveredStatusEffects: Array.from(this.discoveredStatusEffects),
       discoveredGatheringNodes: Array.from(this.discoveredGatheringNodes),
       defeatedAreaBosses: Array.from(this.defeatedAreaBosses),
-      gearInstances: Object.fromEntries(this.gearInstances)
+      gearInstances: Object.fromEntries(this.gearInstances),
+      worldFlags: { ...this.worldFlags },
+      grovePityCounter: this.grovePityCounter
     };
 
     console.log(
@@ -2124,6 +2170,8 @@ export class GameState {
       this.snapshot.hasReceivedTutorialSupplyCrate = this.hasReceivedTutorialSupplyCrate;
       this.snapshot.defeatedAreaBosses = Array.from(this.defeatedAreaBosses);
       this.snapshot.quickSlots = [...this.quickSlots];
+      this.snapshot.worldFlags = { ...this.worldFlags };
+      this.snapshot.grovePityCounter = this.grovePityCounter;
 
       const leader = this.partySnapshots[0];
       const metadata: SaveMetadata = {
@@ -2191,6 +2239,23 @@ export class GameState {
   }
 
   public restoreFromLoadedSnapshot(snap: PlayerSnapshot): void {
+    if (!snap.proficiencies) {
+      snap.proficiencies = {};
+    }
+    if (!snap.proficiencies.druid_staff) {
+      snap.proficiencies.druid_staff = { level: 0, currentExp: 0 };
+    }
+    if (snap.party && Array.isArray(snap.party)) {
+      for (const member of snap.party) {
+        if (!member.proficiencies) {
+          member.proficiencies = {};
+        }
+        if (!member.proficiencies.druid_staff) {
+          member.proficiencies.druid_staff = { level: 0, currentExp: 0 };
+        }
+      }
+    }
+
     this.snapshot = snap;
     this.partySnapshots = snap.party ? [...snap.party] : [];
 
@@ -2308,6 +2373,11 @@ export class GameState {
       this.quickSlots = [null, null, null, null];
     }
 
+    this.worldFlags = snap.worldFlags ? { ...snap.worldFlags } : {};
+    this.grovePityCounter = typeof snap.grovePityCounter === 'number' ? Math.max(0, Math.floor(snap.grovePityCounter)) : 0;
+    snap.worldFlags = { ...this.worldFlags };
+    snap.grovePityCounter = this.grovePityCounter;
+
     this.syncFoodInventory();
     this.isInitialized = true;
   }
@@ -2355,6 +2425,8 @@ export class GameState {
     this.dayProgressMs = 0;
     this.foodItems = [];
     this.quickSlots = ['revive_potion', 'bandage', 'energy_potion', 'antidote'];
+    this.worldFlags = {};
+    this.grovePityCounter = 0;
     this.dungeonFloorCount = 0;
     this.lifetimeDungeonFloorCount = 0;
     this.lastSaveError = null;

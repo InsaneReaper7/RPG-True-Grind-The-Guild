@@ -69,8 +69,10 @@ export interface WeaponDef {
   stunChance?: number;
   weight?: number;
   proficiencyId?: string;
+  proficiencyDescription?: string;
   conduitWeaponId?: string;
   spellWeaponId?: string;
+  castCrossTraining?: { proficiencyId: string; amount: number };
   levelBonus?: WeaponLevelBonus;
   instanceId?: string;
   crafterName?: string;
@@ -151,6 +153,10 @@ export interface HarvestItem {
   weight?: number;
   amount?: [number, number] | number;
   count?: number | [number, number];
+  chance?: number;
+  flag?: string;
+  floatText?: string;
+  floatColor?: string;
   tags: string[];
   note?: string;
 }
@@ -169,10 +175,18 @@ export interface CorpseHarvestDef {
   butchering?: CorpseHarvestEntry;
 }
 
+export interface EnemyBandStatDef {
+  hp: number;
+  criticalHpMax: number;
+  meleeDamage: number;
+  attackIntervalMs: number;
+}
+
 export interface EnemyDef {
   id: string;
   name: string;
   tier: string;
+  school?: string;
   hp: number;
   criticalHpMax?: number;
   meleeDamage: number;
@@ -181,6 +195,7 @@ export interface EnemyDef {
   moveSpeed: number;
   attackRangeTiles?: number;
   dropChance?: number;
+  bandStats?: Record<string, EnemyBandStatDef>;
   harvest: HarvestItem[];
   corpseHarvest?: CorpseHarvestDef;
   poisonChance?: number;
@@ -375,6 +390,8 @@ export interface PlayerSnapshot {
   defeatedAreaBosses?: string[];
   gearInstances?: Record<string, GearItemInstance>;
   quickSlots?: (string | null)[];
+  worldFlags?: Record<string, boolean>;
+  grovePityCounter?: number;
 }
 
 export interface SaveMetadata {
@@ -1188,6 +1205,8 @@ export interface GeneratedDungeon {
   waterTiles?: GridPos[];
   seed?: number;
   band?: number;
+  overgrownGrove?: { roomIndex: number; treantPos: GridPos } | null;
+  groveEligible?: boolean;
 }
 
 export interface DynamicObstaclesConfig {

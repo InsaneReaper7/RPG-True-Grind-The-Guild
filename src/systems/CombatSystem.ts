@@ -1074,7 +1074,7 @@ export class CombatSystem {
                   }
 
                   // Milestone: Magical Crafting - Elemental Enemy Status Effect Proc
-                  if (enemy.enemyData.tier === 'elemental' && actualDamage > 0 && !targetDowned) {
+                  if ((enemy.enemyData.tier === 'elemental' || enemy.enemyData.school) && actualDamage > 0 && !targetDowned) {
                     this.applyElementalAttackStatus(enemy, target);
                   }
 
@@ -2281,6 +2281,19 @@ export class CombatSystem {
         this.createFloatingText(member.x, member.y - 20, `${effectiveWeapon.name} Level ${newLevel}!`, '#22c55e');
       }
 
+      const crossTrain = member.equippedWeapon?.castCrossTraining;
+      if (crossTrain && effectiveWeapon.category === 'magic' && member.equippedWeapon) {
+        const conduitSpell = dataLoader.getSpellForConduit(member.equippedWeapon);
+        const conduitSpellId = conduitSpell ? (conduitSpell.proficiencyId ?? conduitSpell.id) : null;
+        if (conduitSpellId && weaponId === conduitSpellId) {
+          const ctResult = member.progression.addProficiencyExp(crossTrain.proficiencyId, crossTrain.amount);
+          if (ctResult && ctResult.leveledUp) {
+            const newCtLevel = member.progression.getProficiencyLevel(crossTrain.proficiencyId);
+            this.createFloatingText(member.x, member.y - 35, `${crossTrain.proficiencyId.replace('_', ' ').toUpperCase()} Level ${newCtLevel}!`, '#22c55e');
+          }
+        }
+      }
+
       if (passiveImbuement?.secondaryExp) {
         const secProf = passiveImbuement.secondaryExp.proficiency;
         const secExp = passiveImbuement.secondaryExp.exp ?? (passiveImbuement.secondaryExp.share !== undefined ? Math.round(2 * passiveImbuement.secondaryExp.share) : 1);
@@ -2781,9 +2794,27 @@ export class CombatSystem {
 
           for (const h of validHarvest) {
             if (h.item === 'arcane_gemstone' || h.item === 'ice_gemstone') continue; // handled above
+            if (h.method === 'firstKillGuaranteed') {
+              const flagName = h.flag || `${h.item}Obtained`;
+              const alreadyObtained = gameState.getWorldFlag(flagName);
+              const shouldDrop = !alreadyObtained || Math.random() < (h.chance ?? 0.15);
+              if (shouldDrop) {
+                const harvestCount = Array.isArray(h.amount)
+                  ? Math.floor(Math.random() * (h.amount[1] - h.amount[0] + 1)) + h.amount[0]
+                  : typeof h.amount === 'number'
+                  ? h.amount
+                  : 1;
+                gameState.setWorldFlag(flagName, true);
+                gameState.addItem(h.item, harvestCount);
+                const floatText = h.floatText || `+${harvestCount} ${h.item.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())}`;
+                const floatColor = h.floatColor || '#16a34a';
+                this.createFloatingText(target.x, target.y - 50, floatText, floatColor);
+              }
+              continue;
+            }
             const isRare = h.method === 'rare_drop';
             const roll = Math.random();
-            const rareThreshold = isBoss ? 0.60 : 0.35;
+            const rareThreshold = h.chance ?? (isBoss ? 0.60 : 0.35);
             if (!isRare || roll < rareThreshold) {
               const harvestCount = Array.isArray(h.amount)
                 ? Math.floor(Math.random() * (h.amount[1] - h.amount[0] + 1)) + h.amount[0]
@@ -3564,6 +3595,7 @@ export class CombatSystem {
 
     if (spellDef) {
       if (spellDef.id === 'healing_magic' || (spellDef.baseDamage === 0 && !spellDef.attackRangeTiles)) {
+        if (equipped.proficiencyId && equipped.category !== 'magic') return equipped;
         const staffDef = dataLoader.getWeapon('staff') || member.equippedWeapon;
         return staffDef;
       }
@@ -3574,11 +3606,13 @@ export class CombatSystem {
       if (canCast) {
         return spellDef;
       }
+      if (equipped.proficiencyId && equipped.category !== 'magic') return equipped;
       const staffDef = dataLoader.getWeapon('staff') || member.equippedWeapon;
       return staffDef;
     }
 
     if (equipped.id === 'staff' || equipped.category === 'staff' || equipped.id.endsWith('_staff')) {
+      if (equipped.proficiencyId && equipped.category !== 'magic') return equipped;
       const staffDef = dataLoader.getWeapon('staff') || member.equippedWeapon;
       return staffDef;
     }

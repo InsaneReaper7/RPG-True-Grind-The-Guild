@@ -448,8 +448,7 @@ export class DataLoader {
         'wind_magic',
         'healing_magic',
         'holy_magic',
-        'dark_magic',
-        'druid_staff'
+        'dark_magic'
       ];
     }
     return this.weaponsData.weapons
@@ -516,7 +515,9 @@ export class DataLoader {
     const weapon = this.getWeapon(id);
     if (weapon) {
       let description = `Proficiency with ${weapon.name.toLowerCase()} in melee and combat.`;
-      if (weapon.category === 'offhand') {
+      if (weapon.proficiencyDescription) {
+        description = weapon.proficiencyDescription;
+      } else if (weapon.category === 'offhand') {
         description = 'Proficiency with shields to block and deflect incoming attacks.';
       } else if (weapon.id === 'healing_magic') {
         description = 'Proficiency with healing magic to restore health to injured allies.';

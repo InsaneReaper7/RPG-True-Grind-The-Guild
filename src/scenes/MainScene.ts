@@ -291,9 +291,14 @@ export class MainScene extends Phaser.Scene {
         floorNumber,
         currentFloorSeed: seed,
         seed,
-        isTutorialComplete: TutorialSystem.getInstance().getIsCompleted()
+        isTutorialComplete: TutorialSystem.getInstance().getIsCompleted(),
+        grove: {
+          staffObtained: GameState.getInstance().hasObtainedDruidStaff(),
+          misses: GameState.getInstance().getGrovePityCounter()
+        }
       });
       this.dungeon.seed = seed;
+      GameState.getInstance().applyGroveGenerationResult(this.dungeon);
     } else {
       if (this.assignedSeed !== null && this.assignedSeed !== undefined) {
         this.dungeon.seed = this.assignedSeed;
@@ -363,6 +368,10 @@ export class MainScene extends Phaser.Scene {
     const prevRegion = prevFloor >= 1 ? dataLoader.getRegionForFloor(prevFloor) : null;
     if (!prevRegion || prevRegion.id !== activeRegion.id) {
       this.hud.showToast(`🌌 Entering ${activeRegion.name} (Floor ${floorNumber}) — ${activeRegion.tagline || 'New Biome'}`, 'info', 4000);
+    }
+
+    if (this.dungeon.overgrownGrove) {
+      this.hud.showToast('🌳 An ancient presence stirs… an Overgrown Grove lies on this floor.', 'info', 4500);
     }
 
     // Milestone: Tutorial & Onboarding
@@ -514,6 +523,22 @@ export class MainScene extends Phaser.Scene {
       this.triggerCrystalInteraction();
     });
 
+    if (this.dungeon.overgrownGrove) {
+      const treantPos = this.dungeon.overgrownGrove.treantPos;
+      this.add.text(
+        treantPos.x * this.tileSize + this.tileSize / 2,
+        treantPos.y * this.tileSize - 10,
+        '🌳 Overgrown Grove',
+        {
+          fontSize: '11px',
+          color: '#4ade80',
+          fontStyle: 'bold',
+          backgroundColor: 'rgba(0,0,0,0.8)',
+          padding: { x: 4, y: 2 }
+        }
+      ).setOrigin(0.5).setDepth(5000);
+    }
+
     // Expose debug helpers for verification
     (window as any).debugUseEscapeStone = () => this.useEscapeStone();
     (window as any).debugContinueDescent = () => this.executeContinueDescent();
@@ -542,6 +567,18 @@ export class MainScene extends Phaser.Scene {
             attackIntervalMs: stats.attackSpeedMs,
             moveSpeed: stats.moveSpeed
           };
+        } else if (enemyDef.bandStats) {
+          const band = String(this.dungeon.band || 1);
+          const stats = enemyDef.bandStats[band] || enemyDef.bandStats['1'];
+          if (stats) {
+            finalDef = {
+              ...enemyDef,
+              hp: stats.hp,
+              criticalHpMax: stats.criticalHpMax,
+              meleeDamage: stats.meleeDamage,
+              attackIntervalMs: stats.attackIntervalMs
+            };
+          }
         }
         const texKey = `${finalDef.id}-avatar`;
         const tex = this.textures.exists(texKey) ? texKey : 'wolf-avatar';

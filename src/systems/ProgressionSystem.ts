@@ -100,6 +100,7 @@ export class ProgressionSystem {
     this.proficiencies.set('shields', { level: 0, currentExp: 0 });
     this.proficiencies.set('mace', { level: 0, currentExp: 0 });
     this.proficiencies.set('staff', { level: 0, currentExp: 0 });
+    this.proficiencies.set('druid_staff', { level: 0, currentExp: 0 });
     this.proficiencies.set('healing_magic', { level: 0, currentExp: 0 });
     this.proficiencies.set('fire_magic', { level: 0, currentExp: 0 });
     this.proficiencies.set('lightning_magic', { level: 0, currentExp: 0 });

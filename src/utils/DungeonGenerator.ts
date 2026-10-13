@@ -33,7 +33,16 @@ export class DungeonGenerator {
   public static generate(
     config: DungeonConfig,
     rng: () => number = Math.random,
-    options?: { isDiggingUnlocked?: boolean; floorNumber?: number; currentFloorSeed?: number; seed?: number; forceBoss?: boolean; forceBossEnemyId?: string; isTutorialComplete?: boolean }
+    options?: {
+      isDiggingUnlocked?: boolean;
+      floorNumber?: number;
+      currentFloorSeed?: number;
+      seed?: number;
+      forceBoss?: boolean;
+      forceBossEnemyId?: string;
+      isTutorialComplete?: boolean;
+      grove?: { staffObtained: boolean; misses: number };
+    }
   ): GeneratedDungeon {
     const width = config.mapWidth;
     const height = config.mapHeight;
@@ -1206,6 +1215,132 @@ export class DungeonGenerator {
       }
     }
 
+    // 8. Overgrown Grove Event (Pure: reads options.grove, returns overgrownGrove & groveEligible)
+    let overgrownGrove: { roomIndex: number; treantPos: GridPos } | null = null;
+    const floorNum = options?.floorNumber ?? 1;
+    const groveEligible = Boolean(isTutorialComplete && floorNum >= 3);
+    const groveOpts = options?.grove ?? { staffObtained: true, misses: 0 };
+
+    if (groveEligible) {
+      const groveSeed = options?.seed ?? options?.currentFloorSeed;
+      const groveRng = groveSeed !== undefined
+        ? DungeonGenerator.createRng(groveSeed * 37 + 2029)
+        : rng;
+      const groveRoll = groveRng();
+      const shouldSpawnGrove = groveRoll < 0.06 || (!groveOpts.staffObtained && groveOpts.misses >= 15);
+
+      if (shouldSpawnGrove) {
+        const eligibleRooms = rooms.filter(
+          (r) => r.id !== 0 && r.type !== 'entrance' && r.id !== crystalRoomIdx && r.type !== 'boss'
+        );
+        const gatheringCandidates = eligibleRooms.filter((r) => r.type === 'gathering');
+        const lightCombatCandidates = eligibleRooms.filter((r) => r.type === 'light_combat');
+        const candidatePool = gatheringCandidates.length > 0 ? gatheringCandidates : lightCombatCandidates;
+
+        if (candidatePool.length > 0) {
+          const chosenRoom = candidatePool[Math.floor(groveRng() * candidatePool.length)];
+
+          // Remove all other enemy spawns in the converted room
+          for (let i = enemySpawns.length - 1; i >= 0; i--) {
+            if (enemySpawns[i].roomIndex === chosenRoom.id) {
+              enemySpawns.splice(i, 1);
+            }
+          }
+
+          const occupiedTiles = new Set<string>();
+          occupiedTiles.add(`${portalPos.x},${portalPos.y}`);
+          occupiedTiles.add(`${crystalPos.x},${crystalPos.y}`);
+          for (const e of enemySpawns) {
+            occupiedTiles.add(`${e.x},${e.y}`);
+          }
+          for (const wt of waterTiles) {
+            occupiedTiles.add(`${wt.x},${wt.y}`);
+          }
+
+          // Relocate any bush sitting on the room centre so the Ancient Treant stands at room centre
+          const treantPos: GridPos = { x: chosenRoom.centerX, y: chosenRoom.centerY };
+          occupiedTiles.add(`${treantPos.x},${treantPos.y}`);
+
+          const centerBush = bushSpawns.find(
+            (b) => b.roomIndex === chosenRoom.id && b.x === treantPos.x && b.y === treantPos.y
+          );
+          for (const b of bushSpawns) {
+            if (b !== centerBush) {
+              occupiedTiles.add(`${b.x},${b.y}`);
+            }
+          }
+
+          // Collect open interior tiles in the chosen room
+          const candidateTiles: GridPos[] = [];
+          const xStart = chosenRoom.width > 3 ? chosenRoom.x + 1 : chosenRoom.x;
+          const xEnd = chosenRoom.width > 3 ? chosenRoom.x + chosenRoom.width - 2 : chosenRoom.x + chosenRoom.width - 1;
+          const yStart = chosenRoom.height > 3 ? chosenRoom.y + 1 : chosenRoom.y;
+          const yEnd = chosenRoom.height > 3 ? chosenRoom.y + chosenRoom.height - 2 : chosenRoom.y + chosenRoom.height - 1;
+          for (let y = yStart; y <= yEnd; y++) {
+            for (let x = xStart; x <= xEnd; x++) {
+              if (gridMatrix[y]?.[x] === 0 && !occupiedTiles.has(`${x},${y}`)) {
+                candidateTiles.push({ x, y });
+              }
+            }
+          }
+
+          // Deterministically shuffle candidateTiles with groveRng
+          for (let i = candidateTiles.length - 1; i > 0; i--) {
+            const j = Math.floor(groveRng() * (i + 1));
+            const tmp = candidateTiles[i];
+            candidateTiles[i] = candidateTiles[j];
+            candidateTiles[j] = tmp;
+          }
+
+          let tileCursor = 0;
+          if (centerBush && tileCursor < candidateTiles.length) {
+            centerBush.x = candidateTiles[tileCursor].x;
+            centerBush.y = candidateTiles[tileCursor].y;
+            tileCursor++;
+          }
+
+          // 1 Ancient Treant in the room centre
+          enemySpawns.push({
+            enemyId: 'ancient_treant',
+            x: treantPos.x,
+            y: treantPos.y,
+            roomIndex: chosenRoom.id
+          });
+
+          // 2 Nature Elementals with normal band stats
+          for (let n = 0; n < 2; n++) {
+            if (tileCursor < candidateTiles.length) {
+              enemySpawns.push({
+                enemyId: 'nature_elemental',
+                x: candidateTiles[tileCursor].x,
+                y: candidateTiles[tileCursor].y,
+                roomIndex: chosenRoom.id
+              });
+              tileCursor++;
+            }
+          }
+
+          // +3 foraging bushes on top of the room's normal count
+          for (let b = 0; b < 3; b++) {
+            if (tileCursor < candidateTiles.length) {
+              bushSpawns.push({
+                x: candidateTiles[tileCursor].x,
+                y: candidateTiles[tileCursor].y,
+                roomIndex: chosenRoom.id,
+                nodeTypeId: 'foraging_bush'
+              });
+              tileCursor++;
+            }
+          }
+
+          overgrownGrove = {
+            roomIndex: chosenRoom.id,
+            treantPos
+          };
+        }
+      }
+    }
+
     return {
       width,
       height,
@@ -1217,7 +1352,9 @@ export class DungeonGenerator {
       bushSpawns,
       waterTiles,
       seed: options?.seed,
-      band
+      band,
+      overgrownGrove,
+      groveEligible
     };
   }
 }

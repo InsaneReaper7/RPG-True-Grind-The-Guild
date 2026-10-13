@@ -142,6 +142,14 @@ export class SkillSystem {
         }
       }
       caster.progression.addProficiencyExp(profToAward, expAmount);
+      const crossTrain = caster.equippedWeapon?.castCrossTraining;
+      if (crossTrain && caster.equippedWeapon) {
+        const conduitSpell = dataLoader.getSpellForConduit(caster.equippedWeapon);
+        const conduitSpellId = conduitSpell ? (conduitSpell.proficiencyId ?? conduitSpell.id) : null;
+        if (conduitSpellId && profToAward === conduitSpellId) {
+          caster.progression.addProficiencyExp(crossTrain.proficiencyId, crossTrain.amount);
+        }
+      }
     }
 
     return true;

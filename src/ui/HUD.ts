@@ -6581,6 +6581,7 @@ export class HUD {
       case 'fishing': return '#38bdf8';
       case 'mace': return '#cbd5e1';
       case 'staff': return '#fbbf24';
+      case 'druid_staff': return '#16a34a';
       case 'healing_magic': return '#4ade80';
       case 'fire_magic': return '#f97316';
       case 'lightning_magic': return '#38bdf8';
