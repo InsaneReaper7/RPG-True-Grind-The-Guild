@@ -1699,5 +1699,42 @@ The following three intentional behavioural changes were reviewed and accepted b
   - Full test suite: 128/128 suites pass cleanly (`npm test -- --quiet`).
   - Production build: `npm run build` succeeds cleanly.
 
+### Perception, Hidden Caches, and Explorer Crafting Class (2026-10-13)
+
+**Resolved and shipped: Implemented the Perception non-combat proficiency, procedurally generated Hidden Caches, live cache detection loop, data-driven single-use `hidden_cache` gathering node, and the Explorer crafting class.**
+
+- **1. Perception Proficiency (`ProgressionSystem`, `DataLoader`, `HUD`, `GameState`, `player.json`)**:
+  - Registered `perception` everywhere `digging` is registered: `ProgressionSystem.initProficiencies`, `data/player.json`, `DataLoader.getTrainableStatDef` ("Notice what others walk past: hidden caches, and later traps and secrets."), `HUD.getStatColor` (`#06b6d4`), and knowledge base gathering discipline list.
+  - Backfilled legacy snapshots in `GameState.restoreFromLoadedSnapshot` with `{ level: 0, currentExp: 0 }` for player and party members.
+  - Room exploration training: +2 Perception EXP per living party member on first entry per room per floor (with entrance room awarded on floor arrival; resetting on floor regeneration).
+  - Cache reveal training: +10 Perception EXP to the revealing party member.
+- **2. Hidden Caches Procedural Dungeon Generation (`DungeonGenerator`)**:
+  - Gated to floor 2+ (`floorNumber >= 2`), post-tutorial (`isTutorialComplete`), and digging unlocked (`isDiggingUnlocked`).
+  - Placed 1 cache + 50% chance of a 2nd cache (average 1.5 per eligible floor).
+  - Excluded entrance, crystal room, boss rooms, and Overgrown Grove room. Placed at most one per room on open interior walkable tiles not occupied by spawns, water, portal, or crystal.
+  - Dedicated isolated seeded PRNG stream (`seed * 43 + 3079`) guaranteeing 100% determinism without altering layouts, elementals, or Grove rolls.
+- **3. Detection Loop & Reveal Mechanics (`MainScene`)**:
+  - Undiscovered caches are completely invisible (no sprite, no label, no collision).
+  - 1000 ms periodic detection loop checking living party members within Chebyshev radius 3 (or 4 with Explorer Lv 10+): `chance = min(0.90, 0.05 + 0.01 * Perception + explorerBonus)`.
+  - Stepping onto the cache tile reveals it unconditionally.
+  - Injectable `cacheDetectionRng` allowing deterministic verification in tests.
+  - On reveal: displays toast `"👁️ {name} spotted a Hidden Cache!"`, awards +10 Perception EXP (+15 Explorer class EXP if unlocked), and spawns `hidden_cache` node.
+- **4. Data-Driven `hidden_cache` Node & Explorer Crafting Class (`gatheringNodes.json`, `classes.json`, `CraftingSystem`)**:
+  - Added `hidden_cache` to `data/gatheringNodes.json` with `skillId: "digging"`, `channelDurationMs: 3000`, `expGranted: 25`, `respawnTimeMs: 0`, `label: "Hidden Cache"`, `depletedLabel: "Emptied"`, `color: "#eab308"`.
+  - Added Change 1 data-driven node extensions: `bonusLootPerk: "perception"` (rolls extra loot on success via `cacheBonusRollChance`) and `bonusClassExp: [{ classId: "explorer", amount: 25 }]` (grants class EXP if class unlocked).
+  - Single-use: digging sets `isHarvested: true` and depleted label `"Emptied"`; with `respawnTimeMs: 0`, it cannot be dug twice and never respawns.
+  - Added `explorer` to `data/classes.json` (`tier: "expert"`, `category: "crafting"`), unlocking at Digging 60 + Perception 30 + Excavator Lv 20.
+  - Integrated into `CraftingSystem.getMatchingClassId` and `getCrafterPerks` with Keen Eye (+level% detection chance), Wide Search (4-tile radius from Lv 10), and Treasure Sense (+level% extra loot roll).
+- **5. Verification (`test/milestone_perception_explorer.test.ts`)**:
+  - Verified seeds 1–50 against pre-cache fingerprint fixture `test/fixtures/dungeon_determinism_pre_cache_seeds_1_50.json` (100% match).
+  - Verified `rooms[i].id === i` invariant across all generated floors.
+  - Validated 200 eligible floor generations averaging 1.510 caches per floor, with 0 on ineligible floors and no invalid room/tile placements.
+  - Validated detection rolls at fixed seeds (Perception 0 at 0.04/0.06, Perception 50 at 0.54/0.56, Perception 50 + Explorer 15 at 0.69/0.71, 4-tile distance gate at Lv 10, unconditional stepping reveal).
+  - Validated room entry training (+2 once per room, resetting on floor regeneration) and reveal training (+10 Perception, +15 Explorer).
+  - Validated `hidden_cache` harvesting, Digging/Excavator/Explorer EXP grants, Treasure Sense extra loot draw, single-use depletion, and old-save backfill.
+  - Full test suite: 129/129 suites pass cleanly (`npm test -- --quiet`).
+  - Production build: `npm run build` succeeds cleanly.
+
+
 
 

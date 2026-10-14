@@ -110,6 +110,10 @@ export class MainScene extends Phaser.Scene {
   public assignedSeed: number | null = null;
   public currentFloorSeed: number | null = null;
   public bossesDefeatedThisRun: Set<string> = new Set();
+  public visitedRoomIndices: Set<number> = new Set();
+  public undiscoveredCaches: { x: number; y: number; roomIndex: number }[] = [];
+  public cacheDetectionRng: () => number = Math.random;
+  private cacheDetectionAccumulatorMs: number = 0;
 
   private wasdKeys!: {
     W: Phaser.Input.Keyboard.Key;
@@ -206,6 +210,32 @@ export class MainScene extends Phaser.Scene {
     this.gatheringQueue = [];
     this.gatheringQueueWorkers.clear();
     this.gatheringWorkerNodeAssignments.clear();
+
+    // Perception & Hidden Caches per-floor state reset
+    this.visitedRoomIndices.clear();
+    this.undiscoveredCaches = [];
+    this.cacheDetectionAccumulatorMs = 0;
+  }
+
+  public resetFloorState(): void {
+    this.visitedRoomIndices.clear();
+    this.undiscoveredCaches = this.dungeon?.hiddenCaches ? [...this.dungeon.hiddenCaches] : [];
+    this.cacheDetectionAccumulatorMs = 0;
+    this.checkRoomExploration(true);
+  }
+
+  public setDungeon(dungeon: GeneratedDungeon): void {
+    this.dungeon = dungeon;
+    this.mapWidth = dungeon.width;
+    this.mapHeight = dungeon.height;
+    this.gridMatrix = dungeon.gridMatrix;
+    this.portalPos = dungeon.portalPos;
+    this.crystalPos = dungeon.crystalPos;
+    this.resetFloorState();
+  }
+
+  public setCacheDetectionRng(rng: () => number): void {
+    this.cacheDetectionRng = rng;
   }
 
   public preload(): void {
@@ -291,6 +321,7 @@ export class MainScene extends Phaser.Scene {
         floorNumber,
         currentFloorSeed: seed,
         seed,
+        isDiggingUnlocked: GameState.getInstance().isDiggingUnlocked(),
         isTutorialComplete: TutorialSystem.getInstance().getIsCompleted(),
         grove: {
           staffObtained: GameState.getInstance().hasObtainedDruidStaff(),
@@ -451,6 +482,9 @@ export class MainScene extends Phaser.Scene {
     // Milestone 25: Selection reticle graphics and default full-party selection
     this.selectionReticleGraphics = this.add.graphics().setDepth(15);
     this.selectAllMembers();
+
+    // Reset floor state & check initial room entry (entrance room on arrival)
+    this.resetFloorState();
 
     // Spawn Dungeon Entrance Portal (One-Way Arrival Gate from Outpost, Milestone 40)
     this.portalSprite = this.add.sprite(
@@ -2156,6 +2190,19 @@ export class MainScene extends Phaser.Scene {
       }
     }
 
+    // Room exploration check (first entry per room per floor awards +2 Perception EXP to living members inside)
+    this.checkRoomExploration();
+
+    // Stepping on hidden cache check (immediate reveal on step)
+    this.checkCacheStepping();
+
+    // Periodic 1000ms hidden cache detection loop (Chebyshev radius 3-4 tiles)
+    this.cacheDetectionAccumulatorMs += delta;
+    if (this.cacheDetectionAccumulatorMs >= 1000) {
+      this.cacheDetectionAccumulatorMs = 0;
+      this.checkCacheDetection();
+    }
+
     // Milestone 25: Render in-world selection circles under selected party members
     if (this.selectionReticleGraphics) {
       this.selectionReticleGraphics.clear();
@@ -2357,6 +2404,82 @@ export class MainScene extends Phaser.Scene {
 
     // Update HUD Overlay
     this.hud.update(this.player, this.progressionSystem, time, this.party);
+  }
+
+  // --- PERCEPTION & HIDDEN CACHES DETECTION (Milestone: Perception + Explorer) ---
+
+  public checkRoomExploration(_onArrival: boolean = false): void {
+    if (!this.dungeon || !this.dungeon.rooms || this.dungeon.rooms.length === 0) return;
+    for (let rIdx = 0; rIdx < this.dungeon.rooms.length; rIdx++) {
+      if (this.visitedRoomIndices.has(rIdx)) continue;
+      const room = this.dungeon.rooms[rIdx];
+      const livingInRoom = this.party.filter((m) => {
+        if (m.state === 'dead' || m.state === 'downed') return false;
+        return m.gridPos.x >= room.x &&
+               m.gridPos.x < room.x + room.width &&
+               m.gridPos.y >= room.y &&
+               m.gridPos.y < room.y + room.height;
+      });
+
+      if (livingInRoom.length > 0) {
+        this.visitedRoomIndices.add(rIdx);
+        for (const member of livingInRoom) {
+          member.progression.addProficiencyExp('perception', 2);
+        }
+      }
+    }
+  }
+
+  public checkCacheStepping(): void {
+    if (this.undiscoveredCaches.length === 0) return;
+    for (const member of this.party) {
+      if (member.state === 'dead' || member.state === 'downed') continue;
+      for (let i = this.undiscoveredCaches.length - 1; i >= 0; i--) {
+        const cache = this.undiscoveredCaches[i];
+        if (member.gridPos.x === cache.x && member.gridPos.y === cache.y) {
+          this.revealHiddenCache(cache, member);
+        }
+      }
+    }
+  }
+
+  public checkCacheDetection(): void {
+    if (this.undiscoveredCaches.length === 0) return;
+    for (let cIdx = this.undiscoveredCaches.length - 1; cIdx >= 0; cIdx--) {
+      const cache = this.undiscoveredCaches[cIdx];
+      let revealed = false;
+      for (const member of this.party) {
+        if (member.state === 'dead' || member.state === 'downed') continue;
+        const perks = CraftingSystem.getCrafterPerks(member, 'perception');
+        const explorerBonus = perks.detectionBonusChance ?? 0;
+        const radius = perks.detectionRadius ?? 3;
+        const dist = Math.max(Math.abs(member.gridPos.x - cache.x), Math.abs(member.gridPos.y - cache.y));
+        if (dist <= radius) {
+          const percLevel = member.progression.getProficiencyLevel('perception');
+          const chance = Math.min(0.90, 0.05 + 0.01 * percLevel + explorerBonus);
+          const roll = this.cacheDetectionRng();
+          if (roll < chance) {
+            this.revealHiddenCache(cache, member);
+            revealed = true;
+            break;
+          }
+        }
+      }
+      if (revealed) continue;
+    }
+  }
+
+  public revealHiddenCache(cache: { x: number; y: number; roomIndex: number }, revealer: Player): void {
+    const idx = this.undiscoveredCaches.findIndex(c => c.x === cache.x && c.y === cache.y);
+    if (idx !== -1) {
+      this.undiscoveredCaches.splice(idx, 1);
+    }
+    this.hud?.showToast(`👁️ ${revealer.entityName} spotted a Hidden Cache!`, 'info');
+    revealer.progression.addProficiencyExp('perception', 10);
+    if (revealer.progression.isClassUnlocked('explorer')) {
+      revealer.progression.addClassExp('explorer', 15);
+    }
+    this.spawnGatheringNode(cache.x, cache.y, 'hidden_cache');
   }
 
   /**
@@ -3394,12 +3517,53 @@ export class MainScene extends Phaser.Scene {
       }
     }
 
+    // Change 1: Data-driven bonus loot perk extra draw
+    let perkBonusDrop: { resourceId: string; itemName: string; count: number } | null = null;
+    if (node.nodeDef.bonusLootPerk) {
+      const perks = CraftingSystem.getCrafterPerks(character, node.nodeDef.bonusLootPerk);
+      const bonusChance = (perks as any).cacheBonusRollChance ?? perks.bonusYieldChance ?? 0;
+      if (bonusChance > 0) {
+        const perkRoll = lootRollFn ? lootRollFn() : Math.random();
+        if (perkRoll < bonusChance / 100) {
+          if (node.nodeDef.lootTable && node.nodeDef.lootTable.length > 0) {
+            const totalWeight = node.nodeDef.lootTable.reduce((sum, e) => sum + (e.weight ?? 1), 0);
+            const rollVal = (lootRollFn ? lootRollFn() : Math.random()) * totalWeight;
+            let acc = 0;
+            let selected = node.nodeDef.lootTable[0];
+            for (const entry of node.nodeDef.lootTable) {
+              acc += (entry.weight ?? 1);
+              if (rollVal <= acc) {
+                selected = entry;
+                break;
+              }
+            }
+            const pId = selected.itemId || selected.resourceId || node.nodeDef.resourceId;
+            const pName = selected.name || pId.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+            const pCount = selected.count ?? (selected.yieldCount ?? yieldCount);
+            perkBonusDrop = { resourceId: pId, itemName: pName, count: pCount };
+          }
+        }
+      }
+    }
+
+    // Change 1: Data-driven bonus class EXP
+    if (node.nodeDef.bonusClassExp && Array.isArray(node.nodeDef.bonusClassExp)) {
+      for (const entry of node.nodeDef.bonusClassExp) {
+        if (character.progression.isClassUnlocked(entry.classId)) {
+          character.progression.addClassExp(entry.classId, entry.amount);
+        }
+      }
+    }
+
     // Grant resources exclusively to character personal inventory during runs (Milestone Item Flow Unification)
     if (awardedResourceId && awardedResourceId !== '') {
       const wasEncumbered = character.isEncumbered;
       character.addItem(awardedResourceId, awardedCount);
       if (bonusDrop) {
         character.addItem(bonusDrop.resourceId, bonusDrop.count);
+      }
+      if (perkBonusDrop) {
+        character.addItem(perkBonusDrop.resourceId, perkBonusDrop.count);
       }
       if (!wasEncumbered && character.isEncumbered) {
         this.hud?.showToast(`⚠️ ${character.entityName} is ENCUMBERED (-80% Movement Speed)!`, 'warn', 3000);
@@ -3437,6 +3601,9 @@ export class MainScene extends Phaser.Scene {
     }
     if (bonusDrop) {
       this.createFloatingText(posX, posY - 20, `+${bonusDrop.count} ${bonusDrop.itemName} (Bonus)`, '#f59e0b');
+    }
+    if (perkBonusDrop) {
+      this.createFloatingText(posX, posY - 25, `+${perkBonusDrop.count} ${perkBonusDrop.itemName} (Perk Bonus)`, '#facc15');
     }
     if (bonusSeeds > 0) {
       this.createFloatingText(posX, posY - 30, `+${bonusSeeds} Seeds`, '#22c55e');

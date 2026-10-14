@@ -1341,6 +1341,95 @@ export class DungeonGenerator {
       }
     }
 
+    // 9. Hidden Caches Pass (Pure: reads options, returns hiddenCaches)
+    const hiddenCaches: { x: number; y: number; roomIndex: number }[] = [];
+    const cachesEligible = Boolean(isTutorialComplete && floorNum >= 2 && isDiggingUnlocked);
+
+    if (cachesEligible) {
+      const cacheSeed = options?.seed ?? options?.currentFloorSeed;
+      const cacheRng = cacheSeed !== undefined
+        ? DungeonGenerator.createRng(cacheSeed * 43 + 3079)
+        : rng;
+
+      const cacheCount = 1 + (cacheRng() < 0.5 ? 1 : 0);
+
+      // Exclude entrance, crystal room, boss room, and Overgrown Grove room
+      const excludedRoomIds = new Set<number>();
+      excludedRoomIds.add(0);
+      excludedRoomIds.add(crystalRoomIdx);
+      if (overgrownGrove) {
+        excludedRoomIds.add(overgrownGrove.roomIndex);
+      }
+
+      const eligibleRooms = rooms.filter(
+        (r) => !excludedRoomIds.has(r.id) && r.type !== 'entrance' && r.type !== 'boss'
+      );
+
+      // Build occupied tiles set
+      const occupiedTiles = new Set<string>();
+      occupiedTiles.add(`${portalPos.x},${portalPos.y}`);
+      occupiedTiles.add(`${crystalPos.x},${crystalPos.y}`);
+      for (const e of enemySpawns) {
+        occupiedTiles.add(`${e.x},${e.y}`);
+      }
+      for (const b of bushSpawns) {
+        occupiedTiles.add(`${b.x},${b.y}`);
+      }
+      for (const wt of waterTiles) {
+        occupiedTiles.add(`${wt.x},${wt.y}`);
+      }
+
+      // Deterministically shuffle eligible rooms using cacheRng
+      const shuffledRooms = [...eligibleRooms];
+      for (let i = shuffledRooms.length - 1; i > 0; i--) {
+        const j = Math.floor(cacheRng() * (i + 1));
+        const tmp = shuffledRooms[i];
+        shuffledRooms[i] = shuffledRooms[j];
+        shuffledRooms[j] = tmp;
+      }
+
+      const usedRoomIds = new Set<number>();
+
+      for (const room of shuffledRooms) {
+        if (hiddenCaches.length >= cacheCount) break;
+        if (usedRoomIds.has(room.id)) continue;
+
+        // Collect interior walkable tiles (leaving border where room is large enough)
+        const xStart = room.width > 3 ? room.x + 1 : room.x;
+        const xEnd = room.width > 3 ? room.x + room.width - 2 : room.x + room.width - 1;
+        const yStart = room.height > 3 ? room.y + 1 : room.y;
+        const yEnd = room.height > 3 ? room.y + room.height - 2 : room.y + room.height - 1;
+
+        const candidateTiles: GridPos[] = [];
+        for (let y = yStart; y <= yEnd; y++) {
+          for (let x = xStart; x <= xEnd; x++) {
+            if (gridMatrix[y]?.[x] === 0 && !occupiedTiles.has(`${x},${y}`)) {
+              candidateTiles.push({ x, y });
+            }
+          }
+        }
+
+        if (candidateTiles.length > 0) {
+          // Deterministically shuffle candidate tiles with cacheRng
+          for (let i = candidateTiles.length - 1; i > 0; i--) {
+            const j = Math.floor(cacheRng() * (i + 1));
+            const tmp = candidateTiles[i];
+            candidateTiles[i] = candidateTiles[j];
+            candidateTiles[j] = tmp;
+          }
+
+          const picked = candidateTiles[0];
+          hiddenCaches.push({
+            x: picked.x,
+            y: picked.y,
+            roomIndex: room.id
+          });
+          occupiedTiles.add(`${picked.x},${picked.y}`);
+          usedRoomIds.add(room.id);
+        }
+      }
+    }
+
     return {
       width,
       height,
@@ -1354,7 +1443,8 @@ export class DungeonGenerator {
       seed: options?.seed,
       band,
       overgrownGrove,
-      groveEligible
+      groveEligible,
+      hiddenCaches
     };
   }
 }

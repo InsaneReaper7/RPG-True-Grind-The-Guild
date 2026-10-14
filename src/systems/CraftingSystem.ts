@@ -88,6 +88,8 @@ export class CraftingSystem {
         return 'angler';
       case 'lockpicking':
         return 'locksmith';
+      case 'perception':
+        return 'explorer';
       default:
         return null;
     }
@@ -105,6 +107,9 @@ export class CraftingSystem {
     gearStatBonusPercent: number; // 0 to 15 (%)
     savePickChance: number; // 0 to 15 (%)
     perkDescription?: string;
+    detectionBonusChance?: number;
+    detectionRadius?: number;
+    cacheBonusRollChance?: number;
   } {
     const classId = CraftingSystem.getMatchingClassId(professionId) || (DataLoader.getInstance().getClass(professionId) ? professionId : null);
     const progression: ProgressionSystem | undefined =
@@ -122,7 +127,10 @@ export class CraftingSystem {
         perkPercent: 0,
         bonusYieldChance: 0,
         gearStatBonusPercent: 0,
-        savePickChance: 0
+        savePickChance: 0,
+        detectionBonusChance: 0,
+        detectionRadius: 3,
+        cacheBonusRollChance: 0
       };
     }
 
@@ -141,6 +149,9 @@ export class CraftingSystem {
       perkDescription = `${clsDef?.name ?? classId} Lv ${classLevel}: +${cappedBonus}% ${perkType}`;
     } else if (professionId === 'lockpicking' || classId === 'locksmith') {
       perkDescription = `${clsDef?.name ?? classId} Lv ${classLevel}: ${cappedBonus}% chance to save a lockpick on a failed roll`;
+    } else if (professionId === 'perception' || classId === 'explorer') {
+      const wideSearch = cappedBonus >= 10;
+      perkDescription = `${clsDef?.name ?? classId} Lv ${classLevel}: +${cappedBonus}% detection chance${wideSearch ? ', 4-tile search radius' : ''}, +${cappedBonus}% cache loot roll`;
     }
 
     return {
@@ -151,7 +162,10 @@ export class CraftingSystem {
       bonusYieldChance: cappedBonus,
       gearStatBonusPercent: cappedBonus,
       savePickChance: cappedBonus,
-      perkDescription
+      perkDescription,
+      detectionBonusChance: cappedBonus / 100,
+      detectionRadius: cappedBonus >= 10 ? 4 : 3,
+      cacheBonusRollChance: cappedBonus
     };
   }
 

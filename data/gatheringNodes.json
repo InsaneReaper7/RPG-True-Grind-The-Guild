@@ -141,6 +141,33 @@
         { "itemId": "raw_fish", "name": "Raw Fish", "weight": 70, "count": 1 },
         { "itemId": "aquatic_reagent", "name": "Aquatic Reagent", "weight": 30, "count": 1 }
       ]
+    },
+    "hidden_cache": {
+      "id": "hidden_cache",
+      "name": "Hidden Cache",
+      "skillId": "digging",
+      "resourceId": "locked_box",
+      "yieldCount": 1,
+      "expGranted": 25,
+      "channelDurationMs": 3000,
+      "respawnTimeMs": 0,
+      "textureKey": "dig-spot",
+      "textureDepletedKey": "dig-spot-depleted",
+      "label": "Hidden Cache",
+      "depletedLabel": "Emptied",
+      "color": "#eab308",
+      "actionVerb": "Digging",
+      "bonusLootPerk": "perception",
+      "bonusClassExp": [
+        { "classId": "explorer", "amount": 25 }
+      ],
+      "lootTable": [
+        { "itemId": "locked_box", "name": "Locked Box", "weight": 40, "count": 1 },
+        { "itemId": "ore", "name": "Ore", "weight": 20, "count": 2 },
+        { "itemId": "wild_herbs", "name": "Wild Herbs", "weight": 20, "count": 2 },
+        { "itemId": "nature_gemstone", "name": "Nature Gemstone", "weight": 10, "count": 1 },
+        { "itemId": "holy_gemstone", "name": "Holy Gemstone", "weight": 10, "count": 1 }
+      ]
     }
   }
 }

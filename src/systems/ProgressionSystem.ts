@@ -122,6 +122,7 @@ export class ProgressionSystem {
     this.proficiencies.set('mining', { level: 0, currentExp: 0 });
     this.proficiencies.set('armorsmithing', { level: 0, currentExp: 0 });
     this.proficiencies.set('digging', { level: 0, currentExp: 0 });
+    this.proficiencies.set('perception', { level: 0, currentExp: 0 });
     this.proficiencies.set('skinning', { level: 0, currentExp: 0 });
     this.proficiencies.set('butchering', { level: 0, currentExp: 0 });
     this.proficiencies.set('bows', { level: 0, currentExp: 0 });

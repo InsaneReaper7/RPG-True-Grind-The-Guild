@@ -1170,6 +1170,8 @@ export interface GatheringNodeDef {
   actionVerb: string;
   lootTable?: GatheringLootEntry[];
   requiredToolItemId?: string;
+  bonusLootPerk?: string;
+  bonusClassExp?: { classId: string; amount: number }[];
 }
 
 export interface GatheringNodesConfig {
@@ -1207,6 +1209,7 @@ export interface GeneratedDungeon {
   band?: number;
   overgrownGrove?: { roomIndex: number; treantPos: GridPos } | null;
   groveEligible?: boolean;
+  hiddenCaches?: { x: number; y: number; roomIndex: number }[];
 }
 
 export interface DynamicObstaclesConfig {

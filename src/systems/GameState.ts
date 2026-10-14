@@ -2245,6 +2245,9 @@ export class GameState {
     if (!snap.proficiencies.druid_staff) {
       snap.proficiencies.druid_staff = { level: 0, currentExp: 0 };
     }
+    if (!snap.proficiencies.perception) {
+      snap.proficiencies.perception = { level: 0, currentExp: 0 };
+    }
     if (snap.party && Array.isArray(snap.party)) {
       for (const member of snap.party) {
         if (!member.proficiencies) {
@@ -2252,6 +2255,9 @@ export class GameState {
         }
         if (!member.proficiencies.druid_staff) {
           member.proficiencies.druid_staff = { level: 0, currentExp: 0 };
+        }
+        if (!member.proficiencies.perception) {
+          member.proficiencies.perception = { level: 0, currentExp: 0 };
         }
       }
     }

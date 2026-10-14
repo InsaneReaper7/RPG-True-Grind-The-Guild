@@ -6577,6 +6577,7 @@ export class HUD {
       case 'blacksmithing': return '#94a3b8';
       case 'armorsmithing': return '#a3e635';
       case 'digging': return '#b45309';
+      case 'perception': return '#06b6d4';
       case 'skinning': return '#eab308';
       case 'butchering': return '#ef4444';
       case 'fishing': return '#38bdf8';
@@ -8730,7 +8731,7 @@ export class HUD {
     }
 
     // Check gathering proficiencies
-    const gatherStats = ['foraging', 'woodcutting', 'mining', 'digging', 'skinning', 'butchering', 'gardening', 'fishing'];
+    const gatherStats = ['foraging', 'woodcutting', 'mining', 'digging', 'skinning', 'butchering', 'gardening', 'fishing', 'perception'];
     for (const gs of gatherStats) {
       if (hasPartyProficiency(gs)) {
         const def = dataLoader.getTrainableStatDef(gs);

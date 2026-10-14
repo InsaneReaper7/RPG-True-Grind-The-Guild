@@ -745,6 +745,30 @@
       "fantasy": "Patient hands, a line in the water, and an eye on the ripples"
     },
     {
+      "id": "explorer",
+      "name": "Explorer",
+      "tier": "expert",
+      "category": "crafting",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "digging",
+          "value": 60
+        },
+        {
+          "type": "proficiency",
+          "target": "perception",
+          "value": 30
+        },
+        {
+          "type": "classLevel",
+          "target": "excavator",
+          "value": 20
+        }
+      ],
+      "fantasy": "Finds what everyone else walks past"
+    },
+    {
       "id": "apprentice_enchanter",
       "name": "Apprentice Enchanter",
       "tier": "novice",

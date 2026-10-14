@@ -654,6 +654,14 @@ export class DataLoader {
       };
     }
 
+    if (id === 'perception') {
+      return {
+        id: 'perception',
+        name: 'Perception',
+        description: 'Notice what others walk past: hidden caches, and later traps and secrets.'
+      };
+    }
+
     if (id === 'skinning') {
       return {
         id: 'skinning',
