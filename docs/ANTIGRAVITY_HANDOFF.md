@@ -1732,7 +1732,8 @@ The following three intentional behavioural changes were reviewed and accepted b
   - Validated detection rolls at fixed seeds (Perception 0 at 0.04/0.06, Perception 50 at 0.54/0.56, Perception 50 + Explorer 15 at 0.69/0.71, 4-tile distance gate at Lv 10, unconditional stepping reveal).
   - Validated room entry training (+2 once per room, resetting on floor regeneration) and reveal training (+10 Perception, +15 Explorer).
   - Validated `hidden_cache` harvesting, Digging/Excavator/Explorer EXP grants, Treasure Sense extra loot draw, single-use depletion, and old-save backfill.
-  - Full test suite: 129/129 suites pass cleanly (`npm test -- --quiet`).
+  - Extracted pure detection, room exploration, stepping, and node harvest bonus logic into shared helpers in `src/utils/perception.ts` (`computeDetectionChance`, `runDetectionTick`, `findStepReveals`, `findNewlyEnteredRooms`, `rollNodeBonuses`) utilized directly by both `MainScene` and tests without mock duplicates.
+  - Trimmed determinism fixture `test/fixtures/dungeon_determinism_pre_cache_seeds_1_50.json` to `{ seed: sha256 }` only (52 lines) while preserving exact SHA-256 byte parity.
   - Production build: `npm run build` succeeds cleanly.
 
 

@@ -24,6 +24,13 @@ import { ProgressionSystem } from '../src/systems/ProgressionSystem.ts';
 import { CraftingSystem } from '../src/systems/CraftingSystem.ts';
 import { GameState } from '../src/systems/GameState.ts';
 import { HUD } from '../src/ui/HUD.ts';
+import {
+  computeDetectionChance,
+  runDetectionTick,
+  findStepReveals,
+  findNewlyEnteredRooms,
+  rollNodeBonuses
+} from '../src/utils/perception.ts';
 
 console.log('--- START PERCEPTION + HIDDEN CACHES + EXPLORER TESTS ---');
 
@@ -69,9 +76,10 @@ for (let seed = 1; seed <= 50; seed++) {
   };
 
   const sha256 = crypto.createHash('sha256').update(JSON.stringify(floorData)).digest('hex');
+  const expectedHash = typeof fixtureRecords[seed] === 'string' ? fixtureRecords[seed] : fixtureRecords[seed].sha256;
   assert.strictEqual(
     sha256,
-    fixtureRecords[seed].sha256,
+    expectedHash,
     `Seed ${seed} fingerprint must match pre-cache fixture exactly`
   );
 }
@@ -290,154 +298,92 @@ assert.strictEqual(perksLv40.detectionBonusChance, 0.15);
 console.log('✓ PASS: Explorer requirements and crafter perks scale correctly and cap at 15');
 
 // ============================================================================
-// 6. DETECTION LOGIC & MATHEMATICS
+// 6. DETECTION FORMULA, RANGE & STEPPING (Using src/utils/perception.ts)
 // ============================================================================
 console.log('\n[Group 6] Detection Formula, Range & Stepping');
 
-// Mock scene setup for detection verification
-class MockDetectionScene {
-  public party: any[] = [];
-  public undiscoveredCaches: { x: number; y: number; roomIndex: number }[] = [];
-  public revealedCaches: { cache: any; revealer: any }[] = [];
-  public spawnedNodes: any[] = [];
-  public hud = {
-    showToast: (_msg: string) => {}
-  };
-  public cacheDetectionRng: () => number = Math.random;
+// 6a. computeDetectionChance math
+assert.strictEqual(computeDetectionChance(0), 0.05);
+assert.strictEqual(computeDetectionChance(30), 0.35);
+assert.strictEqual(computeDetectionChance(50), 0.55);
+assert.strictEqual(computeDetectionChance(50, { detectionBonusChance: 0.15 }), 0.70);
+assert.strictEqual(computeDetectionChance(90, { detectionBonusChance: 0.15 }), 0.90, 'Capped at 0.90');
 
-  public setCacheDetectionRng(rng: () => number) {
-    this.cacheDetectionRng = rng;
-  }
-
-  public checkCacheStepping() {
-    if (this.undiscoveredCaches.length === 0) return;
-    for (const member of this.party) {
-      if (member.state === 'dead' || member.state === 'downed') continue;
-      for (let i = this.undiscoveredCaches.length - 1; i >= 0; i--) {
-        const cache = this.undiscoveredCaches[i];
-        if (member.gridPos.x === cache.x && member.gridPos.y === cache.y) {
-          this.revealHiddenCache(cache, member);
-        }
-      }
-    }
-  }
-
-  public checkCacheDetection() {
-    if (this.undiscoveredCaches.length === 0) return;
-    for (let cIdx = this.undiscoveredCaches.length - 1; cIdx >= 0; cIdx--) {
-      const cache = this.undiscoveredCaches[cIdx];
-      let revealed = false;
-      for (const member of this.party) {
-        if (member.state === 'dead' || member.state === 'downed') continue;
-        const perks = CraftingSystem.getCrafterPerks(member, 'perception');
-        const explorerBonus = perks.detectionBonusChance ?? 0;
-        const radius = perks.detectionRadius ?? 3;
-        const dist = Math.max(Math.abs(member.gridPos.x - cache.x), Math.abs(member.gridPos.y - cache.y));
-        if (dist <= radius) {
-          const percLevel = member.progression.getProficiencyLevel('perception');
-          const chance = Math.min(0.90, 0.05 + 0.01 * percLevel + explorerBonus);
-          const roll = this.cacheDetectionRng();
-          if (roll < chance) {
-            this.revealHiddenCache(cache, member);
-            revealed = true;
-            break;
-          }
-        }
-      }
-      if (revealed) continue;
-    }
-  }
-
-  public revealHiddenCache(cache: any, revealer: any) {
-    const idx = this.undiscoveredCaches.indexOf(cache);
-    if (idx !== -1) this.undiscoveredCaches.splice(idx, 1);
-    this.revealedCaches.push({ cache, revealer });
-    revealer.progression.addProficiencyExp('perception', 10);
-    if (revealer.progression.isClassUnlocked('explorer')) {
-      revealer.progression.addClassExp('explorer', 15);
-    }
-    this.spawnedNodes.push({ x: cache.x, y: cache.y, nodeTypeId: 'hidden_cache' });
-  }
-}
-
-const mockMember = {
+// Member setup for detection ticks
+const member = {
   entityName: 'Alden',
   state: 'active',
   gridPos: { x: 10, y: 10 },
   progression: new ProgressionSystem(classesData, 'Alden')
 };
 
-const mockScene = new MockDetectionScene();
-mockScene.party = [mockMember];
-
-// 6a. Perception 0 at 2 tiles away (chance = 0.05)
+// 6b. Perception 0 at 2 tiles away (chance = 0.05)
 // Cache at (12, 10), distance = 2
-mockScene.undiscoveredCaches = [{ x: 12, y: 10, roomIndex: 1 }];
-mockScene.setCacheDetectionRng(() => 0.06); // 0.06 >= 0.05 -> fail
-mockScene.checkCacheDetection();
-assert.strictEqual(mockScene.undiscoveredCaches.length, 1, 'Perception 0 must not reveal at roll 0.06');
+const caches1 = [{ x: 12, y: 10, roomIndex: 1 }];
+const failRoll0 = runDetectionTick(caches1, [member], () => 0.06);
+assert.strictEqual(failRoll0.length, 0, 'Perception 0 must not reveal at roll 0.06');
 
-mockScene.setCacheDetectionRng(() => 0.04); // 0.04 < 0.05 -> succeed
-mockScene.checkCacheDetection();
-assert.strictEqual(mockScene.undiscoveredCaches.length, 0, 'Perception 0 must reveal at roll 0.04');
-assert.strictEqual(mockScene.revealedCaches.length, 1);
-assert.strictEqual(mockMember.progression.getProficiencyStat('perception').currentExp, 10, 'Reveal grants +10 Perception EXP');
+const succRoll0 = runDetectionTick(caches1, [member], () => 0.04);
+assert.strictEqual(succRoll0.length, 1, 'Perception 0 must reveal at roll 0.04');
+assert.strictEqual(succRoll0[0].cache, caches1[0]);
+assert.strictEqual(succRoll0[0].revealer, member);
 
-// 6b. Perception 50 at 2 tiles away (chance = 0.05 + 0.50 = 0.55)
-mockMember.progression.getProficiencyStat('perception').level = 50;
-mockScene.undiscoveredCaches = [{ x: 12, y: 10, roomIndex: 1 }];
-mockScene.revealedCaches = [];
+// 6c. Perception 50 at 2 tiles away (chance = 0.05 + 0.50 = 0.55)
+member.progression.getProficiencyStat('perception').level = 50;
+const failRoll50 = runDetectionTick(caches1, [member], () => 0.56);
+assert.strictEqual(failRoll50.length, 0, 'Perception 50 must not reveal at roll 0.56');
 
-mockScene.setCacheDetectionRng(() => 0.56); // 0.56 >= 0.55 -> fail
-mockScene.checkCacheDetection();
-assert.strictEqual(mockScene.undiscoveredCaches.length, 1, 'Perception 50 must not reveal at roll 0.56');
+const succRoll50 = runDetectionTick(caches1, [member], () => 0.54);
+assert.strictEqual(succRoll50.length, 1, 'Perception 50 must reveal at roll 0.54');
 
-mockScene.setCacheDetectionRng(() => 0.54); // 0.54 < 0.55 -> succeed
-mockScene.checkCacheDetection();
-assert.strictEqual(mockScene.undiscoveredCaches.length, 0, 'Perception 50 must reveal at roll 0.54');
+// 6d. Perception 50 + Explorer Lv 15 at 2 tiles away (chance = 0.55 + 0.15 = 0.70)
+member.progression.getProficiencyStat('digging').level = 60;
+member.progression.setClassLevel('excavator', 20);
+member.progression.checkClassUnlocks();
+member.progression.setClassLevel('explorer', 15);
+assert.strictEqual(member.progression.isClassUnlocked('explorer'), true);
 
-// 6c. Perception 50 + Explorer Lv 15 at 2 tiles away (chance = 0.55 + 0.15 = 0.70)
-mockMember.progression.getProficiencyStat('digging').level = 60;
-mockMember.progression.setClassLevel('excavator', 20);
-mockMember.progression.checkClassUnlocks();
-mockMember.progression.setClassLevel('explorer', 15);
-assert.strictEqual(mockMember.progression.isClassUnlocked('explorer'), true);
+const failRollExp = runDetectionTick(caches1, [member], () => 0.71);
+assert.strictEqual(failRollExp.length, 0, 'Perception 50 + Explorer 15 must not reveal at roll 0.71');
 
-mockScene.undiscoveredCaches = [{ x: 12, y: 10, roomIndex: 1 }];
-mockScene.revealedCaches = [];
+const succRollExp = runDetectionTick(caches1, [member], () => 0.69);
+assert.strictEqual(succRollExp.length, 1, 'Perception 50 + Explorer 15 must reveal at roll 0.69');
 
-mockScene.setCacheDetectionRng(() => 0.71); // 0.71 >= 0.70 -> fail
-mockScene.checkCacheDetection();
-assert.strictEqual(mockScene.undiscoveredCaches.length, 1, 'Perception 50 + Explorer 15 must not reveal at roll 0.71');
+// 6e. Radius test at 4 tiles away: cache at (14, 10), distance = 4
+const cachesFar = [{ x: 14, y: 10, roomIndex: 1 }];
+member.progression.setClassLevel('explorer', 9); // Wide Search inactive (radius 3)
+const outOfRange = runDetectionTick(cachesFar, [member], () => 0.01);
+assert.strictEqual(outOfRange.length, 0, 'At 4 tiles, Explorer Lv 9 must not detect cache (radius 3)');
 
-const explorerExpBefore = mockMember.progression.getClassStat('explorer').currentExp;
-mockScene.setCacheDetectionRng(() => 0.69); // 0.69 < 0.70 -> succeed
-mockScene.checkCacheDetection();
-assert.strictEqual(mockScene.undiscoveredCaches.length, 0, 'Perception 50 + Explorer 15 must reveal at roll 0.69');
-assert.strictEqual(
-  mockMember.progression.getClassStat('explorer').currentExp - explorerExpBefore,
-  15,
-  'Revealing cache grants +15 Explorer class EXP'
-);
+member.progression.setClassLevel('explorer', 10); // Wide Search active (radius 4)
+const inRange = runDetectionTick(cachesFar, [member], () => 0.01);
+assert.strictEqual(inRange.length, 1, 'At 4 tiles, Explorer Lv 10 must detect cache (radius 4)');
 
-// 6d. Radius test at 4 tiles away: cache at (14, 10), distance = 4
-mockMember.progression.setClassLevel('explorer', 9); // Wide Search inactive (radius 3)
-mockScene.undiscoveredCaches = [{ x: 14, y: 10, roomIndex: 1 }];
-mockScene.setCacheDetectionRng(() => 0.01); // ultra-low roll
-mockScene.checkCacheDetection();
-assert.strictEqual(mockScene.undiscoveredCaches.length, 1, 'At 4 tiles, Explorer Lv 9 must not detect cache (radius 3)');
+// Distance 5: out of range even at Lv 10+
+const cachesTooFar = [{ x: 15, y: 10, roomIndex: 1 }];
+const tooFar = runDetectionTick(cachesTooFar, [member], () => 0.01);
+assert.strictEqual(tooFar.length, 0, 'At 5 tiles, must be out of range');
 
-mockMember.progression.setClassLevel('explorer', 10); // Wide Search active (radius 4)
-mockScene.checkCacheDetection();
-assert.strictEqual(mockScene.undiscoveredCaches.length, 0, 'At 4 tiles, Explorer Lv 10 must detect cache (radius 4)');
+// Incapacitated members do not detect
+member.state = 'dead';
+const deadRoll = runDetectionTick(caches1, [member], () => 0.01);
+assert.strictEqual(deadRoll.length, 0, 'Dead members do not detect caches');
+member.state = 'active';
 
-// 6e. Stepping on tile always reveals unconditionally
-mockMember.progression.getProficiencyStat('perception').level = 0;
-mockMember.progression.setClassLevel('explorer', 0);
-mockScene.undiscoveredCaches = [{ x: 10, y: 10, roomIndex: 1 }];
-mockScene.setCacheDetectionRng(() => 0.99); // worst roll
-mockScene.checkCacheStepping();
-assert.strictEqual(mockScene.undiscoveredCaches.length, 0, 'Stepping on cache tile must reveal it unconditionally');
+// 6f. Stepping on tile always reveals unconditionally via findStepReveals
+member.progression.getProficiencyStat('perception').level = 0;
+member.progression.setClassLevel('explorer', 0);
+const stepCache = [{ x: 10, y: 10, roomIndex: 1 }];
+const stepReveals = findStepReveals(stepCache, [member]);
+assert.strictEqual(stepReveals.length, 1, 'Stepping on cache tile must reveal it unconditionally');
+assert.strictEqual(stepReveals[0].cache, stepCache[0]);
+assert.strictEqual(stepReveals[0].revealer, member);
+
+// Stepping off-tile does not reveal
+member.gridPos = { x: 10, y: 9 };
+const stepMiss = findStepReveals(stepCache, [member]);
+assert.strictEqual(stepMiss.length, 0, 'Not on tile does not step-reveal');
+member.gridPos = { x: 10, y: 10 };
 
 console.log('✓ PASS: Detection roll formulas, range extensions, and stepping mechanics match spec');
 
@@ -445,40 +391,6 @@ console.log('✓ PASS: Detection roll formulas, range extensions, and stepping m
 // 7. ROOM ENTRY TRAINING & REGENERATION RESET (Changes 2, 4)
 // ============================================================================
 console.log('\n[Group 7] Room Entry Training & Regeneration Floor Reset');
-
-class MockRoomScene {
-  public party: any[] = [];
-  public visitedRoomIndices: Set<number> = new Set();
-  public dungeon: any = null;
-
-  public checkRoomExploration(onArrival: boolean = false) {
-    if (!this.dungeon || !this.dungeon.rooms || this.dungeon.rooms.length === 0) return;
-    for (let rIdx = 0; rIdx < this.dungeon.rooms.length; rIdx++) {
-      if (this.visitedRoomIndices.has(rIdx)) continue;
-      const room = this.dungeon.rooms[rIdx];
-      const livingInRoom = this.party.filter((m) => {
-        if (m.state === 'dead' || m.state === 'downed') return false;
-        return m.gridPos.x >= room.x &&
-               m.gridPos.x < room.x + room.width &&
-               m.gridPos.y >= room.y &&
-               m.gridPos.y < room.y + room.height;
-      });
-
-      if (livingInRoom.length > 0) {
-        this.visitedRoomIndices.add(rIdx);
-        for (const member of livingInRoom) {
-          member.progression.addProficiencyExp('perception', 2);
-        }
-      }
-    }
-  }
-
-  public setDungeon(newDungeon: any) {
-    this.dungeon = newDungeon;
-    this.visitedRoomIndices.clear();
-    this.checkRoomExploration(true);
-  }
-}
 
 const p1 = {
   entityName: 'Hero',
@@ -492,9 +404,7 @@ const p2 = {
   gridPos: { x: 5, y: 6 },
   progression: new ProgressionSystem(classesData, 'Companion')
 };
-
-const roomScene = new MockRoomScene();
-roomScene.party = [p1, p2];
+const party = [p1, p2];
 
 const testDungeon1 = {
   rooms: [
@@ -503,40 +413,69 @@ const testDungeon1 = {
   ]
 };
 
+const visitedRoomIndices: Set<number> = new Set();
+
 // Arrival at entrance room
-roomScene.setDungeon(testDungeon1);
-assert.strictEqual(roomScene.visitedRoomIndices.has(0), true, 'Entrance room must be marked visited on arrival');
+const arrivalEntries = findNewlyEnteredRooms(testDungeon1.rooms, visitedRoomIndices, party);
+assert.strictEqual(arrivalEntries.length, 1);
+assert.strictEqual(arrivalEntries[0].roomIndex, 0);
+for (const entry of arrivalEntries) {
+  visitedRoomIndices.add(entry.roomIndex);
+  for (const m of entry.members) {
+    m.progression.addProficiencyExp('perception', 2);
+  }
+}
+assert.strictEqual(visitedRoomIndices.has(0), true, 'Entrance room must be marked visited on arrival');
 assert.strictEqual(p1.progression.getProficiencyStat('perception').currentExp, 2, 'Hero receives +2 on arrival in entrance');
 assert.strictEqual(p2.progression.getProficiencyStat('perception').currentExp, 2, 'Companion receives +2 on arrival in entrance');
 
 // Moving around inside same room awards nothing further
 p1.gridPos = { x: 6, y: 6 };
-roomScene.checkRoomExploration();
+const sameRoomEntries = findNewlyEnteredRooms(testDungeon1.rooms, visitedRoomIndices, party);
+assert.strictEqual(sameRoomEntries.length, 0, 'Re-checking visited room gives 0 new rooms');
 assert.strictEqual(p1.progression.getProficiencyStat('perception').currentExp, 2, 'Re-checking visited room gives 0 EXP');
 
 // Walking into Room 1
 p1.gridPos = { x: 22, y: 22 };
 p2.gridPos = { x: 23, y: 22 };
-roomScene.checkRoomExploration();
-assert.strictEqual(roomScene.visitedRoomIndices.has(1), true, 'Room 1 marked visited');
+const room1Entries = findNewlyEnteredRooms(testDungeon1.rooms, visitedRoomIndices, party);
+assert.strictEqual(room1Entries.length, 1);
+assert.strictEqual(room1Entries[0].roomIndex, 1);
+for (const entry of room1Entries) {
+  visitedRoomIndices.add(entry.roomIndex);
+  for (const m of entry.members) {
+    m.progression.addProficiencyExp('perception', 2);
+  }
+}
+assert.strictEqual(visitedRoomIndices.has(1), true, 'Room 1 marked visited');
 assert.strictEqual(p1.progression.getProficiencyStat('perception').currentExp, 4, 'Entering Room 1 grants +2 to Hero');
 assert.strictEqual(p2.progression.getProficiencyStat('perception').currentExp, 4, 'Entering Room 1 grants +2 to Companion');
 
 // Walking back to entrance room (Room 0) gives nothing
 p1.gridPos = { x: 5, y: 5 };
 p2.gridPos = { x: 5, y: 6 };
-roomScene.checkRoomExploration();
+const returnEntries = findNewlyEnteredRooms(testDungeon1.rooms, visitedRoomIndices, party);
+assert.strictEqual(returnEntries.length, 0, 'Re-entering entrance room gives 0 new entries');
 assert.strictEqual(p1.progression.getProficiencyStat('perception').currentExp, 4, 'Re-entering entrance room gives 0 EXP');
 
-// Floor regeneration (Change 4): resetting/replacing dungeon resets visitedRoomIndices and awards entrance again
+// Floor regeneration (Change 4): replacing dungeon resets visitedRoomIndices and awards entrance again
 const testDungeon2 = {
   rooms: [
     { id: 0, x: 2, y: 2, width: 8, height: 8, type: 'entrance' },
     { id: 1, x: 25, y: 25, width: 7, height: 7, type: 'light_combat' }
   ]
 };
-roomScene.setDungeon(testDungeon2);
-assert.strictEqual(roomScene.visitedRoomIndices.has(0), true);
+visitedRoomIndices.clear();
+const regenArrivalEntries = findNewlyEnteredRooms(testDungeon2.rooms, visitedRoomIndices, party);
+assert.strictEqual(regenArrivalEntries.length, 1);
+assert.strictEqual(regenArrivalEntries[0].roomIndex, 0);
+for (const entry of regenArrivalEntries) {
+  visitedRoomIndices.add(entry.roomIndex);
+  for (const m of entry.members) {
+    m.progression.addProficiencyExp('perception', 2);
+  }
+}
+assert.strictEqual(visitedRoomIndices.has(0), true);
 assert.strictEqual(p1.progression.getProficiencyStat('perception').currentExp, 6, 'On regenerated floor arrival, Hero gets +2 again');
 assert.strictEqual(p2.progression.getProficiencyStat('perception').currentExp, 6, 'On regenerated floor arrival, Companion gets +2 again');
 
@@ -559,13 +498,9 @@ assert.strictEqual(cacheDef.color, '#eab308');
 assert.strictEqual(cacheDef.bonusLootPerk, 'perception');
 assert.deepStrictEqual(cacheDef.bonusClassExp, [{ classId: 'explorer', amount: 25 }]);
 
-// Verify harvest logic with Change 1 data-driven paths
+// Character setup for testing rollNodeBonuses
 const harvester = {
   entityName: 'Harvester',
-  inventory: new Map<string, number>(),
-  addItem(id: string, count: number) {
-    this.inventory.set(id, (this.inventory.get(id) || 0) + count);
-  },
   progression: new ProgressionSystem(classesData, 'Harvester')
 };
 
@@ -575,114 +510,41 @@ harvester.progression.setClassLevel('excavator', 20);
 harvester.progression.checkClassUnlocks();
 harvester.progression.setClassLevel('explorer', 15);
 
-const cacheNode = {
-  x: 10,
-  y: 10,
-  nodeDef: cacheDef,
-  isHarvested: false
+// 8a. Test rollNodeBonuses with Explorer Lv 15 (bonusChance = 15%)
+// Roll 0.05 < 0.15 -> triggers bonus loot draw and grants class EXP
+const bonusSuccess = rollNodeBonuses(cacheDef, harvester, () => 0.05);
+assert.ok(bonusSuccess.bonusDrop, 'Bonus loot draw must succeed when roll < bonusChance');
+assert.ok(
+  ['locked_box', 'ore', 'wild_herbs', 'nature_gemstone', 'holy_gemstone'].includes(bonusSuccess.bonusDrop!.resourceId),
+  'Bonus drop must be from cache loot table'
+);
+assert.deepStrictEqual(
+  bonusSuccess.classExpGrants,
+  [{ classId: 'explorer', amount: 25 }],
+  'Explorer class EXP grant must be returned'
+);
+
+// Roll 0.20 >= 0.15 -> no bonus loot draw
+const bonusFail = rollNodeBonuses(cacheDef, harvester, () => 0.20);
+assert.strictEqual(bonusFail.bonusDrop, null, 'Bonus drop must be null when roll >= bonusChance');
+assert.deepStrictEqual(
+  bonusFail.classExpGrants,
+  [{ classId: 'explorer', amount: 25 }],
+  'Explorer class EXP is still granted when class is unlocked'
+);
+
+// When Explorer is not unlocked, classExpGrants must be empty
+const lockedHarvester = {
+  entityName: 'Novice',
+  progression: new ProgressionSystem(classesData, 'Novice')
 };
+const lockedResult = rollNodeBonuses(cacheDef, lockedHarvester, () => 0.05);
+assert.strictEqual(lockedResult.bonusDrop, null);
+assert.deepStrictEqual(lockedResult.classExpGrants, [], 'No class EXP granted when Explorer is locked');
 
-// Simulate harvestGatheringNode execution
-function harvestNode(node: any, character: any, rollFn: () => number) {
-  if (node.isHarvested) return false;
-  node.isHarvested = true;
-
-  const yieldCount = node.nodeDef.yieldCount || 1;
-  const expGranted = node.nodeDef.expGranted || 15;
-
-  // 1. Primary loot draw
-  const totalWeight = node.nodeDef.lootTable.reduce((sum: number, e: any) => sum + (e.weight ?? 1), 0);
-  const rollVal = rollFn() * totalWeight;
-  let acc = 0;
-  let selected = node.nodeDef.lootTable[0];
-  for (const entry of node.nodeDef.lootTable) {
-    acc += (entry.weight ?? 1);
-    if (rollVal <= acc) {
-      selected = entry;
-      break;
-    }
-  }
-  const awardedId = selected.itemId || selected.resourceId;
-  const awardedCount = selected.count ?? yieldCount;
-  character.addItem(awardedId, awardedCount);
-
-  // 2. Change 1: bonusLootPerk extra draw
-  if (node.nodeDef.bonusLootPerk) {
-    const perks = CraftingSystem.getCrafterPerks(character, node.nodeDef.bonusLootPerk);
-    const bonusChance = (perks as any).cacheBonusRollChance ?? perks.bonusYieldChance ?? 0;
-    if (bonusChance > 0) {
-      const perkRoll = rollFn();
-      if (perkRoll < bonusChance / 100) {
-        // Extra roll
-        const extraRollVal = rollFn() * totalWeight;
-        let acc2 = 0;
-        let extraSelected = node.nodeDef.lootTable[0];
-        for (const entry of node.nodeDef.lootTable) {
-          acc2 += (entry.weight ?? 1);
-          if (extraRollVal <= acc2) {
-            extraSelected = entry;
-            break;
-          }
-        }
-        character.addItem(extraSelected.itemId, extraSelected.count ?? 1);
-      }
-    }
-  }
-
-  // 3. Change 1: bonusClassExp
-  if (node.nodeDef.bonusClassExp && Array.isArray(node.nodeDef.bonusClassExp)) {
-    for (const entry of node.nodeDef.bonusClassExp) {
-      if (character.progression.isClassUnlocked(entry.classId)) {
-        character.progression.addClassExp(entry.classId, entry.amount);
-      }
-    }
-  }
-
-  // 4. Digging proficiency EXP & Excavator class EXP
-  character.progression.addProficiencyExp(node.nodeDef.skillId, expGranted);
-  if (character.progression.isClassUnlocked('excavator')) {
-    character.progression.addClassExp('excavator', expGranted);
-  }
-
-  return true;
-}
-
-const digExpBefore = harvester.progression.getProficiencyStat('digging').currentExp;
-const excExpBefore = harvester.progression.getClassStat('excavator').currentExp;
-const expExpBefore = harvester.progression.getClassStat('explorer').currentExp;
-
-// Successful dig with guaranteed extra bonus roll (roll 0.05 < 0.15)
-const harvestResult = harvestNode(cacheNode, harvester, () => 0.05);
-assert.strictEqual(harvestResult, true, 'First dig must succeed');
-assert.strictEqual(cacheNode.isHarvested, true, 'Node must be marked harvested');
-
-// Cannot be dug twice
-const secondDig = harvestNode(cacheNode, harvester, () => 0.05);
-assert.strictEqual(secondDig, false, 'Node must not be harvested a second time (single-use)');
-
-// Verify EXP awarded
-assert.strictEqual(
-  harvester.progression.getProficiencyStat('digging').currentExp - digExpBefore,
-  25,
-  'Digging cache awards +25 Digging proficiency EXP'
-);
-assert.strictEqual(
-  harvester.progression.getClassStat('excavator').currentExp - excExpBefore,
-  25,
-  'Digging cache awards +25 Excavator class EXP'
-);
-assert.strictEqual(
-  harvester.progression.getClassStat('explorer').currentExp - expExpBefore,
-  25,
-  'Digging cache awards +25 Explorer class EXP via bonusClassExp'
-);
-
-// Verify items received
-let totalItemsAwarded = 0;
-for (const count of harvester.inventory.values()) {
-  totalItemsAwarded += count;
-}
-assert.ok(totalItemsAwarded >= 2, 'Must receive primary loot plus Treasure Sense bonus loot draw');
+// 8b. Single-use invariant
+assert.strictEqual(cacheDef.respawnTimeMs, 0, 'Single-use cache node must have respawnTimeMs === 0');
+assert.strictEqual(cacheDef.depletedLabel, 'Emptied');
 
 console.log('✓ PASS: Data-driven node attributes, Change 1 bonus loot perk, class EXP, and single-use validated');
 

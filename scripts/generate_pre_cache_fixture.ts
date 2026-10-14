@@ -24,7 +24,7 @@ const dataLoader = DataLoader.getInstance();
 await dataLoader.loadAll();
 
 const config = dataLoader.getDungeonConfig();
-const records: Record<number, { sha256: string; data: any }> = {};
+const records: Record<number, string> = {};
 
 for (let seed = 1; seed <= 50; seed++) {
   const d = DungeonGenerator.generate(config, DungeonGenerator.createRng(seed), {
@@ -51,10 +51,7 @@ for (let seed = 1; seed <= 50; seed++) {
   };
 
   const sha256 = crypto.createHash('sha256').update(JSON.stringify(floorData)).digest('hex');
-  records[seed] = {
-    sha256,
-    data: floorData
-  };
+  records[seed] = sha256;
 }
 
 const outDir = path.resolve('test/fixtures');

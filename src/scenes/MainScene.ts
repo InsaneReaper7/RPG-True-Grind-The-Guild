@@ -17,6 +17,7 @@ import { HiddenSkillSystem } from '../systems/HiddenSkillSystem';
 import { TileClaimDebugOverlay } from '../ui/TileClaimDebugOverlay';
 import { TutorialSystem } from '../systems/TutorialSystem';
 import { isTypingInTextField } from '../utils/inputGuard';
+import { runDetectionTick, findStepReveals, findNewlyEnteredRooms, rollNodeBonuses } from '../utils/perception';
 
 export interface GatheringNode {
   x: number;
@@ -2410,62 +2411,33 @@ export class MainScene extends Phaser.Scene {
 
   public checkRoomExploration(_onArrival: boolean = false): void {
     if (!this.dungeon || !this.dungeon.rooms || this.dungeon.rooms.length === 0) return;
-    for (let rIdx = 0; rIdx < this.dungeon.rooms.length; rIdx++) {
-      if (this.visitedRoomIndices.has(rIdx)) continue;
-      const room = this.dungeon.rooms[rIdx];
-      const livingInRoom = this.party.filter((m) => {
-        if (m.state === 'dead' || m.state === 'downed') return false;
-        return m.gridPos.x >= room.x &&
-               m.gridPos.x < room.x + room.width &&
-               m.gridPos.y >= room.y &&
-               m.gridPos.y < room.y + room.height;
-      });
-
-      if (livingInRoom.length > 0) {
-        this.visitedRoomIndices.add(rIdx);
-        for (const member of livingInRoom) {
-          member.progression.addProficiencyExp('perception', 2);
-        }
+    const newlyEntered = findNewlyEnteredRooms(this.dungeon.rooms, this.visitedRoomIndices, this.party);
+    for (const entry of newlyEntered) {
+      this.visitedRoomIndices.add(entry.roomIndex);
+      for (const member of entry.members) {
+        member.progression.addProficiencyExp('perception', 2);
       }
     }
   }
 
   public checkCacheStepping(): void {
     if (this.undiscoveredCaches.length === 0) return;
-    for (const member of this.party) {
-      if (member.state === 'dead' || member.state === 'downed') continue;
-      for (let i = this.undiscoveredCaches.length - 1; i >= 0; i--) {
-        const cache = this.undiscoveredCaches[i];
-        if (member.gridPos.x === cache.x && member.gridPos.y === cache.y) {
-          this.revealHiddenCache(cache, member);
-        }
-      }
+    const stepReveals = findStepReveals(this.undiscoveredCaches, this.party);
+    for (const reveal of stepReveals) {
+      this.revealHiddenCache(reveal.cache, reveal.revealer);
     }
   }
 
   public checkCacheDetection(): void {
     if (this.undiscoveredCaches.length === 0) return;
-    for (let cIdx = this.undiscoveredCaches.length - 1; cIdx >= 0; cIdx--) {
-      const cache = this.undiscoveredCaches[cIdx];
-      let revealed = false;
-      for (const member of this.party) {
-        if (member.state === 'dead' || member.state === 'downed') continue;
-        const perks = CraftingSystem.getCrafterPerks(member, 'perception');
-        const explorerBonus = perks.detectionBonusChance ?? 0;
-        const radius = perks.detectionRadius ?? 3;
-        const dist = Math.max(Math.abs(member.gridPos.x - cache.x), Math.abs(member.gridPos.y - cache.y));
-        if (dist <= radius) {
-          const percLevel = member.progression.getProficiencyLevel('perception');
-          const chance = Math.min(0.90, 0.05 + 0.01 * percLevel + explorerBonus);
-          const roll = this.cacheDetectionRng();
-          if (roll < chance) {
-            this.revealHiddenCache(cache, member);
-            revealed = true;
-            break;
-          }
-        }
-      }
-      if (revealed) continue;
+    const detectionReveals = runDetectionTick(
+      this.undiscoveredCaches,
+      this.party,
+      this.cacheDetectionRng,
+      (m) => CraftingSystem.getCrafterPerks(m, 'perception')
+    );
+    for (const reveal of detectionReveals) {
+      this.revealHiddenCache(reveal.cache, reveal.revealer);
     }
   }
 
@@ -3517,42 +3489,14 @@ export class MainScene extends Phaser.Scene {
       }
     }
 
-    // Change 1: Data-driven bonus loot perk extra draw
-    let perkBonusDrop: { resourceId: string; itemName: string; count: number } | null = null;
-    if (node.nodeDef.bonusLootPerk) {
-      const perks = CraftingSystem.getCrafterPerks(character, node.nodeDef.bonusLootPerk);
-      const bonusChance = (perks as any).cacheBonusRollChance ?? perks.bonusYieldChance ?? 0;
-      if (bonusChance > 0) {
-        const perkRoll = lootRollFn ? lootRollFn() : Math.random();
-        if (perkRoll < bonusChance / 100) {
-          if (node.nodeDef.lootTable && node.nodeDef.lootTable.length > 0) {
-            const totalWeight = node.nodeDef.lootTable.reduce((sum, e) => sum + (e.weight ?? 1), 0);
-            const rollVal = (lootRollFn ? lootRollFn() : Math.random()) * totalWeight;
-            let acc = 0;
-            let selected = node.nodeDef.lootTable[0];
-            for (const entry of node.nodeDef.lootTable) {
-              acc += (entry.weight ?? 1);
-              if (rollVal <= acc) {
-                selected = entry;
-                break;
-              }
-            }
-            const pId = selected.itemId || selected.resourceId || node.nodeDef.resourceId;
-            const pName = selected.name || pId.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-            const pCount = selected.count ?? (selected.yieldCount ?? yieldCount);
-            perkBonusDrop = { resourceId: pId, itemName: pName, count: pCount };
-          }
-        }
-      }
-    }
-
-    // Change 1: Data-driven bonus class EXP
-    if (node.nodeDef.bonusClassExp && Array.isArray(node.nodeDef.bonusClassExp)) {
-      for (const entry of node.nodeDef.bonusClassExp) {
-        if (character.progression.isClassUnlocked(entry.classId)) {
-          character.progression.addClassExp(entry.classId, entry.amount);
-        }
-      }
+    // Change 1: Data-driven bonus loot perk extra draw & bonus class EXP
+    const { bonusDrop: perkBonusDrop, classExpGrants } = rollNodeBonuses(
+      node.nodeDef,
+      character,
+      lootRollFn || Math.random
+    );
+    for (const grant of classExpGrants) {
+      character.progression.addClassExp(grant.classId, grant.amount);
     }
 
     // Grant resources exclusively to character personal inventory during runs (Milestone Item Flow Unification)
