@@ -351,8 +351,7 @@
         {
           "type": "applyStatus",
           "status": "stun",
-          "chance": 1,
-          "durationMs": 2000
+          "chance": 1
         }
       ]
     },
@@ -740,8 +739,7 @@
         {
           "type": "applyStatus",
           "status": "expose",
-          "chance": 1,
-          "durationMs": 6000
+          "chance": 1
         }
       ]
     },
@@ -810,9 +808,11 @@
           "type": "applyStatus",
           "status": "slow",
           "chance": 1,
-          "durationMs": 4000
+          "durationMs": 4000,
+          "durationOverrideReason": "Trapper identity: longer snare"
         }
-      ]
+      ],
+      "durationOverrideReason": "Trapper identity: longer snare"
     },
     {
       "id": "kill_shot",
@@ -893,8 +893,7 @@
         },
         {
           "type": "applyStatus",
-          "status": "bleed",
-          "durationMs": 6000
+          "status": "bleed"
         }
       ]
     },
@@ -1170,8 +1169,7 @@
         {
           "type": "applyStatus",
           "status": "bleed",
-          "chance": 1,
-          "durationMs": 6000
+          "chance": 1
         }
       ]
     },
@@ -1259,8 +1257,7 @@
         {
           "type": "applyStatus",
           "status": "bleed",
-          "chance": 1,
-          "durationMs": 6000
+          "chance": 1
         }
       ]
     },
@@ -1366,8 +1363,7 @@
         {
           "type": "applyStatus",
           "status": "bleed",
-          "chance": 1,
-          "durationMs": 6000
+          "chance": 1
         }
       ]
     },
@@ -1456,8 +1452,7 @@
         {
           "type": "applyStatus",
           "status": "stun",
-          "chance": 0.3,
-          "durationMs": 2000
+          "chance": 0.3
         }
       ]
     },
@@ -1595,8 +1590,7 @@
         },
         {
           "type": "applyStatus",
-          "status": "bleed",
-          "durationMs": 6000
+          "status": "bleed"
         }
       ]
     },
@@ -1672,9 +1666,11 @@
         {
           "type": "applyStatus",
           "status": "slow",
-          "durationMs": 4000
+          "durationMs": 4000,
+          "durationOverrideReason": "Pin: longer slow"
         }
-      ]
+      ],
+      "durationOverrideReason": "Pin: longer slow"
     },
     {
       "id": "heartseeker_hurl",
@@ -1829,8 +1825,7 @@
         {
           "type": "applyStatus",
           "status": "slow",
-          "chance": 1,
-          "durationMs": 3000
+          "chance": 1
         }
       ]
     },
@@ -2352,14 +2347,15 @@
         {
           "type": "applyStatus",
           "status": "slow",
-          "durationMs": 4000
+          "durationMs": 4000,
+          "durationOverrideReason": "Crippling: longer slow"
         },
         {
           "type": "applyStatus",
-          "status": "bleed",
-          "durationMs": 6000
+          "status": "bleed"
         }
-      ]
+      ],
+      "durationOverrideReason": "Crippling: longer slow"
     },
     {
       "id": "blade_barrage",
@@ -2432,8 +2428,7 @@
         {
           "type": "applyStatus",
           "status": "burn",
-          "chance": 0.4,
-          "durationMs": 4000
+          "chance": 0.4
         }
       ]
     },
@@ -2465,8 +2460,7 @@
         {
           "type": "applyStatus",
           "status": "burn",
-          "chance": 0.85,
-          "durationMs": 4000
+          "chance": 0.85
         }
       ]
     },
@@ -2505,8 +2499,7 @@
         {
           "type": "applyStatus",
           "status": "burn",
-          "chance": 0.7,
-          "durationMs": 4000
+          "chance": 0.7
         }
       ]
     },
@@ -2539,9 +2532,11 @@
           "type": "applyStatus",
           "status": "burn",
           "chance": 1,
-          "durationMs": 6000
+          "durationMs": 6000,
+          "durationOverrideReason": "Ignite: extended burn"
         }
-      ]
+      ],
+      "durationOverrideReason": "Ignite: extended burn"
     },
     {
       "id": "firestorm",
@@ -2578,8 +2573,7 @@
         {
           "type": "applyStatus",
           "status": "burn",
-          "chance": 0.9,
-          "durationMs": 4000
+          "chance": 0.9
         }
       ]
     },
@@ -2606,8 +2600,7 @@
         {
           "type": "applyStatus",
           "status": "stun",
-          "chance": 0.2,
-          "durationMs": 2000
+          "chance": 0.2
         }
       ],
       "ai": {
@@ -2970,8 +2963,7 @@
         {
           "type": "applyStatus",
           "status": "stun",
-          "chance": 0.35,
-          "durationMs": 2000
+          "chance": 0.35
         }
       ],
       "ai": {
@@ -3036,8 +3028,7 @@
         {
           "type": "applyStatus",
           "status": "stun",
-          "chance": 0.25,
-          "durationMs": 2000
+          "chance": 0.25
         }
       ],
       "ai": {
@@ -3098,8 +3089,7 @@
         {
           "type": "applyStatus",
           "status": "bleed",
-          "chance": 0.8,
-          "durationMs": 6000
+          "chance": 0.8
         }
       ],
       "ai": {
@@ -3251,8 +3241,7 @@
         {
           "type": "applyStatus",
           "status": "slow",
-          "chance": 1,
-          "durationMs": 3000
+          "chance": 1
         }
       ],
       "ai": {
@@ -3377,8 +3366,7 @@
         {
           "type": "applyStatus",
           "status": "stun",
-          "chance": 0.3,
-          "durationMs": 2000
+          "chance": 0.3
         }
       ],
       "ai": {
@@ -3442,8 +3430,7 @@
         {
           "type": "applyStatus",
           "status": "slow",
-          "chance": 1,
-          "durationMs": 3000
+          "chance": 1
         }
       ],
       "ai": {
@@ -3474,8 +3461,7 @@
         {
           "type": "applyStatus",
           "status": "stun",
-          "chance": 0.5,
-          "durationMs": 2000
+          "chance": 0.5
         }
       ],
       "ai": {
@@ -3625,8 +3611,7 @@
         {
           "type": "applyStatus",
           "status": "expose",
-          "chance": 1,
-          "durationMs": 6000
+          "chance": 1
         }
       ],
       "ai": {
@@ -3685,8 +3670,7 @@
         {
           "type": "applyStatus",
           "status": "bleed",
-          "chance": 0.6,
-          "durationMs": 6000
+          "chance": 0.6
         }
       ],
       "ai": {
@@ -3782,8 +3766,7 @@
         {
           "type": "applyStatus",
           "status": "bleed",
-          "chance": 0.5,
-          "durationMs": 6000
+          "chance": 0.5
         }
       ],
       "ai": {
@@ -3877,8 +3860,7 @@
         {
           "type": "applyStatus",
           "status": "slow",
-          "chance": 0.5,
-          "durationMs": 3000
+          "chance": 0.5
         }
       ],
       "ai": {
@@ -3937,8 +3919,7 @@
         {
           "type": "applyStatus",
           "status": "stun",
-          "chance": 0.4,
-          "durationMs": 2000
+          "chance": 0.4
         }
       ],
       "ai": {
@@ -3996,8 +3977,7 @@
         {
           "type": "applyStatus",
           "status": "stun",
-          "chance": 0.2,
-          "durationMs": 2000
+          "chance": 0.2
         }
       ],
       "ai": {
@@ -5621,8 +5601,7 @@
         {
           "type": "applyStatus",
           "status": "slow",
-          "chance": 1,
-          "durationMs": 3000
+          "chance": 1
         }
       ],
       "ai": {
@@ -5698,8 +5677,7 @@
         {
           "type": "applyStatus",
           "status": "stun",
-          "chance": 0.4,
-          "durationMs": 2000
+          "chance": 0.4
         }
       ],
       "ai": {
@@ -5849,8 +5827,7 @@
         {
           "type": "applyStatus",
           "status": "bleed",
-          "chance": 0.8,
-          "durationMs": 6000
+          "chance": 0.8
         }
       ],
       "ai": {
@@ -6005,8 +5982,7 @@
         {
           "type": "applyStatus",
           "status": "bleed",
-          "chance": 1,
-          "durationMs": 6000
+          "chance": 1
         }
       ],
       "ai": {
@@ -6096,8 +6072,7 @@
         {
           "type": "applyStatus",
           "status": "bleed",
-          "chance": 0.5,
-          "durationMs": 6000
+          "chance": 0.5
         }
       ],
       "ai": {
@@ -6285,8 +6260,7 @@
         {
           "type": "applyStatus",
           "status": "curse",
-          "chance": 1,
-          "durationMs": 5000
+          "chance": 1
         }
       ],
       "ai": {
@@ -6407,8 +6381,7 @@
         {
           "type": "applyStatus",
           "status": "slow",
-          "chance": 1,
-          "durationMs": 3000
+          "chance": 1
         }
       ],
       "ai": {
@@ -6440,8 +6413,7 @@
         {
           "type": "applyStatus",
           "status": "expose",
-          "chance": 1,
-          "durationMs": 6000
+          "chance": 1
         }
       ],
       "ai": {
@@ -6564,8 +6536,7 @@
         {
           "type": "applyStatus",
           "status": "stun",
-          "chance": 0.35,
-          "durationMs": 2000
+          "chance": 0.35
         }
       ],
       "ai": {
@@ -7311,8 +7282,7 @@
         {
           "type": "applyStatus",
           "status": "bleed",
-          "chance": 0.6,
-          "durationMs": 6000
+          "chance": 0.6
         }
       ],
       "ai": {
@@ -10543,7 +10513,7 @@
         {
           "type": "damage",
           "scaling": "weapon",
-          "multiplier": 2.0,
+          "multiplier": 2,
           "area": {
             "shape": "cleave",
             "radius": 1.5,
@@ -10648,7 +10618,7 @@
         {
           "type": "damage",
           "scaling": "weapon",
-          "multiplier": 2.0,
+          "multiplier": 2,
           "lifesteal": 0.15
         }
       ]
@@ -10782,7 +10752,7 @@
         {
           "type": "damage",
           "scaling": "weapon",
-          "multiplier": 4.0,
+          "multiplier": 4,
           "lifesteal": 0.25,
           "area": {
             "shape": "radius",
@@ -10952,7 +10922,7 @@
         {
           "type": "damage",
           "scaling": "weapon",
-          "multiplier": 4.0
+          "multiplier": 4
         },
         {
           "type": "heal",
@@ -11174,7 +11144,7 @@
         {
           "type": "damage",
           "scaling": "weapon",
-          "multiplier": 1.0
+          "multiplier": 1
         },
         {
           "type": "applyStatus",
@@ -11537,7 +11507,7 @@
         {
           "type": "damage",
           "scaling": "weapon",
-          "multiplier": 2.0,
+          "multiplier": 2,
           "area": {
             "shape": "chain",
             "maxTargets": 3,
@@ -11603,7 +11573,7 @@
         {
           "type": "damage",
           "scaling": "weapon",
-          "multiplier": 4.0,
+          "multiplier": 4,
           "hits": 3
         },
         {
@@ -11703,7 +11673,7 @@
         {
           "type": "damage",
           "scaling": "weapon",
-          "multiplier": 2.0,
+          "multiplier": 2,
           "area": {
             "shape": "chain",
             "maxTargets": 5,
@@ -11816,7 +11786,7 @@
         {
           "type": "damage",
           "scaling": "spell",
-          "multiplier": 1.0,
+          "multiplier": 1,
           "profBonus": {
             "prof": "druid_staff",
             "perLevel": 0.15
@@ -11913,7 +11883,7 @@
         {
           "type": "damage",
           "scaling": "spell",
-          "multiplier": 1.0,
+          "multiplier": 1,
           "area": {
             "shape": "radius",
             "radius": 1.5
@@ -12829,7 +12799,7 @@
         {
           "type": "damage",
           "scaling": "weapon",
-          "multiplier": 5.0,
+          "multiplier": 5,
           "hits": 10,
           "lowHealthBonus": {
             "threshold": 0.4,
@@ -12861,7 +12831,7 @@
         {
           "type": "damage",
           "scaling": "weapon",
-          "multiplier": 2.0
+          "multiplier": 2
         }
       ]
     },
@@ -12956,7 +12926,7 @@
         {
           "type": "damage",
           "scaling": "weapon",
-          "multiplier": 3.0
+          "multiplier": 3
         },
         {
           "type": "applyStatus",
@@ -13144,7 +13114,7 @@
         {
           "type": "damage",
           "scaling": "spell",
-          "multiplier": 5.0,
+          "multiplier": 5,
           "area": {
             "shape": "radius",
             "radius": 2.5
@@ -13358,7 +13328,7 @@
         {
           "type": "damage",
           "scaling": "weapon",
-          "multiplier": 2.0,
+          "multiplier": 2,
           "lifesteal": 0.2
         }
       ]
@@ -13464,7 +13434,7 @@
         {
           "type": "damage",
           "scaling": "weapon",
-          "multiplier": 3.0,
+          "multiplier": 3,
           "lifesteal": 0.3,
           "area": {
             "shape": "radius",
@@ -13500,7 +13470,7 @@
         {
           "type": "damage",
           "scaling": "weapon",
-          "multiplier": 5.0,
+          "multiplier": 5,
           "requiresTargetStatus": {
             "status": "curse",
             "multiplier": 1.3
@@ -13677,7 +13647,7 @@
         {
           "type": "damage",
           "scaling": "spell",
-          "multiplier": 5.0,
+          "multiplier": 5,
           "profBonus": {
             "prof": "druid_staff",
             "perLevel": 0.15
@@ -13876,7 +13846,7 @@
         {
           "type": "damage",
           "scaling": "spell",
-          "multiplier": 5.0,
+          "multiplier": 5,
           "area": {
             "shape": "radius",
             "radius": 3
@@ -13917,7 +13887,7 @@
         {
           "type": "damage",
           "scaling": "weapon",
-          "multiplier": 2.0
+          "multiplier": 2
         },
         {
           "type": "applyStatus",
@@ -14018,7 +13988,7 @@
         {
           "type": "damage",
           "scaling": "weapon",
-          "multiplier": 3.0,
+          "multiplier": 3,
           "lowHealthBonus": {
             "threshold": 0.4,
             "multiplier": 1.5

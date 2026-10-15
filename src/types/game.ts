@@ -687,6 +687,7 @@ export interface SkillEffectApplyStatus {
   status: string;
   chance?: number;
   durationMs?: number;
+  durationOverrideReason?: string;
 }
 
 export interface SkillEffectHeal {
@@ -786,6 +787,7 @@ export interface SkillDef {
   description?: string;
   ai?: SkillAiDef;
   effects?: SkillEffect[];
+  durationOverrideReason?: string;
   stunDurationMs?: number;
   mitigationPercent?: number;
   durationMs?: number;

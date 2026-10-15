@@ -1736,6 +1736,26 @@ The following three intentional behavioural changes were reviewed and accepted b
   - Trimmed determinism fixture `test/fixtures/dungeon_determinism_pre_cache_seeds_1_50.json` to `{ seed: sha256 }` only (52 lines) while preserving exact SHA-256 byte parity.
   - Production build: `npm run build` succeeds cleanly.
 
+### Balance & Polish Pass, Part 1: Data Lint + Balance Simulation (2026-10-14)
 
+**Resolved and shipped: Executed the balance measurement pass without gameplay retunes: cleaned 38 legacy skills to use default durations, preserved 4 explicit overrides with `durationOverrideReason`, added `test/data_lint.test.ts` global guard, implemented single-cast probe (`scripts/skill_probe.ts`), and implemented 85-class simulation (`scripts/balance_sim.ts`) across real and unlimited energy modes.**
 
-
+- **0. Data Hygiene (`data/skills.json`, `src/types/game.ts`, `test/data_lint.test.ts`)**:
+  - Removed `durationMs` from 38 legacy non-poison `applyStatus` effects matching default durations in `statusEffects.json`.
+  - Preserved the 4 deliberate overrides (`trap_snare` slow 4000ms, `pinning_spear` slow 4000ms, `crippling_volley` slow 4000ms, `ignite` burn 6000ms) with `durationOverrideReason`.
+  - Added `durationOverrideReason?: string` to `SkillEffectApplyStatus` and `SkillDef` in `src/types/game.ts`.
+  - Added global guard `test/data_lint.test.ts` asserting: unique skill/class IDs, exactly 5 skills per combat class, valid status effect references, valid requirement targets across recursive `anyOf`/`oneOf`, `applyStatus.durationMs` only on poison or with `durationOverrideReason`, and non-empty `effects`, `ai`, and `description` for all 425 skills.
+- **1. Single-Cast Probe (`scripts/skill_probe.ts`, `docs/balance/skill_probe.csv`)**:
+  - Measured all 297 damage-dealing skills on a Lv 40 caster with 0 proficiencies against a 100,000-HP stationary dummy with fixed hit roll (0 procs).
+  - Evaluated damage against `expected = effective base damage × multiplier` (base 6 for Katana weapon scaling, base 10 for Fire Staff spell scaling).
+  - Produced `docs/balance/skill_probe.csv` (297 rows). 291 skills in-band (0.90–1.15). Identified the 6 out-of-band skills: 1 reactive counterattack (`riposte` dealt 0 due to no incoming attack) and 5 surplus energy dumps (`oblivion_strike`, `heavenly_decapitation`, `cataclysm`, `astral_annihilation`, `arcane_cataclysm`). Multi-hit skills divide cleanly without over-multiplying.
+- **2. Class Simulation (`scripts/balance_sim.ts`, `docs/balance/class_sim.csv`)**:
+  - Simulated all 85 combat classes across 3 fixed seeds (1, 2, 3) in a 90s fight (dt = 250ms) against 3 dummy enemies (100k HP, 0 dmg at range 1, 1.4, 3) and an ally held at 60% HP with timed poison.
+  - Set requirement chain proficiencies to tier benchmark (novice 30, adept 50, expert 70, master 90, prestige 100).
+  - Applied weapon selection rules (first weapon proficiency in chain for weapon scaling, conduit staff for magic, `druid_staff` for Druid line, `dark_staff` for Necromancer, `fist` for Brawler) and logged selected weapons per row.
+  - Evaluated both `real` mode (base 0.5/s energy regen through per-frame engine loop) and `unlimited` mode (refill to 100 below 60 EN).
+  - Produced `docs/balance/class_sim.csv` capturing `dps_real`, `dps_unlimited`, `hps_real`, `hps_unlimited`, `casts_real`, `casts_unlimited`, `en_spent_real`, and `seconds_until_energy_below_20`.
+- **3. Verification**:
+  - Global data lint test `test/data_lint.test.ts` passes 100%.
+  - Full suite `npm test -- --quiet` passes all 130 test suites.
+  - Production build `npm run build` succeeds cleanly.
