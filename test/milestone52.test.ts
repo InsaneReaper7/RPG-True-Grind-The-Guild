@@ -425,7 +425,7 @@ async function runMilestone52Tests() {
     assert.equal(katana.bleedChance, 0.25, 'Katana bleedChance must be 0.25 (25%) per true_grind_gdd line 180');
     assert.ok(katana.levelBonus, 'Katana levelBonus must be defined');
     assert.equal(katana.levelBonus.accuracyPerLevel, 0.004, 'accuracyPerLevel must be 0.004 per class_system line 44');
-    assert.equal(katana.levelBonus.damagePerLevel, 0.55, 'damagePerLevel must be 0.55 per class_system line 37');
+    assert.equal(katana.levelBonus.damagePerLevel, 0.5, 'damagePerLevel must be 0.5 per balance pass part 3');
 
     console.log('✓ PASS: Katana weapon stats, handedness, and scaling verified against design documentation.\n');
   }

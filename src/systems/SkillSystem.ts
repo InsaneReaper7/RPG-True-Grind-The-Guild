@@ -155,14 +155,86 @@ export class SkillSystem {
     return true;
   }
 
+  private resolvePrimaryEnemyTarget(
+    caster: Player,
+    target: Entity | Player | undefined,
+    skillDef?: SkillDef
+  ): any {
+    const isPartyOrCaster = (t: any): boolean => {
+      if (!t) return false;
+      if (t === caster) return true;
+      if (t.isPartyMember === true) return true;
+      if (this.combatSystem.party && this.combatSystem.party.includes(t)) return true;
+      return false;
+    };
+
+    const isEnemy = (t: any): boolean => {
+      return !!(t && !isPartyOrCaster(t) && typeof (t as any).takeDamage === 'function');
+    };
+
+    const isLiving = (t: any): boolean => {
+      return !!(t && t.state !== 'dead' && t.state !== 'downed' && !t.isDowned?.());
+    };
+
+    // 1. the passed target, if it's an enemy
+    if (isEnemy(target)) {
+      return target;
+    }
+
+    const maxRange = skillDef?.rangeTiles ?? 1;
+    const cTile = {
+      x: Math.floor(caster.x / (caster.tileSize || 32)),
+      y: Math.floor(caster.y / (caster.tileSize || 32))
+    };
+
+    const isWithinRange = (t: any): boolean => {
+      const ts = t.tileSize || caster.tileSize || 32;
+      const tTile = {
+        x: Math.floor(t.x / ts),
+        y: Math.floor(t.y / ts)
+      };
+      const dist = Math.max(Math.abs(cTile.x - tTile.x), Math.abs(cTile.y - tTile.y));
+      return dist <= maxRange;
+    };
+
+    // 2. caster.targetEntity, if it's a living enemy within rangeTiles
+    if (isEnemy(caster.targetEntity) && isLiving(caster.targetEntity) && isWithinRange(caster.targetEntity)) {
+      return caster.targetEntity;
+    }
+
+    // 3. the nearest living enemy within rangeTiles
+    const livingEnemies = (this.combatSystem.enemies || []).filter(
+      (e: any) => isEnemy(e) && isLiving(e)
+    );
+    let nearest: any = null;
+    let minDist = Infinity;
+    for (const e of livingEnemies) {
+      const ts = e.tileSize || caster.tileSize || 32;
+      const eTile = {
+        x: Math.floor(e.x / ts),
+        y: Math.floor(e.y / ts)
+      };
+      const dist = Math.max(Math.abs(cTile.x - eTile.x), Math.abs(cTile.y - eTile.y));
+      if (dist <= maxRange && dist < minDist) {
+        minDist = dist;
+        nearest = e;
+      }
+    }
+    if (nearest) {
+      return nearest;
+    }
+
+    // 4. null
+    return null;
+  }
+
   private playVfx(
     vfx: string,
     caster: Player,
     target?: Entity | Player,
     skillDef?: SkillDef
   ): void {
-    const isEnemyLike = (t: any): boolean => !!(t && (t instanceof Enemy || (t.gridPos && typeof t.takeDamage === 'function')));
-    const enemyTarget: any = isEnemyLike(target) ? target : (isEnemyLike(caster.targetEntity) ? caster.targetEntity : null);
+    const enemyTarget: any = this.resolvePrimaryEnemyTarget(caster, target, skillDef);
 
     switch (vfx) {
       case 'holy_smite':
@@ -205,43 +277,7 @@ export class SkillSystem {
 
     switch (effect.type) {
       case 'damage': {
-        const isPartyOrCaster = (t: any): boolean => {
-          if (!t) return false;
-          if (t === caster) return true;
-          if (t.isPartyMember === true) return true;
-          if (this.combatSystem.party && this.combatSystem.party.includes(t)) return true;
-          return false;
-        };
-
-        let enemyTarget: any = (target && !isPartyOrCaster(target) && typeof (target as any).takeDamage === 'function')
-          ? target
-          : null;
-
-        if (!enemyTarget) {
-          const maxRange = skillDef.rangeTiles ?? 1;
-          const cTile = {
-            x: Math.floor(caster.x / (caster.tileSize || 32)),
-            y: Math.floor(caster.y / (caster.tileSize || 32))
-          };
-          const livingEnemies = (this.combatSystem.enemies || []).filter(
-            (e: any) => e && e.state !== 'dead' && e.state !== 'downed' && !e.isDowned?.()
-          );
-          let nearest: any = null;
-          let minDist = Infinity;
-          for (const e of livingEnemies) {
-            const ts = e.tileSize || caster.tileSize || 32;
-            const eTile = {
-              x: Math.floor(e.x / ts),
-              y: Math.floor(e.y / ts)
-            };
-            const dist = Math.max(Math.abs(cTile.x - eTile.x), Math.abs(cTile.y - eTile.y));
-            if (dist <= maxRange && dist < minDist) {
-              minDist = dist;
-              nearest = e;
-            }
-          }
-          enemyTarget = nearest;
-        }
+        const enemyTarget: any = this.resolvePrimaryEnemyTarget(caster, target, skillDef);
 
         let totalMultiplier = effect.multiplier;
 

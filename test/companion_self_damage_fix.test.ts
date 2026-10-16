@@ -135,6 +135,7 @@ async function runTests() {
   let test1Passed = false;
   let test2Passed = false;
   let test3Passed = false;
+  let test4Passed = false;
 
   // TEST 1: Ronin flowing_step cast through AI
   console.log('--- TEST 1: Ronin Flowing Step AI Cast ---');
@@ -334,9 +335,88 @@ async function runTests() {
     console.log(`❌ TEST 3 FAILED: ${err.message}\n`);
   }
 
-  assert.strictEqual(test1Passed && test2Passed && test3Passed, true, 'All 3 tests must pass');
+  // TEST 4: Targeting fallback resolves caster.targetEntity before nearest enemy
+  console.log('--- TEST 4: Targeting fallback respects farther targetEntity over nearest enemy ---');
+  try {
+    const scene = createMockScene();
+    const combat = new CombatSystem(scene);
 
-  console.log('🎉 ALL 3 COMPANION SELF-DAMAGE TESTS PASSED!');
+    const mage = new Player(scene, 10, 10, playerData, arcaneStaffDef, 32);
+    mage.entityName = 'Arcane Caster';
+    mage.progression.setClassLevel('arcane_initiate', 40);
+    mage.progression.activeClassId = 'arcane_initiate';
+
+    mage.equippedSkillIds = ['arcane_bolt'];
+    mage.knownSkillIds = ['arcane_bolt'];
+    mage.hp = 100;
+    mage.maxHp = 100;
+    mage.energy = 100;
+
+    const enemyDefNear: any = {
+      id: 'dummy_near',
+      name: 'Near Target Dummy',
+      tier: 'common',
+      hp: 1000,
+      criticalHpMax: 0,
+      meleeDamage: 0,
+      aggroRadius: 10,
+      attackIntervalMs: 1500,
+      moveSpeed: 90,
+      harvest: []
+    };
+    const enemyDefFar: any = {
+      id: 'dummy_far',
+      name: 'Far Target Dummy',
+      tier: 'common',
+      hp: 1000,
+      criticalHpMax: 0,
+      meleeDamage: 0,
+      aggroRadius: 10,
+      attackIntervalMs: 1500,
+      moveSpeed: 90,
+      harvest: []
+    };
+
+    // Caster at (10, 10)
+    // Enemy Near at (11, 10) -> distance 1 tile
+    // Enemy Far at (13, 10) -> distance 3 tiles (within arcane_bolt rangeTiles: 5)
+    const enemyNear = new Enemy(scene, 11, 10, enemyDefNear, scene.pathfinder);
+    enemyNear.hp = 1000;
+    enemyNear.maxHp = 1000;
+    enemyNear.isAggroed = true;
+
+    const enemyFar = new Enemy(scene, 13, 10, enemyDefFar, scene.pathfinder);
+    enemyFar.hp = 1000;
+    enemyFar.maxHp = 1000;
+    enemyFar.isAggroed = true;
+
+    combat.party = [mage];
+    combat.enemies = [enemyNear, enemyFar];
+
+    // Caster's targetEntity is explicitly the farther enemy
+    mage.targetEntity = enemyFar;
+
+    const initialNearHp = enemyNear.hp;
+    const initialFarHp = enemyFar.hp;
+
+    // Cast arcane_bolt with NO explicit target (undefined)
+    const castOk = combat.castSkill(mage, 'arcane_bolt', undefined, 1000);
+    assert.strictEqual(castOk, true, 'arcane_bolt must cast successfully with no explicit target');
+
+    console.log(`  Near Enemy HP: ${initialNearHp} -> ${enemyNear.hp}`);
+    console.log(`  Far Enemy HP: ${initialFarHp} -> ${enemyFar.hp}`);
+
+    assert.strictEqual(enemyNear.hp, initialNearHp, 'Near enemy must NOT take damage');
+    assert.ok(enemyFar.hp < initialFarHp, 'Farther enemy (caster.targetEntity) MUST take damage');
+    console.log('✓ PASS: Caster whose targetEntity is the farther enemy hit the farther one when cast with no explicit target.\n');
+    test4Passed = true;
+  } catch (err: any) {
+    console.log(`❌ TEST 4 FAILED: ${err.message}\n`);
+  }
+
+  assert.strictEqual(test1Passed && test2Passed && test3Passed && test4Passed, true, 'All 4 tests must pass');
+
+  console.log('🎉 ALL 4 COMPANION SELF-DAMAGE AND TARGETING TESTS PASSED!');
 }
 
 runTests().catch(err => {

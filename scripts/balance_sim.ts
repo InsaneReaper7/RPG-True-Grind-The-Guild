@@ -311,9 +311,14 @@ function runFightSimulation(
   playerData: any,
   dataLoader: any
 ): SimRunResult {
-  Math.random = mulberry32(seed);
+  const origLog = console.log;
+  const origWarn = console.warn;
+  console.log = () => {};
+  console.warn = () => {};
+  try {
+    Math.random = mulberry32(seed);
 
-  const scene = createMockScene();
+    const scene = createMockScene();
   const combat = new CombatSystem(scene);
 
   const companion = new Player(scene, 10, 10, playerData, chosenWeaponDef, 32);
@@ -491,6 +496,10 @@ function runFightSimulation(
     energySpent: totalEnergySpent,
     secondsUntilBelow20
   };
+  } finally {
+    console.log = origLog;
+    console.warn = origWarn;
+  }
 }
 
 async function main() {
@@ -708,7 +717,33 @@ async function main() {
       }
     }
 
-    console.log(`--- TIER: ${t.toUpperCase()} (${tierRows.length} classes) | Median dps_real: ${medianDpsReal} (excluding brawler) ---`);
+    // Melee-only median (exclude brawler, and exclude healing-staff and magic-staff classes)
+    const meleePool = tierRows.filter(r => r.classId !== 'brawler' && !r.weapon.endsWith('_staff'));
+    meleePool.sort((a, b) => a.dps_real - b.dps_real);
+    let meleeMedianDpsReal = 0;
+    if (meleePool.length > 0) {
+      const mid = Math.floor(meleePool.length / 2);
+      if (meleePool.length % 2 === 1) {
+        meleeMedianDpsReal = meleePool[mid].dps_real;
+      } else {
+        meleeMedianDpsReal = Number(((meleePool[mid - 1].dps_real + meleePool[mid].dps_real) / 2).toFixed(1));
+      }
+    }
+
+    // Strictly melee median (excluding ranged weapons as well)
+    const strictlyMeleePool = meleePool.filter(r => !['bows', 'crossbows', 'throwing_weapons'].includes(r.weapon));
+    strictlyMeleePool.sort((a, b) => a.dps_real - b.dps_real);
+    let strictMeleeMedian = 0;
+    if (strictlyMeleePool.length > 0) {
+      const mid = Math.floor(strictlyMeleePool.length / 2);
+      if (strictlyMeleePool.length % 2 === 1) {
+        strictMeleeMedian = strictlyMeleePool[mid].dps_real;
+      } else {
+        strictMeleeMedian = Number(((strictlyMeleePool[mid - 1].dps_real + strictlyMeleePool[mid].dps_real) / 2).toFixed(1));
+      }
+    }
+
+    console.log(`--- TIER: ${t.toUpperCase()} (${tierRows.length} classes) | Overall Median: ${medianDpsReal} | Melee-only Median (excl staff): ${meleeMedianDpsReal} | Strict Melee Median: ${strictMeleeMedian} ---`);
     console.log('  Top 5 by dps_real:');
     const top5 = tierRows.slice(0, 5);
     for (const r of top5) {
@@ -726,22 +761,36 @@ async function main() {
   }
 
   console.log('========================================================================');
-  console.log('GREATSWORD CLASSES (BEFORE vs AFTER):');
+  console.log('GREATSWORD & KATANA CLASSES: BEFORE (4c9420a) vs AFTER:');
   console.log('========================================================================');
-  const gsBaseline: Record<string, { dps_real: number; dps_unl: number }> = {
-    brute: { dps_real: 6.0, dps_unl: 12.3 },
-    reaver: { dps_real: 6.6, dps_unl: 14.9 },
-    juggernaut: { dps_real: 8.7, dps_unl: 17.5 },
-    death_knight: { dps_real: 6.8, dps_unl: 12.9 },
-    dark_lord: { dps_real: 6.2, dps_unl: 16.1 },
-    deathbringer: { dps_real: 6.9, dps_unl: 13.5 }
+  const baseline_4c9420a: Record<string, { dps_real: number; dps_unl: number }> = {
+    // Greatswords
+    brute: { dps_real: 23.9, dps_unl: 45.7 },
+    reaver: { dps_real: 34.5, dps_unl: 73.4 },
+    juggernaut: { dps_real: 54.4, dps_unl: 142.8 },
+    death_knight: { dps_real: 59.0, dps_unl: 123.8 },
+    dark_lord: { dps_real: 81.1, dps_unl: 216.9 },
+    deathbringer: { dps_real: 71.4, dps_unl: 168.3 },
+    // Katana
+    swordsman: { dps_real: 21.4, dps_unl: 29.0 },
+    ronin: { dps_real: 35.1, dps_unl: 55.0 },
+    samurai: { dps_real: 32.8, dps_unl: 42.7 },
+    blademaster: { dps_real: 47.5, dps_unl: 98.1 },
+    sword_saint: { dps_real: 67.2, dps_unl: 136.0 },
+    swordmaster: { dps_real: 70.7, dps_unl: 151.7 },
+    weaponmaster: { dps_real: 107.9, dps_unl: 177.0 }
   };
-  const gsClasses = ['brute', 'reaver', 'juggernaut', 'death_knight', 'dark_lord', 'deathbringer'];
-  for (const cid of gsClasses) {
+  const trackedClasses = [
+    'brute', 'reaver', 'juggernaut', 'death_knight', 'dark_lord', 'deathbringer',
+    'swordsman', 'ronin', 'samurai', 'blademaster', 'sword_saint', 'swordmaster', 'weaponmaster'
+  ];
+  for (const cid of trackedClasses) {
     const r = rows.find(x => x.classId === cid);
-    const b = gsBaseline[cid];
-    if (r) {
-      console.log(`  ${r.classId.padEnd(16)} | tier: ${r.tier.padEnd(10)} | Before: dps_real=${b.dps_real.toFixed(1)}, dps_unl=${b.dps_unl.toFixed(1)} -> After: dps_real=${r.dps_real.toFixed(1)}, dps_unl=${r.dps_unlimited.toFixed(1)}`);
+    const b = baseline_4c9420a[cid];
+    if (r && b) {
+      const pctReal = (((r.dps_real - b.dps_real) / b.dps_real) * 100).toFixed(1);
+      const signReal = Number(pctReal) > 0 ? '+' : '';
+      console.log(`  ${r.classId.padEnd(16)} | weapon: ${r.weapon.padEnd(12)} | tier: ${r.tier.padEnd(9)} | dps_real: ${String(b.dps_real).padStart(5)} -> ${String(r.dps_real).padStart(5)} (${signReal}${pctReal}%) | dps_unl: ${String(b.dps_unl).padStart(5)} -> ${String(r.dps_unlimited).padStart(5)}`);
     }
   }
   console.log('');
