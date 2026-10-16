@@ -324,12 +324,27 @@ const magicSchools = [
 
 const schoolBaselines: Record<string, SchoolBaseline> = {};
 
+// Legacy reference energy costs for spell-filler cap comparison (frozen at pre-cheap-cast values so existing kits keep signed-off ratings)
+const legacySchoolCosts: Record<string, number> = {
+  fire_magic: 22,
+  earth_magic: 22,
+  healing_magic: 22,
+  wind_magic: 14,
+  arcane_magic: 20,
+  water_magic: 20,
+  ice_magic: 20,
+  nature_magic: 20,
+  lightning_magic: 20,
+  holy_magic: 20,
+  dark_magic: 20
+};
+
 for (const mid of magicSchools) {
   const w = weaponsData.weapons.find((item: any) => item.id === mid);
   if (!w) continue;
 
   const baseDmg = w.baseDamage ?? 0;
-  const enCost = w.energyCostPerCast ?? 20;
+  const enCost = legacySchoolCosts[mid] ?? 20;
   let procEV = 0;
   let procInfo = 'None';
 

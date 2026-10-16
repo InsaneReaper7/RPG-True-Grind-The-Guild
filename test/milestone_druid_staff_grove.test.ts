@@ -338,7 +338,7 @@ async function runTests() {
       const targetHpBefore = voidTarget.hp;
       (combat as any).executePlayerBasicAttack(voidHero, voidTarget, 4000);
       const damageDealt = targetHpBefore - voidTarget.hp;
-      assert.strictEqual(damageDealt, 11, 'Void Staff swing must deal 11 damage from void_staff baseDamage 11 (not 7 from generic staff)');
+      assert.strictEqual(damageDealt, 31, 'Void Staff swing must deal 31 damage from void_staff baseDamage 11 + lv 50 scaling (not 7 from generic staff)');
       assert.strictEqual(
         voidHero.progression.getProficiencyStat('staff').currentExp - staffExpBefore,
         2,

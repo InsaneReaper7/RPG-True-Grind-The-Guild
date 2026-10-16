@@ -177,6 +177,17 @@ for (const s of skillsData.skills) {
   assert.ok(typeof s.ai.priority === 'number', `Skill "${s.id}" ai must have numeric priority`);
   assert.ok(typeof s.description === 'string' && s.description.trim().length > 0, `Skill "${s.id}" must have a non-empty description`);
 }
-console.log(`✓ PASS: All ${skillsData.skills.length} skills have effects, ai, and description.\n`);
+// 7. Weapon scaling completeness: every non-magic, non-offhand weapon has damagePerLevel > 0
+console.log('7. Checking weapon levelBonus.damagePerLevel rule...');
+for (const w of weaponsData.weapons) {
+  if (w.category !== 'magic' && w.category !== 'offhand') {
+    assert.ok(
+      w.levelBonus && typeof w.levelBonus.damagePerLevel === 'number' && w.levelBonus.damagePerLevel > 0,
+      `Weapon "${w.id}" (${w.category}) must have levelBonus.damagePerLevel > 0`
+    );
+  }
+}
+console.log('✓ PASS: All non-magic, non-offhand weapons have positive damagePerLevel.\n');
 
 console.log('🎉 ALL DATA LINT CHECKS PASSED PERFECTLY!');
+

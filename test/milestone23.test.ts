@@ -429,8 +429,8 @@ async function runMilestone23Tests() {
   const effectiveWpnFull = combatFallback.getEffectiveWeaponForAttack(staffHero);
   assert.equal(effectiveWpnFull.id, 'lightning_magic', 'Effective weapon is lightning_magic spell when energy available');
 
-  // When dry (0 energy < 20 EN cost)
-  staffHero.energy = 5;
+  // When dry (< 5 EN cost)
+  staffHero.energy = 3;
   combatFallback.updateStaffDynamicRange(staffHero);
   assert.equal(staffHero.attackRangeTiles, 1, 'Dry caster collapses dynamic range to 1 (melee fallback)');
   const effectiveWpnDry = combatFallback.getEffectiveWeaponForAttack(staffHero);

@@ -233,8 +233,8 @@ async function runMilestone19Tests() {
 
   assert.ok(fireMagic, 'fire_magic weapon exists');
   assert.ok(healingMagic, 'healing_magic weapon exists');
-  assert.equal(fireMagic.energyCostPerCast, 22, 'fire_magic should cost 22 energy');
-  assert.equal(healingMagic.energyCostPerCast, 22, 'healing_magic should cost 22 energy');
+  assert.equal(fireMagic.energyCostPerCast, 6, 'fire_magic should cost 6 energy');
+  assert.equal(healingMagic.energyCostPerCast, 6, 'healing_magic should cost 6 energy');
 
   assert.equal(skillsMap['power_strike'].energyCost, 25, 'power_strike should cost 25');
   assert.equal(skillsMap['thrust'].energyCost, 20, 'thrust should cost 20');
@@ -243,12 +243,12 @@ async function runMilestone19Tests() {
   assert.equal(skillsMap['guard_up'].energyCost, 22, 'guard_up should cost 22');
 
   const maxEnergy = 100;
-  const cost = 22;
+  const cost = 6;
   const castCount = Math.floor(maxEnergy / cost);
   const remainder = maxEnergy % cost;
-  assert.equal(castCount, 4, '100 base energy allows exactly 4 casts');
-  assert.equal(remainder, 12, '12 energy remains (< 22), so caster runs dry after 4 casts');
-  console.log('✔ Test 1 passed: 4-5 cast target verified (100 base EN / 22 = 4 casts, 12 left).');
+  assert.equal(castCount, 16, '100 base energy allows exactly 16 casts');
+  assert.equal(remainder, 4, '4 energy remains (< 6), so caster runs dry after 16 casts');
+  console.log('✔ Test 1 passed: 16 cast target verified (100 base EN / 6 = 16 casts, 4 left).');
 
   // ---------------------------------------------------------------------------
   // TEST 2: In-Combat Passive Energy Regen Gating
@@ -401,16 +401,16 @@ async function runMilestone19Tests() {
   const weaponFull = (combat as any).getEffectiveWeaponForAttack(mage);
   assert.equal(weaponFull.id, 'fire_magic', 'Fire Staff with >= 22 EN attacks using fire_magic profile');
 
-  // With dry energy (< 22): drops range to 1 tile and falls back to physical staff
-  mage.energy = 10;
+  // With dry energy (< 6): drops range to 1 tile and falls back to physical staff
+  mage.energy = 5;
   combat.updateStaffDynamicRange(mage);
-  assert.equal(mage.attackRangeTiles, 1, 'Dry Fire Staff (< 22 EN) drops to 1 tile attack range');
+  assert.equal(mage.attackRangeTiles, 1, 'Dry Fire Staff (< 6 EN) drops to 1 tile attack range');
 
   const weaponDry = (combat as any).getEffectiveWeaponForAttack(mage);
   assert.equal(weaponDry.id, 'staff', 'Dry Fire Staff attacks using staff profile');
   assert.equal(weaponDry.energyCostPerCast || 0, 0, 'Staff melee fallback costs 0 energy');
   assert.equal(weaponDry.category, 'melee_2h', 'Staff category is melee_2h');
-  console.log('✔ Test 7 passed: Fire Staff dynamically channels Fire Magic at 4 tiles with >= 22 EN and drops to 1 tile physical melee at 0 cost when dry.');
+  console.log('✔ Test 7 passed: Fire Staff dynamically channels Fire Magic at 4 tiles with >= 6 EN and drops to 1 tile physical melee at 0 cost when dry.');
 
   // ---------------------------------------------------------------------------
   // TEST 8: Healing Magic Branch 3 Dry-State Dynamic Cost Warning & Fallback
@@ -419,7 +419,7 @@ async function runMilestone19Tests() {
   const healingStaff = dataLoader.getWeapon('healing_staff');
   assert.ok(healingStaff, 'healing_staff weapon exists');
   const cleric = createMockHero('cleric1', 'Cleric', 5, 5, healingStaff, new ProgressionSystem(dataLoader.getClassesData(), 'Cleric'));
-  cleric.energy = 10; // dry (< 22)
+  cleric.energy = 5; // dry (< 6)
   const woundedAlly = createMockHero('ally1', 'Ally', 5, 6, healingStaff, new ProgressionSystem(dataLoader.getClassesData(), 'Ally'));
   woundedAlly.hp = 20; // damaged (20/50)
 
@@ -436,11 +436,11 @@ async function runMilestone19Tests() {
     assert.equal(casted, false, 'Branch 3 must return false so cleric falls back to normal combat');
     const warningLog = logs.find(l => l.includes('[Healing Magic] ⚠️ Out of Energy to cast Heal'));
     assert.ok(warningLog, 'Warning log must be produced in Branch 3');
-    assert.ok(warningLog.includes('(10/22)'), 'Warning log must interpolate dynamic cost: (10/22)');
+    assert.ok(warningLog.includes('(5/6)'), 'Warning log must interpolate dynamic cost: (5/6)');
   } finally {
     console.log = origLog;
   }
-  console.log('✔ Test 8 passed: Branch 3 cleanly emits interpolated (10/22) warning and returns false to allow melee fallback.');
+  console.log('✔ Test 8 passed: Branch 3 cleanly emits interpolated (5/6) warning and returns false to allow melee fallback.');
 
   // ---------------------------------------------------------------------------
   // TEST 9: Healing Magic Branch 2 Clean Return When No Allies Are Damaged

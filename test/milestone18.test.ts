@@ -329,7 +329,7 @@ async function runTests() {
   assert.equal(fireMagic.attackRangeTiles, 4, 'Fire Magic attack range is 4 tiles');
   assert.equal(fireMagic.baseDamage, 10, 'Fire Magic base damage is 10');
   assert.equal(fireMagic.baseAccuracy, 0.70, 'Fire Magic base accuracy is 0.70');
-  assert.equal(fireMagic.energyCostPerCast, 22, 'Fire Magic costs 22 Energy per cast (rebalanced in M19)');
+  assert.equal(fireMagic.energyCostPerCast, 6, 'Fire Magic costs 6 Energy per cast (rebalanced in M19)');
   assert.equal(fireMagic.burnChance, 0.35, 'Fire Magic has 35% base burn chance');
   assert.equal(fireMagic.aoeRadiusTiles, 1, 'Fire Magic has AoE radius of 1 tile');
   assert.equal(fireMagic.aoeSplashPercent, 0.50, 'Fire Magic has 50% splash damage');
@@ -338,7 +338,7 @@ async function runTests() {
   assert.ok(fireMagic.levelBonus, 'Fire Magic has levelBonus defined');
   assert.equal(fireMagic.levelBonus?.damagePerLevel, 0.5, '+0.5 damage per level');
   assert.equal(fireMagic.levelBonus?.accuracyPerLevel, 0.003, '+0.003 accuracy per level');
-  assert.equal(fireMagic.levelBonus?.energyCostReductionPerLevel, 0.1, '-0.1 energy cost per level');
+  assert.equal(fireMagic.levelBonus?.energyCostReductionPerLevel, 0.03, '-0.03 energy cost per level');
   assert.equal(fireMagic.levelBonus?.burnChancePerLevel, 0.003, '+0.003 burn chance per level (scaled with proficiency)');
   console.log('✔ Test 1 passed: Fire Magic correctly configured with full stats, 4-tile range, and scaling bonuses.');
 
@@ -413,29 +413,29 @@ async function runTests() {
   const mockScene = createMockScene();
   const combat = new CombatSystem(mockScene, [hero], [], mockScene.pathfinder);
 
-  // At Level 0: Cost is 22 Energy
+  // At Level 0: Cost is 6 Energy
   const level0Cost = Math.max(
     1,
-    Math.round(fireMagic.energyCostPerCast! - (fireMagic.levelBonus?.energyCostReductionPerLevel ?? 0.1) * 0)
+    Math.round(fireMagic.energyCostPerCast! - (fireMagic.levelBonus?.energyCostReductionPerLevel ?? 0.03) * 0)
   );
-  assert.equal(level0Cost, 22, 'Base energy cost at Lv 0 is 22');
+  assert.equal(level0Cost, 6, 'Base energy cost at Lv 0 is 6');
 
-  // At Level 10: Cost is 22 - (0.1 * 10) = 21 Energy
+  // At Level 10: Cost is 6 - (0.03 * 10) = 6 Energy (round(5.7) = 6)
   const level10Cost = Math.max(
     1,
-    Math.round(fireMagic.energyCostPerCast! - (fireMagic.levelBonus?.energyCostReductionPerLevel ?? 0.1) * 10)
+    Math.round(fireMagic.energyCostPerCast! - (fireMagic.levelBonus?.energyCostReductionPerLevel ?? 0.03) * 10)
   );
-  assert.equal(level10Cost, 21, 'Reduced energy cost at Lv 10 is 21');
+  assert.equal(level10Cost, 6, 'Reduced energy cost at Lv 10 is 6');
 
-  // At Level 50: Cost is 22 - (0.1 * 50) = 17 Energy
+  // At Level 50: Cost is 6 - (0.03 * 50) = 5 Energy (round(4.5) = 5)
   const level50Cost = Math.max(
     1,
-    Math.round(fireMagic.energyCostPerCast! - (fireMagic.levelBonus?.energyCostReductionPerLevel ?? 0.1) * 50)
+    Math.round(fireMagic.energyCostPerCast! - (fireMagic.levelBonus?.energyCostReductionPerLevel ?? 0.03) * 50)
   );
-  assert.equal(level50Cost, 17, 'Reduced energy cost at Lv 50 is 17');
+  assert.equal(level50Cost, 5, 'Reduced energy cost at Lv 50 is 5');
 
   // Test inability to cast when energy < cost
-  hero.energy = 5; // Less than 12
+  hero.energy = 5; // Less than 6
   const enemyAtRange = createMockEnemy('wolf_1', 'Wolf', 8, 5); // 3 tiles away
   combat.enemies = [enemyAtRange];
   hero.setTarget(enemyAtRange);
@@ -448,7 +448,7 @@ async function runTests() {
   // Restore energy and confirm cast consumes energy
   hero.energy = 100;
   combat.update(1600, 100);
-  assert.equal(hero.energy, 78, 'Casting Fire Magic consumed exactly 22 Energy (100 -> 78)');
+  assert.equal(hero.energy, 94, 'Casting Fire Magic consumed exactly 6 Energy (100 -> 94)');
   assert.equal(hero.lastAttackTime, 1600, 'Attack executed successfully');
   console.log('✔ Test 5 passed: Energy deduction enforced and scales with Fire Magic proficiency.');
 
@@ -471,7 +471,7 @@ async function runTests() {
   assert.equal(hero.gridPos.x, 5, 'Hero did NOT move into melee range; remained at 4-tile standoff');
   assert.equal(hero.gridPos.y, 5);
   assert.ok(enemyFar.hp < preHp, `Enemy took real damage from 4 tiles away (HP: ${preHp} -> ${enemyFar.hp})`);
-  assert.equal(hero.energy, 78, 'Energy deducted for 4-tile ranged cast (100 - 22 = 78)');
+  assert.equal(hero.energy, 94, 'Energy deducted for 4-tile ranged cast (100 - 6 = 94)');
   console.log('✔ Test 6 passed: Auto-attack loop fires cleanly from 4 tiles away without pathing into melee.');
 
   // -------------------------------------------------------------

@@ -205,8 +205,43 @@ export class SkillSystem {
 
     switch (effect.type) {
       case 'damage': {
-        const enemyTarget: any = (target && typeof (target as any).takeDamage === 'function' ? target : null) ||
-          (caster.targetEntity && typeof (caster.targetEntity as any).takeDamage === 'function' ? caster.targetEntity : null);
+        const isPartyOrCaster = (t: any): boolean => {
+          if (!t) return false;
+          if (t === caster) return true;
+          if (t.isPartyMember === true) return true;
+          if (this.combatSystem.party && this.combatSystem.party.includes(t)) return true;
+          return false;
+        };
+
+        let enemyTarget: any = (target && !isPartyOrCaster(target) && typeof (target as any).takeDamage === 'function')
+          ? target
+          : null;
+
+        if (!enemyTarget) {
+          const maxRange = skillDef.rangeTiles ?? 1;
+          const cTile = {
+            x: Math.floor(caster.x / (caster.tileSize || 32)),
+            y: Math.floor(caster.y / (caster.tileSize || 32))
+          };
+          const livingEnemies = (this.combatSystem.enemies || []).filter(
+            (e: any) => e && e.state !== 'dead' && e.state !== 'downed' && !e.isDowned?.()
+          );
+          let nearest: any = null;
+          let minDist = Infinity;
+          for (const e of livingEnemies) {
+            const ts = e.tileSize || caster.tileSize || 32;
+            const eTile = {
+              x: Math.floor(e.x / ts),
+              y: Math.floor(e.y / ts)
+            };
+            const dist = Math.max(Math.abs(cTile.x - eTile.x), Math.abs(cTile.y - eTile.y));
+            if (dist <= maxRange && dist < minDist) {
+              minDist = dist;
+              nearest = e;
+            }
+          }
+          enemyTarget = nearest;
+        }
 
         let totalMultiplier = effect.multiplier;
 

@@ -366,7 +366,7 @@ async function runMilestone27Tests() {
   assert.equal(iceMagic.category, 'magic');
   assert.equal(iceMagic.conduitWeaponId, 'ice_staff');
   assert.equal(iceMagic.attackRangeTiles, 4);
-  assert.equal(iceMagic.energyCostPerCast, 20);
+  assert.equal(iceMagic.energyCostPerCast, 5);
   assert.equal(iceMagic.slowChance, 0.35);
   // Single-target validation: NO aoe splash, NO chain targets
   assert.equal(iceMagic.aoeRadiusTiles, undefined, 'ice_magic must NOT have aoeRadiusTiles');
@@ -542,15 +542,15 @@ async function runMilestone27Tests() {
   const fullEffective = combat.getEffectiveWeaponForAttack(heroFallback);
   assert.equal(fullEffective.id, 'ice_magic', 'Effective weapon is ice_magic spell when energy available');
 
-  // Simulate spell cast: consumes 20 energy, awards ice_magic EXP
+  // Simulate spell cast: consumes 5 energy, awards ice_magic EXP
   const preIceExp = combatProg.getProficiencyStat('ice_magic')?.currentExp ?? 0;
-  heroFallback.energy -= 20; // Cast cost
+  heroFallback.energy -= 5; // Cast cost
   combatProg.addProficiencyExp('ice_magic', 2);
   const postIceExp = combatProg.getProficiencyStat('ice_magic')?.currentExp ?? 0;
   assert.equal(postIceExp, preIceExp + 2, 'Ice Magic cast credits ice_magic proficiency EXP');
 
-  // 2. Deplete energy below 20 (e.g. 10 energy remaining): Fallback to melee Staff
-  heroFallback.energy = 10;
+  // 2. Deplete energy below 5 (e.g. 3 energy remaining): Fallback to melee Staff
+  heroFallback.energy = 3;
   combat.updateStaffDynamicRange(heroFallback);
   assert.equal(heroFallback.attackRangeTiles, 1, 'Dry energy collapses attack range to 1 tile (Melee Staff)');
   const dryEffective = combat.getEffectiveWeaponForAttack(heroFallback);
@@ -562,7 +562,7 @@ async function runMilestone27Tests() {
   const postStaffExp = combatProg.getProficiencyStat('staff')?.currentExp ?? 0;
   assert.equal(postStaffExp, preStaffExp + 2, 'Dry melee attack credits staff proficiency EXP');
 
-  // 3. Restore energy back to >= 20: Range returns to 4, effective weapon returns to ice_magic
+  // 3. Restore energy back to >= 5: Range returns to 4, effective weapon returns to ice_magic
   heroFallback.energy = 50;
   combat.updateStaffDynamicRange(heroFallback);
   assert.equal(heroFallback.attackRangeTiles, 4, 'Restored energy expands attack range back to 4 tiles');

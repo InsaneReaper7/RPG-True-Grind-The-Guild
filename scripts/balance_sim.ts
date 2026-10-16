@@ -83,6 +83,76 @@ function createMockScene(gridWidth: number = 40, gridHeight: number = 40): any {
   }
   const pathfinder = new Pathfinder(grid);
 
+  // Synchronous findPath wrapper:
+  // In node simulation, pathfinder.findPath returns a Promise which defers .then() to microtasks.
+  // We wrap findPath so .then() executes immediately and synchronously within the simulation frame.
+  (pathfinder as any).findPath = function (
+    start: any,
+    end: any,
+    dynamicObstacles?: any,
+    hardObstacles?: any
+  ) {
+    if (
+      start.x < 0 ||
+      start.x >= (this as any).gridWidth ||
+      start.y < 0 ||
+      start.y >= (this as any).gridHeight ||
+      end.x < 0 ||
+      end.x >= (this as any).gridWidth ||
+      end.y < 0 ||
+      end.y >= (this as any).gridHeight
+    ) {
+      const p = Promise.resolve([]);
+      (p as any).then = function (onFulfilled: any) {
+        if (onFulfilled) onFulfilled([]);
+        return p;
+      };
+      return p;
+    }
+
+    let hardList: any[] = [];
+    if (Array.isArray(dynamicObstacles)) {
+      hardList = hardObstacles ? hardObstacles : dynamicObstacles;
+    } else if (dynamicObstacles && typeof dynamicObstacles === 'object') {
+      hardList = dynamicObstacles.hard || [];
+    } else if (hardObstacles) {
+      hardList = hardObstacles;
+    }
+
+    const easystar = (this as any).easystar;
+    if (hardList.length > 0) {
+      for (const obs of hardList) {
+        if ((obs.x !== start.x || obs.y !== start.y) && (obs.x !== end.x || obs.y !== end.y)) {
+          easystar.avoidAdditionalPoint(obs.x, obs.y);
+        }
+      }
+    }
+
+    let returnedPath: any[] = [];
+    easystar.findPath(start.x, start.y, end.x, end.y, (path: any) => {
+      if (path !== null) {
+        returnedPath = path.map((pt: any) => ({ x: pt.x, y: pt.y }));
+      }
+    });
+    easystar.calculate();
+
+    if (hardList.length > 0) easystar.stopAvoidingAllAdditionalPoints();
+
+    const promise = Promise.resolve(returnedPath);
+    (promise as any).then = function (onFulfilled: any) {
+      if (onFulfilled) {
+        try {
+          const res = onFulfilled(returnedPath);
+          return Promise.resolve(res);
+        } catch (err) {
+          return Promise.reject(err);
+        }
+      }
+      return promise;
+    };
+    return promise;
+  };
+
   const createMockObj = () => {
     const obj: any = new Proxy({
       x: 0,
@@ -153,10 +223,10 @@ function createDummyEnemy(scene: any, x: number, y: number, name: string = 'Dumm
     meleeDamage: 0,
     aggroRadius: 10,
     attackIntervalMs: 1500,
-    moveSpeed: 1.0,
+    moveSpeed: 90,
     harvest: []
   };
-  const enemy = new Enemy(scene, x, y, def, scene.pathfinder);
+  const enemy = new Enemy(scene, x, y, def, 'wolf-avatar', 32);
   enemy.hp = hp;
   enemy.maxHp = hp;
   enemy.isAggroed = true;
@@ -260,11 +330,22 @@ function runFightSimulation(
     const stat = companion.progression.getProficiencyStat(prof);
     if (stat) stat.level = tierLvl;
   }
+  if (chosenWeaponDef.proficiencyId) {
+    const stat = companion.progression.getProficiencyStat(chosenWeaponDef.proficiencyId);
+    if (stat) stat.level = tierLvl;
+  }
 
   // Equip weapon and skills
   companion.equippedWeapon = chosenWeaponDef;
   companion.attackRangeTiles = chosenWeaponDef.attackRangeTiles ??
     (chosenWeaponDef.category === 'ranged' || chosenWeaponDef.category === 'magic' ? 4 : 1);
+
+  if (profsInChain.includes('shields') && !chosenWeaponDef.twoHanded) {
+    const shieldDef = dataLoader.getWeapon('shields');
+    if (shieldDef) {
+      companion.offhandWeapon = shieldDef;
+    }
+  }
 
   companion.equippedSkillIds = classSkills.map(s => s.id);
   companion.knownSkillIds = classSkills.map(s => s.id);
@@ -380,6 +461,9 @@ function runFightSimulation(
     // Execute per-frame path
     companion.update(now, dt);
     ally.update(now, dt);
+    dummy1.update(now, dt);
+    dummy2.update(now, dt);
+    dummy3.update(now, dt);
 
     inCombatUpdate = true;
     combat.update(now, dt);
@@ -491,6 +575,8 @@ async function main() {
       chosenWeaponId = 'dark_staff';
     } else if (['grove_walker', 'herbalist', 'druid', 'natures_avatar', 'archdruid'].includes(c.id)) {
       chosenWeaponId = 'druid_staff';
+    } else if (c.id === 'guardian') {
+      chosenWeaponId = 'short_swords';
     } else if (hasWeaponScaling) {
       const firstWpnProf = profs.find(p => weaponProfList.includes(p) && p !== 'shields');
       if (firstWpnProf && profToWeapon[firstWpnProf]) {
@@ -601,7 +687,7 @@ async function main() {
 
   // Section 2 Reporting
   console.log('========================================================================');
-  console.log('TOP 5 AND BOTTOM 5 CLASSES BY dps_real PER TIER');
+  console.log('TIER MEDIANS, TOP 5 AND BOTTOM 5 CLASSES BY dps_real');
   console.log('========================================================================\n');
 
   const tiers = ['novice', 'adept', 'expert', 'master', 'prestige'];
@@ -609,20 +695,56 @@ async function main() {
     const tierRows = rows.filter(r => r.tier === t);
     tierRows.sort((a, b) => b.dps_real - a.dps_real);
 
-    console.log(`--- TIER: ${t.toUpperCase()} (${tierRows.length} classes) ---`);
+    // Exclude brawler from tier medians
+    const medianPool = tierRows.filter(r => r.classId !== 'brawler');
+    medianPool.sort((a, b) => a.dps_real - b.dps_real);
+    let medianDpsReal = 0;
+    if (medianPool.length > 0) {
+      const mid = Math.floor(medianPool.length / 2);
+      if (medianPool.length % 2 === 1) {
+        medianDpsReal = medianPool[mid].dps_real;
+      } else {
+        medianDpsReal = Number(((medianPool[mid - 1].dps_real + medianPool[mid].dps_real) / 2).toFixed(1));
+      }
+    }
+
+    console.log(`--- TIER: ${t.toUpperCase()} (${tierRows.length} classes) | Median dps_real: ${medianDpsReal} (excluding brawler) ---`);
     console.log('  Top 5 by dps_real:');
     const top5 = tierRows.slice(0, 5);
     for (const r of top5) {
-      console.log(`    ${r.classId.padEnd(22)} | weapon: ${r.weapon.padEnd(16)} | dps_real: ${String(r.dps_real).padStart(6)} | dps_unl: ${String(r.dps_unlimited).padStart(6)} | casts_r: ${r.casts_real}`);
+      const label = r.classId === 'brawler' ? 'brawler (intended outlier)' : r.classId;
+      console.log(`    ${label.padEnd(28)} | weapon: ${r.weapon.padEnd(16)} | dps_real: ${String(r.dps_real).padStart(6)} | dps_unl: ${String(r.dps_unlimited).padStart(6)} | casts_r: ${r.casts_real}`);
     }
 
     console.log('  Bottom 5 by dps_real:');
     const bottom5 = tierRows.slice(-5).reverse();
     for (const r of bottom5) {
-      console.log(`    ${r.classId.padEnd(22)} | weapon: ${r.weapon.padEnd(16)} | dps_real: ${String(r.dps_real).padStart(6)} | dps_unl: ${String(r.dps_unlimited).padStart(6)} | casts_r: ${r.casts_real}`);
+      const label = r.classId === 'brawler' ? 'brawler (intended outlier)' : r.classId;
+      console.log(`    ${label.padEnd(28)} | weapon: ${r.weapon.padEnd(16)} | dps_real: ${String(r.dps_real).padStart(6)} | dps_unl: ${String(r.dps_unlimited).padStart(6)} | casts_r: ${r.casts_real}`);
     }
     console.log('');
   }
+
+  console.log('========================================================================');
+  console.log('GREATSWORD CLASSES (BEFORE vs AFTER):');
+  console.log('========================================================================');
+  const gsBaseline: Record<string, { dps_real: number; dps_unl: number }> = {
+    brute: { dps_real: 6.0, dps_unl: 12.3 },
+    reaver: { dps_real: 6.6, dps_unl: 14.9 },
+    juggernaut: { dps_real: 8.7, dps_unl: 17.5 },
+    death_knight: { dps_real: 6.8, dps_unl: 12.9 },
+    dark_lord: { dps_real: 6.2, dps_unl: 16.1 },
+    deathbringer: { dps_real: 6.9, dps_unl: 13.5 }
+  };
+  const gsClasses = ['brute', 'reaver', 'juggernaut', 'death_knight', 'dark_lord', 'deathbringer'];
+  for (const cid of gsClasses) {
+    const r = rows.find(x => x.classId === cid);
+    const b = gsBaseline[cid];
+    if (r) {
+      console.log(`  ${r.classId.padEnd(16)} | tier: ${r.tier.padEnd(10)} | Before: dps_real=${b.dps_real.toFixed(1)}, dps_unl=${b.dps_unl.toFixed(1)} -> After: dps_real=${r.dps_real.toFixed(1)}, dps_unl=${r.dps_unlimited.toFixed(1)}`);
+    }
+  }
+  console.log('');
 
   console.log('========================================================================');
   console.log('ZERO-DAMAGE CLASSES:');

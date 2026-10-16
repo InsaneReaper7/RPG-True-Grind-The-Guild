@@ -344,7 +344,7 @@ async function runMilestone47Tests() {
   assert.equal(darkMagic.category, 'magic');
   assert.equal(darkMagic.conduitWeaponId, 'dark_staff');
   assert.equal(darkMagic.attackRangeTiles, 4);
-  assert.equal(darkMagic.energyCostPerCast, 20);
+  assert.equal(darkMagic.energyCostPerCast, 5);
   assert.equal(darkMagic.curseChance, 0.35);
   assert.equal(darkMagic.baseDamage, 8);
   assert.equal(darkMagic.baseAccuracy, 0.70);
@@ -465,7 +465,7 @@ async function runMilestone47Tests() {
     Math.random = originalRandom;
   }
 
-  assert.equal(darkCaster.energy, preEnergy - 20, 'Casting Dark Magic consumes exactly 20 energy');
+  assert.equal(darkCaster.energy, preEnergy - 5, 'Casting Dark Magic consumes exactly 5 energy');
   assert.ok(enemy.hp < preEnemyHp, `Enemy takes dark damage (Pre: ${preEnemyHp}, Post: ${enemy.hp})`);
   assert.equal(enemy.hasStatusEffect('curse'), true, 'Enemy is afflicted with Curse status effect');
 

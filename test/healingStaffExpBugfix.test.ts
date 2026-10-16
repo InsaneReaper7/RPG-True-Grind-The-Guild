@@ -338,15 +338,15 @@ async function runBugfixVerification() {
 
     // 1A4. Dry Energy fallback -> Cannot cast Heal, falls back to melee staff
     hero.hp = 20; // still needs healing
-    barris.energy = 10; // dry (< 22 EN cost)
+    barris.energy = 5; // dry (< 6 EN cost)
     barris.lastSkillUseTimes.clear();
     const castedDry = combat.checkAndAutocastHealingMagic(barris, 7000);
-    assert.equal(castedDry, false, 'Dry Barris (< 22 EN) must NOT cast Heal');
+    assert.equal(castedDry, false, 'Dry Barris (< 6 EN) must NOT cast Heal');
     combat.updateStaffDynamicRange(barris);
     assert.equal(barris.attackRangeTiles, 1, 'Dry Healing Staff maintains strict 1-tile attack range');
     const dryEffWpn = combat.getEffectiveWeaponForAttack(barris);
     assert.equal(dryEffWpn.id, 'staff', 'Dry Healing Staff resolves to staff profile for melee fallback');
-    console.log('  ✔ 1A4 Passed: Dry Healing Staff (< 22 EN) refuses heal and drops to 1-tile staff melee fallback');
+    console.log('  ✔ 1A4 Passed: Dry Healing Staff (< 6 EN) refuses heal and drops to 1-tile staff melee fallback');
 
     // Reset hero pos and hp
     hero.gridPos = { x: 10, y: 10 };

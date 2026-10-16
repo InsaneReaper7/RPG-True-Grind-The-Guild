@@ -336,7 +336,7 @@ async function runMilestone57Tests() {
   assert.equal(arcaneMagic.category, 'magic');
   assert.equal(arcaneMagic.conduitWeaponId, 'arcane_staff');
   assert.equal(arcaneMagic.attackRangeTiles, 4);
-  assert.equal(arcaneMagic.energyCostPerCast, 20);
+  assert.equal(arcaneMagic.energyCostPerCast, 5);
   assert.equal(arcaneMagic.manaSiphonAmount, 4, 'arcane_magic defines manaSiphonAmount: 4');
   assert.equal(arcaneMagic.baseDamage, 8);
   assert.equal(arcaneMagic.baseAccuracy, 0.75);
@@ -457,8 +457,8 @@ async function runMilestone57Tests() {
     Math.random = originalRandom;
   }
 
-  // Cost: 20 energy. Siphon restored: 4 energy. Expected net: 80 - 20 + 4 = 64 energy.
-  assert.equal(arcaneCaster.energy, preEnergy - 20 + 4, `Casting Arcane Magic consumed 20 energy and siphoned 4 back (Net: ${arcaneCaster.energy})`);
+  // Cost: 5 energy. Siphon restored: 4 energy. Expected net: 80 - 5 + 4 = 79 energy.
+  assert.equal(arcaneCaster.energy, preEnergy - 5 + 4, `Casting Arcane Magic consumed 5 energy and siphoned 4 back (Net: ${arcaneCaster.energy})`);
   assert.ok(enemy.hp < preEnemyHp, `Enemy takes arcane magic damage (Pre: ${preEnemyHp}, Post: ${enemy.hp})`);
   console.log(`  Enemy HP reduced from ${preEnemyHp} to ${enemy.hp}. Caster Energy: ${preEnergy} -> ${arcaneCaster.energy}`);
 
@@ -471,8 +471,8 @@ async function runMilestone57Tests() {
   } finally {
     Math.random = originalRandom;
   }
-  // 98 - 20 + 4 = 82 <= 100
-  assert.equal(arcaneCaster.energy, 82, 'Siphon correctly calculates net energy below cap');
+  // 98 - 5 + 4 = 97 <= 100
+  assert.equal(arcaneCaster.energy, 97, 'Siphon correctly calculates net energy below cap');
 
   // Test Level Scaling of Mana Siphon
   // At Level 10: base 4 + 10 * 0.1 = 5 siphon amount
@@ -485,9 +485,9 @@ async function runMilestone57Tests() {
   } finally {
     Math.random = originalRandom;
   }
-  // At Level 10: cost is 20 - (10 * 0.1) = 19 energy. Siphon is 4 + (10 * 0.1) = 5 energy.
-  // Net energy: 60 - 19 + 5 = 46 energy.
-  assert.equal(arcaneCaster.energy, 46, `Level 10 Arcane Magic reduced cost to 19 and scaled siphon to 5 (+5 EN restored, net 46)`);
+  // At Level 10: cost is 5 - (10 * 0.03) = 4.7 -> round(4.7) = 5 energy. Siphon is 4 + (10 * 0.1) = 5 energy.
+  // Net energy: 60 - 5 + 5 = 60 energy.
+  assert.equal(arcaneCaster.energy, 60, `Level 10 Arcane Magic reduced cost to 5 and scaled siphon to 5 (+5 EN restored, net 60)`);
   console.log('✓ PASS: Arcane Magic deals ranged magic damage and siphons Energy on hit with level scaling.\n');
 
   // =========================================================================

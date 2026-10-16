@@ -333,7 +333,7 @@ async function runTests() {
   assert.equal(holyMagic.category, 'magic');
   assert.equal(holyMagic.conduitWeaponId, 'holy_staff');
   assert.equal(holyMagic.attackRangeTiles, 4);
-  assert.equal(holyMagic.energyCostPerCast, 20);
+  assert.equal(holyMagic.energyCostPerCast, 5);
   assert.equal(holyMagic.radianceHealAmount, 3);
   assert.equal(holyMagic.baseDamage, 8);
 
@@ -429,7 +429,7 @@ async function runTests() {
     Math.random = originalRandom;
   }
 
-  assert.equal(holyCaster.energy, preEnergy - 20, 'Casting Holy Magic consumes exactly 20 energy');
+  assert.equal(holyCaster.energy, preEnergy - 5, 'Casting Holy Magic consumes exactly 5 energy');
   assert.ok(enemy.hp < preEnemyHp, `Enemy takes holy damage (Pre: ${preEnemyHp}, Post: ${enemy.hp})`);
   assert.equal(injuredAlly.hp, preAllyHp + 3, `Injured ally restored 3 HP via Radiance (Pre: ${preAllyHp}, Post: ${injuredAlly.hp})`);
 
@@ -491,8 +491,8 @@ async function runTests() {
   const postHolyExp = combatProg.getProficiencyStat('holy_magic')?.currentExp ?? 0;
   assert.equal(postHolyExp, preHolyExp + 2, 'Spell cast grants holy_magic EXP');
 
-  // 2. Dry (10 EN < 20): Range collapses to 1, effective weapon falls back to staff
-  fallbackHero.energy = 10;
+  // 2. Dry (4 EN < 5): Range collapses to 1, effective weapon falls back to staff
+  fallbackHero.energy = 4;
   combat.updateStaffDynamicRange(fallbackHero);
   assert.equal(fallbackHero.attackRangeTiles, 1, 'Dry energy collapses attack range to 1 tile (Melee Staff)');
   const effDry = combat.getEffectiveWeaponForAttack(fallbackHero);

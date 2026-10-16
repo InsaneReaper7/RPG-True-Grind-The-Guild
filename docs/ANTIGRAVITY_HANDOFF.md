@@ -1759,3 +1759,35 @@ The following three intentional behavioural changes were reviewed and accepted b
   - Global data lint test `test/data_lint.test.ts` passes 100%.
   - Full suite `npm test -- --quiet` passes all 130 test suites.
   - Production build `npm run build` succeeds cleanly.
+
+### Balance & Polish Pass, Part 2: Weapon Scaling, Cheap Basic Casts, Harness Fixes & Ronin AI Self-Damage Engine Guard (2026-10-15)
+
+**Resolved and shipped: Executed Balance Pass Part 2: fixed Greatsword scaling and 19 weapon rungs in `weapons.json`, added `data_lint` check 7, implemented cheap magic basic casts (cost ÷ 4) across all 11 schools, froze legacy filler costs in `scripts/skill_efficiency.ts`, fixed companion self-damage engine bug in `SkillSystem.ts` with dedicated test suite, updated simulation harness with chasing dummies and shield equips, excluded Brawler from tier medians, re-measured simulation/probe CSVs, and verified all 131 test suites.**
+
+- **1. Behaviour Changes (Companion Self-Damage Guard in `src/systems/SkillSystem.ts`)**:
+  - **Engine Guard**: In `SkillSystem.ts`, offensive `damage` effects can no longer target the caster or friendly party members when autocast by companion AI from defensive or support roles (e.g. `flowing_step`, `arcane_nova`, `holy_nova`).
+  - If a damage effect receives a party member or caster as primary target, it automatically resolves to the nearest living enemy within `rangeTiles` (or `null` if none in range). Caster-centred area attacks (`center: "caster"`) continue to hit all valid enemies in radius without damaging friendlies.
+  - Added targeted test suite `test/companion_self_damage_fix.test.ts` verifying all 3 skills through live AI execution: Ronin takes 0 self-damage on `flowing_step` while dummy takes damage; Arcane Initiate takes 0 self-damage on `arcane_nova` while area enemies are struck; Combat Medic heals ally on `holy_nova` while ally takes 0 damage and enemies in radius are struck.
+  - **Ronin Diagnosis**: On commit `52fa4d1`, Ronin cast `flowing_step` defensively targeting himself every 7s, downing himself at ~15s in unlimited mode (resulting in only 4.0 DPS and 8 casts). With the engine fix, Ronin survives all 90s: unlimited casts rose from 8 to 73, and DPS rose from 4.0 to 55.0. Real mode casts: 6 casts, 35.1 DPS.
+- **2. Weapon Scaling Fixes (`data/weapons.json`, `test/data_lint.test.ts`)**:
+  - `greatswords`: Added `baseAccuracy: 0.6` and `levelBonus: { accuracyPerLevel: 0.004, damagePerLevel: 0.8 }` (0.57 DPS/lvl, aligning with 2H longswords and halberds).
+  - Inherited base weapon `levelBonus` for all 19 crafted/advanced weapon rungs: `steel_sword`, `void_blade`, `steel_longsword_1h`, `steel_longsword_2h`, `void_longsword_1h`, `void_longsword_2h`, `steel_katana`, `void_katana`, `steel_greatsword`, `void_greatsword`, `steel_spear_1h`, `steel_halberd_2h`, `void_spear_1h`, `void_halberd_2h`, `steel_dagger`, `void_dagger`, `composite_bow`, `steel_crossbow`, `void_staff`, and `throwing_weapons` (serrated, heavy, reinforced, war).
+  - Fixed `void_greatsword.proficiencyId` from `"longswords"` to `"greatswords"`.
+  - Added Check 7 to `test/data_lint.test.ts` asserting all non-magic, non-offhand weapons have `levelBonus.damagePerLevel > 0`.
+- **3. Cheap Basic Casts (`data/weapons.json`, `scripts/skill_efficiency.ts`, test suites)**:
+  - Divided basic cast energy costs by 4 (rounded) across all 11 magic schools: Arcane, Water, Ice, Nature, Lightning, Holy, Dark: 20 -> 5 EN; Fire, Earth, Healing: 22 -> 6 EN; Wind: 14 -> 4 EN.
+  - Set `levelBonus.energyCostReductionPerLevel` to 0.03 across all 11 schools (Math.max(1, ...) floor preserved).
+  - In `scripts/skill_efficiency.ts`: Frozen legacy reference basic cast costs (20, 22, 14) so existing filler efficiency ratings remain invariant (0 filler skills flagged).
+  - Updated 8 test suites hardcoding legacy 20/22 cast expectations (`milestone18`, `milestone19`, `milestone23`, `milestone27`, `milestone37`, `milestone47`, `milestone57`, `milestone_four_schools`, `healingStaffExpBugfix`).
+- **4. Harness Fixes & Re-Measurement (`scripts/balance_sim.ts`, `docs/balance/class_sim.csv`)**:
+  - Dummies now pursue at `moveSpeed: 90` with synchronous pathfinder resolution and per-tick updates (`dummy1`, `dummy2`, `dummy3`).
+  - Guardian equipped with `short_swords` + `shields`.
+  - All 1H classes with `shields` in their requirement chain now equip offhand `shields`.
+  - Excluded `brawler` from tier medians and marked it `brawler (intended outlier)`.
+  - Re-measured and committed `docs/balance/class_sim.csv` and `docs/balance/skill_probe.csv`.
+- **5. Verification**:
+  - Data lint `test/data_lint.test.ts`: PASS (all 7 checks).
+  - Companion self-damage test `test/companion_self_damage_fix.test.ts`: PASS (all 3 cases).
+  - Full test suite: `npm test -- --quiet` passes all 131 test suites cleanly.
+  - Production build: `npm run build` succeeds cleanly.
+
