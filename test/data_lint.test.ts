@@ -3,6 +3,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { ProgressionSystem } from '../src/systems/ProgressionSystem.ts';
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const rootDir = path.resolve(__dirname, '..');
@@ -12,6 +14,7 @@ const skillsData = JSON.parse(fs.readFileSync(path.join(rootDir, 'data/skills.js
 const statusEffectsData = JSON.parse(fs.readFileSync(path.join(rootDir, 'data/statusEffects.json'), 'utf8'));
 const playerData = JSON.parse(fs.readFileSync(path.join(rootDir, 'data/player.json'), 'utf8'));
 const weaponsData = JSON.parse(fs.readFileSync(path.join(rootDir, 'data/weapons.json'), 'utf8'));
+const statGainsData = JSON.parse(fs.readFileSync(path.join(rootDir, 'data/statGains.json'), 'utf8'));
 
 console.log('=== DATA LINT GLOBAL GUARD TEST ===\n');
 
@@ -188,6 +191,44 @@ for (const w of weaponsData.weapons) {
   }
 }
 console.log('✓ PASS: All non-magic, non-offhand weapons have positive damagePerLevel.\n');
+
+// 8. Stat gains proficiency coverage: every proficiency registered in ProgressionSystem defaults is assigned exactly once in statGains.json
+console.log('8. Checking stat gains proficiency assignment rule...');
+assert.ok(statGainsData && typeof statGainsData === 'object', 'statGains.json must exist and be valid JSON');
+assert.ok(statGainsData.categories && typeof statGainsData.categories === 'object', 'statGains.json must have categories');
+assert.ok(statGainsData.assignments && typeof statGainsData.assignments === 'object', 'statGains.json must have assignments');
+
+const prog = new ProgressionSystem(classesData);
+const defaultProficiencies = Array.from(prog.getAllProficiencyStats().keys());
+const assignedProficiencies = Object.keys(statGainsData.assignments);
+
+// Check 1: Every registered default proficiency is assigned exactly once
+for (const profId of defaultProficiencies) {
+  assert.ok(
+    profId in statGainsData.assignments,
+    `ProgressionSystem default proficiency "${profId}" is missing from statGains.json assignments`
+  );
+  const cat = statGainsData.assignments[profId];
+  assert.ok(
+    cat === 'excluded' || cat in statGainsData.categories,
+    `Proficiency "${profId}" assigned to unknown category "${cat}" in statGains.json`
+  );
+}
+
+// Check 2: Every assigned proficiency exists in default proficiencies (no phantom assignments)
+for (const assignedId of assignedProficiencies) {
+  assert.ok(
+    defaultProficiencies.includes(assignedId),
+    `statGains.json assigns unknown proficiency "${assignedId}" not found in ProgressionSystem defaults`
+  );
+}
+
+assert.strictEqual(
+  assignedProficiencies.length,
+  defaultProficiencies.length,
+  `Assigned proficiencies count (${assignedProficiencies.length}) must match ProgressionSystem defaults (${defaultProficiencies.length})`
+);
+console.log(`✓ PASS: All ${defaultProficiencies.length} proficiencies in ProgressionSystem defaults are assigned exactly once in statGains.json.\n`);
 
 console.log('🎉 ALL DATA LINT CHECKS PASSED PERFECTLY!');
 

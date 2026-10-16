@@ -48,7 +48,8 @@ import type {
   CraftingConfigData,
   IntroNarrativeData,
   EnchantingRecipeDef,
-  EnchantingRecipesData
+  EnchantingRecipesData,
+  StatGainsData
 } from '../types/game.ts';
 import { HiddenSkillSystem } from '../systems/HiddenSkillSystem.ts';
 import { resolveGearStats, getBaseItemId, isCraftingClass, resolvePartyGearSource, getPartyGearOwnership, canEquipBowDaggerSidearm } from './gearResolver.ts';
@@ -83,6 +84,7 @@ export class DataLoader {
   private craftingConfigData?: CraftingConfigData;
   private introNarrativeData?: IntroNarrativeData;
   private enchantingRecipesData?: EnchantingRecipesData;
+  private statGainsData?: StatGainsData;
 
   private constructor() {}
 
@@ -94,7 +96,7 @@ export class DataLoader {
   }
 
   public async loadAll(): Promise<void> {
-    const [player, weapons, classes, enemies, skills, statusEffects, buildables, rooms, hiddenSkills, skillBooks, researchTree, alchemyRecipes, cookingRecipes, blacksmithRecipes, bowyerRecipes, armors, armorsmithRecipes, foods, moodEffects, dungeon, gathering, items, recruits, craftingConfig, introNarrative, enchantingRecipes] = await Promise.all([
+    const [player, weapons, classes, enemies, skills, statusEffects, buildables, rooms, hiddenSkills, skillBooks, researchTree, alchemyRecipes, cookingRecipes, blacksmithRecipes, bowyerRecipes, armors, armorsmithRecipes, foods, moodEffects, dungeon, gathering, items, recruits, craftingConfig, introNarrative, enchantingRecipes, statGains] = await Promise.all([
       fetch('/data/player.json').then((res) => res.json()),
       fetch('/data/weapons.json').then((res) => res.json()),
       fetch('/data/classes.json').then((res) => res.json()),
@@ -120,7 +122,8 @@ export class DataLoader {
       fetch('/data/recruits.json').then((res) => res.json()).catch(() => null),
       fetch('/data/craftingConfig.json').then((res) => res.json()).catch(() => null),
       fetch('/data/introNarrative.json').then((res) => res.json()).catch(() => null),
-      fetch('/data/enchantingRecipes.json').then((res) => res.json()).catch(() => null)
+      fetch('/data/enchantingRecipes.json').then((res) => res.json()).catch(() => null),
+      fetch('/data/statGains.json').then((res) => res.json()).catch(() => null)
     ]);
 
     this.playerData = player as PlayerData;
@@ -143,6 +146,9 @@ export class DataLoader {
     this.foodsData = foods as FoodsData;
     this.moodEffectsData = moodEffects as MoodEffectsData;
     this.itemsData = (items as ItemsData) || { items: [] };
+    if (statGains) {
+      this.statGainsData = statGains as StatGainsData;
+    }
     this.recruitsData = (recruits as RecruitsData) || {
       fourth_member: {
         name: 'Barris',
@@ -394,6 +400,53 @@ export class DataLoader {
 
   public getOutOfCombatRegenMultiplier(): number {
     return this.playerData?.outOfCombatRegenMultiplier ?? 2.0;
+  }
+
+  public getStatGainsData(): StatGainsData {
+    if (this.statGainsData) {
+      return this.statGainsData;
+    }
+    // Node.js direct filesystem fallback for headless test runners
+    try {
+      if (typeof process !== 'undefined' && process.versions?.node) {
+        const fsModule = (globalThis as any).fs || (typeof require !== 'undefined' ? require('node:fs') : undefined);
+        if (fsModule && fsModule.existsSync('data/statGains.json')) {
+          this.statGainsData = JSON.parse(fsModule.readFileSync('data/statGains.json', 'utf8'));
+          return this.statGainsData!;
+        }
+      }
+    } catch { /* fallback to default structure */ }
+
+    return {
+      categories: {
+        weapon: { maxHpPerLevel: 0.5, maxEnergyPerLevel: 0.0, inCombatEnergyRegenPerLevel: 0.005 },
+        magic: { maxHpPerLevel: 0.0, maxEnergyPerLevel: 0.5, inCombatEnergyRegenPerLevel: 0.02 },
+        profession: { maxHpPerLevel: 0.1, maxEnergyPerLevel: 0.1, inCombatEnergyRegenPerLevel: 0.0 },
+        classLevel: { maxHpPerLevel: 0.2, maxEnergyPerLevel: 0.0, inCombatEnergyRegenPerLevel: 0.002 }
+      },
+      criticalHpMultiplier: 0.5,
+      assignments: {
+        short_swords: 'weapon', longswords: 'weapon', greatswords: 'weapon', katana: 'weapon',
+        daggers: 'weapon', mace: 'weapon', spears: 'weapon', bows: 'weapon', crossbows: 'weapon',
+        throwing_weapons: 'weapon', staff: 'weapon', druid_staff: 'weapon', fist: 'weapon', shields: 'weapon',
+        healing_magic: 'magic', fire_magic: 'magic', lightning_magic: 'magic', ice_magic: 'magic',
+        holy_magic: 'magic', dark_magic: 'magic', arcane_magic: 'magic', water_magic: 'magic',
+        earth_magic: 'magic', nature_magic: 'magic', wind_magic: 'magic',
+        construction: 'profession', alchemy: 'profession', cooking: 'profession', blacksmithing: 'profession',
+        foraging: 'profession', woodcutting: 'profession', mining: 'profession', armorsmithing: 'profession',
+        digging: 'profession', perception: 'profession', skinning: 'profession', butchering: 'profession',
+        bowyer: 'profession', lockpicking: 'profession', gardening: 'profession', fishing: 'profession',
+        enchanting: 'profession',
+        evasion: 'excluded', parry: 'excluded', block: 'excluded', counterattack: 'excluded',
+        resilience: 'excluded', health_regen: 'excluded', mana_regen: 'excluded', energy_regen: 'excluded',
+        iron_back: 'excluded', poison_resistance: 'excluded', dual_wielding: 'excluded',
+        light_armor: 'excluded', medium_armor: 'excluded', heavy_armor: 'excluded'
+      }
+    };
+  }
+
+  public setStatGainsData(data: StatGainsData): void {
+    this.statGainsData = data;
   }
 
   public getWeaponsData(): WeaponsData {

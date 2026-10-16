@@ -562,18 +562,18 @@ async function runTests() {
     assert.equal(regenResult.healthProcced, true, 'Health Regen must proc');
     assert.equal(regenResult.healthRestored, 0.5, 'In-combat Lv 1 Health Regen restores exactly 0.5 HP');
 
-    // Apply the 0.5 HP to an entity with 0 Main HP and 24.5 Critical HP
+    // Apply the 0.5 HP to an entity with 0 Main HP and 0.5 missing Critical HP
     hero.hp = 0;
-    hero.criticalHp = 24.5;
+    hero.criticalHp = hero.maxCriticalHp - 0.5;
     const restored = hero.heal(regenResult.healthRestored);
     assert.equal(restored, 0.5, '0.5 HP restored');
-    assert.equal(hero.criticalHp, 25, '0.5 HP fills Critical HP to cap (25)');
+    assert.equal(hero.criticalHp, hero.maxCriticalHp, '0.5 HP fills Critical HP to cap');
     assert.equal(hero.hp, 0, 'Main HP remains at 0');
 
     // Boundary test: next 0.5 HP proc overflows to Main HP
     const overflowRestored = hero.heal(0.5);
     assert.equal(overflowRestored, 0.5, '0.5 HP overflow restored');
-    assert.equal(hero.criticalHp, 25, 'Critical HP remains full at 25');
+    assert.equal(hero.criticalHp, hero.maxCriticalHp, 'Critical HP remains full at cap');
     assert.equal(hero.hp, 0.5, 'Overflow 0.5 HP goes to Main HP');
   }
   console.log('✓ PASS: 0.5 HP skill proc fills Critical HP first and overflows cleanly.\n');

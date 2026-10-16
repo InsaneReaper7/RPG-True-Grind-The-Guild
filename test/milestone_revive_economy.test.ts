@@ -566,7 +566,7 @@ async function runTestSuite() {
   valerie.state = 'idle';
   valerie.isDowned = false;
 
-  assert.strictEqual(valerie.hp, 25, 'Valerie revived to 50% HP (25 / 50)');
+  assert.strictEqual(valerie.hp, Math.floor(valerie.maxHp * 0.5), 'Valerie revived to 50% HP');
   assert.strictEqual(valerie.isDowned, false, 'Valerie is no longer Downed');
   assert.strictEqual(valerie.state, 'idle', 'Valerie state restored to idle');
 

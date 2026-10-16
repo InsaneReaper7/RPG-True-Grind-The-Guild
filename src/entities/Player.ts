@@ -6,6 +6,7 @@ import { getArmorHpSplit, getArmorProficiencyId } from '../types/game.ts';
 import { GameState } from '../systems/GameState.ts';
 import { DataLoader } from '../utils/DataLoader.ts';
 import { ProgressionSystem } from '../systems/ProgressionSystem.ts';
+import { StatGainsSystem } from '../systems/StatGainsSystem.ts';
 import { isCraftingClass, getBaseItemId, canEquipBowDaggerSidearm } from '../utils/gearResolver.ts';
 import { TutorialSystem } from '../systems/TutorialSystem.ts';
 
@@ -36,7 +37,9 @@ export class Player extends Entity {
 
   public energy: number;
   public maxEnergy: number;
+  public baseMaxEnergy: number = 100;
   public energyRegenPerSecond: number;
+  public baseEnergyRegenPerSecond: number = 0.5;
   public hpRegenPerSecond: number = 0.25;
   public hpFractionalAccumulator: number = 0;
   public lastSkillUseTimes: Map<string, number> = new Map();
@@ -106,15 +109,18 @@ export class Player extends Entity {
     this.equippedWeapon = startingWeapon ?? DataLoader.getInstance().getWeapon('fist') ?? DataLoader.getInstance().getWeapon('short_swords')!;
     this.attackRangeTiles = this.equippedWeapon?.attackRangeTiles ?? playerData.attackRangeTiles ?? 1;
 
-    this.energy = playerData.maxEnergy;
-    this.maxEnergy = playerData.maxEnergy;
-    this.energyRegenPerSecond = playerData.energyRegenPerSecond ?? 0.5;
+    this.baseMaxEnergy = playerData.maxEnergy ?? 100;
+    this.baseEnergyRegenPerSecond = playerData.energyRegenPerSecond ?? 0.5;
+    this.energy = this.baseMaxEnergy;
+    this.maxEnergy = this.baseMaxEnergy;
+    this.energyRegenPerSecond = this.baseEnergyRegenPerSecond;
     this.hpRegenPerSecond = playerData.hpRegenPerSecond ?? 0.25;
 
     this.progression = progression || new ProgressionSystem(DataLoader.getInstance().getClassesData(), this.entityName);
-    if (this.progression) {
-      this.progression.ownerName = this.entityName;
-    }
+    this.bindProgression(this.progression);
+    this.hp = this.maxHp;
+    this.criticalHp = this.maxCriticalHp;
+    this.energy = this.maxEnergy;
 
     this.knownSkillIds = playerData.knownSkillIds ? [...playerData.knownSkillIds] : [];
     this.equippedSkillIds = playerData.equippedSkillIds ? [...playerData.equippedSkillIds] : [];
@@ -123,14 +129,6 @@ export class Player extends Entity {
     }
 
     this.baseCarryCapacity = playerData.baseCarryCapacity ?? 45.0;
-
-    this.progression.onClassUnlocked((event) => {
-      // First-unlock auto-equip: if currently unranked/null, equip first unlocked class (combat only)
-      if (!this.activeClass && !isCraftingClass(event.classDef.id)) {
-        this.setActiveClass(event.classDef.id);
-      }
-      this.checkSkillUnlocks();
-    });
 
     this.checkSkillUnlocks();
     this.updateEncumbrance();
@@ -564,7 +562,29 @@ export class Player extends Entity {
     return this.isEncumbered;
   }
 
-  public recalculateMaxHp(): void {
+  public bindProgression(progression: ProgressionSystem): void {
+    this.progression = progression;
+    if (this.progression) {
+      this.progression.ownerName = this.entityName;
+      this.progression.onProgressionLevelUp(() => {
+        this.recalculateDerivedStats(true);
+      });
+      this.progression.onClassUnlocked((event) => {
+        if (!this.activeClass && !isCraftingClass(event.classDef.id)) {
+          this.setActiveClass(event.classDef.id);
+        }
+        this.checkSkillUnlocks();
+        this.recalculateDerivedStats(true);
+      });
+    }
+    this.recalculateDerivedStats(false);
+  }
+
+  public recalculateDerivedStats(isMidRun: boolean = false): void {
+    const oldMaxHp = this.maxHp ?? this.baseMaxHp;
+    const oldMaxCritHp = this.maxCriticalHp ?? this.baseMaxCriticalHp;
+    const oldMaxEnergy = this.maxEnergy ?? this.baseMaxEnergy;
+
     let bonusMainHp = 0;
     let bonusCritHp = 0;
 
@@ -584,8 +604,26 @@ export class Player extends Entity {
       }
     }
 
-    this.maxHp = this.baseMaxHp + bonusMainHp;
-    this.maxCriticalHp = this.baseMaxCriticalHp + bonusCritHp;
+    const gains = this.progression
+      ? StatGainsSystem.calculateStatGains(this.progression)
+      : { hpGain: 0, critHpGain: 0, energyGain: 0, regenGain: 0 };
+
+    this.maxHp = this.baseMaxHp + bonusMainHp + gains.hpGain;
+    this.maxCriticalHp = this.baseMaxCriticalHp + bonusCritHp + gains.critHpGain;
+    this.maxEnergy = this.baseMaxEnergy + gains.energyGain;
+    this.energyRegenPerSecond = this.baseEnergyRegenPerSecond + gains.regenGain;
+
+    if (isMidRun) {
+      if (this.maxHp > oldMaxHp) {
+        this.hp += (this.maxHp - oldMaxHp);
+      }
+      if (this.maxCriticalHp > oldMaxCritHp) {
+        this.criticalHp += (this.maxCriticalHp - oldMaxCritHp);
+      }
+      if (this.maxEnergy > oldMaxEnergy) {
+        this.energy += (this.maxEnergy - oldMaxEnergy);
+      }
+    }
 
     if (this.hp > this.maxHp) {
       this.hp = this.maxHp;
@@ -593,7 +631,14 @@ export class Player extends Entity {
     if (this.criticalHp > this.maxCriticalHp) {
       this.criticalHp = this.maxCriticalHp;
     }
+    if (this.energy > this.maxEnergy) {
+      this.energy = this.maxEnergy;
+    }
     this.drawHpBar();
+  }
+
+  public recalculateMaxHp(): void {
+    this.recalculateDerivedStats(false);
   }
 
   public equipArmorSlot(slot: ArmorSlot, armor: ArmorDef | null, isOutpost: boolean = false): boolean {
@@ -1281,17 +1326,6 @@ export class Player extends Entity {
       this.equippedAccessory = null;
     }
 
-    this.recalculateMaxHp();
-
-    // Ensure HP does not exceed new maxHp after split recalculation
-    this.hp = Math.min(this.maxHp, snapshot.hp);
-    // If character was at full Critical HP prior to the split, top up to new maxCriticalHp
-    if (snapshot.criticalHp >= 25) {
-      this.criticalHp = this.maxCriticalHp;
-    } else {
-      this.criticalHp = Math.min(this.maxCriticalHp, snapshot.criticalHp);
-    }
-
     this.knownSkillIds = snapshot.knownSkillIds ? [...snapshot.knownSkillIds] : [];
     this.equippedSkillIds = snapshot.equippedSkillIds ? [...snapshot.equippedSkillIds] : [];
 
@@ -1331,6 +1365,13 @@ export class Player extends Entity {
       activityCounts: snapshot.activityCounts
     });
     this.checkSkillUnlocks();
+
+    this.recalculateDerivedStats(false);
+
+    // Fix 1: Clamp only, no magic 25:
+    this.hp = Math.min(this.maxHp, snapshot.hp);
+    this.criticalHp = Math.min(this.maxCriticalHp, snapshot.criticalHp);
+    this.energy = Math.min(this.maxEnergy, snapshot.energy);
 
     // Re-anchor cooldowns in current scene clock
     this.lastSkillUseTimes.clear();

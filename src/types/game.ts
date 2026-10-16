@@ -1242,3 +1242,31 @@ export interface LockpickAttemptResult {
   boxPreserved?: boolean;
 }
 
+// Stat Gains & Progression Level Up
+export interface StatGainCategoryDef {
+  maxHpPerLevel?: number;
+  maxEnergyPerLevel?: number;
+  inCombatEnergyRegenPerLevel?: number;
+}
+
+export interface StatGainsData {
+  categories: Record<string, StatGainCategoryDef>;
+  criticalHpMultiplier: number;
+  assignments: Record<string, string>;
+}
+
+export interface StatGainsResult {
+  hpGain: number;
+  critHpGain: number;
+  energyGain: number;
+  regenGain: number;
+}
+
+export interface ProgressionLevelUpEvent {
+  type: 'proficiency' | 'class';
+  id: string;
+  level: number;
+  levelsGained: number;
+  memberName?: string;
+}
+

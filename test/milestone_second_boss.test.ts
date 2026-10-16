@@ -399,7 +399,13 @@ async function runSecondBossMilestoneTests() {
   (combatSystem as any).enemies = [bossSovereign];
   bossSovereign.targetEntity = partyHero;
   bossSovereign.lastAttackTime = 0;
-  combatSystem.update(2000, 16);
+  const origRand = Math.random;
+  Math.random = () => 0.5;
+  try {
+    combatSystem.update(2000, 16);
+  } finally {
+    Math.random = origRand;
+  }
 
   assert.ok(partyHero.hp < initialHeroHp, 'Hero must take direct damage from ranged attack');
   assert.ok(partyArcher.hp < initialArcherHp, 'Archer must take splash damage from Glacial Spike Nova (dist <= 3 to Hero)');

@@ -602,8 +602,8 @@ async function runMilestone35Tests() {
 
   // Equip Silk Cowl (+30 HP -> +15 Main, +15 Crit)
   hud.handleSlotDrop('helmet', { itemId: 'silk_cowl', itemType: 'armor', itemSlot: 'helmet' }, hero);
-  assert.equal(hero.maxHp, baseMainMax + 13 + 10 + 7 + 13 + 15, 'Max HP matches full set');
-  assert.equal(hero.maxCriticalHp, baseCritMax + 12 + 10 + 7 + 13 + 15, 'Max Crit HP matches full set');
+  assert.equal(hero.maxHp, baseMainMax + 13 + 10 + 7 + 13 + 15 + 30, 'Max HP matches full set');
+  assert.equal(hero.maxCriticalHp, baseCritMax + 12 + 10 + 7 + 13 + 15 + 15, 'Max Crit HP matches full set');
 
   // Lower Crit HP to 5
   hero.criticalHp = 5;

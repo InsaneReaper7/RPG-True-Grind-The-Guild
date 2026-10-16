@@ -10,6 +10,7 @@ import { ResearchSystem } from '../systems/ResearchSystem.ts';
 import { TutorialSystem, type TutorialStepDef } from '../systems/TutorialSystem.ts';
 import { CraftingSystem } from '../systems/CraftingSystem.ts';
 import { ConsumableSystem } from '../systems/ConsumableSystem.ts';
+import { StatGainsSystem } from '../systems/StatGainsSystem.ts';
 import { isCraftingClass, getBaseItemId, canEquipBowDaggerSidearm, resolvePartyGearSource, getPartyGearOwnership } from '../utils/gearResolver.ts';
 import { isTypingInTextField, disableGameKeyboard, enableGameKeyboard, initKeyboardGuards } from '../utils/inputGuard.ts';
 import { formatRequirement } from '../utils/formatRequirement.ts';
@@ -3620,6 +3621,18 @@ export class HUD {
         this.setElementTextIfChanged(energyEl, `${Math.floor(member.energy)} / ${member.maxEnergy}`);
       }
 
+      // 3b. Skill stat gains
+      const gains = StatGainsSystem.calculateStatGains(member.progression);
+      const hasAnyGains = (gains.hpGain > 0 || gains.energyGain > 0 || gains.regenGain > 0);
+      const gainsRowEl = this.partyOverviewRosterEl.querySelector<HTMLElement>(`[data-party-skill-gains="${i}"]`);
+      if (gainsRowEl) {
+        gainsRowEl.style.display = hasAnyGains ? 'flex' : 'none';
+        const valEl = gainsRowEl.querySelector<HTMLElement>(`[data-party-skill-gains-val="${i}"]`);
+        if (valEl) {
+          this.setElementTextIfChanged(valEl, `+${gains.hpGain.toFixed(1)} HP · +${gains.energyGain.toFixed(1)} EN · +${gains.regenGain.toFixed(1)} EN/s`);
+        }
+      }
+
       // 4. Hunger
       const hungerEl = this.partyOverviewRosterEl.querySelector<HTMLElement>(`[data-party-hunger="${i}"]`);
       if (hungerEl) {
@@ -4157,6 +4170,8 @@ export class HUD {
         ? `⚔️ ${combatClsText} · 🔨 ${craftingClassesUnlocked.join(', ')}`
         : `⚔️ ${combatClsText}`;
 
+      const statGains = StatGainsSystem.calculateStatGains(member.progression);
+
       html += `
         <div class="party-card ${isDowned ? 'downed' : ''}" data-party-card-idx="${i}">
           <div class="party-card-header">
@@ -4190,6 +4205,10 @@ export class HUD {
             <div class="party-stat-row">
               <span>Energy:</span>
               <span class="party-stat-val" data-party-energy="${i}" style="color: #3b82f6;">${Math.floor(member.energy)} / ${member.maxEnergy}</span>
+            </div>
+            <div class="party-stat-row party-skill-gains-row" data-party-skill-gains="${i}" style="display: ${(statGains.hpGain > 0 || statGains.energyGain > 0 || statGains.regenGain > 0) ? 'flex' : 'none'}; font-size: 10px; color: #a78bfa; margin-top: 1px;">
+              <span>From skill levels:</span>
+              <span class="party-stat-val" data-party-skill-gains-val="${i}">+${statGains.hpGain.toFixed(1)} HP · +${statGains.energyGain.toFixed(1)} EN · +${statGains.regenGain.toFixed(1)} EN/s</span>
             </div>
             <div class="party-stat-row">
               <span>Hunger:</span>

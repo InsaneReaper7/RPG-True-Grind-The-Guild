@@ -359,10 +359,10 @@ async function runMilestone33Tests() {
   fullHero.equipRing(wolfRing!, true);
   fullHero.equipAccessory(venomCharm!, true);
 
-  assert.equal(fullHero.maxHp, 101, '50 base + 8 + 13 + 10 + 7 + 13 = 101');
-  assert.equal(fullHero.maxCriticalHp, 74, '25 base + 7 + 12 + 10 + 7 + 13 = 74');
-  assert.equal(fullHero.hp, 101);
-  assert.equal(fullHero.criticalHp, 74);
+  assert.equal(fullHero.maxHp, 149, '50 base + 48 (weapon stat gains) + 8 + 13 + 10 + 7 + 13 = 149');
+  assert.equal(fullHero.maxCriticalHp, 98, '25 base + 24 (weapon stat gains) + 7 + 12 + 10 + 7 + 13 = 98');
+  assert.equal(fullHero.hp, 149);
+  assert.equal(fullHero.criticalHp, 98);
   assert.equal(fullHero.isDualWielding(), true, 'Dual wielding unaffected by armor slots');
 
   // Unequip only Ring (-14 HP -> -7 Main, -7 Crit)
@@ -372,15 +372,15 @@ async function runMilestone33Tests() {
   assert.equal(fullHero.equippedBodyArmor?.id, 'leather_armor');
   assert.equal(fullHero.equippedNecklace?.id, 'bone_necklace');
   assert.equal(fullHero.equippedAccessory?.id, 'venom_charm');
-  assert.equal(fullHero.maxHp, 94, '101 - 7 = 94');
-  assert.equal(fullHero.maxCriticalHp, 67, '74 - 7 = 67');
-  assert.equal(fullHero.hp, 94);
-  assert.equal(fullHero.criticalHp, 67);
+  assert.equal(fullHero.maxHp, 142, '149 - 7 = 142');
+  assert.equal(fullHero.maxCriticalHp, 91, '98 - 7 = 91');
+  assert.equal(fullHero.hp, 142);
+  assert.equal(fullHero.criticalHp, 91);
 
   // Re-equip Ring
   fullHero.equipRing(wolfRing!, true);
-  assert.equal(fullHero.maxHp, 101);
-  assert.equal(fullHero.maxCriticalHp, 74);
+  assert.equal(fullHero.maxHp, 149);
+  assert.equal(fullHero.maxCriticalHp, 98);
   console.log('✓ PASS: All 5 slots coexist simultaneously with full additive independence from weapons.\n');
 
   // ----------------------------------------------------------------
@@ -448,7 +448,7 @@ async function runMilestone33Tests() {
   assert.equal(migratedPlayer.maxHp, 83, 'Migrated legacy player immediately gains recalculated 83 Max HP');
   assert.equal(migratedPlayer.maxCriticalHp, 57, 'Migrated legacy player immediately gains recalculated 57 Max Critical HP');
   assert.equal(migratedPlayer.hp, 65, 'Current HP clamped safely to maxHp');
-  assert.equal(migratedPlayer.criticalHp, 57, 'Full health legacy critical HP topped up to newly expanded Max Critical HP');
+  assert.equal(migratedPlayer.criticalHp, 25, 'Current critical HP clamped safely to snapshot criticalHp without free top-up (Fix 1)');
 
   // Scenario B: Full 5-slot snapshot save and restore across GameState handoff
   const originalFull = new Player(mockScene, 8, 8, basePlayerData, startingWeapon, 32, 'orig-full', new ProgressionSystem());

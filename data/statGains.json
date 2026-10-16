@@ -1,0 +1,83 @@
+{
+  "categories": {
+    "weapon": {
+      "maxHpPerLevel": 0.5,
+      "maxEnergyPerLevel": 0.0,
+      "inCombatEnergyRegenPerLevel": 0.005
+    },
+    "magic": {
+      "maxHpPerLevel": 0.0,
+      "maxEnergyPerLevel": 0.5,
+      "inCombatEnergyRegenPerLevel": 0.02
+    },
+    "profession": {
+      "maxHpPerLevel": 0.1,
+      "maxEnergyPerLevel": 0.1,
+      "inCombatEnergyRegenPerLevel": 0.0
+    },
+    "classLevel": {
+      "maxHpPerLevel": 0.2,
+      "maxEnergyPerLevel": 0.0,
+      "inCombatEnergyRegenPerLevel": 0.002
+    }
+  },
+  "criticalHpMultiplier": 0.5,
+  "assignments": {
+    "short_swords": "weapon",
+    "longswords": "weapon",
+    "greatswords": "weapon",
+    "katana": "weapon",
+    "daggers": "weapon",
+    "mace": "weapon",
+    "spears": "weapon",
+    "bows": "weapon",
+    "crossbows": "weapon",
+    "throwing_weapons": "weapon",
+    "staff": "weapon",
+    "druid_staff": "weapon",
+    "fist": "weapon",
+    "shields": "weapon",
+    "healing_magic": "magic",
+    "fire_magic": "magic",
+    "lightning_magic": "magic",
+    "ice_magic": "magic",
+    "holy_magic": "magic",
+    "dark_magic": "magic",
+    "arcane_magic": "magic",
+    "water_magic": "magic",
+    "earth_magic": "magic",
+    "nature_magic": "magic",
+    "wind_magic": "magic",
+    "construction": "profession",
+    "alchemy": "profession",
+    "cooking": "profession",
+    "blacksmithing": "profession",
+    "foraging": "profession",
+    "woodcutting": "profession",
+    "mining": "profession",
+    "armorsmithing": "profession",
+    "digging": "profession",
+    "perception": "profession",
+    "skinning": "profession",
+    "butchering": "profession",
+    "bowyer": "profession",
+    "lockpicking": "profession",
+    "gardening": "profession",
+    "fishing": "profession",
+    "enchanting": "profession",
+    "evasion": "excluded",
+    "parry": "excluded",
+    "block": "excluded",
+    "counterattack": "excluded",
+    "resilience": "excluded",
+    "health_regen": "excluded",
+    "mana_regen": "excluded",
+    "energy_regen": "excluded",
+    "iron_back": "excluded",
+    "poison_resistance": "excluded",
+    "dual_wielding": "excluded",
+    "light_armor": "excluded",
+    "medium_armor": "excluded",
+    "heavy_armor": "excluded"
+  }
+}

@@ -1852,15 +1852,14 @@ export class GameState {
     } else {
       player.equippedAccessory = null;
     }
-    player.recalculateMaxHp();
-
-    // Ensure HP and Critical HP are safely clamped to the recalculated maxes
-    player.hp = Math.min(player.maxHp, snap.hp);
-    if (snap.criticalHp >= 25 && player.maxCriticalHp > 25) {
-      player.criticalHp = player.maxCriticalHp;
-    } else {
-      player.criticalHp = Math.min(player.maxCriticalHp, snap.criticalHp);
+    if (typeof player.recalculateDerivedStats === 'function') {
+      player.recalculateDerivedStats(false);
     }
+
+    // Ensure HP, Critical HP, and Energy are safely clamped to the recalculated maxes (no magic 25)
+    player.hp = Math.min(player.maxHp, snap.hp);
+    player.criticalHp = Math.min(player.maxCriticalHp, snap.criticalHp);
+    player.energy = Math.min(player.maxEnergy, snap.energy);
 
     // Downed state restoration
     // Two-bar system: Downed only occurs when BOTH Main HP and Critical HP reach zero.

@@ -1,4 +1,4 @@
-import type { ClassDef, Requirement, ClassesData, SkillDef, TrainableStat, ExpTransaction, PassiveImbuementDef } from '../types/game.ts';
+import type { ClassDef, Requirement, ClassesData, SkillDef, TrainableStat, ExpTransaction, PassiveImbuementDef, ProgressionLevelUpEvent } from '../types/game.ts';
 import { BuildingSystem } from './BuildingSystem.ts';
 import type { ConstructionTierDef } from './BuildingSystem.ts';
 import { LevelingSystem } from './LevelingSystem.ts';
@@ -14,6 +14,8 @@ export interface SkillDiscoveredEvent {
   level: number;
   memberName?: string;
 }
+
+export type { ProgressionLevelUpEvent };
 
 export class ProgressionSystem {
   public static readonly HIDDEN_SKILL_IDS: readonly string[] = [
@@ -87,6 +89,7 @@ export class ProgressionSystem {
   private onUnlockCallbacks: ((event: UnlockEvent) => void)[] = [];
   private onSkillDiscoveredCallbacks: ((event: SkillDiscoveredEvent) => void)[] = [];
   private onDualWieldUnlockedCallbacks: (() => void)[] = [];
+  private onProgressionLevelUpCallbacks: ((event: ProgressionLevelUpEvent) => void)[] = [];
 
   constructor(classesData?: ClassesData, ownerName: string = 'Guild Hero') {
     this.classesData = classesData ?? DataLoader.getInstance().getClassesData();
@@ -126,11 +129,13 @@ export class ProgressionSystem {
     this.proficiencies.set('skinning', { level: 0, currentExp: 0 });
     this.proficiencies.set('butchering', { level: 0, currentExp: 0 });
     this.proficiencies.set('bows', { level: 0, currentExp: 0 });
+    this.proficiencies.set('crossbows', { level: 0, currentExp: 0 });
     this.proficiencies.set('bowyer', { level: 0, currentExp: 0 });
     this.proficiencies.set('lockpicking', { level: 0, currentExp: 0 });
     this.proficiencies.set('gardening', { level: 0, currentExp: 0 });
     this.proficiencies.set('fist', { level: 0, currentExp: 0 });
     this.proficiencies.set('longswords', { level: 0, currentExp: 0 });
+    this.proficiencies.set('greatswords', { level: 0, currentExp: 0 });
     this.proficiencies.set('spears', { level: 0, currentExp: 0 });
     this.proficiencies.set('katana', { level: 0, currentExp: 0 });
     this.proficiencies.set('throwing_weapons', { level: 0, currentExp: 0 });
@@ -154,6 +159,20 @@ export class ProgressionSystem {
 
   public onDualWieldUnlocked(callback: () => void): void {
     this.onDualWieldUnlockedCallbacks.push(callback);
+  }
+
+  public onProgressionLevelUp(callback: (event: ProgressionLevelUpEvent) => void): void {
+    this.onProgressionLevelUpCallbacks.push(callback);
+  }
+
+  public notifyProgressionLevelUp(event: ProgressionLevelUpEvent): void {
+    for (const cb of this.onProgressionLevelUpCallbacks) {
+      try {
+        cb(event);
+      } catch (err) {
+        console.error('[ProgressionSystem] Error in onProgressionLevelUp callback:', err);
+      }
+    }
   }
 
   public getProficiencyStat(id: string): TrainableStat {
@@ -255,6 +274,13 @@ export class ProgressionSystem {
     if (result.leveledUp) {
       console.log(`[Progression] CLASS LEVEL UP! '${classId}' is now Level ${stat.level}!`);
       this.checkClassUnlocks();
+      this.notifyProgressionLevelUp({
+        type: 'class',
+        id: classId,
+        level: stat.level,
+        levelsGained: result.levelsGained,
+        memberName: this.ownerName
+      });
     }
     return result;
   }
@@ -267,6 +293,13 @@ export class ProgressionSystem {
     this.classLevels.set(classId, level);
     console.log(`[Progression] Set class '${classId}' to Level ${level} (0 EXP) on ${this.ownerName}`);
     this.checkClassUnlocks();
+    this.notifyProgressionLevelUp({
+      type: 'class',
+      id: classId,
+      level,
+      levelsGained: 0,
+      memberName: this.ownerName
+    });
   }
 
   public getActivityCount(target: string): number {
@@ -352,6 +385,14 @@ export class ProgressionSystem {
           cb({ skillId: id, level: stat.level, memberName: this.ownerName });
         }
       }
+
+      this.notifyProgressionLevelUp({
+        type: 'proficiency',
+        id,
+        level: stat.level,
+        levelsGained: result.levelsGained,
+        memberName: this.ownerName
+      });
     }
 
     return result;
