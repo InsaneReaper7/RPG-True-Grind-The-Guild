@@ -884,7 +884,7 @@ export class CombatSystem {
 
                   // Milestone 34 & Environments Milestone: Boss Unique Mechanic — Cleave Shockwave
                   // Bone Warden has 25% splash, Abyssal Colossus & Magma Tyrant have 50% splash
-                  if ((enemy.enemyData.id === 'bone_warden' || enemy.enemyData.id === 'abyssal_colossus' || enemy.enemyData.id === 'magma_tyrant') && actualDamage > 0) {
+                  if ((enemy.enemyData.id === 'bone_warden' || enemy.enemyData.id === 'abyssal_colossus' || enemy.enemyData.id === 'magma_tyrant') && rawDamage > 0) {
                     const cleaveRatio = enemy.enemyData.id === 'bone_warden' ? 0.25 : 0.5;
                     const rawSplash = Math.max(1, Math.round(rawDamage * cleaveRatio));
                     for (const member of this.party) {
@@ -938,7 +938,7 @@ export class CombatSystem {
                   }
 
                   // Milestone — Second Boss Enemy: Glacial Sovereign Signature Mechanics
-                  if (enemy.enemyData.id === 'glacial_sovereign' && actualDamage > 0) {
+                  if (enemy.enemyData.id === 'glacial_sovereign' && rawDamage > 0) {
                     // Signature Mechanic 1: Glacial Spike Nova / Permafrost Shards
                     // Projectile shards shatter outward from the impact, hitting all other party members within 3 tiles of the target
                     const rawShard = Math.max(1, Math.round(rawDamage * 0.4));

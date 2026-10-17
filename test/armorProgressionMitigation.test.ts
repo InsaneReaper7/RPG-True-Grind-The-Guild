@@ -246,7 +246,33 @@ async function run() {
     // Bone Warden splash is 25% of raw (100 * 0.25 = 25 raw splash).
     // Mitigated by hero2's own R = 38: round(25 * (1 - 38/138)) = round(25 * 100 / 138) = 18.
     assert.equal(cleaveTaken, 18, `Hero 2 should take 18 cleave damage, got ${cleaveTaken}`);
-    console.log(`  PASS: Bone Warden cleave dealt 18 damage using recipient's own armor mitigation.\n`);
+    console.log(`  PASS: Bone Warden cleave dealt 18 damage using recipient's own armor mitigation.`);
+
+    // Fourth case: Main target has a reflect-shield absorbing the whole hit (actualDamage = 0).
+    // Neighbour in range still takes the cleave, reduced by their own armor.
+    hero1.applyStatusEffect({
+      id: 'kenjutsu_deflection',
+      name: 'Deflection',
+      durationMs: 10000,
+      tickIntervalMs: 10000,
+      damagePerTick: 0,
+      isHarmful: false,
+      reflectPercent: 0.5,
+      shieldAmount: 200
+    } as any);
+
+    boneWarden.lastAttackTime = 0;
+    const hero1HpBeforeShielded = hero1.hp;
+    const hero2HpBeforeShielded = hero2.hp;
+
+    combatSystemCleave.update(8000, 1000);
+
+    const hero1DamageTaken = hero1HpBeforeShielded - hero1.hp;
+    const hero2CleaveTaken = hero2HpBeforeShielded - hero2.hp;
+
+    assert.equal(hero1DamageTaken, 0, `Main target took 0 damage due to reflect-shield, took ${hero1DamageTaken}`);
+    assert.equal(hero2CleaveTaken, 18, `Neighbour still took 18 cleave damage despite main target absorbing hit, took ${hero2CleaveTaken}`);
+    console.log(`  PASS: Main target reflect-shield absorbed full hit (0 damage), neighbour still took 18 cleave damage.\n`);
   } finally {
     Math.random = origRandom;
   }

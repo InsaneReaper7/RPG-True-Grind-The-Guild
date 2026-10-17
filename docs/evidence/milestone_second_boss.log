@@ -1,0 +1,67 @@
+================================================================
+❄️ RUNNING MILESTONE: SECOND BOSS ENEMY (GLACIAL SOVEREIGN) ❄️
+================================================================
+
+--- TEST 1: Schema Integrity & Second Boss Registry Completeness ---
+✓ PASS: Glacial Sovereign data schema, drops, status effect, and dungeonConfig verified.
+
+--- TEST 2: Existing Boss-Tier Spawn Logic & Thematic Region Routing ---
+  ✓ Floor 5 (Ancient Crypts) correctly routed Bone Warden.
+  ✓ Floor 15 (Infernal Caldera) explicitly routed Magma Tyrant across 50 random seeds with 0% Glacial Sovereign bleed.
+  ✓ Floor 20 (Glacial Caverns) correctly routed Glacial Sovereign.
+  ✓ Non-boss floors cleanly suppress boss rooms without any spawn bleed.
+✓ PASS: Boss spawn logic integration and region routing confirmed.
+
+--- TEST 3: Visual & Thematic Identity Distinction ---
+✓ PASS: Visual assets, color palettes, labels, and combat archetypes confirmed distinct.
+
+--- TEST 4: Live Combat Simulation & Signature Mechanics ---
+  Testing Signature Mechanic 1 & 2: Ranged Attack, Glacial Spike Nova & Rime Frostbite...
+[Combat] Glacial Sovereign aggroed on Guild Vanguard! (Distance: 4 tiles)
+[KnowledgeBase] 🐺 First encountered enemy: 'glacial_sovereign'! (+1 RP)
+[Bestiary] 🐺 First encounter with Glacial Sovereign! (+1 RP)
+[Combat] Glacial Sovereign hits Guild Vanguard for 32 damage!
+[Combat:Glacial Shard] ❄️ Glacial Sovereign icicles shatter into Guild Archer for 13 damage!
+[Combat:Glacial Shard] ❄️ Glacial Sovereign icicles shatter into Guild Mage for 13 damage!
+[KnowledgeBase] 🧪 Status effect discovered: 'frostbite'! (+1 RP)
+[Combat:Frostbite] ❄️ Glacial Sovereign afflicts Guild Vanguard with Frostbite (-50% Move Speed, 3 frost DoT)!
+[Combat Retaliation] ⚔️ Guild Vanguard was attacked by Glacial Sovereign while unengaged! Commanding 3 idle party member(s) to retaliate!
+[DIAG:Combat] ⚔️ Guild Archer attacks Glacial Sovereign with Fist! inCombat: true, Pre-EN: 100.0, Post-EN: 100.0, Range: 4, Dist: 4
+[Combat] Guild Archer attacks Glacial Sovereign with Fist but MISSED! (Hit Chance: 65.0%, Roll: 70.6%)
+[DIAG:Combat] ⚔️ Guild Mage attacks Glacial Sovereign with Fist! inCombat: true, Pre-EN: 100.0, Post-EN: 100.0, Range: 4, Dist: 4
+[Combat] Guild Mage attacks Glacial Sovereign with Fist for 4.0 damage! (Base: 4, Lv 0 Bonus: +0.0, Accuracy: 65.0%)
+[Progression] +2 EXP for 'fist' (Guild Mage). Current: Level 0 (2/50 EXP)
+[Progression] Recorded tx 'fist': +2 EXP for Guild Mage, resulting total: Level 0 (2/50 EXP)
+  ✓ Ranged attack and Glacial Spike Nova fractured across nearby allies with Rime Frostbite.
+  Testing Signature Mechanic 3: Critical-HP Permafrost Glaciation & Crystalline Barrier...
+[Combat:Glaciation] ❄️ Glacial Sovereign has entered PERMAFROST GLACIATION! Conjured 100 HP Crystalline Ice Barrier and active Frost Thorns!
+  ✓ Critical HP transition cleanly triggered Permafrost Glaciation and conjured 100 HP Ice Barrier.
+  Testing Crystalline Barrier Damage Absorption...
+[Combat:Barrier] ❄️ Glacial Sovereign's Crystalline Ice Barrier absorbed 40 damage! Remaining: 60
+[Combat:Barrier] ❄️ Glacial Sovereign's Crystalline Ice Barrier absorbed 60 damage! Remaining: 0
+[Combat:Barrier] ❄️ Glacial Sovereign's Crystalline Ice Barrier SHATTERED!
+  ✓ Crystalline Ice Barrier absorbed incoming attacks cleanly and shattered on depletion.
+  Testing Frost Thorns Melee Reflection...
+[DIAG:Combat] ⚔️ Guild Vanguard attacks Glacial Sovereign with Iron Sword! inCombat: true, Pre-EN: 100.0, Post-EN: 100.0, Range: 1, Dist: 1
+[Combat] Guild Vanguard attacks Glacial Sovereign with Iron Sword for 20.0 damage! (Base: 20, Lv 0 Bonus: +0.0, Accuracy: 100.0%)
+[Progression] +2 EXP for 'iron_sword' (Guild Mage). Current: Level 0 (2/50 EXP)
+[Progression] Recorded tx 'iron_sword': +2 EXP for Guild Mage, resulting total: Level 0 (2/50 EXP)
+[Combat:FrostThorns] ❄️ Glacial Sovereign's Frost Thorns reflect 3 frost damage to Guild Vanguard!
+  ✓ Frost Thorns reflected damage to melee attacker.
+✓ PASS: All 4 signature mechanics (Ranged strike, Nova, Frostbite, Glaciation/Barrier/Thorns) verified in combat.
+
+--- TEST 5: Harvest Loot Execution & Research Points (+20 RP) ---
+[Combat] Glacial Sovereign defeated/downed by Guild Vanguard!
+[Progression] +4 EXP for 'iron_sword' (Guild Mage). Current: Level 0 (6/50 EXP)
+[Progression] Recorded tx 'iron_sword': +4 EXP for Guild Mage, resulting total: Level 0 (6/50 EXP)
+[Combat] 🔬 Defeated BOSS Glacial Sovereign! Awarded +20 Research Points. (Total: 22)
+[GameState] 🏆 Recorded defeated area boss: glacial_sovereign. All defeated: [ 'glacial_sovereign' ]
+  ✓ Defeating Glacial Sovereign awarded +20 RP.
+  ✓ Harvest loot drops successfully rolled.
+[Respawn] Glacial Sovereign completely reset and respawned at (10, 10) with full HP!
+  ✓ Respawn cleanses glaciated state and resets cyan boss aura.
+✓ PASS: Harvest drops, Research Points, and respawn lifecycle confirmed.
+
+================================================================
+🎉 ALL SECOND BOSS ENEMY (GLACIAL SOVEREIGN) TESTS PASSED! 🎉
+================================================================

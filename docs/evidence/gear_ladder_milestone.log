@@ -1,0 +1,191 @@
+=== Starting Gear Ladder Milestone Crafting & Salvaging Test Suite ===
+
+[GameState] Initialized from player.json boot seed with Hero & Valerie: {
+  hp: 50,
+  criticalHp: 25,
+  energy: 100,
+  knownSkillIds: [],
+  equippedSkillIds: [],
+  autocastMap: {},
+  skillCooldownsRemainingMs: {},
+  proficiencies: {
+    short_swords: { level: 0, currentExp: 0 },
+    construction: { level: 0, currentExp: 0 },
+    fist: { level: 0, currentExp: 0 },
+    daggers: { level: 0, currentExp: 0 },
+    shields: { level: 0, currentExp: 0 },
+    dual_wielding: { level: 0, currentExp: 0 },
+    alchemy: { level: 0, currentExp: 0 },
+    evasion: { level: 0, currentExp: 0 },
+    parry: { level: 0, currentExp: 0 },
+    block: { level: 0, currentExp: 0 },
+    counterattack: { level: 0, currentExp: 0 },
+    resilience: { level: 0, currentExp: 0 },
+    health_regen: { level: 0, currentExp: 0 },
+    mana_regen: { level: 0, currentExp: 0 },
+    energy_regen: { level: 0, currentExp: 0 },
+    staff: { level: 0, currentExp: 0 },
+    druid_staff: { level: 0, currentExp: 0 },
+    healing_magic: { level: 0, currentExp: 0 },
+    fire_magic: { level: 0, currentExp: 0 },
+    foraging: { level: 0, currentExp: 0 },
+    woodcutting: { level: 0, currentExp: 0 },
+    mining: { level: 0, currentExp: 0 },
+    mace: { level: 0, currentExp: 0 },
+    blacksmithing: { level: 0, currentExp: 0 },
+    armorsmithing: { level: 0, currentExp: 0 },
+    digging: { level: 0, currentExp: 0 },
+    perception: { level: 0, currentExp: 0 },
+    skinning: { level: 0, currentExp: 0 },
+    butchering: { level: 0, currentExp: 0 },
+    lockpicking: { level: 0, currentExp: 0 },
+    gardening: { level: 0, currentExp: 0 },
+    longswords: { level: 0, currentExp: 0 },
+    dark_magic: { level: 0, currentExp: 0 },
+    light_armor: { level: 0, currentExp: 0 },
+    medium_armor: { level: 0, currentExp: 0 },
+    heavy_armor: { level: 0, currentExp: 0 },
+    fishing: { level: 0, currentExp: 0 },
+    enchanting: { level: 0, currentExp: 0 },
+    water_magic: { level: 0, currentExp: 0 },
+    earth_magic: { level: 0, currentExp: 0 },
+    nature_magic: { level: 0, currentExp: 0 },
+    wind_magic: { level: 0, currentExp: 0 }
+  },
+  classLevels: {},
+  unlockedClasses: [],
+  resources: { wood: 100, ore: 0 },
+  placedBuildables: [],
+  hunger: 100,
+  mood: 50,
+  currentGameDay: 1,
+  foodItems: [],
+  equippedWeaponId: 'short_swords',
+  offhandWeaponId: null,
+  dungeonFloorCount: 0,
+  encounteredEnemies: [],
+  discoveredProficiencies: [ 'short_swords' ],
+  discoveredStatusEffects: [],
+  discoveredGatheringNodes: [],
+  defeatedAreaBosses: [],
+  quickSlots: [ 'revive_potion', 'bandage', 'energy_potion', 'antidote' ],
+  worldFlags: {},
+  grovePityCounter: 0,
+  party: [
+    {
+      id: 'player',
+      name: 'Guild Hero',
+      avatarKey: 'player-avatar',
+      hp: 50,
+      criticalHp: 25,
+      energy: 100,
+      equippedWeaponId: 'short_swords',
+      offhandWeaponId: null,
+      inventory: [Object],
+      knownSkillIds: [],
+      equippedSkillIds: [],
+      autocastMap: {},
+      skillCooldownsRemainingMs: {},
+      proficiencies: [Object],
+      classLevels: {},
+      classStats: {},
+      unlockedClasses: [],
+      activeClass: null,
+      bookLearnedSkills: [],
+      hunger: 100,
+      mood: 50,
+      state: 'idle'
+    },
+    {
+      id: 'companion_1',
+      name: 'Valerie',
+      avatarKey: 'companion-avatar',
+      avatarTextureKey: 'companion-avatar',
+      hp: 50,
+      criticalHp: 25,
+      energy: 100,
+      equippedWeaponId: 'bows',
+      offhandWeaponId: 'daggers',
+      inventory: [Object],
+      knownSkillIds: [Array],
+      equippedSkillIds: [Array],
+      autocastMap: [Object],
+      skillCooldownsRemainingMs: {},
+      proficiencies: [Object],
+      classLevels: [Object],
+      classStats: [Object],
+      unlockedClasses: [Array],
+      activeClass: 'scout',
+      bookLearnedSkills: [],
+      hunger: 100,
+      mood: 50,
+      state: 'idle'
+    }
+  ]
+}
+--- Test Group 1: Blacksmithing Craft & Salvage ---
+[Progression] +50 EXP for 'blacksmithing' (Guild Hero). Current: Level 5 (50/70 EXP)
+[Progression] Recorded tx 'blacksmithing': +50 EXP for Guild Hero, resulting total: Level 5 (50/70 EXP)
+[Progression] +25 EXP for 'blacksmithing' (Guild Hero). Current: Level 5 (25/70 EXP)
+[Progression] Recorded tx 'blacksmithing': +25 EXP for Guild Hero, resulting total: Level 5 (25/70 EXP)
+✔ Blacksmithing Band 2 (Steel Longsword) craft and salvage verified.
+[Progression] +80 EXP for 'blacksmithing' (Guild Hero). Current: Level 8 (80/82 EXP)
+[Progression] Recorded tx 'blacksmithing': +80 EXP for Guild Hero, resulting total: Level 8 (80/82 EXP)
+[Progression] +40 EXP for 'blacksmithing' (Guild Hero). Current: Level 8 (40/82 EXP)
+[Progression] Recorded tx 'blacksmithing': +40 EXP for Guild Hero, resulting total: Level 8 (40/82 EXP)
+✔ Blacksmithing Band 3 (Voidforged Longsword) craft and salvage verified.
+
+--- Test Group 2: Bowyer Craft & Salvage ---
+[Progression] +50 EXP for 'bowyer' (Guild Hero). Current: Level 5 (50/70 EXP)
+[Progression] Recorded tx 'bowyer': +50 EXP for Guild Hero, resulting total: Level 5 (50/70 EXP)
+[Progression] +25 EXP for 'bowyer' (Guild Hero). Current: Level 6 (5/74 EXP)
+[Progression] Recorded tx 'bowyer': +25 EXP for Guild Hero, resulting total: Level 6 (5/74 EXP)
+[Progression] LEVEL UP! 'bowyer' is now Level 6! (Gained 1 level(s))
+✔ Bowyer Band 2 (Reinforced Staff) craft and salvage verified.
+[Progression] +80 EXP for 'bowyer' (Guild Hero). Current: Level 8 (80/82 EXP)
+[Progression] Recorded tx 'bowyer': +80 EXP for Guild Hero, resulting total: Level 8 (80/82 EXP)
+[Progression] +40 EXP for 'bowyer' (Guild Hero). Current: Level 9 (38/86 EXP)
+[Progression] Recorded tx 'bowyer': +40 EXP for Guild Hero, resulting total: Level 9 (38/86 EXP)
+[Progression] LEVEL UP! 'bowyer' is now Level 9! (Gained 1 level(s))
+✔ Bowyer Band 3 (Voidforged Staff) craft and salvage verified.
+
+--- Test Group 3: Armorsmithing Craft & Salvage ---
+[Progression] +80 EXP for 'armorsmithing' (Guild Hero). Current: Level 8 (80/82 EXP)
+[Progression] Recorded tx 'armorsmithing': +80 EXP for Guild Hero, resulting total: Level 8 (80/82 EXP)
+[Progression] +40 EXP for 'armorsmithing' (Guild Hero). Current: Level 9 (38/86 EXP)
+[Progression] Recorded tx 'armorsmithing': +40 EXP for Guild Hero, resulting total: Level 9 (38/86 EXP)
+[Progression] LEVEL UP! 'armorsmithing' is now Level 9! (Gained 1 level(s))
+✔ Armorsmithing Band 3 (Voidforged Greathelm) craft and salvage verified.
+[Progression] +90 EXP for 'armorsmithing' (Guild Hero). Current: Level 10 (4/90 EXP)
+[Progression] Recorded tx 'armorsmithing': +90 EXP for Guild Hero, resulting total: Level 10 (4/90 EXP)
+[Progression] LEVEL UP! 'armorsmithing' is now Level 10! (Gained 1 level(s))
+[Progression] Class Unlocked: Apprentice Armorer (apprentice_armorer) for Guild Hero!
+[Progression] +90 Class EXP for 'apprentice_armorer' (Guild Hero). Current: Level 2 (36/58 EXP)
+[Progression] CLASS LEVEL UP! 'apprentice_armorer' is now Level 2!
+[Progression] +45 EXP for 'armorsmithing' (Guild Hero). Current: Level 10 (49/90 EXP)
+[Progression] Recorded tx 'armorsmithing': +45 EXP for Guild Hero, resulting total: Level 10 (49/90 EXP)
+[Progression] +45 Class EXP for 'apprentice_armorer' (Guild Hero). Current: Level 3 (23/62 EXP)
+[Progression] CLASS LEVEL UP! 'apprentice_armorer' is now Level 3!
+✔ Armorsmithing Band 3 (Voidforged Plate Armor) craft and salvage verified.
+[Progression] +95 EXP for 'armorsmithing' (Guild Hero). Current: Level 11 (5/94 EXP)
+[Progression] Recorded tx 'armorsmithing': +95 EXP for Guild Hero, resulting total: Level 11 (5/94 EXP)
+[Progression] LEVEL UP! 'armorsmithing' is now Level 11! (Gained 1 level(s))
+[Progression] +95 Class EXP for 'apprentice_armorer' (Guild Hero). Current: Level 4 (56/66 EXP)
+[Progression] CLASS LEVEL UP! 'apprentice_armorer' is now Level 4!
+[Progression] +48 EXP for 'armorsmithing' (Guild Hero). Current: Level 11 (53/94 EXP)
+[Progression] Recorded tx 'armorsmithing': +48 EXP for Guild Hero, resulting total: Level 11 (53/94 EXP)
+[Progression] +48 Class EXP for 'apprentice_armorer' (Guild Hero). Current: Level 5 (38/70 EXP)
+[Progression] CLASS LEVEL UP! 'apprentice_armorer' is now Level 5!
+✔ Armorsmithing Band 3 (Voidforged Relic) craft and salvage verified.
+
+--- Test Group 4: Heavy Armor Stat Application & Proficiency ---
+[Player:Hero] Equipped helmet: Voidforged Greathelm (+60 HP). Current HP: 83.6/83.6, Crit HP: 56.8/56.8
+[Player:Hero] Equipped body: Voidforged Plate Armor (+100 HP). Current HP: 133.6/133.6, Crit HP: 106.8/106.8
+[Progression] +1 EXP for 'heavy_armor' (Guild Hero). Current: Level 0 (1/50 EXP)
+[Progression] Recorded tx 'heavy_armor': +1 EXP for Guild Hero, resulting total: Level 0 (1/50 EXP)
+[KnowledgeBase] ⚔️ Proficiency discovered: 'heavy_armor'! (+1 RP)
+[Progression] +1 EXP for 'heavy_armor' (Guild Hero). Current: Level 0 (2/50 EXP)
+[Progression] Recorded tx 'heavy_armor': +1 EXP for Guild Hero, resulting total: Level 0 (2/50 EXP)
+✔ Heavy armor stat application and proficiency EXP verified.
+
+🎉 ALL GEAR LADDER MILESTONE TESTS PASSED SUCCESSFULLY! 🎉

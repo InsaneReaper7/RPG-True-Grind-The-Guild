@@ -1,0 +1,71 @@
+======================================================
+RUNNING MILESTONE 28: ARMOR SLOTS & ARMORSMITHING TESTS
+======================================================
+
+--- TEST 1: Data Registry & Architecture Integrity ---
+✓ PASS: Station buildable, research node, room rule, armors, recipes, and class definitions verified.
+
+--- TEST 2: Dangling Resource Consumption & Bench Crafting ---
+[Progression] +25 EXP for 'armorsmithing' (Guild Hero). Current: Level 0 (25/50 EXP)
+[Progression] Recorded tx 'armorsmithing': +25 EXP for Guild Hero, resulting total: Level 0 (25/50 EXP)
+✓ PASS: Wolf Pelt successfully consumed to craft Leather Cap with Armorsmithing EXP rewarded.
+
+--- TEST 3: Outpost Restriction & Equipping Armor Mechanical HP Effect ---
+[Player:Ironclad Hero] Cannot equip or unequip helmet outside the Outpost / during combat!
+[Player:Ironclad Hero] Cannot equip or unequip helmet outside the Outpost / during combat!
+[Player:Ironclad Hero] Equipped helmet: Leather Cap (+15 HP). Current HP: 58/58, Crit HP: 32/32
+[Player:Ironclad Hero] Equipped body: Leather Armor (+25 HP). Current HP: 71/71, Crit HP: 44/44
+✓ PASS: Outpost-only restrictions enforced and equipping boosts max HP and critical HP additively.
+
+--- TEST 4: Harsh Unequip Subtraction with Safety Floor of Exactly 1 HP ---
+[Player:Ironclad Hero] Equipped body: Silk Robe (+50 HP). Current HP: 75/75, Crit HP: 50/50
+[Player:Ironclad Hero] Unequipped body. Current HP: 0/50, Crit HP: 1/25
+✓ PASS: Low-HP unequip subtraction cleanly floors Critical HP at exactly 1 with zero Downed state trigger.
+
+--- TEST 5: Real Mechanical Combat Survival Benefit ---
+[Player:Ironclad Hero] Equipped helmet: Leather Cap (+15 HP). Current HP: 58/58, Crit HP: 32/32
+[Player:Ironclad Hero] Equipped body: Leather Armor (+25 HP). Current HP: 71/71, Crit HP: 44/44
+✓ PASS: Armor HP bonus delivers real, observable damage buffer and survival benefit in combat.
+
+--- TEST 6: Additive Architecture & Weapon Independence ---
+[Progression] +7000 EXP for 'short_swords' (Guild Hero). Current: Level 48 (88/242 EXP)
+[Progression] Recorded tx 'short_swords': +7000 EXP for Guild Hero, resulting total: Level 48 (88/242 EXP)
+[Progression] LEVEL UP! 'short_swords' is now Level 48! (Gained 48 level(s))
+[Progression] Class Unlocked: Fencer (fencer) for Guild Hero!
+[Progression] ✨ SKILL DISCOVERED: 'short_swords' reached Level 48 by Guild Hero! ✨
+[Progression] +7000 EXP for 'daggers' (Guild Hero). Current: Level 48 (88/242 EXP)
+[Progression] Recorded tx 'daggers': +7000 EXP for Guild Hero, resulting total: Level 48 (88/242 EXP)
+[Progression] LEVEL UP! 'daggers' is now Level 48! (Gained 48 level(s))
+[Progression] Class Unlocked: Cutthroat (cutthroat) for Guild Hero!
+[Progression] Class Unlocked: Duelist (duelist) for Guild Hero!
+[Progression] ✨ DUAL WIELDING UNLOCKED! Two 1H melee weapon proficiencies reached Level 30! ✨
+[Progression] ✨ SKILL DISCOVERED: 'daggers' reached Level 48 by Guild Hero! ✨
+[Player] Equipped skill: power_strike. Current loadout: [power_strike]
+[Player] Equipped skill: quick_stab. Current loadout: [power_strike, quick_stab]
+[Player] Equipped skill: flurry_cut. Current loadout: [power_strike, quick_stab, flurry_cut]
+[Player:Ironclad Hero] Equipped offhand weapon: Daggers
+[Player:Ironclad Hero] Equipped helmet: Leather Cap (+15 HP). Current HP: 106/106, Crit HP: 56/56
+[Player:Ironclad Hero] Equipped body: Leather Armor (+25 HP). Current HP: 119/119, Crit HP: 68/68
+[Player:Ironclad Hero] Unequipped helmet. Current HP: 111/111, Crit HP: 61/61
+[Player:Ironclad Hero] Unequipped body. Current HP: 98/98, Crit HP: 49/49
+✓ PASS: Armor slots are 100% additive; weapon and offhand logic are completely unaffected.
+
+--- TEST 7: Armorsmithing Progression, Hidden Rule & Apprentice Armorer Unlock ---
+[Progression] +55 EXP for 'armorsmithing' (Guild Hero). Current: Level 1 (5/54 EXP)
+[Progression] Recorded tx 'armorsmithing': +55 EXP for Guild Hero, resulting total: Level 1 (5/54 EXP)
+[Progression] LEVEL UP! 'armorsmithing' is now Level 1! (Gained 1 level(s))
+[Progression] ✨ SKILL DISCOVERED: 'armorsmithing' reached Level 1 by Guild Hero! ✨
+[Progression] +700 EXP for 'armorsmithing' (Guild Hero). Current: Level 10 (75/90 EXP)
+[Progression] Recorded tx 'armorsmithing': +700 EXP for Guild Hero, resulting total: Level 10 (75/90 EXP)
+[Progression] LEVEL UP! 'armorsmithing' is now Level 10! (Gained 9 level(s))
+[Progression] Class Unlocked: Apprentice Armorer (apprentice_armorer) for Guild Hero!
+✓ PASS: Hidden-until-Lv-1 rule and Apprentice Armorer class unlock at Level 10 verified.
+
+--- TEST 8: State Snapshot Persistence & Non-Interactive Restoration ---
+[Player:Ironclad Hero] Equipped helmet: Silk Cowl (+30 HP). Current HP: 65/65, Crit HP: 40/40
+[Player:Ironclad Hero] Equipped body: Silk Robe (+50 HP). Current HP: 90/90, Crit HP: 65/65
+✓ PASS: Snapshots serialize and restore equipped armor slots cleanly across scene handoffs.
+
+======================================================
+ALL MILESTONE 28 TESTS COMPLETED & VERIFIED SUCCESSFULLY
+======================================================

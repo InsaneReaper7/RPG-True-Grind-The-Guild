@@ -1,0 +1,381 @@
+=== Starting Priority Milestone Test Suite: Crafting Output to Character Inventory ===
+
+--- Test 1: Recipe Coverage Audit (Data-Driven) ---
+Derived 13 physical weapon families from data/weapons.json:
+katana, short_swords, shields, longswords, greatswords, daggers, bows, mace, throwing_weapons, staff, spears, crossbows, fist
+
+--- Weapon Family Recipe Coverage ---
+Family: bows                 | Recipe ID: hunting_bow        | File: data/bowyerRecipes.json
+Family: crossbows            | Recipe ID: crossbow           | File: data/blacksmithRecipes.json
+Family: daggers              | Recipe ID: daggers            | File: data/blacksmithRecipes.json
+[EXCLUDED] Family: fist               | Reason: Unarmed combat baseline; inherent character capability, not a craftable weapon.
+Family: greatswords          | Recipe ID: greatsword         | File: data/blacksmithRecipes.json
+Family: katana               | Recipe ID: katana             | File: data/blacksmithRecipes.json
+Family: longswords           | Recipe ID: longsword_1h       | File: data/blacksmithRecipes.json
+Family: mace                 | Recipe ID: mace               | File: data/blacksmithRecipes.json
+Family: shields              | Recipe ID: iron_shield        | File: data/blacksmithRecipes.json
+Family: short_swords         | Recipe ID: short_sword        | File: data/blacksmithRecipes.json
+Family: spears               | Recipe ID: spear              | File: data/blacksmithRecipes.json
+Family: staff                | Recipe ID: quarterstaff       | File: data/bowyerRecipes.json
+Family: throwing_weapons     | Recipe ID: throwing_weapons   | File: data/blacksmithRecipes.json
+
+--- Armor Slots Recipe Coverage ---
+Slot:   helmet               | Recipe ID: leather_cap        | File: data/armorsmithRecipes.json
+Slot:   body                 | Recipe ID: leather_armor      | File: data/armorsmithRecipes.json
+Slot:   necklace             | Recipe ID: bone_necklace      | File: data/armorsmithRecipes.json
+Slot:   ring                 | Recipe ID: wolf_claw_ring     | File: data/armorsmithRecipes.json
+Slot:   accessory            | Recipe ID: venom_charm        | File: data/armorsmithRecipes.json
+
+[Info] Druid Staff: 'druid_staff' exists in data/weapons.json (category: 'melee_2h').
+       Per docs/class_system.md, it is an independent magic weapon line (Grove Walker) separate from Staff, deliberately out of scope for crafting in this milestone.
+
+✓ Test 1 Passed: Data-driven recipe coverage audit complete and fully verified.
+
+--- Test 2: Equip/Unequip Item Conservation ---
+Chosen Source-of-Truth Rule:
+1. Equipping: handleSlotDrop deducts from character personal inventory first; if not found, deducts from shared party stockpile.
+2. Unequipping/Swapping: removed gear returns exclusively to character personal inventory (member.addItem). Never duplicated into stockpile.
+Walkthrough Note for the Record:
+"Because removed gear always returns to personal inventory, any item equipped from the stockpile migrates into that character's bag when it's unequipped, and adds to their carried weight."
+
+[GameState] 🗑️ Saved game deleted from storage.
+--- Part 2A: Stockpile-Sourced Equip ---
+[Player:Hero Leader] Equipped main weapon: Fist (Range: 1 tiles)
+Before Equip: Personal=0, Stockpile=1, Equipped=0 | Total=1
+[Player:Hero Leader] Equipped main weapon: Katana (Range: 1 tiles)
+After Equip:  Personal=0, Stockpile=0, Equipped=1 | Total=1
+✓ Part 2A Passed: Stockpile deduction verified (Stockpile 1 -> 0, Equipped 0 -> 1).
+
+--- Part 2B: Direct Unequip ---
+[Player:Hero Leader] Equipped main weapon: Fist (Range: 1 tiles)
+After Direct Unequip: Personal=1, Stockpile=0, Equipped=0 | Total=1
+✓ Part 2B Passed: Direct unequip verified (Equipped 1 -> 0, Personal 0 -> 1).
+
+--- Part 2C: Both-Stores Priority Case ---
+Before Equip (Both Stores): Personal=1, Stockpile=1, Equipped=0 | Total=2
+[Player:Hero Leader] Equipped main weapon: Katana (Range: 1 tiles)
+After Equip (Both Stores):  Personal=0, Stockpile=1, Equipped=1 | Total=2
+✓ Part 2C Passed: Personal deduction priority verified (Personal 1 -> 0, Stockpile remains 1).
+
+[Player:Hero Leader] Equipped main weapon: Fist (Range: 1 tiles)
+--- Part 2D: 10 Cycles of Stockpile-Sourced Path (Stockpile 1->0->1, Personal 0->1->0) ---
+Initial: Personal=0, Stockpile=1, Equipped=0 | Total=1
+[Player:Hero Leader] Equipped main weapon: Katana (Range: 1 tiles)
+Cycle  1 Step 1 (Equip from Stockpile):  Personal=0, Stockpile=0, Equipped=1 | Total=1
+[Player:Hero Leader] Equipped main weapon: Fist (Range: 1 tiles)
+Cycle  1 Step 2 (Direct Unequip to Bag):  Personal=1, Stockpile=0, Equipped=0 | Total=1
+Cycle  1 Step 3 (Deposit to Stockpile):  Personal=0, Stockpile=1, Equipped=0 | Total=1
+[Player:Hero Leader] Equipped main weapon: Katana (Range: 1 tiles)
+Cycle  2 Step 1 (Equip from Stockpile):  Personal=0, Stockpile=0, Equipped=1 | Total=1
+[Player:Hero Leader] Equipped main weapon: Fist (Range: 1 tiles)
+Cycle  2 Step 2 (Direct Unequip to Bag):  Personal=1, Stockpile=0, Equipped=0 | Total=1
+Cycle  2 Step 3 (Deposit to Stockpile):  Personal=0, Stockpile=1, Equipped=0 | Total=1
+[Player:Hero Leader] Equipped main weapon: Katana (Range: 1 tiles)
+Cycle  3 Step 1 (Equip from Stockpile):  Personal=0, Stockpile=0, Equipped=1 | Total=1
+[Player:Hero Leader] Equipped main weapon: Fist (Range: 1 tiles)
+Cycle  3 Step 2 (Direct Unequip to Bag):  Personal=1, Stockpile=0, Equipped=0 | Total=1
+Cycle  3 Step 3 (Deposit to Stockpile):  Personal=0, Stockpile=1, Equipped=0 | Total=1
+[Player:Hero Leader] Equipped main weapon: Katana (Range: 1 tiles)
+Cycle  4 Step 1 (Equip from Stockpile):  Personal=0, Stockpile=0, Equipped=1 | Total=1
+[Player:Hero Leader] Equipped main weapon: Fist (Range: 1 tiles)
+Cycle  4 Step 2 (Direct Unequip to Bag):  Personal=1, Stockpile=0, Equipped=0 | Total=1
+Cycle  4 Step 3 (Deposit to Stockpile):  Personal=0, Stockpile=1, Equipped=0 | Total=1
+[Player:Hero Leader] Equipped main weapon: Katana (Range: 1 tiles)
+Cycle  5 Step 1 (Equip from Stockpile):  Personal=0, Stockpile=0, Equipped=1 | Total=1
+[Player:Hero Leader] Equipped main weapon: Fist (Range: 1 tiles)
+Cycle  5 Step 2 (Direct Unequip to Bag):  Personal=1, Stockpile=0, Equipped=0 | Total=1
+Cycle  5 Step 3 (Deposit to Stockpile):  Personal=0, Stockpile=1, Equipped=0 | Total=1
+[Player:Hero Leader] Equipped main weapon: Katana (Range: 1 tiles)
+Cycle  6 Step 1 (Equip from Stockpile):  Personal=0, Stockpile=0, Equipped=1 | Total=1
+[Player:Hero Leader] Equipped main weapon: Fist (Range: 1 tiles)
+Cycle  6 Step 2 (Direct Unequip to Bag):  Personal=1, Stockpile=0, Equipped=0 | Total=1
+Cycle  6 Step 3 (Deposit to Stockpile):  Personal=0, Stockpile=1, Equipped=0 | Total=1
+[Player:Hero Leader] Equipped main weapon: Katana (Range: 1 tiles)
+Cycle  7 Step 1 (Equip from Stockpile):  Personal=0, Stockpile=0, Equipped=1 | Total=1
+[Player:Hero Leader] Equipped main weapon: Fist (Range: 1 tiles)
+Cycle  7 Step 2 (Direct Unequip to Bag):  Personal=1, Stockpile=0, Equipped=0 | Total=1
+Cycle  7 Step 3 (Deposit to Stockpile):  Personal=0, Stockpile=1, Equipped=0 | Total=1
+[Player:Hero Leader] Equipped main weapon: Katana (Range: 1 tiles)
+Cycle  8 Step 1 (Equip from Stockpile):  Personal=0, Stockpile=0, Equipped=1 | Total=1
+[Player:Hero Leader] Equipped main weapon: Fist (Range: 1 tiles)
+Cycle  8 Step 2 (Direct Unequip to Bag):  Personal=1, Stockpile=0, Equipped=0 | Total=1
+Cycle  8 Step 3 (Deposit to Stockpile):  Personal=0, Stockpile=1, Equipped=0 | Total=1
+[Player:Hero Leader] Equipped main weapon: Katana (Range: 1 tiles)
+Cycle  9 Step 1 (Equip from Stockpile):  Personal=0, Stockpile=0, Equipped=1 | Total=1
+[Player:Hero Leader] Equipped main weapon: Fist (Range: 1 tiles)
+Cycle  9 Step 2 (Direct Unequip to Bag):  Personal=1, Stockpile=0, Equipped=0 | Total=1
+Cycle  9 Step 3 (Deposit to Stockpile):  Personal=0, Stockpile=1, Equipped=0 | Total=1
+[Player:Hero Leader] Equipped main weapon: Katana (Range: 1 tiles)
+Cycle 10 Step 1 (Equip from Stockpile):  Personal=0, Stockpile=0, Equipped=1 | Total=1
+[Player:Hero Leader] Equipped main weapon: Fist (Range: 1 tiles)
+Cycle 10 Step 2 (Direct Unequip to Bag):  Personal=1, Stockpile=0, Equipped=0 | Total=1
+Cycle 10 Step 3 (Deposit to Stockpile):  Personal=0, Stockpile=1, Equipped=0 | Total=1
+✓ Part 2D Passed: 10 cycles of stockpile-sourced equip/unequip verified with invariant Total = 1.
+
+--- Part 2E: 10 Cycles of Weapon-for-Weapon Swap Conservation ---
+Initial: Katana[P=1, S=1, E=0 | T=2]  Greatsword[P=0, S=10, E=0 | T=10]
+[Player:Hero Leader] Equipped main weapon: Katana (Range: 1 tiles)
+Cycle  1 Step 1 (Equip Katana): Katana[P=0, S=1, E=1 | T=2]  Greatsword[P=0, S=10, E=0 | T=10]
+[Player:Hero Leader] Equipped main weapon: Greatswords (Range: 1 tiles)
+Cycle  1 Step 2 (Swap to GS):   Katana[P=1, S=1, E=0 | T=2]  Greatsword[P=0, S=9, E=1 | T=10]
+[Player:Hero Leader] Equipped main weapon: Fist (Range: 1 tiles)
+Cycle  1 Step 3 (Unequip GS):  Katana[P=1, S=1, E=0 | T=2]  Greatsword[P=1, S=9, E=0 | T=10]
+[Player:Hero Leader] Equipped main weapon: Katana (Range: 1 tiles)
+Cycle  2 Step 1 (Equip Katana): Katana[P=0, S=1, E=1 | T=2]  Greatsword[P=1, S=9, E=0 | T=10]
+[Player:Hero Leader] Equipped main weapon: Greatswords (Range: 1 tiles)
+Cycle  2 Step 2 (Swap to GS):   Katana[P=1, S=1, E=0 | T=2]  Greatsword[P=0, S=9, E=1 | T=10]
+[Player:Hero Leader] Equipped main weapon: Fist (Range: 1 tiles)
+Cycle  2 Step 3 (Unequip GS):  Katana[P=1, S=1, E=0 | T=2]  Greatsword[P=1, S=9, E=0 | T=10]
+[Player:Hero Leader] Equipped main weapon: Katana (Range: 1 tiles)
+Cycle  3 Step 1 (Equip Katana): Katana[P=0, S=1, E=1 | T=2]  Greatsword[P=1, S=9, E=0 | T=10]
+[Player:Hero Leader] Equipped main weapon: Greatswords (Range: 1 tiles)
+Cycle  3 Step 2 (Swap to GS):   Katana[P=1, S=1, E=0 | T=2]  Greatsword[P=0, S=9, E=1 | T=10]
+[Player:Hero Leader] Equipped main weapon: Fist (Range: 1 tiles)
+Cycle  3 Step 3 (Unequip GS):  Katana[P=1, S=1, E=0 | T=2]  Greatsword[P=1, S=9, E=0 | T=10]
+[Player:Hero Leader] Equipped main weapon: Katana (Range: 1 tiles)
+Cycle  4 Step 1 (Equip Katana): Katana[P=0, S=1, E=1 | T=2]  Greatsword[P=1, S=9, E=0 | T=10]
+[Player:Hero Leader] Equipped main weapon: Greatswords (Range: 1 tiles)
+Cycle  4 Step 2 (Swap to GS):   Katana[P=1, S=1, E=0 | T=2]  Greatsword[P=0, S=9, E=1 | T=10]
+[Player:Hero Leader] Equipped main weapon: Fist (Range: 1 tiles)
+Cycle  4 Step 3 (Unequip GS):  Katana[P=1, S=1, E=0 | T=2]  Greatsword[P=1, S=9, E=0 | T=10]
+[Player:Hero Leader] Equipped main weapon: Katana (Range: 1 tiles)
+Cycle  5 Step 1 (Equip Katana): Katana[P=0, S=1, E=1 | T=2]  Greatsword[P=1, S=9, E=0 | T=10]
+[Player:Hero Leader] Equipped main weapon: Greatswords (Range: 1 tiles)
+Cycle  5 Step 2 (Swap to GS):   Katana[P=1, S=1, E=0 | T=2]  Greatsword[P=0, S=9, E=1 | T=10]
+[Player:Hero Leader] Equipped main weapon: Fist (Range: 1 tiles)
+Cycle  5 Step 3 (Unequip GS):  Katana[P=1, S=1, E=0 | T=2]  Greatsword[P=1, S=9, E=0 | T=10]
+[Player:Hero Leader] Equipped main weapon: Katana (Range: 1 tiles)
+Cycle  6 Step 1 (Equip Katana): Katana[P=0, S=1, E=1 | T=2]  Greatsword[P=1, S=9, E=0 | T=10]
+[Player:Hero Leader] Equipped main weapon: Greatswords (Range: 1 tiles)
+Cycle  6 Step 2 (Swap to GS):   Katana[P=1, S=1, E=0 | T=2]  Greatsword[P=0, S=9, E=1 | T=10]
+[Player:Hero Leader] Equipped main weapon: Fist (Range: 1 tiles)
+Cycle  6 Step 3 (Unequip GS):  Katana[P=1, S=1, E=0 | T=2]  Greatsword[P=1, S=9, E=0 | T=10]
+[Player:Hero Leader] Equipped main weapon: Katana (Range: 1 tiles)
+Cycle  7 Step 1 (Equip Katana): Katana[P=0, S=1, E=1 | T=2]  Greatsword[P=1, S=9, E=0 | T=10]
+[Player:Hero Leader] Equipped main weapon: Greatswords (Range: 1 tiles)
+Cycle  7 Step 2 (Swap to GS):   Katana[P=1, S=1, E=0 | T=2]  Greatsword[P=0, S=9, E=1 | T=10]
+[Player:Hero Leader] Equipped main weapon: Fist (Range: 1 tiles)
+Cycle  7 Step 3 (Unequip GS):  Katana[P=1, S=1, E=0 | T=2]  Greatsword[P=1, S=9, E=0 | T=10]
+[Player:Hero Leader] Equipped main weapon: Katana (Range: 1 tiles)
+Cycle  8 Step 1 (Equip Katana): Katana[P=0, S=1, E=1 | T=2]  Greatsword[P=1, S=9, E=0 | T=10]
+[Player:Hero Leader] Equipped main weapon: Greatswords (Range: 1 tiles)
+Cycle  8 Step 2 (Swap to GS):   Katana[P=1, S=1, E=0 | T=2]  Greatsword[P=0, S=9, E=1 | T=10]
+[Player:Hero Leader] Equipped main weapon: Fist (Range: 1 tiles)
+Cycle  8 Step 3 (Unequip GS):  Katana[P=1, S=1, E=0 | T=2]  Greatsword[P=1, S=9, E=0 | T=10]
+[Player:Hero Leader] Equipped main weapon: Katana (Range: 1 tiles)
+Cycle  9 Step 1 (Equip Katana): Katana[P=0, S=1, E=1 | T=2]  Greatsword[P=1, S=9, E=0 | T=10]
+[Player:Hero Leader] Equipped main weapon: Greatswords (Range: 1 tiles)
+Cycle  9 Step 2 (Swap to GS):   Katana[P=1, S=1, E=0 | T=2]  Greatsword[P=0, S=9, E=1 | T=10]
+[Player:Hero Leader] Equipped main weapon: Fist (Range: 1 tiles)
+Cycle  9 Step 3 (Unequip GS):  Katana[P=1, S=1, E=0 | T=2]  Greatsword[P=1, S=9, E=0 | T=10]
+[Player:Hero Leader] Equipped main weapon: Katana (Range: 1 tiles)
+Cycle 10 Step 1 (Equip Katana): Katana[P=0, S=1, E=1 | T=2]  Greatsword[P=1, S=9, E=0 | T=10]
+[Player:Hero Leader] Equipped main weapon: Greatswords (Range: 1 tiles)
+Cycle 10 Step 2 (Swap to GS):   Katana[P=1, S=1, E=0 | T=2]  Greatsword[P=0, S=9, E=1 | T=10]
+[Player:Hero Leader] Equipped main weapon: Fist (Range: 1 tiles)
+Cycle 10 Step 3 (Unequip GS):  Katana[P=1, S=1, E=0 | T=2]  Greatsword[P=1, S=9, E=0 | T=10]
+
+✓ Test 2 Passed: Exact item conservation preserved across all stockpile-sourced equips, direct unequips, both-stores prioritization, and swap cycles.
+
+--- Test 3: Encumbrance Clears and Applies from Every Route ---
+
+Apply Route 1: Monster Loot Pickup Exceeding Capacity
+  [Loot Pickup] BEFORE -> Carried: 3.0kg, Capacity: 45.0kg, Speed: 100px/s (Encumbered: false)
+  [Loot Pickup] AFTER  -> Carried: 53.0kg, Capacity: 45.0kg, Speed: 20px/s (Encumbered: true)
+
+Clear Route 1: Dropping Item
+  [Drop Item] BEFORE -> Carried: 53.0kg, Capacity: 45.0kg, Speed: 20px/s (Encumbered: true)
+  [Drop Item] AFTER  -> Carried: 43.0kg, Capacity: 45.0kg, Speed: 100px/s (Encumbered: false)
+
+Apply Route 2: Gathering Yields Exceeding Capacity
+  [Gather Yield] BEFORE -> Carried: 3.0kg, Capacity: 45.0kg, Speed: 100px/s (Encumbered: false)
+  [Gather Yield] AFTER  -> Carried: 50.5kg, Capacity: 45.0kg, Speed: 20px/s (Encumbered: true)
+
+Clear Route 2: Depositing to Stockpile
+  [Deposit Stockpile] BEFORE -> Carried: 50.5kg, Capacity: 45.0kg, Speed: 20px/s (Encumbered: true)
+  [Deposit Stockpile] AFTER  -> Carried: 40.5kg, Capacity: 45.0kg, Speed: 100px/s (Encumbered: false)
+
+Apply/Clear Route 3: Transfer to Party Member & Promoting Over-Capacity Companion
+  [Transfer Prep] HERO OVERWEIGHT -> Carried: 53.0kg, Capacity: 45.0kg, Speed: 20px/s (Encumbered: true)
+  [Transfer Item] HERO POST-TRANSFER -> Carried: 33.0kg, Capacity: 45.0kg, Speed: 100px/s (Encumbered: false)
+  [Promotion Prep] COMPANION BEFORE PROMOTION -> Carried: 53.0kg, Capacity: 45.0kg, Speed: 20px/s (Encumbered: true)
+  [Promote Leader] PROMOTED LEADER LIVE STATE -> Carried: 53.0kg, Capacity: 45.0kg, Speed: 20px/s (Encumbered: true)
+
+✓ Test 3 Passed: Encumbrance clears and applies faithfully on all routes via single shared recalculation.
+
+--- Test 4: Alchemy Explicit resultItemId Field Audit ---
+Checking 8 alchemy recipes for explicit resultItemId:
+Recipe: bandage          | resultItemId: bandage          | Item exists in items.json: ✓
+Recipe: antidote         | resultItemId: antidote         | Item exists in items.json: ✓
+Recipe: energy_potion    | resultItemId: energy_potion    | Item exists in items.json: ✓
+Recipe: health_potion    | resultItemId: health_potion    | Item exists in items.json: ✓
+Recipe: mana_potion      | resultItemId: mana_potion      | Item exists in items.json: ✓
+Recipe: bone_meal        | resultItemId: bone_meal        | Item exists in items.json: ✓
+Recipe: revive_potion    | resultItemId: revive_potion    | Item exists in items.json: ✓
+Recipe: escape_stone     | resultItemId: escape_stone     | Item exists in items.json: ✓
+[Progression] +25 EXP for 'alchemy' (Hero Leader). Current: Level 0 (25/50 EXP)
+[Progression] Recorded tx 'alchemy': +25 EXP for Hero Leader, resulting total: Level 0 (25/50 EXP)
+
+✓ Test 4 Passed: Every alchemy recipe has valid resultItemId matching items.json and deposits successfully.
+
+--- Test 5: Crafting Input Source with Empty-Handed Promoted Leader ---
+Documented Input Rule: All Outpost crafting stations consume raw ingredients from the central
+party stockpile (GameState), while output goods and EXP route to the active Leader personal inventory.
+
+[GameState] 🗑️ Saved game deleted from storage.
+[Cooking] ✨ Recipe permanently discovered: 'herb_stew'! (+1 RP)
+[Progression] +20 EXP for 'blacksmithing' (Valerie). Current: Level 0 (20/50 EXP)
+[Progression] Recorded tx 'blacksmithing': +20 EXP for Valerie, resulting total: Level 0 (20/50 EXP)
+[Progression] +35 EXP for 'armorsmithing' (Valerie). Current: Level 0 (35/50 EXP)
+[Progression] Recorded tx 'armorsmithing': +35 EXP for Valerie, resulting total: Level 0 (35/50 EXP)
+[Progression] +25 EXP for 'bowyer' (Valerie). Current: Level 0 (25/50 EXP)
+[Progression] Recorded tx 'bowyer': +25 EXP for Valerie, resulting total: Level 0 (25/50 EXP)
+[Progression] +25 EXP for 'alchemy' (Valerie). Current: Level 0 (25/50 EXP)
+[Progression] Recorded tx 'alchemy': +25 EXP for Valerie, resulting total: Level 0 (25/50 EXP)
+[Progression] +20 EXP for 'cooking' (Valerie). Current: Level 0 (20/50 EXP)
+[Progression] Recorded tx 'cooking': +20 EXP for Valerie, resulting total: Level 0 (20/50 EXP)
+✓ All 5 stations successfully crafted with an empty-handed promoted leader.
+✓ Verified: materials deducted from stockpile; output items deposited into leader personal inventory; 0 added to stockpile; total conserved.
+
+✓ Test 5 Passed: Crafting input source and exact output conservation verified.
+
+--- Test 6: Debug Flag Hardening & Gating ---
+Gating Architecture Report:
+  Debug helpers ((window as any).__instantReviveParty, __dealDebugDamage, etc.) and the Debug Panel
+  are unconditionally included in alpha builds for developer/tester accessibility (no DEV stripping).
+  window.__debugBypassEquipCheck adheres to this exact same console/window gate.
+  The static source-grep confirms zero UI buttons or keybindings manipulate or expose this flag.
+  (Limitation: static grep verifies static source text but would not detect runtime dynamic eval or obfuscated property access).
+
+✓ Test 6 Passed: Debug flag hardening verified.
+
+--- Test 7: Stash Exploit Closure & Paperdoll Inventory ---
+[GameState] Initialized from player.json boot seed with Hero & Valerie: {
+  hp: 50,
+  criticalHp: 25,
+  energy: 100,
+  knownSkillIds: [],
+  equippedSkillIds: [],
+  autocastMap: {},
+  skillCooldownsRemainingMs: {},
+  proficiencies: {
+    short_swords: { level: 0, currentExp: 0 },
+    construction: { level: 0, currentExp: 0 },
+    fist: { level: 0, currentExp: 0 },
+    daggers: { level: 0, currentExp: 0 },
+    shields: { level: 0, currentExp: 0 },
+    dual_wielding: { level: 0, currentExp: 0 },
+    alchemy: { level: 0, currentExp: 0 },
+    evasion: { level: 0, currentExp: 0 },
+    parry: { level: 0, currentExp: 0 },
+    block: { level: 0, currentExp: 0 },
+    counterattack: { level: 0, currentExp: 0 },
+    resilience: { level: 0, currentExp: 0 },
+    health_regen: { level: 0, currentExp: 0 },
+    mana_regen: { level: 0, currentExp: 0 },
+    energy_regen: { level: 0, currentExp: 0 },
+    staff: { level: 0, currentExp: 0 },
+    druid_staff: { level: 0, currentExp: 0 },
+    healing_magic: { level: 0, currentExp: 0 },
+    fire_magic: { level: 0, currentExp: 0 },
+    foraging: { level: 0, currentExp: 0 },
+    woodcutting: { level: 0, currentExp: 0 },
+    mining: { level: 0, currentExp: 0 },
+    mace: { level: 0, currentExp: 0 },
+    blacksmithing: { level: 0, currentExp: 0 },
+    armorsmithing: { level: 0, currentExp: 0 },
+    digging: { level: 0, currentExp: 0 },
+    perception: { level: 0, currentExp: 0 },
+    skinning: { level: 0, currentExp: 0 },
+    butchering: { level: 0, currentExp: 0 },
+    lockpicking: { level: 0, currentExp: 0 },
+    gardening: { level: 0, currentExp: 0 },
+    longswords: { level: 0, currentExp: 0 },
+    dark_magic: { level: 0, currentExp: 0 },
+    light_armor: { level: 0, currentExp: 0 },
+    medium_armor: { level: 0, currentExp: 0 },
+    heavy_armor: { level: 0, currentExp: 0 },
+    fishing: { level: 0, currentExp: 0 },
+    enchanting: { level: 0, currentExp: 0 },
+    water_magic: { level: 0, currentExp: 0 },
+    earth_magic: { level: 0, currentExp: 0 },
+    nature_magic: { level: 0, currentExp: 0 },
+    wind_magic: { level: 0, currentExp: 0 }
+  },
+  classLevels: {},
+  unlockedClasses: [],
+  resources: { wood: 100, ore: 0 },
+  placedBuildables: [],
+  hunger: 100,
+  mood: 50,
+  currentGameDay: 1,
+  foodItems: [],
+  equippedWeaponId: 'short_swords',
+  offhandWeaponId: null,
+  dungeonFloorCount: 0,
+  encounteredEnemies: [],
+  discoveredProficiencies: [ 'short_swords' ],
+  discoveredStatusEffects: [],
+  discoveredGatheringNodes: [],
+  defeatedAreaBosses: [],
+  quickSlots: [ 'revive_potion', 'bandage', 'energy_potion', 'antidote' ],
+  worldFlags: {},
+  grovePityCounter: 0,
+  party: [
+    {
+      id: 'player',
+      name: 'Guild Hero',
+      avatarKey: 'player-avatar',
+      hp: 50,
+      criticalHp: 25,
+      energy: 100,
+      equippedWeaponId: 'short_swords',
+      offhandWeaponId: null,
+      inventory: [Object],
+      knownSkillIds: [],
+      equippedSkillIds: [],
+      autocastMap: {},
+      skillCooldownsRemainingMs: {},
+      proficiencies: [Object],
+      classLevels: {},
+      classStats: {},
+      unlockedClasses: [],
+      activeClass: null,
+      bookLearnedSkills: [],
+      hunger: 100,
+      mood: 50,
+      state: 'idle'
+    },
+    {
+      id: 'companion_1',
+      name: 'Valerie',
+      avatarKey: 'companion-avatar',
+      avatarTextureKey: 'companion-avatar',
+      hp: 50,
+      criticalHp: 25,
+      energy: 100,
+      equippedWeaponId: 'bows',
+      offhandWeaponId: 'daggers',
+      inventory: [Object],
+      knownSkillIds: [Array],
+      equippedSkillIds: [Array],
+      autocastMap: [Object],
+      skillCooldownsRemainingMs: {},
+      proficiencies: [Object],
+      classLevels: [Object],
+      classStats: [Object],
+      unlockedClasses: [Array],
+      activeClass: 'scout',
+      bookLearnedSkills: [],
+      hunger: 100,
+      mood: 50,
+      state: 'idle'
+    }
+  ]
+}
+[Player:Hero Leader] Equipped main weapon: Katana (Range: 1 tiles)
+✓ Test 7 Passed: Unowned items non-draggable; drops strictly validated; Stash toggle respected.
+
+================================================================
+ALL CRAFTING INVENTORY ROUTING TESTS PASSED SUCCESSFULLY! 🎉
+================================================================

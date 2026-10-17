@@ -1,0 +1,77 @@
+================================================================
+RUNNING MILESTONE 33: SECOND ARMOR WAVE (NECKLACE, RING, ACCESSORY)
+================================================================
+
+--- TEST 1: Data Registry Integrity & Dangling Resource Recipes ---
+✓ PASS: Data registries, 5 slots, and dangling material recipes verified.
+
+--- TEST 2: Outpost Restriction & In-Combat Lockout for New Slots ---
+[Player:Guild Guardian] Cannot equip or unequip necklace outside the Outpost / during combat!
+[Player:Guild Guardian] Cannot equip or unequip ring outside the Outpost / during combat!
+[Player:Guild Guardian] Cannot equip or unequip accessory outside the Outpost / during combat!
+[Player:Guild Guardian] Cannot equip or unequip necklace outside the Outpost / during combat!
+[Player:Guild Guardian] Cannot equip or unequip ring outside the Outpost / during combat!
+[Player:Guild Guardian] Cannot equip or unequip accessory outside the Outpost / during combat!
+[Player:Guild Guardian] Cannot equip Bone Necklace in ring slot (slot is necklace)
+[Player:Guild Guardian] Cannot equip Wolf Claw Ring in accessory slot (slot is ring)
+[Player:Guild Guardian] Cannot equip Venom Charm in helmet slot (slot is accessory)
+✓ PASS: Outpost restriction, in-combat lock, and slot type validation strictly enforced.
+
+--- TEST 3: Two-Bar HP Split on Equip (Both Bars Visibly Increase) ---
+[Player:Guild Guardian] Equipped helmet: Silk Cowl (+30 HP). Current HP: 65/65, Crit HP: 40/40
+[Player:Guild Guardian] Equipped necklace: Bone Necklace (+20 HP). Current HP: 75/75, Crit HP: 50/50
+✓ PASS: Both Main HP and Critical HP visibly boost on equipping retrofitted and new armor pieces.
+
+--- TEST 4: Floor-of-1 Safety Rule Specifically Protects Critical HP ---
+[Player:Guild Guardian] Equipped accessory: Venom Charm (+26 HP). Current HP: 63/63, Crit HP: 38/38
+[Player:Guild Guardian] Unequipped accessory. Current HP: 0/50, Crit HP: 1/25
+✓ PASS: Floor-of-1 safety rule correctly targets Critical HP; Main HP safely drops to 0 without downing.
+
+--- TEST 5: Full 5-Slot Additive Coexistence & Independence ---
+[Progression] +7000 EXP for 'short_swords' (Guild Hero). Current: Level 48 (88/242 EXP)
+[Progression] Recorded tx 'short_swords': +7000 EXP for Guild Hero, resulting total: Level 48 (88/242 EXP)
+[Progression] LEVEL UP! 'short_swords' is now Level 48! (Gained 48 level(s))
+[Progression] Class Unlocked: Fencer (fencer) for Guild Hero!
+[Progression] ✨ SKILL DISCOVERED: 'short_swords' reached Level 48 by Guild Hero! ✨
+[Progression] +7000 EXP for 'daggers' (Guild Hero). Current: Level 48 (88/242 EXP)
+[Progression] Recorded tx 'daggers': +7000 EXP for Guild Hero, resulting total: Level 48 (88/242 EXP)
+[Progression] LEVEL UP! 'daggers' is now Level 48! (Gained 48 level(s))
+[Progression] Class Unlocked: Cutthroat (cutthroat) for Guild Hero!
+[Progression] Class Unlocked: Duelist (duelist) for Guild Hero!
+[Progression] ✨ DUAL WIELDING UNLOCKED! Two 1H melee weapon proficiencies reached Level 30! ✨
+[Progression] ✨ SKILL DISCOVERED: 'daggers' reached Level 48 by Guild Hero! ✨
+[Player] Equipped skill: power_strike. Current loadout: [power_strike]
+[Player] Equipped skill: quick_stab. Current loadout: [power_strike, quick_stab]
+[Player] Equipped skill: flurry_cut. Current loadout: [power_strike, quick_stab, flurry_cut]
+[Player:Guild Guardian] Equipped offhand weapon: Daggers
+[Player:Guild Guardian] Equipped helmet: Leather Cap (+15 HP). Current HP: 106/106, Crit HP: 56/56
+[Player:Guild Guardian] Equipped body: Leather Armor (+25 HP). Current HP: 119/119, Crit HP: 68/68
+[Player:Guild Guardian] Equipped necklace: Bone Necklace (+20 HP). Current HP: 129/129, Crit HP: 78/78
+[Player:Guild Guardian] Equipped ring: Wolf Claw Ring (+14 HP). Current HP: 136/136, Crit HP: 85/85
+[Player:Guild Guardian] Equipped accessory: Venom Charm (+26 HP). Current HP: 149/149, Crit HP: 98/98
+[Player:Guild Guardian] Unequipped ring. Current HP: 142/142, Crit HP: 91/91
+[Player:Guild Guardian] Equipped ring: Wolf Claw Ring (+14 HP). Current HP: 149/149, Crit HP: 98/98
+✓ PASS: All 5 slots coexist simultaneously with full additive independence from weapons.
+
+--- TEST 6: Real Observable Combat Survival Benefit (Full 5-Piece Set) ---
+[Player:Guild Guardian] Equipped helmet: Leather Cap (+15 HP). Current HP: 58/58, Crit HP: 32/32
+[Player:Guild Guardian] Equipped body: Leather Armor (+25 HP). Current HP: 71/71, Crit HP: 44/44
+[Player:Guild Guardian] Equipped necklace: Bone Necklace (+20 HP). Current HP: 81/81, Crit HP: 54/54
+[Player:Guild Guardian] Equipped ring: Wolf Claw Ring (+14 HP). Current HP: 88/88, Crit HP: 61/61
+[Player:Guild Guardian] Equipped accessory: Venom Charm (+26 HP). Current HP: 101/101, Crit HP: 74/74
+✓ PASS: Full 5-piece armor loadout prevents downed state and delivers observable combat survivability.
+
+--- TEST 7: State Persistence & Mid-Game Save Retrofit ---
+[Player:Guild Guardian] Equipped helmet: Leather Cap (+15 HP). Current HP: 58/58, Crit HP: 32/32
+[Player:Guild Guardian] Equipped body: Leather Armor (+25 HP). Current HP: 71/71, Crit HP: 44/44
+[Player:Guild Guardian] Equipped necklace: Bone Necklace (+20 HP). Current HP: 81/81, Crit HP: 54/54
+[Player:Guild Guardian] Equipped ring: Wolf Claw Ring (+14 HP). Current HP: 88/88, Crit HP: 61/61
+[Player:Guild Guardian] Equipped accessory: Venom Charm (+26 HP). Current HP: 101/101, Crit HP: 74/74
+✓ PASS: Mid-game save retrofit recalculation on load and full 5-slot snapshot persistence verified.
+
+--- TEST 8: Odd-Numbered Split & Rounding Conservation Sweep ---
+✓ PASS: Odd-numbered split sweep verified: 100% conservation of total HP with integer values.
+
+================================================================
+ALL MILESTONE 33 UNIT TESTS COMPLETED & VERIFIED SUCCESSFULLY
+================================================================

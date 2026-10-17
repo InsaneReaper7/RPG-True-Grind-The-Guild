@@ -1,0 +1,145 @@
+=== TEST: PER-LEVEL STAT GAINS & CLASS LEVELS TO 100 ===
+
+1. Testing weapon proficiency training 0 -> 10...
+[Progression] +680 EXP for 'short_swords' (Guild Hero). Current: Level 10 (0/90 EXP)
+[Progression] Recorded tx 'short_swords': +680 EXP for Guild Hero, resulting total: Level 10 (0/90 EXP)
+[Progression] LEVEL UP! 'short_swords' is now Level 10! (Gained 10 level(s))
+[Progression] Class Unlocked: Fencer (fencer) for Guild Hero!
+[Player:Guild Hero] Active class set to: fencer
+[Player] Equipped skill: power_strike. Current loadout: [power_strike]
+[Progression] ✨ SKILL DISCOVERED: 'short_swords' reached Level 10 by Guild Hero! ✨
+✓ PASS: Weapon 0 -> 10 gives +5 Max HP, +2.5 Crit HP, +0.05 EN/s, and current HP rises by 5.
+2. Testing magic school training 0 -> 50...
+[Progression] +7400 EXP for 'fire_magic' (Guild Hero). Current: Level 50 (0/250 EXP)
+[Progression] Recorded tx 'fire_magic': +7400 EXP for Guild Hero, resulting total: Level 50 (0/250 EXP)
+[Progression] LEVEL UP! 'fire_magic' is now Level 50! (Gained 50 level(s))
+[Progression] Class Unlocked: Ember Adept (ember_adept) for Guild Hero!
+[Player:Guild Hero] Active class set to: ember_adept
+[Player] Equipped skill: scorch. Current loadout: [scorch]
+[Progression] Class Unlocked: Flamecaller (flamecaller) for Guild Hero!
+[Player] Equipped skill: fireball. Current loadout: [scorch, fireball]
+[Progression] ✨ SKILL DISCOVERED: 'fire_magic' reached Level 50 by Guild Hero! ✨
+✓ PASS: Magic 0 -> 50 gives +25 Max Energy, +1.0 EN/s, and current energy rises by 25.
+3. Testing no-ceiling linear scaling (uncapped stat gains)...
+[Progression] +24800 EXP for 'short_swords' (Guild Hero). Current: Level 100 (0/450 EXP)
+[Progression] Recorded tx 'short_swords': +24800 EXP for Guild Hero, resulting total: Level 100 (0/450 EXP)
+[Progression] LEVEL UP! 'short_swords' is now Level 100! (Gained 100 level(s))
+[Progression] Class Unlocked: Fencer (fencer) for Guild Hero!
+[Player:Guild Hero] Active class set to: fencer
+[Player] Equipped skill: power_strike. Current loadout: [power_strike]
+[Progression] ✨ SKILL DISCOVERED: 'short_swords' reached Level 100 by Guild Hero! ✨
+[Progression] +24800 EXP for 'longswords' (Guild Hero). Current: Level 100 (0/450 EXP)
+[Progression] Recorded tx 'longswords': +24800 EXP for Guild Hero, resulting total: Level 100 (0/450 EXP)
+[Progression] LEVEL UP! 'longswords' is now Level 100! (Gained 100 level(s))
+[Progression] Class Unlocked: Squire (squire) for Guild Hero!
+[Player] Equipped skill: measured_cut. Current loadout: [power_strike, measured_cut]
+[Progression] ✨ DUAL WIELDING UNLOCKED! Two 1H melee weapon proficiencies reached Level 30! ✨
+[Progression] ✨ SKILL DISCOVERED: 'longswords' reached Level 100 by Guild Hero! ✨
+[Progression] +24800 EXP for 'greatswords' (Guild Hero). Current: Level 100 (0/450 EXP)
+[Progression] Recorded tx 'greatswords': +24800 EXP for Guild Hero, resulting total: Level 100 (0/450 EXP)
+[Progression] LEVEL UP! 'greatswords' is now Level 100! (Gained 100 level(s))
+[Progression] Class Unlocked: Brute (brute) for Guild Hero!
+[Player] Equipped skill: heavy_swing. Current loadout: [power_strike, measured_cut, heavy_swing]
+[Progression] ✨ SKILL DISCOVERED: 'greatswords' reached Level 100 by Guild Hero! ✨
+[Progression] +24800 EXP for 'katana' (Guild Hero). Current: Level 100 (0/450 EXP)
+[Progression] Recorded tx 'katana': +24800 EXP for Guild Hero, resulting total: Level 100 (0/450 EXP)
+[Progression] LEVEL UP! 'katana' is now Level 100! (Gained 100 level(s))
+[Progression] Class Unlocked: Swordsman (swordsman) for Guild Hero!
+[Player] Equipped skill: blade_strike. Current loadout: [power_strike, measured_cut, heavy_swing, blade_strike]
+[Progression] ✨ SKILL DISCOVERED: 'katana' reached Level 100 by Guild Hero! ✨
+[Progression] +24800 EXP for 'daggers' (Guild Hero). Current: Level 100 (0/450 EXP)
+[Progression] Recorded tx 'daggers': +24800 EXP for Guild Hero, resulting total: Level 100 (0/450 EXP)
+[Progression] LEVEL UP! 'daggers' is now Level 100! (Gained 100 level(s))
+[Progression] Class Unlocked: Cutthroat (cutthroat) for Guild Hero!
+[Player] Equipped skill: quick_stab. Current loadout: [power_strike, measured_cut, heavy_swing, blade_strike, quick_stab]
+[Progression] Class Unlocked: Duelist (duelist) for Guild Hero!
+[Progression] ✨ SKILL DISCOVERED: 'daggers' reached Level 100 by Guild Hero! ✨
+[Progression] +24800 EXP for 'mace' (Guild Hero). Current: Level 100 (0/450 EXP)
+[Progression] Recorded tx 'mace': +24800 EXP for Guild Hero, resulting total: Level 100 (0/450 EXP)
+[Progression] LEVEL UP! 'mace' is now Level 100! (Gained 100 level(s))
+[Progression] Class Unlocked: Bludgeoner (bludgeoner) for Guild Hero!
+[Progression] ✨ SKILL DISCOVERED: 'mace' reached Level 100 by Guild Hero! ✨
+[Progression] +24800 EXP for 'spears' (Guild Hero). Current: Level 100 (0/450 EXP)
+[Progression] Recorded tx 'spears': +24800 EXP for Guild Hero, resulting total: Level 100 (0/450 EXP)
+[Progression] LEVEL UP! 'spears' is now Level 100! (Gained 100 level(s))
+[Progression] Class Unlocked: Lancer (lancer) for Guild Hero!
+[Progression] ✨ SKILL DISCOVERED: 'spears' reached Level 100 by Guild Hero! ✨
+[Progression] +24800 EXP for 'bows' (Guild Hero). Current: Level 100 (0/450 EXP)
+[Progression] Recorded tx 'bows': +24800 EXP for Guild Hero, resulting total: Level 100 (0/450 EXP)
+[Progression] LEVEL UP! 'bows' is now Level 100! (Gained 100 level(s))
+[Progression] Class Unlocked: Marksman (marksman) for Guild Hero!
+[Progression] Class Unlocked: Scout (scout) for Guild Hero!
+[Progression] Class Unlocked: Ranger (ranger) for Guild Hero!
+[Progression] ✨ SKILL DISCOVERED: 'bows' reached Level 100 by Guild Hero! ✨
+[Progression] +24800 EXP for 'crossbows' (Guild Hero). Current: Level 100 (0/450 EXP)
+[Progression] Recorded tx 'crossbows': +24800 EXP for Guild Hero, resulting total: Level 100 (0/450 EXP)
+[Progression] LEVEL UP! 'crossbows' is now Level 100! (Gained 100 level(s))
+[Progression] Class Unlocked: Loader (loader) for Guild Hero!
+[Progression] Class Unlocked: Sharpshooter (sharpshooter) for Guild Hero!
+[Progression] ✨ SKILL DISCOVERED: 'crossbows' reached Level 100 by Guild Hero! ✨
+[Progression] +24800 EXP for 'throwing_weapons' (Guild Hero). Current: Level 100 (0/450 EXP)
+[Progression] Recorded tx 'throwing_weapons': +24800 EXP for Guild Hero, resulting total: Level 100 (0/450 EXP)
+[Progression] LEVEL UP! 'throwing_weapons' is now Level 100! (Gained 100 level(s))
+[Progression] Class Unlocked: Skirmisher (skirmisher) for Guild Hero!
+[Progression] Class Unlocked: Javelin (javelin) for Guild Hero!
+[Progression] Class Unlocked: Thrower (thrower) for Guild Hero!
+[Progression] ✨ SKILL DISCOVERED: 'throwing_weapons' reached Level 100 by Guild Hero! ✨
+[Progression] +24800 EXP for 'fire_magic' (Guild Hero). Current: Level 100 (0/450 EXP)
+[Progression] Recorded tx 'fire_magic': +24800 EXP for Guild Hero, resulting total: Level 100 (0/450 EXP)
+[Progression] LEVEL UP! 'fire_magic' is now Level 100! (Gained 100 level(s))
+[Progression] Class Unlocked: Ember Adept (ember_adept) for Guild Hero!
+[Progression] Class Unlocked: Flamecaller (flamecaller) for Guild Hero!
+[Progression] ✨ SKILL DISCOVERED: 'fire_magic' reached Level 100 by Guild Hero! ✨
+[Progression] +24800 EXP for 'ice_magic' (Guild Hero). Current: Level 100 (0/450 EXP)
+[Progression] Recorded tx 'ice_magic': +24800 EXP for Guild Hero, resulting total: Level 100 (0/450 EXP)
+[Progression] LEVEL UP! 'ice_magic' is now Level 100! (Gained 100 level(s))
+[Progression] Class Unlocked: Frost Initiate (frost_initiate) for Guild Hero!
+[Progression] ✨ SKILL DISCOVERED: 'ice_magic' reached Level 100 by Guild Hero! ✨
+[Progression] +24800 EXP for 'lightning_magic' (Guild Hero). Current: Level 100 (0/450 EXP)
+[Progression] Recorded tx 'lightning_magic': +24800 EXP for Guild Hero, resulting total: Level 100 (0/450 EXP)
+[Progression] LEVEL UP! 'lightning_magic' is now Level 100! (Gained 100 level(s))
+[Progression] Class Unlocked: Spark Adept (spark_adept) for Guild Hero!
+[Progression] Class Unlocked: Stormtouched (stormtouched) for Guild Hero!
+[Progression] ✨ SKILL DISCOVERED: 'lightning_magic' reached Level 100 by Guild Hero! ✨
+✓ PASS: Over-training weapons to 1,000 levels yields exactly +500 HP & +250 Crit HP; magic to 300 levels yields +6.0 EN/s.
+4. Testing class leveling beyond Lv 40 (40 -> 41+)...
+[Progression] Set class 'vanguard' to Level 40 (0 EXP) on Guild Hero
+[Progression] +210 Class EXP for 'vanguard' (Guild Hero). Current: Level 41 (0/214 EXP)
+[Progression] CLASS LEVEL UP! 'vanguard' is now Level 41!
+✓ PASS: Class level advances from 40 to 41 via addClassExp and receives class stat gains.
+5. Testing save round-trip, old save loading, and damaged character critical HP clamp...
+[Progression] +1760 EXP for 'short_swords' (Guild Hero). Current: Level 20 (0/130 EXP)
+[Progression] Recorded tx 'short_swords': +1760 EXP for Guild Hero, resulting total: Level 20 (0/130 EXP)
+[Progression] LEVEL UP! 'short_swords' is now Level 20! (Gained 20 level(s))
+[Progression] Class Unlocked: Fencer (fencer) for Guild Hero!
+[Player:Guild Hero] Active class set to: fencer
+[Player] Equipped skill: power_strike. Current loadout: [power_strike]
+[Progression] ✨ SKILL DISCOVERED: 'short_swords' reached Level 20 by Guild Hero! ✨
+✓ PASS: Save round-trip keeps values identical with zero double-application; damaged load preserves critical HP.
+6. Testing companion stat gains...
+[Progression] +680 EXP for 'daggers' (Guild Hero). Current: Level 10 (0/90 EXP)
+[Progression] Recorded tx 'daggers': +680 EXP for Guild Hero, resulting total: Level 10 (0/90 EXP)
+[Progression] LEVEL UP! 'daggers' is now Level 10! (Gained 10 level(s))
+[Progression] Class Unlocked: Cutthroat (cutthroat) for Guild Hero!
+[Player:Companion Lyra] Active class set to: cutthroat
+[Player] Equipped skill: quick_stab. Current loadout: [quick_stab]
+[Progression] ✨ SKILL DISCOVERED: 'daggers' reached Level 10 by Guild Hero! ✨
+✓ PASS: Companion receives derived stat gains identically to leader.
+7. Testing in-combat regen with Magic 100 (2.5 EN/s over 10 s)...
+[Progression] +24800 EXP for 'arcane_magic' (Guild Hero). Current: Level 100 (0/450 EXP)
+[Progression] Recorded tx 'arcane_magic': +24800 EXP for Guild Hero, resulting total: Level 100 (0/450 EXP)
+[Progression] LEVEL UP! 'arcane_magic' is now Level 100! (Gained 100 level(s))
+[Progression] Class Unlocked: Arcane Initiate (arcane_initiate) for Guild Hero!
+[Player:Guild Hero] Active class set to: arcane_initiate
+[Player] Equipped skill: arcane_bolt. Current loadout: [arcane_bolt]
+[Progression] ✨ SKILL DISCOVERED: 'arcane_magic' reached Level 100 by Guild Hero! ✨
+[DIAG:Regen] Guild Hero | inCombat: true | Rate: 2.50 EN/s | Energy: 10.0 -> 12.5 (+2.50)
+[DIAG:Regen] Guild Hero | inCombat: true | Rate: 2.50 EN/s | Energy: 15.0 -> 17.5 (+2.50)
+[DIAG:Regen] Guild Hero | inCombat: true | Rate: 2.50 EN/s | Energy: 20.0 -> 22.5 (+2.50)
+[DIAG:Regen] Guild Hero | inCombat: true | Rate: 2.50 EN/s | Energy: 25.0 -> 27.5 (+2.50)
+[DIAG:Regen] Guild Hero | inCombat: true | Rate: 2.50 EN/s | Energy: 30.0 -> 32.5 (+2.50)
+✓ PASS: Magic 100 regenerates exactly 25.0 EN over 10s in combat (2.5 EN/s).
+
+================================================================
+🎉 ALL STAT GAINS & CLASS LEVELS TO 100 TESTS PASSED PERFECTLY!
+================================================================

@@ -1852,9 +1852,9 @@ The following three intentional behavioural changes were reviewed and accepted b
   - Each level of an armor proficiency reduces the carried weight of worn pieces of that class by 0.5% (floor at $0.5 \times$ original weight).
   - Only equipped armor is lightened; armor in bags weighs full catalog weight.
   - `recalculateDerivedStats()` invokes `this.updateEncumbrance()`, ensuring mid-run level-ups instantly recalculate carried weight and update encumbrance state.
-- **4. Behavior Change: Boss Splash & Shard Hits Mitigated by Recipient**:
-  - In `src/systems/CombatSystem.ts`, Boss Cleave shockwave (`member.takeDamage(splashDamage)`) and Glacial Sovereign shards (`member.takeDamage(shardDamage)`) now calculate splash/shard damage from the raw hit (`rawDamage * ratio`) and apply the **recipient's own** `applyArmorMitigation`.
-  - A heavily armored main target no longer artificially shrinks the splash damage taken by neighboring allies; each ally mitigates based on their own worn armor.
+- **4. Behavior Change: Boss Splash & Shard Hits Gated on rawDamage > 0 & Mitigated by Recipient**:
+  - In `src/systems/CombatSystem.ts`, Boss Cleave shockwave (`member.takeDamage(splashDamage)`) and Glacial Sovereign shards (`member.takeDamage(shardDamage)`) now gate on `rawDamage > 0` (previously gated on `actualDamage > 0`), calculate splash/shard damage from the raw hit (`rawDamage * ratio`), and apply the **recipient's own** `applyArmorMitigation`.
+  - If a reflect-shield on the primary target absorbs the full hit (`actualDamage` reaches 0), neighbors in range still take the cleave shockwave, mitigated by their own armor.
 - **5. Gear Gaps Filled (`data/armors.json`, `data/armorsmithRecipes.json`)**:
   - Added 8 new armor pieces using existing gathered/dropped materials (`leather`, `wolf_pelt`, `ore`, `bone`, `orc_hide`, `undead_ashes`, `silk`):
     - Light: `padded_tunic` (starter body).
@@ -1867,9 +1867,32 @@ The following three intentional behavioural changes were reviewed and accepted b
   - Character sheet displays `"Armor: R {effectiveRating} · −{reduction}% damage taken"` row beneath defenses (hidden when $R = 0$).
   - Paperdoll and inventory tooltips display `"Armor {rating} ({weightClass})"`.
   - Armor proficiency rows display `"+{X}% armor rating · −{Y}% worn weight"`.
-- **7. Verification & Evidence Logs**:
-  - `test/armorProgressionMitigation.test.ts`: 9 automated end-to-end tests covering mitigation, exempt damage, wear EXP, stat/attribute gains, worn weight reduction, mid-run encumbrance flip, 8 recipe crafting/salvage, starter heavy armor training, and "heavy doesn't dominate" data guard.
-  - Evidence committed: `docs/evidence/armorProgressionMitigation.log` and `docs/evidence/data_lint.log`.
-  - Full test suite: `npm test -- --quiet` passes all 134 test suites (932 tests) cleanly.
+- **7. Party Member `takeDamage` and Direct HP Reduction Classification Table**:
+
+| Site | What it is | Armor |
+|---|---|---|
+| `CombatSystem.ts` L875 `target.takeDamage(actualDamage)` | Enemy direct hit (melee, ranged or spell) | **Mitigated** |
+| `CombatSystem.ts` L898 `member.takeDamage(splashDamage)` | Boss cleave shockwave | **Mitigated** (recipient's armor) |
+| `CombatSystem.ts` L953 `member.takeDamage(shardDamage)` | Glacial Sovereign shards | **Mitigated** (recipient's armor) |
+| `CombatSystem.ts` L2347 `member.takeDamage(reflectDamage)` | Frost Thorns reflect | Exempt |
+| `Entity.ts` L629 `this.takeDamage(damage)` | DoT tick | Exempt |
+| `SkillSystem.ts` L793 `caster.hp -= cost` | Skill `hpCost` (self) | Exempt |
+| `CombatSystem.ts` L1374, L1796, L2340 | Party hitting enemies | n/a |
+
+- **8. Verification & Committed Evidence Logs**:
+  - `test/armorProgressionMitigation.test.ts`: Automated end-to-end tests covering mitigation, exempt damage, wear EXP, stat/attribute gains, worn weight reduction, mid-run encumbrance flip, 8 recipe crafting/salvage, starter heavy armor training, "heavy doesn't dominate" data guard, and the reflect-shield splash cleave test.
+  - Evidence committed:
+    - `docs/evidence/armorProgressionMitigation.log`
+    - `docs/evidence/data_lint.log`
+    - `docs/evidence/gear_ladder_milestone.log`
+    - `docs/evidence/milestone28.log`
+    - `docs/evidence/milestone33.log`
+    - `docs/evidence/milestone_armor_proficiency.log`
+    - `docs/evidence/milestone58.log`
+    - `docs/evidence/salvage.log`
+    - `docs/evidence/crafting_mastery_apprentice.log`
+    - `docs/evidence/craftingInventoryRouting.log`
+    - `docs/evidence/statGainsAndClassLevel100.log`
+    - `docs/evidence/milestone_second_boss.log`
   - Production build: `npm run build` succeeds cleanly.
 

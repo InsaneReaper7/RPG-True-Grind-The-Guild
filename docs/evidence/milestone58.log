@@ -1,0 +1,99 @@
+================================================================
+✨ RUNNING MILESTONE 58: ARCANE INITIATE REACHABLE & COMPLETE ✨
+================================================================
+
+--- TEST 1: Direct Documentation Citation Audit ---
+  ✓ Verified class_system (1).md line 90: | Arcane Initiate | Arcane 10 | First spark of raw magic |
+  ✓ Verified GDD Section 12.2 all 5 skills cited directly across lines 463-468.
+  ✓ Verified downstream classes (Spellsword, Archmage, etc.) do NOT gate on Arcane Initiate class levels.
+✓ PASS: Direct documentation audit verified citations and scope discipline.
+
+--- TEST 2: Data Registry & Architecture Integrity ---
+✓ PASS: All class, skill, and status effect entries cleanly registered.
+
+--- TEST 3: Progression & Class Unlock Boundary (Arcane Magic 9 vs 10) ---
+[Progression] +100 EXP for 'arcane_magic' (Candidate Mage). Current: Level 1 (50/54 EXP)
+[Progression] Recorded tx 'arcane_magic': +100 EXP for Candidate Mage, resulting total: Level 1 (50/54 EXP)
+[Progression] LEVEL UP! 'arcane_magic' is now Level 1! (Gained 1 level(s))
+[Progression] ✨ SKILL DISCOVERED: 'arcane_magic' reached Level 1 by Candidate Mage! ✨
+[Progression] +100 EXP for 'arcane_magic' (Candidate Mage). Current: Level 3 (38/62 EXP)
+[Progression] Recorded tx 'arcane_magic': +100 EXP for Candidate Mage, resulting total: Level 3 (38/62 EXP)
+[Progression] LEVEL UP! 'arcane_magic' is now Level 3! (Gained 2 level(s))
+[Progression] +100 EXP for 'arcane_magic' (Candidate Mage). Current: Level 5 (10/70 EXP)
+[Progression] Recorded tx 'arcane_magic': +100 EXP for Candidate Mage, resulting total: Level 5 (10/70 EXP)
+[Progression] LEVEL UP! 'arcane_magic' is now Level 5! (Gained 2 level(s))
+[Progression] +100 EXP for 'arcane_magic' (Candidate Mage). Current: Level 6 (40/74 EXP)
+[Progression] Recorded tx 'arcane_magic': +100 EXP for Candidate Mage, resulting total: Level 6 (40/74 EXP)
+[Progression] LEVEL UP! 'arcane_magic' is now Level 6! (Gained 1 level(s))
+[Progression] +100 EXP for 'arcane_magic' (Candidate Mage). Current: Level 7 (66/78 EXP)
+[Progression] Recorded tx 'arcane_magic': +100 EXP for Candidate Mage, resulting total: Level 7 (66/78 EXP)
+[Progression] LEVEL UP! 'arcane_magic' is now Level 7! (Gained 1 level(s))
+[Progression] +100 EXP for 'arcane_magic' (Candidate Mage). Current: Level 9 (6/86 EXP)
+[Progression] Recorded tx 'arcane_magic': +100 EXP for Candidate Mage, resulting total: Level 9 (6/86 EXP)
+[Progression] LEVEL UP! 'arcane_magic' is now Level 9! (Gained 2 level(s))
+[Progression] +100 EXP for 'arcane_magic' (Candidate Mage). Current: Level 10 (20/90 EXP)
+[Progression] Recorded tx 'arcane_magic': +100 EXP for Candidate Mage, resulting total: Level 10 (20/90 EXP)
+[Progression] LEVEL UP! 'arcane_magic' is now Level 10! (Gained 1 level(s))
+[Progression] Class Unlocked: Arcane Initiate (arcane_initiate) for Candidate Mage!
+[Progression] +100 EXP for 'arcane_magic' (Candidate Mage). Current: Level 11 (30/94 EXP)
+[Progression] Recorded tx 'arcane_magic': +100 EXP for Candidate Mage, resulting total: Level 11 (30/94 EXP)
+[Progression] LEVEL UP! 'arcane_magic' is now Level 11! (Gained 1 level(s))
+[Progression] +100 EXP for 'arcane_magic' (Candidate Mage). Current: Level 12 (36/98 EXP)
+[Progression] Recorded tx 'arcane_magic': +100 EXP for Candidate Mage, resulting total: Level 12 (36/98 EXP)
+[Progression] LEVEL UP! 'arcane_magic' is now Level 12! (Gained 1 level(s))
+✓ PASS: Arcane Initiate class unlock boundary verified (locked < 10, unlocked >= 10).
+
+--- TEST 4: Arcane Initiate 5-Tier Skill Unlock Cadence ---
+[Progression] Set class 'arcane_initiate' to Level 0 (0 EXP) on Arcane Apprentice
+[Progression] Set class 'arcane_initiate' to Level 1 (0 EXP) on Arcane Apprentice
+[Progression] Set class 'arcane_initiate' to Level 10 (0 EXP) on Arcane Apprentice
+[Progression] Set class 'arcane_initiate' to Level 20 (0 EXP) on Arcane Apprentice
+[Progression] Set class 'arcane_initiate' to Level 30 (0 EXP) on Arcane Apprentice
+[Progression] Set class 'arcane_initiate' to Level 40 (0 EXP) on Arcane Apprentice
+✓ PASS: All 5 Arcane Initiate skills unlock in strict accordance with the 1, 10, 20, 30, 40 cadence.
+
+--- TEST 5: Live Combat Execution — All 5 Skills ---
+[Progression] Set class 'arcane_initiate' to Level 40 (0 EXP) on undefined
+[Player:undefined] Equipped main weapon: Arcane Staff (Range: 1 tiles)
+[Player] Equipped skill: arcane_bolt. Current loadout: [arcane_bolt]
+[Player] Equipped skill: mana_shield. Current loadout: [arcane_bolt, mana_shield]
+[Player] Equipped skill: overcharge. Current loadout: [arcane_bolt, mana_shield, overcharge]
+[Player] Equipped skill: blink. Current loadout: [arcane_bolt, mana_shield, overcharge, blink]
+[Player] Equipped skill: arcane_nova. Current loadout: [arcane_bolt, mana_shield, overcharge, blink, arcane_nova]
+  Subtest 5.1: Arcane Bolt
+[Progression] +2 EXP for 'arcane_magic' (undefined). Current: Level 0 (2/50 EXP)
+[Progression] Recorded tx 'arcane_magic': +2 EXP for Guild Hero, resulting total: Level 0 (2/50 EXP)
+  Subtest 5.2: Mana Shield
+[KnowledgeBase] 🧪 Status effect discovered: 'mana_shield'! (+1 RP)
+[Progression] +2 EXP for 'arcane_magic' (undefined). Current: Level 0 (4/50 EXP)
+[Progression] Recorded tx 'arcane_magic': +2 EXP for Guild Hero, resulting total: Level 0 (4/50 EXP)
+[DamageToEnergy] undefined's Mana Shield converted 10 damage to Energy! (70.0 Energy remaining)
+  Subtest 5.3: Overcharge
+[KnowledgeBase] 🧪 Status effect discovered: 'overcharge'! (+1 RP)
+[Progression] +2 EXP for 'arcane_magic' (undefined). Current: Level 0 (6/50 EXP)
+[Progression] Recorded tx 'arcane_magic': +2 EXP for Guild Hero, resulting total: Level 0 (6/50 EXP)
+[Skill:NextSpell] ⚡ undefined consumed Overcharge! (1.75x damage, +6 EN consumed)
+[Progression] +2 EXP for 'arcane_magic' (undefined). Current: Level 0 (8/50 EXP)
+[Progression] Recorded tx 'arcane_magic': +2 EXP for Guild Hero, resulting total: Level 0 (8/50 EXP)
+  Subtest 5.4: Blink
+[Progression] +2 EXP for 'arcane_magic' (undefined). Current: Level 0 (10/50 EXP)
+[Progression] Recorded tx 'arcane_magic': +2 EXP for Guild Hero, resulting total: Level 0 (10/50 EXP)
+  Subtest 5.5: Arcane Nova
+[Progression] +4 EXP for 'arcane_magic' (undefined). Current: Level 0 (14/50 EXP)
+[Progression] Recorded tx 'arcane_magic': +4 EXP for Guild Hero, resulting total: Level 0 (14/50 EXP)
+✓ PASS: All 5 skills executed with exact mechanical behaviors, costs, and effects.
+
+--- TEST 6: Autocast Integration ---
+[Player] Autocast for skill 'arcane_bolt' set to ON
+[Player] Autocast for skill 'mana_shield' set to ON
+[Player] Autocast for skill 'overcharge' set to ON
+[Player] Autocast for skill 'blink' set to ON
+[Player] Autocast for skill 'arcane_nova' set to ON
+[Progression] +4 EXP for 'arcane_magic' (undefined). Current: Level 0 (18/50 EXP)
+[Progression] Recorded tx 'arcane_magic': +4 EXP for Guild Hero, resulting total: Level 0 (18/50 EXP)
+✓ PASS: Autocast loops cleanly identify and trigger Arcane Initiate skills.
+
+================================================================
+🎉 ALL MILESTONE 58 TESTS PASSED CLEANLY & SUCCESSFULLY! 🎉
+================================================================
+

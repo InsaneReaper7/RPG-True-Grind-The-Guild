@@ -196,6 +196,21 @@ Test 1: Armor mitigation through real enemy attack path (Heavy 0, Heavy 50, Boss
 [DIAG:Combat] ⚔️ Guild Hero attacks Heavy Striker with Short Swords! inCombat: true, Pre-EN: 100.0, Post-EN: 100.0, Range: 1, Dist: 1
 [Combat] Guild Hero attacks Heavy Striker with Short Swords but MISSED! (Hit Chance: 60.0%, Roll: 99.0%)
   PASS: Bone Warden cleave dealt 18 damage using recipient's own armor mitigation.
+[KnowledgeBase] 🧪 Status effect discovered: 'kenjutsu_deflection'! (+1 RP)
+[Progression] +1 EXP for 'heavy_armor' (Guild Hero). Current: Level 50 (7/250 EXP)
+[Progression] Recorded tx 'heavy_armor': +1 EXP for Guild Hero, resulting total: Level 50 (7/250 EXP)
+[Progression] +1 EXP for 'heavy_armor' (Guild Hero). Current: Level 50 (8/250 EXP)
+[Progression] Recorded tx 'heavy_armor': +1 EXP for Guild Hero, resulting total: Level 50 (8/250 EXP)
+[Combat:Armor] 🛡️ Guild Hero's armor mitigated 43 damage (Rating: 76, -43.2%).
+[Combat] Bone Warden hits Guild Hero for 57 damage!
+[Progression] +1 EXP for 'heavy_armor' (Guild Hero). Current: Level 0 (3/50 EXP)
+[Progression] Recorded tx 'heavy_armor': +1 EXP for Guild Hero, resulting total: Level 0 (3/50 EXP)
+[Progression] +1 EXP for 'heavy_armor' (Guild Hero). Current: Level 0 (4/50 EXP)
+[Progression] Recorded tx 'heavy_armor': +1 EXP for Guild Hero, resulting total: Level 0 (4/50 EXP)
+[Combat:Boss Cleave] 💥 Bone Warden cleave hits Guild Hero for 18 damage!
+[DIAG:Combat] ⚔️ Guild Hero attacks Heavy Striker with Short Swords! inCombat: true, Pre-EN: 100.0, Post-EN: 100.0, Range: 1, Dist: 1
+[Combat] Guild Hero attacks Heavy Striker with Short Swords but MISSED! (Hit Chance: 60.0%, Roll: 99.0%)
+  PASS: Main target reflect-shield absorbed full hit (0 damage), neighbour still took 18 cleave damage.
 
 Test 2: Exempt damage sources (Poison tick & Reflect bypass armor)
 [Player:Guild Hero] Equipped helmet: Voidforged Greathelm (+60 HP). Current HP: 80/80, Crit HP: 55/55
