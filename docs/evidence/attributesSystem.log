@@ -1,0 +1,156 @@
+=== TEST: ATTRIBUTES SYSTEM (STR / DEX / INT) ===
+
+Test 1: Base attributes start at 1.0 with 1.0x multipliers
+  PASS: Base attributes and multipliers start at 1.0.
+
+Test 2: Katana Lv 50 -> STR 6.0 (+10% damage multiplier)
+[Progression] +7400 EXP for 'katana' (undefined). Current: Level 50 (0/250 EXP)
+[Progression] Recorded tx 'katana': +7400 EXP for Guild Hero, resulting total: Level 50 (0/250 EXP)
+[Progression] LEVEL UP! 'katana' is now Level 50! (Gained 50 level(s))
+[Progression] Class Unlocked: Swordsman (swordsman) for undefined!
+[Player:undefined] Active class set to: swordsman
+[Player] Equipped skill: blade_strike. Current loadout: [blade_strike]
+[Progression] ✨ SKILL DISCOVERED: 'katana' reached Level 50 by undefined! ✨
+[KnowledgeBase] 🐺 First encountered enemy: 'test_goblin'! (+1 RP)
+[Bestiary] 🐺 First encounter with Goblin! (+1 RP)
+[DIAG:Combat] ⚔️ undefined attacks Goblin with Katana! inCombat: false, Pre-EN: 100.0, Post-EN: 100.0, Range: 1, Dist: 1
+[Combat] undefined attacks Goblin with Katana for 11.0 damage! (Base: 6, Lv 0 Bonus: +0.0, Accuracy: 100.0%)
+[Progression] +2 EXP for 'katana' (undefined). Current: Level 50 (2/250 EXP)
+[Progression] Recorded tx 'katana': +2 EXP for Guild Hero, resulting total: Level 50 (2/250 EXP)
+  PASS: Katana 50 gives STR 6.0 and scales melee basic attack to x1.10.
+
+Test 3: Bows Lv 50 -> DEX 6.0 (+10% ranged damage, no melee bonus)
+[Progression] +7400 EXP for 'bows' (undefined). Current: Level 50 (0/250 EXP)
+[Progression] Recorded tx 'bows': +7400 EXP for Guild Hero, resulting total: Level 50 (0/250 EXP)
+[Progression] LEVEL UP! 'bows' is now Level 50! (Gained 50 level(s))
+[Progression] Class Unlocked: Marksman (marksman) for undefined!
+[Player:undefined] Active class set to: marksman
+[Player] Equipped skill: aimed_shot. Current loadout: [aimed_shot]
+[Progression] ✨ SKILL DISCOVERED: 'bows' reached Level 50 by undefined! ✨
+[DIAG:Combat] ⚔️ undefined attacks Goblin with Hunting Bow! inCombat: false, Pre-EN: 100.0, Post-EN: 100.0, Range: 1, Dist: 2
+[Combat] undefined attacks Goblin with Hunting Bow for 22.0 damage! (Base: 6, Lv 0 Bonus: +0.0, Accuracy: 100.0%)
+[Progression] +2 EXP for 'bows' (undefined). Current: Level 50 (2/250 EXP)
+[Progression] Recorded tx 'bows': +2 EXP for Guild Hero, resulting total: Level 50 (2/250 EXP)
+[DIAG:Combat] ⚔️ undefined attacks Goblin with Voidforged Crossbow! inCombat: false, Pre-EN: 100.0, Post-EN: 100.0, Range: 1, Dist: 2
+[Combat] undefined attacks Goblin with Voidforged Crossbow for 33.0 damage! (Base: 15, Lv 0 Bonus: +0.0, Accuracy: 100.0%)
+[Progression] +2 EXP for 'crossbows' (undefined). Current: Level 0 (2/50 EXP)
+[Progression] Recorded tx 'crossbows': +2 EXP for Guild Hero, resulting total: Level 0 (2/50 EXP)
+[DIAG:Combat] ⚔️ undefined attacks Goblin with Fist! inCombat: false, Pre-EN: 100.0, Post-EN: 100.0, Range: 1, Dist: 2
+[Combat] undefined attacks Goblin with Fist for 10.0 damage! (Base: 4, Lv 0 Bonus: +0.0, Accuracy: 100.0%)
+[Progression] +2 EXP for 'fist' (undefined). Current: Level 0 (2/50 EXP)
+[Progression] Recorded tx 'fist': +2 EXP for Guild Hero, resulting total: Level 0 (2/50 EXP)
+  PASS: Bows 50 gives DEX 6.0, scales ranged & Void Crossbow x1.10, melee untouched.
+
+Test 4: Fire Magic Lv 50 -> INT 6.0 (+10% magic damage and flat heal)
+[Progression] +7400 EXP for 'fire_magic' (undefined). Current: Level 50 (0/250 EXP)
+[Progression] Recorded tx 'fire_magic': +7400 EXP for Guild Hero, resulting total: Level 50 (0/250 EXP)
+[Progression] LEVEL UP! 'fire_magic' is now Level 50! (Gained 50 level(s))
+[Progression] Class Unlocked: Ember Adept (ember_adept) for undefined!
+[Player:undefined] Active class set to: ember_adept
+[Player] Equipped skill: scorch. Current loadout: [scorch]
+[Progression] Class Unlocked: Flamecaller (flamecaller) for undefined!
+[Player] Equipped skill: fireball. Current loadout: [scorch, fireball]
+[Progression] ✨ SKILL DISCOVERED: 'fire_magic' reached Level 50 by undefined! ✨
+[DIAG:Combat] ⚔️ undefined attacks Goblin with Fire Magic! inCombat: false, Pre-EN: 125.0, Post-EN: 125.0, Range: 1, Dist: 2
+[Combat] undefined attacks Goblin with Fire Magic for 22.0 damage! (Base: 10, Lv 0 Bonus: +0.0, Accuracy: 100.0%)
+[Progression] +2 EXP for 'fire_magic' (undefined). Current: Level 50 (2/250 EXP)
+[Progression] Recorded tx 'fire_magic': +2 EXP for Guild Hero, resulting total: Level 50 (2/250 EXP)
+[DIAG:HealingStaff] Enforced range: 4, actual distance: 1 between undefined at (5,5) and undefined at (5,6)
+[DIAG:Combat] ✨ undefined casts Heal on undefined! inCombat: false, Pre-EN: 125.0, Post-EN: 119.0 (cost: 6)
+[Healing Magic] ✨ undefined casts Heal on undefined! Restored 9 HP. (Energy: 119/125)
+[Progression] +2 EXP for 'healing_magic' (undefined). Current: Level 0 (2/50 EXP)
+[Progression] Recorded tx 'healing_magic': +2 EXP for Guild Hero, resulting total: Level 0 (2/50 EXP)
+[Progression] +2 EXP for 'staff' (undefined). Current: Level 0 (2/50 EXP)
+[Progression] Recorded tx 'staff': +2 EXP for Guild Hero, resulting total: Level 0 (2/50 EXP)
+[Progression] +2 EXP for 'staff' (undefined). Current: Level 0 (4/50 EXP)
+[Progression] Recorded tx 'staff': +2 EXP for Guild Hero, resulting total: Level 0 (4/50 EXP)
+[KnowledgeBase] 🧪 Status effect discovered: 'test_hot'! (+1 RP)
+[Progression] +2 EXP for 'staff' (undefined). Current: Level 0 (6/50 EXP)
+[Progression] Recorded tx 'staff': +2 EXP for Guild Hero, resulting total: Level 0 (6/50 EXP)
+[KnowledgeBase] 🧪 Status effect discovered: 'test_shield'! (+1 RP)
+[Progression] +2 EXP for 'staff' (undefined). Current: Level 0 (8/50 EXP)
+[Progression] Recorded tx 'staff': +2 EXP for Guild Hero, resulting total: Level 0 (8/50 EXP)
+  PASS: Fire 50 gives INT 6.0, scales spells, flat heal, HoT ticks, and shields; percent heal exempt.
+
+Test 5: Uncapped attribute scaling (STR 101.0 -> x3.00 multiplier)
+[Progression] +24800 EXP for 'short_swords' (undefined). Current: Level 100 (0/450 EXP)
+[Progression] Recorded tx 'short_swords': +24800 EXP for Guild Hero, resulting total: Level 100 (0/450 EXP)
+[Progression] LEVEL UP! 'short_swords' is now Level 100! (Gained 100 level(s))
+[Progression] Class Unlocked: Fencer (fencer) for undefined!
+[Player:undefined] Active class set to: fencer
+[Player] Equipped skill: power_strike. Current loadout: [power_strike]
+[Progression] ✨ SKILL DISCOVERED: 'short_swords' reached Level 100 by undefined! ✨
+[Progression] +24800 EXP for 'longswords' (undefined). Current: Level 100 (0/450 EXP)
+[Progression] Recorded tx 'longswords': +24800 EXP for Guild Hero, resulting total: Level 100 (0/450 EXP)
+[Progression] LEVEL UP! 'longswords' is now Level 100! (Gained 100 level(s))
+[Progression] Class Unlocked: Squire (squire) for undefined!
+[Player] Equipped skill: measured_cut. Current loadout: [power_strike, measured_cut]
+[Progression] ✨ DUAL WIELDING UNLOCKED! Two 1H melee weapon proficiencies reached Level 30! ✨
+[Progression] ✨ SKILL DISCOVERED: 'longswords' reached Level 100 by undefined! ✨
+[Progression] +24800 EXP for 'greatswords' (undefined). Current: Level 100 (0/450 EXP)
+[Progression] Recorded tx 'greatswords': +24800 EXP for Guild Hero, resulting total: Level 100 (0/450 EXP)
+[Progression] LEVEL UP! 'greatswords' is now Level 100! (Gained 100 level(s))
+[Progression] Class Unlocked: Brute (brute) for undefined!
+[Player] Equipped skill: heavy_swing. Current loadout: [power_strike, measured_cut, heavy_swing]
+[Progression] ✨ SKILL DISCOVERED: 'greatswords' reached Level 100 by undefined! ✨
+[Progression] +24800 EXP for 'katana' (undefined). Current: Level 100 (0/450 EXP)
+[Progression] Recorded tx 'katana': +24800 EXP for Guild Hero, resulting total: Level 100 (0/450 EXP)
+[Progression] LEVEL UP! 'katana' is now Level 100! (Gained 100 level(s))
+[Progression] Class Unlocked: Swordsman (swordsman) for undefined!
+[Player] Equipped skill: blade_strike. Current loadout: [power_strike, measured_cut, heavy_swing, blade_strike]
+[Progression] ✨ SKILL DISCOVERED: 'katana' reached Level 100 by undefined! ✨
+[Progression] +24800 EXP for 'daggers' (undefined). Current: Level 100 (0/450 EXP)
+[Progression] Recorded tx 'daggers': +24800 EXP for Guild Hero, resulting total: Level 100 (0/450 EXP)
+[Progression] LEVEL UP! 'daggers' is now Level 100! (Gained 100 level(s))
+[Progression] Class Unlocked: Cutthroat (cutthroat) for undefined!
+[Player] Equipped skill: quick_stab. Current loadout: [power_strike, measured_cut, heavy_swing, blade_strike, quick_stab]
+[Progression] Class Unlocked: Duelist (duelist) for undefined!
+[Progression] ✨ SKILL DISCOVERED: 'daggers' reached Level 100 by undefined! ✨
+[Progression] +24800 EXP for 'mace' (undefined). Current: Level 100 (0/450 EXP)
+[Progression] Recorded tx 'mace': +24800 EXP for Guild Hero, resulting total: Level 100 (0/450 EXP)
+[Progression] LEVEL UP! 'mace' is now Level 100! (Gained 100 level(s))
+[Progression] Class Unlocked: Bludgeoner (bludgeoner) for undefined!
+[Progression] ✨ SKILL DISCOVERED: 'mace' reached Level 100 by undefined! ✨
+[Progression] +24800 EXP for 'spears' (undefined). Current: Level 100 (0/450 EXP)
+[Progression] Recorded tx 'spears': +24800 EXP for Guild Hero, resulting total: Level 100 (0/450 EXP)
+[Progression] LEVEL UP! 'spears' is now Level 100! (Gained 100 level(s))
+[Progression] Class Unlocked: Lancer (lancer) for undefined!
+[Progression] ✨ SKILL DISCOVERED: 'spears' reached Level 100 by undefined! ✨
+[Progression] +24800 EXP for 'fist' (undefined). Current: Level 100 (0/450 EXP)
+[Progression] Recorded tx 'fist': +24800 EXP for Guild Hero, resulting total: Level 100 (0/450 EXP)
+[Progression] LEVEL UP! 'fist' is now Level 100! (Gained 100 level(s))
+[Progression] Class Unlocked: Brawler (brawler) for undefined!
+[Progression] ✨ SKILL DISCOVERED: 'fist' reached Level 100 by undefined! ✨
+[Progression] +24800 EXP for 'staff' (undefined). Current: Level 100 (0/450 EXP)
+[Progression] Recorded tx 'staff': +24800 EXP for Guild Hero, resulting total: Level 100 (0/450 EXP)
+[Progression] LEVEL UP! 'staff' is now Level 100! (Gained 100 level(s))
+[Progression] Class Unlocked: Staff Adept (staff_adept) for undefined!
+[Progression] ✨ SKILL DISCOVERED: 'staff' reached Level 100 by undefined! ✨
+[Progression] +24800 EXP for 'shields' (undefined). Current: Level 100 (0/450 EXP)
+[Progression] Recorded tx 'shields': +24800 EXP for Guild Hero, resulting total: Level 100 (0/450 EXP)
+[Progression] LEVEL UP! 'shields' is now Level 100! (Gained 100 level(s))
+[Progression] Class Unlocked: Guardian (guardian) for undefined!
+[Progression] Class Unlocked: Hoplite (hoplite) for undefined!
+[Progression] ✨ SKILL DISCOVERED: 'shields' reached Level 100 by undefined! ✨
+  PASS: STR 101.0 yields uncapped x3.00 multiplier without ceiling.
+
+Test 6: Cleave damage scaling with crescent_storm (STR 11.0 -> x1.20 on primary and cleave)
+[Progression] +24800 EXP for 'longswords' (undefined). Current: Level 100 (0/450 EXP)
+[Progression] Recorded tx 'longswords': +24800 EXP for Guild Hero, resulting total: Level 100 (0/450 EXP)
+[Progression] LEVEL UP! 'longswords' is now Level 100! (Gained 100 level(s))
+[Progression] Class Unlocked: Squire (squire) for undefined!
+[Player:undefined] Active class set to: squire
+[Player] Equipped skill: measured_cut. Current loadout: [measured_cut]
+[Progression] ✨ SKILL DISCOVERED: 'longswords' reached Level 100 by undefined! ✨
+[Progression] +2 EXP for 'greatswords' (undefined). Current: Level 0 (2/50 EXP)
+[Progression] Recorded tx 'greatswords': +2 EXP for Guild Hero, resulting total: Level 0 (2/50 EXP)
+[KnowledgeBase] 🧪 Status effect discovered: 'bleed'! (+1 RP)
+  crescent_storm primary damage: 37.4, cleave damage: 37.4
+  PASS: crescent_storm scales primary target AND cleave target by x1.20.
+
+Test 7: DoT ticks and reflect remain unaffected by attributes
+[DoT] Goblin takes 5 damage from Bleed!
+[Combat] Goblin aggroed immediately due to damage!
+  PASS: DoT tick is unaffected by INT/STR.
+
+ALL ATTRIBUTES SYSTEM TESTS PASSED SUCCESSFULLY!

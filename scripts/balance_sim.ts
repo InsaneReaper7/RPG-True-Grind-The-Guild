@@ -386,10 +386,10 @@ function runFightSimulation(
   // Ally at 60% HP with timed poison
   const ally = new Player(scene, 9, 10, playerData, chosenWeaponDef, 32);
   ally.entityName = 'Party Ally';
-  ally.maxHp = 100;
+  ally.baseMaxHp = 100;
+  ally.baseMaxCriticalHp = 0;
+  ally.recalculateDerivedStats(false);
   ally.hp = 60;
-  ally.maxCriticalHp = 0;
-  ally.criticalHp = 0;
 
   combat.party = [companion, ally];
 

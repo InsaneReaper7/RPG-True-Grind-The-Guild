@@ -49,8 +49,8 @@ export function summarizeSim(csvSource: string): void {
   for (const t of tiers) {
     const tRows = rows.filter(r => r.tier === t);
     const overallMed = median(tRows.map(r => r.dps_real));
-    // Melee-only excludes healing_staff support classes
-    const meleeMed = median(tRows.filter(r => r.weapon !== 'healing_staff').map(r => r.dps_real));
+    // Melee-only leaves out healing_staff and every magic *_staff, but keeps druid_staff
+    const meleeMed = median(tRows.filter(r => r.weapon === 'druid_staff' || !r.weapon.endsWith('_staff')).map(r => r.dps_real));
     console.log(`| ${t.padEnd(8)} | ${overallMed.toFixed(1).padStart(18)} | ${meleeMed.toFixed(1).padStart(21)} |`);
   }
 }
