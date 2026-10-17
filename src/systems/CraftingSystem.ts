@@ -13,6 +13,7 @@ import { GameState } from './GameState.ts';
 import { DataLoader } from '../utils/DataLoader.ts';
 import { getBaseItemId } from '../utils/gearResolver.ts';
 import { TutorialSystem } from './TutorialSystem.ts';
+import { EventLog } from './EventLog.ts';
 
 export type AnyRecipeDef =
   | BlacksmithRecipeDef
@@ -312,6 +313,8 @@ export class CraftingSystem {
       classExpGranted = expGranted;
       crafter.progression.addClassExp(perks.classId, classExpGranted);
     }
+
+    EventLog.getInstance().add('craft', `${crafter?.entityName || 'Hero'}: Crafted ${quantity}x ${recipe.name}`, { recipeId: recipe.id, quantity, isGear });
 
     return {
       success: true,
@@ -731,6 +734,7 @@ export class CraftingSystem {
 
     const prefix = qtyToSalvage > 1 ? `${qtyToSalvage}x ` : '';
     const message = `Salvaged ${prefix}${displayName} → ${refundParts}, +${expGranted} ${stationLabel} EXP`;
+    EventLog.getInstance().add('craft', `${member?.entityName || 'Hero'}: ${message}`, { itemIdOrInstanceId, baseItemId: baseId, quantity: qtyToSalvage, refunds });
 
     return {
       success: true,

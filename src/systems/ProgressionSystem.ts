@@ -3,6 +3,7 @@ import { BuildingSystem } from './BuildingSystem.ts';
 import type { ConstructionTierDef } from './BuildingSystem.ts';
 import { LevelingSystem } from './LevelingSystem.ts';
 import { DataLoader } from '../utils/DataLoader.ts';
+import { EventLog } from './EventLog.ts';
 
 export interface UnlockEvent {
   classDef: ClassDef;
@@ -273,6 +274,7 @@ export class ProgressionSystem {
 
     if (result.leveledUp) {
       console.log(`[Progression] CLASS LEVEL UP! '${classId}' is now Level ${stat.level}!`);
+      EventLog.getInstance().add('progression', `${this.ownerName || 'Hero'}: Class '${classId}' leveled up to Level ${stat.level} (+${result.levelsGained})`, { type: 'class', id: classId, level: stat.level, levelsGained: result.levelsGained });
       this.checkClassUnlocks();
       this.notifyProgressionLevelUp({
         type: 'class',
@@ -376,6 +378,7 @@ export class ProgressionSystem {
 
     if (result.leveledUp) {
       console.log(`[Progression] LEVEL UP! '${id}' is now Level ${stat.level}! (Gained ${result.levelsGained} level(s))`);
+      EventLog.getInstance().add('progression', `${this.ownerName || 'Hero'}: Proficiency '${id}' leveled up to Level ${stat.level} (+${result.levelsGained})`, { type: 'proficiency', id, level: stat.level, levelsGained: result.levelsGained });
       this.checkClassUnlocks();
       this.checkDualWieldUnlock();
 

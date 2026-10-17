@@ -7,9 +7,12 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "start": "vite preview --host 0.0.0.0",
+    "start": "node server/index.js",
     "test": "node scripts/run_all_tests.mjs",
     "test:e2e": "node scripts/run_e2e_tests.mjs"
+  },
+  "engines": {
+    "node": ">=20"
   },
   "dependencies": {
     "easystarjs": "^0.4.4",

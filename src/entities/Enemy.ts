@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { Entity } from './Entity.ts';
 import type { Player } from './Player.ts';
 import type { EnemyDef, GridPos } from '../types/game.ts';
+import { EventLog } from '../systems/EventLog.ts';
 
 export class Enemy extends Entity {
   public enemyData: EnemyDef;
@@ -329,6 +330,7 @@ export class Enemy extends Entity {
    * Transitions enemy to a dead state, disabling clickability and clearing HP bars.
    */
   public markDead(): void {
+    EventLog.getInstance().add('combat', `${this.enemyData.name} died`);
     this.state = 'dead';
     this.path = [];
     this.targetWorldPos = null;

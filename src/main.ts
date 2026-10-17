@@ -7,6 +7,11 @@ import { MainScene } from './scenes/MainScene';
 import { OutpostScene } from './scenes/OutpostScene';
 import { HUD } from './ui/HUD';
 import { initKeyboardGuards } from './utils/inputGuard';
+import { EventLog } from './systems/EventLog';
+import { BugReportModal } from './ui/BugReportModal';
+
+// Install error handlers early to capture any startup issues
+EventLog.getInstance().installErrorHandlers();
 
 // Intercept Phaser keyboard captures and hotkeys early before any scene boots
 initKeyboardGuards(Phaser);
@@ -18,6 +23,24 @@ async function bootstrap() {
 
   // Initialize persistent GameState from player.json boot seed once
   GameState.getInstance().initFromPlayerData(dataLoader.getPlayer());
+
+  // Log session startup
+  let version = 'unknown';
+  let buildDate = new Date().toISOString();
+  try {
+    if (typeof __APP_VERSION__ !== 'undefined') version = __APP_VERSION__;
+    if (typeof __BUILD_DATE__ !== 'undefined') buildDate = __BUILD_DATE__;
+  } catch {
+    // fallback
+  }
+  EventLog.getInstance().add(
+    'session',
+    `Session started: version ${version}, hunger=${dataLoader.isHungerEnabled()}, mood=${dataLoader.isMoodEnabled()}`,
+    { version, buildDate, hunger: dataLoader.isHungerEnabled(), mood: dataLoader.isMoodEnabled() }
+  );
+
+  // Initialize BugReportModal singleton
+  BugReportModal.getInstance();
 
   const config: Phaser.Types.Core.GameConfig = {
     type: Phaser.AUTO,
@@ -40,6 +63,8 @@ async function bootstrap() {
   (window as any).DataLoader = DataLoader;
   (window as any).ResearchSystem = ResearchSystem;
   (window as any).TutorialSystem = TutorialSystem;
+  (window as any).EventLog = EventLog;
+  (window as any).BugReportModal = BugReportModal;
 
   // Window helpers for persistent saves
   (window as any).hasSavedGame = () => GameState.getInstance().hasSave();

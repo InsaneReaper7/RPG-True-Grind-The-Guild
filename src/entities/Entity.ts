@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import type { GridPos, EntityState, StatusEffectDef, ActiveStatusEffect } from '../types/game.ts';
 import { GameState } from '../systems/GameState.ts';
+import { EventLog } from '../systems/EventLog.ts';
 
 export class Entity extends Phaser.GameObjects.Container {
   public gridPos: GridPos;
@@ -320,6 +321,9 @@ export class Entity extends Phaser.GameObjects.Container {
       return false;
     }
 
+    const totalMaxHp = this.maxHp + this.maxCriticalHp;
+    const totalHpBefore = this.hp + this.criticalHp;
+
     if (this.hp > 0) {
       if (this.hp >= damageRemaining) {
         this.hp -= damageRemaining;
@@ -330,6 +334,18 @@ export class Entity extends Phaser.GameObjects.Container {
       }
     } else {
       this.criticalHp = Math.max(0, this.criticalHp - damageRemaining);
+    }
+
+    const totalHpAfter = this.hp + this.criticalHp;
+    const isPlayer = (this as any).progression !== undefined || (this as any).knownSkillIds !== undefined;
+    if (isPlayer) {
+      if (totalHpBefore / totalMaxHp >= 0.25 && totalHpAfter / totalMaxHp < 0.25 && totalHpAfter > 0) {
+        EventLog.getInstance().add(
+          'damage',
+          `${this.entityName} took ${damageRemaining} damage, dropping to ${Math.floor(totalHpAfter)} HP (< 25% HP)`,
+          { memberName: this.entityName, damage: damageRemaining, hpRemaining: totalHpAfter, maxHp: totalMaxHp }
+        );
+      }
     }
 
     this.drawHpBar();
@@ -367,6 +383,11 @@ export class Entity extends Phaser.GameObjects.Container {
   }
 
   public onDowned(): void {
+    const isPlayer = (this as any).progression !== undefined || (this as any).knownSkillIds !== undefined;
+    if (isPlayer) {
+      EventLog.getInstance().add('combat', `${this.entityName} was downed!`);
+    }
+
     this.state = 'downed';
     this.path = [];
     this.targetWorldPos = null;

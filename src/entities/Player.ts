@@ -9,6 +9,7 @@ import { ProgressionSystem } from '../systems/ProgressionSystem.ts';
 import { StatGainsSystem } from '../systems/StatGainsSystem.ts';
 import { isCraftingClass, getBaseItemId, canEquipBowDaggerSidearm } from '../utils/gearResolver.ts';
 import { TutorialSystem } from '../systems/TutorialSystem.ts';
+import { EventLog } from '../systems/EventLog.ts';
 
 export { canEquipBowDaggerSidearm };
 
@@ -196,6 +197,7 @@ export class Player extends Entity {
         }
         if (!proceed) {
           console.log(`[Player:${this.entityName}] Class switch to ${targetClassName} cancelled by user.`);
+          EventLog.getInstance().add('class', `Class switch to ${targetClassName} cancelled by user`);
           return false;
         }
       }
@@ -204,6 +206,7 @@ export class Player extends Entity {
     if (classId === null) {
       this.activeClass = null;
       console.log(`[Player:${this.entityName}] Cleared active class (Unranked).`);
+      EventLog.getInstance().add('class', `${this.entityName}: Cleared active class (Unranked)`);
       this.handleClassChangeOffhandCheck(prevClass);
       return true;
     }
@@ -214,6 +217,7 @@ export class Player extends Entity {
     if (this.progression.isClassUnlocked(classId)) {
       this.activeClass = classId;
       console.log(`[Player:${this.entityName}] Active class set to: ${classId}`);
+      EventLog.getInstance().add('class', `${this.entityName}: Active class set to: ${classId}`);
       this.handleClassChangeOffhandCheck(prevClass);
       this.checkSkillUnlocks();
       return true;
@@ -232,6 +236,7 @@ export class Player extends Entity {
         const reason = 'Scout class required';
         const msg = `${this.entityName}'s off-hand ${removed.name} was unequipped: ${reason}`;
         console.log(`[Player:${this.entityName}] ${msg}`);
+        EventLog.getInstance().add('equip', `${this.entityName}: off-hand ${removed.name} unequipped: ${reason}`);
         const hud = (globalThis as any).activeHUD || (globalThis as any).window?.activeHUD || (this.scene as any)?.hud;
         hud?.showToast(msg, 'warn', 6000);
       }
@@ -289,12 +294,17 @@ export class Player extends Entity {
         const reason = `${resolvedWeapon.name} is two-handed`;
         const msg = `${this.entityName}'s off-hand ${removed.name} was unequipped: ${reason}`;
         console.log(`[Player:${this.entityName}] ${msg}`);
+        EventLog.getInstance().add('equip', `${this.entityName}: off-hand ${removed.name} unequipped: ${reason}`);
         const hud = (globalThis as any).activeHUD || (globalThis as any).window?.activeHUD || (this.scene as any)?.hud;
         hud?.showToast(msg, 'warn', 6000);
       }
     }
     this.updateEncumbrance();
+    const equipMsg = weapon === null
+      ? `${this.entityName}: Unequipped main weapon`
+      : `${this.entityName}: Equipped main weapon: ${resolvedWeapon.name}`;
     console.log(`[Player:${this.entityName}] Equipped main weapon: ${resolvedWeapon.name} (Range: ${this.attackRangeTiles} tiles)`);
+    EventLog.getInstance().add('equip', equipMsg);
     if (weapon !== null && resolvedWeapon.id !== 'fist') {
       this.emitGearEquipped(resolvedWeapon, 'main');
     }
@@ -310,6 +320,7 @@ export class Player extends Entity {
       this.offhandWeapon = null;
       this.updateEncumbrance();
       console.log(`[Player:${this.entityName}] Unequipped offhand weapon`);
+      EventLog.getInstance().add('equip', `${this.entityName}: Unequipped offhand weapon`);
       return true;
     }
     const isBowSidearmDagger = canEquipBowDaggerSidearm(this, weapon);
@@ -341,6 +352,7 @@ export class Player extends Entity {
       this.offhandWeapon = weapon;
       this.updateEncumbrance();
       console.log(`[Player:${this.entityName}] Equipped ${isAllowedSidearm ? 'sidearm weapon' : 'shield'} in offhand: ${weapon.name}`);
+      EventLog.getInstance().add('equip', `${this.entityName}: Equipped offhand weapon: ${weapon.name}`);
       this.emitGearEquipped(weapon, 'offhand');
       return true;
     }
@@ -356,6 +368,7 @@ export class Player extends Entity {
     this.offhandWeapon = weapon;
     this.updateEncumbrance();
     console.log(`[Player:${this.entityName}] Equipped offhand weapon: ${weapon.name}`);
+    EventLog.getInstance().add('equip', `${this.entityName}: Equipped offhand weapon: ${weapon.name}`);
     this.emitGearEquipped(weapon, 'offhand');
     return true;
   }
@@ -364,6 +377,7 @@ export class Player extends Entity {
 
   public addItem(itemId: string, count: number = 1): void {
     if (count <= 0) return;
+    EventLog.getInstance().logItemTransaction(this.entityName, '+', itemId, count);
     const dataLoader = DataLoader.getInstance();
     if (dataLoader.getFood(itemId)) {
       this.addFoodItem(itemId, count);
@@ -387,6 +401,7 @@ export class Player extends Entity {
         }
       }
       this.syncFoodInventory();
+      EventLog.getInstance().logItemTransaction(this.entityName, '-', itemId, count);
       return true;
     }
     const current = this.inventory.get(itemId) || 0;
@@ -398,6 +413,7 @@ export class Player extends Entity {
         this.inventory.set(itemId, remaining);
       }
       this.updateEncumbrance();
+      EventLog.getInstance().logItemTransaction(this.entityName, '-', itemId, count);
       return true;
     }
     // If exact key insufficient, check for matching gear instances by baseItemId
@@ -417,6 +433,7 @@ export class Player extends Entity {
     }
     if (remainingToConsume <= 0) {
       this.updateEncumbrance();
+      EventLog.getInstance().logItemTransaction(this.entityName, '-', itemId, count);
       return true;
     }
     return false;
@@ -753,6 +770,7 @@ export class Player extends Entity {
     this.drawHpBar();
     this.updateEncumbrance();
     console.log(`[Player:${this.entityName}] ${armor ? `Equipped ${slot}: ${armor.name} (+${armor.hpBonus} HP)` : `Unequipped ${slot}`}. Current HP: ${this.hp}/${this.maxHp}, Crit HP: ${this.criticalHp}/${this.maxCriticalHp}`);
+    EventLog.getInstance().add('equip', `${this.entityName}: ${armor ? `Equipped ${slot}: ${armor.name}` : `Unequipped ${slot}`}`);
     if (armor) {
       this.emitGearEquipped(armor, slot);
     }
@@ -994,6 +1012,7 @@ export class Player extends Entity {
       this.autocastMap.set(skillId, true);
     }
     console.log(`[Player] Equipped skill: ${skillId}. Current loadout: [${this.equippedSkillIds.join(', ')}]`);
+    EventLog.getInstance().add('skill', `${this.entityName}: Equipped skill ${skillId}`);
     return true;
   }
 
@@ -1002,6 +1021,7 @@ export class Player extends Entity {
     if (idx === -1) return false;
     this.equippedSkillIds.splice(idx, 1);
     console.log(`[Player] Unequipped skill: ${skillId}. Current loadout: [${this.equippedSkillIds.join(', ')}]`);
+    EventLog.getInstance().add('skill', `${this.entityName}: Unequipped skill ${skillId}`);
     return true;
   }
 
@@ -1212,6 +1232,7 @@ export class Player extends Entity {
     this.criticalHp = this.maxCriticalHp;
     this.clearDownedState();
     console.log(`[Player] Revived with ${this.hp} Main HP and ${this.criticalHp} Critical HP!`);
+    EventLog.getInstance().add('combat', `${this.entityName} was revived!`);
 
     // Track Ally Revived activity on the reviver (or leader/first non-downed living ally)
     const actor = reviver || (this.scene as any)?.party?.find((m: Player) => m !== this && m.state !== 'downed' && m.state !== 'dead') || (this.scene as any)?.player;

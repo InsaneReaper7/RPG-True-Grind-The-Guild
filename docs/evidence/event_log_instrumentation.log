@@ -1,0 +1,157 @@
+--- TEST SUITE: EventLog Instrumentation ---
+[GameState] Initialized from player.json boot seed with Hero & Valerie: {
+  hp: 50,
+  criticalHp: 25,
+  energy: 100,
+  knownSkillIds: [],
+  equippedSkillIds: [],
+  autocastMap: {},
+  skillCooldownsRemainingMs: {},
+  proficiencies: {
+    short_swords: { level: 0, currentExp: 0 },
+    construction: { level: 0, currentExp: 0 },
+    fist: { level: 0, currentExp: 0 },
+    daggers: { level: 0, currentExp: 0 },
+    shields: { level: 0, currentExp: 0 },
+    dual_wielding: { level: 0, currentExp: 0 },
+    alchemy: { level: 0, currentExp: 0 },
+    evasion: { level: 0, currentExp: 0 },
+    parry: { level: 0, currentExp: 0 },
+    block: { level: 0, currentExp: 0 },
+    counterattack: { level: 0, currentExp: 0 },
+    resilience: { level: 0, currentExp: 0 },
+    health_regen: { level: 0, currentExp: 0 },
+    mana_regen: { level: 0, currentExp: 0 },
+    energy_regen: { level: 0, currentExp: 0 },
+    staff: { level: 0, currentExp: 0 },
+    druid_staff: { level: 0, currentExp: 0 },
+    healing_magic: { level: 0, currentExp: 0 },
+    fire_magic: { level: 0, currentExp: 0 },
+    foraging: { level: 0, currentExp: 0 },
+    woodcutting: { level: 0, currentExp: 0 },
+    mining: { level: 0, currentExp: 0 },
+    mace: { level: 0, currentExp: 0 },
+    blacksmithing: { level: 0, currentExp: 0 },
+    armorsmithing: { level: 0, currentExp: 0 },
+    digging: { level: 0, currentExp: 0 },
+    perception: { level: 0, currentExp: 0 },
+    skinning: { level: 0, currentExp: 0 },
+    butchering: { level: 0, currentExp: 0 },
+    lockpicking: { level: 0, currentExp: 0 },
+    gardening: { level: 0, currentExp: 0 },
+    longswords: { level: 0, currentExp: 0 },
+    dark_magic: { level: 0, currentExp: 0 },
+    light_armor: { level: 0, currentExp: 0 },
+    medium_armor: { level: 0, currentExp: 0 },
+    heavy_armor: { level: 0, currentExp: 0 },
+    fishing: { level: 0, currentExp: 0 },
+    enchanting: { level: 0, currentExp: 0 },
+    water_magic: { level: 0, currentExp: 0 },
+    earth_magic: { level: 0, currentExp: 0 },
+    nature_magic: { level: 0, currentExp: 0 },
+    wind_magic: { level: 0, currentExp: 0 }
+  },
+  classLevels: {},
+  unlockedClasses: [],
+  resources: { wood: 100, ore: 0 },
+  placedBuildables: [],
+  hunger: 100,
+  mood: 50,
+  currentGameDay: 1,
+  foodItems: [],
+  equippedWeaponId: 'short_swords',
+  offhandWeaponId: null,
+  dungeonFloorCount: 0,
+  encounteredEnemies: [],
+  discoveredProficiencies: [ 'short_swords' ],
+  discoveredStatusEffects: [],
+  discoveredGatheringNodes: [],
+  defeatedAreaBosses: [],
+  quickSlots: [ 'revive_potion', 'bandage', 'energy_potion', 'antidote' ],
+  worldFlags: {},
+  grovePityCounter: 0,
+  party: [
+    {
+      id: 'player',
+      name: 'Guild Hero',
+      avatarKey: 'player-avatar',
+      hp: 50,
+      criticalHp: 25,
+      energy: 100,
+      equippedWeaponId: 'short_swords',
+      offhandWeaponId: null,
+      inventory: [Object],
+      knownSkillIds: [],
+      equippedSkillIds: [],
+      autocastMap: {},
+      skillCooldownsRemainingMs: {},
+      proficiencies: [Object],
+      classLevels: {},
+      classStats: {},
+      unlockedClasses: [],
+      activeClass: null,
+      bookLearnedSkills: [],
+      hunger: 100,
+      mood: 50,
+      state: 'idle'
+    },
+    {
+      id: 'companion_1',
+      name: 'Valerie',
+      avatarKey: 'companion-avatar',
+      avatarTextureKey: 'companion-avatar',
+      hp: 50,
+      criticalHp: 25,
+      energy: 100,
+      equippedWeaponId: 'bows',
+      offhandWeaponId: 'daggers',
+      inventory: [Object],
+      knownSkillIds: [Array],
+      equippedSkillIds: [Array],
+      autocastMap: [Object],
+      skillCooldownsRemainingMs: {},
+      proficiencies: [Object],
+      classLevels: [Object],
+      classStats: [Object],
+      unlockedClasses: [Array],
+      activeClass: 'scout',
+      bookLearnedSkills: [],
+      hunger: 100,
+      mood: 50,
+      state: 'idle'
+    }
+  ]
+}
+1. Testing off-hand removal on 2H equip logging...
+[Player:Valerie] Equipped shield in offhand: Shields
+[Player:Valerie] Valerie's off-hand Shields was unequipped: Greatswords is two-handed
+[Player:Valerie] Equipped main weapon: Greatswords (Range: 1 tiles)
+✓ Off-hand removal with reason logged correctly
+2. Testing class switch and cancelled confirm logging...
+[Progression] Set class 'scout' to Level 1 (0 EXP) on Guild Hero
+[Player:Hero] Active class set to: scout
+[Player] Equipped skill: quickshot. Current loadout: [quickshot]
+[Player:Hero] Equipped main weapon: Hunting Bow (Range: 4 tiles)
+[Player:Hero] Equipped sidearm weapon in offhand: Daggers
+[Player:Hero] Class switch to fighter cancelled by user.
+[Progression] Set class 'fighter' to Level 1 (0 EXP) on Guild Hero
+[Player:Hero] Active class set to: fighter
+[Player:Hero] Hero's off-hand Daggers was unequipped: Scout class required
+✓ Class change and cancelled confirm logged correctly
+3. Testing progression level-up logging...
+[Progression] +100 EXP for 'short_swords' (Kaelen). Current: Level 1 (50/54 EXP)
+[Progression] Recorded tx 'short_swords': +100 EXP for Kaelen, resulting total: Level 1 (50/54 EXP)
+[Progression] LEVEL UP! 'short_swords' is now Level 1! (Gained 1 level(s))
+[Progression] ✨ SKILL DISCOVERED: 'short_swords' reached Level 1 by Kaelen! ✨
+[Progression] Set class 'fighter' to Level 1 (0 EXP) on Kaelen
+[Progression] +100 Class EXP for 'fighter' (Kaelen). Current: Level 2 (46/58 EXP)
+[Progression] CLASS LEVEL UP! 'fighter' is now Level 2!
+✓ Progression level-ups logged correctly
+4. Testing floor transition logging...
+✓ Floor transitions logged correctly
+5. Testing combat fight summary (1 summary per fight, not per hit)...
+[Combat] Goblin Scout gave up chase (target was downed). Returning to spawn (50, 50).
+✓ Combat fight summary logged once per fight
+ALL EventLog Instrumentation tests passed!
+
+[Combat] Goblin Scout already at spawnPos. State set to 'idle'. Proximity aggro restored.

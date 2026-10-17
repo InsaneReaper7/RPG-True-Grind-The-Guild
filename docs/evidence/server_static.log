@@ -1,0 +1,14 @@
+▶ Server Static Handler & Health Check
+  ✔ GET /api/health returns 200 with { ok: true, version } and no secrets (12.5145ms)
+  ✔ serves static files with correct MIME types (57.8226ms)
+  ✔ falls back to index.html for SPA routes (e.g. /dungeon or /outpost) (15.3574ms)
+  ✔ rejects path traversal attempts with 403 Forbidden (/../ and encoded %2e%2e) (3.8093ms)
+✔ Server Static Handler & Health Check (108.1232ms)
+ℹ tests 4
+ℹ suites 1
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 112.4068

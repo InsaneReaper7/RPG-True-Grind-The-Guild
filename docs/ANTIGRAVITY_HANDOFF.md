@@ -1927,10 +1927,53 @@ The following three intentional behavioural changes were reviewed and accepted b
   - `test/milestone49.test.ts`: In TEST 8, updated historical deferral check from asserting Dragoon absent to confirming Dragoon is implemented and present in `classes.json`.
 - **5. Verification & Testing**:
   - `test/class_dragoon.test.ts`: 7 automated tests covering expected-table guards, durationMs checks, 5 unlock boundary permutations, end-to-end heavy armor leveling through real hits (`awardArmorWearExp('hit')`), PB heavy scaling normalized by `strMultiplier` (4.5 diff), Dragon Dive leap and target-centered radius 1.5 splash, Highwind 1.3× expose synergy, and 60s 3-enemy smoke test (4/5 skills cast).
-  - Evidence committed:
-    - `docs/evidence/class_dragoon.log`
-    - `docs/evidence/data_lint.log`
-    - `docs/evidence/milestone49.log`
-    - `docs/evidence/full_suite.log`
   - Production build: `npm run build` succeeds cleanly.
+
+### Bug Reports: In-Game Event Log, UI Dialog, and GitHub Reports Server (2026-10-17)
+
+**Resolved and shipped: Built the client-side event log ring buffer, in-game bug reporting modal with F8 hotkey and crash prompt banner, and lightweight Node.js server to persist bug reports directly to a private GitHub repository via the GitHub Contents API without storing reports or credentials on Railway.**
+
+- **1. In-Game Event Log (`src/systems/EventLog.ts`)**:
+  - In-memory ring buffer holding up to 2,000 entries. Nothing written to disk per frame.
+  - Entry structure: `{ t, at, floor, cat, msg, data? }`.
+  - Categories: `session`, `floor`, `room`, `combat`, `damage`, `skill`, `equip`, `class`, `progression`, `item`, `craft`, `party`, `save`, `ui`, `error`.
+  - Floor tracking with `setLocation(floor | 'Outpost')` stamping every entry with the current location.
+  - Formatted text serialization via `toText()`: `[+00:12:03.512] F3 equip   Valerie: off-hand Daggers unequipped: Greatswords is two-handed`.
+  - Item spam protection: `logItemTransaction()` aggregates rapid (<1s) same-entity, same-item transactions into a single running total.
+  - Re-entrancy guard on console interception and crash prompt throttling (max once per 60s, triggered only by uncaught `window.onerror` / `unhandledrejection`).
+- **2. Read-Only Bug Report Bundle (`src/systems/BugReport.ts`)**:
+  - `buildLiveSnapshot()` creates a deep-copy snapshot of party members, progression, and outpost/stockpile fields without calling mutating scene snapshot methods or touching `GameState`.
+  - Extracts both `liveSnapshot` and raw `lastSavedFile` (`localStorage['RPG_TRUE_GRIND_SAVE_V1']`).
+  - Assembles `BugReportBundle` with short ID (`TG-XXXXXX`), build commit hash (`__APP_VERSION__`), build date (`__BUILD_DATE__`), browser/screen telemetry, session duration, and full event log.
+- **3. "Report a Bug" UI Dialog (`src/ui/BugReportModal.ts`)**:
+  - Triggered via F8 hotkey, HUD "Report Bug" button, and Title Screen "Report Bug" button.
+  - Form includes "What happened?" (required, up to 2,000 chars with live counter), "What did you expect?" (optional), and category selector.
+  - Submits via `POST /api/bug-report`. On failure (server unavailable or offline), immediately offers fallback JSON download of the exact bundle.
+  - Non-blocking crash prompt banner (`⚠️ Something went wrong. Send a bug report?`) on uncaught errors with "Crash" pre-selected.
+- **4. Production Node Server (`server/`)**:
+  - Zero runtime dependencies (`server/index.js`, `server/staticHandler.js`, `server/reportHandler.js`).
+  - `GET /api/health` returning `{ ok: true, version }` without leaking secrets.
+  - `POST /api/bug-report` enforcing 2 MB stream cap while reading chunks (returns 413 immediately), IP rate limiting (5 reports per 10 minutes per IP using `X-Forwarded-For`), strict `application/json` check (415), sanitized commit message, and dual-file commit (`reports/YYYY-MM-DD/HHMMSS_<reportId>.json` and `.log`) via GitHub Contents API `PUT /repos/{owner}/{repo}/contents/{path}`.
+  - Static file serving with correct MIME types (`.js`, `.css`, `.png`, `.wasm`, `.svg`, etc.), SPA fallback to `dist/index.html`, and path traversal protection against `..` and encoded `%2e%2e` attempts (returns 403 Forbidden).
+- **5. Behaviour Changes**:
+  - `package.json`: Updated `"start": "node server/index.js"` (replacing `vite preview`) and added `"engines": { "node": ">=20" }` for Railway deployment with native `fetch`.
+  - Vite config defines `__APP_VERSION__` (resolving `RAILWAY_GIT_COMMIT_SHA` -> git HEAD -> `'unknown'`) and `__BUILD_DATE__`.
+- **6. Setup Guide (`docs/bug_reports_setup.md`)**:
+  - Step-by-step non-developer instructions covering private repo creation, fine-grained PAT creation (Contents: Read and write), Railway environment variables (`GITHUB_REPORTS_TOKEN`, `GITHUB_REPORTS_REPO`), Railway start command verification (`npm start`), `/api/health` verification, and token renewal procedure.
+- **7. Verification & Committed Evidence Logs**:
+  - `test/event_log.test.ts`: Ring buffer bounds (2,000 kept), `toText()`, location stamping, item merging, console capture, re-entrancy, crash throttling.
+  - `test/bug_report_bundle.test.ts`: Bundle field completeness, read-only snapshot guarantee, round-trip save restoration.
+  - `test/event_log_instrumentation.test.ts`: 2H off-hand removal with reason, class change/cancel, level-ups, floor transitions, combat fight summary (1 per fight).
+  - `test/server_bug_report.test.ts`: Valid report dual-file GitHub dispatch (mocking only the external GitHub fetch), 2 MB stream capping (413), rate limiting (429), missing token (503), GitHub API failure (502), Content-Type enforcement (415), CORS absence.
+  - `test/server_static.test.ts`: `/api/health` check, MIME type delivery, SPA fallback, traversal rejection (403).
+  - Evidence committed:
+    - `docs/evidence/event_log.log`
+    - `docs/evidence/bug_report_bundle.log`
+    - `docs/evidence/event_log_instrumentation.log`
+    - `docs/evidence/server_bug_report.log`
+    - `docs/evidence/server_static.log`
+    - `docs/evidence/sample_bug_report.log`
+    - `docs/evidence/full_suite.log` (141/141 test suites passed)
+  - Production build: `npm run build` succeeds cleanly.
+
 

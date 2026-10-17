@@ -9,9 +9,11 @@ import type { GridPos, WeaponDef, PassiveImbuementDef, PassiveImbuementProcDef, 
 import { HiddenSkillSystem, type CombatContext, type CounterattackResult } from './HiddenSkillSystem.ts';
 import { GameState } from './GameState.ts';
 import { SkillSystem } from './SkillSystem.ts';
+import { EventLog } from './EventLog.ts';
 
 export class CombatSystem {
   public static readonly DEBUG_AI: boolean = false;
+  public static activeInstance: CombatSystem | null = null;
 
   private scene: Phaser.Scene;
   public party: Player[];
@@ -24,6 +26,12 @@ export class CombatSystem {
   private casterRegrowthTargets: Map<string, Entity> = new Map();
   public skillSystem: SkillSystem;
 
+  private wasInCombat: boolean = false;
+  private combatStartTimeMs: number = 0;
+  private damageDealtByMember: Map<string, number> = new Map();
+  private damageTakenByMember: Map<string, number> = new Map();
+  private biggestHitTaken: { amount: number; memberName: string; source: string } | null = null;
+
   constructor(
     scene: Phaser.Scene,
     playerOrParty: Player | Player[],
@@ -32,6 +40,7 @@ export class CombatSystem {
     _progressionSystem?: ProgressionSystem,
     onEnemyDeath?: (enemy: Enemy) => void
   ) {
+    CombatSystem.activeInstance = this;
     this.scene = scene;
     this.party = Array.isArray(playerOrParty) ? playerOrParty : (playerOrParty ? [playerOrParty] : []);
     this.enemies = enemies || [];
@@ -450,6 +459,21 @@ export class CombatSystem {
     return this.currentInCombat || this.party.some((m) => m.inCombat);
   }
 
+  public recordDamageDealt(memberName: string, amount: number): void {
+    if (amount <= 0) return;
+    const current = this.damageDealtByMember.get(memberName) || 0;
+    this.damageDealtByMember.set(memberName, current + amount);
+  }
+
+  public recordDamageTaken(memberName: string, amount: number, source: string): void {
+    if (amount <= 0) return;
+    const current = this.damageTakenByMember.get(memberName) || 0;
+    this.damageTakenByMember.set(memberName, current + amount);
+    if (!this.biggestHitTaken || amount > this.biggestHitTaken.amount) {
+      this.biggestHitTaken = { amount, memberName, source };
+    }
+  }
+
   public update(time: number, delta: number): void {
     const anyEnemyAggroed = this.enemies.some((e) => e.isAggroed && e.state !== 'dead' && e.state !== 'downed');
     const anyPartyEngaged = this.party.some((m) => m.state !== 'dead' && m.state !== 'downed' && m.targetEntity && m.targetEntity.state !== 'dead' && m.targetEntity.state !== 'downed');
@@ -460,6 +484,30 @@ export class CombatSystem {
     }
     const inCombat = activeThreat || (time - this.lastCombatTimeMs < 4000);
     this.currentInCombat = inCombat;
+
+    if (!this.wasInCombat && inCombat) {
+      this.wasInCombat = true;
+      this.combatStartTimeMs = time;
+      this.damageDealtByMember.clear();
+      this.damageTakenByMember.clear();
+      this.biggestHitTaken = null;
+      EventLog.getInstance().add('combat', 'Combat started');
+    } else if (this.wasInCombat && !inCombat) {
+      this.wasInCombat = false;
+      const durationSec = ((time - this.combatStartTimeMs) / 1000).toFixed(1);
+      const dealtList = Array.from(this.damageDealtByMember.entries()).map(([k, v]) => `${k}: ${Math.floor(v)}`).join(', ') || 'None';
+      const takenList = Array.from(this.damageTakenByMember.entries()).map(([k, v]) => `${k}: ${Math.floor(v)}`).join(', ') || 'None';
+      const biggestStr = this.biggestHitTaken
+        ? `${this.biggestHitTaken.memberName} took ${Math.floor(this.biggestHitTaken.amount)} from ${this.biggestHitTaken.source}`
+        : 'None';
+      const summaryMsg = `Combat ended (${durationSec}s): Dealt [${dealtList}], Taken [${takenList}], Biggest hit: ${biggestStr}`;
+      EventLog.getInstance().add('combat', summaryMsg, {
+        durationMs: time - this.combatStartTimeMs,
+        damageDealt: Object.fromEntries(this.damageDealtByMember),
+        damageTaken: Object.fromEntries(this.damageTakenByMember),
+        biggestHit: this.biggestHitTaken
+      });
+    }
 
     // Clear targets for any downed or dead party members
     for (const member of this.party) {

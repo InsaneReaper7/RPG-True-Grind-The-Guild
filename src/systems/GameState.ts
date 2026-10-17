@@ -18,6 +18,7 @@ import type {
 } from '../types/game.ts';
 import { DataLoader } from '../utils/DataLoader.ts';
 import { LockpickingSystem } from './LockpickingSystem.ts';
+import { EventLog } from './EventLog.ts';
 import { isCraftingClass, getBaseItemId } from '../utils/gearResolver.ts';
 
 export function validateCharacterName(name: string | null | undefined, defaultName: string): string {
@@ -1100,6 +1101,8 @@ export class GameState {
   }
 
   public addItem(itemId: string, count: number): void {
+    if (count <= 0) return;
+    EventLog.getInstance().logItemTransaction('Stockpile', '+', itemId, count);
     if (itemId === 'wood') {
       this.addWood(count);
       return;
@@ -1141,6 +1144,7 @@ export class GameState {
           return false;
         }
       }
+      EventLog.getInstance().logItemTransaction('Stockpile', '-', itemId, count);
       return true;
     }
     const directQty = this.inventory.get(itemId) || 0;
@@ -1154,6 +1158,7 @@ export class GameState {
       if (this.snapshot) {
         this.snapshot.inventory = Object.fromEntries(this.inventory);
       }
+      EventLog.getInstance().logItemTransaction('Stockpile', '-', itemId, count);
       return true;
     }
 
@@ -1175,6 +1180,7 @@ export class GameState {
       if (this.snapshot) {
         this.snapshot.inventory = Object.fromEntries(this.inventory);
       }
+      EventLog.getInstance().logItemTransaction('Stockpile', '-', itemId, count);
       return true;
     }
     return false;
@@ -1510,6 +1516,7 @@ export class GameState {
       this.snapshot.party = [...this.partySnapshots];
     }
     console.log(`[GameState] Added/Updated companion '${snap.name}' (id: ${snap.id}) in party. Total members: ${this.partySnapshots.length}`);
+    EventLog.getInstance().add('party', `Added/Updated companion '${snap.name}' (id: ${snap.id}) in party. Total members: ${this.partySnapshots.length}`);
   }
 
   /**
@@ -2197,11 +2204,13 @@ export class GameState {
         `%c[GameState] 💾 Checkpoint persisted to storage (Day ${metadata.gameDay}, ${metadata.partySize} members, ${serialized.length} bytes)`,
         'color: #10b981; font-weight: bold;'
       );
+      EventLog.getInstance().add('save', `Saved game to disk (Day ${metadata.gameDay}, ${metadata.partySize} members, ${serialized.length} bytes)`, metadata);
       return true;
     } catch (err: any) {
       const errMsg = err?.message || 'Storage quota exceeded or storage disabled';
       this.lastSaveError = errMsg;
       console.error('[GameState] ❌ Failed to persist save to disk:', err);
+      EventLog.getInstance().add('save', `Save failed: ${errMsg}`);
       this.onSaveFailedCallback?.(errMsg);
       return false;
     }
@@ -2228,11 +2237,13 @@ export class GameState {
         `%c[GameState] 📂 Successfully loaded save from storage (Day ${saveFile.metadata?.gameDay ?? this.currentGameDay}, Leader: ${saveFile.metadata?.leaderName ?? 'Hero'})`,
         'color: #38bdf8; font-weight: bold;'
       );
+      EventLog.getInstance().add('save', `Loaded save from disk (Day ${saveFile.metadata?.gameDay ?? this.currentGameDay}, Leader: ${saveFile.metadata?.leaderName ?? 'Hero'})`);
       return true;
     } catch (err: any) {
       const errMsg = err?.message || 'Failed to load save from storage';
       this.lastSaveError = errMsg;
       console.error('[GameState] ❌ Failed to load save from disk:', err);
+      EventLog.getInstance().add('save', `Load failed: ${errMsg}`);
       return false;
     }
   }

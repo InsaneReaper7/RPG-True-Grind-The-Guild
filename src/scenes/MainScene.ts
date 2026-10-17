@@ -18,6 +18,7 @@ import { TileClaimDebugOverlay } from '../ui/TileClaimDebugOverlay';
 import { TutorialSystem } from '../systems/TutorialSystem';
 import { isTypingInTextField } from '../utils/inputGuard';
 import { runDetectionTick, findStepReveals, findNewlyEnteredRooms, rollNodeBonuses } from '../utils/perception';
+import { EventLog } from '../systems/EventLog';
 
 export interface GatheringNode {
   x: number;
@@ -314,6 +315,8 @@ export class MainScene extends Phaser.Scene {
     // 1. Procedural Dungeon Generation (Milestone 13 / 34)
     const dungeonConfig = dataLoader.getDungeonConfig();
     const floorNumber = GameState.getInstance().incrementDungeonFloorCount();
+    EventLog.getInstance().setLocation(floorNumber);
+    EventLog.getInstance().add('floor', `Entered dungeon floor ${floorNumber}`, { floorNumber });
     if (!this.dungeon) {
       const seed = this.assignedSeed ?? (Math.floor(Math.random() * 1000000) + 1);
       this.currentFloorSeed = seed;
@@ -2015,6 +2018,7 @@ export class MainScene extends Phaser.Scene {
     }
 
     this.isTransitioning = true;
+    EventLog.getInstance().add('floor', `Continuing descent from floor ${currentFloor}`, { currentFloor });
 
     console.log('[MainScene] Continuing descent deeper into dungeon...');
     // Save live party snapshot and player snapshot
@@ -2030,6 +2034,7 @@ export class MainScene extends Phaser.Scene {
   public executeTransitionToOutpost(): void {
     if (this.isTransitioning) return;
     this.isTransitioning = true;
+    EventLog.getInstance().add('floor', `Exited dungeon floor ${GameState.getInstance().getDungeonFloorCount()} -> Returning to Outpost`);
 
     console.log('[MainScene] Returning from Dungeon -> Transitioning to OutpostScene');
     GameState.getInstance().savePartySnapshot(this.party, this.time.now);
@@ -2050,6 +2055,7 @@ export class MainScene extends Phaser.Scene {
     if (this.isWiping || this.isTransitioning) return;
     this.isWiping = true;
     this.isTransitioning = true;
+    EventLog.getInstance().add('party', 'Full party wiped in dungeon! Teleporting back to Guild Outpost');
 
     console.log('%c[Party Wipe] ☠️ FULL PARTY WIPED! Teleporting back to Guild Outpost...', 'color: #ef4444; font-weight: bold; font-size: 14px;');
     if (this.hud) {
@@ -2416,6 +2422,7 @@ export class MainScene extends Phaser.Scene {
     const newlyEntered = findNewlyEnteredRooms(this.dungeon.rooms, this.visitedRoomIndices, this.party);
     for (const entry of newlyEntered) {
       this.visitedRoomIndices.add(entry.roomIndex);
+      EventLog.getInstance().add('room', `Entered room ${entry.roomIndex} (${entry.room?.type || 'room'})`, { roomIndex: entry.roomIndex, roomType: entry.room?.type });
       for (const member of entry.members) {
         member.progression.addProficiencyExp('perception', 2);
       }

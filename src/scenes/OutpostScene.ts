@@ -14,6 +14,7 @@ import { HiddenSkillSystem } from '../systems/HiddenSkillSystem';
 import { ActiveReviveChannel, ActiveMoveHighlight } from './MainScene';
 import { TutorialSystem } from '../systems/TutorialSystem';
 import { isTypingInTextField } from '../utils/inputGuard';
+import { EventLog } from '../systems/EventLog';
 
 export class OutpostScene extends Phaser.Scene {
   private mapWidth: number = 20;
@@ -574,6 +575,8 @@ export class OutpostScene extends Phaser.Scene {
     };
 
     // Milestone: Persistent Saves — Checkpoint Outpost arrival state to storage (only when not at title screen)
+    EventLog.getInstance().setLocation('Outpost');
+    EventLog.getInstance().add('floor', 'Arrived at Guild Outpost');
     if (!HUD.isTitleScreenOpen) {
       GameState.getInstance().savePartySnapshot(this.party, this.time.now);
       GameState.getInstance().saveSnapshot(this.player, this.progressionSystem, this.time.now);
@@ -2343,6 +2346,7 @@ export class OutpostScene extends Phaser.Scene {
     }
 
     console.log('[OutpostScene] Entering Dungeon Portal -> Transitioning to MainScene (Fresh Descent)');
+    EventLog.getInstance().add('floor', 'Entering Dungeon Portal from Outpost');
     // Milestone 40: Boss and descent floor counter resets to 0 at the start of every new descent
     GameState.getInstance().resetDungeonFloorCount();
     GameState.getInstance().savePartySnapshot(this.party, this.time.now);

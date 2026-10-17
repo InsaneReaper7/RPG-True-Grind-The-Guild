@@ -413,6 +413,38 @@ export interface GameSaveFile {
   snapshot: PlayerSnapshot;
 }
 
+export type BugReportCategory =
+  | 'Combat'
+  | 'Items & gear'
+  | 'Classes & skills'
+  | 'UI'
+  | 'Crash'
+  | 'Other';
+
+export interface BugReportBundle {
+  reportId: string;
+  timestamp: string;
+  version: string;
+  buildDate: string;
+  browser: string;
+  screenSize: string;
+  sessionLengthMs: number;
+  playerText: {
+    whatHappened: string;
+    whatExpected?: string;
+    category: BugReportCategory;
+  };
+  whatHappened: string;
+  whatExpected?: string;
+  category: BugReportCategory;
+  liveSnapshot: PlayerSnapshot;
+  lastSavedFile: string | null;
+  eventLog: {
+    entries: any[];
+    text: string;
+  };
+}
+
 export type KnowledgeBaseTab =
   | 'weapons'
   | 'classes'

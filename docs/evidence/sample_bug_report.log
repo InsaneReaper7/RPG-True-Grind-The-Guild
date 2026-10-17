@@ -1,0 +1,22 @@
+=======================================================
+RPG TRUE GRIND - BUG REPORT TG-7K3F2Q
+Generated At: 2026-10-17T12:05:26.871Z
+Category:     combat
+What Happened:
+Off-hand daggers were unequipped when Valerie equipped a Greatsword, but combat showed 0 damage.
+What Expected:
+Greatsword should deal full 2H damage.
+=======================================================
+
+EVENT LOG:
+[+00:00:00.000] Outpost session     Session started. Version: 74a69fe. Build date: 2026-10-17T12:00:00Z
+[+00:00:00.001] Outpost party       Valerie recruited to party
+[+00:00:00.001] Outpost equip       Hero: Equipped main weapon: Short Sword
+[+00:00:00.001] F1   floor       Entered Floor 1
+[+00:00:00.001] F1   combat      Combat started
+[+00:00:00.001] F1   combat      Combat ended. Dealt [Hero: 42], Taken [Hero: 14]. Biggest hit taken: 14 from Goblin Scout
+[+00:00:00.001] F2   floor       Entered Floor 2
+[+00:00:00.001] F2   damage      Valerie dropped to 22% HP (11/50) from Cave Bat
+[+00:00:00.001] F3   floor       Entered Floor 3
+[+00:00:00.001] F3   equip       Valerie: off-hand Daggers unequipped: Greatswords is two-handed
+[+00:00:00.001] F3   ui          Toast shown: [warn] Valerie's off-hand Daggers was unequipped: Greatswords is two-handed

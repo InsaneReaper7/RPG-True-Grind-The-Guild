@@ -14,6 +14,8 @@ import { StatGainsSystem } from '../systems/StatGainsSystem.ts';
 import { isCraftingClass, getBaseItemId, canEquipBowDaggerSidearm, resolvePartyGearSource, getPartyGearOwnership } from '../utils/gearResolver.ts';
 import { isTypingInTextField, disableGameKeyboard, enableGameKeyboard, initKeyboardGuards } from '../utils/inputGuard.ts';
 import { formatRequirement } from '../utils/formatRequirement.ts';
+import { EventLog } from '../systems/EventLog.ts';
+import { BugReportModal } from './BugReportModal.ts';
 
 export interface AnnouncementItem {
   type: 'class' | 'skill';
@@ -1013,6 +1015,19 @@ export class HUD {
     if (this.hudResetSaveBtn) {
       this.hudResetSaveBtn.onclick = () => {
         this.handleResetSave();
+      };
+    }
+
+    const hudReportBugBtn = document.getElementById('hud-report-bug-btn');
+    if (hudReportBugBtn) {
+      hudReportBugBtn.onclick = () => {
+        BugReportModal.getInstance().open();
+      };
+    }
+    const titleReportBugBtn = document.getElementById('title-report-bug-btn');
+    if (titleReportBugBtn) {
+      titleReportBugBtn.onclick = () => {
+        BugReportModal.getInstance().open();
       };
     }
 
@@ -2163,6 +2178,8 @@ export class HUD {
     type: 'info' | 'success' | 'warn' | 'error' = 'info',
     durationMs: number = 3500
   ): void {
+    EventLog.getInstance().add('ui', `Toast [${type}]: ${message}`, { type, message, durationMs });
+
     if (!this.buildFeedbackToastEl) return;
 
     if (this.toastTimer) {
