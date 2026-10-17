@@ -1979,4 +1979,38 @@ The following three intentional behavioural changes were reviewed and accepted b
     - `docs/evidence/full_suite.log` (141/141 test suites passed)
   - Production build: `npm run build` succeeds cleanly.
 
+### Class Skill Rebalance, Part B: Per-Class Spell Multiplier & Tuning (2026-10-17)
+
+**Resolved and shipped: Implemented `spellDamageMultiplier` on 28 combat caster classes, integrated class multiplier into basic spell attacks and skill spell scaling, updated UI display in loadout and knowledge base, validated determinism diff against 67efd5a, and verified single-target / pack progression medians.**
+
+- **1. Data Definition & Validation (`data/classes.json`, `test/data_lint.test.ts`)**:
+  - Added optional number `spellDamageMultiplier` (default 1.0) to 28 combat caster classes across Novice, Adept, Expert, Master, and Prestige tiers.
+  - Healers (`medic`, `combat_medic`, `restoration_mage`, `cleric`), hybrid melee (`spellsword`, `battlemage`), and `archmage` intentionally left at 1.0.
+  - Data lint rule (Check 9 in `test/data_lint.test.ts`) validates that any present `spellDamageMultiplier` is a number in $(0, 2]$.
+- **2. Engine Integration (`src/entities/Player.ts`, `src/systems/CombatSystem.ts`, `src/systems/SkillSystem.ts`)**:
+  - `Player.ts`: Added `classSpellDamageMultiplier: number = 1.0`. Evaluated in `recalculateDerivedStats` from active combat class definition (`classes.json`). `setActiveClass()` invokes `recalculateDerivedStats(true)` upon class swap or clear.
+  - `CombatSystem.ts` (~L2226): In `executePlayerBasicAttack`, multiplied `attrMult` by `member.classSpellDamageMultiplier` when `isSpell` is true.
+  - `SkillSystem.ts` (~L415): Multiplied `attrMult` by `caster.classSpellDamageMultiplier` when `effect.scaling === 'spell'`.
+  - Non-scaling integrity preserved: heals, HoTs, shields, DoT ticks, reflect, and weapon-scaling damage remain strictly unaffected.
+- **3. UI Display (`src/ui/HUD.ts`)**:
+  - Displays `Spell damage ×<val>` on active class card in Outpost Loadout modal and Knowledge Base class details when multiplier $\neq 1.0$.
+- **4. Combat Sim & Diff Verification (`scripts/balance_sim.ts`, `scripts/sim_diff.ts`, `scripts/sim_summary.ts`)**:
+  - Diff check against baseline `67efd5a`: exactly 28 changed classes, 58 unchanged classes, 86 vs 86 rows. All 58 unchanged classes bit-for-bit identical across combat output metrics.
+  - Single-target medians: Novice 71.1%, Adept 73.5%, Expert 74.9%, Master 75.0% (meeting 70–82% target band).
+  - Prestige pack trimming: `elemental_sovereign` reduced from 208% to 162.0% (within 145–175% band); `archmage` at 145.2%.
+- **5. Edited Tests**:
+  - `test/attributesSystem.test.ts`: In Test 4, isolated INT attribute scaling by clearing active class before testing INT-only damage (22.0), and added explicit assertion verifying Ember Adept active applies 1.25× multiplier ($20 \times 1.10 \times 1.25 = 27.5$).
+- **6. Verification & Committed Evidence Logs**:
+  - `test/class_spell_multiplier.test.ts`: 6 test suites covering basic attack spell scaling, physical weapon non-scaling, skill spell damage scaling, non-scaling immunity for heals/shields/DoTs/reflect, active class switching recalculation, and UI text rendering.
+  - `test/data_lint.test.ts`: All 9 data lint checks pass.
+  - Evidence committed:
+    - `docs/evidence/data_lint.log`
+    - `docs/evidence/class_spell_multiplier.log`
+    - `docs/evidence/balance_sim.log`
+    - `docs/evidence/sim_summary.log`
+    - `docs/evidence/sim_diff.log`
+    - `docs/evidence/full_suite.log` (143/143 test suites passed)
+  - Production build: `npm run build` succeeds cleanly.
+
+
 

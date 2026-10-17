@@ -3,11 +3,11 @@ Simulation Summary: docs/balance/class_sim.csv
 TIER MEDIANS (Brawler excluded):
 | Tier     | Pack Melee Med | Pack Caster Med | Caster ÷ Melee (Pack) | ST Melee Med | ST Caster Med | Caster ÷ Melee (ST) |
 |---|---|---|---|---|---|---|
-| novice   |           16.0 |             9.9 |                 61.9% |         15.9 |           8.3 |               52.2% |
-| adept    |           32.3 |            17.2 |                 53.3% |         29.1 |          14.6 |               50.2% |
-| expert   |           58.0 |            30.8 |                 53.1% |         53.3 |          28.5 |               53.5% |
-| master   |           89.6 |            43.4 |                 48.4% |         83.7 |          39.3 |               47.0% |
-| prestige |          143.2 |           248.2 |                173.3% |        122.2 |          74.0 |               60.6% |
+| novice   |           16.0 |            13.3 |                 83.1% |         15.9 |          11.3 |               71.1% |
+| adept    |           32.3 |            26.9 |                 83.3% |         29.1 |          21.4 |               73.5% |
+| expert   |           58.0 |            43.2 |                 74.5% |         53.3 |          39.9 |               74.9% |
+| master   |           89.6 |            68.9 |                 76.9% |         83.7 |          62.8 |               75.0% |
+| prestige |          143.2 |           219.9 |                153.6% |        122.2 |          66.1 |               54.1% |
 
 PER-CLASS BENCHMARKS:
 | Class                    | Tier     | Weapon           | dps_real | % Pack Melee | dps_real_st | % ST Melee |
@@ -18,21 +18,21 @@ PER-CLASS BENCHMARKS:
 | medic                    | novice   | healing_staff    |      2.0 |        12.5% |         1.7 |      10.7% |
 | staff_adept              | novice   | staff            |     10.4 |        65.0% |        10.1 |      63.5% |
 | combat_medic             | novice   | healing_staff    |      2.2 |        13.8% |         2.1 |      13.2% |
-| ember_adept              | novice   | fire_staff       |     18.8 |       117.5% |         9.5 |      59.7% |
+| ember_adept              | novice   | fire_staff       |     22.1 |       138.1% |        11.3 |      71.1% |
 | bludgeoner               | novice   | mace             |     13.7 |        85.6% |        14.4 |      90.6% |
-| spark_adept              | novice   | lightning_staff  |     17.8 |       111.3% |         8.8 |      55.3% |
-| frost_initiate           | novice   | ice_staff        |      9.0 |        56.3% |         8.1 |      50.9% |
-| acolyte                  | novice   | holy_staff       |      9.9 |        61.9% |         8.6 |      54.1% |
-| tide_adept               | novice   | water_staff      |      9.8 |        61.3% |         8.0 |      50.3% |
-| sprout_keeper            | novice   | nature_staff     |      8.6 |        53.8% |         7.8 |      49.1% |
-| gale_adept               | novice   | wind_staff       |     16.1 |       100.6% |         8.6 |      54.1% |
-| stoneheart_initiate      | novice   | earth_staff      |      8.4 |        52.5% |         7.0 |      44.0% |
+| spark_adept              | novice   | lightning_staff  |     23.5 |       146.9% |        11.4 |      71.7% |
+| frost_initiate           | novice   | ice_staff        |     12.3 |        76.9% |        11.1 |      69.8% |
+| acolyte                  | novice   | holy_staff       |     13.3 |        83.1% |        11.5 |      72.3% |
+| tide_adept               | novice   | water_staff      |     13.9 |        86.9% |        11.3 |      71.1% |
+| sprout_keeper            | novice   | nature_staff     |     11.9 |        74.4% |        10.8 |      67.9% |
+| gale_adept               | novice   | wind_staff       |     21.9 |       136.9% |        11.4 |      71.7% |
+| stoneheart_initiate      | novice   | earth_staff      |     13.3 |        83.1% |        11.1 |      69.8% |
 | restoration_mage         | expert   | healing_staff    |      0.4 |         0.7% |         0.4 |       0.8% |
 | marksman                 | novice   | bows             |     12.2 |        76.3% |        12.2 |      76.7% |
 | scout                    | adept    | daggers          |     25.8 |        79.9% |        25.9 |      89.0% |
 | brawler                  | novice   | fist             |     56.5 |       353.1% |        56.6 |     356.0% |
 | squire                   | novice   | longsword_1h     |     16.9 |       105.6% |        16.8 |     105.7% |
-| cultist                  | novice   | dark_staff       |      8.1 |        50.6% |         7.5 |      47.2% |
+| cultist                  | novice   | dark_staff       |     12.0 |        75.0% |        11.2 |      70.4% |
 | dark_knight              | expert   | longsword_1h     |     70.7 |       121.9% |        69.3 |     130.0% |
 | lancer                   | novice   | spears           |     15.8 |        98.8% |        15.9 |     100.0% |
 | hoplite                  | adept    | spears           |     32.4 |       100.3% |        31.6 |     108.6% |
@@ -42,7 +42,7 @@ PER-CLASS BENCHMARKS:
 | skirmisher               | novice   | throwing_weapons |     16.2 |       101.3% |        16.9 |     106.3% |
 | javelin                  | adept    | spears           |     29.6 |        91.6% |        26.7 |      91.8% |
 | loader                   | novice   | crossbows        |     13.2 |        82.5% |        12.7 |      79.9% |
-| arcane_initiate          | novice   | arcane_staff     |     11.6 |        72.5% |        11.5 |      72.3% |
+| arcane_initiate          | novice   | arcane_staff     |     12.2 |        76.3% |        12.1 |      76.1% |
 | spellsword               | adept    | longsword_1h     |     32.3 |       100.0% |        33.2 |     114.1% |
 | thrower                  | adept    | throwing_weapons |     30.2 |        93.5% |        28.9 |      99.3% |
 | brute                    | novice   | greatswords      |     20.9 |       130.6% |        18.9 |     118.9% |
@@ -53,13 +53,13 @@ PER-CLASS BENCHMARKS:
 | shadow_initiate          | adept    | daggers          |     26.8 |        83.0% |        25.7 |      88.3% |
 | sharpshooter             | adept    | crossbows        |     33.4 |       103.4% |        29.1 |     100.0% |
 | battle_medic             | adept    | mace             |     24.0 |        74.3% |        24.1 |      82.8% |
-| flamecaller              | adept    | fire_staff       |     37.4 |       115.8% |        17.8 |      61.2% |
-| frostcaller              | adept    | water_staff      |     16.7 |        51.7% |        13.2 |      45.4% |
-| stormtouched             | adept    | lightning_staff  |     34.0 |       105.3% |        15.7 |      54.0% |
-| windwalker               | adept    | wind_staff       |     27.8 |        86.1% |        15.8 |      54.3% |
-| naturalist               | adept    | nature_staff     |     15.8 |        48.9% |        14.6 |      50.2% |
-| priest                   | adept    | holy_staff       |     17.2 |        53.3% |        13.9 |      47.8% |
-| warlock                  | adept    | dark_staff       |     14.8 |        45.8% |        14.3 |      49.1% |
+| flamecaller              | adept    | fire_staff       |     44.8 |       138.7% |        21.4 |      73.5% |
+| frostcaller              | adept    | water_staff      |     26.9 |        83.3% |        21.1 |      72.5% |
+| stormtouched             | adept    | lightning_staff  |     47.2 |       146.1% |        21.4 |      73.5% |
+| windwalker               | adept    | wind_staff       |     38.5 |       119.2% |        21.7 |      74.6% |
+| naturalist               | adept    | nature_staff     |     22.6 |        70.0% |        20.9 |      71.8% |
+| priest                   | adept    | holy_staff       |     25.9 |        80.2% |        20.9 |      71.8% |
+| warlock                  | adept    | dark_staff       |     22.4 |        69.3% |        21.5 |      73.9% |
 | blademaster              | expert   | katana           |     59.6 |       102.8% |        58.8 |     110.3% |
 | assassin                 | expert   | daggers          |     42.8 |        73.8% |        42.6 |      79.9% |
 | shadowblade              | expert   | daggers          |     43.3 |        74.7% |        41.6 |      78.0% |
@@ -72,10 +72,10 @@ PER-CLASS BENCHMARKS:
 | battlemage               | expert   | longsword_1h     |     65.0 |       112.1% |        54.2 |     101.7% |
 | storm_lancer             | expert   | spears           |     60.6 |       104.5% |        55.3 |     103.8% |
 | dragoon                  | expert   | spears           |     60.7 |       104.7% |        53.0 |      99.4% |
-| elementalist             | expert   | fire_staff       |     95.3 |       164.3% |        44.2 |      82.9% |
-| aquamancer               | expert   | water_staff      |     30.8 |        53.1% |        28.5 |      53.5% |
-| cryomancer               | expert   | ice_staff        |     30.4 |        52.4% |        28.8 |      54.0% |
-| geomancer                | expert   | earth_staff      |     33.3 |        57.4% |        24.7 |      46.3% |
+| elementalist             | expert   | fire_staff       |     90.9 |       156.7% |        42.1 |      79.0% |
+| aquamancer               | expert   | water_staff      |     43.2 |        74.5% |        39.9 |      74.9% |
+| cryomancer               | expert   | ice_staff        |     42.5 |        73.3% |        40.3 |      75.6% |
+| geomancer                | expert   | earth_staff      |     53.2 |        91.7% |        39.6 |      74.3% |
 | cleric                   | expert   | holy_staff       |     29.0 |        50.0% |        27.6 |      51.8% |
 | sword_saint              | master   | katana           |     88.6 |        98.9% |        85.1 |     101.7% |
 | death_knight             | master   | greatswords      |    116.0 |       129.5% |        98.7 |     117.9% |
@@ -85,16 +85,16 @@ PER-CLASS BENCHMARKS:
 | arcane_knight            | master   | longsword_1h     |     89.6 |       100.0% |        82.3 |      98.3% |
 | elemental_knight         | master   | longsword_1h     |    110.1 |       122.9% |        85.9 |     102.6% |
 | tempest                  | master   | bows             |     91.5 |       102.1% |        59.3 |      70.8% |
-| grove_walker             | novice   | druid_staff      |     11.3 |        70.6% |        11.0 |      69.2% |
-| herbalist                | adept    | druid_staff      |     21.0 |        65.0% |        18.9 |      64.9% |
-| druid                    | expert   | druid_staff      |     37.8 |        65.2% |        31.0 |      58.2% |
-| necromancer              | master   | dark_staff       |     43.4 |        48.4% |        39.3 |      47.0% |
-| natures_avatar           | master   | druid_staff      |     62.5 |        69.8% |        52.7 |      63.0% |
+| grove_walker             | novice   | druid_staff      |     11.4 |        71.3% |        11.1 |      69.8% |
+| herbalist                | adept    | druid_staff      |     23.1 |        71.5% |        20.8 |      71.5% |
+| druid                    | expert   | druid_staff      |     48.8 |        84.1% |        40.0 |      75.0% |
+| necromancer              | master   | dark_staff       |     68.9 |        76.9% |        62.8 |      75.0% |
+| natures_avatar           | master   | druid_staff      |     74.8 |        83.5% |        63.0 |      75.3% |
 | swordmaster              | prestige | katana           |    114.5 |        80.0% |       113.9 |      93.2% |
 | weaponmaster             | prestige | katana           |    168.1 |       117.4% |       154.4 |     126.4% |
 | archmage                 | prestige | arcane_staff     |    207.9 |       145.2% |        66.5 |      54.4% |
 | grand_paladin            | prestige | short_swords     |    163.2 |       114.0% |       130.4 |     106.7% |
 | dark_lord                | prestige | greatswords      |    170.9 |       119.3% |       139.9 |     114.5% |
-| archdruid                | prestige | druid_staff      |     76.2 |        53.2% |        63.2 |      51.7% |
-| elemental_sovereign      | prestige | fire_staff       |    288.5 |       201.5% |        81.4 |      66.6% |
+| archdruid                | prestige | druid_staff      |    109.9 |        76.7% |        91.2 |      74.6% |
+| elemental_sovereign      | prestige | fire_staff       |    232.0 |       162.0% |        65.7 |      53.8% |
 | deathbringer             | prestige | greatswords      |    123.2 |        86.0% |       108.1 |      88.5% |

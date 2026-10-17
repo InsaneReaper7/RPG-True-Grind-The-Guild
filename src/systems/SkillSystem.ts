@@ -412,7 +412,7 @@ export class SkillSystem {
             ? (caster.dexMultiplier ?? (1 + 0.02 * ((caster.dexterity ?? 1.0) - 1)))
             : (caster.strMultiplier ?? (1 + 0.02 * ((caster.strength ?? 1.0) - 1)));
         } else if (effect.scaling === 'spell') {
-          attrMult = caster.intMultiplier ?? (1 + 0.02 * ((caster.intelligence ?? 1.0) - 1));
+          attrMult = (caster.intMultiplier ?? (1 + 0.02 * ((caster.intelligence ?? 1.0) - 1))) * (caster.classSpellDamageMultiplier ?? 1.0);
         }
         hitDamage *= attrMult;
 

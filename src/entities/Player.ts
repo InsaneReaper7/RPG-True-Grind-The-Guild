@@ -87,6 +87,7 @@ export class Player extends Entity {
   public strMultiplier: number = 1.0;
   public dexMultiplier: number = 1.0;
   public intMultiplier: number = 1.0;
+  public classSpellDamageMultiplier: number = 1.0;
 
   constructor(
     scene: Phaser.Scene,
@@ -208,6 +209,7 @@ export class Player extends Entity {
       console.log(`[Player:${this.entityName}] Cleared active class (Unranked).`);
       EventLog.getInstance().add('class', `${this.entityName}: Cleared active class (Unranked)`);
       this.handleClassChangeOffhandCheck(prevClass);
+      this.recalculateDerivedStats(true);
       return true;
     }
     if (isCraftingClass(classId)) {
@@ -220,6 +222,7 @@ export class Player extends Entity {
       EventLog.getInstance().add('class', `${this.entityName}: Active class set to: ${classId}`);
       this.handleClassChangeOffhandCheck(prevClass);
       this.checkSkillUnlocks();
+      this.recalculateDerivedStats(true);
       return true;
     }
     console.warn(`[Player:${this.entityName}] Cannot set active class to '${classId}': not unlocked.`);
@@ -692,6 +695,17 @@ export class Player extends Entity {
     this.strMultiplier = gains.strMultiplier ?? (1 + 0.02 * (this.strength - 1));
     this.dexMultiplier = gains.dexMultiplier ?? (1 + 0.02 * (this.dexterity - 1));
     this.intMultiplier = gains.intMultiplier ?? (1 + 0.02 * (this.intelligence - 1));
+
+    if (this.activeClass) {
+      try {
+        const clsDef = DataLoader.getInstance().getClass(this.activeClass);
+        this.classSpellDamageMultiplier = clsDef?.spellDamageMultiplier ?? 1.0;
+      } catch {
+        this.classSpellDamageMultiplier = 1.0;
+      }
+    } else {
+      this.classSpellDamageMultiplier = 1.0;
+    }
 
     if (isMidRun) {
       if (this.maxHp > oldMaxHp) {

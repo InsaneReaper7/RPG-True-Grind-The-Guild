@@ -230,5 +230,22 @@ assert.strictEqual(
 );
 console.log(`✓ PASS: All ${defaultProficiencies.length} proficiencies in ProgressionSystem defaults are assigned exactly once in statGains.json.\n`);
 
+// 9. If spellDamageMultiplier is present on a class, it must be a number > 0 and <= 2
+console.log('9. Checking class spellDamageMultiplier values...');
+for (const c of classesData.classes) {
+  if (c.spellDamageMultiplier !== undefined) {
+    assert.strictEqual(
+      typeof c.spellDamageMultiplier,
+      'number',
+      `Class "${c.id}" spellDamageMultiplier must be a number`
+    );
+    assert.ok(
+      c.spellDamageMultiplier > 0 && c.spellDamageMultiplier <= 2,
+      `Class "${c.id}" spellDamageMultiplier must be > 0 and <= 2 (found ${c.spellDamageMultiplier})`
+    );
+  }
+}
+console.log('✓ PASS: All spellDamageMultiplier values are numbers > 0 and <= 2.\n');
+
 console.log('🎉 ALL DATA LINT CHECKS PASSED PERFECTLY!');
 

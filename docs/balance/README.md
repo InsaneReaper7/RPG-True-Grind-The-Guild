@@ -63,3 +63,12 @@ Outputs:
 - Their `dps_real` and `hps_real` gaps compared to `dps_unlimited` and `hps_unlimited` are known, expected, and preserved by design.
 - Magic school basic attacks feature reduced energy costs (`energyCostPerCast`: 4–6 EN) to ensure consistent rotation filler without stalling companion AI.
 - Single-target measurements (`dps_real_st`) isolate raw single-target output from AoE school advantages (fire splash, lightning chain, wind pierce).
+
+### 3. Class Spell Damage Multiplier (`spellDamageMultiplier`)
+- Defined on `classes.json` (optional number in `(0, 2]`, defaulting to 1.0) across 28 combat caster classes.
+- **Design Intent**: In tiers 0–3, casters target ~75% of the melee median against a single enemy (`dps_real_st`), keeping them competitive while allowing AoE schools to pull ahead in group fights. At prestige, it trims group-fight extremes (e.g., `elemental_sovereign` trimmed from ~208% to ~162%).
+- **Engine Application**: Applied strictly where INT scales spell damage:
+  1. `CombatSystem.ts`: basic attack when `isSpell` is true (`attrMult * classSpellDamageMultiplier`).
+  2. `SkillSystem.ts`: skill execution when `effect.scaling === 'spell'` (`attrMult * classSpellDamageMultiplier`).
+- **Exclusions**: Does not apply to heals, HoTs, shields, DoT ticks, reflect, or weapon-scaling damage.
+

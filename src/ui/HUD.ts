@@ -2504,6 +2504,10 @@ export class HUD {
           actionBtnHtml = `<button type="button" class="active-class-btn btn-equip" data-equip-class="${cls.id}">Set Active</button>`;
         }
 
+        const spellMultHtml = (cls.spellDamageMultiplier && cls.spellDamageMultiplier !== 1.0)
+          ? `<div style="font-size: 11px; color: #38bdf8; font-weight: 500;">Spell damage ×${cls.spellDamageMultiplier.toFixed(2)}</div>`
+          : '';
+
         card.innerHTML = `
           <div class="active-class-card-header">
             <span class="active-class-name">${cls.name}</span>
@@ -2512,6 +2516,7 @@ export class HUD {
           <div class="active-class-info">
             <span>Level ${clsStat.level} (${clsStat.currentExp}/${nextExp} EXP)</span>
           </div>
+          ${spellMultHtml}
           <div style="font-size: 10px; color: #9ca3af; font-style: italic;">${cls.fantasy}</div>
           <div style="margin-top: auto; display: flex; justify-content: flex-end;">
             ${actionBtnHtml}
@@ -8758,6 +8763,9 @@ export class HUD {
             .map(([k, v]) => `+${((v as number) * 100).toFixed(0)}% ${k.replace('_', ' ')}`)
             .join(', ');
           stats.push({ label: 'Class Passives', value: bonuses });
+        }
+        if (c.spellDamageMultiplier && c.spellDamageMultiplier !== 1.0) {
+          stats.push({ label: 'Spell Damage', value: `Spell damage ×${c.spellDamageMultiplier.toFixed(2)}` });
         }
 
         discoveredClasses.push({

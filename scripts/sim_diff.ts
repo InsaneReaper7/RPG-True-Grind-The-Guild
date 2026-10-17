@@ -7,7 +7,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const rootDir = path.resolve(__dirname, '..');
 const currentCsvPath = path.join(rootDir, 'docs/balance/class_sim.csv');
-const baselineGitRef = 'a8f7765:docs/balance/class_sim.csv';
+const baselineGitRef = '67efd5a:docs/balance/class_sim.csv';
 
 console.log('========================================================================');
 console.log('SIMULATION DETERMINISM CHECK: current vs ' + baselineGitRef);
@@ -93,12 +93,19 @@ console.log(`\nUnchanged classes count: ${unchangedCount}`);
 console.log(`Changed classes count:   ${changedClasses.length}`);
 console.log(`Changed classes:         ${changedClasses.join(', ')}`);
 
-const expectedChanged = ['weaponmaster', 'archmage', 'elemental_sovereign', 'deathbringer', 'guardian'];
+const expectedChanged = [
+  'ember_adept', 'spark_adept', 'frost_initiate', 'acolyte', 'tide_adept',
+  'sprout_keeper', 'gale_adept', 'stoneheart_initiate', 'cultist', 'arcane_initiate',
+  'grove_walker', 'flamecaller', 'frostcaller', 'stormtouched', 'windwalker',
+  'naturalist', 'priest', 'warlock', 'herbalist', 'elementalist',
+  'aquamancer', 'cryomancer', 'geomancer', 'druid', 'necromancer',
+  'natures_avatar', 'archdruid', 'elemental_sovereign'
+];
 const unexpected = changedClasses.filter(c => !expectedChanged.includes(c));
 const missingExpected = expectedChanged.filter(c => !changedClasses.includes(c));
 
 if (unexpected.length === 0 && missingExpected.length === 0) {
-  console.log('\n[PASS] Exactly the 5 expected classes changed. Determinism verified for all 81 other classes!');
+  console.log(`\n[PASS] Exactly the ${expectedChanged.length} expected classes changed. Determinism verified for all ${unchangedCount} other classes!`);
 } else {
   if (unexpected.length > 0) {
     console.log(`\n[WARNING] Unexpected classes changed: ${unexpected.join(', ')}`);

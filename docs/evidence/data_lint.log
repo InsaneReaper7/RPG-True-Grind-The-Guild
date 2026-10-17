@@ -22,4 +22,7 @@
 8. Checking stat gains proficiency assignment rule...
 ✓ PASS: All 56 proficiencies in ProgressionSystem defaults are assigned exactly once in statGains.json.
 
+9. Checking class spellDamageMultiplier values...
+✓ PASS: All spellDamageMultiplier values are numbers > 0 and <= 2.
+
 🎉 ALL DATA LINT CHECKS PASSED PERFECTLY!

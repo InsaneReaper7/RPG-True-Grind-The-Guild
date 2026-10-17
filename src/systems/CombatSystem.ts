@@ -2223,7 +2223,7 @@ export class CombatSystem {
     const isSpell = effectiveWeapon.category === 'magic';
     const isRanged = effectiveWeapon.category === 'ranged';
     const attrMult = isSpell
-      ? (member.intMultiplier ?? (1 + 0.02 * ((member.intelligence ?? 1.0) - 1)))
+      ? (member.intMultiplier ?? (1 + 0.02 * ((member.intelligence ?? 1.0) - 1))) * (member.classSpellDamageMultiplier ?? 1.0)
       : isRanged
         ? (member.dexMultiplier ?? (1 + 0.02 * ((member.dexterity ?? 1.0) - 1)))
         : (member.strMultiplier ?? (1 + 0.02 * ((member.strength ?? 1.0) - 1)));

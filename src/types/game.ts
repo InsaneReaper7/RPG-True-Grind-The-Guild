@@ -142,6 +142,7 @@ export interface ClassDef {
   hiddenSkillBonuses?: Record<string, number>;
   passiveImbuement?: PassiveImbuementDef;
   primaryAttribute?: 'str' | 'dex' | 'int';
+  spellDamageMultiplier?: number;
 }
 
 export interface ClassesData {

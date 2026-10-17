@@ -1,0 +1,141 @@
+=== CLASS SPELL MULTIPLIER TEST SUITE ===
+
+1. Checking Expected-Table Guard for all 28 classes...
+✓ PASS: All 28 expected classes match section 2 exactly, and no other class has the field.
+
+2. Checking Basic spell attack multiplier scaling...
+[Progression] Set class 'stoneheart_initiate' to Level 1 (0 EXP) on Guild Hero
+[Player:Guild Hero] Active class set to: stoneheart_initiate
+[Player] Equipped skill: pebble_shot. Current loadout: [pebble_shot]
+[KnowledgeBase] 🐺 First encountered enemy: 'dummy_target_dummy'! (+1 RP)
+[Bestiary] 🐺 First encounter with Target Dummy! (+1 RP)
+[DIAG:Combat] ⚔️ Guild Hero attacks Target Dummy with Earth Magic! inCombat: false, Pre-EN: 100.0, Post-EN: 100.0, Range: 1, Dist: 1
+[Combat] Guild Hero attacks Target Dummy with Earth Magic for 17.0 damage! (Base: 10, Lv 0 Bonus: +0.0, Accuracy: 70.0%)
+[KnowledgeBase] 🧪 Status effect discovered: 'stoneskin'! (+1 RP)
+[Combat:Earth] 🪨 Stoneskin applied to party (-10% damage taken for 4s)!
+[Progression] +2 EXP for 'earth_magic' (Guild Hero). Current: Level 0 (2/50 EXP)
+[Progression] Recorded tx 'earth_magic': +2 EXP for Guild Hero, resulting total: Level 0 (2/50 EXP)
+[Combat] Target Dummy defeated/downed by Guild Hero!
+[Progression] +4 EXP for 'earth_magic' (Guild Hero). Current: Level 0 (6/50 EXP)
+[Progression] Recorded tx 'earth_magic': +4 EXP for Guild Hero, resulting total: Level 0 (6/50 EXP)
+[Progression] +25 Class EXP for 'stoneheart_initiate' (Guild Hero). Current: Level 1 (25/54 EXP)
+[Player:Guild Hero] Cleared active class (Unranked).
+[DIAG:Combat] ⚔️ Guild Hero attacks Target Dummy with Earth Magic! inCombat: false, Pre-EN: 100.0, Post-EN: 100.0, Range: 1, Dist: 1
+[Combat] Guild Hero attacks Target Dummy with Earth Magic for 10.0 damage! (Base: 10, Lv 0 Bonus: +0.0, Accuracy: 70.0%)
+[Combat:Earth] 🪨 Stoneskin applied to party (-10% damage taken for 4s)!
+[Progression] +2 EXP for 'earth_magic' (Guild Hero). Current: Level 0 (2/50 EXP)
+[Progression] Recorded tx 'earth_magic': +2 EXP for Guild Hero, resulting total: Level 0 (2/50 EXP)
+[Combat] Target Dummy defeated/downed by Guild Hero!
+[Progression] +4 EXP for 'earth_magic' (Guild Hero). Current: Level 0 (6/50 EXP)
+[Progression] Recorded tx 'earth_magic': +4 EXP for Guild Hero, resulting total: Level 0 (6/50 EXP)
+  ✓ stoneheart_initiate: 17.00 vs 10.00 => ratio 1.7000 (expected 1.7)
+[Progression] Set class 'elemental_sovereign' to Level 1 (0 EXP) on Guild Hero
+[Player:Guild Hero] Active class set to: elemental_sovereign
+[Player] Equipped skill: sovereign_bolt. Current loadout: [sovereign_bolt]
+[DIAG:Combat] ⚔️ Guild Hero attacks Target Dummy with Fire Magic! inCombat: false, Pre-EN: 100.0, Post-EN: 100.0, Range: 1, Dist: 1
+[Combat] Guild Hero attacks Target Dummy with Fire Magic for 8.0 damage! (Base: 10, Lv 0 Bonus: +0.0, Accuracy: 70.0%)
+[Progression] +2 EXP for 'fire_magic' (Guild Hero). Current: Level 0 (2/50 EXP)
+[Progression] Recorded tx 'fire_magic': +2 EXP for Guild Hero, resulting total: Level 0 (2/50 EXP)
+[Combat] Target Dummy defeated/downed by Guild Hero!
+[Progression] +4 EXP for 'fire_magic' (Guild Hero). Current: Level 0 (6/50 EXP)
+[Progression] Recorded tx 'fire_magic': +4 EXP for Guild Hero, resulting total: Level 0 (6/50 EXP)
+[Progression] +25 Class EXP for 'elemental_sovereign' (Guild Hero). Current: Level 1 (25/54 EXP)
+[Player:Guild Hero] Cleared active class (Unranked).
+[DIAG:Combat] ⚔️ Guild Hero attacks Target Dummy with Fire Magic! inCombat: false, Pre-EN: 100.0, Post-EN: 100.0, Range: 1, Dist: 1
+[Combat] Guild Hero attacks Target Dummy with Fire Magic for 10.0 damage! (Base: 10, Lv 0 Bonus: +0.0, Accuracy: 70.0%)
+[Progression] +2 EXP for 'fire_magic' (Guild Hero). Current: Level 0 (2/50 EXP)
+[Progression] Recorded tx 'fire_magic': +2 EXP for Guild Hero, resulting total: Level 0 (2/50 EXP)
+[Combat] Target Dummy defeated/downed by Guild Hero!
+[Progression] +4 EXP for 'fire_magic' (Guild Hero). Current: Level 0 (6/50 EXP)
+[Progression] Recorded tx 'fire_magic': +4 EXP for Guild Hero, resulting total: Level 0 (6/50 EXP)
+  ✓ elemental_sovereign: 8.00 vs 10.00 => ratio 0.8000 (expected 0.8)
+✓ PASS: Basic spell attack scales exactly by class multiplier.
+
+3. Checking Spell skill through SkillSystem.execute...
+[Progression] Set class 'stoneheart_initiate' to Level 1 (0 EXP) on Guild Hero
+[Player:Guild Hero] Active class set to: stoneheart_initiate
+[Player] Equipped skill: pebble_shot. Current loadout: [pebble_shot]
+[Combat] Target Dummy defeated/downed by Guild Hero!
+[Progression] +4 EXP for 'arcane_magic' (Guild Hero). Current: Level 0 (4/50 EXP)
+[Progression] Recorded tx 'arcane_magic': +4 EXP for Guild Hero, resulting total: Level 0 (4/50 EXP)
+[Progression] +25 Class EXP for 'stoneheart_initiate' (Guild Hero). Current: Level 1 (25/54 EXP)
+[Progression] +2 EXP for 'arcane_magic' (Guild Hero). Current: Level 0 (6/50 EXP)
+[Progression] Recorded tx 'arcane_magic': +2 EXP for Guild Hero, resulting total: Level 0 (6/50 EXP)
+[Player:Guild Hero] Cleared active class (Unranked).
+[Combat] Target Dummy defeated/downed by Guild Hero!
+[Progression] +4 EXP for 'arcane_magic' (Guild Hero). Current: Level 0 (4/50 EXP)
+[Progression] Recorded tx 'arcane_magic': +4 EXP for Guild Hero, resulting total: Level 0 (4/50 EXP)
+[Progression] +2 EXP for 'arcane_magic' (Guild Hero). Current: Level 0 (6/50 EXP)
+[Progression] Recorded tx 'arcane_magic': +2 EXP for Guild Hero, resulting total: Level 0 (6/50 EXP)
+  ✓ stoneheart_initiate spell skill: 19.04 vs 11.20 => ratio 1.7000 (expected 1.7)
+[Progression] Set class 'elemental_sovereign' to Level 1 (0 EXP) on Guild Hero
+[Player:Guild Hero] Active class set to: elemental_sovereign
+[Player] Equipped skill: sovereign_bolt. Current loadout: [sovereign_bolt]
+[Combat] Target Dummy defeated/downed by Guild Hero!
+[Progression] +4 EXP for 'arcane_magic' (Guild Hero). Current: Level 0 (4/50 EXP)
+[Progression] Recorded tx 'arcane_magic': +4 EXP for Guild Hero, resulting total: Level 0 (4/50 EXP)
+[Progression] +25 Class EXP for 'elemental_sovereign' (Guild Hero). Current: Level 1 (25/54 EXP)
+[Progression] +2 EXP for 'arcane_magic' (Guild Hero). Current: Level 0 (6/50 EXP)
+[Progression] Recorded tx 'arcane_magic': +2 EXP for Guild Hero, resulting total: Level 0 (6/50 EXP)
+[Player:Guild Hero] Cleared active class (Unranked).
+[Combat] Target Dummy defeated/downed by Guild Hero!
+[Progression] +4 EXP for 'arcane_magic' (Guild Hero). Current: Level 0 (4/50 EXP)
+[Progression] Recorded tx 'arcane_magic': +4 EXP for Guild Hero, resulting total: Level 0 (4/50 EXP)
+[Progression] +2 EXP for 'arcane_magic' (Guild Hero). Current: Level 0 (6/50 EXP)
+[Progression] Recorded tx 'arcane_magic': +2 EXP for Guild Hero, resulting total: Level 0 (6/50 EXP)
+  ✓ elemental_sovereign spell skill: 8.96 vs 11.20 => ratio 0.8000 (expected 0.8)
+✓ PASS: Spell skill scales exactly by class multiplier.
+
+4. Checking Unaffected paths (weapon-scaling skill, heal, burn DoT tick)...
+[Progression] Set class 'stoneheart_initiate' to Level 1 (0 EXP) on Guild Hero
+[Player:Guild Hero] Active class set to: stoneheart_initiate
+[Player] Equipped skill: pebble_shot. Current loadout: [pebble_shot]
+[Combat] Target Dummy defeated/downed by Guild Hero!
+[Progression] +4 EXP for 'short_swords' (Guild Hero). Current: Level 0 (4/50 EXP)
+[Progression] Recorded tx 'short_swords': +4 EXP for Guild Hero, resulting total: Level 0 (4/50 EXP)
+[Progression] +25 Class EXP for 'stoneheart_initiate' (Guild Hero). Current: Level 1 (25/54 EXP)
+[StatusEffect] Applied Bleed to Target Dummy!
+[KnowledgeBase] 🧪 Status effect discovered: 'bleed'! (+1 RP)
+[Progression] +2 EXP for 'short_swords' (Guild Hero). Current: Level 0 (6/50 EXP)
+[Progression] Recorded tx 'short_swords': +2 EXP for Guild Hero, resulting total: Level 0 (6/50 EXP)
+[Player:Guild Hero] Cleared active class (Unranked).
+[Combat] Target Dummy defeated/downed by Guild Hero!
+[Progression] +4 EXP for 'short_swords' (Guild Hero). Current: Level 0 (4/50 EXP)
+[Progression] Recorded tx 'short_swords': +4 EXP for Guild Hero, resulting total: Level 0 (4/50 EXP)
+[StatusEffect] Applied Bleed to Target Dummy!
+[Progression] +2 EXP for 'short_swords' (Guild Hero). Current: Level 0 (6/50 EXP)
+[Progression] Recorded tx 'short_swords': +2 EXP for Guild Hero, resulting total: Level 0 (6/50 EXP)
+  ✓ Weapon-scaling skill (power_strike): unchanged (10 vs 10)
+[Progression] Set class 'stoneheart_initiate' to Level 1 (0 EXP) on Guild Hero
+[Player:Guild Hero] Active class set to: stoneheart_initiate
+[Player] Equipped skill: pebble_shot. Current loadout: [pebble_shot]
+[Progression] +2 EXP for 'healing_magic' (Guild Hero). Current: Level 0 (2/50 EXP)
+[Progression] Recorded tx 'healing_magic': +2 EXP for Guild Hero, resulting total: Level 0 (2/50 EXP)
+[Player:Guild Hero] Cleared active class (Unranked).
+[Progression] +2 EXP for 'healing_magic' (Guild Hero). Current: Level 0 (2/50 EXP)
+[Progression] Recorded tx 'healing_magic': +2 EXP for Guild Hero, resulting total: Level 0 (2/50 EXP)
+  ✓ Heal skill (first_aid): unchanged (20 vs 20)
+[KnowledgeBase] 🧪 Status effect discovered: 'burn'! (+1 RP)
+[DoT] Target Dummy takes 4 damage from Burn!
+[DoT] Target Dummy takes 4 damage from Burn!
+  ✓ Burn DoT tick: unchanged (4 vs 4, exact damagePerTick: 4)
+✓ PASS: All unaffected paths (weapon skill, heal, burn DoT) are strictly unmodified.
+
+5. Checking Class switch behavior...
+[Progression] Set class 'stoneheart_initiate' to Level 1 (0 EXP) on Guild Hero
+[Progression] Set class 'fencer' to Level 1 (0 EXP) on Guild Hero
+[Player:Guild Hero] Active class set to: stoneheart_initiate
+[Player] Equipped skill: power_strike. Current loadout: [power_strike]
+[Player] Equipped skill: pebble_shot. Current loadout: [power_strike, pebble_shot]
+[Player:Guild Hero] Active class set to: fencer
+[Player:Guild Hero] Active class set to: stoneheart_initiate
+[Player:Guild Hero] Cleared active class (Unranked).
+  ✓ Switching stoneheart_initiate -> fencer resets multiplier to 1.0
+  ✓ Switching back to stoneheart_initiate restores 1.70
+  ✓ Switching to null resets multiplier to 1.0
+✓ PASS: Class switch correctly recalculates classSpellDamageMultiplier.
+
+6. Checking Data lint rule...
+✓ PASS: Data lint rules satisfied.
+
+🎉 ALL CLASS SPELL MULTIPLIER TESTS PASSED PERFECTLY!

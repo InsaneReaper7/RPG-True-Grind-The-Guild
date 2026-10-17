@@ -288,12 +288,21 @@ async function run() {
     expReward: 10
   });
 
-  // Magic attack
+  // Magic attack - isolate INT attribute scaling with unranked class (1.0x spell mult)
   const fireMagicDef = dl.getWeapon('fire_magic')!;
+  hero4.setActiveClass(null);
   const hpBeforeSpell = enemy4.hp;
   combatSystem4.executePlayerBasicAttack(hero4, enemy4, 1000, fireMagicDef, 0, 20, 1.0);
   const spellDamage = hpBeforeSpell - enemy4.hp;
   assert.equal(Math.round(spellDamage * 100) / 100, 22.0, `Spell basic attack should scale by INT to 22.0, dealt ${spellDamage}`);
+
+  // Magic attack with Ember Adept active (1.25x class spell damage multiplier) -> 20 * 1.10 * 1.25 = 27.5
+  hero4.setActiveClass('ember_adept');
+  const hpBeforeEmberSpell = enemy4.hp;
+  combatSystem4.executePlayerBasicAttack(hero4, enemy4, 1000, fireMagicDef, 0, 20, 1.0);
+  const emberSpellDamage = hpBeforeEmberSpell - enemy4.hp;
+  assert.equal(Math.round(emberSpellDamage * 100) / 100, 27.5, `Spell basic attack with Ember Adept should scale to 27.5, dealt ${emberSpellDamage}`);
+
 
   // Basic healing staff cast: flat heal scaled by INT
   const woundedAlly = new Player(scene4, 5, 6, 'ally', playerData, 'warrior');

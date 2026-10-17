@@ -1,5 +1,5 @@
 ========================================================================
-SIMULATION DETERMINISM CHECK: current vs a8f7765:docs/balance/class_sim.csv
+SIMULATION DETERMINISM CHECK: current vs 67efd5a:docs/balance/class_sim.csv
 ========================================================================
 
 Baseline row count: 86
@@ -8,14 +8,37 @@ Classes missing in current CSV: None
 Classes added in current CSV: None
 
 Checking first 11 columns across all classes:
-  * guardian             [CHANGED]: dps_real: 5.6 -> 17.2, dps_unlimited: 5.1 -> 18.1
-  * weaponmaster         [CHANGED]: dps_real: 458.4 -> 168.1, dps_unlimited: 458.4 -> 263.7, casts_real: 45 -> 26, en_spent_real: 1312 -> 630, seconds_until_energy_below_20: 90 -> 4.3
-  * archmage             [CHANGED]: dps_real: 311.2 -> 207.9, dps_unlimited: 311.2 -> 214.7, casts_real: 46 -> 45, en_spent_real: 1434 -> 1392.6, seconds_until_energy_below_20: 90 -> 50.3
-  * elemental_sovereign  [CHANGED]: dps_real: 310.5 -> 288.5, dps_unlimited: 310.5 -> 310.4, casts_real: 46 -> 44, en_spent_real: 1394 -> 1330, seconds_until_energy_below_20: 90 -> 69.3
-  * deathbringer         [CHANGED]: dps_real: 253.3 -> 123.2, dps_unlimited: 324.5 -> 219, hps_real: 7.5 -> 1.4, hps_unlimited: 10.8 -> 7.2, casts_real: 27 -> 20, en_spent_real: 718 -> 510, seconds_until_energy_below_20: 19.8 -> 12.3
+  * ember_adept          [CHANGED]: dps_real: 18.8 -> 22.1, dps_unlimited: 43.8 -> 53.7
+  * spark_adept          [CHANGED]: dps_real: 17.8 -> 23.5, dps_unlimited: 39.1 -> 52.8
+  * frost_initiate       [CHANGED]: dps_real: 9 -> 12.3, dps_unlimited: 22.1 -> 31.7
+  * acolyte              [CHANGED]: dps_real: 9.9 -> 13.3, dps_unlimited: 28.4 -> 39.8
+  * tide_adept           [CHANGED]: dps_real: 9.8 -> 13.9, dps_unlimited: 24.9 -> 37.4
+  * sprout_keeper        [CHANGED]: dps_real: 8.6 -> 11.9, dps_unlimited: 17.7 -> 26.9
+  * gale_adept           [CHANGED]: dps_real: 16.1 -> 21.9, dps_unlimited: 36.7 -> 50.9
+  * stoneheart_initiate  [CHANGED]: dps_real: 8.4 -> 13.3, dps_unlimited: 20.4 -> 34.6
+  * cultist              [CHANGED]: dps_real: 8.1 -> 12, dps_unlimited: 17.3 -> 27.7
+  * arcane_initiate      [CHANGED]: dps_real: 11.6 -> 12.2, dps_unlimited: 26.8 -> 28.1
+  * flamecaller          [CHANGED]: dps_real: 37.4 -> 44.8, dps_unlimited: 90.6 -> 112
+  * frostcaller          [CHANGED]: dps_real: 16.7 -> 26.9, dps_unlimited: 40.5 -> 66.7
+  * stormtouched         [CHANGED]: dps_real: 34 -> 47.2, dps_unlimited: 68 -> 95.1
+  * windwalker           [CHANGED]: dps_real: 27.8 -> 38.5, dps_unlimited: 61 -> 85.1
+  * naturalist           [CHANGED]: dps_real: 15.8 -> 22.6, dps_unlimited: 37.1 -> 55.2
+  * priest               [CHANGED]: dps_real: 17.2 -> 25.9, dps_unlimited: 28.9 -> 44.7
+  * warlock              [CHANGED]: dps_real: 14.8 -> 22.4, dps_unlimited: 28.4 -> 43.9
+  * elementalist         [CHANGED]: dps_real: 95.3 -> 90.9, dps_unlimited: 148.4 -> 141.2
+  * aquamancer           [CHANGED]: dps_real: 30.8 -> 43.2, dps_unlimited: 51.7 -> 72.4
+  * cryomancer           [CHANGED]: dps_real: 30.4 -> 42.5, dps_unlimited: 54.4 -> 75.8
+  * geomancer            [CHANGED]: dps_real: 33.3 -> 53.2, dps_unlimited: 77.9 -> 124.6
+  * grove_walker         [CHANGED]: dps_real: 11.3 -> 11.4, dps_unlimited: 8.8 -> 9.5
+  * herbalist            [CHANGED]: dps_real: 21 -> 23.1, dps_unlimited: 29.7 -> 34
+  * druid                [CHANGED]: dps_real: 37.8 -> 48.8, dps_unlimited: 81.3 -> 105.4
+  * necromancer          [CHANGED]: dps_real: 43.4 -> 68.9, dps_unlimited: 82.8 -> 131.9
+  * natures_avatar       [CHANGED]: dps_real: 62.5 -> 74.8, dps_unlimited: 101.4 -> 121.5
+  * archdruid            [CHANGED]: dps_real: 76.2 -> 109.9, dps_unlimited: 142.8 -> 206.6
+  * elemental_sovereign  [CHANGED]: dps_real: 288.5 -> 232, dps_unlimited: 310.4 -> 249.4
 
-Unchanged classes count: 81
-Changed classes count:   5
-Changed classes:         guardian, weaponmaster, archmage, elemental_sovereign, deathbringer
+Unchanged classes count: 58
+Changed classes count:   28
+Changed classes:         ember_adept, spark_adept, frost_initiate, acolyte, tide_adept, sprout_keeper, gale_adept, stoneheart_initiate, cultist, arcane_initiate, flamecaller, frostcaller, stormtouched, windwalker, naturalist, priest, warlock, elementalist, aquamancer, cryomancer, geomancer, grove_walker, herbalist, druid, necromancer, natures_avatar, archdruid, elemental_sovereign
 
-[PASS] Exactly the 5 expected classes changed. Determinism verified for all 81 other classes!
+[PASS] Exactly the 28 expected classes changed. Determinism verified for all 58 other classes!

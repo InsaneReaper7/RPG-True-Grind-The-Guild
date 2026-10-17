@@ -133,7 +133,8 @@
       "hiddenSkillBonuses": {
         "mana_regen": 0.05
       },
-      "primaryAttribute": "int"
+      "primaryAttribute": "int",
+      "spellDamageMultiplier": 1.25
     },
     {
       "id": "bludgeoner",
@@ -167,7 +168,8 @@
       "hiddenSkillBonuses": {
         "mana_regen": 0.05
       },
-      "primaryAttribute": "int"
+      "primaryAttribute": "int",
+      "spellDamageMultiplier": 1.35
     },
     {
       "id": "frost_initiate",
@@ -184,7 +186,8 @@
       "hiddenSkillBonuses": {
         "mana_regen": 0.05
       },
-      "primaryAttribute": "int"
+      "primaryAttribute": "int",
+      "spellDamageMultiplier": 1.45
     },
     {
       "id": "acolyte",
@@ -201,7 +204,8 @@
       "hiddenSkillBonuses": {
         "mana_regen": 0.05
       },
-      "primaryAttribute": "int"
+      "primaryAttribute": "int",
+      "spellDamageMultiplier": 1.4
     },
     {
       "id": "tide_adept",
@@ -218,7 +222,8 @@
       "hiddenSkillBonuses": {
         "mana_regen": 0.05
       },
-      "primaryAttribute": "int"
+      "primaryAttribute": "int",
+      "spellDamageMultiplier": 1.5
     },
     {
       "id": "sprout_keeper",
@@ -235,7 +240,8 @@
       "hiddenSkillBonuses": {
         "mana_regen": 0.05
       },
-      "primaryAttribute": "int"
+      "primaryAttribute": "int",
+      "spellDamageMultiplier": 1.55
     },
     {
       "id": "gale_adept",
@@ -252,7 +258,8 @@
       "hiddenSkillBonuses": {
         "mana_regen": 0.05
       },
-      "primaryAttribute": "int"
+      "primaryAttribute": "int",
+      "spellDamageMultiplier": 1.4
     },
     {
       "id": "stoneheart_initiate",
@@ -269,7 +276,8 @@
       "hiddenSkillBonuses": {
         "mana_regen": 0.05
       },
-      "primaryAttribute": "int"
+      "primaryAttribute": "int",
+      "spellDamageMultiplier": 1.7
     },
     {
       "id": "restoration_mage",
@@ -474,7 +482,8 @@
       "hiddenSkillBonuses": {
         "mana_regen": 0.05
       },
-      "primaryAttribute": "int"
+      "primaryAttribute": "int",
+      "spellDamageMultiplier": 1.6
     },
     {
       "id": "dark_knight",
@@ -699,7 +708,8 @@
       "hiddenSkillBonuses": {
         "mana_regen": 0.05
       },
-      "primaryAttribute": "int"
+      "primaryAttribute": "int",
+      "spellDamageMultiplier": 1.05
     },
     {
       "id": "spellsword",
@@ -996,7 +1006,8 @@
       "hiddenSkillBonuses": {
         "mana_regen": 0.05
       },
-      "primaryAttribute": "int"
+      "primaryAttribute": "int",
+      "spellDamageMultiplier": 1.25
     },
     {
       "id": "frostcaller",
@@ -1013,7 +1024,8 @@
       "hiddenSkillBonuses": {
         "mana_regen": 0.05
       },
-      "primaryAttribute": "int"
+      "primaryAttribute": "int",
+      "spellDamageMultiplier": 1.65
     },
     {
       "id": "stormtouched",
@@ -1030,7 +1042,8 @@
       "hiddenSkillBonuses": {
         "mana_regen": 0.05
       },
-      "primaryAttribute": "int"
+      "primaryAttribute": "int",
+      "spellDamageMultiplier": 1.4
     },
     {
       "id": "windwalker",
@@ -1047,7 +1060,8 @@
       "hiddenSkillBonuses": {
         "mana_regen": 0.05
       },
-      "primaryAttribute": "int"
+      "primaryAttribute": "int",
+      "spellDamageMultiplier": 1.4
     },
     {
       "id": "naturalist",
@@ -1064,7 +1078,8 @@
       "hiddenSkillBonuses": {
         "mana_regen": 0.05
       },
-      "primaryAttribute": "int"
+      "primaryAttribute": "int",
+      "spellDamageMultiplier": 1.5
     },
     {
       "id": "priest",
@@ -1081,7 +1096,8 @@
       "hiddenSkillBonuses": {
         "mana_regen": 0.05
       },
-      "primaryAttribute": "int"
+      "primaryAttribute": "int",
+      "spellDamageMultiplier": 1.55
     },
     {
       "id": "warlock",
@@ -1098,7 +1114,8 @@
       "hiddenSkillBonuses": {
         "mana_regen": 0.05
       },
-      "primaryAttribute": "int"
+      "primaryAttribute": "int",
+      "spellDamageMultiplier": 1.55
     },
     {
       "id": "blademaster",
@@ -1454,7 +1471,8 @@
       "hiddenSkillBonuses": {
         "mana_regen": 0.05
       },
-      "primaryAttribute": "int"
+      "primaryAttribute": "int",
+      "spellDamageMultiplier": 0.95
     },
     {
       "id": "aquamancer",
@@ -1476,7 +1494,8 @@
       "hiddenSkillBonuses": {
         "mana_regen": 0.05
       },
-      "primaryAttribute": "int"
+      "primaryAttribute": "int",
+      "spellDamageMultiplier": 1.4
     },
     {
       "id": "cryomancer",
@@ -1498,7 +1517,8 @@
       "hiddenSkillBonuses": {
         "mana_regen": 0.05
       },
-      "primaryAttribute": "int"
+      "primaryAttribute": "int",
+      "spellDamageMultiplier": 1.4
     },
     {
       "id": "geomancer",
@@ -1520,7 +1540,8 @@
       "hiddenSkillBonuses": {
         "mana_regen": 0.05
       },
-      "primaryAttribute": "int"
+      "primaryAttribute": "int",
+      "spellDamageMultiplier": 1.6
     },
     {
       "id": "cleric",
@@ -1825,7 +1846,8 @@
       "hiddenSkillBonuses": {
         "mana_regen": 0.05
       },
-      "primaryAttribute": "int"
+      "primaryAttribute": "int",
+      "spellDamageMultiplier": 1.1
     },
     {
       "id": "herbalist",
@@ -1847,7 +1869,8 @@
       "hiddenSkillBonuses": {
         "mana_regen": 0.05
       },
-      "primaryAttribute": "int"
+      "primaryAttribute": "int",
+      "spellDamageMultiplier": 1.15
     },
     {
       "id": "druid",
@@ -1874,7 +1897,8 @@
       "hiddenSkillBonuses": {
         "mana_regen": 0.05
       },
-      "primaryAttribute": "int"
+      "primaryAttribute": "int",
+      "spellDamageMultiplier": 1.3
     },
     {
       "id": "necromancer",
@@ -1901,7 +1925,8 @@
       "hiddenSkillBonuses": {
         "mana_regen": 0.05
       },
-      "primaryAttribute": "int"
+      "primaryAttribute": "int",
+      "spellDamageMultiplier": 1.6
     },
     {
       "id": "natures_avatar",
@@ -1933,7 +1958,8 @@
       "hiddenSkillBonuses": {
         "mana_regen": 0.05
       },
-      "primaryAttribute": "int"
+      "primaryAttribute": "int",
+      "spellDamageMultiplier": 1.2
     },
     {
       "id": "swordmaster",
@@ -2298,7 +2324,8 @@
       "hiddenSkillBonuses": {
         "mana_regen": 0.08
       },
-      "primaryAttribute": "int"
+      "primaryAttribute": "int",
+      "spellDamageMultiplier": 1.45
     },
     {
       "id": "elemental_sovereign",
@@ -2345,7 +2372,8 @@
       "hiddenSkillBonuses": {
         "mana_regen": 0.08
       },
-      "primaryAttribute": "int"
+      "primaryAttribute": "int",
+      "spellDamageMultiplier": 0.8
     },
     {
       "id": "deathbringer",
