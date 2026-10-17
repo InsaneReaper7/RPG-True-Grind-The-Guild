@@ -26,7 +26,7 @@ console.log('--- TEST SUITE: EventLog ---');
   log.add('equip', 'Valerie: off-hand Daggers unequipped: Greatswords is two-handed');
 
   const text = log.toText();
-  assert.match(text, /^\[\+\d{2}:\d{2}:\d{2}\.\d{3}\] F3   equip       Valerie: off-hand Daggers unequipped: Greatswords is two-handed/);
+  assert.match(text, /^\[\+\d{2}:\d{2}:\d{2}\.\d{3}\] F3\s{6}equip\s{7}Valerie: off-hand Daggers unequipped: Greatswords is two-handed/);
   console.log('✓ toText() format passed');
 }
 

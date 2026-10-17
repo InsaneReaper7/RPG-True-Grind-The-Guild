@@ -1954,6 +1954,9 @@ The following three intentional behavioural changes were reviewed and accepted b
   - Zero runtime dependencies (`server/index.js`, `server/staticHandler.js`, `server/reportHandler.js`).
   - `GET /api/health` returning `{ ok: true, version }` without leaking secrets.
   - `POST /api/bug-report` enforcing 2 MB stream cap while reading chunks (returns 413 immediately), IP rate limiting (5 reports per 10 minutes per IP using `X-Forwarded-For`), strict `application/json` check (415), sanitized commit message, and dual-file commit (`reports/YYYY-MM-DD/HHMMSS_<reportId>.json` and `.log`) via GitHub Contents API `PUT /repos/{owner}/{repo}/contents/{path}`.
+  - **Sequential Writes & Collision Fix**: Writes the `.json` file first, then the `.log` sequentially. On a 409 Conflict, retries that PUT once after 500 ms. If the `.json` succeeds but `.log` fails, returns `{ ok: true, reportId }` to prevent losing reports while logging a server warning without credentials.
+  - **UTC Paths**: Both date (`YYYY-MM-DD`) and time (`HHMMSS`) in the file path are derived from `toISOString()`.
+  - **Rate Limit Map Cleanup**: Stale IPs whose timestamps have all expired are pruned during checks so memory cannot grow unbounded.
   - Static file serving with correct MIME types (`.js`, `.css`, `.png`, `.wasm`, `.svg`, etc.), SPA fallback to `dist/index.html`, and path traversal protection against `..` and encoded `%2e%2e` attempts (returns 403 Forbidden).
 - **5. Behaviour Changes**:
   - `package.json`: Updated `"start": "node server/index.js"` (replacing `vite preview`) and added `"engines": { "node": ">=20" }` for Railway deployment with native `fetch`.
@@ -1961,10 +1964,10 @@ The following three intentional behavioural changes were reviewed and accepted b
 - **6. Setup Guide (`docs/bug_reports_setup.md`)**:
   - Step-by-step non-developer instructions covering private repo creation, fine-grained PAT creation (Contents: Read and write), Railway environment variables (`GITHUB_REPORTS_TOKEN`, `GITHUB_REPORTS_REPO`), Railway start command verification (`npm start`), `/api/health` verification, and token renewal procedure.
 - **7. Verification & Committed Evidence Logs**:
-  - `test/event_log.test.ts`: Ring buffer bounds (2,000 kept), `toText()`, location stamping, item merging, console capture, re-entrancy, crash throttling.
-  - `test/bug_report_bundle.test.ts`: Bundle field completeness, read-only snapshot guarantee, round-trip save restoration.
+  - `test/event_log.test.ts`: Ring buffer bounds (2,000 kept), `toText()` with 7-char location column alignment, location stamping, item merging, console capture, re-entrancy, crash throttling.
+  - `test/bug_report_bundle.test.ts`: Bundle field completeness, read-only snapshot guarantee, round-trip save restoration, and late-game bundle size measurement under realistic full-game conditions (full 4-member party, 25 item stacks each, 95 classes, full stockpile, 2,000 log entries -> 817,339 bytes / ~0.779 MB, well under the 1.5 MB threshold).
   - `test/event_log_instrumentation.test.ts`: 2H off-hand removal with reason, class change/cancel, level-ups, floor transitions, combat fight summary (1 per fight).
-  - `test/server_bug_report.test.ts`: Valid report dual-file GitHub dispatch (mocking only the external GitHub fetch), 2 MB stream capping (413), rate limiting (429), missing token (503), GitHub API failure (502), Content-Type enforcement (415), CORS absence.
+  - `test/server_bug_report.test.ts`: Valid report sequential GitHub dispatch, 409 Conflict retry (3 calls total), partial failure tolerance (.json 201 + .log 500 -> 200 OK), 2 MB stream capping (413), rate limiting (429), missing token (503), GitHub API failure (502), Content-Type enforcement (415), CORS absence, and authentic `sample_bug_report.log` capture from decoded PUT payload.
   - `test/server_static.test.ts`: `/api/health` check, MIME type delivery, SPA fallback, traversal rejection (403).
   - Evidence committed:
     - `docs/evidence/event_log.log`
@@ -1972,7 +1975,7 @@ The following three intentional behavioural changes were reviewed and accepted b
     - `docs/evidence/event_log_instrumentation.log`
     - `docs/evidence/server_bug_report.log`
     - `docs/evidence/server_static.log`
-    - `docs/evidence/sample_bug_report.log`
+    - `docs/evidence/sample_bug_report.log` (generated from real instrumentation and server log formatter)
     - `docs/evidence/full_suite.log` (141/141 test suites passed)
   - Production build: `npm run build` succeeds cleanly.
 

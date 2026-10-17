@@ -1,22 +1,21 @@
-=======================================================
-RPG TRUE GRIND - BUG REPORT TG-7K3F2Q
-Generated At: 2026-10-17T12:05:26.871Z
-Category:     combat
-What Happened:
-Off-hand daggers were unequipped when Valerie equipped a Greatsword, but combat showed 0 damage.
-What Expected:
-Greatsword should deal full 2H damage.
-=======================================================
+================================================================================
+BUG REPORT: TG-B2OBAL
+DATE: 2026-10-17T12:49:27.747Z
+CATEGORY: Combat
+VERSION: unknown
+WHAT HAPPENED:
+Valerie equipped a Greatsword which unequipped off-hand Shield as expected, but goblin counterattack deal double damage.
+WHAT DID YOU EXPECT:
+Damage should be normal tier 1 amount.
+================================================================================
 
-EVENT LOG:
-[+00:00:00.000] Outpost session     Session started. Version: 74a69fe. Build date: 2026-10-17T12:00:00Z
-[+00:00:00.001] Outpost party       Valerie recruited to party
-[+00:00:00.001] Outpost equip       Hero: Equipped main weapon: Short Sword
-[+00:00:00.001] F1   floor       Entered Floor 1
-[+00:00:00.001] F1   combat      Combat started
-[+00:00:00.001] F1   combat      Combat ended. Dealt [Hero: 42], Taken [Hero: 14]. Biggest hit taken: 14 from Goblin Scout
-[+00:00:00.001] F2   floor       Entered Floor 2
-[+00:00:00.001] F2   damage      Valerie dropped to 22% HP (11/50) from Cave Bat
-[+00:00:00.001] F3   floor       Entered Floor 3
-[+00:00:00.001] F3   equip       Valerie: off-hand Daggers unequipped: Greatswords is two-handed
-[+00:00:00.001] F3   ui          Toast shown: [warn] Valerie's off-hand Daggers was unequipped: Greatswords is two-handed
+[+00:00:00.000] Outpost session     Session started. Version: e9ab511. Build date: 2026-10-17T12:00:00.000Z
+[+00:00:00.002] Outpost equip       Valerie: Equipped offhand weapon: Shields
+[+00:00:00.002] Outpost item        Valerie: +1 shields
+[+00:00:00.003] Outpost equip       Valerie: off-hand Shields unequipped: Greatswords is two-handed
+[+00:00:00.003] Outpost equip       Valerie: Equipped main weapon: Greatswords
+[+00:00:00.003] F1      class       Valerie: Active class set to: scout
+[+00:00:00.003] F1      skill       Valerie: Equipped skill quickshot
+[+00:00:00.003] F1      class       Valerie: Active class set to: fighter
+[+00:00:00.005] F2      combat      Combat started
+[+00:00:00.005] F2      combat      Combat ended (5.0s): Dealt [Valerie: 85], Taken [Valerie: 28], Biggest hit: Valerie took 28 from Goblin Scout

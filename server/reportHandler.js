@@ -18,6 +18,16 @@ export function getClientIp(req) {
 
 export function isRateLimited(ip, now = Date.now()) {
   const windowStart = now - RATE_LIMIT_WINDOW_MS;
+  // Clean up any stale IPs in the map so it cannot grow forever
+  for (const [key, times] of rateLimitMap.entries()) {
+    const valid = times.filter((t) => t > windowStart);
+    if (valid.length === 0) {
+      rateLimitMap.delete(key);
+    } else if (valid.length !== times.length) {
+      rateLimitMap.set(key, valid);
+    }
+  }
+
   let timestamps = rateLimitMap.get(ip) || [];
   timestamps = timestamps.filter((t) => t > windowStart);
   if (timestamps.length >= RATE_LIMIT_MAX_CALLS) {
@@ -155,10 +165,11 @@ export async function handleBugReport(req, res, options = {}) {
     payload.reportId = reportId;
   }
 
-  // 7. Format paths and commit message
+  // 7. Format paths and commit message using UTC for both date and time
   const now = new Date();
-  const dateStr = now.toISOString().slice(0, 10); // YYYY-MM-DD
-  const timeStr = now.toTimeString().slice(0, 8).replace(/:/g, ''); // HHMMSS
+  const iso = now.toISOString();
+  const dateStr = iso.slice(0, 10); // YYYY-MM-DD
+  const timeStr = iso.slice(11, 19).replace(/:/g, ''); // HHMMSS in UTC
   const jsonPath = `reports/${dateStr}/${timeStr}_${reportId}.json`;
   const logPath = `reports/${dateStr}/${timeStr}_${reportId}.log`;
 
@@ -174,7 +185,7 @@ export async function handleBugReport(req, res, options = {}) {
   const logFileText = [
     '================================================================================',
     `BUG REPORT: ${reportId}`,
-    `DATE: ${now.toISOString()}`,
+    `DATE: ${iso}`,
     `CATEGORY: ${category}`,
     `VERSION: ${version}`,
     'WHAT HAPPENED:',
@@ -196,9 +207,9 @@ export async function handleBugReport(req, res, options = {}) {
     return;
   }
 
-  const putFile = async (filePath, base64Content) => {
+  const putFileOnce = async (filePath, base64Content) => {
     const url = `https://api.github.com/repos/${repo}/contents/${filePath}`;
-    const response = await fetchFn(url, {
+    return await fetchFn(url, {
       method: 'PUT',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -211,23 +222,44 @@ export async function handleBugReport(req, res, options = {}) {
         content: base64Content
       })
     });
-    return response;
+  };
+
+  const putFileWithRetry = async (filePath, base64Content) => {
+    let res = await putFileOnce(filePath, base64Content);
+    if (res.status === 409) {
+      // Conflict on branch ref update: wait 500 ms and retry once
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      res = await putFileOnce(filePath, base64Content);
+    }
+    return res;
   };
 
   try {
-    const [jsonRes, logRes] = await Promise.all([
-      putFile(jsonPath, jsonBase64),
-      putFile(logPath, logBase64)
-    ]);
-
-    if (!jsonRes.ok || !logRes.ok) {
-      console.error('[BugReport] GitHub API returned non-OK status:', {
-        jsonStatus: jsonRes.status,
-        logStatus: logRes.status
+    // Sequential execution: PUT the .json first, then the .log
+    const jsonRes = await putFileWithRetry(jsonPath, jsonBase64);
+    if (!jsonRes.ok) {
+      console.error('[BugReport] GitHub API failed writing JSON bundle:', {
+        jsonStatus: jsonRes.status
       });
       res.writeHead(502, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: 'Failed to write bug report to GitHub repository.' }));
       return;
+    }
+
+    // Now PUT the .log
+    let logRes;
+    try {
+      logRes = await putFileWithRetry(logPath, logBase64);
+    } catch (err) {
+      console.error('[BugReport] Error writing readable .log to GitHub:', err?.message || err);
+    }
+
+    if (!logRes || !logRes.ok) {
+      // Partial failure: JSON succeeded, but .log failed. Still accept report and return ok: true!
+      console.warn('[BugReport] Report JSON succeeded but readable log failed on GitHub:', {
+        reportId,
+        logStatus: logRes ? logRes.status : 'error'
+      });
     }
 
     res.writeHead(200, { 'Content-Type': 'application/json' });

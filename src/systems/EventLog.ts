@@ -216,7 +216,7 @@ export class EventLog {
     return this.entries
       .map((e) => {
         const timeStr = `[${EventLog.formatElapsed(e.t)}]`;
-        const floorStr = (e.floor || 'Outpost').padEnd(4, ' ');
+        const floorStr = (e.floor || 'Outpost').padEnd(7, ' ');
         const catStr = (e.cat || '').padEnd(11, ' ');
         return `${timeStr} ${floorStr} ${catStr} ${e.msg}`;
       })

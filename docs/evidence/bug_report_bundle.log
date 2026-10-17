@@ -128,5 +128,9 @@
 ✓ Read-only snapshot guarantee passed
 3. Testing snapshot round-trip (bundle -> restoreFromLoadedSnapshot)...
 ✓ Snapshot round-trip passed
+4. Testing late-game bug report bundle size (must be under 1.5 MB)...
+[GameState] 💾 Checkpoint persisted to storage (Day 1, 4 members, 41798 bytes)
+Late-game bundle size: 817339 bytes (798.2 KB, 0.779 MB)
+✓ Late-game bundle size is well under 1.5 MB cap
 ALL BugReportBundle tests passed!
 

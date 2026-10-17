@@ -1,6 +1,145 @@
 --- TEST SUITE: Server Bug Report Handler ---
-1. Testing valid bug report handling and GitHub Contents API dispatch...
-✓ Valid bug report dispatch passed
+[GameState] Initialized from player.json boot seed with Hero & Valerie: {
+  hp: 50,
+  criticalHp: 25,
+  energy: 100,
+  knownSkillIds: [],
+  equippedSkillIds: [],
+  autocastMap: {},
+  skillCooldownsRemainingMs: {},
+  proficiencies: {
+    short_swords: { level: 0, currentExp: 0 },
+    construction: { level: 0, currentExp: 0 },
+    fist: { level: 0, currentExp: 0 },
+    daggers: { level: 0, currentExp: 0 },
+    shields: { level: 0, currentExp: 0 },
+    dual_wielding: { level: 0, currentExp: 0 },
+    alchemy: { level: 0, currentExp: 0 },
+    evasion: { level: 0, currentExp: 0 },
+    parry: { level: 0, currentExp: 0 },
+    block: { level: 0, currentExp: 0 },
+    counterattack: { level: 0, currentExp: 0 },
+    resilience: { level: 0, currentExp: 0 },
+    health_regen: { level: 0, currentExp: 0 },
+    mana_regen: { level: 0, currentExp: 0 },
+    energy_regen: { level: 0, currentExp: 0 },
+    staff: { level: 0, currentExp: 0 },
+    druid_staff: { level: 0, currentExp: 0 },
+    healing_magic: { level: 0, currentExp: 0 },
+    fire_magic: { level: 0, currentExp: 0 },
+    foraging: { level: 0, currentExp: 0 },
+    woodcutting: { level: 0, currentExp: 0 },
+    mining: { level: 0, currentExp: 0 },
+    mace: { level: 0, currentExp: 0 },
+    blacksmithing: { level: 0, currentExp: 0 },
+    armorsmithing: { level: 0, currentExp: 0 },
+    digging: { level: 0, currentExp: 0 },
+    perception: { level: 0, currentExp: 0 },
+    skinning: { level: 0, currentExp: 0 },
+    butchering: { level: 0, currentExp: 0 },
+    lockpicking: { level: 0, currentExp: 0 },
+    gardening: { level: 0, currentExp: 0 },
+    longswords: { level: 0, currentExp: 0 },
+    dark_magic: { level: 0, currentExp: 0 },
+    light_armor: { level: 0, currentExp: 0 },
+    medium_armor: { level: 0, currentExp: 0 },
+    heavy_armor: { level: 0, currentExp: 0 },
+    fishing: { level: 0, currentExp: 0 },
+    enchanting: { level: 0, currentExp: 0 },
+    water_magic: { level: 0, currentExp: 0 },
+    earth_magic: { level: 0, currentExp: 0 },
+    nature_magic: { level: 0, currentExp: 0 },
+    wind_magic: { level: 0, currentExp: 0 }
+  },
+  classLevels: {},
+  unlockedClasses: [],
+  resources: { wood: 100, ore: 0 },
+  placedBuildables: [],
+  hunger: 100,
+  mood: 50,
+  currentGameDay: 1,
+  foodItems: [],
+  equippedWeaponId: 'short_swords',
+  offhandWeaponId: null,
+  dungeonFloorCount: 0,
+  encounteredEnemies: [],
+  discoveredProficiencies: [ 'short_swords' ],
+  discoveredStatusEffects: [],
+  discoveredGatheringNodes: [],
+  defeatedAreaBosses: [],
+  quickSlots: [ 'revive_potion', 'bandage', 'energy_potion', 'antidote' ],
+  worldFlags: {},
+  grovePityCounter: 0,
+  party: [
+    {
+      id: 'player',
+      name: 'Guild Hero',
+      avatarKey: 'player-avatar',
+      hp: 50,
+      criticalHp: 25,
+      energy: 100,
+      equippedWeaponId: 'short_swords',
+      offhandWeaponId: null,
+      inventory: [Object],
+      knownSkillIds: [],
+      equippedSkillIds: [],
+      autocastMap: {},
+      skillCooldownsRemainingMs: {},
+      proficiencies: [Object],
+      classLevels: {},
+      classStats: {},
+      unlockedClasses: [],
+      activeClass: null,
+      bookLearnedSkills: [],
+      hunger: 100,
+      mood: 50,
+      state: 'idle'
+    },
+    {
+      id: 'companion_1',
+      name: 'Valerie',
+      avatarKey: 'companion-avatar',
+      avatarTextureKey: 'companion-avatar',
+      hp: 50,
+      criticalHp: 25,
+      energy: 100,
+      equippedWeaponId: 'bows',
+      offhandWeaponId: 'daggers',
+      inventory: [Object],
+      knownSkillIds: [Array],
+      equippedSkillIds: [Array],
+      autocastMap: [Object],
+      skillCooldownsRemainingMs: {},
+      proficiencies: [Object],
+      classLevels: [Object],
+      classStats: [Object],
+      unlockedClasses: [Array],
+      activeClass: 'scout',
+      bookLearnedSkills: [],
+      hunger: 100,
+      mood: 50,
+      state: 'idle'
+    }
+  ]
+}
+1. Testing valid bug report handling, sequential execution, and capturing sample_bug_report.log...
+[Player:Valerie] Equipped shield in offhand: Shields
+[Player:Valerie] Valerie's off-hand Shields was unequipped: Greatswords is two-handed
+[Player:Valerie] Equipped main weapon: Greatswords (Range: 1 tiles)
+[Progression] Set class 'scout' to Level 1 (0 EXP) on Guild Hero
+[Player:Valerie] Active class set to: scout
+[Player] Equipped skill: quickshot. Current loadout: [quickshot]
+[Player:Valerie] Cannot set active class to 'fighter': not unlocked.
+[Progression] Set class 'fighter' to Level 1 (0 EXP) on Guild Hero
+[Player:Valerie] Active class set to: fighter
+[Combat] Goblin Scout gave up chase (target was downed). Returning to spawn (50, 50).
+[Combat] Goblin Scout already at spawnPos. State set to 'idle'. Proximity aggro restored.
+✓ Valid bug report dispatch, sequential writes, and sample_bug_report.log generation passed
+1b. Testing 409 Conflict retry mechanism on GitHub Contents API...
+✓ 409 retry mechanism passed (3 calls in total)
+1c. Testing partial failure tolerance (.json succeeds, .log fails)...
+[BugReport] Report JSON succeeded but readable log failed on GitHub: { reportId: 'TG-PART01', logStatus: 500 }
+✓ Partial failure tolerance passed
 2. Testing 2 MB payload capping (2.1 MB -> 413)...
 ✓ Stream aborted on client side during excess byte reception
 ✓ 2 MB stream capping passed
@@ -9,7 +148,7 @@
 4. Testing missing GitHub credentials (missing env -> 503)...
 ✓ Missing env vars return 503 passed
 5. Testing GitHub failure (failed fetch -> 502)...
-[BugReport] GitHub API returned non-OK status: { jsonStatus: 500, logStatus: 500 }
+[BugReport] GitHub API failed writing JSON bundle: { jsonStatus: 500 }
 ✓ GitHub failure handling passed
 6. Testing Content-Type requirement (non-json -> 415) and absence of CORS headers...
 ✓ Content-Type and CORS checks passed
