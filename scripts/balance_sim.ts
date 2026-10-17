@@ -72,6 +72,16 @@ const { Player } = await import('../src/entities/Player.ts');
 const { Enemy } = await import('../src/entities/Enemy.ts');
 const { Pathfinder } = await import('../src/utils/Pathfinder.ts');
 import type { EnemyDef, WeaponDef } from '../src/types/game.ts';
+import {
+  getRequirementChain,
+  chooseWeaponId,
+  weaponProficiencyId,
+  weaponProfList,
+  magicProfList,
+  profToWeapon,
+  magicToStaff
+} from './sim_build.ts';
+
 
 function createMockScene(gridWidth: number = 40, gridHeight: number = 40): any {
   const grid: number[][] = [];
@@ -242,48 +252,6 @@ function mulberry32(a: number) {
   };
 }
 
-const weaponProfList = [
-  'short_swords', 'longswords', 'greatswords', 'daggers', 'katana',
-  'spears', 'mace', 'bows', 'crossbows', 'throwing_weapons', 'fist',
-  'staff', 'druid_staff'
-];
-
-const magicProfList = [
-  'arcane_magic', 'fire_magic', 'water_magic', 'ice_magic', 'earth_magic',
-  'nature_magic', 'lightning_magic', 'wind_magic', 'healing_magic',
-  'holy_magic', 'dark_magic'
-];
-
-const profToWeapon: Record<string, string> = {
-  short_swords: 'short_swords',
-  longswords: 'longsword_1h',
-  greatswords: 'greatswords',
-  daggers: 'daggers',
-  katana: 'katana',
-  spears: 'spears',
-  mace: 'mace',
-  bows: 'bows',
-  crossbows: 'crossbows',
-  throwing_weapons: 'throwing_weapons',
-  fist: 'fist',
-  staff: 'staff',
-  druid_staff: 'druid_staff'
-};
-
-const magicToStaff: Record<string, string> = {
-  arcane_magic: 'arcane_staff',
-  fire_magic: 'fire_staff',
-  water_magic: 'water_staff',
-  ice_magic: 'ice_staff',
-  earth_magic: 'earth_staff',
-  nature_magic: 'nature_staff',
-  lightning_magic: 'lightning_staff',
-  wind_magic: 'wind_staff',
-  healing_magic: 'healing_staff',
-  holy_magic: 'holy_staff',
-  dark_magic: 'dark_staff'
-};
-
 const tierLevels: Record<string, number> = {
   novice: 30,
   adept: 50,
@@ -309,7 +277,8 @@ function runFightSimulation(
   mode: 'real' | 'unlimited',
   seed: number,
   playerData: any,
-  dataLoader: any
+  dataLoader: any,
+  singleTarget: boolean = false
 ): SimRunResult {
   const origLog = console.log;
   const origWarn = console.warn;
@@ -335,8 +304,9 @@ function runFightSimulation(
     const stat = companion.progression.getProficiencyStat(prof);
     if (stat) stat.level = tierLvl;
   }
-  if (chosenWeaponDef.proficiencyId) {
-    const stat = companion.progression.getProficiencyStat(chosenWeaponDef.proficiencyId);
+  const weaponProf = weaponProficiencyId(chosenWeaponDef);
+  if (weaponProf) {
+    const stat = companion.progression.getProficiencyStat(weaponProf);
     if (stat) stat.level = tierLvl;
   }
 
@@ -393,16 +363,22 @@ function runFightSimulation(
 
   combat.party = [companion, ally];
 
-  // 3 dummy enemies at distances 1, 1.4, 3
+  // 3 dummy enemies at distances 1, 1.4, 3 (or 1 dummy if singleTarget)
   const dummy1 = createDummyEnemy(scene, 11, 10, 'Dummy A', 100000);
-  const dummy2 = createDummyEnemy(scene, 11, 11, 'Dummy B', 100000);
-  const dummy3 = createDummyEnemy(scene, 13, 10, 'Dummy C', 100000);
-  combat.enemies = [dummy1, dummy2, dummy3];
+  let dummy2: any = null;
+  let dummy3: any = null;
+  if (singleTarget) {
+    combat.enemies = [dummy1];
+  } else {
+    dummy2 = createDummyEnemy(scene, 11, 11, 'Dummy B', 100000);
+    dummy3 = createDummyEnemy(scene, 13, 10, 'Dummy C', 100000);
+    combat.enemies = [dummy1, dummy2, dummy3];
+  }
 
   companion.targetEntity = dummy1;
 
   let totalDamageDealt = 0;
-  for (const dummy of [dummy1, dummy2, dummy3]) {
+  for (const dummy of combat.enemies) {
     const origTakeDamage = dummy.takeDamage.bind(dummy);
     dummy.takeDamage = (amount: number) => {
       totalDamageDealt += amount;
@@ -468,8 +444,10 @@ function runFightSimulation(
     companion.update(now, dt);
     ally.update(now, dt);
     dummy1.update(now, dt);
-    dummy2.update(now, dt);
-    dummy3.update(now, dt);
+    if (!singleTarget && dummy2 && dummy3) {
+      dummy2.update(now, dt);
+      dummy3.update(now, dt);
+    }
 
     inCombatUpdate = true;
     combat.update(now, dt);
@@ -518,37 +496,7 @@ async function main() {
 
   const classMap = new Map<string, any>(classesData.classes.map((c: any) => [c.id, c]));
 
-  function getRequirementChain(classDef: any): { profs: string[]; prereqClasses: string[] } {
-    const visitedClasses = new Set<string>();
-    const profs: string[] = [];
-    const prereqClasses: string[] = [];
-
-    function recurse(c: any) {
-      if (!c || visitedClasses.has(c.id)) return;
-      visitedClasses.add(c.id);
-
-      function handleReq(r: any) {
-        if (!r) return;
-        if (r.type === 'proficiency') {
-          if (!profs.includes(r.target)) profs.push(r.target);
-        } else if (r.type === 'classLevel') {
-          if (!prereqClasses.includes(r.target)) prereqClasses.push(r.target);
-          recurse(classMap.get(r.target));
-        }
-        const children = r.of || r.anyOf || r.oneOf || r.requirements;
-        if (Array.isArray(children)) {
-          children.forEach(handleReq);
-        }
-      }
-
-      (c.requirements || []).forEach(handleReq);
-    }
-
-    recurse(classDef);
-    return { profs, prereqClasses };
-  }
-
-  console.log(`Starting Balance Simulation for ${combatClasses.length} combat classes (3 seeds × 90s, real & unlimited)...\n`);
+  console.log(`Starting Balance Simulation for ${combatClasses.length} combat classes (3 seeds × 90s, real & unlimited & single-target real)...\n`);
 
   interface ClassSimRow {
     classId: string;
@@ -562,6 +510,9 @@ async function main() {
     casts_unlimited: number;
     en_spent_real: number;
     seconds_until_energy_below_20: number;
+    dps_real_st: number;
+    build_profs: string;
+    build_prereq_classes: string;
   }
 
   const rows: ClassSimRow[] = [];
@@ -569,39 +520,12 @@ async function main() {
 
   for (let idx = 0; idx < combatClasses.length; idx++) {
     const c = combatClasses[idx];
-    const { profs, prereqClasses } = getRequirementChain(c);
+    const { profs, prereqClasses } = getRequirementChain(c, classMap, { minimal: true });
     const classSkills = skillsData.skills.filter((s: any) =>
       (s.requirements || []).some((r: any) => r.type === 'classLevel' && r.target === c.id)
     );
 
-    const hasWeaponScaling = classSkills.some((s: any) =>
-      (s.effects || []).some((e: any) => e.type === 'damage' && e.scaling === 'weapon')
-    );
-
-    let chosenWeaponId = '';
-    if (c.id === 'brawler') {
-      chosenWeaponId = 'fist';
-    } else if (c.id === 'necromancer') {
-      chosenWeaponId = 'dark_staff';
-    } else if (['grove_walker', 'herbalist', 'druid', 'natures_avatar', 'archdruid'].includes(c.id)) {
-      chosenWeaponId = 'druid_staff';
-    } else if (c.id === 'guardian') {
-      chosenWeaponId = 'short_swords';
-    } else if (hasWeaponScaling) {
-      const firstWpnProf = profs.find(p => weaponProfList.includes(p) && p !== 'shields');
-      if (firstWpnProf && profToWeapon[firstWpnProf]) {
-        chosenWeaponId = profToWeapon[firstWpnProf];
-      } else {
-        chosenWeaponId = 'katana';
-      }
-    } else {
-      const firstMagicProf = profs.find(p => magicProfList.includes(p));
-      if (firstMagicProf && magicToStaff[firstMagicProf]) {
-        chosenWeaponId = magicToStaff[firstMagicProf];
-      } else {
-        chosenWeaponId = 'arcane_staff';
-      }
-    }
+    const chosenWeaponId = chooseWeaponId(c, profs, classSkills);
 
     const chosenWeaponDef: WeaponDef = dataLoader.getWeapon(chosenWeaponId) ||
       weaponsData.weapons.find((w: any) => w.id === chosenWeaponId) ||
@@ -615,6 +539,7 @@ async function main() {
     let totalCastsUnl = 0;
     let totalEnSpentReal = 0;
     let totalSecBelow20 = 0;
+    let totalDpsRealSt = 0;
 
     for (const seed of seeds) {
       const realRes = runFightSimulation(
@@ -626,7 +551,8 @@ async function main() {
         'real',
         seed,
         playerData,
-        dataLoader
+        dataLoader,
+        false
       );
       totalDpsReal += realRes.damageDealt / 90;
       totalHpsReal += realRes.healed / 90;
@@ -643,11 +569,26 @@ async function main() {
         'unlimited',
         seed,
         playerData,
-        dataLoader
+        dataLoader,
+        false
       );
       totalDpsUnl += unlRes.damageDealt / 90;
       totalHpsUnl += unlRes.healed / 90;
       totalCastsUnl += unlRes.casts;
+
+      const realStRes = runFightSimulation(
+        c,
+        chosenWeaponDef,
+        profs,
+        prereqClasses,
+        classSkills,
+        'real',
+        seed,
+        playerData,
+        dataLoader,
+        true
+      );
+      totalDpsRealSt += realStRes.damageDealt / 90;
     }
 
     const row: ClassSimRow = {
@@ -661,7 +602,10 @@ async function main() {
       casts_real: Number((totalCastsReal / seeds.length).toFixed(1)),
       casts_unlimited: Number((totalCastsUnl / seeds.length).toFixed(1)),
       en_spent_real: Number((totalEnSpentReal / seeds.length).toFixed(1)),
-      seconds_until_energy_below_20: Number((totalSecBelow20 / seeds.length).toFixed(1))
+      seconds_until_energy_below_20: Number((totalSecBelow20 / seeds.length).toFixed(1)),
+      dps_real_st: Number((totalDpsRealSt / seeds.length).toFixed(1)),
+      build_profs: profs.join(';'),
+      build_prereq_classes: prereqClasses.join(';')
     };
 
     rows.push(row);
@@ -672,6 +616,7 @@ async function main() {
       `${c.tier.padEnd(8, ' ')} | ` +
       `weapon: ${chosenWeaponId.padEnd(16, ' ')} | ` +
       `dps_real: ${String(row.dps_real).padStart(6, ' ')} | ` +
+      `dps_st: ${String(row.dps_real_st).padStart(6, ' ')} | ` +
       `dps_unl: ${String(row.dps_unlimited).padStart(6, ' ')} | ` +
       `casts_r: ${String(row.casts_real).padStart(4, ' ')} | ` +
       `sec<20: ${String(row.seconds_until_energy_below_20).padStart(5, ' ')}`
@@ -685,9 +630,9 @@ async function main() {
   }
 
   const csvLines = [
-    'class,tier,weapon,dps_real,dps_unlimited,hps_real,hps_unlimited,casts_real,casts_unlimited,en_spent_real,seconds_until_energy_below_20',
+    'class,tier,weapon,dps_real,dps_unlimited,hps_real,hps_unlimited,casts_real,casts_unlimited,en_spent_real,seconds_until_energy_below_20,dps_real_st,build_profs,build_prereq_classes',
     ...rows.map(
-      r => `${r.classId},${r.tier},${r.weapon},${r.dps_real},${r.dps_unlimited},${r.hps_real},${r.hps_unlimited},${r.casts_real},${r.casts_unlimited},${r.en_spent_real},${r.seconds_until_energy_below_20}`
+      r => `${r.classId},${r.tier},${r.weapon},${r.dps_real},${r.dps_unlimited},${r.hps_real},${r.hps_unlimited},${r.casts_real},${r.casts_unlimited},${r.en_spent_real},${r.seconds_until_energy_below_20},${r.dps_real_st},${r.build_profs},${r.build_prereq_classes}`
     )
   ];
 

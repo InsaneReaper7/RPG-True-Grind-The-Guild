@@ -1,0 +1,21 @@
+========================================================================
+SIMULATION DETERMINISM CHECK: current vs a8f7765:docs/balance/class_sim.csv
+========================================================================
+
+Baseline row count: 86
+Current row count:  86
+Classes missing in current CSV: None
+Classes added in current CSV: None
+
+Checking first 11 columns across all classes:
+  * guardian             [CHANGED]: dps_real: 5.6 -> 17.2, dps_unlimited: 5.1 -> 18.1
+  * weaponmaster         [CHANGED]: dps_real: 458.4 -> 168.1, dps_unlimited: 458.4 -> 263.7, casts_real: 45 -> 26, en_spent_real: 1312 -> 630, seconds_until_energy_below_20: 90 -> 4.3
+  * archmage             [CHANGED]: dps_real: 311.2 -> 207.9, dps_unlimited: 311.2 -> 214.7, casts_real: 46 -> 45, en_spent_real: 1434 -> 1392.6, seconds_until_energy_below_20: 90 -> 50.3
+  * elemental_sovereign  [CHANGED]: dps_real: 310.5 -> 288.5, dps_unlimited: 310.5 -> 310.4, casts_real: 46 -> 44, en_spent_real: 1394 -> 1330, seconds_until_energy_below_20: 90 -> 69.3
+  * deathbringer         [CHANGED]: dps_real: 253.3 -> 123.2, dps_unlimited: 324.5 -> 219, hps_real: 7.5 -> 1.4, hps_unlimited: 10.8 -> 7.2, casts_real: 27 -> 20, en_spent_real: 718 -> 510, seconds_until_energy_below_20: 19.8 -> 12.3
+
+Unchanged classes count: 81
+Changed classes count:   5
+Changed classes:         guardian, weaponmaster, archmage, elemental_sovereign, deathbringer
+
+[PASS] Exactly the 5 expected classes changed. Determinism verified for all 81 other classes!

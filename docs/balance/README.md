@@ -11,22 +11,55 @@ Both scripts are executed via `npx tsx` and require no browser runtime:
 # Evaluates raw single-hit execution across all 297 damage skills against a stationary dummy
 npx tsx scripts/skill_probe.ts
 
-# 2. 85-Class Combat Simulation
-# Runs full 90-second combat loops across 3 fixed seeds (1, 2, 3) in both real-energy and unlimited-energy modes
+# 2. 86-Class Combat Simulation
+# Runs full 90-second combat loops across 3 fixed seeds (1, 2, 3) in pack real-energy, pack unlimited-energy, and single-target real-energy modes
 npx tsx scripts/balance_sim.ts
+
+# 3. Simulation Summary
+# Computes pack and single-target medians for melee and casters, and per-class benchmarks
+npx tsx scripts/sim_summary.ts docs/balance/class_sim.csv
 ```
 
 Outputs:
 - `docs/balance/skill_probe.csv`: Per-skill damage ratios, multipliers, and hit verification.
-- `docs/balance/class_sim.csv`: Per-class `dps_real`, `dps_unlimited`, `hps_real`, `hps_unlimited`, `casts_real`, `casts_unlimited`, `en_spent_real`, and `seconds_until_energy_below_20`.
+- `docs/balance/class_sim.csv`: Per-class columns:
+  - `class`: Class identifier.
+  - `tier`: Progression tier (`novice`, `adept`, `expert`, `master`, `prestige`).
+  - `weapon`: Equipped weapon identifier.
+  - `dps_real`: 3-seed average pack DPS with real energy (3 dummy enemies).
+  - `dps_unlimited`: 3-seed average pack DPS with unlimited energy.
+  - `hps_real`: 3-seed average HPS with real energy.
+  - `hps_unlimited`: 3-seed average HPS with unlimited energy.
+  - `casts_real`: 3-seed average skill casts with real energy.
+  - `casts_unlimited`: 3-seed average skill casts with unlimited energy.
+  - `en_spent_real`: 3-seed average energy spent in real energy mode.
+  - `seconds_until_energy_below_20`: Time in seconds until energy drops below 20 (or 90.0s).
+  - `dps_real_st`: 3-seed average single-target DPS with real energy (1 dummy enemy: Dummy A).
+  - `build_profs`: Semicolon-delimited list of proficiencies in the minimal qualifying build.
+  - `build_prereq_classes`: Semicolon-delimited list of prerequisite classes in the minimal qualifying build.
+
+## Build Resolution & Levelling Rules
+
+### 1. Minimal Qualifying Build
+- The balance sim models a character who meets only the **minimal qualifying requirements** for the class:
+  - `anyOf` with `count: N`: follows the first N options in data order.
+  - `anyOf` without `count`: follows all options.
+  - `oneOf`: follows the first option only.
+  - Recurses only into class-level requirements that were followed.
+- Avoids stat inflation from multi-branch alternative requirements (`weaponmaster`, `archmage`, `elemental_sovereign`, `deathbringer`).
+
+### 2. Equipped Weapon Proficiency
+- The equipped weapon's associated proficiency is always levelled to the tier level (e.g. 100 for prestige), in addition to proficiencies present in the requirement chain.
+- Resolves by `proficiencyId`, reverse mapping of `profToWeapon`, or `spellWeaponId`.
 
 ## Design Notes & Known Boundaries
 
 ### 1. Brawler (Intended Outlier)
 - Brawler operates with unarmed fists (`attackIntervalMs: 750`, `damagePerLevel: 1.5`, zero weapon weight encumbrance).
-- Brawler is an intentional outlier by design fantasy and is excluded from tier median calculations so as not to skew melee progression benchmarks.
+- Brawler is an intentional outlier by design fantasy and is excluded from tier median calculations in both documentation and code (`sim_summary.ts`, `balance_sim.ts`) so as not to skew melee progression benchmarks.
 
 ### 2. Casters and Healers (Energy-Limited by Design)
 - Casters and healers are intentionally energy-limited until the planned per-level stat gain system arrives.
 - Their `dps_real` and `hps_real` gaps compared to `dps_unlimited` and `hps_unlimited` are known, expected, and preserved by design.
 - Magic school basic attacks feature reduced energy costs (`energyCostPerCast`: 4–6 EN) to ensure consistent rotation filler without stalling companion AI.
+- Single-target measurements (`dps_real_st`) isolate raw single-target output from AoE school advantages (fire splash, lightning chain, wind pierce).

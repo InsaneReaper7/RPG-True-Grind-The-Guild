@@ -38,20 +38,86 @@ export function summarizeSim(csvSource: string): void {
       classId: parts[0]?.trim(),
       tier: parts[1]?.trim(),
       weapon: parts[2]?.trim(),
-      dps_real: parseFloat(parts[3] || '0')
+      dps_real: parseFloat(parts[3] || '0'),
+      dps_real_st: parseFloat(parts[11] || '0')
     };
   });
 
   const tiers = ['novice', 'adept', 'expert', 'master', 'prestige'];
-  console.log(`Simulation Summary: ${csvSource}`);
-  console.log('| Tier | Overall Median DPS | Melee-only Median DPS |');
-  console.log('|---|---|---|');
+
+  // Calculate medians per tier
+  const tierStats: Record<string, {
+    packMeleeMed: number;
+    packCasterMed: number;
+    packRatio: number;
+    stMeleeMed: number;
+    stCasterMed: number;
+    stRatio: number;
+  }> = {};
+
+  console.log(`Simulation Summary: ${csvSource}\n`);
+  console.log('TIER MEDIANS (Brawler excluded):');
+  console.log('| Tier     | Pack Melee Med | Pack Caster Med | Caster ÷ Melee (Pack) | ST Melee Med | ST Caster Med | Caster ÷ Melee (ST) |');
+  console.log('|---|---|---|---|---|---|---|');
+
   for (const t of tiers) {
     const tRows = rows.filter(r => r.tier === t);
-    const overallMed = median(tRows.map(r => r.dps_real));
-    // Melee-only leaves out healing_staff and every magic *_staff, but keeps druid_staff
-    const meleeMed = median(tRows.filter(r => r.weapon === 'druid_staff' || !r.weapon.endsWith('_staff')).map(r => r.dps_real));
-    console.log(`| ${t.padEnd(8)} | ${overallMed.toFixed(1).padStart(18)} | ${meleeMed.toFixed(1).padStart(21)} |`);
+
+    // Melee: excludes brawler, leaves out healing_staff and magic *_staff, keeps druid_staff
+    const meleeRows = tRows.filter(r => r.classId !== 'brawler' && (r.weapon === 'druid_staff' || !r.weapon.endsWith('_staff')));
+
+    // Casters: every *_staff except druid_staff and healing_staff
+    const casterRows = tRows.filter(r => r.classId !== 'brawler' && r.weapon.endsWith('_staff') && r.weapon !== 'druid_staff' && r.weapon !== 'healing_staff');
+
+    const packMeleeMed = median(meleeRows.map(r => r.dps_real));
+    const packCasterMed = median(casterRows.map(r => r.dps_real));
+    const packRatio = packMeleeMed > 0 ? (packCasterMed / packMeleeMed) : 0;
+
+    const stMeleeMed = median(meleeRows.map(r => r.dps_real_st));
+    const stCasterMed = median(casterRows.map(r => r.dps_real_st));
+    const stRatio = stMeleeMed > 0 ? (stCasterMed / stMeleeMed) : 0;
+
+    tierStats[t] = {
+      packMeleeMed,
+      packCasterMed,
+      packRatio,
+      stMeleeMed,
+      stCasterMed,
+      stRatio
+    };
+
+    const packRatioStr = (packRatio * 100).toFixed(1) + '%';
+    const stRatioStr = (stRatio * 100).toFixed(1) + '%';
+
+    console.log(
+      `| ${t.padEnd(8)} ` +
+      `| ${packMeleeMed.toFixed(1).padStart(14)} ` +
+      `| ${packCasterMed.toFixed(1).padStart(15)} ` +
+      `| ${packRatioStr.padStart(21)} ` +
+      `| ${stMeleeMed.toFixed(1).padStart(12)} ` +
+      `| ${stCasterMed.toFixed(1).padStart(13)} ` +
+      `| ${stRatioStr.padStart(19)} |`
+    );
+  }
+
+  console.log('\nPER-CLASS BENCHMARKS:');
+  console.log('| Class                    | Tier     | Weapon           | dps_real | % Pack Melee | dps_real_st | % ST Melee |');
+  console.log('|---|---|---|---|---|---|---|');
+
+  for (const r of rows) {
+    const stats = tierStats[r.tier];
+    const packPct = stats && stats.packMeleeMed > 0 ? ((r.dps_real / stats.packMeleeMed) * 100).toFixed(1) + '%' : 'N/A';
+    const stPct = stats && stats.stMeleeMed > 0 ? ((r.dps_real_st / stats.stMeleeMed) * 100).toFixed(1) + '%' : 'N/A';
+
+    console.log(
+      `| ${r.classId.padEnd(24)} ` +
+      `| ${r.tier.padEnd(8)} ` +
+      `| ${r.weapon.padEnd(16)} ` +
+      `| ${r.dps_real.toFixed(1).padStart(8)} ` +
+      `| ${packPct.padStart(12)} ` +
+      `| ${r.dps_real_st.toFixed(1).padStart(11)} ` +
+      `| ${stPct.padStart(10)} |`
+    );
   }
 }
 

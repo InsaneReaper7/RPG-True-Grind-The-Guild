@@ -1,0 +1,187 @@
+Starting Balance Simulation for 86 combat classes (3 seeds × 90s, real & unlimited & single-target real)...
+
+[ 1/86] fencer               | novice   | weapon: short_swords     | dps_real:     19 | dps_st:   18.9 | dps_unl:   31.7 | casts_r:  7.7 | sec<20:   3.9
+[ 2/86] guardian             | novice   | weapon: short_swords     | dps_real:   17.2 | dps_st:   18.9 | dps_unl:   18.1 | casts_r:   10 | sec<20:   5.5
+[ 3/86] vanguard             | adept    | weapon: short_swords     | dps_real:   34.5 | dps_st:   33.1 | dps_unl:   35.8 | casts_r:   10 | sec<20:   0.8
+[ 4/86] medic                | novice   | weapon: healing_staff    | dps_real:      2 | dps_st:    1.7 | dps_unl:      0 | casts_r:    5 | sec<20:   1.5
+[ 5/86] staff_adept          | novice   | weapon: staff            | dps_real:   10.4 | dps_st:   10.1 | dps_unl:   13.8 | casts_r:   15 | sec<20:   6.3
+[ 6/86] combat_medic         | novice   | weapon: healing_staff    | dps_real:    2.2 | dps_st:    2.1 | dps_unl:      3 | casts_r:    4 | sec<20:   1.3
+[ 7/86] ember_adept          | novice   | weapon: fire_staff       | dps_real:   18.8 | dps_st:    9.5 | dps_unl:   43.8 | casts_r:    4 | sec<20:     5
+[ 8/86] bludgeoner           | novice   | weapon: mace             | dps_real:   13.7 | dps_st:   14.4 | dps_unl:     18 | casts_r:    7 | sec<20:     5
+[ 9/86] spark_adept          | novice   | weapon: lightning_staff  | dps_real:   17.8 | dps_st:    8.8 | dps_unl:   39.1 | casts_r:    4 | sec<20:   4.8
+[10/86] frost_initiate       | novice   | weapon: ice_staff        | dps_real:      9 | dps_st:    8.1 | dps_unl:   22.1 | casts_r:    4 | sec<20:   4.8
+[11/86] acolyte              | novice   | weapon: holy_staff       | dps_real:    9.9 | dps_st:    8.6 | dps_unl:   28.4 | casts_r:    4 | sec<20:   4.8
+[12/86] tide_adept           | novice   | weapon: water_staff      | dps_real:    9.8 | dps_st:      8 | dps_unl:   24.9 | casts_r:    4 | sec<20:   4.8
+[13/86] sprout_keeper        | novice   | weapon: nature_staff     | dps_real:    8.6 | dps_st:    7.8 | dps_unl:   17.7 | casts_r:    5 | sec<20:     5
+[14/86] gale_adept           | novice   | weapon: wind_staff       | dps_real:   16.1 | dps_st:    8.6 | dps_unl:   36.7 | casts_r:    5 | sec<20:   4.3
+[15/86] stoneheart_initiate  | novice   | weapon: earth_staff      | dps_real:    8.4 | dps_st:      7 | dps_unl:   20.4 | casts_r:    4 | sec<20:   4.3
+[16/86] restoration_mage     | expert   | weapon: healing_staff    | dps_real:    0.4 | dps_st:    0.4 | dps_unl:      0 | casts_r:    5 | sec<20:   6.5
+[17/86] marksman             | novice   | weapon: bows             | dps_real:   12.2 | dps_st:   12.2 | dps_unl:   19.2 | casts_r:    8 | sec<20:     4
+[18/86] scout                | adept    | weapon: daggers          | dps_real:   25.8 | dps_st:   25.9 | dps_unl:   23.9 | casts_r:   12 | sec<20:   4.8
+[19/86] brawler              | novice   | weapon: fist             | dps_real:   56.5 | dps_st:   56.6 | dps_unl:   79.6 | casts_r:    9 | sec<20:   2.5
+[20/86] squire               | novice   | weapon: longsword_1h     | dps_real:   16.9 | dps_st:   16.8 | dps_unl:     23 | casts_r:    9 | sec<20:     4
+[21/86] cultist              | novice   | weapon: dark_staff       | dps_real:    8.1 | dps_st:    7.5 | dps_unl:   17.3 | casts_r:    5 | sec<20:   6.3
+[22/86] dark_knight          | expert   | weapon: longsword_1h     | dps_real:   70.7 | dps_st:   69.3 | dps_unl:   84.9 | casts_r:   18 | sec<20:  12.8
+[23/86] lancer               | novice   | weapon: spears           | dps_real:   15.8 | dps_st:   15.9 | dps_unl:   22.1 | casts_r:    8 | sec<20:     4
+[24/86] hoplite              | adept    | weapon: spears           | dps_real:   32.4 | dps_st:   31.6 | dps_unl:   42.7 | casts_r:    9 | sec<20:     3
+[25/86] swordsman            | novice   | weapon: katana           | dps_real:   21.7 | dps_st:   20.5 | dps_unl:   29.1 | casts_r:    8 | sec<20:   3.3
+[26/86] ronin                | adept    | weapon: katana           | dps_real:   37.3 | dps_st:   34.8 | dps_unl:   56.9 | casts_r:    9 | sec<20:   3.3
+[27/86] samurai              | adept    | weapon: katana           | dps_real:   37.9 | dps_st:   36.4 | dps_unl:   48.1 | casts_r:    8 | sec<20:   1.5
+[28/86] skirmisher           | novice   | weapon: throwing_weapons | dps_real:   16.2 | dps_st:   16.9 | dps_unl:   19.9 | casts_r:    9 | sec<20:   2.5
+[29/86] javelin              | adept    | weapon: spears           | dps_real:   29.6 | dps_st:   26.7 | dps_unl:   46.2 | casts_r:    9 | sec<20:   3.3
+[30/86] loader               | novice   | weapon: crossbows        | dps_real:   13.2 | dps_st:   12.7 | dps_unl:   20.4 | casts_r:    9 | sec<20:   4.8
+[31/86] arcane_initiate      | novice   | weapon: arcane_staff     | dps_real:   11.6 | dps_st:   11.5 | dps_unl:   26.8 | casts_r:   18 | sec<20:   5.3
+[32/86] spellsword           | adept    | weapon: longsword_1h     | dps_real:   32.3 | dps_st:   33.2 | dps_unl:   40.2 | casts_r:   20 | sec<20:  14.3
+[33/86] thrower              | adept    | weapon: throwing_weapons | dps_real:   30.2 | dps_st:   28.9 | dps_unl:   49.7 | casts_r:   12 | sec<20:   2.5
+[34/86] brute                | novice   | weapon: greatswords      | dps_real:   20.9 | dps_st:   18.9 | dps_unl:   41.8 | casts_r:    7 | sec<20:   3.3
+[35/86] cutthroat            | novice   | weapon: daggers          | dps_real:     16 | dps_st:   15.5 | dps_unl:   18.6 | casts_r:    9 | sec<20:   2.5
+[36/86] duelist              | adept    | weapon: short_swords     | dps_real:   34.5 | dps_st:   32.3 | dps_unl:   42.4 | casts_r:   10 | sec<20:   3.3
+[37/86] ranger               | adept    | weapon: bows             | dps_real:   25.3 | dps_st:   23.7 | dps_unl:     39 | casts_r:   10 | sec<20:   3.3
+[38/86] reaver               | adept    | weapon: greatswords      | dps_real:   33.7 | dps_st:   33.2 | dps_unl:   71.1 | casts_r:    7 | sec<20:   3.3
+[39/86] shadow_initiate      | adept    | weapon: daggers          | dps_real:   26.8 | dps_st:   25.7 | dps_unl:   30.8 | casts_r:   16 | sec<20:   8.5
+[40/86] sharpshooter         | adept    | weapon: crossbows        | dps_real:   33.4 | dps_st:   29.1 | dps_unl:   49.3 | casts_r:    9 | sec<20:   2.8
+[41/86] battle_medic         | adept    | weapon: mace             | dps_real:     24 | dps_st:   24.1 | dps_unl:   22.4 | casts_r:   14 | sec<20:     5
+[42/86] flamecaller          | adept    | weapon: fire_staff       | dps_real:   37.4 | dps_st:   17.8 | dps_unl:   90.6 | casts_r:    4 | sec<20:   4.8
+[43/86] frostcaller          | adept    | weapon: water_staff      | dps_real:   16.7 | dps_st:   13.2 | dps_unl:   40.5 | casts_r:    4 | sec<20:   4.8
+[44/86] stormtouched         | adept    | weapon: lightning_staff  | dps_real:     34 | dps_st:   15.7 | dps_unl:     68 | casts_r:    4 | sec<20:   4.8
+[45/86] windwalker           | adept    | weapon: wind_staff       | dps_real:   27.8 | dps_st:   15.8 | dps_unl:     61 | casts_r:    6 | sec<20:   4.3
+[46/86] naturalist           | adept    | weapon: nature_staff     | dps_real:   15.8 | dps_st:   14.6 | dps_unl:   37.1 | casts_r:    5 | sec<20:   6.3
+[47/86] priest               | adept    | weapon: holy_staff       | dps_real:   17.2 | dps_st:   13.9 | dps_unl:   28.9 | casts_r:    4 | sec<20:   2.3
+[48/86] warlock              | adept    | weapon: dark_staff       | dps_real:   14.8 | dps_st:   14.3 | dps_unl:   28.4 | casts_r:    5 | sec<20:   6.3
+[49/86] blademaster          | expert   | weapon: katana           | dps_real:   59.6 | dps_st:   58.8 | dps_unl:  119.2 | casts_r:   11 | sec<20:   2.3
+[50/86] assassin             | expert   | weapon: daggers          | dps_real:   42.8 | dps_st:   42.6 | dps_unl:   49.1 | casts_r:   20 | sec<20:  10.8
+[51/86] shadowblade          | expert   | weapon: daggers          | dps_real:   43.3 | dps_st:   41.6 | dps_unl:   62.7 | casts_r:   19 | sec<20:   6.3
+[52/86] arcane_archer        | expert   | weapon: bows             | dps_real:   47.9 | dps_st:   42.4 | dps_unl:   86.1 | casts_r:   21 | sec<20:  10.3
+[53/86] storm_archer         | expert   | weapon: bows             | dps_real:   43.6 | dps_st:   39.5 | dps_unl:   73.8 | casts_r:   20 | sec<20:   4.3
+[54/86] witch_hunter         | expert   | weapon: crossbows        | dps_real:   50.1 | dps_st:   49.3 | dps_unl:   64.1 | casts_r:   18 | sec<20:   5.3
+[55/86] knight               | expert   | weapon: short_swords     | dps_real:   56.5 | dps_st:   53.6 | dps_unl:   63.1 | casts_r:   12 | sec<20:   2.5
+[56/86] paladin              | expert   | weapon: short_swords     | dps_real:   64.7 | dps_st:   58.1 | dps_unl:   86.7 | casts_r:   19 | sec<20:   6.3
+[57/86] juggernaut           | expert   | weapon: greatswords      | dps_real:   62.8 | dps_st:   57.3 | dps_unl:  150.7 | casts_r:    8 | sec<20:     2
+[58/86] battlemage           | expert   | weapon: longsword_1h     | dps_real:     65 | dps_st:   54.2 | dps_unl:  111.2 | casts_r:   24 | sec<20:  19.5
+[59/86] storm_lancer         | expert   | weapon: spears           | dps_real:   60.6 | dps_st:   55.3 | dps_unl:   91.4 | casts_r:   20 | sec<20:  12.8
+[60/86] dragoon              | expert   | weapon: spears           | dps_real:   60.7 | dps_st:     53 | dps_unl:    122 | casts_r:   10 | sec<20:   2.8
+[61/86] elementalist         | expert   | weapon: fire_staff       | dps_real:   95.3 | dps_st:   44.2 | dps_unl:  148.4 | casts_r:   20 | sec<20:  16.8
+[62/86] aquamancer           | expert   | weapon: water_staff      | dps_real:   30.8 | dps_st:   28.5 | dps_unl:   51.7 | casts_r:    5 | sec<20:   3.5
+[63/86] cryomancer           | expert   | weapon: ice_staff        | dps_real:   30.4 | dps_st:   28.8 | dps_unl:   54.4 | casts_r:    5 | sec<20:   6.3
+[64/86] geomancer            | expert   | weapon: earth_staff      | dps_real:   33.3 | dps_st:   24.7 | dps_unl:   77.9 | casts_r:    4 | sec<20:   6.3
+[65/86] cleric               | expert   | weapon: holy_staff       | dps_real:     29 | dps_st:   27.6 | dps_unl:   15.7 | casts_r:   13 | sec<20:   9.5
+[66/86] sword_saint          | master   | weapon: katana           | dps_real:   88.6 | dps_st:   85.1 | dps_unl:  165.3 | casts_r:   13 | sec<20:   2.3
+[67/86] death_knight         | master   | weapon: greatswords      | dps_real:    116 | dps_st:   98.7 | dps_unl:  196.7 | casts_r:   21 | sec<20:     5
+[68/86] celestial_knight     | master   | weapon: longsword_1h     | dps_real:  124.1 | dps_st:   97.3 | dps_unl:  161.1 | casts_r:   29 | sec<20:  21.5
+[69/86] shadow_monk          | master   | weapon: short_swords     | dps_real:   85.2 | dps_st:   83.7 | dps_unl:   98.5 | casts_r:   24 | sec<20:  11.3
+[70/86] demon_hunter         | master   | weapon: short_swords     | dps_real:   69.1 | dps_st:   68.4 | dps_unl:    101 | casts_r:   23 | sec<20:   4.3
+[71/86] arcane_knight        | master   | weapon: longsword_1h     | dps_real:   89.6 | dps_st:   82.3 | dps_unl:  159.7 | casts_r:   29 | sec<20:  15.3
+[72/86] elemental_knight     | master   | weapon: longsword_1h     | dps_real:  110.1 | dps_st:   85.9 | dps_unl:  110.1 | casts_r:   47 | sec<20:  74.8
+[73/86] tempest              | master   | weapon: bows             | dps_real:   91.5 | dps_st:   59.3 | dps_unl:  141.9 | casts_r:   34 | sec<20:  13.3
+[74/86] grove_walker         | novice   | weapon: druid_staff      | dps_real:   11.3 | dps_st:     11 | dps_unl:    8.8 | casts_r:    4 | sec<20:   3.3
+[75/86] herbalist            | adept    | weapon: druid_staff      | dps_real:     21 | dps_st:   18.9 | dps_unl:   29.7 | casts_r:    5 | sec<20:   2.3
+[76/86] druid                | expert   | weapon: druid_staff      | dps_real:   37.8 | dps_st:     31 | dps_unl:   81.3 | casts_r:    6 | sec<20:   3.3
+[77/86] necromancer          | master   | weapon: dark_staff       | dps_real:   43.4 | dps_st:   39.3 | dps_unl:   82.8 | casts_r:   13 | sec<20:   7.8
+[78/86] natures_avatar       | master   | weapon: druid_staff      | dps_real:   62.5 | dps_st:   52.7 | dps_unl:  101.4 | casts_r:   23 | sec<20:  15.8
+[79/86] swordmaster          | prestige | weapon: katana           | dps_real:  114.5 | dps_st:  113.9 | dps_unl:  230.5 | casts_r:   16 | sec<20:   2.3
+[80/86] weaponmaster         | prestige | weapon: katana           | dps_real:  168.1 | dps_st:  154.4 | dps_unl:  263.7 | casts_r:   26 | sec<20:   4.3
+[81/86] archmage             | prestige | weapon: arcane_staff     | dps_real:  207.9 | dps_st:   66.5 | dps_unl:  214.7 | casts_r:   45 | sec<20:  50.3
+[82/86] grand_paladin        | prestige | weapon: short_swords     | dps_real:  163.2 | dps_st:  130.4 | dps_unl:    208 | casts_r:   34 | sec<20:  23.3
+[83/86] dark_lord            | prestige | weapon: greatswords      | dps_real:  170.9 | dps_st:  139.9 | dps_unl:  363.7 | casts_r:   23 | sec<20:   4.8
+[84/86] archdruid            | prestige | weapon: druid_staff      | dps_real:   76.2 | dps_st:   63.2 | dps_unl:  142.8 | casts_r:   25 | sec<20:  18.5
+[85/86] elemental_sovereign  | prestige | weapon: fire_staff       | dps_real:  288.5 | dps_st:   81.4 | dps_unl:  310.4 | casts_r:   44 | sec<20:  69.3
+[86/86] deathbringer         | prestige | weapon: greatswords      | dps_real:  123.2 | dps_st:  108.1 | dps_unl:    219 | casts_r:   20 | sec<20:  12.3
+
+Saved 86 rows to docs\balance\class_sim.csv.
+
+========================================================================
+TIER MEDIANS, TOP 5 AND BOTTOM 5 CLASSES BY dps_real
+========================================================================
+
+--- TIER: NOVICE (26 classes) | Overall Median: 13.2 | Melee-only Median (excl staff): 16.1 | Strict Melee Median: 16.9 ---
+  Top 5 by dps_real:
+    brawler (intended outlier)   | weapon: fist             | dps_real:   56.5 | dps_unl:   79.6 | casts_r: 9
+    swordsman                    | weapon: katana           | dps_real:   21.7 | dps_unl:   29.1 | casts_r: 8
+    brute                        | weapon: greatswords      | dps_real:   20.9 | dps_unl:   41.8 | casts_r: 7
+    fencer                       | weapon: short_swords     | dps_real:     19 | dps_unl:   31.7 | casts_r: 7.7
+    ember_adept                  | weapon: fire_staff       | dps_real:   18.8 | dps_unl:   43.8 | casts_r: 4
+  Bottom 5 by dps_real:
+    medic                        | weapon: healing_staff    | dps_real:      2 | dps_unl:      0 | casts_r: 5
+    combat_medic                 | weapon: healing_staff    | dps_real:    2.2 | dps_unl:      3 | casts_r: 4
+    cultist                      | weapon: dark_staff       | dps_real:    8.1 | dps_unl:   17.3 | casts_r: 5
+    stoneheart_initiate          | weapon: earth_staff      | dps_real:    8.4 | dps_unl:   20.4 | casts_r: 4
+    sprout_keeper                | weapon: nature_staff     | dps_real:    8.6 | dps_unl:   17.7 | casts_r: 5
+
+--- TIER: ADEPT (22 classes) | Overall Median: 29.9 | Melee-only Median (excl staff): 32.3 | Strict Melee Median: 32.4 ---
+  Top 5 by dps_real:
+    samurai                      | weapon: katana           | dps_real:   37.9 | dps_unl:   48.1 | casts_r: 8
+    flamecaller                  | weapon: fire_staff       | dps_real:   37.4 | dps_unl:   90.6 | casts_r: 4
+    ronin                        | weapon: katana           | dps_real:   37.3 | dps_unl:   56.9 | casts_r: 9
+    vanguard                     | weapon: short_swords     | dps_real:   34.5 | dps_unl:   35.8 | casts_r: 10
+    duelist                      | weapon: short_swords     | dps_real:   34.5 | dps_unl:   42.4 | casts_r: 10
+  Bottom 5 by dps_real:
+    warlock                      | weapon: dark_staff       | dps_real:   14.8 | dps_unl:   28.4 | casts_r: 5
+    naturalist                   | weapon: nature_staff     | dps_real:   15.8 | dps_unl:   37.1 | casts_r: 5
+    frostcaller                  | weapon: water_staff      | dps_real:   16.7 | dps_unl:   40.5 | casts_r: 4
+    priest                       | weapon: holy_staff       | dps_real:   17.2 | dps_unl:   28.9 | casts_r: 4
+    herbalist                    | weapon: druid_staff      | dps_real:     21 | dps_unl:   29.7 | casts_r: 5
+
+--- TIER: EXPERT (20 classes) | Overall Median: 49 | Melee-only Median (excl staff): 59.6 | Strict Melee Median: 60.7 ---
+  Top 5 by dps_real:
+    elementalist                 | weapon: fire_staff       | dps_real:   95.3 | dps_unl:  148.4 | casts_r: 20
+    dark_knight                  | weapon: longsword_1h     | dps_real:   70.7 | dps_unl:   84.9 | casts_r: 18
+    battlemage                   | weapon: longsword_1h     | dps_real:     65 | dps_unl:  111.2 | casts_r: 24
+    paladin                      | weapon: short_swords     | dps_real:   64.7 | dps_unl:   86.7 | casts_r: 19
+    juggernaut                   | weapon: greatswords      | dps_real:   62.8 | dps_unl:  150.7 | casts_r: 8
+  Bottom 5 by dps_real:
+    restoration_mage             | weapon: healing_staff    | dps_real:    0.4 | dps_unl:      0 | casts_r: 5
+    cleric                       | weapon: holy_staff       | dps_real:     29 | dps_unl:   15.7 | casts_r: 13
+    cryomancer                   | weapon: ice_staff        | dps_real:   30.4 | dps_unl:   54.4 | casts_r: 5
+    aquamancer                   | weapon: water_staff      | dps_real:   30.8 | dps_unl:   51.7 | casts_r: 5
+    geomancer                    | weapon: earth_staff      | dps_real:   33.3 | dps_unl:   77.9 | casts_r: 4
+
+--- TIER: MASTER (10 classes) | Overall Median: 89.1 | Melee-only Median (excl staff): 90.5 | Strict Melee Median: 89.6 ---
+  Top 5 by dps_real:
+    celestial_knight             | weapon: longsword_1h     | dps_real:  124.1 | dps_unl:  161.1 | casts_r: 29
+    death_knight                 | weapon: greatswords      | dps_real:    116 | dps_unl:  196.7 | casts_r: 21
+    elemental_knight             | weapon: longsword_1h     | dps_real:  110.1 | dps_unl:  110.1 | casts_r: 47
+    tempest                      | weapon: bows             | dps_real:   91.5 | dps_unl:  141.9 | casts_r: 34
+    arcane_knight                | weapon: longsword_1h     | dps_real:   89.6 | dps_unl:  159.7 | casts_r: 29
+  Bottom 5 by dps_real:
+    necromancer                  | weapon: dark_staff       | dps_real:   43.4 | dps_unl:   82.8 | casts_r: 13
+    natures_avatar               | weapon: druid_staff      | dps_real:   62.5 | dps_unl:  101.4 | casts_r: 23
+    demon_hunter                 | weapon: short_swords     | dps_real:   69.1 | dps_unl:    101 | casts_r: 23
+    shadow_monk                  | weapon: short_swords     | dps_real:   85.2 | dps_unl:   98.5 | casts_r: 24
+    sword_saint                  | weapon: katana           | dps_real:   88.6 | dps_unl:  165.3 | casts_r: 13
+
+--- TIER: PRESTIGE (8 classes) | Overall Median: 165.6 | Melee-only Median (excl staff): 163.2 | Strict Melee Median: 163.2 ---
+  Top 5 by dps_real:
+    elemental_sovereign          | weapon: fire_staff       | dps_real:  288.5 | dps_unl:  310.4 | casts_r: 44
+    archmage                     | weapon: arcane_staff     | dps_real:  207.9 | dps_unl:  214.7 | casts_r: 45
+    dark_lord                    | weapon: greatswords      | dps_real:  170.9 | dps_unl:  363.7 | casts_r: 23
+    weaponmaster                 | weapon: katana           | dps_real:  168.1 | dps_unl:  263.7 | casts_r: 26
+    grand_paladin                | weapon: short_swords     | dps_real:  163.2 | dps_unl:    208 | casts_r: 34
+  Bottom 5 by dps_real:
+    archdruid                    | weapon: druid_staff      | dps_real:   76.2 | dps_unl:  142.8 | casts_r: 25
+    swordmaster                  | weapon: katana           | dps_real:  114.5 | dps_unl:  230.5 | casts_r: 16
+    deathbringer                 | weapon: greatswords      | dps_real:  123.2 | dps_unl:    219 | casts_r: 20
+    grand_paladin                | weapon: short_swords     | dps_real:  163.2 | dps_unl:    208 | casts_r: 34
+    weaponmaster                 | weapon: katana           | dps_real:  168.1 | dps_unl:  263.7 | casts_r: 26
+
+========================================================================
+GREATSWORD & KATANA CLASSES: BEFORE (4c9420a) vs AFTER:
+========================================================================
+  brute            | weapon: greatswords  | tier: novice    | dps_real:  23.9 ->  20.9 (-12.6%) | dps_unl:  45.7 ->  41.8
+  reaver           | weapon: greatswords  | tier: adept     | dps_real:  34.5 ->  33.7 (-2.3%) | dps_unl:  73.4 ->  71.1
+  juggernaut       | weapon: greatswords  | tier: expert    | dps_real:  54.4 ->  62.8 (+15.4%) | dps_unl: 142.8 -> 150.7
+  death_knight     | weapon: greatswords  | tier: master    | dps_real:    59 ->   116 (+96.6%) | dps_unl: 123.8 -> 196.7
+  dark_lord        | weapon: greatswords  | tier: prestige  | dps_real:  81.1 -> 170.9 (+110.7%) | dps_unl: 216.9 -> 363.7
+  deathbringer     | weapon: greatswords  | tier: prestige  | dps_real:  71.4 -> 123.2 (+72.5%) | dps_unl: 168.3 ->   219
+  swordsman        | weapon: katana       | tier: novice    | dps_real:  21.4 ->  21.7 (+1.4%) | dps_unl:    29 ->  29.1
+  ronin            | weapon: katana       | tier: adept     | dps_real:  35.1 ->  37.3 (+6.3%) | dps_unl:    55 ->  56.9
+  samurai          | weapon: katana       | tier: adept     | dps_real:  32.8 ->  37.9 (+15.5%) | dps_unl:  42.7 ->  48.1
+  blademaster      | weapon: katana       | tier: expert    | dps_real:  47.5 ->  59.6 (+25.5%) | dps_unl:  98.1 -> 119.2
+  sword_saint      | weapon: katana       | tier: master    | dps_real:  67.2 ->  88.6 (+31.8%) | dps_unl:   136 -> 165.3
+  swordmaster      | weapon: katana       | tier: prestige  | dps_real:  70.7 -> 114.5 (+62.0%) | dps_unl: 151.7 -> 230.5
+  weaponmaster     | weapon: katana       | tier: prestige  | dps_real: 107.9 -> 168.1 (+55.8%) | dps_unl:   177 -> 263.7
+
+========================================================================
+ZERO-DAMAGE CLASSES:
+========================================================================
+  - medic (tier: novice, weapon: healing_staff): dps_real=2, dps_unlimited=0
+  - restoration_mage (tier: expert, weapon: healing_staff): dps_real=0.4, dps_unlimited=0
