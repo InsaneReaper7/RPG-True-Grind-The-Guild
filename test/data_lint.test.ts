@@ -40,7 +40,7 @@ console.log('2. Checking combat class skill counts...');
 const combatClasses = classesData.classes.filter(
   (c: any) => c.category !== 'crafting' && c.tier !== 'crafting' && !c.isCrafting
 );
-assert.strictEqual(combatClasses.length, 85, 'There must be exactly 85 combat classes');
+assert.strictEqual(combatClasses.length, 86, 'There must be exactly 86 combat classes');
 
 const classSkillsMap = new Map<string, string[]>();
 for (const c of combatClasses) {

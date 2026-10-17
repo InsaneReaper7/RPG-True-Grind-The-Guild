@@ -749,7 +749,7 @@ console.log('- `brawler`: Tier 0 unarmed brawler (Fist 10), partial kit (1/5: ha
 console.log('- `hoplite`: Tier 1 armored spearman (Spears 30 + Shields 30 + Lancer Lv 5 + Guardian Lv 5), kit not yet defined.');
 console.log('- `javelin`: Tier 1 hybrid skirmisher (Spears 30 + Throwing Weapons 30), 5/5 complete kit.');
 console.log('- `angler`: Tier 0 gathering specialist (Fishing 10), kit not yet defined.');
-console.log('- `dragoon`: Heavy-armor spear line from the original GDD (not yet in classes.json).');
+console.log('- `dragoon`: Tier 2 heavy-armor spear line (Spears 60 + Heavy Armor 30 + Hoplite Lv 15), 5/5 complete kit.');
 
 // ============================================================================
 // SECTION H: Existing combat building blocks

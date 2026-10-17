@@ -58,6 +58,7 @@ paladin,expert,short_swords,64.7,86.7,1.4,3.6,19,45,386,6.3
 juggernaut,expert,greatswords,62.8,150.7,0,0,8,40,212.5,2
 battlemage,expert,longsword_1h,65,111.2,0,0,24,40,498,19.5
 storm_lancer,expert,spears,60.6,91.4,0,0,20,42,370,12.8
+dragoon,expert,spears,60.7,122,0,0,10,41,208,2.8
 elementalist,expert,fire_staff,95.3,148.4,0,0,20,48,624,16.8
 aquamancer,expert,water_staff,30.8,51.7,5.8,6.7,5,51.7,314,3.5
 cryomancer,expert,ice_staff,30.4,54.4,0,0,5,48,309,6.3

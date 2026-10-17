@@ -1,10 +1,10 @@
 === DATA LINT GLOBAL GUARD TEST ===
 
 1. Checking ID uniqueness...
-✓ PASS: 94 class IDs and 425 skill IDs are unique.
+✓ PASS: 95 class IDs and 430 skill IDs are unique.
 
 2. Checking combat class skill counts...
-✓ PASS: All 85 combat classes have exactly 5 skills.
+✓ PASS: All 86 combat classes have exactly 5 skills.
 
 3. Checking status effect references...
 ✓ PASS: All status references exist in statusEffects.json (38 valid statuses).

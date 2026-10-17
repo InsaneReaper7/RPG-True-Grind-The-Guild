@@ -9587,6 +9587,191 @@
       ]
     },
     {
+      "id": "drake_thrust",
+      "name": "Drake Thrust",
+      "energyCost": 16,
+      "cooldownMs": 3000,
+      "targetType": "enemy",
+      "rangeTiles": 1,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "dragoon",
+          "value": 1
+        }
+      ],
+      "description": "Delivers a heavy spear thrust dealing 150% weapon damage, scaling with Heavy Armor proficiency (+0.15 per level).",
+      "ai": {
+        "role": "rotation",
+        "priority": 30
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "weapon",
+          "multiplier": 1.5,
+          "profBonus": {
+            "prof": "heavy_armor",
+            "perLevel": 0.15
+          }
+        }
+      ]
+    },
+    {
+      "id": "iron_scales",
+      "name": "Iron Scales",
+      "energyCost": 22,
+      "cooldownMs": 15000,
+      "targetType": "self",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "dragoon",
+          "value": 10
+        }
+      ],
+      "description": "Hardens the Dragoon's defenses like dragon scales, reducing damage taken to 70% (DT 0.7) for 6s.",
+      "ai": {
+        "role": "defensive",
+        "priority": 60
+      },
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "damageTakenMultiplier",
+          "value": 0.7,
+          "durationMs": 6000,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "dragon_dive",
+      "name": "Dragon Dive",
+      "energyCost": 28,
+      "cooldownMs": 10000,
+      "targetType": "enemy",
+      "rangeTiles": 4,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "dragoon",
+          "value": 20
+        }
+      ],
+      "description": "Leaps high into the sky and crashes down on the target up to 4 tiles away, dealing 220% weapon damage (scaling with Heavy Armor proficiency) in a 1.5-tile radius around the target with a 30% chance to stun the main target.",
+      "ai": {
+        "role": "gapCloser",
+        "priority": 60
+      },
+      "effects": [
+        {
+          "type": "move",
+          "moveType": "leap"
+        },
+        {
+          "type": "damage",
+          "scaling": "weapon",
+          "multiplier": 2.2,
+          "profBonus": {
+            "prof": "heavy_armor",
+            "perLevel": 0.15
+          },
+          "area": {
+            "shape": "radius",
+            "radius": 1.5
+          }
+        },
+        {
+          "type": "applyStatus",
+          "status": "stun",
+          "chance": 0.3
+        }
+      ]
+    },
+    {
+      "id": "wyrmpiercer",
+      "name": "Wyrmpiercer",
+      "energyCost": 30,
+      "cooldownMs": 9000,
+      "targetType": "enemy",
+      "rangeTiles": 1,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "dragoon",
+          "value": 30
+        }
+      ],
+      "description": "Pierces through up to 3 targets in a line dealing 260% weapon damage and exposing the main target (100%).",
+      "ai": {
+        "role": "rotation",
+        "priority": 60,
+        "condition": {
+          "enemiesInRadius": 2
+        }
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "weapon",
+          "multiplier": 2.6,
+          "area": {
+            "shape": "line",
+            "maxTargets": 3
+          }
+        },
+        {
+          "type": "applyStatus",
+          "status": "expose",
+          "chance": 1
+        }
+      ]
+    },
+    {
+      "id": "highwind",
+      "name": "Highwind",
+      "energyCost": 44,
+      "cooldownMs": 18000,
+      "targetType": "enemy",
+      "rangeTiles": 5,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "dragoon",
+          "value": 40
+        }
+      ],
+      "description": "Performs a towering leap onto a target up to 5 tiles away, dealing 360% weapon damage (scaling with Heavy Armor proficiency, amplified by x1.3 against exposed targets) in a 2-tile radius around the target.",
+      "ai": {
+        "role": "finisher",
+        "priority": 85
+      },
+      "effects": [
+        {
+          "type": "move",
+          "moveType": "leap"
+        },
+        {
+          "type": "damage",
+          "scaling": "weapon",
+          "multiplier": 3.6,
+          "profBonus": {
+            "prof": "heavy_armor",
+            "perLevel": 0.15
+          },
+          "area": {
+            "shape": "radius",
+            "radius": 2
+          },
+          "requiresTargetStatus": {
+            "status": "expose",
+            "multiplier": 1.3
+          }
+        }
+      ]
+    },
+    {
       "id": "prismatic_bolt",
       "name": "Prismatic Bolt",
       "energyCost": 20,

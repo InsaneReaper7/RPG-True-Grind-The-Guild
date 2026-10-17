@@ -76,24 +76,18 @@ In Milestone 28, Helmet and Body Armor slots were introduced with flat Max HP bo
 
 ---
 
-## 5. Dragoon Class & Armor Proficiency System (Prerequisite Resolved — Dragoon Ready for Dedicated Scoping)
+## 5. Dragoon Class & Armor Proficiency System (Resolved & Shipped)
 
-### Status Update (Armor Proficiency System Shipped)
-- **Resolved and Shipped**: Trainable **Armor Proficiency** system implemented across `light_armor`, `medium_armor`, and `heavy_armor`.
-- **True Armor Tagging vs. Pure Stat Jewelry**:
-  - The 4 true armor pieces in `armors.json` (Leather Cap, Leather Armor, Silk Cowl, Silk Robe) occupying the Helmet and Body slots are explicitly tagged with their weight class (`light` or `medium`).
-  - The 3 jewelry/accessory pieces (Bone Necklace, Wolf Claw Ring, Venom Charm) occupying Necklace, Ring, and Accessory slots have **no `weightClass` tag** — they are pure stat items with zero involvement in armor proficiency.
-- **Explicit Slot Exclusion & EXP Invariants**:
-  - Combat hooks (`hit`, `attack`, `kill`) and active weight class introspection (`getEquippedArmorWeightClasses()`) **explicitly evaluate only true armor slots (`helmet` and `body`)**.
-  - Necklace, Ring, and Accessory slots are explicitly excluded and contribute zero armor proficiency EXP under any condition.
-- **EXP Awarding Mechanics (Intentional Design Distinction)**:
-  - **Hit (`hit`) — Per-Piece Award**: When a character absorbs a hit in combat, every equipped true armor piece (Helmet/Body) absorbs impact and awards +1 EXP to its corresponding weight class. Wearing 2 light pieces (cowl + robe) awards +2 `light_armor` EXP per hit; wearing 1 light helmet and 1 medium body awards +1 `light_armor` EXP and +1 `medium_armor` EXP per hit. This models physical coverage: more surface area/pieces enduring damage yields more defensive conditioning.
-  - **Attack (`attack`) & Kill (`kill`) — Per-Unique-Class Award**: Offensive actions award +1 EXP (`attack`) and +2 EXP (`kill`) per *unique weight class worn on true armor slots* rather than per piece. A character in full light armor moves and maneuvers within the light encumbrance class as a whole; deduplication prevents offensive action spam from multiplying EXP per piece equipped while still rewarding mixed-weight builds equally (+1/+2 to each worn class).
-- **Known Deliberate Gap — `heavy_armor` Currently Untrainable**:
-  - Zero existing true armor pieces in `armors.json` or recipes in `armorsmithRecipes.json` are tagged `heavy` (all existing true armor pieces are `light` or `medium`).
-  - While the `heavy_armor` proficiency is architecturally complete, tested, and ready in engine logic (trainable stat definition, leveling curves, discovery, and serialization), there is currently no equipment in the game that allows a player to earn EXP in it.
-  - **Prerequisite Tracking (Matching Throwing Weapons → Javelin)**: Exactly matching how Throwing Weapons was tracked as Javelin's missing prerequisite piece (Milestone 49 → Milestone 54), Heavy Armor equipment (e.g., Iron Plate, Forged Heavy Mail) is a known, deliberate prerequisite that must be introduced in a future blacksmithing/armor milestone before players can earn `heavy_armor` levels to satisfy Dragoon's requirement (`Spears 60 + Heavy Armor 30 + Lancer/Hoplite Lv 15`).
-- **Next Step for Dragoon**: Introduce heavy armor craftables/equipment in an armor expansion milestone to enable `heavy_armor` training, and resolve the Lancer/Hoplite naming and evolutionary branch decisions.
+### Status Update (Implemented & Complete)
+- **Resolved and Shipped**: With heavy armor equipment (`iron_greathelm`, `iron_plate_armor`) introduced in the armor expansion (798910f / dc29eed), `heavy_armor` became trainable through real armor wear in combat.
+- **Dragoon Class Implemented**: `dragoon` added to `data/classes.json` with Tier 2 Expert requirements (`spears: 60`, `heavy_armor: 30`, `hoplite: 15`), hidden skill bonus `{ "resilience": 0.05 }`, and primary attribute `str`.
+- **Full 5-Skill Kit**: Implemented in `data/skills.json`:
+  1. `drake_thrust` (Class Lv 1): 1.5× weapon damage + PB heavy (+0.15 per Heavy Armor level), 16 EN, 3 s CD, Range 1.
+  2. `iron_scales` (Class Lv 10): DT 0.7 for 6 s self-buff, 22 EN, 15 s CD.
+  3. `dragon_dive` (Class Lv 20): move `leap` + 2.2× weapon damage + PB heavy, radius 1.5 around target, 30% stun, 28 EN, 10 s CD, Range 4.
+  4. `wyrmpiercer` (Class Lv 30): 2.6× weapon damage, line AoE (`maxTargets: 3`), 100% expose, 30 EN, 9 s CD, Range 1, AI rotation 60 (≥2).
+  5. `highwind` (Class Lv 40): move `leap` + 3.6× weapon damage + PB heavy, radius 2 around target, ×1.3 vs exposed targets, 44 EN, 18 s CD, Range 5.
+- **Roster Count**: Combat classes increased from 85 → **86** (STR 39, DEX 13, INT 34), total classes from 94 → **95**, total skill IDs from 425 → **430**.
 
 ---
 
@@ -110,19 +104,16 @@ In Milestone 28, Helmet and Body Armor slots were introduced with flat Max HP bo
      - *Tier 1 (Adept)*: **Hoplite** (`id: "hoplite"`, `Spears 30 + Shields 10`)
    - What is live as `"lancer"` corresponds mechanically to documented `Spearman`, and `"hoplite"` corresponds mechanically to documented `Lancer`.
 
-2. **Evolution Path Divergence (Dragoon vs. Storm Lancer)**:
-   - Early project concept and Section 5 above define Lancer's Tier 2 evolution as **Dragoon**, gated behind a new Heavy Armor proficiency system.
-   - The canonical `class_system (1).md` documents Lancer's Tier 2 evolution as **Storm Lancer**, gated behind `Spears 30 + Lightning Magic 30 + Lancer Lv 15` (elemental magic synergy rather than armor proficiency).
+2. **Evolution Path Divergence (Dragoon vs. Storm Lancer) — Resolved as Dual Branches**:
+   - The decision from 2026-09-26 confirmed **Direction 1 (Dual Branches)**:
+     - **Storm Lancer** (Magical / Lightning hybrid: `Spears 30 + Lightning Magic 30 + Hoplite Lv 15`).
+     - **Dragoon** (Martial / Heavy armor juggernaut: `Spears 60 + Heavy Armor 30 + Hoplite Lv 15`).
+   - Both evolutions are now live in `classes.json`.
 
 ### Eventual Decision Points (Deferred — Non-blocking)
 - **Class Naming / IDs**:
   - *Option A (Deliberate Divergence)*: Keep current shipped IDs and names (`lancer` at Spears 10, `hoplite` at Spears 30 + Shields 10) as an accepted divergence (preserves save compatibility and existing tests/references; "Hoplite" is an evocative and accurate name for Spear + Shield).
   - *Option B (Canonical Alignment)*: Perform a formal migration renaming `lancer` -> `spearman` and `hoplite` -> `lancer` across `classes.json`, tests, and save deserializers.
-- **Tier 2 Progression Architecture**:
-  - *Direction 1 (Dual Branches)*: Support both evolutions branching from the spear tree:
-    - **Storm Lancer** (Magical / Lightning hybrid: `Spears 30 + Lightning Magic 30 + Lancer Lv 15`).
-    - **Dragoon** (Martial / Heavy armor juggernaut: `Spears 60 + Heavy Armor 30 + Lancer/Hoplite Lv 15`).
-  - *Direction 2 (Single Intended Direction)*: Select either Storm Lancer or Dragoon as the canonical evolution.
 
 ---
 

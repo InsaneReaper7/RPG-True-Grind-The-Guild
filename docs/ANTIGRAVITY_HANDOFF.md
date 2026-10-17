@@ -1896,3 +1896,41 @@ The following three intentional behavioural changes were reviewed and accepted b
     - `docs/evidence/milestone_second_boss.log`
   - Production build: `npm run build` succeeds cleanly.
 
+### Class: Dragoon (Tier 2 Heavy-Armor Spear Line) (2026-10-17)
+
+**Resolved and shipped: Implemented the Dragoon class directly per Director specification as the martial Tier 2 spear evolution alongside Storm Lancer. The prerequisite heavy armor system and starter iron gear are now utilized end-to-end to train heavy armor proficiency, unlock Dragoon, and scale Dragoon's signature attacks.**
+
+- **1. Class Definition & Progression (`data/classes.json`)**:
+  - `id`: `dragoon`, `name`: `Dragoon`, `tier`: `expert`.
+  - Requirements (ANDed): `spears: 60`, `heavy_armor: 30`, `hoplite: 15`.
+  - Fantasy: `"Armored dragon-knight who strikes from the sky"`.
+  - Hidden skill bonus: `{ "resilience": 0.05 }`.
+  - Primary attribute: `str` (assigned via `scripts/assign_primary_attribute.ts`).
+  - Total classes: 94 → **95**; Combat classes: 85 → **86** (STR: 38 → **39**, DEX: 13, INT: 34); Crafting classes: 9.
+- **2. The 5-Skill Kit (`data/skills.json`)**:
+  - `drake_thrust` (Class Lv 1): 1.5× weapon damage + PB heavy (+0.15 per Heavy Armor level), 16 EN, 3 s CD, Range 1, AI rotation 30 (+0.4% efficiency vs `blade_strike`).
+  - `iron_scales` (Class Lv 10): DT 0.7 for 6 s (self buff `damageTakenMultiplier: 0.7`, `durationMs: 6000`), 22 EN, 15 s CD, Range —, AI defensive 60.
+  - `dragon_dive` (Class Lv 20): move `leap` + 2.2× weapon damage + PB heavy (+0.15), radius 1.5 around target, 30% stun chance (no `durationMs`), 28 EN, 10 s CD, Range 4, AI gapCloser 60.
+  - `wyrmpiercer` (Class Lv 30): 2.6× weapon damage, line AoE (`maxTargets: 3`), 100% expose (no `durationMs`), 30 EN, 9 s CD, Range 1, AI rotation 60 (`condition: { "enemiesInRadius": 2 }`).
+  - `highwind` (Class Lv 40): move `leap` + 3.6× weapon damage + PB heavy (+0.15), radius 2 around target, ×1.3 vs exposed targets (`requiresTargetStatus: { "status": "expose", "multiplier": 1.3 }`), 44 EN, 18 s CD, Range 5, AI finisher 85.
+  - Total skills: 425 → **430**.
+- **3. Balance Simulation (`scripts/balance_sim.ts`, `docs/balance/class_sim.csv`)**:
+  - Dragoon row added deterministically with zero changes to any existing class rows:
+    - `dragoon,expert,spears,60.7,122,0,0,10,41,208,2.8`
+  - Peer expert melee comparisons:
+    - `storm_lancer`: 60.6 real DPS
+    - `knight`: 56.5 real DPS
+    - `juggernaut`: 62.8 real DPS
+  - New summary: Expert overall median 49.0 DPS, melee-only median 58.0 DPS.
+- **4. Edited Tests**:
+  - `test/data_lint.test.ts`: Updated combat class count assertion from 85 → 86.
+  - `test/milestone49.test.ts`: In TEST 8, updated historical deferral check from asserting Dragoon absent to confirming Dragoon is implemented and present in `classes.json`.
+- **5. Verification & Testing**:
+  - `test/class_dragoon.test.ts`: 7 automated tests covering expected-table guards, durationMs checks, 5 unlock boundary permutations, end-to-end heavy armor leveling through real hits (`awardArmorWearExp('hit')`), PB heavy scaling normalized by `strMultiplier` (4.5 diff), Dragon Dive leap and target-centered radius 1.5 splash, Highwind 1.3× expose synergy, and 60s 3-enemy smoke test (4/5 skills cast).
+  - Evidence committed:
+    - `docs/evidence/class_dragoon.log`
+    - `docs/evidence/data_lint.log`
+    - `docs/evidence/milestone49.log`
+    - `docs/evidence/full_suite.log`
+  - Production build: `npm run build` succeeds cleanly.
+

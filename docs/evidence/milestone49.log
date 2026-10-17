@@ -1,0 +1,58 @@
+================================================================
+⚔️ RUNNING MILESTONE 49 TEST SUITE: SPEARS, HOPLITE & LANCER ⚔️
+================================================================
+
+--- TEST 1: Spears Data Integrity & Handedness ---
+✓ PASS: Both 1H and 2H Spear weapon items exist with correct handedness and non-colliding IDs.
+
+--- TEST 2: Real & Obvious Damage Differential ---
+  1H Spear base damage: 7
+  2H Spear base damage: 12
+  Derived base damage increase: +71.4%
+✓ PASS: 2H Spear delivers ~71.4% higher base damage with steeper per-level scaling.
+
+--- TEST 3: Equipping & Shield Compatibility (1H vs 2H) ---
+[Player:Guild Hero] Equipped main weapon: One-Handed Spear (Range: 1 tiles)
+[Player:Guild Hero] Equipped shield in offhand: Shields
+[Player:Guild Hero] Guild Hero's off-hand Shields was unequipped: Two-Handed Spear is two-handed
+[Player:Guild Hero] Equipped main weapon: Two-Handed Spear (Range: 1 tiles)
+[Player:Guild Hero] Cannot equip offhand while wielding a two-handed weapon!
+✓ PASS: 1H Spear cleanly allows Shield pairing for Hoplite, and 2H Spear strictly blocks offhand.
+
+--- TEST 4: Blacksmithing Recipes for Both Spear Variants ---
+✓ PASS: Both 1H and 2H Spear recipes are craftable, consume correct materials, and yield items.
+
+--- TEST 5: Combat Loop & Shared Proficiency Growth ---
+[Player:Guild Hero] Equipped main weapon: One-Handed Spear (Range: 1 tiles)
+[KnowledgeBase] 🐺 First encountered enemy: 'wolf'! (+1 RP)
+[Bestiary] 🐺 First encounter with Wolf! (+1 RP)
+[DIAG:Combat] ⚔️ Guild Hero attacks Wolf with One-Handed Spear! inCombat: false, Pre-EN: 100.0, Post-EN: 100.0, Range: 1, Dist: 1
+[Combat] Guild Hero attacks Wolf with One-Handed Spear for 7.0 damage! (Base: 7, Lv 0 Bonus: +0.0, Accuracy: 100.0%)
+[Progression] +2 EXP for 'spears' (Guild Hero). Current: Level 0 (2/50 EXP)
+[Progression] Recorded tx 'spears': +2 EXP for Guild Hero, resulting total: Level 0 (2/50 EXP)
+[Player:Guild Hero] Equipped main weapon: Two-Handed Spear (Range: 1 tiles)
+[DIAG:Combat] ⚔️ Guild Hero attacks Wolf with Two-Handed Spear! inCombat: false, Pre-EN: 100.0, Post-EN: 100.0, Range: 1, Dist: 1
+[Combat] Guild Hero attacks Wolf with Two-Handed Spear for 12.0 damage! (Base: 12, Lv 0 Bonus: +0.0, Accuracy: 100.0%)
+[Progression] +2 EXP for 'spears' (Guild Hero). Current: Level 0 (4/50 EXP)
+[Progression] Recorded tx 'spears': +2 EXP for Guild Hero, resulting total: Level 0 (4/50 EXP)
+✓ PASS: Both 1H and 2H variants function in combat and award shared "spears" proficiency EXP.
+
+--- TEST 6: Lancer (Spears-only) Boundary Test ---
+[Progression] Class Unlocked: Lancer (lancer) for Lancer Candidate!
+✓ PASS: Lancer unlocks cleanly at Spears Level 10 with zero secondary requirements.
+
+--- TEST 7: Hoplite Dual-Requirement 2D Boundary Checks ---
+[Progression] Class Unlocked: Lancer (lancer) for Hoplite Candidate A!
+[Progression] Class Unlocked: Guardian (guardian) for Hoplite Candidate B!
+[Progression] Class Unlocked: Lancer (lancer) for Hoplite Candidate B!
+[Progression] Class Unlocked: Guardian (guardian) for Hoplite Candidate C!
+[Progression] Class Unlocked: Lancer (lancer) for Hoplite Candidate C!
+[Progression] Class Unlocked: Hoplite (hoplite) for Hoplite Candidate C!
+✓ PASS: Hoplite dual-requirement boundary checks strictly enforced on both axes.
+
+--- TEST 8: Progression of Formerly Deferred Classes ---
+✓ PASS: Javelin and Dragoon implementation and historical documentation confirmed.
+
+================================================================
+🎉 ALL 8 MILESTONE 49 TESTS PASSED CLEANLY & SUCCESSFULLY! 🎉
+================================================================
