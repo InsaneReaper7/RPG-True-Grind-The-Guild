@@ -149,10 +149,8 @@ Never ask Antigravity to jump ahead in this list — each milestone assumes the 
     - `attack` and `kill` are **per-unique-class**: offensive combat maneuvers are performed within the armor encumbrance class as a whole, not per piece. Deduplication avoids artificial EXP inflation from equipping multiple lightweight items while still cleanly awarding +1/+2 EXP across all active weight classes for mixed loadouts.
   - Follows universal `LevelingSystem` curve with floating combat level-up notifications.
   - Discoveries feed `GameState.discoveredProficiencies`, Knowledge Base Codex, and Party Overview.
-- **Known Deliberate Gap — `heavy_armor` Currently Untrainable**:
-  - All 4 existing true armor items in `data/armors.json` (and recipes in `data/armorsmithRecipes.json`) are tagged `light` or `medium` — zero pieces are tagged `heavy`.
-  - While the `heavy_armor` proficiency is fully implemented, verified, and functional in code (trainable stat definition, leveling curve, UI, and serialization), there is currently no equipment in the game that allows a player to earn EXP in it.
-  - **Prerequisite Tracking (Matching Throwing Weapons → Javelin)**: Exactly matching how Throwing Weapons was tracked as Javelin's missing piece (Milestone 49 → Milestone 54), Heavy Armor equipment (e.g., Iron Plate / Forged Heavy Mail) is a known, deliberate prerequisite that must be introduced in a future blacksmithing/armor milestone before players can earn `heavy_armor` levels to unlock Dragoon (`Spears 60 + Heavy Armor 30 + Lancer/Hoplite Lv 15`).
+- **Resolved Deliberate Gap — `heavy_armor` Trainable from Starter Tier**:
+  - Previously untrainable prior to endgame Void armor. Now fully resolved: `iron_greathelm` and `iron_plate_armor` provide starter-tier heavy armor crafted at level 0 armorsmithing from floor-1 materials (`ore`, `leather`), allowing immediate training of `heavy_armor` from the early game. Mid-tier progression continues with `steel_greathelm` and `steel_plate_armor`.
 - **Zero Regressions**: Preserved 50/50 two-bar HP split, Outpost-only equip rules, Critical HP floor-of-1 safety, and save/snapshot persistence.
 
 **Resolved and shipped: Milestone — Spellsword.**
@@ -1830,3 +1828,48 @@ The following three intentional behavioural changes were reviewed and accepted b
   - `test/data_lint.test.ts`: Passes all 8 checks.
   - Full test suite: `npm test -- --quiet` passed all 134 test suites cleanly.
   - Production build: `npm run build` succeeds cleanly.
+
+### Armor Mitigation, Armor Training Stat Gains, Weight Scaling & Gear Gaps (2026-10-16)
+
+**Resolved and shipped: Implemented armor damage mitigation, linear stat and attribute gains for armor proficiencies (`light_armor`, `medium_armor`, `heavy_armor`), weight reduction on worn armor pieces scaling with armor training, dynamic mid-run encumbrance recalculation, 8 new crafted armor pieces closing starter and mid-tier equipment gaps across light, medium, and heavy armor, and comprehensive HUD stat/tooltip integration.**
+
+- **1. Armor Rating & Mitigation Formula (`data/armors.json`, `src/types/game.ts`, `src/entities/Player.ts`, `src/systems/CombatSystem.ts`)**:
+  - Added `armorRating` and `tier` (`'starter' | 'mid' | 'void'`) to `ArmorDef`. Every true armor piece (helmet or body) has an `armorRating`.
+  - Effective rating calculation: $R_i = \text{armorRating} \times (1 + 0.02 \times \text{proficiencyLevel})$.
+  - Mitigation formula: $\text{reduction} = \frac{R}{R + 100}$, where $R = \sum R_i$ across all worn armor pieces. No cap.
+  - Applied to every enemy direct hit (melee, ranged, and spells) after evasion, parry, and block, and before shields and resilience.
+  - Floor of 1 on mitigated damage if incoming direct damage is $\ge 1$.
+  - DoTs, traps, reflect (Frost Thorns), fall damage, and self-inflicted damage remain strictly exempt from armor mitigation.
+- **2. Armor Proficiency Stat Gains & Attribute Growth (`data/statGains.json`, `test/data_lint.test.ts`)**:
+  - Created `"armor"` category in `data/statGains.json` granting +0.3 Max HP per proficiency level.
+  - Moved `light_armor`, `medium_armor`, and `heavy_armor` out of `excluded` into `armor`.
+  - Added attribute gains:
+    - `light_armor`: +0.05 DEX per level.
+    - `medium_armor`: +0.025 STR, +0.025 DEX per level.
+    - `heavy_armor`: +0.05 STR per level.
+  - `data_lint` Check 8 verified passing (all 56 proficiencies registered exactly once).
+- **3. Worn Weight Reduction & Mid-Run Encumbrance Refresh (`src/entities/Player.ts`)**:
+  - Each level of an armor proficiency reduces the carried weight of worn pieces of that class by 0.5% (floor at $0.5 \times$ original weight).
+  - Only equipped armor is lightened; armor in bags weighs full catalog weight.
+  - `recalculateDerivedStats()` invokes `this.updateEncumbrance()`, ensuring mid-run level-ups instantly recalculate carried weight and update encumbrance state.
+- **4. Behavior Change: Boss Splash & Shard Hits Mitigated by Recipient**:
+  - In `src/systems/CombatSystem.ts`, Boss Cleave shockwave (`member.takeDamage(splashDamage)`) and Glacial Sovereign shards (`member.takeDamage(shardDamage)`) now calculate splash/shard damage from the raw hit (`rawDamage * ratio`) and apply the **recipient's own** `applyArmorMitigation`.
+  - A heavily armored main target no longer artificially shrinks the splash damage taken by neighboring allies; each ally mitigates based on their own worn armor.
+- **5. Gear Gaps Filled (`data/armors.json`, `data/armorsmithRecipes.json`)**:
+  - Added 8 new armor pieces using existing gathered/dropped materials (`leather`, `wolf_pelt`, `ore`, `bone`, `orc_hide`, `undead_ashes`, `silk`):
+    - Light: `padded_tunic` (starter body).
+    - Medium: `reinforced_leather_helm` (starter helmet), `studded_leather_helm` (mid helmet), `studded_leather_armor` (mid body).
+    - Heavy: `iron_greathelm` (starter helmet), `iron_plate_armor` (starter body), `steel_greathelm` (mid helmet), `steel_plate_armor` (mid body).
+  - `hpBonus` follows strict tier and slot rules (Starter Helm: 15, Starter Body: 25; Mid Helm: 30, Mid Body: 50). Weight class governs rating vs. weight trade-offs.
+  - All pieces include explicit 50/50 Max HP and Critical HP split descriptions and full salvage support through `CraftingSystem.getRecipeForGear`.
+  - Heavy armor is now trainable from starter tier via `iron_greathelm` and `iron_plate_armor`.
+- **6. HUD & Character Sheet Integration (`src/ui/HUD.ts`)**:
+  - Character sheet displays `"Armor: R {effectiveRating} · −{reduction}% damage taken"` row beneath defenses (hidden when $R = 0$).
+  - Paperdoll and inventory tooltips display `"Armor {rating} ({weightClass})"`.
+  - Armor proficiency rows display `"+{X}% armor rating · −{Y}% worn weight"`.
+- **7. Verification & Evidence Logs**:
+  - `test/armorProgressionMitigation.test.ts`: 9 automated end-to-end tests covering mitigation, exempt damage, wear EXP, stat/attribute gains, worn weight reduction, mid-run encumbrance flip, 8 recipe crafting/salvage, starter heavy armor training, and "heavy doesn't dominate" data guard.
+  - Evidence committed: `docs/evidence/armorProgressionMitigation.log` and `docs/evidence/data_lint.log`.
+  - Full test suite: `npm test -- --quiet` passes all 134 test suites (932 tests) cleanly.
+  - Production build: `npm run build` succeeds cleanly.
+

@@ -19,6 +19,11 @@
       "maxHpPerLevel": 0.2,
       "maxEnergyPerLevel": 0.0,
       "inCombatEnergyRegenPerLevel": 0.002
+    },
+    "armor": {
+      "maxHpPerLevel": 0.3,
+      "maxEnergyPerLevel": 0.0,
+      "inCombatEnergyRegenPerLevel": 0.0
     }
   },
   "criticalHpMultiplier": 0.5,
@@ -65,7 +70,10 @@
     "lockpicking": { "dex": 0.02 },
     "skinning": { "dex": 0.02 },
     "enchanting": { "int": 0.02 },
-    "alchemy": { "int": 0.02 }
+    "alchemy": { "int": 0.02 },
+    "light_armor": { "dex": 0.05 },
+    "medium_armor": { "str": 0.025, "dex": 0.025 },
+    "heavy_armor": { "str": 0.05 }
   },
   "assignments": {
     "short_swords": "weapon",
@@ -121,8 +129,8 @@
     "iron_back": "excluded",
     "poison_resistance": "excluded",
     "dual_wielding": "excluded",
-    "light_armor": "excluded",
-    "medium_armor": "excluded",
-    "heavy_armor": "excluded"
+    "light_armor": "armor",
+    "medium_armor": "armor",
+    "heavy_armor": "armor"
   }
 }

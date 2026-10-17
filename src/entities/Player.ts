@@ -526,12 +526,24 @@ export class Player extends Entity {
     this.updateEncumbrance();
   }
 
+  public getEquippedArmorPieceWeight(armor: ArmorDef | null): number {
+    if (!armor || armor.weight === undefined) return 0;
+    if (!armor.weightClass || (armor.slot !== 'helmet' && armor.slot !== 'body')) {
+      return armor.weight;
+    }
+    const profId = getArmorProficiencyId(armor.weightClass);
+    const level = this.progression ? this.progression.getProficiencyLevel(profId) : 0;
+    // Floor at 0.5x original weight, 0.5% weight reduction per level
+    const reductionMultiplier = Math.max(0.5, 1 - 0.005 * level);
+    return Math.round(armor.weight * reductionMultiplier * 100) / 100;
+  }
+
   public getEquippedWeight(): number {
     let weight = 0;
     if (this.equippedWeapon?.weight !== undefined) weight += this.equippedWeapon.weight;
     if (this.offhandWeapon?.weight !== undefined) weight += this.offhandWeapon.weight;
-    if (this.equippedHelmet?.weight !== undefined) weight += this.equippedHelmet.weight;
-    if (this.equippedBodyArmor?.weight !== undefined) weight += this.equippedBodyArmor.weight;
+    if (this.equippedHelmet) weight += this.getEquippedArmorPieceWeight(this.equippedHelmet);
+    if (this.equippedBodyArmor) weight += this.getEquippedArmorPieceWeight(this.equippedBodyArmor);
     if (this.equippedNecklace?.weight !== undefined) weight += this.equippedNecklace.weight;
     if (this.equippedRing?.weight !== undefined) weight += this.equippedRing.weight;
     if (this.equippedAccessory?.weight !== undefined) weight += this.equippedAccessory.weight;
@@ -685,6 +697,7 @@ export class Player extends Entity {
     if (this.energy > this.maxEnergy) {
       this.energy = this.maxEnergy;
     }
+    this.updateEncumbrance();
     this.drawHpBar();
   }
 
@@ -860,6 +873,51 @@ export class Player extends Entity {
         }
       }
     }
+  }
+
+  public getEffectiveArmorRating(): number {
+    let total = 0;
+    const armors = this.getEquippedWeightArmors();
+    for (const armor of armors) {
+      if ((armor.slot === 'helmet' || armor.slot === 'body') && armor.armorRating && armor.weightClass) {
+        const profId = getArmorProficiencyId(armor.weightClass);
+        const level = this.progression ? this.progression.getProficiencyLevel(profId) : 0;
+        const effective = armor.armorRating * (1 + 0.02 * level);
+        total += effective;
+      }
+    }
+    return Math.round(total * 100) / 100;
+  }
+
+  public getArmorDamageReduction(): number {
+    const r = this.getEffectiveArmorRating();
+    if (r <= 0) return 0;
+    return r / (r + 100);
+  }
+
+  public applyArmorMitigation(incomingDamage: number): {
+    finalDamage: number;
+    mitigatedAmount: number;
+    effectiveRating: number;
+    reductionPercent: number;
+  } {
+    if (incomingDamage <= 0) {
+      return { finalDamage: 0, mitigatedAmount: 0, effectiveRating: 0, reductionPercent: 0 };
+    }
+    const r = this.getEffectiveArmorRating();
+    if (r <= 0) {
+      return { finalDamage: incomingDamage, mitigatedAmount: 0, effectiveRating: 0, reductionPercent: 0 };
+    }
+    const reduction = r / (r + 100);
+    const mitigated = Math.round(incomingDamage * (1 - reduction));
+    const finalDamage = Math.max(1, mitigated);
+    const mitigatedAmount = Math.max(0, incomingDamage - finalDamage);
+    return {
+      finalDamage,
+      mitigatedAmount,
+      effectiveRating: r,
+      reductionPercent: reduction
+    };
   }
 
   public isDualWielding(): boolean {

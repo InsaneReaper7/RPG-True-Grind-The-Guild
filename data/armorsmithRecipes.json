@@ -147,6 +147,107 @@
       },
       "expGranted": 95,
       "description": "Encase a legendary void core in woven subterranean silk, anchoring massive extra carry capacity and health."
+    },
+    {
+      "id": "padded_tunic",
+      "name": "Padded Tunic",
+      "resultArmorId": "padded_tunic",
+      "requiredLevel": 0,
+      "ingredients": {
+        "wolf_pelt": 3,
+        "wood": 1
+      },
+      "expGranted": 25,
+      "description": "Craft a lightweight padded tunic from wolf pelts reinforced with wood battening."
+    },
+    {
+      "id": "reinforced_leather_helm",
+      "name": "Reinforced Leather Helm",
+      "resultArmorId": "reinforced_leather_helm",
+      "requiredLevel": 0,
+      "ingredients": {
+        "wolf_pelt": 2,
+        "bone": 1
+      },
+      "expGranted": 25,
+      "description": "Reinforce a leather cap with shaved bone plates for increased defense."
+    },
+    {
+      "id": "iron_greathelm",
+      "name": "Iron Greathelm",
+      "resultArmorId": "iron_greathelm",
+      "requiredLevel": 0,
+      "ingredients": {
+        "ore": 4,
+        "bone": 2
+      },
+      "expGranted": 30,
+      "description": "Hammer raw iron ore and bone into a sturdy full-coverage greathelm."
+    },
+    {
+      "id": "iron_plate_armor",
+      "name": "Iron Plate Armor",
+      "resultArmorId": "iron_plate_armor",
+      "requiredLevel": 0,
+      "ingredients": {
+        "ore": 6,
+        "wood": 2,
+        "bone": 2
+      },
+      "expGranted": 40,
+      "description": "Forge thick iron plates fitted over timber framing and bone rivets."
+    },
+    {
+      "id": "studded_leather_helm",
+      "name": "Studded Leather Helm",
+      "resultArmorId": "studded_leather_helm",
+      "requiredLevel": 5,
+      "ingredients": {
+        "orc_heavy_hide": 1,
+        "wolf_pelt": 2,
+        "steel_scrap": 1
+      },
+      "expGranted": 55,
+      "description": "Fashion a resilient combat helm from orc hide studded with salvaged steel."
+    },
+    {
+      "id": "studded_leather_armor",
+      "name": "Studded Leather Armor",
+      "resultArmorId": "studded_leather_armor",
+      "requiredLevel": 6,
+      "ingredients": {
+        "orc_heavy_hide": 2,
+        "wolf_pelt": 3,
+        "steel_scrap": 2
+      },
+      "expGranted": 75,
+      "description": "Craft an impenetrable vest of thick orc hide heavily studded with steel."
+    },
+    {
+      "id": "steel_greathelm",
+      "name": "Steel Greathelm",
+      "resultArmorId": "steel_greathelm",
+      "requiredLevel": 5,
+      "ingredients": {
+        "steel_scrap": 3,
+        "ore": 4,
+        "orc_heavy_hide": 1
+      },
+      "expGranted": 60,
+      "description": "Forge a heavy steel greathelm incorporating orc leather padding."
+    },
+    {
+      "id": "steel_plate_armor",
+      "name": "Steel Plate Armor",
+      "resultArmorId": "steel_plate_armor",
+      "requiredLevel": 6,
+      "ingredients": {
+        "steel_scrap": 5,
+        "ore": 6,
+        "orc_heavy_hide": 1
+      },
+      "expGranted": 80,
+      "description": "Forge a masterwork suit of articulated steel plate backed by heavy orc hide."
     }
   ]
 }

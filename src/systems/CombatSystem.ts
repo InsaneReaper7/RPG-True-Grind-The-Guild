@@ -813,7 +813,15 @@ export class CombatSystem {
 
                   let actualDamage = rawDamage;
 
-                  const mitigation = hiddenSystem.resolveDamageTaken(context, target.progression, rawDamage);
+                  if (typeof (target as any).applyArmorMitigation === 'function') {
+                    const armorRes = (target as any).applyArmorMitigation(rawDamage);
+                    actualDamage = armorRes.finalDamage;
+                    if (armorRes.mitigatedAmount > 0) {
+                      console.log(`[Combat:Armor] 🛡️ ${target.entityName}'s armor mitigated ${armorRes.mitigatedAmount} damage (Rating: ${armorRes.effectiveRating}, -${(armorRes.reductionPercent * 100).toFixed(1)}%).`);
+                    }
+                  }
+
+                  const mitigation = hiddenSystem.resolveDamageTaken(context, target.progression, actualDamage);
                   actualDamage = mitigation.finalDamage;
 
                   if (mitigation.mitigatedAmount > 0) {
@@ -878,11 +886,15 @@ export class CombatSystem {
                   // Bone Warden has 25% splash, Abyssal Colossus & Magma Tyrant have 50% splash
                   if ((enemy.enemyData.id === 'bone_warden' || enemy.enemyData.id === 'abyssal_colossus' || enemy.enemyData.id === 'magma_tyrant') && actualDamage > 0) {
                     const cleaveRatio = enemy.enemyData.id === 'bone_warden' ? 0.25 : 0.5;
-                    const splashDamage = Math.max(1, Math.round(actualDamage * cleaveRatio));
+                    const rawSplash = Math.max(1, Math.round(rawDamage * cleaveRatio));
                     for (const member of this.party) {
                       if (member !== target && member.state !== 'downed' && member.state !== 'dead') {
                         const dist = Math.hypot(member.gridPos.x - enemy.gridPos.x, member.gridPos.y - enemy.gridPos.y);
                         if (dist <= 1.5) {
+                          let splashDamage = rawSplash;
+                          if (typeof (member as any).applyArmorMitigation === 'function') {
+                            splashDamage = (member as any).applyArmorMitigation(rawSplash).finalDamage;
+                          }
                           const memDowned = member.takeDamage(splashDamage);
                           member?.awardArmorWearExp?.('hit');
                           this.createAttackEffect(enemy.x, enemy.y, member.x, member.y, 0xdc2626);
@@ -929,11 +941,15 @@ export class CombatSystem {
                   if (enemy.enemyData.id === 'glacial_sovereign' && actualDamage > 0) {
                     // Signature Mechanic 1: Glacial Spike Nova / Permafrost Shards
                     // Projectile shards shatter outward from the impact, hitting all other party members within 3 tiles of the target
-                    const shardDamage = Math.max(1, Math.round(actualDamage * 0.4));
+                    const rawShard = Math.max(1, Math.round(rawDamage * 0.4));
                     for (const member of this.party) {
                       if (member !== target && member.state !== 'downed' && member.state !== 'dead') {
                         const distToImpact = Math.hypot(member.gridPos.x - target.gridPos.x, member.gridPos.y - target.gridPos.y);
                         if (distToImpact <= 3.0) {
+                          let shardDamage = rawShard;
+                          if (typeof (member as any).applyArmorMitigation === 'function') {
+                            shardDamage = (member as any).applyArmorMitigation(rawShard).finalDamage;
+                          }
                           const memDowned = member.takeDamage(shardDamage);
                           member?.awardArmorWearExp?.('hit');
                           this.createAttackEffect(target.x, target.y, member.x, member.y, 0x06b6d4);

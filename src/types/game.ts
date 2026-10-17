@@ -568,6 +568,8 @@ export interface ArmorDef {
   slot: ArmorSlot;
   weightClass?: ArmorWeightClass;
   hpBonus: number;
+  armorRating?: number;
+  tier?: 'starter' | 'mid' | 'void';
   weight?: number;
   carryCapacityBonus?: number;
   splitRatio?: string | [number, number];

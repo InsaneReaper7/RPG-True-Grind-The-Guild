@@ -3680,6 +3680,19 @@ export class HUD {
         }
       }
 
+      // 5a. Armor Rating & Mitigation (Director Spec)
+      const armorRowEl = this.partyOverviewRosterEl.querySelector<HTMLElement>(`[data-party-armor="${i}"]`);
+      const armorValEl = this.partyOverviewRosterEl.querySelector<HTMLElement>(`[data-party-armor-val="${i}"]`);
+      const effectiveR = typeof (member as any).getEffectiveArmorRating === 'function' ? (member as any).getEffectiveArmorRating() : 0;
+      if (armorRowEl) {
+        armorRowEl.style.display = effectiveR > 0 ? 'flex' : 'none';
+      }
+      if (armorValEl && effectiveR > 0) {
+        const red = typeof (member as any).getArmorDamageReduction === 'function' ? (member as any).getArmorDamageReduction() : (effectiveR / (effectiveR + 100));
+        const redPct = Math.round(red * 100);
+        this.setElementTextIfChanged(armorValEl, `R ${effectiveR.toFixed(1)} · −${redPct}% damage taken`);
+      }
+
       // 5b. Carry Weight & Encumbrance (Milestone 51)
       const totalWeight = member.getTotalWeight();
       const carryCap = member.getEffectiveCarryCapacity();
@@ -3721,6 +3734,11 @@ export class HUD {
           if (valEl) {
             const nextExp = LevelingSystem.expForNextLevel(stat.level);
             this.setElementTextIfChanged(valEl, `Lv ${stat.level} (${stat.currentExp}/${nextExp})`);
+          }
+          if (rowEl && (statId === 'light_armor' || statId === 'medium_armor' || statId === 'heavy_armor')) {
+            const ratingPct = stat.level * 2;
+            const weightPct = Math.min(50, stat.level * 0.5);
+            rowEl.title = `+${ratingPct}% armor rating · −${weightPct.toFixed(1)}% worn weight`;
           }
         } else {
           if (rowEl && rowEl.style.display !== 'none') {
@@ -3821,8 +3839,15 @@ export class HUD {
         const perks = CraftingSystem.getCrafterPerks(member, statId);
         const perkText = perks.perkDescription ? ` — ${perks.perkDescription}` : '';
 
+        let profTitleAttr = '';
+        if (statId === 'light_armor' || statId === 'medium_armor' || statId === 'heavy_armor') {
+          const ratingPct = stat.level * 2;
+          const weightPct = Math.min(50, stat.level * 0.5);
+          profTitleAttr = `title="+${ratingPct}% armor rating · −${weightPct.toFixed(1)}% worn weight"`;
+        }
+
         profRowsHtml += `
-          <div class="party-stat-row" data-party-prof-row="${i}-${statId}" style="display: ${isRevealed ? 'flex' : 'none'};">
+          <div class="party-stat-row" data-party-prof-row="${i}-${statId}" ${profTitleAttr} style="display: ${isRevealed ? 'flex' : 'none'}; cursor: ${profTitleAttr ? 'help' : 'default'};">
             <span>${displayName}:</span>
             <span class="party-stat-val" data-party-prof-val="${i}-${statId}" ${legacyAttr} style="color: ${statColor};">Lv ${stat.level} (${stat.currentExp}/${nextExp})${perkText}</span>
           </div>
@@ -3859,8 +3884,8 @@ export class HUD {
           <div class="slot-item-info">
             <span class="slot-item-icon">🪖</span>
             <div>
-              <div class="slot-item-text" title="${helmet ? (helmet.name + getCraftText(helmet)) : 'Empty'}">${helmet ? helmet.name : '<span class="slot-empty-text">Empty Helmet</span>'}</div>
-              ${helmet ? `<div class="slot-item-stat">+${helmet.hpBonus} HP${getBonusBadge(helmet)} · ${helmet.weight ?? 1.0}kg</div>` : ''}
+              <div class="slot-item-text" title="${helmet ? (helmet.name + (helmet.armorRating ? ` — Armor ${helmet.armorRating} (${helmet.weightClass})` : '') + getCraftText(helmet)) : 'Empty'}">${helmet ? helmet.name : '<span class="slot-empty-text">Empty Helmet</span>'}</div>
+              ${helmet ? `<div class="slot-item-stat">+${helmet.hpBonus} HP${helmet.armorRating ? ` · Armor ${helmet.armorRating} (${helmet.weightClass})` : ''}${getBonusBadge(helmet)} · ${member.getEquippedArmorPieceWeight(helmet).toFixed(1)}kg</div>` : ''}
             </div>
           </div>
           ${helmet ? `<button class="slot-unequip-btn" data-slot="helmet" data-member-idx="${i}" type="button" title="Unequip Helmet">&times;</button>` : ''}
@@ -3977,8 +4002,8 @@ export class HUD {
               <span class="slot-item-icon">🛡️</span>
             </span>
             <div>
-              <div class="slot-item-text" title="${bodyArmor ? (bodyArmor.name + getCraftText(bodyArmor)) : 'Empty'}">${bodyArmor ? bodyArmor.name : '<span class="slot-empty-text">Empty Body</span>'}</div>
-              ${bodyArmor ? `<div class="slot-item-stat">+${bodyArmor.hpBonus} HP${getBonusBadge(bodyArmor)} · ${bodyArmor.weight ?? 4.0}kg</div>` : ''}
+              <div class="slot-item-text" title="${bodyArmor ? (bodyArmor.name + (bodyArmor.armorRating ? ` — Armor ${bodyArmor.armorRating} (${bodyArmor.weightClass})` : '') + getCraftText(bodyArmor)) : 'Empty'}">${bodyArmor ? bodyArmor.name : '<span class="slot-empty-text">Empty Body</span>'}</div>
+              ${bodyArmor ? `<div class="slot-item-stat">+${bodyArmor.hpBonus} HP${bodyArmor.armorRating ? ` · Armor ${bodyArmor.armorRating} (${bodyArmor.weightClass})` : ''}${getBonusBadge(bodyArmor)} · ${member.getEquippedArmorPieceWeight(bodyArmor).toFixed(1)}kg</div>` : ''}
             </div>
           </div>
           ${bodyArmor ? `<button class="slot-unequip-btn" data-slot="body" data-member-idx="${i}" type="button" title="Unequip Body Armor">&times;</button>` : ''}
@@ -4109,7 +4134,8 @@ export class HUD {
         const itemDef = dataLoader.getItem(itemId) || dataLoader.getWeapon(itemId) || dataLoader.getArmor(itemId) || dataLoader.getFood(itemId);
         const hasBonus = Boolean((itemDef as any)?.bonusPercent);
         const itemName = hasBonus ? `${itemDef!.name} (+${(itemDef as any).bonusPercent}%)` : (itemDef?.name || itemId);
-        const itemTitle = hasBonus ? `${itemDef!.name} (Crafted by ${(itemDef as any).crafterName}, +${(itemDef as any).bonusPercent}%)` : (itemDef?.name || itemId);
+        const armorExtra = (itemDef as any)?.armorRating ? ` — Armor ${(itemDef as any).armorRating} (${(itemDef as any).weightClass})` : '';
+        const itemTitle = hasBonus ? `${itemDef!.name}${armorExtra} (Crafted by ${(itemDef as any).crafterName}, +${(itemDef as any).bonusPercent}%)` : (itemDef ? `${itemDef.name}${armorExtra}` : itemId);
         const itemIcon = (itemDef as any)?.icon || '📦';
 
         let transferOptionsHtml = '';
@@ -4241,6 +4267,17 @@ export class HUD {
               <span>Attributes:</span>
               <span class="party-stat-val" data-party-attributes-val="${i}">STR ${(member.strength ?? 1.0).toFixed(1)} (+${(((member.strMultiplier ?? 1.0) - 1) * 100).toFixed(1)}%) · DEX ${(member.dexterity ?? 1.0).toFixed(1)} (+${(((member.dexMultiplier ?? 1.0) - 1) * 100).toFixed(1)}%) · INT ${(member.intelligence ?? 1.0).toFixed(1)} (+${(((member.intMultiplier ?? 1.0) - 1) * 100).toFixed(1)}%)</span>
             </div>
+            ${(() => {
+              const r = typeof (member as any).getEffectiveArmorRating === 'function' ? (member as any).getEffectiveArmorRating() : 0;
+              const red = typeof (member as any).getArmorDamageReduction === 'function' ? (member as any).getArmorDamageReduction() : (r > 0 ? r / (r + 100) : 0);
+              const redPct = Math.round(red * 100);
+              return `
+                <div class="party-stat-row party-armor-row" data-party-armor="${i}" style="display: ${r > 0 ? 'flex' : 'none'}; font-size: 10px; color: #94a3b8; margin-top: 1px;">
+                  <span>Armor:</span>
+                  <span class="party-stat-val" data-party-armor-val="${i}">R ${r.toFixed(1)} · −${redPct}% damage taken</span>
+                </div>
+              `;
+            })()}
             <div class="party-stat-row">
               <span>Hunger:</span>
               <span class="party-stat-val" data-party-hunger="${i}" style="color: ${DataLoader.getInstance().isHungerEnabled() ? '#fb923c' : '#9ca3af'};">${Math.floor(member.hunger)} / ${member.maxHunger}${DataLoader.getInstance().isHungerEnabled() ? '' : ' (paused)'}</span>
