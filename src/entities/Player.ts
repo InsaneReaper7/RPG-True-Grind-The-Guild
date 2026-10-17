@@ -183,12 +183,11 @@ export class Player extends Entity {
   public setActiveClass(classId: string | null, options?: { confirmFn?: (message: string) => boolean; bypassConfirm?: boolean }): boolean {
     const prevClass = this.activeClass;
     if (prevClass === 'scout' && classId !== 'scout') {
-      const isBow = this.equippedWeapon?.category === 'ranged' || this.equippedWeapon?.proficiencyId === 'bows' || (this.equippedWeapon && getBaseItemId(this.equippedWeapon.id) === 'bows');
-      const isDagger = this.offhandWeapon && (getBaseItemId(this.offhandWeapon.id) === 'daggers' || this.offhandWeapon.proficiencyId === 'daggers');
-      if (isBow && isDagger && this.offhandWeapon && !options?.bypassConfirm) {
+      const isBowSidearmDagger = this.offhandWeapon && canEquipBowDaggerSidearm({ activeClass: 'scout', equippedWeapon: this.equippedWeapon }, this.offhandWeapon);
+      if (isBowSidearmDagger && !options?.bypassConfirm) {
         const clsDef = classId ? DataLoader.getInstance().getClass(classId) : null;
         const targetClassName = clsDef?.name || classId || 'None';
-        const msg = `Switching ${this.entityName} to ${targetClassName} will unequip her off-hand Dagger. Continue?`;
+        const msg = `Switching ${this.entityName} to ${targetClassName} will unequip ${this.entityName}'s off-hand ${this.offhandWeapon!.name || 'Dagger'}. Continue?`;
         let proceed = true;
         if (options?.confirmFn) {
           proceed = options.confirmFn(msg);
@@ -225,9 +224,7 @@ export class Player extends Entity {
 
   private handleClassChangeOffhandCheck(prevClass: string | null): void {
     if (prevClass === 'scout' && this.activeClass !== 'scout') {
-      const isBow = this.equippedWeapon?.category === 'ranged' || this.equippedWeapon?.proficiencyId === 'bows' || (this.equippedWeapon && getBaseItemId(this.equippedWeapon.id) === 'bows');
-      const isDagger = this.offhandWeapon && (getBaseItemId(this.offhandWeapon.id) === 'daggers' || this.offhandWeapon.proficiencyId === 'daggers');
-      if (isBow && isDagger && this.offhandWeapon) {
+      if (this.offhandWeapon && canEquipBowDaggerSidearm({ activeClass: 'scout', equippedWeapon: this.equippedWeapon }, this.offhandWeapon)) {
         const removed = this.offhandWeapon;
         this.offhandWeapon = null;
         this.addItem(removed.id, 1);

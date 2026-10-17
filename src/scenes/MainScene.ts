@@ -748,6 +748,7 @@ export class MainScene extends Phaser.Scene {
       const stat = targetMember.progression.getProficiencyStat(statId);
       stat.level = targetLevel;
       stat.currentExp = 0;
+      targetMember.recalculateDerivedStats(true);
       targetMember.progression.checkClassUnlocks();
       targetMember.progression.checkDualWieldUnlock();
       console.log(`[Debug] Set '${statId}' to Level ${targetLevel} (0 EXP) on ${targetMember.entityName}`);
@@ -933,6 +934,7 @@ export class MainScene extends Phaser.Scene {
         p.getProficiencyStat('shields').currentExp = 0;
         p.setClassLevel('fencer', 5);
         p.setClassLevel('guardian', 5);
+        targetMember.recalculateDerivedStats(true);
         p.checkClassUnlocks();
         targetMember.checkSkillUnlocks();
         this.hud.update(this.player, this.progressionSystem, 0, this.party);

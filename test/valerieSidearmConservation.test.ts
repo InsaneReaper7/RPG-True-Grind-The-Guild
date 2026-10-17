@@ -197,7 +197,7 @@ async function run() {
   assert.ok(valerieB.offhandWeapon !== null && valerieB.offhandWeapon.id === 'daggers', 'Dagger must remain equipped');
   assert.equal(
     promptShown,
-    'Switching Valerie to Vanguard will unequip her off-hand Dagger. Continue?',
+    "Switching Valerie to Vanguard will unequip Valerie's off-hand Daggers. Continue?",
     `Prompt text must match expected. Got: "${promptShown}"`
   );
   console.log(`  PASS: Cancel preserves Scout class and equipped Dagger; prompt was: "${promptShown}"`);

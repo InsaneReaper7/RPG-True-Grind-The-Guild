@@ -85,7 +85,7 @@ export function canEquipBowDaggerSidearm(
   offhandWeapon?: WeaponDef | null
 ): boolean {
   if (character.activeClass !== 'scout') return false;
-  const isBow = character.equippedWeapon?.category === 'ranged' || character.equippedWeapon?.proficiencyId === 'bows' || (character.equippedWeapon && getBaseItemId(character.equippedWeapon.id) === 'bows');
+  const isBow = character.equippedWeapon?.proficiencyId === 'bows' || (character.equippedWeapon && (getBaseItemId(character.equippedWeapon.id) === 'bows' || getBaseItemId(character.equippedWeapon.id).endsWith('_bow')));
   if (!isBow) return false;
   if (!offhandWeapon) return true;
   const isDagger = getBaseItemId(offhandWeapon.id) === 'daggers' || offhandWeapon.proficiencyId === 'daggers';

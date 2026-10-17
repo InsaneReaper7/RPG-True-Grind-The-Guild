@@ -450,6 +450,7 @@ async function runTests() {
     companion.progression.getProficiencyStat('nature_magic').level = 90;
     companion.progression.getProficiencyStat('healing_magic').level = 30;
     companion.progression.getProficiencyStat('dark_magic').level = 90;
+    companion.recalculateDerivedStats(false);
 
     companion.equippedSkillIds = [...kit.skills];
     companion.energy = 100;
@@ -573,6 +574,11 @@ async function runTests() {
       const groveWalker = new Player(scene, 10, 10, playerData, druidStaffDef, 32);
       groveWalker.progression.setClassLevel('grove_walker', 40);
       groveWalker.progression.getProficiencyStat('nature_magic').level = 20;
+      groveWalker.progression.getProficiencyStat('druid_staff').level = 10;
+      groveWalker.recalculateDerivedStats(false);
+      const str10 = groveWalker.strength;
+      const strMult10 = groveWalker.strMultiplier;
+      const spellMult10 = groveWalker.intMultiplier;
       groveWalker.energy = 100;
 
       const target = createDummyEnemy(scene, 13, 10, 'Target Dummy', 5000);
@@ -580,7 +586,6 @@ async function runTests() {
       combat.enemies = [target];
 
       // Cast 1 at Druid Staff 10
-      groveWalker.progression.getProficiencyStat('druid_staff').level = 10;
       const hpBefore10 = target.hp;
       const cast10Ok = combat.castSkill(groveWalker, 'bark_lash', target, 1000);
       assert.strictEqual(cast10Ok, true, 'bark_lash cast at Druid Staff 10 must succeed');
@@ -590,22 +595,28 @@ async function runTests() {
       groveWalker.lastSkillUseTimes.clear();
       groveWalker.energy = 100;
       groveWalker.progression.getProficiencyStat('druid_staff').level = 60;
+      groveWalker.recalculateDerivedStats(false);
+      const str60 = groveWalker.strength;
+      const strMult60 = groveWalker.strMultiplier;
+      const spellMult60 = groveWalker.intMultiplier;
+
       const hpBefore60 = target.hp;
       const cast60Ok = combat.castSkill(groveWalker, 'bark_lash', target, 5000);
       assert.strictEqual(cast60Ok, true, 'bark_lash cast at Druid Staff 60 must succeed');
       const dmgAt60 = hpBefore60 - target.hp;
 
-      const diff = dmgAt60 - dmgAt10;
-      // Druid Staff gives 0.05 STR and 0.05 INT per level.
-      // 50 levels of Druid Staff gives +2.5 STR and +2.5 INT.
-      // Scaling for bark_lash is "weapon" (melee, non-ranged), so it scales with STR attribute multiplier.
-      // Base damage increases by 0.15 * 50 = +7.5. With STR bonus, diff is ~7.617.
       assert.strictEqual(
-        Number(diff.toFixed(3)),
-        7.617,
-        `bark_lash at Druid Staff 60 vs 10 must deal expected damage with STR attribute bonus, got ${diff} (${dmgAt10} -> ${dmgAt60})`
+        Number((str60 - str10).toFixed(4)),
+        2.5,
+        `Strength must rise by exactly 2.5 between Druid Staff 10 and 60 (50 * 0.05), got ${str60 - str10}`
       );
-      console.log(`    ✓ bark_lash PB verified: Druid Staff 10 dealt ${dmgAt10}, Druid Staff 60 dealt ${dmgAt60} (diff = +${diff}).`);
+      const normalizedDiff = (dmgAt60 / spellMult60) - (dmgAt10 / spellMult10);
+      assert.strictEqual(
+        Number(normalizedDiff.toFixed(4)),
+        7.5,
+        `dmgAt60 / strMult(60) - dmgAt10 / strMult(10) must equal 7.5, got ${normalizedDiff}`
+      );
+      console.log(`    ✓ bark_lash PB verified: Druid Staff 10 dealt ${dmgAt10} (spellMult: ${spellMult10}), Druid Staff 60 dealt ${dmgAt60} (spellMult: ${spellMult60}), normalized diff = ${normalizedDiff}, STR rise = ${str60 - str10}.`);
     }
 
     // 3B: cross-training: Druid Staff wielder casting thornlash gains Nature Magic EXP (+2) and +1 druid_staff

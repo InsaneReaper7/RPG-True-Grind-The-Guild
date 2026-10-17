@@ -351,7 +351,50 @@ async function run() {
   skillSystem4.execute(hero4, percentHealSkillDef as any, woundedAlly, 3000);
   // 20% of 50 = exactly 10, not scaled by INT
   assert.equal(woundedAlly.hp, 20, `Percent heal must NOT scale by INT, got hp ${woundedAlly.hp}`);
-  console.log('  PASS: Fire 50 gives INT 6.0, scales spells and flat heal, percent heal exempt.\n');
+
+  // HoT scaling by INT 1.10
+  const hotSkillDef = {
+    id: 'test_hot',
+    name: 'Test HoT',
+    category: 'magic',
+    proficiencyId: 'healing_magic',
+    requiredLevel: 1,
+    energyCost: 10,
+    cooldownMs: 1000,
+    castTimeMs: 0,
+    rangeTiles: 5,
+    targetType: 'single_ally',
+    effects: [
+      { type: 'healOverTime', amountPerTick: 10, durationMs: 5000, tickIntervalMs: 1000 }
+    ]
+  };
+  skillSystem4.execute(hero4, hotSkillDef as any, woundedAlly, 4000);
+  const appliedHot = woundedAlly.getStatusEffect('test_hot');
+  assert.ok(appliedHot, 'HoT status effect should be applied');
+  assert.equal(appliedHot.def.healPerTick, 11, `HoT healPerTick should scale by INT 1.10 (10 * 1.10 = 11), got ${appliedHot.def.healPerTick}`);
+
+  // Shield scaling by INT 1.10
+  const shieldSkillDef = {
+    id: 'test_shield',
+    name: 'Test Shield',
+    category: 'magic',
+    proficiencyId: 'healing_magic',
+    requiredLevel: 1,
+    energyCost: 10,
+    cooldownMs: 1000,
+    castTimeMs: 0,
+    rangeTiles: 5,
+    targetType: 'single_ally',
+    effects: [
+      { type: 'shield', shieldAmount: 20, durationMs: 5000 }
+    ]
+  };
+  skillSystem4.execute(hero4, shieldSkillDef as any, woundedAlly, 5000);
+  const appliedShield = woundedAlly.getStatusEffect('test_shield');
+  assert.ok(appliedShield, 'Shield status effect should be applied');
+  assert.equal(appliedShield.shieldHp, 22, `Shield shieldAmount should scale by INT 1.10 (20 * 1.10 = 22), got ${appliedShield.shieldHp}`);
+
+  console.log('  PASS: Fire 50 gives INT 6.0, scales spells, flat heal, HoT ticks, and shields; percent heal exempt.\n');
 
   // --- Test 5: Uncapped scaling (STR 101.0 -> x3.00 damage multiplier) ---
   console.log('Test 5: Uncapped attribute scaling (STR 101.0 -> x3.00 multiplier)');

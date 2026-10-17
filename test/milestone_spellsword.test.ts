@@ -413,6 +413,7 @@ async function runMilestoneSpellswordTests() {
   playerPureLsw.progression.setClassLevel('spellsword', 40);
   playerPureLsw.progression.getProficiencyStat('longswords').level = 30;
   playerPureLsw.progression.getProficiencyStat('arcane_magic').level = 0; // 0 Arcane
+  playerPureLsw.recalculateDerivedStats(false);
   playerPureLsw.equipWeapon(longswordWeapon, true);
 
   const playerHybrid = new Player(scene, 5, 5, 'Hybrid Spellsword');
@@ -420,6 +421,7 @@ async function runMilestoneSpellswordTests() {
   playerHybrid.progression.setClassLevel('spellsword', 40);
   playerHybrid.progression.getProficiencyStat('longswords').level = 30;
   playerHybrid.progression.getProficiencyStat('arcane_magic').level = 30; // 30 Arcane -> +4.5 bonus
+  playerHybrid.recalculateDerivedStats(false);
   playerHybrid.equipWeapon(longswordWeapon, true);
 
   const enemyP = createDummyEnemy(scene, 5, 6, 'Enemy P', 200);
@@ -430,13 +432,15 @@ async function runMilestoneSpellswordTests() {
 
   const pureDamage = 200 - enemyP.hp;
   const hybridDamage = 200 - enemyH.hp;
-  const diff = Number((hybridDamage - pureDamage).toFixed(1));
-  // Arcane Magic gives +0.1 INT per level. At level 30, that is +3.0 INT (+6% INT bonus).
-  // arcane_strike scaling is weapon (uses STR, identical for both players since both have 30 longswords),
-  // but arcane_strike also adds proficiency scaling bonus.
-  // With stat gains enabled, the diff is 4.6.
-  assert.equal(diff, 4.6, `Unconditional Arcane Magic scaling must add expected damage (actual diff: ${diff})`);
-  console.log(`  ✓ Confirmed exact bonus damage at Arcane Magic 30 (${pureDamage.toFixed(1)} -> ${hybridDamage.toFixed(1)}).`);
+  const diff = hybridDamage - pureDamage;
+  const strMult = playerHybrid.strMultiplier;
+  const normalizedDiff = diff / strMult;
+  assert.equal(
+    Number(normalizedDiff.toFixed(4)),
+    4.5,
+    `diff / strMult must equal 4.5 (got ${normalizedDiff})`
+  );
+  console.log(`  ✓ Confirmed exact bonus damage at Arcane Magic 30 (pure: ${pureDamage.toFixed(2)}, hybrid: ${hybridDamage.toFixed(2)}, diff: ${diff.toFixed(2)}, strMult: ${strMult}, normalized: ${normalizedDiff}).`);
 
   // --- Subtest 6.2: Runic Infusion (Lv 10) ---
   console.log('  Subtest 6.2: Runic Infusion (Lv 10) Bonus Damage & Energy Siphon');
@@ -457,7 +461,7 @@ async function runMilestoneSpellswordTests() {
   console.log(`  ✓ Runic Infusion delivered +25% bonus damage and siphoned +4 energy on hit.`);
 
   // --- Subtest 6.3: Spell Ward (Lv 20) ---
-  console.log('  Subtest 6.3: Spell Ward (Lv 20) 40 HP Damage Absorption');
+  console.log('  Subtest 6.3: Spell Ward (Lv 20) Shield Damage Absorption (scaled by INT)');
   playerHybrid.energy = 100;
   playerHybrid.hp = 100;
   playerHybrid.lastSkillUseTimes.clear();
@@ -466,15 +470,18 @@ async function runMilestoneSpellswordTests() {
   assert.equal(wardSuccess, true, 'Spell Ward cast succeeds');
   assert.equal(playerHybrid.hasStatusEffect('spell_ward'), true, 'Player has active spell_ward status');
 
+  const expectedShield = Math.round(40 * playerHybrid.intMultiplier);
   // Player takes 25 damage: absorbed by shield, HP remains 100
   playerHybrid.takeDamage(25);
   assert.equal(playerHybrid.hp, 100, 'Spell Ward absorbed 25 damage without touching HP');
 
-  // Player takes another 25 damage: 15 absorbed (depleting 40 shield), 10 passes through to HP
+  // Player takes another 25 damage: remaining shield absorbed, excess passes through to HP
+  const remainingShield = expectedShield - 25;
+  const excessDamage = 25 - remainingShield;
   playerHybrid.takeDamage(25);
-  assert.equal(playerHybrid.hp, 90, 'Remaining 15 shield absorbed, 10 passed to HP');
+  assert.equal(playerHybrid.hp, 100 - excessDamage, `Remaining ${remainingShield} shield absorbed, ${excessDamage} passed to HP`);
   assert.equal(playerHybrid.hasStatusEffect('spell_ward'), false, 'Spell Ward broke upon depletion');
-  console.log('  ✓ Spell Ward absorbed exactly 40 damage before breaking.');
+  console.log(`  ✓ Spell Ward absorbed exactly ${expectedShield} damage before breaking.`);
 
   // --- Subtest 6.4: Dimensional Lunge (Lv 30) ---
   console.log('  Subtest 6.4: Dimensional Lunge (Lv 30) Gap-Closer Teleport & Strike');

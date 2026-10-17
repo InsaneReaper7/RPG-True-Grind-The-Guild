@@ -1437,6 +1437,7 @@ export class HUD {
           hero.progression.getProficiencyStat('short_swords').currentExp = 0;
           hero.progression.getProficiencyStat('daggers').level = 30;
           hero.progression.getProficiencyStat('daggers').currentExp = 0;
+          hero.recalculateDerivedStats(true);
           hero.progression.checkDualWieldUnlock();
           HUD.activeInstance?.showToast('⚔️ Set Hero Short Swords & Daggers to Lv30! Dual Wielding UNLOCKED!', 'success', 3500);
           if (HUD.activeInstance) {
@@ -1555,6 +1556,7 @@ export class HUD {
           hero.progression.getProficiencyStat('shields').currentExp = 0;
           hero.progression.setClassLevel('fencer', 5);
           hero.progression.setClassLevel('guardian', 5);
+          hero.recalculateDerivedStats(true);
           hero.progression.checkClassUnlocks();
           hero.checkSkillUnlocks();
           HUD.activeInstance?.showToast('🛡️ Vanguard Requirements Fulfilled! Class UNLOCKED!', 'success', 4000);
@@ -1817,6 +1819,7 @@ export class HUD {
           const stat = hero.progression.getProficiencyStat('lockpicking');
           stat.level = 10;
           stat.currentExp = 0;
+          hero.recalculateDerivedStats(true);
           hero.progression.checkClassUnlocks();
           HUD.activeInstance?.showToast('🗝️ Set Hero Lockpicking to Level 10!', 'success');
           HUD.activeInstance?.updatePartyOverviewLiveStats();
