@@ -211,17 +211,20 @@ async function runBatchBTests() {
     scaling: { stat: 'intelligence', factor: 0.0 }
   };
 
-  const createTester = (skillId: string, weapon: WeaponDef = fixedTestWeapon) => {
+  const createTester = (skillId: string, weapon: WeaponDef = fixedTestWeapon, skipClasses: boolean = true) => {
     const tester = new Player(scene, 10, 10, playerData, weapon, 32);
-    for (const c of [
-      'fencer', 'combat_medic', 'vanguard', 'restoration_mage', 'brawler',
-      'scout', 'dark_knight', 'swordsman', 'ronin', 'samurai', 'javelin',
-      'loader', 'arcane_initiate', 'spellsword', 'thrower'
-    ]) {
-      tester.progression.setClassLevel(c as any, 50);
+    if (!skipClasses) {
+      for (const c of [
+        'fencer', 'combat_medic', 'vanguard', 'restoration_mage', 'brawler',
+        'scout', 'dark_knight', 'swordsman', 'ronin', 'samurai', 'javelin',
+        'loader', 'arcane_initiate', 'spellsword', 'thrower'
+      ]) {
+        tester.progression.setClassLevel(c as any, 50);
+      }
     }
     tester.mood = 50; // 1.0 multiplier
     tester.energy = 100;
+    tester.knownSkillIds = [skillId];
     tester.equippedSkillIds = [skillId];
     return tester;
   };
@@ -263,6 +266,8 @@ async function runBatchBTests() {
       const fallbackResult = tester.useSkill('blade_strike', 1000);
       assert.strictEqual(fallbackResult, false, 'useSkill fallback returns false for non-support skill without combat system');
 
+      tester.knownSkillIds.push('heal');
+      tester.equippedSkillIds.push('heal');
       const healResult = tester.useSkill('heal', 1000);
       assert.strictEqual(healResult, true, 'useSkill fallback returns true for heal skill');
     }

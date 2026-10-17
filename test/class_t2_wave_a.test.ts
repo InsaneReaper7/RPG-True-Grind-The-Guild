@@ -722,8 +722,9 @@ async function runTests() {
     const ok1 = combat.castSkill(juggernaut, 'cataclysm', target1, 1000);
     assert.strictEqual(ok1, true, 'cataclysm cast succeeded');
     assert.strictEqual(juggernaut.energy, 0, 'Juggernaut spent 44 base + 25 surplus = 69 EN (0 EN left)');
-    const expectedDmg1 = effBase * 4.8;
-    assert.strictEqual(target1.hp.toFixed(1), (1000 - expectedDmg1).toFixed(1), `Target took ${expectedDmg1} damage (effBase ${effBase} * 4.8): ${target1.hp}`);
+    const strMult = juggernaut.strMultiplier;
+    const expectedDmg1 = effBase * 4.8 * strMult;
+    assert.strictEqual(target1.hp.toFixed(1), (1000 - expectedDmg1).toFixed(1), `Target took ${expectedDmg1} damage (effBase ${effBase} * 4.8 * strMult ${strMult}): ${target1.hp}`);
 
     // Case 2: 35 surplus EN available (44 + 35 = 79 EN).
     // Maximum dump is 25 EN.
@@ -735,7 +736,7 @@ async function runTests() {
     const ok2 = combat.castSkill(juggernaut, 'cataclysm', target2, 20000);
     assert.strictEqual(ok2, true, 'cataclysm cast succeeded');
     assert.strictEqual(juggernaut.energy, 10, `Juggernaut capped dump at 25 EN (79 - 44 - 25 = 10 EN remaining): ${juggernaut.energy}`);
-    const expectedDmg2 = effBase * 4.8;
+    const expectedDmg2 = effBase * 4.8 * strMult;
     assert.strictEqual(target2.hp.toFixed(1), (1000 - expectedDmg2).toFixed(1), `Target took ${expectedDmg2} damage with max dump: ${target2.hp}`);
     console.log('    ✓ cataclysm dumps up to 25 bonus EN (+4% per EN) and caps appropriately.');
   }

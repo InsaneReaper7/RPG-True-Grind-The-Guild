@@ -200,7 +200,7 @@ async function runGoldenMasterTests() {
     // 1a. Power Strike deals exactly 2.0 × base (2.0 × 10 = 20 damage)
     {
       const tester = new Player(scene, 10, 10, playerData, fixedTestWeapon, 32);
-      tester.progression.setClassLevel('fencer', 40);
+      tester.progression.setClassLevel('fencer', 1);
       tester.mood = 50; // 1.0 combat multiplier
       tester.energy = 100;
       tester.equippedSkillIds = ['power_strike'];
@@ -227,9 +227,10 @@ async function runGoldenMasterTests() {
     // 1b. Thrust deals exactly 1.5 × base (1.5 × 10 = 15 damage)
     {
       const tester = new Player(scene, 10, 10, playerData, fixedTestWeapon, 32);
-      tester.progression.setClassLevel('fencer', 40);
+      tester.progression.setClassLevel('fencer', 1);
       tester.mood = 50;
       tester.energy = 100;
+      tester.knownSkillIds = ['thrust'];
       tester.equippedSkillIds = ['thrust'];
 
       const enemy = createDummyEnemy(scene, 10, 11, 'Target', 100);
@@ -251,9 +252,10 @@ async function runGoldenMasterTests() {
     // Roll = 0.75: basic attack (0.60) misses, but Thrust (0.90) hits!
     {
       const tester = new Player(scene, 10, 10, playerData, fixedTestWeapon, 32);
-      tester.progression.setClassLevel('fencer', 40);
+      tester.progression.setClassLevel('fencer', 1);
       tester.mood = 50;
       tester.energy = 100;
+      tester.knownSkillIds = ['thrust'];
       tester.equippedSkillIds = ['thrust'];
 
       const enemy = createDummyEnemy(scene, 10, 11, 'Target', 100);
@@ -271,9 +273,10 @@ async function runGoldenMasterTests() {
     // Thrust effective accuracy = 0.90. Roll = 0.95 -> MISS.
     {
       const tester = new Player(scene, 10, 10, playerData, fixedTestWeapon, 32);
-      tester.progression.setClassLevel('fencer', 40);
+      tester.progression.setClassLevel('fencer', 1);
       tester.mood = 50;
       tester.energy = 100;
+      tester.knownSkillIds = ['thrust'];
       tester.equippedSkillIds = ['thrust'];
 
       const enemy = createDummyEnemy(scene, 10, 11, 'Target', 100);
@@ -290,7 +293,7 @@ async function runGoldenMasterTests() {
     // 1e. Weapon with bleed proc applies bleed on forced proc roll
     {
       const tester = new Player(scene, 10, 10, playerData, fixedTestWeapon, 32);
-      tester.progression.setClassLevel('fencer', 40);
+      tester.progression.setClassLevel('fencer', 1);
       tester.mood = 50;
       tester.energy = 100;
       tester.equippedSkillIds = ['power_strike'];

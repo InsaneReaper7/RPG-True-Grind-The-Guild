@@ -43,12 +43,58 @@ export class StatGainsSystem {
     const critMultiplier = data?.criticalHpMultiplier ?? 0.5;
     const critHpGain = hpGain * critMultiplier;
 
+    // 3. Attributes (STR, DEX, INT)
+    const baseAttrs = data?.baseAttributes ?? { str: 1.0, dex: 1.0, int: 1.0 };
+    let strength = baseAttrs.str ?? 1.0;
+    let dexterity = baseAttrs.dex ?? 1.0;
+    let intelligence = baseAttrs.int ?? 1.0;
+
+    const attrGains = data?.attributeGains ?? {};
+    for (const [profId, stat] of progression.getAllProficiencyStats().entries()) {
+      const level = stat.level ?? 0;
+      if (level <= 0) continue;
+      const g = attrGains[profId];
+      if (g) {
+        if (g.str) strength += level * g.str;
+        if (g.dex) dexterity += level * g.dex;
+        if (g.int) intelligence += level * g.int;
+      }
+    }
+
+    const classAttrGain = data?.classLevelAttributeGain ?? 0.02;
+    const dl = DataLoader.getInstance();
+    for (const [classId, stat] of progression.getAllClassStats().entries()) {
+      const levelsGained = Math.max(0, (stat.level ?? 0) - 1);
+      if (levelsGained <= 0) continue;
+      const cDef = dl.getClass(classId);
+      const primary = cDef?.primaryAttribute;
+      if (primary === 'str') strength += levelsGained * classAttrGain;
+      else if (primary === 'dex') dexterity += levelsGained * classAttrGain;
+      else if (primary === 'int') intelligence += levelsGained * classAttrGain;
+    }
+
+    // Floating-point precision cleanup to 4 decimals
+    strength = Math.round(strength * 10000) / 10000;
+    dexterity = Math.round(dexterity * 10000) / 10000;
+    intelligence = Math.round(intelligence * 10000) / 10000;
+
+    const multPerPoint = data?.damageMultiplierPerAttributePoint ?? 0.02;
+    const strMultiplier = 1 + multPerPoint * (strength - 1);
+    const dexMultiplier = 1 + multPerPoint * (dexterity - 1);
+    const intMultiplier = 1 + multPerPoint * (intelligence - 1);
+
     // Linear scaling with no ceiling per owner directive
     return {
       hpGain,
       critHpGain,
       energyGain,
-      regenGain
+      regenGain,
+      strength,
+      dexterity,
+      intelligence,
+      strMultiplier,
+      dexMultiplier,
+      intMultiplier
     };
   }
 }

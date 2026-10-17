@@ -331,7 +331,7 @@ async function runTests() {
     // Subtest 2.1: Exact hit damage (10 base * 1.8 = 18 dmg, deducts 22 energy, aggro, +2 EXP)
     {
       const tester = new Player(scene, 10, 10, playerData, maceWeapon, 32);
-      tester.progression.setClassLevel('bludgeoner', 40);
+      tester.progression.setClassLevel('bludgeoner', 1);
       tester.mood = 50; // 1.0 combat multiplier
       tester.energy = 100;
       tester.equippedSkillIds = ['crushing_blow'];
@@ -360,7 +360,7 @@ async function runTests() {
     // Subtest 2.2: Miss behaviour (0 damage, consumes 22 energy, 0 EXP awarded)
     {
       const tester = new Player(scene, 10, 10, playerData, maceWeapon, 32);
-      tester.progression.setClassLevel('bludgeoner', 40);
+      tester.progression.setClassLevel('bludgeoner', 1);
       tester.mood = 50;
       tester.energy = 100;
       tester.equippedSkillIds = ['crushing_blow'];

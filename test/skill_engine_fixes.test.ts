@@ -384,9 +384,10 @@ async function runTests() {
     // 6B. Shield Bash via castSkill generic fallback on forced HIT (Math.random = 0.1)
     {
       const tank = new Player(scene, 10, 10, playerData, testSword, 32);
-      tank.progression.setClassLevel('vanguard', 40);
+      tank.progression.setClassLevel('vanguard', 1);
       tank.mood = 50; // 1.0 combat damage multiplier
       tank.energy = 100;
+      tank.knownSkillIds = ['shield_bash'];
       tank.equippedSkillIds = ['shield_bash'];
 
       const enemy = createDummyEnemy(scene, 10, 11, 'Target', 100);
@@ -408,9 +409,10 @@ async function runTests() {
     // 6C. Thrust via SkillSystem on forced MISS (Math.random = 0.99)
     {
       const fencer = new Player(scene, 10, 10, playerData, testSword, 32);
-      fencer.progression.setClassLevel('fencer', 40);
+      fencer.progression.setClassLevel('fencer', 1);
       fencer.mood = 50;
       fencer.energy = 100;
+      fencer.knownSkillIds = ['thrust'];
       fencer.equippedSkillIds = ['thrust'];
 
       const enemy = createDummyEnemy(scene, 10, 11, 'Target', 100);
@@ -431,9 +433,10 @@ async function runTests() {
     // 6D. Thrust via SkillSystem on forced HIT (Math.random = 0.1)
     {
       const fencer = new Player(scene, 10, 10, playerData, testSword, 32);
-      fencer.progression.setClassLevel('fencer', 40);
+      fencer.progression.setClassLevel('fencer', 1);
       fencer.mood = 50;
       fencer.energy = 100;
+      fencer.knownSkillIds = ['thrust'];
       fencer.equippedSkillIds = ['thrust'];
 
       const enemy = createDummyEnemy(scene, 10, 11, 'Target', 100);

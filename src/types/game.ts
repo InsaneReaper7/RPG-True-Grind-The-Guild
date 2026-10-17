@@ -141,6 +141,7 @@ export interface ClassDef {
   fantasy: string;
   hiddenSkillBonuses?: Record<string, number>;
   passiveImbuement?: PassiveImbuementDef;
+  primaryAttribute?: 'str' | 'dex' | 'int';
 }
 
 export interface ClassesData {
@@ -1253,6 +1254,10 @@ export interface StatGainsData {
   categories: Record<string, StatGainCategoryDef>;
   criticalHpMultiplier: number;
   assignments: Record<string, string>;
+  baseAttributes?: { str: number; dex: number; int: number };
+  damageMultiplierPerAttributePoint?: number;
+  classLevelAttributeGain?: number;
+  attributeGains?: Record<string, { str?: number; dex?: number; int?: number }>;
 }
 
 export interface StatGainsResult {
@@ -1260,6 +1265,12 @@ export interface StatGainsResult {
   critHpGain: number;
   energyGain: number;
   regenGain: number;
+  strength: number;
+  dexterity: number;
+  intelligence: number;
+  strMultiplier: number;
+  dexMultiplier: number;
+  intMultiplier: number;
 }
 
 export interface ProgressionLevelUpEvent {

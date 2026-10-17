@@ -245,12 +245,10 @@ async function runDownedMemberTransitionTest() {
   console.log(`  Party member 2: ${kaelen.entityName}`);
 
   // --- Step 2: Simulate Leader (Hero) and Kaelen Downed Far Away from Crystal ---
-  const crystalPos = (dungeonScene as any).crystalPos;
-  const farX = crystalPos.x > 25 ? 5 : 45;
-  const farY = crystalPos.y > 25 ? 5 : 45;
-  hero.gridPos = { x: farX, y: farY };
-  hero.x = farX * 32 + 16;
-  hero.y = farY * 32 + 16;
+  console.log('\n[Step 2] Down the Leader (Hero) and Kaelen, leaving Valerie conscious...');
+  hero.gridPos = { x: 5, y: 5 };
+  hero.x = 5 * 32 + 16;
+  hero.y = 5 * 32 + 16;
   hero.hp = 0;
   hero.criticalHp = 0;
   hero.state = 'downed';
@@ -265,6 +263,7 @@ async function runDownedMemberTransitionTest() {
   kaelen.showReviveIcon();
 
   // Valerie is conscious and positioned at the Teleporter Crystal
+  const crystalPos = (dungeonScene as any).crystalPos;
   valerie.gridPos = { x: crystalPos.x + 1, y: crystalPos.y };
   valerie.x = valerie.gridPos.x * 32 + 16;
   valerie.y = valerie.gridPos.y * 32 + 16;

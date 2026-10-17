@@ -2154,6 +2154,17 @@ export class CombatSystem {
     if (statusBonusDamagePercent > 0) {
       damage *= (1 + statusBonusDamagePercent);
     }
+
+    // Attribute damage multiplier (STR for physical melee/dry staff, DEX for ranged, INT for magic)
+    const isSpell = effectiveWeapon.category === 'magic';
+    const isRanged = effectiveWeapon.category === 'ranged';
+    const attrMult = isSpell
+      ? (member.intMultiplier ?? (1 + 0.02 * ((member.intelligence ?? 1.0) - 1)))
+      : isRanged
+        ? (member.dexMultiplier ?? (1 + 0.02 * ((member.dexterity ?? 1.0) - 1)))
+        : (member.strMultiplier ?? (1 + 0.02 * ((member.strength ?? 1.0) - 1)));
+    damage *= attrMult;
+
     let totalSiphon = 0;
     if (member.activeStatusEffects) {
       for (const activeEffect of member.activeStatusEffects.values()) {
@@ -3304,8 +3315,9 @@ export class CombatSystem {
     member.lastAttackTime = time;
     member.state = 'attacking';
 
+    const intMult = member.intMultiplier ?? (1 + 0.02 * ((member.intelligence ?? 1.0) - 1));
     const healBonus = (healDef?.levelBonus?.healPerLevel ?? 0.5) * healLevel;
-    const healAmount = Math.max(1, Math.round((healDef?.baseHealAmount ?? 8) + healBonus));
+    const healAmount = Math.max(1, Math.round(((healDef?.baseHealAmount ?? 8) + healBonus) * intMult));
 
     const restored = targetAlly.heal(healAmount);
     console.log(

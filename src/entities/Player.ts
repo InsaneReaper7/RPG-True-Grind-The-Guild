@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { Entity } from './Entity.ts';
-import type { PlayerData, WeaponDef, CharacterSnapshot, ArmorDef, ArmorSlot, ArmorWeightClass, FoodQuality, FoodItemInstance, StatusEffectDef } from '../types/game.ts';
+import type { PlayerData, WeaponDef, CharacterSnapshot, ArmorDef, ArmorSlot, ArmorWeightClass, FoodQuality, FoodItemInstance, StatusEffectDef, StatGainsResult } from '../types/game.ts';
 import type { ClassifiedRoom } from '../systems/RoomClassifier.ts';
 import { getArmorHpSplit, getArmorProficiencyId } from '../types/game.ts';
 import { GameState } from '../systems/GameState.ts';
@@ -78,6 +78,14 @@ export class Player extends Entity {
   // Milestone 31: Clickable Revive Icon for Downed Ally
   public reviveIconSprite?: Phaser.GameObjects.Sprite;
   private reviveIconTween?: Phaser.Tweens.Tween;
+
+  // Attributes (STR, DEX, INT)
+  public strength: number = 1.0;
+  public dexterity: number = 1.0;
+  public intelligence: number = 1.0;
+  public strMultiplier: number = 1.0;
+  public dexMultiplier: number = 1.0;
+  public intMultiplier: number = 1.0;
 
   constructor(
     scene: Phaser.Scene,
@@ -172,8 +180,28 @@ export class Player extends Entity {
     TutorialSystem.getInstance().notifyGearEquipped(item, this, slot);
   }
 
-  public setActiveClass(classId: string | null): boolean {
+  public setActiveClass(classId: string | null, options?: { confirmFn?: (message: string) => boolean; bypassConfirm?: boolean }): boolean {
     const prevClass = this.activeClass;
+    if (prevClass === 'scout' && classId !== 'scout') {
+      const isBow = this.equippedWeapon?.category === 'ranged' || this.equippedWeapon?.proficiencyId === 'bows' || (this.equippedWeapon && getBaseItemId(this.equippedWeapon.id) === 'bows');
+      const isDagger = this.offhandWeapon && (getBaseItemId(this.offhandWeapon.id) === 'daggers' || this.offhandWeapon.proficiencyId === 'daggers');
+      if (isBow && isDagger && this.offhandWeapon && !options?.bypassConfirm) {
+        const clsDef = classId ? DataLoader.getInstance().getClass(classId) : null;
+        const targetClassName = clsDef?.name || classId || 'None';
+        const msg = `Switching ${this.entityName} to ${targetClassName} will unequip her off-hand Dagger. Continue?`;
+        let proceed = true;
+        if (options?.confirmFn) {
+          proceed = options.confirmFn(msg);
+        } else if (typeof window !== 'undefined' && typeof window.confirm === 'function') {
+          proceed = window.confirm(msg);
+        }
+        if (!proceed) {
+          console.log(`[Player:${this.entityName}] Class switch to ${targetClassName} cancelled by user.`);
+          return false;
+        }
+      }
+    }
+
     if (classId === null) {
       this.activeClass = null;
       console.log(`[Player:${this.entityName}] Cleared active class (Unranked).`);
@@ -204,9 +232,11 @@ export class Player extends Entity {
         this.offhandWeapon = null;
         this.addItem(removed.id, 1);
         this.updateEncumbrance();
-        console.log(`[Player:${this.entityName}] Off-hand Dagger unequipped (Scout class required)`);
-        const hud = (globalThis as any).window?.activeHUD || (this.scene as any)?.hud;
-        hud?.showToast('Off-hand Dagger unequipped (Scout class required)', 'warn', 3000);
+        const reason = 'Scout class required';
+        const msg = `${this.entityName}'s off-hand ${removed.name} was unequipped: ${reason}`;
+        console.log(`[Player:${this.entityName}] ${msg}`);
+        const hud = (globalThis as any).activeHUD || (globalThis as any).window?.activeHUD || (this.scene as any)?.hud;
+        hud?.showToast(msg, 'warn', 6000);
       }
     }
   }
@@ -256,8 +286,14 @@ export class Player extends Entity {
       const isDagger = getBaseItemId(this.offhandWeapon.id) === 'daggers' || this.offhandWeapon.proficiencyId === 'daggers';
       const isScoutSidearm = (this.activeClass === 'scout') && isBow && isDagger;
       if (!isScoutSidearm) {
-        console.log(`[Player:${this.entityName}] Unequipped offhand because ${resolvedWeapon.name} is two-handed`);
+        const removed = this.offhandWeapon;
         this.offhandWeapon = null;
+        this.addItem(removed.id, 1);
+        const reason = `${resolvedWeapon.name} is two-handed`;
+        const msg = `${this.entityName}'s off-hand ${removed.name} was unequipped: ${reason}`;
+        console.log(`[Player:${this.entityName}] ${msg}`);
+        const hud = (globalThis as any).activeHUD || (globalThis as any).window?.activeHUD || (this.scene as any)?.hud;
+        hud?.showToast(msg, 'warn', 6000);
       }
     }
     this.updateEncumbrance();
@@ -604,14 +640,32 @@ export class Player extends Entity {
       }
     }
 
-    const gains = this.progression
+    const gains: StatGainsResult = this.progression
       ? StatGainsSystem.calculateStatGains(this.progression)
-      : { hpGain: 0, critHpGain: 0, energyGain: 0, regenGain: 0 };
+      : {
+          hpGain: 0,
+          critHpGain: 0,
+          energyGain: 0,
+          regenGain: 0,
+          strength: 1.0,
+          dexterity: 1.0,
+          intelligence: 1.0,
+          strMultiplier: 1.0,
+          dexMultiplier: 1.0,
+          intMultiplier: 1.0
+        };
 
     this.maxHp = this.baseMaxHp + bonusMainHp + gains.hpGain;
     this.maxCriticalHp = this.baseMaxCriticalHp + bonusCritHp + gains.critHpGain;
     this.maxEnergy = this.baseMaxEnergy + gains.energyGain;
     this.energyRegenPerSecond = this.baseEnergyRegenPerSecond + gains.regenGain;
+
+    this.strength = gains.strength ?? 1.0;
+    this.dexterity = gains.dexterity ?? 1.0;
+    this.intelligence = gains.intelligence ?? 1.0;
+    this.strMultiplier = gains.strMultiplier ?? (1 + 0.02 * (this.strength - 1));
+    this.dexMultiplier = gains.dexMultiplier ?? (1 + 0.02 * (this.dexterity - 1));
+    this.intMultiplier = gains.intMultiplier ?? (1 + 0.02 * (this.intelligence - 1));
 
     if (isMidRun) {
       if (this.maxHp > oldMaxHp) {

@@ -15,7 +15,8 @@
       "fantasy": "Quick, light-footed duelist",
       "hiddenSkillBonuses": {
         "counterattack": 0.05
-      }
+      },
+      "primaryAttribute": "str"
     },
     {
       "id": "guardian",
@@ -31,7 +32,8 @@
       "fantasy": "Learning to hold the line",
       "hiddenSkillBonuses": {
         "block": 0.05
-      }
+      },
+      "primaryAttribute": "str"
     },
     {
       "id": "vanguard",
@@ -63,7 +65,8 @@
       "hiddenSkillBonuses": {
         "block": 0.05,
         "counterattack": 0.05
-      }
+      },
+      "primaryAttribute": "str"
     },
     {
       "id": "medic",
@@ -79,7 +82,8 @@
       "fantasy": "Knows one spell and it's a good one",
       "hiddenSkillBonuses": {
         "health_regen": 0.05
-      }
+      },
+      "primaryAttribute": "int"
     },
     {
       "id": "staff_adept",
@@ -92,7 +96,8 @@
           "value": 10
         }
       ],
-      "fantasy": "Student of the quarterstaff and conduit arts"
+      "fantasy": "Student of the quarterstaff and conduit arts",
+      "primaryAttribute": "str"
     },
     {
       "id": "combat_medic",
@@ -110,7 +115,8 @@
           "value": 5
         }
       ],
-      "fantasy": "Field triage specialist keeping allies on their feet"
+      "fantasy": "Field triage specialist keeping allies on their feet",
+      "primaryAttribute": "int"
     },
     {
       "id": "ember_adept",
@@ -126,7 +132,8 @@
       "fantasy": "Can light a candle. Sometimes a person.",
       "hiddenSkillBonuses": {
         "mana_regen": 0.05
-      }
+      },
+      "primaryAttribute": "int"
     },
     {
       "id": "bludgeoner",
@@ -142,7 +149,8 @@
       "fantasy": "Heavy impacts and broken defenses",
       "hiddenSkillBonuses": {
         "resilience": 0.05
-      }
+      },
+      "primaryAttribute": "str"
     },
     {
       "id": "spark_adept",
@@ -158,7 +166,8 @@
       "fantasy": "Static shocks with intent",
       "hiddenSkillBonuses": {
         "mana_regen": 0.05
-      }
+      },
+      "primaryAttribute": "int"
     },
     {
       "id": "frost_initiate",
@@ -174,7 +183,8 @@
       "fantasy": "First brush with true cold",
       "hiddenSkillBonuses": {
         "mana_regen": 0.05
-      }
+      },
+      "primaryAttribute": "int"
     },
     {
       "id": "acolyte",
@@ -190,7 +200,8 @@
       "fantasy": "Recently devout",
       "hiddenSkillBonuses": {
         "mana_regen": 0.05
-      }
+      },
+      "primaryAttribute": "int"
     },
     {
       "id": "tide_adept",
@@ -206,7 +217,8 @@
       "fantasy": "Basic control of water",
       "hiddenSkillBonuses": {
         "mana_regen": 0.05
-      }
+      },
+      "primaryAttribute": "int"
     },
     {
       "id": "sprout_keeper",
@@ -222,7 +234,8 @@
       "fantasy": "Talks to plants; plants don't answer yet",
       "hiddenSkillBonuses": {
         "mana_regen": 0.05
-      }
+      },
+      "primaryAttribute": "int"
     },
     {
       "id": "gale_adept",
@@ -238,7 +251,8 @@
       "fantasy": "Can ruin someone's hair from a distance",
       "hiddenSkillBonuses": {
         "mana_regen": 0.05
-      }
+      },
+      "primaryAttribute": "int"
     },
     {
       "id": "stoneheart_initiate",
@@ -254,7 +268,8 @@
       "fantasy": "Can crack a rock. On purpose, mostly.",
       "hiddenSkillBonuses": {
         "mana_regen": 0.05
-      }
+      },
+      "primaryAttribute": "int"
     },
     {
       "id": "restoration_mage",
@@ -276,7 +291,8 @@
       "hiddenSkillBonuses": {
         "health_regen": 0.1,
         "mana_regen": 0.05
-      }
+      },
+      "primaryAttribute": "int"
     },
     {
       "id": "apprentice_armorer",
@@ -351,7 +367,8 @@
       "fantasy": "First nocked arrow",
       "hiddenSkillBonuses": {
         "evasion": 0.05
-      }
+      },
+      "primaryAttribute": "dex"
     },
     {
       "id": "apprentice_bowyer",
@@ -387,7 +404,8 @@
       "hiddenSkillBonuses": {
         "evasion": 0.05,
         "counterattack": 0.05
-      }
+      },
+      "primaryAttribute": "dex"
     },
     {
       "id": "locksmith",
@@ -421,7 +439,8 @@
       "hiddenSkillBonuses": {
         "counterattack": 0.08,
         "resilience": 0.08
-      }
+      },
+      "primaryAttribute": "str"
     },
     {
       "id": "squire",
@@ -437,7 +456,8 @@
       "fantasy": "Trainee in traditional swordplay",
       "hiddenSkillBonuses": {
         "parry": 0.05
-      }
+      },
+      "primaryAttribute": "str"
     },
     {
       "id": "cultist",
@@ -453,7 +473,8 @@
       "fantasy": "Recently indoctrinated",
       "hiddenSkillBonuses": {
         "mana_regen": 0.05
-      }
+      },
+      "primaryAttribute": "int"
     },
     {
       "id": "dark_knight",
@@ -496,7 +517,8 @@
           "exp": 1,
           "share": 0.5
         }
-      }
+      },
+      "primaryAttribute": "str"
     },
     {
       "id": "lancer",
@@ -512,7 +534,8 @@
       "fantasy": "Spear specialist mastering reach and precision thrusts",
       "hiddenSkillBonuses": {
         "counterattack": 0.05
-      }
+      },
+      "primaryAttribute": "str"
     },
     {
       "id": "hoplite",
@@ -534,7 +557,8 @@
       "hiddenSkillBonuses": {
         "block": 0.05,
         "parry": 0.05
-      }
+      },
+      "primaryAttribute": "str"
     },
     {
       "id": "swordsman",
@@ -550,7 +574,8 @@
       "fantasy": "First swing of the blade",
       "hiddenSkillBonuses": {
         "parry": 0.05
-      }
+      },
+      "primaryAttribute": "str"
     },
     {
       "id": "ronin",
@@ -571,7 +596,8 @@
       "fantasy": "Wandering blade for hire",
       "hiddenSkillBonuses": {
         "parry": 0.05
-      }
+      },
+      "primaryAttribute": "str"
     },
     {
       "id": "samurai",
@@ -598,7 +624,8 @@
       "hiddenSkillBonuses": {
         "block": 0.05,
         "parry": 0.05
-      }
+      },
+      "primaryAttribute": "str"
     },
     {
       "id": "skirmisher",
@@ -614,7 +641,8 @@
       "fantasy": "Hit-and-run thrower",
       "hiddenSkillBonuses": {
         "evasion": 0.05
-      }
+      },
+      "primaryAttribute": "dex"
     },
     {
       "id": "javelin",
@@ -636,7 +664,8 @@
       "hiddenSkillBonuses": {
         "counterattack": 0.05,
         "evasion": 0.05
-      }
+      },
+      "primaryAttribute": "dex"
     },
     {
       "id": "loader",
@@ -652,7 +681,8 @@
       "fantasy": "Mechanically minded shooter",
       "hiddenSkillBonuses": {
         "energy_regen": 0.05
-      }
+      },
+      "primaryAttribute": "dex"
     },
     {
       "id": "arcane_initiate",
@@ -668,7 +698,8 @@
       "fantasy": "First spark of raw magic",
       "hiddenSkillBonuses": {
         "mana_regen": 0.05
-      }
+      },
+      "primaryAttribute": "int"
     },
     {
       "id": "spellsword",
@@ -706,7 +737,8 @@
           "exp": 1,
           "share": 0.5
         }
-      }
+      },
+      "primaryAttribute": "str"
     },
     {
       "id": "thrower",
@@ -728,7 +760,8 @@
       "hiddenSkillBonuses": {
         "evasion": 0.05,
         "counterattack": 0.05
-      }
+      },
+      "primaryAttribute": "dex"
     },
     {
       "id": "angler",
@@ -796,7 +829,8 @@
       "fantasy": "Swinging something too heavy, badly",
       "hiddenSkillBonuses": {
         "resilience": 0.05
-      }
+      },
+      "primaryAttribute": "str"
     },
     {
       "id": "cutthroat",
@@ -812,7 +846,8 @@
       "fantasy": "Back-alley opportunist",
       "hiddenSkillBonuses": {
         "evasion": 0.05
-      }
+      },
+      "primaryAttribute": "str"
     },
     {
       "id": "duelist",
@@ -833,7 +868,8 @@
       "fantasy": "Fast, evasive close-range fighter",
       "hiddenSkillBonuses": {
         "evasion": 0.05
-      }
+      },
+      "primaryAttribute": "str"
     },
     {
       "id": "ranger",
@@ -854,7 +890,8 @@
       "fantasy": "Mobile wilderness scout",
       "hiddenSkillBonuses": {
         "evasion": 0.05
-      }
+      },
+      "primaryAttribute": "dex"
     },
     {
       "id": "reaver",
@@ -875,7 +912,8 @@
       "fantasy": "Heavy-hitting brawler",
       "hiddenSkillBonuses": {
         "resilience": 0.05
-      }
+      },
+      "primaryAttribute": "str"
     },
     {
       "id": "shadow_initiate",
@@ -896,7 +934,8 @@
       "fantasy": "Apprentice assassin",
       "hiddenSkillBonuses": {
         "counterattack": 0.05
-      }
+      },
+      "primaryAttribute": "str"
     },
     {
       "id": "sharpshooter",
@@ -917,7 +956,8 @@
       "fantasy": "Precision trainee",
       "hiddenSkillBonuses": {
         "parry": 0.05
-      }
+      },
+      "primaryAttribute": "dex"
     },
     {
       "id": "battle_medic",
@@ -938,7 +978,8 @@
       "fantasy": "Frontline healer-in-training",
       "hiddenSkillBonuses": {
         "health_regen": 0.05
-      }
+      },
+      "primaryAttribute": "int"
     },
     {
       "id": "flamecaller",
@@ -954,7 +995,8 @@
       "fantasy": "Apprentice pyromancer",
       "hiddenSkillBonuses": {
         "mana_regen": 0.05
-      }
+      },
+      "primaryAttribute": "int"
     },
     {
       "id": "frostcaller",
@@ -970,7 +1012,8 @@
       "fantasy": "Apprentice aquamancer",
       "hiddenSkillBonuses": {
         "mana_regen": 0.05
-      }
+      },
+      "primaryAttribute": "int"
     },
     {
       "id": "stormtouched",
@@ -986,7 +1029,8 @@
       "fantasy": "Apprentice storm mage",
       "hiddenSkillBonuses": {
         "mana_regen": 0.05
-      }
+      },
+      "primaryAttribute": "int"
     },
     {
       "id": "windwalker",
@@ -1002,7 +1046,8 @@
       "fantasy": "Apprentice air mage",
       "hiddenSkillBonuses": {
         "mana_regen": 0.05
-      }
+      },
+      "primaryAttribute": "int"
     },
     {
       "id": "naturalist",
@@ -1018,7 +1063,8 @@
       "fantasy": "Apprentice nature mage",
       "hiddenSkillBonuses": {
         "mana_regen": 0.05
-      }
+      },
+      "primaryAttribute": "int"
     },
     {
       "id": "priest",
@@ -1034,7 +1080,8 @@
       "fantasy": "Devout novice",
       "hiddenSkillBonuses": {
         "mana_regen": 0.05
-      }
+      },
+      "primaryAttribute": "int"
     },
     {
       "id": "warlock",
@@ -1050,7 +1097,8 @@
       "fantasy": "Apprentice of forbidden power",
       "hiddenSkillBonuses": {
         "mana_regen": 0.05
-      }
+      },
+      "primaryAttribute": "int"
     },
     {
       "id": "blademaster",
@@ -1076,7 +1124,8 @@
       "fantasy": "Master of multiple sword styles",
       "hiddenSkillBonuses": {
         "parry": 0.05
-      }
+      },
+      "primaryAttribute": "str"
     },
     {
       "id": "assassin",
@@ -1102,7 +1151,8 @@
       "fantasy": "Stealth and lethal precision",
       "hiddenSkillBonuses": {
         "evasion": 0.05
-      }
+      },
+      "primaryAttribute": "str"
     },
     {
       "id": "shadowblade",
@@ -1128,7 +1178,8 @@
       "fantasy": "Assassin empowered by darkness",
       "hiddenSkillBonuses": {
         "counterattack": 0.05
-      }
+      },
+      "primaryAttribute": "str"
     },
     {
       "id": "arcane_archer",
@@ -1154,7 +1205,8 @@
       "fantasy": "Magic-infused archer",
       "hiddenSkillBonuses": {
         "evasion": 0.05
-      }
+      },
+      "primaryAttribute": "dex"
     },
     {
       "id": "storm_archer",
@@ -1180,7 +1232,8 @@
       "fantasy": "Lightning-infused ranged fighter",
       "hiddenSkillBonuses": {
         "evasion": 0.05
-      }
+      },
+      "primaryAttribute": "dex"
     },
     {
       "id": "witch_hunter",
@@ -1206,7 +1259,8 @@
       "fantasy": "Monster and magic hunter",
       "hiddenSkillBonuses": {
         "parry": 0.05
-      }
+      },
+      "primaryAttribute": "dex"
     },
     {
       "id": "knight",
@@ -1232,7 +1286,8 @@
       "fantasy": "Traditional armored warrior",
       "hiddenSkillBonuses": {
         "block": 0.05
-      }
+      },
+      "primaryAttribute": "str"
     },
     {
       "id": "paladin",
@@ -1258,7 +1313,8 @@
       "fantasy": "Holy warrior",
       "hiddenSkillBonuses": {
         "block": 0.05
-      }
+      },
+      "primaryAttribute": "str"
     },
     {
       "id": "juggernaut",
@@ -1284,7 +1340,8 @@
       "fantasy": "Nearly unstoppable tank",
       "hiddenSkillBonuses": {
         "resilience": 0.05
-      }
+      },
+      "primaryAttribute": "str"
     },
     {
       "id": "battlemage",
@@ -1315,7 +1372,8 @@
       "fantasy": "Aggressive magic warrior",
       "hiddenSkillBonuses": {
         "parry": 0.05
-      }
+      },
+      "primaryAttribute": "str"
     },
     {
       "id": "storm_lancer",
@@ -1341,7 +1399,8 @@
       "fantasy": "Lightning-infused spear warrior",
       "hiddenSkillBonuses": {
         "counterattack": 0.05
-      }
+      },
+      "primaryAttribute": "str"
     },
     {
       "id": "elementalist",
@@ -1367,7 +1426,8 @@
       "fantasy": "Master of elemental forces",
       "hiddenSkillBonuses": {
         "mana_regen": 0.05
-      }
+      },
+      "primaryAttribute": "int"
     },
     {
       "id": "aquamancer",
@@ -1388,7 +1448,8 @@
       "fantasy": "Master of tides, currents and fluid control",
       "hiddenSkillBonuses": {
         "mana_regen": 0.05
-      }
+      },
+      "primaryAttribute": "int"
     },
     {
       "id": "cryomancer",
@@ -1409,7 +1470,8 @@
       "fantasy": "Master of true cold",
       "hiddenSkillBonuses": {
         "mana_regen": 0.05
-      }
+      },
+      "primaryAttribute": "int"
     },
     {
       "id": "geomancer",
@@ -1430,7 +1492,8 @@
       "fantasy": "Master of stone and terrain",
       "hiddenSkillBonuses": {
         "mana_regen": 0.05
-      }
+      },
+      "primaryAttribute": "int"
     },
     {
       "id": "cleric",
@@ -1456,7 +1519,8 @@
       "fantasy": "Dedicated holy healer",
       "hiddenSkillBonuses": {
         "mana_regen": 0.05
-      }
+      },
+      "primaryAttribute": "int"
     },
     {
       "id": "sword_saint",
@@ -1482,7 +1546,8 @@
       "fantasy": "Legendary master of swordsmanship",
       "hiddenSkillBonuses": {
         "parry": 0.05
-      }
+      },
+      "primaryAttribute": "str"
     },
     {
       "id": "death_knight",
@@ -1513,7 +1578,8 @@
       "fantasy": "Terrifying heavy warrior infused with death magic",
       "hiddenSkillBonuses": {
         "resilience": 0.05
-      }
+      },
+      "primaryAttribute": "str"
     },
     {
       "id": "celestial_knight",
@@ -1549,7 +1615,8 @@
       "fantasy": "Legendary holy swordsman",
       "hiddenSkillBonuses": {
         "parry": 0.05
-      }
+      },
+      "primaryAttribute": "str"
     },
     {
       "id": "shadow_monk",
@@ -1580,7 +1647,8 @@
       "fantasy": "Extremely mobile melee assassin",
       "hiddenSkillBonuses": {
         "evasion": 0.05
-      }
+      },
+      "primaryAttribute": "str"
     },
     {
       "id": "demon_hunter",
@@ -1611,7 +1679,8 @@
       "fantasy": "Specialist in hunting supernatural creatures",
       "hiddenSkillBonuses": {
         "evasion": 0.05
-      }
+      },
+      "primaryAttribute": "dex"
     },
     {
       "id": "arcane_knight",
@@ -1637,7 +1706,8 @@
       "fantasy": "Channels raw magical energy through weapons",
       "hiddenSkillBonuses": {
         "parry": 0.05
-      }
+      },
+      "primaryAttribute": "str"
     },
     {
       "id": "elemental_knight",
@@ -1678,7 +1748,8 @@
       "fantasy": "Imbues weapon with different elements",
       "hiddenSkillBonuses": {
         "parry": 0.05
-      }
+      },
+      "primaryAttribute": "str"
     },
     {
       "id": "tempest",
@@ -1709,7 +1780,8 @@
       "fantasy": "Ranged warrior who fights alongside storms",
       "hiddenSkillBonuses": {
         "evasion": 0.05
-      }
+      },
+      "primaryAttribute": "dex"
     },
     {
       "id": "grove_walker",
@@ -1725,7 +1797,8 @@
       "fantasy": "Wandering nature novice",
       "hiddenSkillBonuses": {
         "mana_regen": 0.05
-      }
+      },
+      "primaryAttribute": "int"
     },
     {
       "id": "herbalist",
@@ -1746,7 +1819,8 @@
       "fantasy": "Nature's apprentice",
       "hiddenSkillBonuses": {
         "mana_regen": 0.05
-      }
+      },
+      "primaryAttribute": "int"
     },
     {
       "id": "druid",
@@ -1772,7 +1846,8 @@
       "fantasy": "Master of nature",
       "hiddenSkillBonuses": {
         "mana_regen": 0.05
-      }
+      },
+      "primaryAttribute": "int"
     },
     {
       "id": "necromancer",
@@ -1798,7 +1873,8 @@
       "fantasy": "Death magic specialist",
       "hiddenSkillBonuses": {
         "mana_regen": 0.05
-      }
+      },
+      "primaryAttribute": "int"
     },
     {
       "id": "natures_avatar",
@@ -1829,7 +1905,8 @@
       "fantasy": "Near-mythical champion of nature",
       "hiddenSkillBonuses": {
         "mana_regen": 0.05
-      }
+      },
+      "primaryAttribute": "int"
     },
     {
       "id": "swordmaster",
@@ -1860,7 +1937,8 @@
       "fantasy": "Peerless blade master",
       "hiddenSkillBonuses": {
         "parry": 0.08
-      }
+      },
+      "primaryAttribute": "str"
     },
     {
       "id": "weaponmaster",
@@ -1871,47 +1949,160 @@
           "type": "anyOf",
           "count": 5,
           "of": [
-            { "type": "proficiency", "target": "katana", "value": 60 },
-            { "type": "proficiency", "target": "short_swords", "value": 60 },
-            { "type": "proficiency", "target": "longswords", "value": 60 },
-            { "type": "proficiency", "target": "greatswords", "value": 60 },
-            { "type": "proficiency", "target": "daggers", "value": 60 },
-            { "type": "proficiency", "target": "mace", "value": 60 },
-            { "type": "proficiency", "target": "spears", "value": 60 },
-            { "type": "proficiency", "target": "bows", "value": 60 },
-            { "type": "proficiency", "target": "crossbows", "value": 60 },
-            { "type": "proficiency", "target": "throwing_weapons", "value": 60 },
-            { "type": "proficiency", "target": "staff", "value": 60 },
-            { "type": "proficiency", "target": "fist", "value": 60 }
+            {
+              "type": "proficiency",
+              "target": "katana",
+              "value": 60
+            },
+            {
+              "type": "proficiency",
+              "target": "short_swords",
+              "value": 60
+            },
+            {
+              "type": "proficiency",
+              "target": "longswords",
+              "value": 60
+            },
+            {
+              "type": "proficiency",
+              "target": "greatswords",
+              "value": 60
+            },
+            {
+              "type": "proficiency",
+              "target": "daggers",
+              "value": 60
+            },
+            {
+              "type": "proficiency",
+              "target": "mace",
+              "value": 60
+            },
+            {
+              "type": "proficiency",
+              "target": "spears",
+              "value": 60
+            },
+            {
+              "type": "proficiency",
+              "target": "bows",
+              "value": 60
+            },
+            {
+              "type": "proficiency",
+              "target": "crossbows",
+              "value": 60
+            },
+            {
+              "type": "proficiency",
+              "target": "throwing_weapons",
+              "value": 60
+            },
+            {
+              "type": "proficiency",
+              "target": "staff",
+              "value": 60
+            },
+            {
+              "type": "proficiency",
+              "target": "fist",
+              "value": 60
+            }
           ]
         },
         {
           "type": "anyOf",
           "count": 2,
           "of": [
-            { "type": "classLevel", "target": "blademaster", "value": 20 },
-            { "type": "classLevel", "target": "assassin", "value": 20 },
-            { "type": "classLevel", "target": "shadowblade", "value": 20 },
-            { "type": "classLevel", "target": "knight", "value": 20 },
-            { "type": "classLevel", "target": "paladin", "value": 20 },
-            { "type": "classLevel", "target": "dark_knight", "value": 20 },
-            { "type": "classLevel", "target": "juggernaut", "value": 20 },
-            { "type": "classLevel", "target": "battlemage", "value": 20 },
-            { "type": "classLevel", "target": "storm_lancer", "value": 20 },
-            { "type": "classLevel", "target": "sword_saint", "value": 20 },
-            { "type": "classLevel", "target": "death_knight", "value": 20 },
-            { "type": "classLevel", "target": "celestial_knight", "value": 20 },
-            { "type": "classLevel", "target": "shadow_monk", "value": 20 },
-            { "type": "classLevel", "target": "demon_hunter", "value": 20 },
-            { "type": "classLevel", "target": "arcane_knight", "value": 20 },
-            { "type": "classLevel", "target": "elemental_knight", "value": 20 }
+            {
+              "type": "classLevel",
+              "target": "blademaster",
+              "value": 20
+            },
+            {
+              "type": "classLevel",
+              "target": "assassin",
+              "value": 20
+            },
+            {
+              "type": "classLevel",
+              "target": "shadowblade",
+              "value": 20
+            },
+            {
+              "type": "classLevel",
+              "target": "knight",
+              "value": 20
+            },
+            {
+              "type": "classLevel",
+              "target": "paladin",
+              "value": 20
+            },
+            {
+              "type": "classLevel",
+              "target": "dark_knight",
+              "value": 20
+            },
+            {
+              "type": "classLevel",
+              "target": "juggernaut",
+              "value": 20
+            },
+            {
+              "type": "classLevel",
+              "target": "battlemage",
+              "value": 20
+            },
+            {
+              "type": "classLevel",
+              "target": "storm_lancer",
+              "value": 20
+            },
+            {
+              "type": "classLevel",
+              "target": "sword_saint",
+              "value": 20
+            },
+            {
+              "type": "classLevel",
+              "target": "death_knight",
+              "value": 20
+            },
+            {
+              "type": "classLevel",
+              "target": "celestial_knight",
+              "value": 20
+            },
+            {
+              "type": "classLevel",
+              "target": "shadow_monk",
+              "value": 20
+            },
+            {
+              "type": "classLevel",
+              "target": "demon_hunter",
+              "value": 20
+            },
+            {
+              "type": "classLevel",
+              "target": "arcane_knight",
+              "value": 20
+            },
+            {
+              "type": "classLevel",
+              "target": "elemental_knight",
+              "value": 20
+            }
           ]
         }
       ],
       "fantasy": "Refuses to specialize, and doesn't need to",
       "hiddenSkillBonuses": {
         "parry": 0.08
-      }
+      },
+      "primaryAttribute": "str"
     },
     {
       "id": "archmage",
@@ -1927,27 +2118,64 @@
           "type": "anyOf",
           "count": 3,
           "of": [
-            { "type": "proficiency", "target": "fire_magic", "value": 30 },
-            { "type": "proficiency", "target": "water_magic", "value": 30 },
-            { "type": "proficiency", "target": "ice_magic", "value": 30 },
-            { "type": "proficiency", "target": "earth_magic", "value": 30 },
-            { "type": "proficiency", "target": "nature_magic", "value": 30 },
-            { "type": "proficiency", "target": "lightning_magic", "value": 30 },
-            { "type": "proficiency", "target": "wind_magic", "value": 30 }
+            {
+              "type": "proficiency",
+              "target": "fire_magic",
+              "value": 30
+            },
+            {
+              "type": "proficiency",
+              "target": "water_magic",
+              "value": 30
+            },
+            {
+              "type": "proficiency",
+              "target": "ice_magic",
+              "value": 30
+            },
+            {
+              "type": "proficiency",
+              "target": "earth_magic",
+              "value": 30
+            },
+            {
+              "type": "proficiency",
+              "target": "nature_magic",
+              "value": 30
+            },
+            {
+              "type": "proficiency",
+              "target": "lightning_magic",
+              "value": 30
+            },
+            {
+              "type": "proficiency",
+              "target": "wind_magic",
+              "value": 30
+            }
           ]
         },
         {
           "type": "oneOf",
           "of": [
-            { "type": "classLevel", "target": "arcane_knight", "value": 25 },
-            { "type": "classLevel", "target": "elementalist", "value": 25 }
+            {
+              "type": "classLevel",
+              "target": "arcane_knight",
+              "value": 25
+            },
+            {
+              "type": "classLevel",
+              "target": "elementalist",
+              "value": 25
+            }
           ]
         }
       ],
       "fantasy": "Master of pure magical theory",
       "hiddenSkillBonuses": {
         "mana_regen": 0.08
-      }
+      },
+      "primaryAttribute": "int"
     },
     {
       "id": "grand_paladin",
@@ -1983,7 +2211,8 @@
       "fantasy": "Pinnacle holy warrior",
       "hiddenSkillBonuses": {
         "parry": 0.08
-      }
+      },
+      "primaryAttribute": "str"
     },
     {
       "id": "dark_lord",
@@ -2009,7 +2238,8 @@
       "fantasy": "Apex of destructive darkness",
       "hiddenSkillBonuses": {
         "resilience": 0.08
-      }
+      },
+      "primaryAttribute": "str"
     },
     {
       "id": "archdruid",
@@ -2040,7 +2270,8 @@
       "fantasy": "Mythical guardian of nature",
       "hiddenSkillBonuses": {
         "mana_regen": 0.08
-      }
+      },
+      "primaryAttribute": "int"
     },
     {
       "id": "elemental_sovereign",
@@ -2070,15 +2301,24 @@
         {
           "type": "oneOf",
           "of": [
-            { "type": "classLevel", "target": "elemental_knight", "value": 25 },
-            { "type": "classLevel", "target": "tempest", "value": 25 }
+            {
+              "type": "classLevel",
+              "target": "elemental_knight",
+              "value": 25
+            },
+            {
+              "type": "classLevel",
+              "target": "tempest",
+              "value": 25
+            }
           ]
         }
       ],
       "fantasy": "Commands all elements at once",
       "hiddenSkillBonuses": {
         "mana_regen": 0.08
-      }
+      },
+      "primaryAttribute": "int"
     },
     {
       "id": "deathbringer",
@@ -2103,15 +2343,24 @@
         {
           "type": "oneOf",
           "of": [
-            { "type": "classLevel", "target": "necromancer", "value": 30 },
-            { "type": "classLevel", "target": "death_knight", "value": 30 }
+            {
+              "type": "classLevel",
+              "target": "necromancer",
+              "value": 30
+            },
+            {
+              "type": "classLevel",
+              "target": "death_knight",
+              "value": 30
+            }
           ]
         }
       ],
       "fantasy": "Harbinger of death itself",
       "hiddenSkillBonuses": {
         "resilience": 0.08
-      }
+      },
+      "primaryAttribute": "str"
     }
   ]
 }

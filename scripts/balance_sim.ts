@@ -359,13 +359,14 @@ function runFightSimulation(
   }
 
   companion.mood = 50;
-  companion.energy = 100;
-  companion.maxEnergy = 100;
-  companion.hp = 100;
-  companion.maxHp = 100;
+  companion.activeClass = classDef.id;
+  companion.recalculateDerivedStats(false);
+  companion.hp = companion.maxHp;
+  companion.criticalHp = companion.maxCriticalHp;
+  companion.energy = companion.maxEnergy;
 
   // Track energy spent in real mode
-  let currentEnergy = 100;
+  let currentEnergy = companion.maxEnergy;
   let totalEnergySpent = 0;
   let secondsUntilBelow20: number | null = null;
 
@@ -444,7 +445,7 @@ function runFightSimulation(
 
     if (mode === 'unlimited') {
       if (currentEnergy < 60) {
-        currentEnergy = 100;
+        currentEnergy = companion.maxEnergy;
       }
     } else {
       if (currentEnergy < 20 && secondsUntilBelow20 === null) {
@@ -476,7 +477,7 @@ function runFightSimulation(
 
     if (mode === 'unlimited') {
       if (currentEnergy < 60) {
-        currentEnergy = 100;
+        currentEnergy = companion.maxEnergy;
       }
     } else {
       if (currentEnergy < 20 && secondsUntilBelow20 === null) {

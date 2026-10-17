@@ -189,14 +189,17 @@ async function runBatchATests() {
     scaling: { stat: 'strength', factor: 1.0 }
   };
 
-  const createTester = (skillId: string) => {
+  const createTester = (skillId: string, skipClasses: boolean = true) => {
     const tester = new Player(scene, 10, 10, playerData, fixedTestWeapon, 32);
-    // Unlock all classes so requirements are met
-    for (const c of ['fencer', 'combat_medic', 'vanguard', 'restoration_mage', 'brawler', 'scout', 'swordsman', 'ronin', 'samurai', 'loader', 'thrower', 'reaver']) {
-      tester.progression.setClassLevel(c as any, 50);
+    if (!skipClasses) {
+      // Unlock all classes so requirements are met
+      for (const c of ['fencer', 'combat_medic', 'vanguard', 'restoration_mage', 'brawler', 'scout', 'swordsman', 'ronin', 'samurai', 'loader', 'thrower', 'reaver']) {
+        tester.progression.setClassLevel(c as any, 50);
+      }
     }
     tester.mood = 50; // 1.0 combat multiplier
     tester.energy = 100;
+    tester.knownSkillIds = [skillId];
     tester.equippedSkillIds = [skillId];
     return tester;
   };

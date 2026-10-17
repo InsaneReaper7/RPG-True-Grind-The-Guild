@@ -1791,3 +1791,42 @@ The following three intentional behavioural changes were reviewed and accepted b
   - Full test suite: `npm test -- --quiet` passes all 131 test suites cleanly.
   - Production build: `npm run build` succeeds cleanly.
 
+### Stat Gains & Uncapped Attribute Scaling (STR, DEX, INT), Valerie Sidearm Conservation, and Sim Re-measurement (2026-10-16)
+
+**Resolved and shipped: Implemented the owner's founding vision of linear uncapped per-level stat gains (Max HP, Max Critical HP, Max Energy, and in-combat Energy Regen) and core attributes (STR, DEX, INT) scaling physical, ranged physical, and magical damage/flat healing. Implemented Valerie's off-hand dagger lifecycle conservation across transitions/unequips with bag returns and class-change confirmation prompts. Extended class levels to 100 without artificial caps. Added Check 8 to `test/data_lint.test.ts`. Re-ran balance simulation, updated test suites, and verified 100% test pass rate.**
+
+- **1. Linear Uncapped Stat Gains (`data/statGains.json`, `src/systems/StatGainsSystem.ts`, `src/entities/Player.ts`)**:
+  - Derived, idempotent per-level stat calculation via `StatGainsSystem.calculateStatGains` invoked on character initialization, level up, class level up, and class unlocks.
+  - Linear gains per category (all caps removed per owner direction):
+    - **Weapon**: +0.5 Max HP, +0.25 Max Critical HP, +0.005 In-combat EN/s.
+    - **Magic school**: +0.5 Max Energy, +0.02 In-combat EN/s.
+    - **Profession / Gathering / Utility**: +0.1 Max HP, +0.05 Max Critical HP, +0.1 Max Energy.
+    - **Class levels (1–100)**: +0.2 Max HP, +0.1 Max Critical HP, +0.002 In-combat EN/s.
+  - Safe restoration on load (`Math.min(maxCriticalHp, snapshot.criticalHp)`), avoiding free critical HP on load.
+  - Dynamic mid-run expansion (`isMidRun`): when Max HP / Critical HP / Max Energy increases mid-run, current values increase by the same amount.
+  - `data_lint` Check 8: Every one of the 56 default proficiencies in `ProgressionSystem` is registered exactly once in `statGains.json` (assigned to weapon, magic, profession, or excluded).
+- **2. Core Attributes: STR, DEX, INT Linear Scaling (`data/statGains.json`, `data/classes.json`, `src/systems/CombatSystem.ts`, `src/systems/SkillSystem.ts`)**:
+  - Base attribute 1.0 for all characters.
+  - Growth:
+    - Melee weapons (+0.1 STR per level).
+    - Ranged weapons (`bows`, `crossbows`, `throwing_weapons`: +0.1 DEX per level).
+    - Magic schools (+0.1 INT per level).
+    - `druid_staff`: +0.05 STR, +0.05 INT per level.
+    - Class levels (combat classes): +0.02 to the class's `primaryAttribute` per level gained above level 1.
+  - Multiplier: `1.0 + 0.02 * (attribute - 1.0)`.
+  - Unified scaling hook in `SkillSystem.ts` (where `hitDamage` is finalized):
+    - `scaling: "weapon"`: scales by `dexMultiplier` if `effectiveWeapon.category === 'ranged'`, else `strMultiplier`. Primary targets, cleave targets, radius area hits, chains, and lifesteal all receive the properly scaled hit damage.
+    - `scaling: "spell"`: scales by `intMultiplier`.
+    - Flat heals and shields (`healing_staff` basic heal, `heal.amount`, `healOverTime.amountPerTick`, `shield.shieldAmount`) scale with `intMultiplier`. Proportional heals (`heal.percent`), revives, and status ticks/DoTs remain exempt.
+  - Primary attribute assigned to all 85 combat classes in `data/classes.json` (38 STR, 13 DEX, 34 INT); 9 crafting classes omitted.
+- **3. Valerie Sidearm Conservation (`src/entities/Player.ts`, `src/ui/HUD.ts`)**:
+  - Valerie retains her off-hand Dagger across floor transitions, Outpost visits, and save/load cycles.
+  - When unequipping off-hand due to 2H weapon equipping or class switching, the unequipped item is returned directly to the character's inventory bag.
+  - A persistent >=6s warning toast is displayed: `"{name}'s off-hand {item} was unequipped: {reason}"`.
+  - Confirmation prompt when switching Valerie from Scout to a class unable to dual-wield sidearms: `"Switching Valerie to {Class} will unequip her off-hand Dagger. Continue?"`.
+- **4. Verification & Testing**:
+  - `test/attributesSystem.test.ts`: 7 targeted tests for uncapped STR/DEX/INT scaling, cleave scaling, and DoT exemption.
+  - `test/valerieSidearmConservation.test.ts`: 4 targeted tests verifying dagger conservation across all lifecycle states.
+  - `test/data_lint.test.ts`: Passes all 8 checks.
+  - Full test suite: `npm test -- --quiet` passed all 134 test suites cleanly.
+  - Production build: `npm run build` succeeds cleanly.

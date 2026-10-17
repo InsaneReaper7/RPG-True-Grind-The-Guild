@@ -202,7 +202,7 @@ async function runBatchCTests() {
     scaling: { stat: 'strength', factor: 0.0 }
   };
 
-  const createTester = (skillId: string, weapon: WeaponDef = fixedTestWeapon, x: number = 10, y: number = 10, skipClasses: boolean = false) => {
+  const createTester = (skillId: string, weapon: WeaponDef = fixedTestWeapon, x: number = 10, y: number = 10, skipClasses: boolean = true) => {
     const tester = new Player(scene, x, y, playerData, weapon, 32);
     if (!skipClasses) {
       for (const c of [

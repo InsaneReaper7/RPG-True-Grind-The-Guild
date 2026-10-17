@@ -403,6 +403,19 @@ export class SkillSystem {
           }
         }
 
+        // Attribute multiplier applied once to finalized hitDamage (covers weapon skills, spell skills, cleave/area, chains, and lifesteal)
+        let attrMult = 1.0;
+        if (effect.scaling === 'weapon') {
+          const effectiveWeapon = this.combatSystem.getEffectiveWeaponForAttack(caster);
+          const isRanged = effectiveWeapon.category === 'ranged';
+          attrMult = isRanged
+            ? (caster.dexMultiplier ?? (1 + 0.02 * ((caster.dexterity ?? 1.0) - 1)))
+            : (caster.strMultiplier ?? (1 + 0.02 * ((caster.strength ?? 1.0) - 1)));
+        } else if (effect.scaling === 'spell') {
+          attrMult = caster.intMultiplier ?? (1 + 0.02 * ((caster.intelligence ?? 1.0) - 1));
+        }
+        hitDamage *= attrMult;
+
         if (!enemyTarget || enemyTarget.isDowned?.() || enemyTarget.state === 'dead' || enemyTarget.state === 'downed') {
           if (effect.area && effect.area.center === 'caster') {
             this.executeAreaDamage(effect.area, caster, null, hitDamage, weaponId, time, skillDef);
@@ -525,11 +538,12 @@ export class SkillSystem {
       }
 
       case 'heal': {
+        const intMult = caster.intMultiplier ?? (1 + 0.02 * ((caster.intelligence ?? 1.0) - 1));
         let healTarget: Player | null = null;
         if (effect.target === 'self') {
           healTarget = caster;
         } else if (effect.target === 'party') {
-          const amt = effect.amount ?? 20;
+          const amt = Math.round((effect.amount ?? 20) * intMult);
           for (const m of this.combatSystem.party) {
             if (m.state === 'dead' || m.state === 'downed') continue;
             const res = m.heal(amt);
@@ -542,7 +556,7 @@ export class SkillSystem {
         }
 
         if (healTarget && healTarget.state !== 'dead' && healTarget.state !== 'downed') {
-          let amt = effect.amount ?? 20;
+          let amt = Math.round((effect.amount ?? 20) * intMult);
           if (effect.percent) {
             amt = Math.round(healTarget.maxHp * effect.percent);
           }
@@ -556,13 +570,14 @@ export class SkillSystem {
       case 'healOverTime': {
         const hotTarget = this.resolveAllyTarget(caster, target, effect.target);
         if (hotTarget && hotTarget.state !== 'dead' && hotTarget.state !== 'downed') {
+          const intMult = caster.intMultiplier ?? (1 + 0.02 * ((caster.intelligence ?? 1.0) - 1));
           const hotDef = {
             id: skillDef.id,
             name: skillDef.name,
             durationMs: effect.durationMs,
             tickIntervalMs: effect.tickIntervalMs ?? 1000,
             damagePerTick: 0,
-            healPerTick: effect.amountPerTick,
+            healPerTick: Math.round(effect.amountPerTick * intMult),
             color: '#22c55e'
           };
           hotTarget.applyStatusEffect(hotDef);
@@ -575,11 +590,13 @@ export class SkillSystem {
       case 'shield': {
         const shieldTarget = this.resolveAllyTarget(caster, target, effect.target);
         if (shieldTarget && shieldTarget.state !== 'dead' && shieldTarget.state !== 'downed') {
+          const intMult = caster.intMultiplier ?? (1 + 0.02 * ((caster.intelligence ?? 1.0) - 1));
+          const scaledShield = Math.round(effect.shieldAmount * intMult);
           const baseDef = dataLoader.getStatusEffect(skillDef.id);
           const shieldDef = baseDef
             ? {
                 ...baseDef,
-                shieldAmount: effect.shieldAmount,
+                shieldAmount: scaledShield,
                 durationMs: effect.durationMs ?? baseDef.durationMs,
                 tickIntervalMs: effect.durationMs ?? baseDef.tickIntervalMs ?? effect.durationMs
               }
@@ -589,12 +606,12 @@ export class SkillSystem {
                 durationMs: effect.durationMs,
                 tickIntervalMs: effect.durationMs,
                 damagePerTick: 0,
-                shieldAmount: effect.shieldAmount,
+                shieldAmount: scaledShield,
                 color: '#38bdf8'
               };
           shieldTarget.applyStatusEffect(shieldDef);
           this.combatSystem.createCleanseEffect(shieldTarget.x, shieldTarget.y);
-          this.combatSystem.createFloatingText(shieldTarget.x, shieldTarget.y - 12, `+${effect.shieldAmount} SHIELD!`, shieldDef.color || '#38bdf8');
+          this.combatSystem.createFloatingText(shieldTarget.x, shieldTarget.y - 12, `+${scaledShield} SHIELD!`, shieldDef.color || '#38bdf8');
         }
         break;
       }

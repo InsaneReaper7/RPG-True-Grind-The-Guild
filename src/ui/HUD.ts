@@ -1076,6 +1076,7 @@ export class HUD {
       HUD.activeInstance.destroy();
     }
     HUD.activeInstance = this;
+    (globalThis as any).activeHUD = this;
     if (typeof window !== 'undefined') {
       (window as any).activeHUD = this;
     }
@@ -2323,6 +2324,7 @@ export class HUD {
   public setLocation(name: string, isOutpost: boolean, customColor?: string): void {
     this.isOutpost = isOutpost;
     HUD.activeInstance = this;
+    (globalThis as any).activeHUD = this;
     (window as any).activeHUD = this;
 
     if (this.locationBadgeEl) {
@@ -2499,20 +2501,24 @@ export class HUD {
         const equipBtn = card.querySelector(`[data-equip-class="${cls.id}"]`) as HTMLElement;
         if (equipBtn) {
           equipBtn.onclick = () => {
-            player.setActiveClass(cls.id);
-            this.showToast(`🎯 Active Class set to ${cls.name}`, 'success');
-            this.renderLoadoutModal(player, progression);
-            this.update(player, progression, 0, this.currentParty);
+            const success = player.setActiveClass(cls.id);
+            if (success) {
+              this.showToast(`🎯 Active Class set to ${cls.name}`, 'success');
+              this.renderLoadoutModal(player, progression);
+              this.update(player, progression, 0, this.currentParty);
+            }
           };
         }
 
         const unequipBtn = card.querySelector(`[data-unequip-class="${cls.id}"]`) as HTMLElement;
         if (unequipBtn) {
           unequipBtn.onclick = () => {
-            player.setActiveClass(null);
-            this.showToast('🎯 Active Class cleared (None)', 'info');
-            this.renderLoadoutModal(player, progression);
-            this.update(player, progression, 0, this.currentParty);
+            const success = player.setActiveClass(null);
+            if (success) {
+              this.showToast('🎯 Active Class cleared (None)', 'info');
+              this.renderLoadoutModal(player, progression);
+              this.update(player, progression, 0, this.currentParty);
+            }
           };
         }
 
@@ -3633,6 +3639,24 @@ export class HUD {
         }
       }
 
+      // 3c. Attributes (STR, DEX, INT)
+      const attrRowEl = this.partyOverviewRosterEl.querySelector<HTMLElement>(`[data-party-attributes="${i}"]`);
+      if (attrRowEl) {
+        const strVal = member.strength ?? 1.0;
+        const dexVal = member.dexterity ?? 1.0;
+        const intVal = member.intelligence ?? 1.0;
+        const strMult = member.strMultiplier ?? (1 + 0.02 * (strVal - 1));
+        const dexMult = member.dexMultiplier ?? (1 + 0.02 * (dexVal - 1));
+        const intMult = member.intMultiplier ?? (1 + 0.02 * (intVal - 1));
+        const strBonusPct = ((strMult - 1) * 100).toFixed(1);
+        const dexBonusPct = ((dexMult - 1) * 100).toFixed(1);
+        const intBonusPct = ((intMult - 1) * 100).toFixed(1);
+        const valEl = attrRowEl.querySelector<HTMLElement>(`[data-party-attributes-val="${i}"]`);
+        if (valEl) {
+          this.setElementTextIfChanged(valEl, `STR ${strVal.toFixed(1)} (+${strBonusPct}%) · DEX ${dexVal.toFixed(1)} (+${dexBonusPct}%) · INT ${intVal.toFixed(1)} (+${intBonusPct}%)`);
+        }
+      }
+
       // 4. Hunger
       const hungerEl = this.partyOverviewRosterEl.querySelector<HTMLElement>(`[data-party-hunger="${i}"]`);
       if (hungerEl) {
@@ -4210,6 +4234,10 @@ export class HUD {
               <span>From skill levels:</span>
               <span class="party-stat-val" data-party-skill-gains-val="${i}">+${statGains.hpGain.toFixed(1)} HP · +${statGains.energyGain.toFixed(1)} EN · +${statGains.regenGain.toFixed(1)} EN/s</span>
             </div>
+            <div class="party-stat-row party-attributes-row" data-party-attributes="${i}" style="font-size: 10px; color: #38bdf8; margin-top: 1px;">
+              <span>Attributes:</span>
+              <span class="party-stat-val" data-party-attributes-val="${i}">STR ${(member.strength ?? 1.0).toFixed(1)} (+${(((member.strMultiplier ?? 1.0) - 1) * 100).toFixed(1)}%) · DEX ${(member.dexterity ?? 1.0).toFixed(1)} (+${(((member.dexMultiplier ?? 1.0) - 1) * 100).toFixed(1)}%) · INT ${(member.intelligence ?? 1.0).toFixed(1)} (+${(((member.intMultiplier ?? 1.0) - 1) * 100).toFixed(1)}%)</span>
+            </div>
             <div class="party-stat-row">
               <span>Hunger:</span>
               <span class="party-stat-val" data-party-hunger="${i}" style="color: ${DataLoader.getInstance().isHungerEnabled() ? '#fb923c' : '#9ca3af'};">${Math.floor(member.hunger)} / ${member.maxHunger}${DataLoader.getInstance().isHungerEnabled() ? '' : ' (paused)'}</span>
@@ -4755,7 +4783,6 @@ export class HUD {
       }
 
       const prevWeapon = member.equippedWeapon?.id !== 'fist' ? member.equippedWeapon : null;
-      const prevOffhand = (weapon?.twoHanded && member.offhandWeapon) ? member.offhandWeapon : null;
       const success = member.equipWeapon(weapon, this.isOutpost);
       if (success) {
         if (!debugBypass) {
@@ -4763,9 +4790,7 @@ export class HUD {
           if (prevWeapon) {
             member.addItem(prevWeapon.id, 1);
           }
-          if (prevOffhand && !member.offhandWeapon) {
-            member.addItem(prevOffhand.id, 1);
-          }
+          // Note: member.equipWeapon already returns unequipped offhand to inventory and shows a >=6s toast.
         }
         this.showToast(`⚔️ Equipped ${weapon.name} in Main Hand!`, 'success');
         this.renderPartyOverviewModal(true);
@@ -5333,6 +5358,8 @@ export class HUD {
         this.partyReselectAllBtn.onclick = null;
       }
       HUD.activeInstance = null;
+      if ((globalThis as any).activeHUD === this) (globalThis as any).activeHUD = null;
+      if ((window as any)?.activeHUD === this) (window as any).activeHUD = null;
     }
   }
 
