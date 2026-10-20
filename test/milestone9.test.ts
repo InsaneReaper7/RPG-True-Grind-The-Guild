@@ -237,15 +237,15 @@ async function runTests() {
   // TEST 6: Harvest drops on defeat
   // ==========================================================================
   const gameState = GameState.getInstance();
-  const initialMeat = gameState.getItemCount('monster_meat');
+  const initialMeat = gameState.getItemCount('crypt_meat');
   const initialEar = gameState.getItemCount('goblin_ear');
   const initialBone = gameState.getItemCount('bone');
   const initialEcto = gameState.getItemCount('ectoplasm');
 
   // Verify harvest tables in data (allowing corpseHarvest for butchering items per M32)
   assert.ok(
-    goblinDef.harvest.some(h => h.item === 'monster_meat' && h.tags.includes('cooking')) ||
-    (goblinDef.corpseHarvest?.butchering?.item === 'monster_meat' && (goblinDef.corpseHarvest?.butchering?.tags?.includes('cooking') ?? true))
+    goblinDef.harvest.some(h => h.item === 'crypt_meat' && h.tags.includes('cooking')) ||
+    (goblinDef.corpseHarvest?.butchering?.item === 'crypt_meat' && (goblinDef.corpseHarvest?.butchering?.tags?.includes('cooking') ?? true))
   );
   assert.ok(goblinDef.harvest.some(h => h.item === 'goblin_ear' && h.tags.includes('alchemy')));
   assert.ok(skeletonDef.harvest.some(h => h.item === 'bone' && h.tags.includes('blacksmithing')));
@@ -254,12 +254,12 @@ async function runTests() {
   assert.ok(undeadDef.harvest.some(h => h.item === 'ectoplasm'));
 
   // Test addItem to inventory directly
-  gameState.addItem('monster_meat', 1);
+  gameState.addItem('crypt_meat', 1);
   gameState.addItem('bone', 1);
   gameState.addItem('ectoplasm', 1);
   gameState.addItem('goblin_ear', 1);
 
-  assert.equal(gameState.getItemCount('monster_meat'), initialMeat + 1);
+  assert.equal(gameState.getItemCount('crypt_meat'), initialMeat + 1);
   assert.equal(gameState.getItemCount('bone'), initialBone + 1);
   assert.equal(gameState.getItemCount('ectoplasm'), initialEcto + 1);
   assert.equal(gameState.getItemCount('goblin_ear'), initialEar + 1);

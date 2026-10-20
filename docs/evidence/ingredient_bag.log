@@ -1,0 +1,16 @@
+--- STARTING INGREDIENT BAG TEST SUITE ---
+
+--- Test 1: Definition & Crafting Recipe ---
+✔ Test 1 passed: ingredient_bag definition and Lv 1 crafting recipe verified.
+
+--- Test 2: Weight Math & Exemption ---
+[Player:undefined] Equipped accessory: Ingredient Bag (+undefined HP). Current HP: NaN/NaN, Crit HP: NaN/NaN
+[Player:undefined] Unequipped accessory. Current HP: NaN/NaN, Crit HP: NaN/25
+✔ Test 2 passed: 15 kg exemption math and unequipped full weight verified.
+
+--- Test 3: Auto-Deposit on Return ---
+[Player:undefined] Equipped accessory: Ingredient Bag (+undefined HP). Current HP: NaN/NaN, Crit HP: NaN/NaN
+[Auto-Deposit] 📦 Deposited to stockpile: 60 Crypt Game Meat
+✔ Test 3 passed: Auto-deposit empties ingredients into stockpile on return while keeping bag equipped.
+
+ALL INGREDIENT BAG TESTS PASSED SUCCESSFULLY!

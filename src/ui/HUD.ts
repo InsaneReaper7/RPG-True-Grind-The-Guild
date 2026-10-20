@@ -6966,6 +6966,7 @@ export class HUD {
       let undiscoveredCount = 0;
 
       for (const recipe of allRecipes) {
+        if (recipe.id === 'burnt_mush') continue;
         const isDiscovered = gameState.isCookingRecipeDiscovered(recipe.id);
 
         if (!isDiscovered) {
@@ -7086,8 +7087,8 @@ export class HUD {
 
           const qDef = foodDef?.qualities?.[quality];
           const hungerAmt = qDef ? Math.round((foodDef?.hungerRestored || 30) * qDef.hungerMultiplier) : (foodDef?.hungerRestored || 30);
-          const regenAmt = qDef ? qDef.hpRegenPerSec : (foodDef?.buff.hpRegenPerSec || 2);
-          const durSec = Math.round((qDef ? qDef.buffDurationMs : (foodDef?.buff.durationMs || 15000)) / 1000);
+          const regenAmt = qDef ? qDef.hpRegenPerSec : (foodDef?.buff?.hpRegenPerSec || 2);
+          const durSec = Math.round((qDef ? qDef.buffDurationMs : (foodDef?.buff?.durationMs || 15000)) / 1000);
 
           row.innerHTML = `
             <div>

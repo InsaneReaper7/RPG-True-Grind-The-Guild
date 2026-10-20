@@ -484,8 +484,8 @@ async function runTestSuite() {
     const sm = gameState.getSeedMaker(8, 9);
     assert.ok(sm && sm.seedMakerData, 'Seed maker data must survive');
     assert.equal(sm.seedMakerData.state, 'processing');
-    assert.equal(sm.seedMakerData.inputItem, 'vegetable');
-    assert.equal(sm.seedMakerData.outputItem, 'seeds');
+    assert.equal(sm.seedMakerData.inputItem, 'carrot');
+    assert.equal(sm.seedMakerData.outputItem, 'carrot_seed');
     assert.equal(sm.seedMakerData.outputCount, 2);
 
     // Party Roster & Personal Inventories

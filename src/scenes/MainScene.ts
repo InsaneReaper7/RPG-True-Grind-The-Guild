@@ -2703,7 +2703,7 @@ export class MainScene extends Phaser.Scene {
 
   public isEnemyAnimalType(enemyId: string): boolean {
     const id = enemyId.toLowerCase();
-    return id === 'wolf' || id === 'spider';
+    return id === 'wolf' || id === 'spider' || id === 'deep_crawler';
   }
 
   public isEnemyUndeadOrSkeleton(enemyId: string): boolean {
@@ -2754,11 +2754,11 @@ export class MainScene extends Phaser.Scene {
     const corpseHarvest = deadEnemy.enemyData.corpseHarvest;
     const harvestDef = isSkinning ? corpseHarvest?.skinning : corpseHarvest?.butchering;
 
-    const defaultResource = isSkinning
-      ? (deadEnemy.enemyData.id === 'wolf' ? 'wolf_pelt' : 'spider_silk')
-      : (deadEnemy.enemyData.id === 'wolf' ? 'wolf_meat' : 'monster_meat');
+    if (!harvestDef || !harvestDef.item) {
+      return null as any;
+    }
 
-    const resourceId = harvestDef?.item || defaultResource;
+    const resourceId = harvestDef.item;
     const actionVerb = isSkinning ? 'Skinning' : 'Butchering';
     const skillId = isSkinning ? 'skinning' : 'butchering';
     const color = isSkinning ? '#eab308' : '#ef4444';
@@ -2934,7 +2934,7 @@ export class MainScene extends Phaser.Scene {
       id: nodeTypeId,
       name: nodeTypeId.includes('tree') ? 'Tree' : nodeTypeId.includes('rock') ? 'Rock Vein' : nodeTypeId.includes('dig') ? 'Dig Spot' : nodeTypeId.includes('vegetable') ? 'Wild Vegetable' : nodeTypeId.includes('fish') ? 'Fishing Spot' : 'Wild Herbs',
       skillId: nodeTypeId.includes('tree') ? 'woodcutting' : nodeTypeId.includes('rock') ? 'mining' : nodeTypeId.includes('dig') ? 'digging' : nodeTypeId.includes('vegetable') ? 'gardening' : nodeTypeId.includes('fish') ? 'fishing' : 'foraging',
-      resourceId: nodeTypeId.includes('tree') ? 'wood' : nodeTypeId.includes('rock') ? 'ore' : nodeTypeId.includes('dig') ? 'dirt' : nodeTypeId.includes('vegetable') ? 'vegetable' : nodeTypeId.includes('fish') ? 'raw_fish' : 'wild_herbs',
+      resourceId: nodeTypeId.includes('tree') ? 'wood' : nodeTypeId.includes('rock') ? 'ore' : nodeTypeId.includes('dig') ? 'dirt' : nodeTypeId.includes('vegetable') ? 'carrot' : nodeTypeId.includes('fish') ? 'river_carp' : 'wild_herbs',
       yieldCount: nodeTypeId.includes('tree') ? 2 : 1,
       expGranted: 15,
       channelDurationMs: 2500,
@@ -3436,7 +3436,69 @@ export class MainScene extends Phaser.Scene {
     let awardedItemName = node.nodeDef.name;
     let awardedCount = yieldCount;
 
-    if (node.nodeDef.lootTable && node.nodeDef.lootTable.length > 0) {
+
+    // Regional vegetable node harvest tables
+    if (node.nodeDef.id === 'vegetable_node' || node.nodeDef.resourceId === 'carrot' || node.nodeDef.resourceId === 'vegetable') {
+      const currentFloor = GameState.getInstance().getDungeonFloorCount() || 1;
+      const region = DataLoader.getInstance().getRegionForFloor(currentFloor);
+      let vegTable = [
+        { item: 'carrot', weight: 30 },
+        { item: 'potato', weight: 25 },
+        { item: 'onion', weight: 25 },
+        { item: 'garlic', weight: 20 }
+      ];
+      if (region.id === 'abyss') {
+        vegTable = [
+          { item: 'cave_mushroom', weight: 40 },
+          { item: 'turnip', weight: 30 },
+          { item: 'carrot', weight: 10 },
+          { item: 'potato', weight: 10 },
+          { item: 'garlic', weight: 10 }
+        ];
+      } else if (region.id === 'caldera') {
+        vegTable = [
+          { item: 'fire_pepper', weight: 40 },
+          { item: 'sweet_potato', weight: 30 },
+          { item: 'cave_mushroom', weight: 15 },
+          { item: 'turnip', weight: 15 }
+        ];
+      } else if (region.id === 'glacial') {
+        vegTable = [
+          { item: 'frost_cabbage', weight: 40 },
+          { item: 'snow_pea', weight: 30 },
+          { item: 'fire_pepper', weight: 15 },
+          { item: 'sweet_potato', weight: 15 }
+        ];
+      }
+
+      const totalVegWeight = vegTable.reduce((sum, e) => sum + e.weight, 0);
+      const rollVal = (lootRollFn ? lootRollFn() : Math.random()) * totalVegWeight;
+      let acc = 0;
+      let selectedVeg = vegTable[0].item;
+      for (const entry of vegTable) {
+        acc += entry.weight;
+        if (rollVal <= acc) {
+          selectedVeg = entry.item;
+          break;
+        }
+      }
+      awardedResourceId = selectedVeg;
+      awardedItemName = DataLoader.getInstance().getItem(selectedVeg)?.name || selectedVeg.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+      awardedCount = yieldCount;
+    }
+
+    // Butchering Premium Cut Roll (Section 2.1: 10% chance)
+    if (node.nodeDef.actionVerb === 'Butchering' && node.corpseEnemy) {
+      const butchDef = node.corpseEnemy.enemyData?.corpseHarvest?.butchering;
+      if (butchDef?.premiumItem && butchDef.premiumChance) {
+        const premRoll = lootRollFn ? lootRollFn() : Math.random();
+        if (premRoll < butchDef.premiumChance) {
+          awardedResourceId = butchDef.premiumItem;
+          awardedItemName = DataLoader.getInstance().getItem(awardedResourceId)?.name || butchDef.premiumItem.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+        }
+      }
+    }
+    if (node.nodeDef.lootTable && node.nodeDef.lootTable.length > 0 && node.nodeDef.id !== 'vegetable_node') {
       const totalWeight = node.nodeDef.lootTable.reduce((sum, e) => sum + (e.weight ?? 1), 0);
       const rollVal = (lootRollFn ? lootRollFn() : Math.random()) * totalWeight;
       let acc = 0;
@@ -3530,18 +3592,61 @@ export class MainScene extends Phaser.Scene {
       }
     }
 
-    // Milestone 39: Rare Dungeon Vegetable Node Seed Bonus Gated at Gardening Level 1
+
+    // Vegetable Node Seed Bonus Gated at Gardening Level 1 (awards harvested vegetable's seed)
     let bonusSeeds = 0;
-    if (node.nodeDef.id === 'vegetable_node' || node.nodeDef.resourceId === 'vegetable') {
+    let bonusSeedItem = 'seeds';
+    if (node.nodeDef.id === 'vegetable_node' || node.nodeDef.skillId === 'gardening') {
       const gardeningLevel = character.progression.getProficiencyLevel('gardening');
       if (gardeningLevel >= 1) {
         const seedRoll = lootRollFn ? lootRollFn() : Math.random();
         if (seedRoll < 0.5) {
           bonusSeeds = 1;
-          character.addItem('seeds', 1);
+          const cropsConfig = DataLoader.getInstance().getCropsConfig();
+          if (cropsConfig?.crops) {
+            for (const [sId, cDef] of Object.entries(cropsConfig.crops) as [string, any][]) {
+              if (cDef.produceId === awardedResourceId) {
+                bonusSeedItem = sId;
+                break;
+              }
+            }
+          }
+          character.addItem(bonusSeedItem, 1);
         }
       }
     }
+
+    // Herbs & Spices Extra Rolls (Section 2.4)
+    let extraHerbName: string | null = null;
+    let saffronName: string | null = null;
+    let cinnamonName: string | null = null;
+
+    if (node.nodeDef.skillId === 'foraging') {
+      // 8% herb roll (thyme 40, rosemary 35, sage 25)
+      const herbRoll = lootRollFn ? lootRollFn() : Math.random();
+      if (herbRoll < 0.08) {
+        const subRoll = (lootRollFn ? lootRollFn() : Math.random()) * 100;
+        const herbId = subRoll < 40 ? 'thyme' : subRoll < 75 ? 'rosemary' : 'sage';
+        character.addItem(herbId, 1);
+        extraHerbName = DataLoader.getInstance().getItem(herbId)?.name || herbId;
+      }
+      // 1% saffron roll (separate roll)
+      const saffronRoll = lootRollFn ? lootRollFn() : Math.random();
+      if (saffronRoll < 0.01) {
+        character.addItem('saffron', 1);
+        saffronName = 'Saffron';
+      }
+    }
+
+    if (node.nodeDef.skillId === 'woodcutting') {
+      // 5% cinnamon roll (separate roll)
+      const cinRoll = lootRollFn ? lootRollFn() : Math.random();
+      if (cinRoll < 0.05) {
+        character.addItem('cinnamon', 1);
+        cinnamonName = 'Cinnamon Bark';
+      }
+    }
+
 
     // Grant gathering EXP
     character.progression.addProficiencyExp(node.nodeDef.skillId, expGranted);
@@ -3559,7 +3664,17 @@ export class MainScene extends Phaser.Scene {
       this.createFloatingText(posX, posY - 25, `+${perkBonusDrop.count} ${perkBonusDrop.itemName} (Perk Bonus)`, '#facc15');
     }
     if (bonusSeeds > 0) {
-      this.createFloatingText(posX, posY - 30, `+${bonusSeeds} Seeds`, '#22c55e');
+      const sName = DataLoader.getInstance().getItem(bonusSeedItem)?.name || 'Seed';
+      this.createFloatingText(posX, posY - 30, `+1 ${sName}`, '#22c55e');
+    }
+    if (extraHerbName) {
+      this.createFloatingText(posX, posY - 35, `+1 ${extraHerbName}`, '#34d399');
+    }
+    if (saffronName) {
+      this.createFloatingText(posX, posY - 40, '+1 Saffron (Rare)', '#f43f5e');
+    }
+    if (cinnamonName) {
+      this.createFloatingText(posX, posY - 40, '+1 Cinnamon Bark', '#f59e0b');
     }
     const skillName = DataLoader.getInstance().getTrainableStatDef(node.nodeDef.skillId)?.name || node.nodeDef.skillId;
     this.createFloatingText(posX, posY - 42, `+${expGranted} ${skillName} EXP`, '#60a5fa');
@@ -3614,7 +3729,11 @@ export class MainScene extends Phaser.Scene {
           // Wolf remains active and transitions to Phase 2 (Butchering)!
           node.isHarvested = false;
           const meatDef = corpseEnemy.enemyData.corpseHarvest?.butchering;
-          const meatResource = meatDef?.item || (corpseEnemy.enemyData.id === 'wolf' ? 'wolf_meat' : 'monster_meat');
+          if (!meatDef || !meatDef.item) {
+            node.isHarvested = true;
+            return;
+          }
+          const meatResource = meatDef.item;
           node.nodeDef.skillId = 'butchering';
           node.nodeDef.resourceId = meatResource;
           node.nodeDef.actionVerb = 'Butchering';

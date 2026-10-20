@@ -247,5 +247,65 @@ for (const c of classesData.classes) {
 }
 console.log('✓ PASS: All spellDamageMultiplier values are numbers > 0 and <= 2.\n');
 
+// 10. Food & Cooking Data Integrity Guard
+console.log('10. Checking Food & Cooking data integrity...');
+const itemsData = JSON.parse(fs.readFileSync(path.join(rootDir, 'data/items.json'), 'utf8'));
+const cookingRecipesData = JSON.parse(fs.readFileSync(path.join(rootDir, 'data/cookingRecipes.json'), 'utf8'));
+const cropsData = JSON.parse(fs.readFileSync(path.join(rootDir, 'data/crops.json'), 'utf8'));
+const gatheringNodesData = JSON.parse(fs.readFileSync(path.join(rootDir, 'data/gatheringNodes.json'), 'utf8'));
+const enemiesData = JSON.parse(fs.readFileSync(path.join(rootDir, 'data/enemies.json'), 'utf8'));
+const cookingConfigData = JSON.parse(fs.readFileSync(path.join(rootDir, 'data/cookingConfig.json'), 'utf8'));
+
+const itemMap = new Map(itemsData.items.map((it: any) => [it.id, it]));
+
+// 10a. Dead IDs must be absent
+const deadIds = ['raw_meat', 'monster_meat', 'wolf_meat', 'raw_fish', 'vegetable'];
+for (const dId of deadIds) {
+  assert.ok(!itemMap.has(dId), `Dead legacy ID "${dId}" must not exist in items.json`);
+}
+
+// 10b. Fishing table sum is exactly 100
+const fishingNode = gatheringNodesData.nodes?.fishing_spot;
+assert.ok(fishingNode?.lootTable, 'fishing_spot must have lootTable');
+const fishingWeightSum = fishingNode.lootTable.reduce((sum: number, e: any) => sum + (e.weight || 0), 0);
+assert.strictEqual(fishingWeightSum, 100, `Fishing table weights must sum to exactly 100 (got ${fishingWeightSum})`);
+
+// 10c. Crops config validity
+for (const [seedId, crop] of Object.entries(cropsData.crops) as [string, any][]) {
+  assert.ok(itemMap.has(seedId), `Crop seed "${seedId}" must exist in items.json`);
+  assert.ok(itemMap.has(crop.produceId), `Crop produce "${crop.produceId}" must exist in items.json`);
+}
+
+// 10d. Recipe ingredient validity
+const validTags = ['meat', 'fish', 'shellfish', 'vegetable', 'herb', 'spice', 'seasoning'];
+for (const r of cookingRecipesData.recipes) {
+  if (r.id === 'burnt_mush') continue;
+  assert.ok(r.slots && r.slots.length >= 2 && r.slots.length <= 5, `Recipe ${r.id} must have 2..5 slots`);
+  for (const s of r.slots) {
+    if (s.item) {
+      const it = itemMap.get(s.item);
+      assert.ok(it, `Recipe ${r.id} slot item "${s.item}" must exist in items.json`);
+      assert.ok(it.ingredient, `Recipe ${r.id} slot item "${s.item}" must have ingredient: true`);
+    }
+    if (s.tag) {
+      assert.ok(validTags.includes(s.tag), `Recipe ${r.id} slot tag "${s.tag}" must be valid`);
+    }
+  }
+}
+
+// 10e. Enemy scroll drops
+const allowedTiers = Object.keys(cookingConfigData.lostRecipeChanceByTier);
+for (const enemy of enemiesData.enemies) {
+  if (enemy.lostRecipeScrolls) {
+    assert.ok(allowedTiers.includes(enemy.tier), `Enemy ${enemy.id} tier "${enemy.tier}" must be in lostRecipeChanceByTier`);
+    for (const sId of enemy.lostRecipeScrolls) {
+      const it = itemMap.get(sId);
+      assert.ok(it, `Scroll "${sId}" in enemy ${enemy.id} must exist in items.json`);
+      assert.strictEqual(it.category, 'consumables', `Scroll "${sId}" must be consumables category`);
+    }
+  }
+}
+console.log('✓ PASS: All Food & Cooking data integrity rules verified.\n');
+
 console.log('🎉 ALL DATA LINT CHECKS PASSED PERFECTLY!');
 

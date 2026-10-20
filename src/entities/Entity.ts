@@ -603,7 +603,7 @@ export class Entity extends Phaser.GameObjects.Container {
         this.statusIconSprite.setVisible(true);
       }
     } else if (this.activeStatusEffects.has('blind')) {
-      this.avatarSprite.setTint(0x4c1d95);
+      if (this.avatarSprite?.setTint) this.avatarSprite.setTint(0x4c1d95);
       if (this.statusIconSprite) {
         if (this.scene?.textures?.exists('blind-icon')) {
           this.statusIconSprite.setTexture('blind-icon');
@@ -611,13 +611,13 @@ export class Entity extends Phaser.GameObjects.Container {
         this.statusIconSprite.setVisible(true);
       }
     } else if (this.activeStatusEffects.has('stoneskin')) {
-      this.avatarSprite.setTint(0xa8a29e);
+      if (this.avatarSprite?.setTint) this.avatarSprite.setTint(0xa8a29e);
       if (this.statusIconSprite) this.statusIconSprite.setVisible(false);
     } else if (this.activeStatusEffects.has('regrowth')) {
-      this.avatarSprite.setTint(0x22c55e);
+      if (this.avatarSprite?.setTint) this.avatarSprite.setTint(0x22c55e);
       if (this.statusIconSprite) this.statusIconSprite.setVisible(false);
     } else {
-      this.avatarSprite.clearTint();
+      if (this.avatarSprite?.clearTint) this.avatarSprite.clearTint();
       if (this.statusIconSprite) this.statusIconSprite.setVisible(false);
     }
   }

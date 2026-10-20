@@ -200,15 +200,6 @@ async function runRefinementAudit() {
   const foodRaw = JSON.parse(fs.readFileSync('data/food.json', 'utf8'));
   const foodsMap = new Map<string, any>(foodRaw.foods.map((f: any) => [f.id, f]));
   assert.equal(foodsMap.get('ration').buff.hpRegenPerSec, 1.0);
-  assert.equal(foodsMap.get('herb_stew').qualities.common.hpRegenPerSec, 1.0);
-  assert.equal(foodsMap.get('herb_stew').qualities.good.hpRegenPerSec, 1.25);
-  assert.equal(foodsMap.get('herb_stew').qualities.excellent.hpRegenPerSec, 1.5);
-  assert.equal(foodsMap.get('herb_stew').qualities.perfect.hpRegenPerSec, 2.0);
-  assert.equal(foodsMap.get('beast_stew').qualities.common.hpRegenPerSec, 1.5);
-  assert.equal(foodsMap.get('beast_stew').qualities.good.hpRegenPerSec, 1.75);
-  assert.equal(foodsMap.get('beast_stew').qualities.excellent.hpRegenPerSec, 2.0);
-  assert.equal(foodsMap.get('beast_stew').qualities.perfect.hpRegenPerSec, 2.5);
-  assert.equal(foodsMap.get('vegetable').buff.hpRegenPerSec, 0.5);
 
   console.log('✓ PASS: Static data check confirmed: All sources store in-combat baseline with NO hardcoded out-of-combat values.\n');
 

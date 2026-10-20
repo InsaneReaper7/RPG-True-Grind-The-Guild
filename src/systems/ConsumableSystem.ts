@@ -1,4 +1,5 @@
 import { DataLoader } from '../utils/DataLoader.ts';
+import { CookingSystem } from './CookingSystem.ts';
 import { GameState } from './GameState.ts';
 import type { Player } from '../entities/Player.ts';
 
@@ -104,6 +105,7 @@ export class ConsumableSystem {
   }
 
   public isConsumable(itemId: string): boolean {
+    if (itemId.startsWith('lost_recipe_')) return true;
     if (this.isFoodItem(itemId)) return true;
     const knownConsumables = new Set([
       'bandage',
@@ -250,6 +252,9 @@ export class ConsumableSystem {
     }
 
     switch (normalizedId) {
+      case normalizedId.startsWith('lost_recipe_') ? normalizedId : '___never___': {
+        return { canUse: true, target: leader };
+      }
       case 'revive_potion': {
         // The selected member, if downed. Otherwise the downed member closest to the leader.
         if (options?.preferredTarget && options.preferredTarget.state === 'downed') {
@@ -355,6 +360,10 @@ export class ConsumableSystem {
         return { canUse: true, target };
       }
 
+      case normalizedId.startsWith('lost_recipe_') ? normalizedId : '___never___': {
+        return { canUse: true, target: leader };
+      }
+
       case 'escape_stone': {
         // Party-wide, as today.
         if (isAtOutpost) {
@@ -370,6 +379,8 @@ export class ConsumableSystem {
         }
         return { canUse: true, target: leader };
       }
+
+
 
       default: {
         if (isFood) {
@@ -474,6 +485,18 @@ export class ConsumableSystem {
     const target = check.target || leader;
 
     switch (normalizedId) {
+      case normalizedId.startsWith('lost_recipe_') ? normalizedId : '___never___': {
+        const consumed = this.consumeItemFromParty(normalizedId, target, party, options?.fromMember);
+        if (!consumed) {
+          const msg = 'No scroll carried by party!';
+          this.showToast(msg, 'warn');
+          return { success: false, message: msg };
+        }
+        const learnResult = CookingSystem.learnLostRecipe(normalizedId, target);
+        this.showToast(learnResult.message, 'success');
+        return { success: true, message: learnResult.message };
+      }
+
       case 'revive_potion': {
         const downedAlly = target;
         if (!downedAlly || downedAlly.state !== 'downed') {
@@ -668,18 +691,54 @@ export class ConsumableSystem {
               target.hunger = Math.min(target.maxHunger, target.hunger + 30);
             }
           } else {
-            const consumed = this.consumeItemFromParty(normalizedId, target, party, options?.fromMember);
-            if (!consumed) {
-              const msg = 'No food available to eat!';
-              this.showToast(msg, 'warn');
-              return { success: false, message: msg };
-            }
             if (typeof target.eatFood === 'function') {
-              target.eatFood(normalizedId);
+              const ate = target.eatFood(normalizedId);
+              if (!ate) {
+                const consumed = this.consumeItemFromParty(normalizedId, target, party, options?.fromMember);
+                if (!consumed) {
+                  const msg = 'No food available to eat!';
+                  this.showToast(msg, 'warn');
+                  return { success: false, message: msg };
+                }
+              }
             } else {
+              const consumed = this.consumeItemFromParty(normalizedId, target, party, options?.fromMember);
+              if (!consumed) {
+                const msg = 'No food available to eat!';
+                this.showToast(msg, 'warn');
+                return { success: false, message: msg };
+              }
               target.hunger = Math.min(target.maxHunger, target.hunger + 30);
             }
           }
+          // Legendary dish party-wide fan-out (User Change 3)
+          const recipe = DataLoader.getInstance().getCookingRecipe(normalizedId);
+          if (recipe && recipe.rarity === 'legendary') {
+            const eaterBuff = target.getStatusEffect('dish_buff');
+            const eaterHpRegen = target.wellFedHpPerSec;
+            const eaterEnRegen = target.wellFedEnergyPerSec;
+            const eaterDuration = target.wellFedRemainingMs;
+
+            for (const member of party) {
+              if (member !== target) {
+                if (member.state === 'downed' || member.state === 'dead' || (member.hp <= 0 && member.criticalHp <= 0)) {
+                  continue; // Downed members skipped
+                }
+                if (typeof (member as any).applyDishBuff === 'function') {
+                  (member as any).applyDishBuff(eaterBuff?.def?.name || recipe.name, {
+                    durationMs: eaterDuration,
+                    hpRegenPerSec: eaterHpRegen,
+                    energyRegenPerSec: eaterEnRegen,
+                    bonusDamagePercent: eaterBuff?.def?.bonusDamagePercent,
+                    damageTakenMultiplier: eaterBuff?.def?.damageTakenMultiplier,
+                    evasionBonus: eaterBuff?.def?.evasionBonus
+                  });
+                }
+              }
+            }
+            this.showToast(`✨ ${recipe.name} empowers the entire party!`, 'success');
+          }
+
           const msg = `🍖 ${target.entityName} ate ${normalizedId.replace(/_/g, ' ')}!`;
           this.showToast(msg, 'success');
           return { success: true, message: msg };

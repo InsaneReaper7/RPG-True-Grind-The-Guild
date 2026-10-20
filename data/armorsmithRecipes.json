@@ -248,6 +248,18 @@
       },
       "expGranted": 80,
       "description": "Forge a masterwork suit of articulated steel plate backed by heavy orc hide."
+    },
+    {
+      "id": "ingredient_bag",
+      "name": "Ingredient Bag",
+      "resultArmorId": "ingredient_bag",
+      "requiredLevel": 1,
+      "ingredients": {
+        "wolf_pelt": 3,
+        "bowstring": 1
+      },
+      "expGranted": 25,
+      "description": "Craft an ingredient bag providing 15 kg of weight exemption for culinary ingredients."
     }
   ]
 }

@@ -5,6 +5,7 @@ import type { ClassifiedRoom } from '../systems/RoomClassifier.ts';
 import { getArmorHpSplit, getArmorProficiencyId } from '../types/game.ts';
 import { GameState } from '../systems/GameState.ts';
 import { DataLoader } from '../utils/DataLoader.ts';
+import { CookingSystem } from '../systems/CookingSystem.ts';
 import { ProgressionSystem } from '../systems/ProgressionSystem.ts';
 import { StatGainsSystem } from '../systems/StatGainsSystem.ts';
 import { isCraftingClass, getBaseItemId, canEquipBowDaggerSidearm } from '../utils/gearResolver.ts';
@@ -63,6 +64,7 @@ export class Player extends Entity {
   public savedMood?: number;
 
   public wellFedRemainingMs: number = 0;
+  public wellFedEnergyPerSec: number = 0;
   public wellFedNextTickMs: number = 0;
   public wellFedHpPerSec: number = 2;
 
@@ -572,11 +574,26 @@ export class Player extends Entity {
 
   public getInventoryWeight(): number {
     const dataLoader = DataLoader.getInstance();
-    let weight = 0;
+    let ingredientWeight = 0;
+    let nonIngredientWeight = 0;
+
     for (const [id, count] of this.inventory.entries()) {
-      weight += dataLoader.getItemWeight(id) * count;
+      const itemDef = dataLoader.getItem(id);
+      const itemWeight = dataLoader.getItemWeight(id) * count;
+      if (itemDef?.ingredient) {
+        ingredientWeight += itemWeight;
+      } else {
+        nonIngredientWeight += itemWeight;
+      }
     }
-    return Math.round(weight * 100) / 100;
+
+    // Ingredient Bag accessory exemption (15 kg of ingredients)
+    if (this.equippedAccessory?.id === 'ingredient_bag') {
+      const exemptWeight = Math.min(15.0, ingredientWeight);
+      ingredientWeight -= exemptWeight;
+    }
+
+    return Math.round((nonIngredientWeight + ingredientWeight) * 100) / 100;
   }
 
   public getTotalWeight(): number {
@@ -1580,6 +1597,32 @@ export class Player extends Entity {
     this.drawHpBar();
   }
 
+  public applyDishBuff(dishName: string, buffs: {
+    durationMs: number;
+    hpRegenPerSec?: number;
+    energyRegenPerSec?: number;
+    bonusDamagePercent?: number;
+    damageTakenMultiplier?: number;
+    evasionBonus?: number;
+  }): void {
+    this.wellFedHpPerSec = buffs.hpRegenPerSec || 0;
+    this.wellFedEnergyPerSec = buffs.energyRegenPerSec || 0;
+    this.wellFedRemainingMs = buffs.durationMs;
+    this.wellFedNextTickMs = 1000;
+
+    const dishBuffDef: any = {
+      id: 'dish_buff',
+      name: dishName,
+      durationMs: buffs.durationMs,
+      bonusDamagePercent: buffs.bonusDamagePercent,
+      damageTakenMultiplier: buffs.damageTakenMultiplier,
+      evasionBonus: buffs.evasionBonus,
+      icon: '🍲',
+      description: `Combat buffs from ${dishName}`
+    };
+    this.applyStatusEffect(dishBuffDef);
+  }
+
   public eatFood(foodId?: string): boolean {
     const dataLoader = DataLoader.getInstance();
     const gameState = GameState.getInstance();
@@ -1644,17 +1687,39 @@ export class Player extends Entity {
     this.hunger = Math.min(this.maxHunger, this.hunger + hungerRestored);
     const restored = this.hunger - oldHunger;
 
-    const buffDuration = qualityDef ? qualityDef.buffDurationMs : foodDef.buff.durationMs;
-    const buffRegen = qualityDef ? qualityDef.hpRegenPerSec : foodDef.buff.hpRegenPerSec;
-
-    // Refresh Well Fed buff (resets duration to quality duration, sets HP/sec rate)
-    this.wellFedHpPerSec = buffRegen;
-    this.wellFedRemainingMs = buffDuration;
-    this.wellFedNextTickMs = 1000;
+    // Apply dish buff and refresh Well Fed (Change 1)
+    const recipe = dataLoader.getCookingRecipe(foodDef.recipeId || targetFoodId);
+    if (recipe) {
+      const computedDish = CookingSystem.computeDish(recipe, consumedQuality, Object.keys(recipe.ingredients || {}), this);
+      if (computedDish) {
+        this.applyDishBuff(computedDish.name, {
+          durationMs: computedDish.buffs.durationMs,
+          hpRegenPerSec: computedDish.buffs.hpRegenPerSec,
+          energyRegenPerSec: computedDish.buffs.energyRegenPerSec,
+          bonusDamagePercent: computedDish.buffs.bonusDamagePercent,
+          damageTakenMultiplier: computedDish.buffs.damageTakenMultiplier,
+          evasionBonus: computedDish.buffs.evasionBonus
+        });
+      } else {
+        const buffDuration = qualityDef ? qualityDef.buffDurationMs : (foodDef.buff?.durationMs || 120000);
+        const buffRegen = qualityDef ? qualityDef.hpRegenPerSec : (foodDef.buff?.hpRegenPerSec || 2);
+        this.applyDishBuff(foodDef.name, {
+          durationMs: buffDuration,
+          hpRegenPerSec: buffRegen
+        });
+      }
+    } else {
+      const buffDuration = qualityDef ? qualityDef.buffDurationMs : (foodDef.buff?.durationMs || 120000);
+      const buffRegen = qualityDef ? qualityDef.hpRegenPerSec : (foodDef.buff?.hpRegenPerSec || 2);
+      this.applyDishBuff(foodDef.name, {
+        durationMs: buffDuration,
+        hpRegenPerSec: buffRegen
+      });
+    }
 
     const qualityLabel = consumedQuality !== 'common' ? ` [${consumedQuality.charAt(0).toUpperCase() + consumedQuality.slice(1)}]` : '';
     console.log(
-      `%c[Player] 🍖 Ate ${foodDef.name}${qualityLabel}! Restored +${restored.toFixed(1)} Hunger (Now: ${this.hunger.toFixed(1)}/100). Well Fed buff refreshed (${(buffDuration / 1000).toFixed(0)}s @ +${this.wellFedHpPerSec} HP/s).`,
+      `%c[Player] 🍖 Ate ${foodDef.name}${qualityLabel}! Restored +${restored.toFixed(1)} Hunger (Now: ${this.hunger.toFixed(1)}/100). Well Fed buff refreshed (${((this.wellFedRemainingMs || 0) / 1000).toFixed(0)}s @ +${this.wellFedHpPerSec} HP/s).`,
       'color: #10b981; font-weight: bold;'
     );
     this.createFloatingText(`+${restored.toFixed(0)} Hunger${qualityLabel} (Well Fed)`, '#10b981');
@@ -1703,7 +1768,7 @@ export class Player extends Entity {
       this.hideReviveIcon();
     }
 
-    if (this.state !== 'downed' && this.state !== 'dead') {
+    if ((this.state as string) !== 'downed' && (this.state as string) !== 'dead') {
       const dataLoader = DataLoader.getInstance();
       const oocMultiplier = dataLoader.getOutOfCombatRegenMultiplier();
       const currentRegenMultiplier = this.inCombat ? 1.0 : oocMultiplier;
@@ -1754,13 +1819,23 @@ export class Player extends Entity {
         this.wellFedNextTickMs -= delta;
         if (this.wellFedNextTickMs <= 0) {
           this.wellFedNextTickMs += 1000;
-          if (this.hp < this.maxHp || this.criticalHp < this.maxCriticalHp) {
-            const foodMultiplier = this.inCombat ? 1.0 : oocMultiplier;
-            const effectiveHeal = this.wellFedHpPerSec * foodMultiplier;
-            const healed = this.heal(effectiveHeal);
-            if (healed > 0) {
-              console.log(`[Well Fed] Regenerated +${healed} HP from food buff!`);
-              this.createFloatingText(`+${healed} HP`, '#22c55e');
+          if (this.state !== 'downed' && this.state !== 'dead') {
+            if (this.hp < this.maxHp || this.criticalHp < this.maxCriticalHp) {
+              const foodMultiplier = this.inCombat ? 1.0 : oocMultiplier;
+              const effectiveHeal = this.wellFedHpPerSec * foodMultiplier;
+              const healed = this.heal(effectiveHeal);
+              if (healed > 0) {
+                console.log(`[Well Fed] Regenerated +${healed} HP from food buff!`);
+                this.createFloatingText(`+${healed} HP`, '#22c55e');
+              }
+            }
+            if (this.wellFedEnergyPerSec > 0 && this.energy < this.maxEnergy) {
+              const prevEnergy = this.energy;
+              this.energy = Math.min(this.maxEnergy, this.energy + this.wellFedEnergyPerSec);
+              const enGained = this.energy - prevEnergy;
+              if (enGained > 0) {
+                this.createFloatingText(`+${enGained} EN`, '#38bdf8');
+              }
             }
           }
         }

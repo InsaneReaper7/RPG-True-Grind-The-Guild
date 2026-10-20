@@ -1,4 +1,7 @@
 import type {
+  CropDef,
+  CropsConfig,
+  CookingConfig,
   PlayerData,
   WeaponsData,
   ClassesData,
@@ -85,6 +88,8 @@ export class DataLoader {
   private introNarrativeData?: IntroNarrativeData;
   private enchantingRecipesData?: EnchantingRecipesData;
   private statGainsData?: StatGainsData;
+  private cropsConfig?: CropsConfig;
+  private cookingConfigData?: CookingConfig;
 
   private constructor() {}
 
@@ -96,7 +101,7 @@ export class DataLoader {
   }
 
   public async loadAll(): Promise<void> {
-    const [player, weapons, classes, enemies, skills, statusEffects, buildables, rooms, hiddenSkills, skillBooks, researchTree, alchemyRecipes, cookingRecipes, blacksmithRecipes, bowyerRecipes, armors, armorsmithRecipes, foods, moodEffects, dungeon, gathering, items, recruits, craftingConfig, introNarrative, enchantingRecipes, statGains] = await Promise.all([
+    const [player, weapons, classes, enemies, skills, statusEffects, buildables, rooms, hiddenSkills, skillBooks, researchTree, alchemyRecipes, cookingRecipes, blacksmithRecipes, bowyerRecipes, armors, armorsmithRecipes, foods, moodEffects, dungeon, gathering, items, recruits, craftingConfig, introNarrative, enchantingRecipes, statGains, crops, cookingConfig] = await Promise.all([
       fetch('/data/player.json').then((res) => res.json()),
       fetch('/data/weapons.json').then((res) => res.json()),
       fetch('/data/classes.json').then((res) => res.json()),
@@ -123,7 +128,9 @@ export class DataLoader {
       fetch('/data/craftingConfig.json').then((res) => res.json()).catch(() => null),
       fetch('/data/introNarrative.json').then((res) => res.json()).catch(() => null),
       fetch('/data/enchantingRecipes.json').then((res) => res.json()).catch(() => null),
-      fetch('/data/statGains.json').then((res) => res.json()).catch(() => null)
+      fetch('/data/statGains.json').then((res) => res.json()).catch(() => null),
+      fetch('/data/crops.json').then((res) => res.json()).catch(() => null),
+      fetch('/data/cookingConfig.json').then((res) => res.json()).catch(() => null)
     ]);
 
     this.playerData = player as PlayerData;
@@ -148,6 +155,12 @@ export class DataLoader {
     this.itemsData = (items as ItemsData) || { items: [] };
     if (statGains) {
       this.statGainsData = statGains as StatGainsData;
+    }
+    if (crops) {
+      this.cropsConfig = crops as CropsConfig;
+    }
+    if (cookingConfig) {
+      this.cookingConfigData = cookingConfig as CookingConfig;
     }
     this.recruitsData = (recruits as RecruitsData) || {
       fourth_member: {
@@ -826,6 +839,26 @@ export class DataLoader {
     };
   }
 
+  public getCropsConfig(): CropsConfig | undefined {
+    return this.cropsConfig;
+  }
+
+  public getCrop(seedId: string): CropDef | undefined {
+    return this.cropsConfig?.crops?.[seedId];
+  }
+
+  public getCookingConfig(): CookingConfig {
+    return this.cookingConfigData || {
+      ingredientDropChance: 0.12,
+      lostRecipeChanceByTier: { elite: 0.05, epic: 0.05, boss: 0.20 },
+      peppercornSeedChance: 0.02,
+      chefBonusRollFactor: 0.0035,
+      herbRollChance: 0.08,
+      saffronRollChance: 0.01,
+      cinnamonRollChance: 0.05
+    };
+  }
+
   public getGatheringNodesConfig(): GatheringNodesConfig {
     return this.gatheringNodesConfig;
   }
@@ -1116,6 +1149,10 @@ export class DataLoader {
 
   public getStartingKit(id: string): StartingKitDef | undefined {
     return this.getStartingKits().find((k) => k.id === id);
+  }
+
+  public getItems(): ItemDef[] {
+    return this.getItemsData().items;
   }
 
   public getItemsData(): ItemsData {

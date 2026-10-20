@@ -1,0 +1,82 @@
+{
+  "crops": {
+    "carrot_seed": {
+      "seedId": "carrot_seed",
+      "produceId": "carrot",
+      "growthDays": 1,
+      "yieldCount": 2
+    },
+    "potato_seed": {
+      "seedId": "potato_seed",
+      "produceId": "potato",
+      "growthDays": 1,
+      "yieldCount": 2
+    },
+    "onion_seed": {
+      "seedId": "onion_seed",
+      "produceId": "onion",
+      "growthDays": 1,
+      "yieldCount": 2
+    },
+    "garlic_clove": {
+      "seedId": "garlic_clove",
+      "produceId": "garlic",
+      "growthDays": 1,
+      "yieldCount": 2
+    },
+    "cave_mushroom_spore": {
+      "seedId": "cave_mushroom_spore",
+      "produceId": "cave_mushroom",
+      "growthDays": 1,
+      "yieldCount": 2
+    },
+    "turnip_seed": {
+      "seedId": "turnip_seed",
+      "produceId": "turnip",
+      "growthDays": 1,
+      "yieldCount": 2
+    },
+    "fire_pepper_seed": {
+      "seedId": "fire_pepper_seed",
+      "produceId": "fire_pepper",
+      "growthDays": 2,
+      "yieldCount": 2
+    },
+    "sweet_potato_seed": {
+      "seedId": "sweet_potato_seed",
+      "produceId": "sweet_potato",
+      "growthDays": 2,
+      "yieldCount": 2
+    },
+    "frost_cabbage_seed": {
+      "seedId": "frost_cabbage_seed",
+      "produceId": "frost_cabbage",
+      "growthDays": 2,
+      "yieldCount": 2
+    },
+    "snow_pea_seed": {
+      "seedId": "snow_pea_seed",
+      "produceId": "snow_pea",
+      "growthDays": 2,
+      "yieldCount": 2
+    },
+    "peppercorn_seed": {
+      "seedId": "peppercorn_seed",
+      "produceId": "black_pepper",
+      "growthDays": 2,
+      "yieldCount": 2
+    },
+    "seeds": {
+      "seedId": "seeds",
+      "produceId": "carrot",
+      "growthDays": 1,
+      "yieldCount": 2
+    },
+    "mixed_seeds": {
+      "seedId": "mixed_seeds",
+      "produceId": "carrot",
+      "growthDays": 1,
+      "yieldCount": 2
+    }
+  }
+}

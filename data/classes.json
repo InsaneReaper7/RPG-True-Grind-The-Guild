@@ -187,7 +187,7 @@
         "mana_regen": 0.05
       },
       "primaryAttribute": "int",
-      "spellDamageMultiplier": 1.45
+      "spellDamageMultiplier": 1.5
     },
     {
       "id": "acolyte",
@@ -241,7 +241,7 @@
         "mana_regen": 0.05
       },
       "primaryAttribute": "int",
-      "spellDamageMultiplier": 1.55
+      "spellDamageMultiplier": 1.65
     },
     {
       "id": "gale_adept",
@@ -277,7 +277,7 @@
         "mana_regen": 0.05
       },
       "primaryAttribute": "int",
-      "spellDamageMultiplier": 1.7
+      "spellDamageMultiplier": 1.75
     },
     {
       "id": "restoration_mage",
@@ -1847,7 +1847,7 @@
         "mana_regen": 0.05
       },
       "primaryAttribute": "int",
-      "spellDamageMultiplier": 1.1
+      "spellDamageMultiplier": 1.15
     },
     {
       "id": "herbalist",
@@ -2416,6 +2416,96 @@
         "resilience": 0.08
       },
       "primaryAttribute": "str"
+    },
+    {
+      "id": "apprentice_cook",
+      "name": "Apprentice Cook",
+      "tier": "novice",
+      "category": "crafting",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "cooking",
+          "value": 10
+        }
+      ],
+      "fantasy": "Learning the basics of kitchen prep and heat management",
+      "perkDescription": "Extra portion: min(15, Lv)%"
+    },
+    {
+      "id": "line_cook",
+      "name": "Line Cook",
+      "tier": "adept",
+      "category": "crafting",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "cooking",
+          "value": 30
+        },
+        {
+          "type": "classLevel",
+          "target": "apprentice_cook",
+          "value": 10
+        },
+        {
+          "type": "discoveredRecipes",
+          "target": "cooking",
+          "value": 5
+        }
+      ],
+      "fantasy": "Fast, steady hands working under kitchen pressure",
+      "perkDescription": "+min(15, Lv) effective Cooking levels on quality rolls"
+    },
+    {
+      "id": "chef",
+      "name": "Chef",
+      "tier": "expert",
+      "category": "crafting",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "cooking",
+          "value": 60
+        },
+        {
+          "type": "classLevel",
+          "target": "line_cook",
+          "value": 15
+        },
+        {
+          "type": "discoveredRecipes",
+          "target": "cooking",
+          "value": 15
+        }
+      ],
+      "fantasy": "Master of culinary balance, seasoning, and technique",
+      "perkDescription": "Dish buff duration +2 * min(15, Lv)%"
+    },
+    {
+      "id": "executive_chef",
+      "name": "Executive Chef",
+      "tier": "master",
+      "category": "crafting",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "cooking",
+          "value": 90
+        },
+        {
+          "type": "classLevel",
+          "target": "chef",
+          "value": 25
+        },
+        {
+          "type": "discoveredRecipes",
+          "target": "cooking",
+          "value": 30
+        }
+      ],
+      "fantasy": "Culinary authority elevating dishes to transcendent perfection",
+      "perkDescription": "Dishes gain +1 dish tier (max 4; excludes lost recipes)"
     }
   ]
 }

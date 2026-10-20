@@ -178,6 +178,7 @@ function createMockPlayer(id: string, name: string, overrides: Partial<any> = {}
     },
     eatFood: (foodId: string) => {
       player.hunger = Math.min(player.maxHunger, player.hunger + 30);
+      player.removeItem(foodId, 1);
       return true;
     },
     getPartyMembers: () => player._party || [player],

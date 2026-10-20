@@ -67,10 +67,30 @@
       "color": "#b45309",
       "actionVerb": "Digging",
       "lootTable": [
-        { "itemId": "dirt", "name": "Dirt", "weight": 35, "count": 1 },
-        { "itemId": "clay", "name": "Clay", "weight": 30, "count": 1 },
-        { "itemId": "seeds", "name": "Seeds", "weight": 20, "count": 1 },
-        { "itemId": "locked_box", "name": "Locked Box", "weight": 15, "count": 1 }
+        {
+          "itemId": "dirt",
+          "name": "Dirt",
+          "weight": 35,
+          "count": 1
+        },
+        {
+          "itemId": "clay",
+          "name": "Clay",
+          "weight": 30,
+          "count": 1
+        },
+        {
+          "itemId": "seeds",
+          "name": "Seeds",
+          "weight": 20,
+          "count": 1
+        },
+        {
+          "itemId": "locked_box",
+          "name": "Locked Box",
+          "weight": 15,
+          "count": 1
+        }
       ]
     },
     "corpse_skinning": {
@@ -109,7 +129,7 @@
       "id": "vegetable_node",
       "name": "Wild Vegetable",
       "skillId": "gardening",
-      "resourceId": "vegetable",
+      "resourceId": "carrot",
       "yieldCount": 1,
       "expGranted": 15,
       "channelDurationMs": 2500,
@@ -125,7 +145,7 @@
       "id": "fishing_spot",
       "name": "Fishing Spot",
       "skillId": "fishing",
-      "resourceId": "raw_fish",
+      "resourceId": "river_carp",
       "yieldCount": 1,
       "expGranted": 15,
       "channelDurationMs": 2500,
@@ -138,8 +158,78 @@
       "actionVerb": "Fishing",
       "requiredToolItemId": "fishing_rod",
       "lootTable": [
-        { "itemId": "raw_fish", "name": "Raw Fish", "weight": 70, "count": 1 },
-        { "itemId": "aquatic_reagent", "name": "Aquatic Reagent", "weight": 30, "count": 1 }
+        {
+          "itemId": "river_carp",
+          "name": "River Carp",
+          "weight": 18,
+          "count": 1
+        },
+        {
+          "itemId": "cave_trout",
+          "name": "Cave Trout",
+          "weight": 14,
+          "count": 1
+        },
+        {
+          "itemId": "catfish",
+          "name": "Catfish",
+          "weight": 12,
+          "count": 1
+        },
+        {
+          "itemId": "seaweed",
+          "name": "Seaweed",
+          "weight": 12,
+          "count": 1
+        },
+        {
+          "itemId": "salmon",
+          "name": "Salmon",
+          "weight": 8,
+          "count": 1
+        },
+        {
+          "itemId": "eel",
+          "name": "Eel",
+          "weight": 7,
+          "count": 1
+        },
+        {
+          "itemId": "sea_urchin",
+          "name": "Sea Urchin",
+          "weight": 6,
+          "count": 1
+        },
+        {
+          "itemId": "crab",
+          "name": "Crab",
+          "weight": 6,
+          "count": 1
+        },
+        {
+          "itemId": "octopus",
+          "name": "Octopus",
+          "weight": 4,
+          "count": 1
+        },
+        {
+          "itemId": "lobster",
+          "name": "Lobster",
+          "weight": 2,
+          "count": 1
+        },
+        {
+          "itemId": "golden_carp",
+          "name": "Golden Carp",
+          "weight": 1,
+          "count": 1
+        },
+        {
+          "itemId": "aquatic_reagent",
+          "name": "Aquatic Reagent",
+          "weight": 10,
+          "count": 1
+        }
       ]
     },
     "hidden_cache": {
@@ -159,14 +249,42 @@
       "actionVerb": "Digging",
       "bonusLootPerk": "perception",
       "bonusClassExp": [
-        { "classId": "explorer", "amount": 25 }
+        {
+          "classId": "explorer",
+          "amount": 25
+        }
       ],
       "lootTable": [
-        { "itemId": "locked_box", "name": "Locked Box", "weight": 40, "count": 1 },
-        { "itemId": "ore", "name": "Ore", "weight": 20, "count": 2 },
-        { "itemId": "wild_herbs", "name": "Wild Herbs", "weight": 20, "count": 2 },
-        { "itemId": "nature_gemstone", "name": "Nature Gemstone", "weight": 10, "count": 1 },
-        { "itemId": "holy_gemstone", "name": "Holy Gemstone", "weight": 10, "count": 1 }
+        {
+          "itemId": "locked_box",
+          "name": "Locked Box",
+          "weight": 40,
+          "count": 1
+        },
+        {
+          "itemId": "ore",
+          "name": "Ore",
+          "weight": 20,
+          "count": 2
+        },
+        {
+          "itemId": "wild_herbs",
+          "name": "Wild Herbs",
+          "weight": 20,
+          "count": 2
+        },
+        {
+          "itemId": "nature_gemstone",
+          "name": "Nature Gemstone",
+          "weight": 10,
+          "count": 1
+        },
+        {
+          "itemId": "holy_gemstone",
+          "name": "Holy Gemstone",
+          "weight": 10,
+          "count": 1
+        }
       ]
     }
   }

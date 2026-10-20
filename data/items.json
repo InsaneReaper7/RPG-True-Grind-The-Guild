@@ -20,7 +20,12 @@
       "name": "Wild Herbs",
       "weight": 0.05,
       "category": "gathering",
-      "icon": "🌿"
+      "icon": "🌿",
+      "ingredient": true,
+      "cookingTags": [
+        "herb",
+        "seasoning"
+      ]
     },
     {
       "id": "dirt",
@@ -38,7 +43,7 @@
     },
     {
       "id": "seeds",
-      "name": "Seeds",
+      "name": "Mixed Seeds",
       "weight": 0.02,
       "category": "gathering",
       "icon": "🌱"
@@ -49,20 +54,6 @@
       "weight": 0.5,
       "category": "reagents",
       "icon": "🐺"
-    },
-    {
-      "id": "wolf_meat",
-      "name": "Wolf Meat",
-      "weight": 0.3,
-      "category": "reagents",
-      "icon": "🥩"
-    },
-    {
-      "id": "monster_meat",
-      "name": "Monster Meat",
-      "weight": 0.3,
-      "category": "reagents",
-      "icon": "🥩"
     },
     {
       "id": "wolf_claw",
@@ -111,7 +102,8 @@
       "name": "Slime Gel",
       "weight": 0.2,
       "category": "reagents",
-      "icon": "🧪"
+      "icon": "🧪",
+      "ingredient": true
     },
     {
       "id": "goblin_ear",
@@ -314,13 +306,6 @@
       "icon": "🍖"
     },
     {
-      "id": "vegetable",
-      "name": "Fresh Vegetable",
-      "weight": 0.2,
-      "category": "consumables",
-      "icon": "🥕"
-    },
-    {
       "id": "herb_stew",
       "name": "Herb Stew",
       "weight": 0.5,
@@ -349,25 +334,11 @@
       "icon": "🪨"
     },
     {
-      "id": "raw_meat",
-      "name": "Raw Meat",
-      "weight": 0.3,
-      "category": "reagents",
-      "icon": "🥩"
-    },
-    {
       "id": "slime_jelly",
       "name": "Slime Jelly",
       "weight": 0.2,
       "category": "reagents",
       "icon": "🧪"
-    },
-    {
-      "id": "raw_fish",
-      "name": "Raw Fish",
-      "weight": 0.3,
-      "category": "gathering",
-      "icon": "🐟"
     },
     {
       "id": "aquatic_reagent",
@@ -537,6 +508,621 @@
       "weight": 0.2,
       "category": "reagents",
       "icon": "💎"
+    },
+    {
+      "id": "crypt_meat",
+      "name": "Crypt Game Meat",
+      "weight": 0.3,
+      "ingredient": true,
+      "ingredientTier": 1,
+      "cookingTags": [
+        "meat"
+      ],
+      "category": "ingredients",
+      "icon": "🥩"
+    },
+    {
+      "id": "prime_crypt_meat",
+      "name": "Prime Crypt Cut",
+      "weight": 0.3,
+      "ingredient": true,
+      "ingredientTier": 1,
+      "premium": true,
+      "cookingTags": [
+        "meat"
+      ],
+      "category": "ingredients",
+      "icon": "🥩"
+    },
+    {
+      "id": "abyssal_meat",
+      "name": "Abyssal Flesh",
+      "weight": 0.3,
+      "ingredient": true,
+      "ingredientTier": 2,
+      "cookingTags": [
+        "meat"
+      ],
+      "category": "ingredients",
+      "icon": "🥩"
+    },
+    {
+      "id": "prime_abyssal_meat",
+      "name": "Prime Abyssal Cut",
+      "weight": 0.3,
+      "ingredient": true,
+      "ingredientTier": 2,
+      "premium": true,
+      "cookingTags": [
+        "meat"
+      ],
+      "category": "ingredients",
+      "icon": "🥩"
+    },
+    {
+      "id": "caldera_meat",
+      "name": "Cinder Haunch",
+      "weight": 0.3,
+      "ingredient": true,
+      "ingredientTier": 3,
+      "cookingTags": [
+        "meat"
+      ],
+      "category": "ingredients",
+      "icon": "🥩"
+    },
+    {
+      "id": "prime_caldera_meat",
+      "name": "Prime Cinder Haunch",
+      "weight": 0.3,
+      "ingredient": true,
+      "ingredientTier": 3,
+      "premium": true,
+      "cookingTags": [
+        "meat"
+      ],
+      "category": "ingredients",
+      "icon": "🥩"
+    },
+    {
+      "id": "glacial_meat",
+      "name": "Frostbeast Meat",
+      "weight": 0.3,
+      "ingredient": true,
+      "ingredientTier": 4,
+      "cookingTags": [
+        "meat"
+      ],
+      "category": "ingredients",
+      "icon": "🥩"
+    },
+    {
+      "id": "prime_glacial_meat",
+      "name": "Prime Frostbeast Cut",
+      "weight": 0.3,
+      "ingredient": true,
+      "ingredientTier": 4,
+      "premium": true,
+      "cookingTags": [
+        "meat"
+      ],
+      "category": "ingredients",
+      "icon": "🥩"
+    },
+    {
+      "id": "river_carp",
+      "name": "River Carp",
+      "weight": 0.3,
+      "ingredient": true,
+      "ingredientTier": 1,
+      "cookingTags": [
+        "fish"
+      ],
+      "category": "ingredients",
+      "icon": "🐟"
+    },
+    {
+      "id": "cave_trout",
+      "name": "Cave Trout",
+      "weight": 0.3,
+      "ingredient": true,
+      "ingredientTier": 1,
+      "cookingTags": [
+        "fish"
+      ],
+      "category": "ingredients",
+      "icon": "🐟"
+    },
+    {
+      "id": "catfish",
+      "name": "Catfish",
+      "weight": 0.4,
+      "ingredient": true,
+      "ingredientTier": 1,
+      "cookingTags": [
+        "fish"
+      ],
+      "category": "ingredients",
+      "icon": "🐟"
+    },
+    {
+      "id": "seaweed",
+      "name": "Seaweed",
+      "weight": 0.1,
+      "ingredient": true,
+      "ingredientTier": 1,
+      "cookingTags": [
+        "vegetable"
+      ],
+      "category": "ingredients",
+      "icon": "🌿"
+    },
+    {
+      "id": "salmon",
+      "name": "Salmon",
+      "weight": 0.4,
+      "ingredient": true,
+      "ingredientTier": 2,
+      "cookingTags": [
+        "fish"
+      ],
+      "category": "ingredients",
+      "icon": "🐟"
+    },
+    {
+      "id": "eel",
+      "name": "Eel",
+      "weight": 0.4,
+      "ingredient": true,
+      "ingredientTier": 2,
+      "cookingTags": [
+        "fish"
+      ],
+      "category": "ingredients",
+      "icon": "🐟"
+    },
+    {
+      "id": "sea_urchin",
+      "name": "Sea Urchin",
+      "weight": 0.2,
+      "ingredient": true,
+      "ingredientTier": 2,
+      "cookingTags": [
+        "fish",
+        "shellfish"
+      ],
+      "category": "ingredients",
+      "icon": "🦔"
+    },
+    {
+      "id": "crab",
+      "name": "Crab",
+      "weight": 0.4,
+      "ingredient": true,
+      "ingredientTier": 2,
+      "cookingTags": [
+        "fish",
+        "shellfish"
+      ],
+      "category": "ingredients",
+      "icon": "🦀"
+    },
+    {
+      "id": "octopus",
+      "name": "Octopus",
+      "weight": 0.5,
+      "ingredient": true,
+      "ingredientTier": 3,
+      "cookingTags": [
+        "fish"
+      ],
+      "category": "ingredients",
+      "icon": "🐙"
+    },
+    {
+      "id": "lobster",
+      "name": "Lobster",
+      "weight": 0.6,
+      "ingredient": true,
+      "ingredientTier": 3,
+      "cookingTags": [
+        "fish",
+        "shellfish"
+      ],
+      "category": "ingredients",
+      "icon": "🦞"
+    },
+    {
+      "id": "golden_carp",
+      "name": "Golden Carp",
+      "weight": 0.3,
+      "ingredient": true,
+      "ingredientTier": 3,
+      "premium": true,
+      "cookingTags": [
+        "fish"
+      ],
+      "category": "ingredients",
+      "icon": "✨"
+    },
+    {
+      "id": "carrot",
+      "name": "Carrot",
+      "weight": 0.2,
+      "ingredient": true,
+      "ingredientTier": 1,
+      "cookingTags": [
+        "vegetable"
+      ],
+      "category": "ingredients",
+      "icon": "🥕"
+    },
+    {
+      "id": "potato",
+      "name": "Potato",
+      "weight": 0.2,
+      "ingredient": true,
+      "ingredientTier": 1,
+      "cookingTags": [
+        "vegetable"
+      ],
+      "category": "ingredients",
+      "icon": "🥔"
+    },
+    {
+      "id": "onion",
+      "name": "Onion",
+      "weight": 0.2,
+      "ingredient": true,
+      "ingredientTier": 1,
+      "cookingTags": [
+        "vegetable"
+      ],
+      "category": "ingredients",
+      "icon": "🧅"
+    },
+    {
+      "id": "garlic",
+      "name": "Garlic",
+      "weight": 0.2,
+      "ingredient": true,
+      "ingredientTier": 1,
+      "cookingTags": [
+        "vegetable"
+      ],
+      "category": "ingredients",
+      "icon": "🧄"
+    },
+    {
+      "id": "cave_mushroom",
+      "name": "Cave Mushroom",
+      "weight": 0.2,
+      "ingredient": true,
+      "ingredientTier": 2,
+      "cookingTags": [
+        "vegetable"
+      ],
+      "category": "ingredients",
+      "icon": "🍄"
+    },
+    {
+      "id": "turnip",
+      "name": "Turnip",
+      "weight": 0.2,
+      "ingredient": true,
+      "ingredientTier": 2,
+      "cookingTags": [
+        "vegetable"
+      ],
+      "category": "ingredients",
+      "icon": "🌱"
+    },
+    {
+      "id": "fire_pepper",
+      "name": "Fire Pepper",
+      "weight": 0.2,
+      "ingredient": true,
+      "ingredientTier": 3,
+      "cookingTags": [
+        "vegetable"
+      ],
+      "category": "ingredients",
+      "icon": "🌶️"
+    },
+    {
+      "id": "sweet_potato",
+      "name": "Sweet Potato",
+      "weight": 0.2,
+      "ingredient": true,
+      "ingredientTier": 3,
+      "cookingTags": [
+        "vegetable"
+      ],
+      "category": "ingredients",
+      "icon": "🍠"
+    },
+    {
+      "id": "frost_cabbage",
+      "name": "Frost Cabbage",
+      "weight": 0.2,
+      "ingredient": true,
+      "ingredientTier": 4,
+      "cookingTags": [
+        "vegetable"
+      ],
+      "category": "ingredients",
+      "icon": "🥬"
+    },
+    {
+      "id": "snow_pea",
+      "name": "Snow Pea",
+      "weight": 0.2,
+      "ingredient": true,
+      "ingredientTier": 4,
+      "cookingTags": [
+        "vegetable"
+      ],
+      "category": "ingredients",
+      "icon": "🫛"
+    },
+    {
+      "id": "carrot_seed",
+      "name": "Carrot Seed",
+      "weight": 0.02,
+      "category": "gathering",
+      "icon": "🌱"
+    },
+    {
+      "id": "potato_seed",
+      "name": "Potato Seed",
+      "weight": 0.02,
+      "category": "gathering",
+      "icon": "🌱"
+    },
+    {
+      "id": "onion_seed",
+      "name": "Onion Seed",
+      "weight": 0.02,
+      "category": "gathering",
+      "icon": "🌱"
+    },
+    {
+      "id": "garlic_clove",
+      "name": "Garlic Clove",
+      "weight": 0.02,
+      "category": "gathering",
+      "icon": "🧄"
+    },
+    {
+      "id": "cave_mushroom_spore",
+      "name": "Cave Mushroom Spore",
+      "weight": 0.02,
+      "category": "gathering",
+      "icon": "🍄"
+    },
+    {
+      "id": "turnip_seed",
+      "name": "Turnip Seed",
+      "weight": 0.02,
+      "category": "gathering",
+      "icon": "🌱"
+    },
+    {
+      "id": "fire_pepper_seed",
+      "name": "Fire Pepper Seed",
+      "weight": 0.02,
+      "category": "gathering",
+      "icon": "🌱"
+    },
+    {
+      "id": "sweet_potato_seed",
+      "name": "Sweet Potato Seed",
+      "weight": 0.02,
+      "category": "gathering",
+      "icon": "🌱"
+    },
+    {
+      "id": "frost_cabbage_seed",
+      "name": "Frost Cabbage Seed",
+      "weight": 0.02,
+      "category": "gathering",
+      "icon": "🌱"
+    },
+    {
+      "id": "snow_pea_seed",
+      "name": "Snow Pea Seed",
+      "weight": 0.02,
+      "category": "gathering",
+      "icon": "🌱"
+    },
+    {
+      "id": "peppercorn_seed",
+      "name": "Peppercorn Seed",
+      "weight": 0.02,
+      "category": "gathering",
+      "icon": "🌱"
+    },
+    {
+      "id": "thyme",
+      "name": "Thyme",
+      "weight": 0.05,
+      "ingredient": true,
+      "cookingTags": [
+        "herb",
+        "seasoning"
+      ],
+      "category": "ingredients",
+      "icon": "🌿"
+    },
+    {
+      "id": "rosemary",
+      "name": "Rosemary",
+      "weight": 0.05,
+      "ingredient": true,
+      "cookingTags": [
+        "herb",
+        "seasoning"
+      ],
+      "category": "ingredients",
+      "icon": "🌿"
+    },
+    {
+      "id": "sage",
+      "name": "Sage",
+      "weight": 0.05,
+      "ingredient": true,
+      "cookingTags": [
+        "herb",
+        "seasoning"
+      ],
+      "category": "ingredients",
+      "icon": "🌿"
+    },
+    {
+      "id": "saffron",
+      "name": "Saffron",
+      "weight": 0.05,
+      "ingredient": true,
+      "premium": true,
+      "cookingTags": [
+        "spice",
+        "seasoning"
+      ],
+      "category": "ingredients",
+      "icon": "🌸"
+    },
+    {
+      "id": "cinnamon",
+      "name": "Cinnamon Bark",
+      "weight": 0.05,
+      "ingredient": true,
+      "cookingTags": [
+        "spice",
+        "seasoning"
+      ],
+      "category": "ingredients",
+      "icon": "🪵"
+    },
+    {
+      "id": "black_pepper",
+      "name": "Black Pepper",
+      "weight": 0.05,
+      "ingredient": true,
+      "cookingTags": [
+        "spice",
+        "seasoning"
+      ],
+      "category": "ingredients",
+      "icon": "🧂"
+    },
+    {
+      "id": "salt",
+      "name": "Salt",
+      "weight": 0.05,
+      "ingredient": true,
+      "cookingTags": [
+        "seasoning"
+      ],
+      "category": "ingredients",
+      "icon": "🧂"
+    },
+    {
+      "id": "ingredient_bag",
+      "name": "Ingredient Bag",
+      "weight": 0.5,
+      "category": "equipment",
+      "slot": "accessory",
+      "ingredientCapacityKg": 15,
+      "icon": "🎒",
+      "description": "A specialized pack worn as an accessory. Carried ingredients are weight-exempt up to 15 kg during dungeon expeditions."
+    },
+    {
+      "id": "lost_recipe_warlords_roast",
+      "name": "Lost Recipe: Warlord's Roast",
+      "weight": 0.1,
+      "category": "consumables",
+      "icon": "📜",
+      "description": "Ancient culinary scroll detailing the legendary Warlord's Roast."
+    },
+    {
+      "id": "lost_recipe_treant_harvest",
+      "name": "Lost Recipe: Treant's Harvest",
+      "weight": 0.1,
+      "category": "consumables",
+      "icon": "📜",
+      "description": "Ancient culinary scroll detailing the legendary Treant's Harvest."
+    },
+    {
+      "id": "lost_recipe_abyssal_deep_stew",
+      "name": "Lost Recipe: Deep Abyss Stew",
+      "weight": 0.1,
+      "category": "consumables",
+      "icon": "📜",
+      "description": "Ancient culinary scroll detailing the legendary Deep Abyss Stew."
+    },
+    {
+      "id": "lost_recipe_golden_sashimi",
+      "name": "Lost Recipe: Golden Carp Sashimi",
+      "weight": 0.1,
+      "category": "consumables",
+      "icon": "📜",
+      "description": "Ancient culinary scroll detailing the legendary Golden Carp Sashimi."
+    },
+    {
+      "id": "lost_recipe_magma_glazed_ribs",
+      "name": "Lost Recipe: Magma-Glazed Ribs",
+      "weight": 0.1,
+      "category": "consumables",
+      "icon": "📜",
+      "description": "Ancient culinary scroll detailing the legendary Magma-Glazed Ribs."
+    },
+    {
+      "id": "lost_recipe_frostbite_broth",
+      "name": "Lost Recipe: Frostbite Broth",
+      "weight": 0.1,
+      "category": "consumables",
+      "icon": "📜",
+      "description": "Ancient culinary scroll detailing the legendary Frostbite Broth."
+    },
+    {
+      "id": "lost_recipe_wardens_ossuary_feast",
+      "name": "Lost Recipe: Warden's Ossuary Feast",
+      "weight": 0.1,
+      "category": "consumables",
+      "icon": "📜",
+      "description": "Ancient culinary scroll detailing the legendary Warden's Ossuary Feast."
+    },
+    {
+      "id": "lost_recipe_colossus_banquet",
+      "name": "Lost Recipe: Colossus Banquet",
+      "weight": 0.1,
+      "category": "consumables",
+      "icon": "📜",
+      "description": "Ancient culinary scroll detailing the legendary Colossus Banquet."
+    },
+    {
+      "id": "lost_recipe_tyrants_ember_feast",
+      "name": "Lost Recipe: Tyrant's Ember Feast",
+      "weight": 0.1,
+      "category": "consumables",
+      "icon": "📜",
+      "description": "Ancient culinary scroll detailing the legendary Tyrant's Ember Feast."
+    },
+    {
+      "id": "lost_recipe_sovereigns_winter_table",
+      "name": "Lost Recipe: Sovereign's Winter Table",
+      "weight": 0.1,
+      "category": "consumables",
+      "icon": "📜",
+      "description": "Ancient culinary scroll detailing the legendary Sovereign's Winter Table."
+    },
+    {
+      "id": "mixed_seeds",
+      "name": "Mixed Seeds",
+      "weight": 0.05,
+      "category": "gathering",
+      "icon": "🌱",
+      "description": "A varied blend of common vegetable seeds ready for soil."
     }
   ]
 }

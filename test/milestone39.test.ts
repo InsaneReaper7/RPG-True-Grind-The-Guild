@@ -120,7 +120,7 @@ async function runMilestone39Tests() {
   const vegNodeDef = gatheringConfig.nodes.vegetable_node;
   assert.equal(vegNodeDef.skillId, 'gardening', 'vegetable_node skillId must be gardening');
   assert.equal(vegNodeDef.actionVerb, 'Gardening', 'vegetable_node actionVerb must be Gardening');
-  assert.equal(vegNodeDef.resourceId, 'vegetable', 'vegetable_node resourceId must be vegetable');
+  assert.equal(vegNodeDef.resourceId, 'carrot', 'vegetable_node resourceId must be carrot');
   assert.equal(vegNodeDef.expGranted, 15, 'vegetable_node must grant 15 EXP');
 
   // 1d. Player data seeds gardening proficiency at Level 0
@@ -128,9 +128,9 @@ async function runMilestone39Tests() {
   assert.equal((mockPlayerData.proficiencies as any).gardening.level, 0, 'gardening starting level must be 0');
 
   // 1e. Food data contains vegetable
-  const vegFood = dataLoader.getFood('vegetable');
-  assert.ok(vegFood, 'vegetable must exist in food.json');
-  assert.equal(vegFood.hungerRestored, 15, 'vegetable hungerRestored must be 15');
+  const vegFood = dataLoader.getFood('cinnamon_carrots');
+  assert.ok(vegFood, 'cinnamon_carrots must exist in food.json');
+  assert.equal(vegFood.hungerRestored, 25, 'cinnamon_carrots hungerRestored must be 25');
 
   console.log('✓ PASS: Research node, buildables, gathering node, player data, and food schemas verified.');
 
@@ -251,11 +251,11 @@ async function runMilestone39Tests() {
 
   // Mock vegetable node harvest function matching MainScene logic
   function simulateHarvestNode(prog: ProgressionSystem, rollSeed: number): { vegGained: number; seedsGained: number } {
-    const preV = gameState.getItemCount('vegetable');
+    const preV = gameState.getItemCount('carrot');
     const preS = gameState.getItemCount('seeds');
 
     // Base drop
-    gameState.addItem('vegetable', 1);
+    gameState.addItem('carrot', 1);
 
     // Seed bonus gated at Gardening Level >= 1
     const gLevel = prog.getProficiencyLevel('gardening');
@@ -267,7 +267,7 @@ async function runMilestone39Tests() {
     prog.addProficiencyExp('gardening', 15);
 
     return {
-      vegGained: gameState.getItemCount('vegetable') - preV,
+      vegGained: gameState.getItemCount('carrot') - preV,
       seedsGained: gameState.getItemCount('seeds') - preS
     };
   }
@@ -359,11 +359,11 @@ async function runMilestone39Tests() {
   assert.equal(testGardenerProgression.getProficiencyStat('gardening').currentExp, 18);
 
   // Action 3: Harvesting ready plot
-  const preHarvestVeg = gameState.getItemCount('vegetable');
+  const preHarvestVeg = gameState.getItemCount('carrot');
   const harvestResult = gameState.harvestCrop(10, 10);
   assert.ok(harvestResult && harvestResult.success, 'Harvest must succeed');
   assert.equal(harvestResult.count, 2, 'Harvest must yield confirmed +2 vegetables');
-  assert.equal(gameState.getItemCount('vegetable'), preHarvestVeg + 2, '2 vegetables added to inventory');
+  assert.equal(gameState.getItemCount('carrot'), preHarvestVeg + 2, '2 vegetables added to inventory');
   assert.equal(plotState.state, 'empty', 'Plot state must reset to empty');
 
   // Award harvest EXP (+15 EXP)
@@ -442,14 +442,14 @@ async function runMilestone39Tests() {
   assert.equal(smState.state, 'idle', 'Initial state is idle');
 
   // Cycle 1:
-  gameState.addItem('vegetable', 2);
-  const preVegCycle1 = gameState.getItemCount('vegetable');
+  gameState.addItem('carrot', 2);
+  const preVegCycle1 = gameState.getItemCount('carrot');
   const preSeedCycle1 = gameState.getItemCount('seeds');
 
   // Put in 1 vegetable
-  const insert1 = gameState.insertSeedMakerProduce(5, 5, 'vegetable', 1000); // 1000ms duration for test
+  const insert1 = gameState.insertSeedMakerProduce(5, 5, 'carrot', 1000); // 1000ms duration for test
   assert.equal(insert1, true, 'Inserted vegetable into Seed Maker');
-  assert.equal(gameState.getItemCount('vegetable'), preVegCycle1 - 1, 'Consumed 1 vegetable');
+  assert.equal(gameState.getItemCount('carrot'), preVegCycle1 - 1, 'Consumed 1 vegetable');
   assert.equal(smState.state, 'processing', 'State is processing');
 
   // While processing: cannot collect
@@ -468,7 +468,7 @@ async function runMilestone39Tests() {
   assert.equal(smState.state, 'idle', 'Machine returns to idle');
 
   // Cycle 2 (Confirms repeatable device, not a one-shot recipe):
-  const insert2 = gameState.insertSeedMakerProduce(5, 5, 'vegetable', 1000);
+  const insert2 = gameState.insertSeedMakerProduce(5, 5, 'carrot', 1000);
   assert.equal(insert2, true, 'Can immediately insert again (repeatable)');
   assert.equal(smState.state, 'processing');
   gameState.updateSeedMakers(Date.now() + 1500);

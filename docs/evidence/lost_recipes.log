@@ -1,0 +1,38 @@
+--- STARTING LOST RECIPES TEST SUITE ---
+
+--- Guard 1: Data Guard (Enemies, Tiers, Scroll Items) ---
+✔ Guard 1 passed: All 7 enemies with scrolls have valid tiers and existing items.
+
+--- Guard 2: CombatSystem.ts Literal Guard ---
+✔ Guard 2 passed: CombatSystem.ts is completely data-driven with no hardcoded scroll IDs.
+
+--- Test 9a: Secrecy & Experimentation Lockout ---
+expRes: {
+  success: false,
+  count: 0,
+  isNewDiscovery: false,
+  refusedLostRecipe: true,
+  message: 'This combination stirs a memory… a lost recipe. Find its scroll.',
+  expAwarded: 0
+}
+✔ Test 9a passed: Lost recipe cannot be unlocked via kitchen experimentation.
+
+--- Test 9b: Scroll Deciphering ---
+[Cooking] ✨ Recipe permanently discovered: 'warlords_roast'! (+1 RP)
+[ConsumableSystem] [Toast success] ✨ Lost Recipe Learned: Warlord's Roast! Added to your Recipe Journal.
+[Progression] +120 EXP for 'cooking' (undefined). Current: Level 50 (120/250 EXP)
+[Progression] Recorded tx 'cooking': +120 EXP for Guild Hero, resulting total: Level 50 (120/250 EXP)
+✔ Test 9b passed: Deciphering scroll permanently unlocks the lost recipe.
+
+--- Test 9c: Legendary Party-Wide Buff Fan-Out ---
+[Cooking] ✨ Recipe permanently discovered: 'wardens_ossuary_feast'! (+1 RP)
+[ConsumableSystem] [Toast success] ✨ Lost Recipe Learned: Warden's Ossuary Feast! Added to your Recipe Journal.
+[Progression] +120 EXP for 'cooking' (undefined). Current: Level 50 (240/250 EXP)
+[Progression] Recorded tx 'cooking': +120 EXP for Guild Hero, resulting total: Level 50 (240/250 EXP)
+[KnowledgeBase] 🧪 Status effect discovered: 'dish_buff'! (+1 RP)
+[Player] 🍖 Ate Warden's Ossuary Feast [Excellent]! Restored +0.0 Hunger (Now: 100.0/100). Well Fed buff refreshed (420s @ +5.63 HP/s).
+[ConsumableSystem] [Toast success] ✨ Warden's Ossuary Feast empowers the entire party!
+[ConsumableSystem] [Toast success] 🍖 undefined ate wardens ossuary feast!
+✔ Test 9c passed: Legendary dishes fan-out party-wide and skip downed members.
+
+ALL LOST RECIPES TESTS PASSED SUCCESSFULLY!

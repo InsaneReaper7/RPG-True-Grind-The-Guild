@@ -3,26 +3,1296 @@
     {
       "id": "herb_stew",
       "name": "Herb Stew",
+      "slots": [
+        {
+          "tag": "meat"
+        },
+        {
+          "item": "wild_herbs"
+        }
+      ],
+      "buffs": [
+        "H"
+      ],
+      "multipliers": {},
+      "description": "A warm, fragrant stew of wild herbs and meat simmered to perfection.",
       "ingredients": {
-        "wild_herbs": 1,
-        "monster_meat": 1
+        "crypt_meat": 1,
+        "wild_herbs": 1
       },
       "resultFoodId": "herb_stew",
-      "expGranted": 20,
-      "maxQuality": "excellent",
-      "description": "A restorative, earthy stew of wild herbs and simmered monster meat. Hard ceiling at Excellent quality."
+      "expGranted": 20
+    },
+    {
+      "id": "salted_jerky",
+      "name": "Salted Jerky",
+      "slots": [
+        {
+          "tag": "meat"
+        },
+        {
+          "item": "salt"
+        }
+      ],
+      "buffs": [
+        "H"
+      ],
+      "durationMultiplier": 1.5,
+      "description": "Cured strips of hearty meat, salted for long journeys.",
+      "ingredients": {
+        "crypt_meat": 1,
+        "salt": 1
+      },
+      "resultFoodId": "salted_jerky",
+      "expGranted": 20
+    },
+    {
+      "id": "grilled_skewer",
+      "name": "Grilled Skewer",
+      "slots": [
+        {
+          "tag": "meat"
+        },
+        {
+          "tag": "vegetable"
+        }
+      ],
+      "buffs": [
+        "D"
+      ],
+      "description": "Fire-roasted meat and fresh vegetables on a skewer.",
+      "ingredients": {
+        "crypt_meat": 1,
+        "carrot": 1
+      },
+      "resultFoodId": "grilled_skewer",
+      "expGranted": 20
+    },
+    {
+      "id": "grilled_fish",
+      "name": "Grilled Fish",
+      "slots": [
+        {
+          "tag": "fish"
+        },
+        {
+          "tag": "herb"
+        }
+      ],
+      "buffs": [
+        "E"
+      ],
+      "description": "Tender fish grilled over open flames with garden herbs.",
+      "ingredients": {
+        "river_carp": 1,
+        "wild_herbs": 1
+      },
+      "resultFoodId": "grilled_fish",
+      "expGranted": 20
+    },
+    {
+      "id": "seaweed_salad",
+      "name": "Seaweed Salad",
+      "slots": [
+        {
+          "item": "seaweed"
+        },
+        {
+          "tag": "vegetable"
+        }
+      ],
+      "buffs": [
+        "T"
+      ],
+      "description": "Crisp seaweed tossed with fresh vegetables in a refreshing salad.",
+      "ingredients": {
+        "seaweed": 1,
+        "carrot": 1
+      },
+      "resultFoodId": "seaweed_salad",
+      "expGranted": 20
+    },
+    {
+      "id": "slime_jelly",
+      "name": "Slime Jelly",
+      "slots": [
+        {
+          "item": "slime_gel"
+        },
+        {
+          "tag": "seasoning"
+        }
+      ],
+      "buffs": [
+        "E"
+      ],
+      "description": "A sweetened gelatinous treat providing an invigorating kick.",
+      "ingredients": {
+        "slime_gel": 1,
+        "salt": 1
+      },
+      "resultFoodId": "slime_jelly",
+      "expGranted": 20
+    },
+    {
+      "id": "baked_potato",
+      "name": "Baked Potato",
+      "slots": [
+        {
+          "item": "potato"
+        },
+        {
+          "item": "salt"
+        }
+      ],
+      "buffs": [
+        "H"
+      ],
+      "description": "A steaming hot roasted potato dusted with mineral salt.",
+      "ingredients": {
+        "potato": 1,
+        "salt": 1
+      },
+      "resultFoodId": "baked_potato",
+      "expGranted": 20
+    },
+    {
+      "id": "garlic_mushrooms",
+      "name": "Garlic Mushrooms",
+      "slots": [
+        {
+          "item": "garlic"
+        },
+        {
+          "item": "cave_mushroom"
+        }
+      ],
+      "buffs": [
+        "T"
+      ],
+      "description": "Earthy cave mushrooms sautéed in fragrant crushed garlic.",
+      "ingredients": {
+        "garlic": 1,
+        "cave_mushroom": 1
+      },
+      "resultFoodId": "garlic_mushrooms",
+      "expGranted": 20
+    },
+    {
+      "id": "peppered_eel",
+      "name": "Peppered Eel",
+      "slots": [
+        {
+          "item": "eel"
+        },
+        {
+          "item": "black_pepper"
+        }
+      ],
+      "buffs": [
+        "D"
+      ],
+      "description": "Rich, oily eel spiced with freshly cracked black pepper.",
+      "ingredients": {
+        "eel": 1,
+        "black_pepper": 1
+      },
+      "resultFoodId": "peppered_eel",
+      "expGranted": 20
+    },
+    {
+      "id": "cinnamon_carrots",
+      "name": "Cinnamon Carrots",
+      "slots": [
+        {
+          "item": "carrot"
+        },
+        {
+          "item": "cinnamon"
+        }
+      ],
+      "buffs": [
+        "V"
+      ],
+      "description": "Sweet glazed carrots spiced with aromatic cinnamon bark.",
+      "ingredients": {
+        "carrot": 1,
+        "cinnamon": 1
+      },
+      "resultFoodId": "cinnamon_carrots",
+      "expGranted": 20
     },
     {
       "id": "beast_stew",
       "name": "Hearty Beast Stew",
+      "slots": [
+        {
+          "tag": "meat"
+        },
+        {
+          "tag": "vegetable"
+        },
+        {
+          "tag": "seasoning"
+        }
+      ],
+      "buffs": [
+        "H",
+        "T"
+      ],
+      "description": "A fortifying, rich stew of simmered game, vegetables, and savory seasoning.",
       "ingredients": {
-        "wild_herbs": 1,
-        "wolf_meat": 1
+        "crypt_meat": 1,
+        "carrot": 1,
+        "salt": 1
       },
       "resultFoodId": "beast_stew",
-      "expGranted": 35,
-      "maxQuality": "perfect",
-      "description": "A rich and revitalizing stew made from prized wolf meat. Can reach Perfect quality."
+      "expGranted": 20
+    },
+    {
+      "id": "seafood_chowder",
+      "name": "Seafood Chowder",
+      "slots": [
+        {
+          "tag": "fish"
+        },
+        {
+          "tag": "vegetable"
+        },
+        {
+          "tag": "seasoning"
+        }
+      ],
+      "buffs": [
+        "H",
+        "E"
+      ],
+      "description": "A creamy, restorative chowder loaded with fresh seafood.",
+      "ingredients": {
+        "river_carp": 1,
+        "carrot": 1,
+        "salt": 1
+      },
+      "resultFoodId": "seafood_chowder",
+      "expGranted": 20
+    },
+    {
+      "id": "peppered_steak",
+      "name": "Peppered Steak",
+      "slots": [
+        {
+          "tag": "meat"
+        },
+        {
+          "item": "black_pepper"
+        },
+        {
+          "item": "salt"
+        }
+      ],
+      "buffs": [
+        "D"
+      ],
+      "description": "Thick cut steak seasoned heavily with crushed peppercorns and salt.",
+      "ingredients": {
+        "crypt_meat": 1,
+        "black_pepper": 1,
+        "salt": 1
+      },
+      "resultFoodId": "peppered_steak",
+      "expGranted": 20
+    },
+    {
+      "id": "garden_medley",
+      "name": "Garden Medley",
+      "slots": [
+        {
+          "tag": "vegetable"
+        },
+        {
+          "tag": "vegetable"
+        },
+        {
+          "tag": "vegetable"
+        }
+      ],
+      "buffs": [
+        "H",
+        "T"
+      ],
+      "description": "A wholesome roasted medley of freshly harvested dungeon produce.",
+      "ingredients": {
+        "carrot": 3
+      },
+      "resultFoodId": "garden_medley",
+      "expGranted": 20
+    },
+    {
+      "id": "shellfish_bisque",
+      "name": "Shellfish Bisque",
+      "slots": [
+        {
+          "tag": "shellfish"
+        },
+        {
+          "tag": "shellfish"
+        },
+        {
+          "tag": "herb"
+        }
+      ],
+      "buffs": [
+        "E",
+        "T"
+      ],
+      "description": "A velvety, aromatic bisque made from crushed shellfish and aromatic herbs.",
+      "ingredients": {
+        "sea_urchin": 2,
+        "wild_herbs": 1
+      },
+      "resultFoodId": "shellfish_bisque",
+      "expGranted": 20
+    },
+    {
+      "id": "onion_soup",
+      "name": "Onion Soup",
+      "slots": [
+        {
+          "item": "onion"
+        },
+        {
+          "item": "onion"
+        },
+        {
+          "tag": "herb"
+        }
+      ],
+      "buffs": [
+        "H"
+      ],
+      "durationMultiplier": 1.5,
+      "description": "Caramelized sweet onions simmered in savory broth with herbs.",
+      "ingredients": {
+        "onion": 2,
+        "wild_herbs": 1
+      },
+      "resultFoodId": "onion_soup",
+      "expGranted": 20
+    },
+    {
+      "id": "spiced_salmon",
+      "name": "Spiced Salmon",
+      "slots": [
+        {
+          "item": "salmon"
+        },
+        {
+          "tag": "spice"
+        },
+        {
+          "tag": "herb"
+        }
+      ],
+      "buffs": [
+        "E",
+        "D"
+      ],
+      "description": "Wild salmon fillet crusted in exotic spices and fresh garden herbs.",
+      "ingredients": {
+        "salmon": 1,
+        "black_pepper": 1,
+        "wild_herbs": 1
+      },
+      "resultFoodId": "spiced_salmon",
+      "expGranted": 20
+    },
+    {
+      "id": "urchin_tartare",
+      "name": "Urchin Tartare",
+      "slots": [
+        {
+          "item": "sea_urchin"
+        },
+        {
+          "item": "seaweed"
+        },
+        {
+          "item": "salt"
+        }
+      ],
+      "buffs": [
+        "E"
+      ],
+      "multiplier": 1.25,
+      "description": "Delicate sea urchin roe seasoned lightly with mineral salt and crisp seaweed.",
+      "ingredients": {
+        "sea_urchin": 1,
+        "seaweed": 1,
+        "salt": 1
+      },
+      "resultFoodId": "urchin_tartare",
+      "expGranted": 20
+    },
+    {
+      "id": "catfish_fry",
+      "name": "Catfish Fry",
+      "slots": [
+        {
+          "item": "catfish"
+        },
+        {
+          "item": "potato"
+        },
+        {
+          "item": "salt"
+        }
+      ],
+      "buffs": [
+        "H",
+        "V"
+      ],
+      "description": "Crisp golden-fried catfish served with roasted potatoes.",
+      "ingredients": {
+        "catfish": 1,
+        "potato": 1,
+        "salt": 1
+      },
+      "resultFoodId": "catfish_fry",
+      "expGranted": 20
+    },
+    {
+      "id": "hunters_feast",
+      "name": "Hunter's Feast",
+      "slots": [
+        {
+          "tag": "meat"
+        },
+        {
+          "tag": "meat"
+        },
+        {
+          "tag": "vegetable"
+        },
+        {
+          "tag": "seasoning"
+        }
+      ],
+      "buffs": [
+        "H",
+        "D"
+      ],
+      "description": "A bountiful roast of prime meats and vegetables fit for a victorious hunter.",
+      "ingredients": {
+        "crypt_meat": 2,
+        "carrot": 1,
+        "salt": 1
+      },
+      "resultFoodId": "hunters_feast",
+      "expGranted": 50
+    },
+    {
+      "id": "fishermans_platter",
+      "name": "Fisherman's Platter",
+      "slots": [
+        {
+          "tag": "fish"
+        },
+        {
+          "tag": "fish"
+        },
+        {
+          "item": "seaweed"
+        },
+        {
+          "tag": "seasoning"
+        }
+      ],
+      "buffs": [
+        "E",
+        "D"
+      ],
+      "description": "A grand coastal platter featuring twin catches, seaweed, and spices.",
+      "ingredients": {
+        "river_carp": 2,
+        "seaweed": 1,
+        "salt": 1
+      },
+      "resultFoodId": "fishermans_platter",
+      "expGranted": 50
+    },
+    {
+      "id": "spiced_octopus",
+      "name": "Spiced Octopus",
+      "slots": [
+        {
+          "item": "octopus"
+        },
+        {
+          "item": "fire_pepper"
+        },
+        {
+          "item": "salt"
+        },
+        {
+          "tag": "spice"
+        }
+      ],
+      "buffs": [
+        "D"
+      ],
+      "multiplier": 1.5,
+      "description": "Tender braised octopus infused with fiery peppers and warming spices.",
+      "ingredients": {
+        "octopus": 1,
+        "fire_pepper": 1,
+        "salt": 1,
+        "black_pepper": 1
+      },
+      "resultFoodId": "spiced_octopus",
+      "expGranted": 50
+    },
+    {
+      "id": "mushroom_ragout",
+      "name": "Mushroom Ragout",
+      "slots": [
+        {
+          "item": "cave_mushroom"
+        },
+        {
+          "item": "cave_mushroom"
+        },
+        {
+          "tag": "meat"
+        },
+        {
+          "tag": "herb"
+        }
+      ],
+      "buffs": [
+        "H",
+        "T"
+      ],
+      "description": "A thick, earthy ragout of double cave mushrooms, tender meat, and herbs.",
+      "ingredients": {
+        "cave_mushroom": 2,
+        "crypt_meat": 1,
+        "wild_herbs": 1
+      },
+      "resultFoodId": "mushroom_ragout",
+      "expGranted": 50
+    },
+    {
+      "id": "crab_cakes",
+      "name": "Crab Cakes",
+      "slots": [
+        {
+          "item": "crab"
+        },
+        {
+          "item": "crab"
+        },
+        {
+          "item": "potato"
+        },
+        {
+          "tag": "spice"
+        }
+      ],
+      "buffs": [
+        "D",
+        "V"
+      ],
+      "description": "Crispy pan-seared crab cakes seasoned with potato and zesty spices.",
+      "ingredients": {
+        "crab": 2,
+        "potato": 1,
+        "black_pepper": 1
+      },
+      "resultFoodId": "crab_cakes",
+      "expGranted": 50
+    },
+    {
+      "id": "sweet_potato_pie",
+      "name": "Sweet Potato Pie",
+      "slots": [
+        {
+          "item": "sweet_potato"
+        },
+        {
+          "item": "sweet_potato"
+        },
+        {
+          "item": "cinnamon"
+        },
+        {
+          "item": "salt"
+        }
+      ],
+      "buffs": [
+        "H",
+        "E"
+      ],
+      "description": "A rich, decadent pie of sweet potatoes baked with cinnamon and salt.",
+      "ingredients": {
+        "sweet_potato": 2,
+        "cinnamon": 1,
+        "salt": 1
+      },
+      "resultFoodId": "sweet_potato_pie",
+      "expGranted": 50
+    },
+    {
+      "id": "cabbage_rolls",
+      "name": "Frost Cabbage Rolls",
+      "slots": [
+        {
+          "item": "frost_cabbage"
+        },
+        {
+          "tag": "meat"
+        },
+        {
+          "tag": "vegetable"
+        },
+        {
+          "tag": "herb"
+        }
+      ],
+      "buffs": [
+        "H",
+        "T"
+      ],
+      "description": "Crisp frost cabbage leaves wrapped around seasoned meat and vegetables.",
+      "ingredients": {
+        "frost_cabbage": 1,
+        "crypt_meat": 1,
+        "carrot": 1,
+        "wild_herbs": 1
+      },
+      "resultFoodId": "cabbage_rolls",
+      "expGranted": 50
+    },
+    {
+      "id": "guild_banquet",
+      "name": "Guild Banquet",
+      "slots": [
+        {
+          "tag": "meat"
+        },
+        {
+          "tag": "fish"
+        },
+        {
+          "tag": "vegetable"
+        },
+        {
+          "tag": "vegetable"
+        },
+        {
+          "tag": "seasoning"
+        }
+      ],
+      "buffs": [
+        "H",
+        "E",
+        "T"
+      ],
+      "description": "A magnificent celebratory banquet combining guild catches, hunts, and garden produce.",
+      "ingredients": {
+        "crypt_meat": 1,
+        "river_carp": 1,
+        "carrot": 2,
+        "salt": 1
+      },
+      "resultFoodId": "guild_banquet",
+      "expGranted": 50
+    },
+    {
+      "id": "surf_and_turf",
+      "name": "Surf and Turf",
+      "slots": [
+        {
+          "tag": "meat"
+        },
+        {
+          "tag": "fish"
+        },
+        {
+          "item": "salt"
+        },
+        {
+          "item": "black_pepper"
+        },
+        {
+          "tag": "seasoning"
+        }
+      ],
+      "buffs": [
+        "D",
+        "E"
+      ],
+      "description": "The pinnacle of meat and seafood pairing, perfectly seared with salt and pepper.",
+      "ingredients": {
+        "crypt_meat": 1,
+        "river_carp": 1,
+        "salt": 2,
+        "black_pepper": 1
+      },
+      "resultFoodId": "surf_and_turf",
+      "expGranted": 50
+    },
+    {
+      "id": "abyssal_eel_pie",
+      "name": "Abyssal Eel Pie",
+      "slots": [
+        {
+          "item": "eel"
+        },
+        {
+          "tag": "vegetable"
+        },
+        {
+          "tag": "vegetable"
+        },
+        {
+          "item": "salt"
+        },
+        {
+          "tag": "seasoning"
+        }
+      ],
+      "buffs": [
+        "H",
+        "T"
+      ],
+      "multiplier": 1.25,
+      "description": "A deeply savory pie filled with tender eel, garden vegetables, and aromatic seasoning.",
+      "ingredients": {
+        "eel": 1,
+        "carrot": 2,
+        "salt": 2
+      },
+      "resultFoodId": "abyssal_eel_pie",
+      "expGranted": 50
+    },
+    {
+      "id": "lobster_thermidor",
+      "name": "Lobster Thermidor",
+      "slots": [
+        {
+          "item": "lobster"
+        },
+        {
+          "item": "garlic"
+        },
+        {
+          "tag": "herb"
+        },
+        {
+          "tag": "spice"
+        },
+        {
+          "item": "salt"
+        }
+      ],
+      "buffs": [
+        "D",
+        "E"
+      ],
+      "multiplier": 1.25,
+      "description": "Decadent whole lobster baked in a creamy sauce with garlic, herbs, and spices.",
+      "ingredients": {
+        "lobster": 1,
+        "garlic": 1,
+        "wild_herbs": 1,
+        "black_pepper": 1,
+        "salt": 1
+      },
+      "resultFoodId": "lobster_thermidor",
+      "expGranted": 50
+    },
+    {
+      "id": "inferno_chili",
+      "name": "Inferno Chili",
+      "slots": [
+        {
+          "item": "fire_pepper"
+        },
+        {
+          "item": "fire_pepper"
+        },
+        {
+          "tag": "meat"
+        },
+        {
+          "item": "garlic"
+        },
+        {
+          "tag": "spice"
+        }
+      ],
+      "buffs": [
+        "D",
+        "V"
+      ],
+      "buffMultipliers": {
+        "D": 1.5
+      },
+      "description": "A scorching chili of double fire peppers and seasoned meat that sets the blood ablaze.",
+      "ingredients": {
+        "fire_pepper": 2,
+        "crypt_meat": 1,
+        "garlic": 1,
+        "black_pepper": 1
+      },
+      "resultFoodId": "inferno_chili",
+      "expGranted": 50
+    },
+    {
+      "id": "glacial_hotpot",
+      "name": "Glacial Hotpot",
+      "slots": [
+        {
+          "item": "frost_cabbage"
+        },
+        {
+          "item": "snow_pea"
+        },
+        {
+          "tag": "fish"
+        },
+        {
+          "tag": "meat"
+        },
+        {
+          "tag": "herb"
+        }
+      ],
+      "buffs": [
+        "H",
+        "E",
+        "T"
+      ],
+      "description": "A steaming hotpot defying sub-zero temperatures with winter greens and fresh protein.",
+      "ingredients": {
+        "frost_cabbage": 1,
+        "snow_pea": 1,
+        "river_carp": 1,
+        "crypt_meat": 1,
+        "wild_herbs": 1
+      },
+      "resultFoodId": "glacial_hotpot",
+      "expGranted": 50
+    },
+    {
+      "id": "warlords_roast",
+      "name": "Warlord's Roast",
+      "rarity": "epic",
+      "slots": [
+        {
+          "item": "prime_crypt_meat"
+        },
+        {
+          "item": "garlic"
+        },
+        {
+          "item": "onion"
+        },
+        {
+          "item": "rosemary"
+        },
+        {
+          "item": "black_pepper"
+        }
+      ],
+      "buffs": [
+        "H",
+        "D",
+        "T"
+      ],
+      "droppedBy": [
+        "orc_warrior"
+      ],
+      "description": "A legendary roasted feast once prepared for conquerors of the Ancient Crypts.",
+      "ingredients": {
+        "prime_crypt_meat": 1,
+        "garlic": 1,
+        "onion": 1,
+        "rosemary": 1,
+        "black_pepper": 1
+      },
+      "resultFoodId": "warlords_roast",
+      "expGranted": 50
+    },
+    {
+      "id": "treant_harvest",
+      "name": "Treant's Harvest",
+      "rarity": "epic",
+      "slots": [
+        {
+          "item": "carrot"
+        },
+        {
+          "item": "turnip"
+        },
+        {
+          "item": "cave_mushroom"
+        },
+        {
+          "item": "sage"
+        },
+        {
+          "item": "seaweed"
+        }
+      ],
+      "buffs": [
+        "H",
+        "E",
+        "V"
+      ],
+      "droppedBy": [
+        "ancient_treant"
+      ],
+      "description": "A mystical harvest dish brimming with natural earth energies and vitality.",
+      "ingredients": {
+        "carrot": 1,
+        "turnip": 1,
+        "cave_mushroom": 1,
+        "sage": 1,
+        "seaweed": 1
+      },
+      "resultFoodId": "treant_harvest",
+      "expGranted": 50
+    },
+    {
+      "id": "abyssal_deep_stew",
+      "name": "Deep Abyss Stew",
+      "rarity": "epic",
+      "slots": [
+        {
+          "item": "prime_abyssal_meat"
+        },
+        {
+          "item": "eel"
+        },
+        {
+          "item": "cave_mushroom"
+        },
+        {
+          "item": "thyme"
+        },
+        {
+          "item": "salt"
+        }
+      ],
+      "buffs": [
+        "H",
+        "E",
+        "T"
+      ],
+      "droppedBy": [
+        "void_knight"
+      ],
+      "description": "An enigmatic stew simmered with prime abyssal cut and cave mushrooms.",
+      "ingredients": {
+        "prime_abyssal_meat": 1,
+        "eel": 1,
+        "cave_mushroom": 1,
+        "thyme": 1,
+        "salt": 1
+      },
+      "resultFoodId": "abyssal_deep_stew",
+      "expGranted": 50
+    },
+    {
+      "id": "golden_sashimi",
+      "name": "Golden Carp Sashimi",
+      "rarity": "epic",
+      "slots": [
+        {
+          "item": "golden_carp"
+        },
+        {
+          "item": "seaweed"
+        },
+        {
+          "item": "sea_urchin"
+        },
+        {
+          "item": "salt"
+        },
+        {
+          "item": "saffron"
+        }
+      ],
+      "buffs": [
+        "E",
+        "D",
+        "V"
+      ],
+      "droppedBy": [
+        "orc_warrior",
+        "void_knight"
+      ],
+      "description": "Exquisitely sliced golden carp and sea urchin dusted with precious saffron.",
+      "ingredients": {
+        "golden_carp": 1,
+        "seaweed": 1,
+        "sea_urchin": 1,
+        "salt": 1,
+        "saffron": 1
+      },
+      "resultFoodId": "golden_sashimi",
+      "expGranted": 50
+    },
+    {
+      "id": "magma_glazed_ribs",
+      "name": "Magma-Glazed Ribs",
+      "rarity": "epic",
+      "slots": [
+        {
+          "item": "prime_caldera_meat"
+        },
+        {
+          "item": "fire_pepper"
+        },
+        {
+          "item": "sweet_potato"
+        },
+        {
+          "item": "cinnamon"
+        },
+        {
+          "item": "salt"
+        }
+      ],
+      "buffs": [
+        "H",
+        "D"
+      ],
+      "droppedBy": [
+        "orc_warrior",
+        "ancient_treant"
+      ],
+      "description": "Tender cinder haunches glazed in caramelized fire pepper and sweet potato.",
+      "ingredients": {
+        "prime_caldera_meat": 1,
+        "fire_pepper": 1,
+        "sweet_potato": 1,
+        "cinnamon": 1,
+        "salt": 1
+      },
+      "resultFoodId": "magma_glazed_ribs",
+      "expGranted": 50
+    },
+    {
+      "id": "frostbite_broth",
+      "name": "Frostbite Broth",
+      "rarity": "epic",
+      "slots": [
+        {
+          "item": "glacial_meat"
+        },
+        {
+          "item": "frost_cabbage"
+        },
+        {
+          "item": "snow_pea"
+        },
+        {
+          "item": "sage"
+        },
+        {
+          "item": "salt"
+        }
+      ],
+      "buffs": [
+        "E",
+        "T"
+      ],
+      "droppedBy": [],
+      "description": "An invigorating broth prepared from frostbeast meat and sub-zero winter vegetables.",
+      "ingredients": {
+        "glacial_meat": 1,
+        "frost_cabbage": 1,
+        "snow_pea": 1,
+        "sage": 1,
+        "salt": 1
+      },
+      "resultFoodId": "frostbite_broth",
+      "expGranted": 50
+    },
+    {
+      "id": "wardens_ossuary_feast",
+      "name": "Warden's Ossuary Feast",
+      "rarity": "legendary",
+      "slots": [
+        {
+          "item": "prime_crypt_meat"
+        },
+        {
+          "item": "garlic"
+        },
+        {
+          "item": "potato"
+        },
+        {
+          "item": "rosemary"
+        },
+        {
+          "item": "saffron"
+        }
+      ],
+      "buffs": [
+        "H",
+        "D",
+        "T"
+      ],
+      "droppedBy": [
+        "bone_warden"
+      ],
+      "description": "A legendary banquet whose fortifying aromas empower the entire adventuring party.",
+      "ingredients": {
+        "prime_crypt_meat": 1,
+        "garlic": 1,
+        "potato": 1,
+        "rosemary": 1,
+        "saffron": 1
+      },
+      "resultFoodId": "wardens_ossuary_feast",
+      "expGranted": 50
+    },
+    {
+      "id": "colossus_banquet",
+      "name": "Colossus Banquet",
+      "rarity": "legendary",
+      "slots": [
+        {
+          "item": "prime_abyssal_meat"
+        },
+        {
+          "item": "lobster"
+        },
+        {
+          "item": "octopus"
+        },
+        {
+          "item": "cave_mushroom"
+        },
+        {
+          "item": "saffron"
+        }
+      ],
+      "buffs": [
+        "E",
+        "D",
+        "T"
+      ],
+      "droppedBy": [
+        "abyssal_colossus"
+      ],
+      "description": "A feast of titanic proportions yielding enduring strength to every party member.",
+      "ingredients": {
+        "prime_abyssal_meat": 1,
+        "lobster": 1,
+        "octopus": 1,
+        "cave_mushroom": 1,
+        "saffron": 1
+      },
+      "resultFoodId": "colossus_banquet",
+      "expGranted": 50
+    },
+    {
+      "id": "tyrants_ember_feast",
+      "name": "Tyrant's Ember Feast",
+      "rarity": "legendary",
+      "slots": [
+        {
+          "item": "prime_caldera_meat"
+        },
+        {
+          "item": "fire_pepper"
+        },
+        {
+          "item": "sweet_potato"
+        },
+        {
+          "item": "golden_carp"
+        },
+        {
+          "item": "saffron"
+        }
+      ],
+      "buffs": [
+        "H",
+        "D",
+        "V"
+      ],
+      "droppedBy": [
+        "magma_tyrant"
+      ],
+      "description": "A radiant feast cooked over volcanic embers, granting unparalleled prowess to the full party.",
+      "ingredients": {
+        "prime_caldera_meat": 1,
+        "fire_pepper": 1,
+        "sweet_potato": 1,
+        "golden_carp": 1,
+        "saffron": 1
+      },
+      "resultFoodId": "tyrants_ember_feast",
+      "expGranted": 50
+    },
+    {
+      "id": "sovereigns_winter_table",
+      "name": "Sovereign's Winter Table",
+      "rarity": "legendary",
+      "slots": [
+        {
+          "item": "prime_glacial_meat"
+        },
+        {
+          "item": "frost_cabbage"
+        },
+        {
+          "item": "snow_pea"
+        },
+        {
+          "item": "salmon"
+        },
+        {
+          "item": "saffron"
+        }
+      ],
+      "buffs": [
+        "H",
+        "E",
+        "D",
+        "T",
+        "V"
+      ],
+      "droppedBy": [
+        "glacial_sovereign"
+      ],
+      "description": "The ultimate culinary triumph, providing all combat buffs to the entire party.",
+      "ingredients": {
+        "prime_glacial_meat": 1,
+        "frost_cabbage": 1,
+        "snow_pea": 1,
+        "salmon": 1,
+        "saffron": 1
+      },
+      "resultFoodId": "sovereigns_winter_table",
+      "expGranted": 50
+    },
+    {
+      "id": "burnt_mush",
+      "name": "Burnt Mush",
+      "slots": [],
+      "buffs": [],
+      "description": "An unrecognizable, charred culinary failure. Restores minimal hunger and grants no buffs.",
+      "ingredients": {},
+      "resultFoodId": "burnt_mush",
+      "expGranted": 20
     }
   ]
 }

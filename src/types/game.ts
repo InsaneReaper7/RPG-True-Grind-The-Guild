@@ -102,7 +102,7 @@ export interface WeaponsData {
 }
 
 export interface Requirement {
-  type: 'proficiency' | 'classLevel' | 'activityCount' | 'triggerCount' | 'anyOf' | 'oneOf';
+  type: 'proficiency' | 'classLevel' | 'activityCount' | 'triggerCount' | 'anyOf' | 'oneOf' | 'discoveredRecipes';
   target?: string;
   value?: number;
   count?: number;
@@ -170,6 +170,8 @@ export interface CorpseHarvestEntry {
   exp: number;
   tags?: string[];
   note?: string;
+  premiumItem?: string;
+  premiumChance?: number;
 }
 
 export interface CorpseHarvestDef {
@@ -199,6 +201,8 @@ export interface EnemyDef {
   dropChance?: number;
   bandStats?: Record<string, EnemyBandStatDef>;
   harvest: HarvestItem[];
+  ingredientDrops?: Array<{ item: string; weight: number }>;
+  lostRecipeScrolls?: string[];
   corpseHarvest?: CorpseHarvestDef;
   poisonChance?: number;
   burnChance?: number;
@@ -376,6 +380,8 @@ export interface PlayerSnapshot {
   equippedAccessoryId?: string | null;
   party?: CharacterSnapshot[];
   discoveredCookingRecipes?: string[];
+  triedCookingSignatures?: string[];
+  migrations?: Record<string, boolean>;
   discoveredAlchemyRecipes?: string[];
   dungeonFloorCount?: number;
   lifetimeDungeonFloorCount?: number;
@@ -500,6 +506,11 @@ export interface AlchemyRecipesData {
   recipes: AlchemyRecipeDef[];
 }
 
+export interface CookingSlotDef {
+  item?: string;
+  tag?: string;
+}
+
 export interface CookingRecipeDef {
   id: string;
   name: string;
@@ -509,6 +520,14 @@ export interface CookingRecipeDef {
   maxQuality?: FoodQuality;
   requiredLevel?: number;
   description: string;
+  slots?: CookingSlotDef[];
+  tier?: number;
+  rarity?: 'epic' | 'legendary';
+  lostRecipe?: boolean;
+  multiplier?: number;
+  durationMultiplier?: number;
+  buffs?: string[];
+  buffMultipliers?: Record<string, number>;
 }
 
 export interface CookingRecipesData {
@@ -990,7 +1009,10 @@ export interface FoodDef {
   hungerRestored: number;
   weight?: number;
   spoilageDays: number;
-  buff: FoodBuffDef;
+  buff?: FoodBuffDef;
+  buffs?: string[];
+  rarity?: string;
+  recipeId?: string;
   qualities?: Record<FoodQuality, FoodQualityModifier>;
   description: string;
 }
@@ -1009,6 +1031,10 @@ export interface ItemDef {
   keepOnReturn?: boolean;
   healAmount?: number;
   cooldownMs?: number;
+  ingredient?: boolean;
+  cookingTags?: string[];
+  ingredientTier?: number;
+  premium?: boolean;
 }
 
 export interface ItemsData {
@@ -1033,6 +1059,9 @@ export interface FoodItemInstance {
   acquiredDay: number;
   instanceId: string;
   quality?: FoodQuality;
+  foodId?: string;
+  count?: number;
+  computedDish?: any;
 }
 
 export type MoodTierName = 'high' | 'content' | 'low';
@@ -1316,3 +1345,25 @@ export interface ProgressionLevelUpEvent {
   memberName?: string;
 }
 
+
+export interface CropDef {
+  seedId: string;
+  produceId: string;
+  growthDays: number;
+  yieldCount: number;
+  randomPool?: string[];
+}
+
+export interface CropsConfig {
+  crops: Record<string, CropDef>;
+}
+
+export interface CookingConfig {
+  ingredientDropChance: number;
+  lostRecipeChanceByTier: Record<string, number>;
+  peppercornSeedChance: number;
+  chefBonusRollFactor: number;
+  herbRollChance: number;
+  saffronRollChance: number;
+  cinnamonRollChance: number;
+}

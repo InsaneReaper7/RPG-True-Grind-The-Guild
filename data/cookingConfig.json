@@ -1,0 +1,13 @@
+{
+  "ingredientDropChance": 0.12,
+  "lostRecipeChanceByTier": {
+    "elite": 0.05,
+    "epic": 0.05,
+    "boss": 0.20
+  },
+  "peppercornSeedChance": 0.02,
+  "chefBonusRollFactor": 0.0035,
+  "herbRollChance": 0.08,
+  "saffronRollChance": 0.01,
+  "cinnamonRollChance": 0.05
+}

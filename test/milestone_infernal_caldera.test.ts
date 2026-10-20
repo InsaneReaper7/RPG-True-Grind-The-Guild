@@ -98,11 +98,10 @@ async function runMilestoneInfernalCalderaTests() {
   const houndDef = enemiesData.enemies.find((e: any) => e.id === 'cinder_hound');
   assert.ok(houndDef, 'cinder_hound must exist');
   const houndDrops = houndDef.harvest.map((h: any) => h.item);
-  assert.ok(houndDrops.includes('monster_meat'), 'Hound must drop monster_meat');
-  assert.ok(houndDrops.includes('bone'), 'Hound must drop bone');
+    assert.ok(houndDrops.includes('bone'), 'Hound must drop bone');
   assert.strictEqual(houndDrops.some((item: string) => item.includes('gemstone')), false, 'Hound must NEVER drop gemstones');
   assert.strictEqual(houndDef.corpseHarvest?.skinning?.item, 'wolf_pelt', 'Hound must have wolf_pelt skinning');
-  assert.strictEqual(houndDef.corpseHarvest?.butchering?.item, 'wolf_meat', 'Hound must have wolf_meat butchering');
+  assert.strictEqual(houndDef.corpseHarvest?.butchering?.item, 'caldera_meat', 'Hound must have caldera_meat butchering');
   console.log('  ✓ Cinder Hound drops: [monster_meat, bone], corpse skinning: wolf_pelt, butchering: wolf_meat. Gemstones: 0.');
 
   const wraithDef = enemiesData.enemies.find((e: any) => e.id === 'ash_wraith');

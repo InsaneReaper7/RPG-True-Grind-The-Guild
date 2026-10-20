@@ -44,10 +44,12 @@
           ]
         },
         "butchering": {
-          "item": "wolf_meat",
-          "name": "Wolf Meat",
+          "item": "crypt_meat",
+          "name": "Crypt Game Meat",
           "count": 1,
           "exp": 15,
+          "premiumItem": "prime_crypt_meat",
+          "premiumChance": 0.1,
           "tags": [
             "cooking"
           ]
@@ -74,6 +76,16 @@
             "cooking",
             "alchemy"
           ]
+        }
+      ],
+      "ingredientDrops": [
+        {
+          "item": "salt",
+          "weight": 2
+        },
+        {
+          "item": "slime_gel",
+          "weight": 1
         }
       ]
     },
@@ -109,16 +121,27 @@
       ],
       "corpseHarvest": {
         "butchering": {
-          "item": "monster_meat",
-          "name": "Monster Meat",
+          "item": "crypt_meat",
+          "name": "Crypt Game Meat",
           "count": 1,
           "exp": 15,
+          "premiumItem": "prime_crypt_meat",
+          "premiumChance": 0.1,
           "tags": [
             "cooking"
-          ],
-          "note": "lower Chef dish-quality ceiling than wolf_meat"
+          ]
         }
-      }
+      },
+      "ingredientDrops": [
+        {
+          "item": "black_pepper",
+          "weight": 2
+        },
+        {
+          "item": "salt",
+          "weight": 1
+        }
+      ]
     },
     {
       "id": "goblin_archer",
@@ -162,15 +185,23 @@
       ],
       "corpseHarvest": {
         "butchering": {
-          "item": "monster_meat",
-          "name": "Monster Meat",
+          "item": "crypt_meat",
+          "name": "Crypt Game Meat",
           "count": 1,
           "exp": 15,
+          "premiumItem": "prime_crypt_meat",
+          "premiumChance": 0.1,
           "tags": [
             "cooking"
           ]
         }
-      }
+      },
+      "ingredientDrops": [
+        {
+          "item": "black_pepper",
+          "weight": 2
+        }
+      ]
     },
     {
       "id": "skeleton",
@@ -201,6 +232,12 @@
             "enchanting",
             "alchemy"
           ]
+        }
+      ],
+      "ingredientDrops": [
+        {
+          "item": "salt",
+          "weight": 1
         }
       ]
     },
@@ -296,7 +333,7 @@
       "aggroRadius": 6,
       "attackIntervalMs": 950,
       "moveSpeed": 110,
-      "poisonChance": 0.10,
+      "poisonChance": 0.1,
       "dropChance": 0.4,
       "harvest": [
         {
@@ -375,6 +412,11 @@
             "blacksmithing"
           ]
         }
+      ],
+      "lostRecipeScrolls": [
+        "lost_recipe_warlords_roast",
+        "lost_recipe_golden_sashimi",
+        "lost_recipe_magma_glazed_ribs"
       ]
     },
     {
@@ -442,9 +484,13 @@
             "blacksmithing"
           ]
         }
+      ],
+      "lostRecipeScrolls": [
+        "lost_recipe_abyssal_deep_stew",
+        "lost_recipe_golden_sashimi"
       ]
     },
-  {
+    {
       "id": "bone_warden",
       "name": "Bone Warden",
       "tier": "boss",
@@ -487,6 +533,9 @@
           ],
           "note": "Guaranteed 1 Elemental Gemstone (Holy or Dark 50/50)"
         }
+      ],
+      "lostRecipeScrolls": [
+        "lost_recipe_wardens_ossuary_feast"
       ]
     },
     {
@@ -551,6 +600,9 @@
           ],
           "note": "Guaranteed 1 Elemental Gemstone (Arcane, Water, or Earth 1/3 each)"
         }
+      ],
+      "lostRecipeScrolls": [
+        "lost_recipe_colossus_banquet"
       ]
     },
     {
@@ -615,6 +667,9 @@
           ],
           "note": "Guaranteed 1 Elemental Gemstone (Ice or Wind 50/50)"
         }
+      ],
+      "lostRecipeScrolls": [
+        "lost_recipe_sovereigns_winter_table"
       ]
     },
     {
@@ -772,7 +827,7 @@
         },
         {
           "method": "rare_drop",
-          "item": "raw_fish",
+          "item": "river_carp",
           "chance": 0.15,
           "amount": 1,
           "weight": 1,
@@ -1023,15 +1078,6 @@
       "harvest": [
         {
           "method": "salvage",
-          "item": "monster_meat",
-          "weight": 2,
-          "tags": [
-            "cooking",
-            "provisioning"
-          ]
-        },
-        {
-          "method": "salvage",
           "item": "bone",
           "weight": 2,
           "tags": [
@@ -1051,15 +1097,23 @@
           ]
         },
         "butchering": {
-          "item": "wolf_meat",
-          "name": "Wolf Meat",
+          "item": "caldera_meat",
+          "name": "Cinder Haunch",
           "count": 1,
           "exp": 15,
+          "premiumItem": "prime_caldera_meat",
+          "premiumChance": 0.1,
           "tags": [
             "cooking"
           ]
         }
-      }
+      },
+      "ingredientDrops": [
+        {
+          "item": "black_pepper",
+          "weight": 1
+        }
+      ]
     },
     {
       "id": "magma_brute",
@@ -1093,6 +1147,12 @@
             "blacksmithing",
             "bowyer"
           ]
+        }
+      ],
+      "ingredientDrops": [
+        {
+          "item": "salt",
+          "weight": 2
         }
       ]
     },
@@ -1220,6 +1280,9 @@
           ],
           "note": "Ancient pulsating void core (10% chase drop)"
         }
+      ],
+      "lostRecipeScrolls": [
+        "lost_recipe_tyrants_ember_feast"
       ]
     },
     {
@@ -1274,6 +1337,17 @@
             "tailoring",
             "bowyer"
           ]
+        },
+        "butchering": {
+          "item": "abyssal_meat",
+          "name": "Abyssal Flesh",
+          "count": 1,
+          "exp": 15,
+          "premiumItem": "prime_abyssal_meat",
+          "premiumChance": 0.1,
+          "tags": [
+            "cooking"
+          ]
         }
       }
     },
@@ -1310,6 +1384,12 @@
             "alchemy"
           ]
         }
+      ],
+      "ingredientDrops": [
+        {
+          "item": "black_pepper",
+          "weight": 2
+        }
       ]
     },
     {
@@ -1344,6 +1424,12 @@
             "blacksmithing"
           ]
         }
+      ],
+      "ingredientDrops": [
+        {
+          "item": "salt",
+          "weight": 2
+        }
       ]
     },
     {
@@ -1363,17 +1449,40 @@
         "max": 12
       },
       "bandStats": {
-        "1": { "hp": 130, "criticalHpMax": 65, "meleeDamage": 13, "attackIntervalMs": 1600 },
-        "2": { "hp": 180, "criticalHpMax": 90, "meleeDamage": 16, "attackIntervalMs": 1550 },
-        "3": { "hp": 240, "criticalHpMax": 120, "meleeDamage": 20, "attackIntervalMs": 1500 },
-        "4": { "hp": 300, "criticalHpMax": 150, "meleeDamage": 24, "attackIntervalMs": 1450 }
+        "1": {
+          "hp": 130,
+          "criticalHpMax": 65,
+          "meleeDamage": 13,
+          "attackIntervalMs": 1600
+        },
+        "2": {
+          "hp": 180,
+          "criticalHpMax": 90,
+          "meleeDamage": 16,
+          "attackIntervalMs": 1550
+        },
+        "3": {
+          "hp": 240,
+          "criticalHpMax": 120,
+          "meleeDamage": 20,
+          "attackIntervalMs": 1500
+        },
+        "4": {
+          "hp": 300,
+          "criticalHpMax": 150,
+          "meleeDamage": 24,
+          "attackIntervalMs": 1450
+        }
       },
       "description": "A colossal elder tree, roused to guard the grove. Its heartwood is said to make a staff unlike any other.",
       "harvest": [
         {
           "method": "guaranteed",
           "item": "nature_gemstone",
-          "amount": [2, 3],
+          "amount": [
+            2,
+            3
+          ],
           "tags": [
             "enchanting"
           ]
@@ -1408,6 +1517,10 @@
             "equipment"
           ]
         }
+      ],
+      "lostRecipeScrolls": [
+        "lost_recipe_treant_harvest",
+        "lost_recipe_magma_glazed_ribs"
       ]
     }
   ]

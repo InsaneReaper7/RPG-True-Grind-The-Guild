@@ -895,7 +895,7 @@ async function runTests() {
     gameState.addItem('spider_silk', 20);
     gameState.addItem('bowstring', 20);
     gameState.addItem('wild_herbs', 20);
-    gameState.addItem('monster_meat', 20);
+    gameState.addItem('crypt_meat', 20);
     gameState.discoverCookingRecipe('herb_stew');
 
     const getTotalCountAcrossAllStores = (itemId: string): number => {
@@ -972,7 +972,7 @@ async function runTests() {
 
     // 5. Cooking: Cook Herb Stew
     const preStewHerbs = gameState.getItemCount('wild_herbs');
-    const preStewMeat = gameState.getItemCount('monster_meat');
+    const preStewMeat = gameState.getItemCount('crypt_meat');
     const preStockpileStew = gameState.getItemCount('herb_stew');
     const preTotalStew = getTotalCountAcrossAllStores('herb_stew');
     hud.openCookingModal(leader, leader.progression);
@@ -981,7 +981,7 @@ async function runTests() {
     assert.ok(stewBtn, 'Herb stew cook button rendered');
     stewBtn.onclick();
     assert.strictEqual(gameState.getItemCount('wild_herbs'), preStewHerbs - 1, 'Wild Herbs deducted from stockpile for stew');
-    assert.strictEqual(gameState.getItemCount('monster_meat'), preStewMeat - 1, 'Monster Meat deducted from stockpile for stew');
+    assert.strictEqual(gameState.getItemCount('crypt_meat'), preStewMeat - 1, 'Crypt Meat deducted from stockpile for stew');
     assert.strictEqual(leader.getItemCount('herb_stew'), 1, 'Herb stew landed in leader inventory');
     assert.strictEqual(gameState.getItemCount('herb_stew'), preStockpileStew, 'Stockpile gained exactly 0 herb_stew from craft');
     assert.strictEqual(getTotalCountAcrossAllStores('herb_stew'), preTotalStew + 1, 'Total herb_stew across all stores rose by exactly 1');

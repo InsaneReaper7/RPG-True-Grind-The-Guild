@@ -44,6 +44,7 @@ export class GameState {
   private inventory: Map<string, number> = new Map();
   private bookLearnedSkills: Set<string> = new Set();
   private discoveredCookingRecipes: Set<string> = new Set();
+  private triedCookingSignatures: Set<string> = new Set();
   private discoveredAlchemyRecipes: Set<string> = new Set(['bandage', 'antidote', 'energy_potion', 'escape_stone']);
   private encounteredEnemies: Set<string> = new Set();
   private discoveredProficiencies: Set<string> = new Set();
@@ -696,7 +697,8 @@ export class GameState {
     state.plantedCropId = seedItemId;
     state.plantedAtDay = this.currentGameDay;
     state.plantedAtDayProgress = this.getDayProgress();
-    state.growthDays = 1;
+    const cropConfig = DataLoader.getInstance().getCropsConfig()?.crops?.[seedItemId];
+    state.growthDays = cropConfig?.growthDays ?? 1;
     return true;
   }
 
@@ -706,10 +708,13 @@ export class GameState {
     const state = this.getPlotState(x, y);
     if (!state || state.state !== 'ready') return null;
 
+    const seedItemId = state.plantedCropId || 'seeds';
+    const cropConfig = DataLoader.getInstance().getCropsConfig()?.crops?.[seedItemId];
+    const produceId = cropConfig?.produceId || 'carrot';
+    const count = cropConfig?.yieldCount ?? 2;
+
     state.state = 'empty';
     state.plantedCropId = undefined;
-    const produceId = 'vegetable';
-    const count = 2; // Confirmed +2 vegetables per harvest
     this.addItem(produceId, count);
     return { success: true, produceId, count };
   }
@@ -904,6 +909,21 @@ export class GameState {
       return true;
     }
     return false;
+  }
+
+  public recordTriedCookingSignature(signature: string): void {
+    this.triedCookingSignatures.add(signature);
+    if (this.snapshot) {
+      this.snapshot.triedCookingSignatures = Array.from(this.triedCookingSignatures);
+    }
+  }
+
+  public hasTriedCookingSignature(signature: string): boolean {
+    return this.triedCookingSignatures.has(signature);
+  }
+
+  public getTriedCookingSignatures(): string[] {
+    return Array.from(this.triedCookingSignatures);
   }
 
   public isCookingRecipeDiscovered(recipeId: string): boolean {
@@ -1340,8 +1360,11 @@ export class GameState {
     return false;
   }
 
-  public static isDepositedMaterial(itemId: string): boolean {
+  public static isDepositedMaterial(itemOrId: string | any): boolean {
     const dataLoader = DataLoader.getInstance();
+    const itemId = typeof itemOrId === 'string' ? itemOrId : itemOrId?.id;
+    if (!itemId) return false;
+
     // Gear never deposits
     if (dataLoader.getWeapon(itemId) || dataLoader.getArmor(itemId)) {
       return false;
@@ -1350,7 +1373,7 @@ export class GameState {
     if (dataLoader.getFood(itemId)) {
       return false;
     }
-    const itemDef = dataLoader.getItem(itemId);
+    const itemDef = typeof itemOrId === 'object' && itemOrId.id ? itemOrId : dataLoader.getItem(itemId);
     if (!itemDef) {
       // Direct raw resource fallback
       if (itemId === 'wood' || itemId === 'ore') return true;
@@ -1360,12 +1383,16 @@ export class GameState {
     if (itemDef.keepOnReturn) {
       return false;
     }
+    // Explicit ingredient flag (Change 5)
+    if (itemDef.ingredient) {
+      return true;
+    }
     // Categories to keep in bags
     if (itemDef.category === 'tool' || itemDef.category === 'consumables' || itemDef.category === 'equipment') {
       return false;
     }
     // Categories to deposit to stockpile
-    if (itemDef.category === 'gathering' || itemDef.category === 'reagents') {
+    if (itemDef.category === 'gathering' || itemDef.category === 'reagents' || itemDef.category === 'ingredients') {
       return true;
     }
     if (itemId === 'wood' || itemId === 'ore') {
@@ -2280,6 +2307,118 @@ export class GameState {
       wood: snap.resources?.wood ?? 0,
       ore: (snap.resources as any)?.ore ?? 0
     };
+
+
+    // One-time Save Migration: Food & Cooking V2
+    if (!snap.migrations?.cookingV2) {
+      const renameMap: Record<string, string> = {
+        monster_meat: 'crypt_meat',
+        wolf_meat: 'crypt_meat',
+        raw_meat: 'crypt_meat',
+        raw_fish: 'river_carp',
+        vegetable: 'carrot',
+        seeds: 'mixed_seeds'
+      };
+
+      // 1. Stockpile inventory map
+      if (snap.inventory) {
+        for (const [oldId, newId] of Object.entries(renameMap)) {
+          if (snap.inventory[oldId]) {
+            snap.inventory[newId] = (snap.inventory[newId] || 0) + snap.inventory[oldId];
+            delete snap.inventory[oldId];
+          }
+        }
+      }
+
+      // 2. Stockpile food items: vegetable food becomes carrot items
+      if (snap.foodItems && Array.isArray(snap.foodItems)) {
+        let vegFoodCount = 0;
+        snap.foodItems = snap.foodItems.filter(f => {
+          if (f.id === 'vegetable') {
+            vegFoodCount += (f.count || 1);
+            return false;
+          }
+          return true;
+        });
+        if (vegFoodCount > 0 && snap.inventory) {
+          snap.inventory['carrot'] = (snap.inventory['carrot'] || 0) + vegFoodCount;
+        }
+      }
+
+      // 3. Party members' bags
+      const partyList = [snap, ...(snap.party || [])];
+      for (const member of partyList) {
+        if (member.inventory) {
+          for (const [oldId, newId] of Object.entries(renameMap)) {
+            if (member.inventory[oldId]) {
+              member.inventory[newId] = (member.inventory[newId] || 0) + member.inventory[oldId];
+              delete member.inventory[oldId];
+            }
+          }
+        }
+        if (member.foodItems && Array.isArray(member.foodItems)) {
+          let vegFoodCount = 0;
+          member.foodItems = member.foodItems.filter(f => {
+            if (f.id === 'vegetable') {
+              vegFoodCount += (f.count || 1);
+              return false;
+            }
+            return true;
+          });
+          if (vegFoodCount > 0 && member.inventory) {
+            member.inventory['carrot'] = (member.inventory['carrot'] || 0) + vegFoodCount;
+          }
+        }
+        const m = member as any;
+        if (m.quickSlots && Array.isArray(m.quickSlots)) {
+          for (let i = 0; i < m.quickSlots.length; i++) {
+            const slotItem = m.quickSlots[i];
+            if (slotItem && (renameMap as Record<string, string>)[slotItem]) {
+              m.quickSlots[i] = (renameMap as Record<string, string>)[slotItem];
+            }
+          }
+        }
+      }
+
+      // 4. Quick slots at root
+      if (snap.quickSlots && Array.isArray(snap.quickSlots)) {
+        for (let i = 0; i < snap.quickSlots.length; i++) {
+          const slotItem = snap.quickSlots[i];
+          if (slotItem && (renameMap as Record<string, string>)[slotItem]) {
+            snap.quickSlots[i] = (renameMap as Record<string, string>)[slotItem];
+          }
+        }
+      }
+
+      // 5. Placed buildables: plots and seed makers
+      if (snap.placedBuildables && Array.isArray(snap.placedBuildables)) {
+        for (const b of snap.placedBuildables) {
+          if (b.seedMakerData) {
+            if (b.seedMakerData.inputItem === 'vegetable') {
+              b.seedMakerData.inputItem = 'carrot';
+            }
+            if (b.seedMakerData.outputItem === 'seeds') {
+              b.seedMakerData.outputItem = 'carrot_seed';
+            }
+          }
+        }
+      }
+
+      // 6. Discoveries: herb_stew and beast_stew stay discovered
+      if (!snap.discoveredCookingRecipes) {
+        snap.discoveredCookingRecipes = [];
+      }
+      if (!snap.discoveredCookingRecipes.includes('herb_stew')) {
+        snap.discoveredCookingRecipes.push('herb_stew');
+      }
+      if (!snap.discoveredCookingRecipes.includes('beast_stew')) {
+        snap.discoveredCookingRecipes.push('beast_stew');
+      }
+
+      snap.migrations = snap.migrations || {};
+      snap.migrations.cookingV2 = true;
+      console.log('[GameState] 🍳 Save Migration applied: Food & Cooking V2.');
+    }
 
     this.placedBuildables = snap.placedBuildables ? JSON.parse(JSON.stringify(snap.placedBuildables)) : [];
     this.researchPoints = snap.researchPoints ?? 0;

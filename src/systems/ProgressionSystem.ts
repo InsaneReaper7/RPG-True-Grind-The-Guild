@@ -1,3 +1,4 @@
+import { GameState } from './GameState.ts';
 import type { ClassDef, Requirement, ClassesData, SkillDef, TrainableStat, ExpTransaction, PassiveImbuementDef, ProgressionLevelUpEvent } from '../types/game.ts';
 import { BuildingSystem } from './BuildingSystem.ts';
 import type { ConstructionTierDef } from './BuildingSystem.ts';
@@ -411,6 +412,14 @@ export class ProgressionSystem {
     } else if (req.type === 'activityCount') {
       const currentCount = this.getActivityCount(req.target ?? '');
       return currentCount >= (req.value ?? 0);
+    } else if (req.type === 'discoveredRecipes') {
+      const target = req.target ?? 'cooking';
+      if (target === 'cooking') {
+        const discovered = GameState.getInstance().getDiscoveredCookingRecipes();
+        const validDiscovered = discovered.filter(id => id !== 'burnt_mush');
+        return validDiscovered.length >= (req.value ?? 0);
+      }
+      return false;
     } else if (req.type === 'triggerCount') {
       const currentCount = this.getTriggerCount(req.target ?? '');
       return currentCount >= (req.value ?? 0);

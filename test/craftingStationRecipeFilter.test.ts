@@ -596,15 +596,17 @@ async function runTests() {
   assert.ok(!ckContainer.innerHTML.includes('recipes still undiscovered'), 'Count banner omitted in Unlocked Only');
 
   // Toggle to Show All with 0 discoveries: empty banner AND count banner rendered; NEVER recipe names!
+  const discoverableCooking = dataLoader.getCookingRecipes().filter((r: any) => !r.isLostRecipe && r.id !== 'burnt_mush');
+  const totalCooking = discoverableCooking.length;
   ckBtn.onclick?.();
   assert.strictEqual(hud.isCraftingFilterActive('cooking'), false);
   assert.strictEqual(ckLabel.innerText, 'Showing: All Recipes');
   assert.ok(ckContainer.innerHTML.includes('No recipes discovered yet'), 'Empty banner shown in Show All when 0 discovered');
-  assert.ok(ckContainer.innerHTML.includes('2 recipes still undiscovered'), 'Count banner renders 2 recipes undiscovered');
+  assert.ok(ckContainer.innerHTML.includes(`${totalCooking} recipes still undiscovered`), `Count banner renders ${totalCooking} recipes undiscovered`);
   assert.ok(!ckContainer.innerHTML.includes('Herb Stew'), 'Herb Stew must NOT be revealed');
   assert.ok(!ckContainer.innerHTML.includes('herb_stew'), 'herb_stew ID must NOT be revealed');
-  assert.ok(!ckContainer.innerHTML.includes('Hearty Beast Stew'), 'Hearty Beast Stew must NOT be revealed');
-  assert.ok(!ckContainer.innerHTML.includes('beast_stew'), 'beast_stew ID must NOT be revealed');
+  assert.ok(!ckContainer.innerHTML.includes('Salted Jerky'), 'Salted Jerky must NOT be revealed');
+  assert.ok(!ckContainer.innerHTML.includes('salted_jerky'), 'salted_jerky ID must NOT be revealed');
 
   // Scenario 6B: Discover only herb_stew
   gameState.discoverCookingRecipe('herb_stew');
@@ -612,8 +614,8 @@ async function runTests() {
   assert.strictEqual(hud.isCraftingFilterActive('cooking'), true);
   assert.strictEqual(ckLabel.innerText, 'Showing: Unlocked Only');
   assert.ok(ckContainer.innerHTML.includes('Herb Stew'), 'Discovered recipe Herb Stew must be shown in Unlocked Only');
-  assert.ok(!ckContainer.innerHTML.includes('Hearty Beast Stew'), 'Undiscovered Hearty Beast Stew must NOT appear anywhere in Unlocked Only');
-  assert.ok(!ckContainer.innerHTML.includes('beast_stew'), 'Undiscovered beast_stew ID must NOT appear anywhere in Unlocked Only');
+  assert.ok(!ckContainer.innerHTML.includes('Salted Jerky'), 'Undiscovered Salted Jerky must NOT appear anywhere in Unlocked Only');
+  assert.ok(!ckContainer.innerHTML.includes('salted_jerky'), 'Undiscovered salted_jerky ID must NOT appear anywhere in Unlocked Only');
   assert.ok(!ckContainer.innerHTML.includes('recipes still undiscovered'), 'Count line must NOT appear in Unlocked Only');
   const ckCountFiltered = ckContainer.children.length;
 
@@ -623,16 +625,18 @@ async function runTests() {
   assert.strictEqual(ckLabel.innerText, 'Showing: All Recipes');
   assert.ok(ckContainer.innerHTML.includes('Herb Stew'), 'Herb Stew shown in Show All');
   // CRITICAL SECRECY ASSERTION: undiscovered recipe name and ID must NEVER appear anywhere in DOM
-  assert.ok(!ckContainer.innerHTML.includes('Hearty Beast Stew'), 'Hearty Beast Stew name must NEVER appear in Show All');
-  assert.ok(!ckContainer.innerHTML.includes('beast_stew'), 'beast_stew ID must NEVER appear in Show All');
-  assert.ok(ckContainer.innerHTML.includes('1 recipe still undiscovered'), 'Single count line indicates 1 recipe undiscovered');
+  assert.ok(!ckContainer.innerHTML.includes('Salted Jerky'), 'Salted Jerky name must NEVER appear in Show All');
+  assert.ok(!ckContainer.innerHTML.includes('salted_jerky'), 'salted_jerky ID must NEVER appear in Show All');
+  assert.ok(ckContainer.innerHTML.includes(`${totalCooking - 1} recipes still undiscovered`), `Single count line indicates ${totalCooking - 1} recipes undiscovered`);
   const ckCountAll = ckContainer.children.length;
-  console.log(`  Per-Station Count: Cooking -> Unlocked Only = ${ckCountFiltered}, Show All = ${ckCountAll} (1 Discovered, 1 Undiscovered Count Line)`);
+  console.log(`  Per-Station Count: Cooking -> Unlocked Only = ${ckCountFiltered}, Show All = ${ckCountAll} (1 Discovered, Undiscovered Count Line)`);
 
-  // Scenario 6C: Now discover beast_stew -> It should now immediately appear!
-  gameState.discoverCookingRecipe('beast_stew');
+  // Scenario 6C: Now discover all recipes -> They should now appear!
+  for (const r of discoverableCooking) {
+    gameState.discoverCookingRecipe(r.id);
+  }
   hud.renderCookingModal(hero, progression);
-  assert.ok(ckContainer.innerHTML.includes('Hearty Beast Stew'), 'Hearty Beast Stew now appears after discovery');
+  assert.ok(ckContainer.innerHTML.includes('Salted Jerky'), 'Salted Jerky now appears after discovery');
   assert.ok(!ckContainer.innerHTML.includes('recipes still undiscovered'), 'Undiscovered count line disappears when 0 remain undiscovered');
 
   // Toggle back to Unlocked Only

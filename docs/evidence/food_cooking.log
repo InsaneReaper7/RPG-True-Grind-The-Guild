@@ -1,0 +1,44 @@
+--- STARTING FOOD & COOKING TEST SUITE ---
+
+--- Test 1: Bipartite Matching & Specificity ---
+✔ Test 1 passed: Bipartite matching with specificity works accurately.
+
+--- Test 2: Quality Odds & Line Cook Bonus ---
+✔ Test 2 passed: Quality calculation and Line Cook odds bonus verified.
+
+--- Test 3: Buff Potencies & Durations ---
+✔ Test 3 passed: Durations and scaled buff potencies match specifications.
+
+--- Test 4: EN Food Tick ---
+[KnowledgeBase] 🧪 Status effect discovered: 'dish_buff'! (+1 RP)
+[DIAG:Regen] undefined | inCombat: false | Rate: 0.00 EN/s | Energy: 10.0 -> 10.0 (+0.00)
+✔ Test 4 passed: EN food tick works without OOC multiplier and skips downed players.
+
+--- Test 5: Single Status ID dish_buff (Change 1) ---
+✔ Test 5 passed: Single dish_buff status ID cleanly replaces previous dish buff.
+
+--- Test 6: Chef Bonus Ingredient Roll ---
+✔ Test 6 passed: Chef bonus ingredient drop formula scales to 35% at Lv 100.
+
+--- Test 7: Crop & Vegetable Harvest ---
+✔ Test 7 passed: Crops and vegetable definitions verified.
+
+--- Test 8: Deposit Materials by Flag ---
+✔ Test 8 passed: Item deposit correctly checks item.ingredient flag first.
+
+--- Test 10: Burnt Mush & Guaranteed Discovery ---
+[Cooking] ✨ Recipe permanently discovered: 'herb_stew'! (+1 RP)
+[Progression] +40 EXP for 'cooking' (undefined). Current: Level 0 (40/50 EXP)
+[Progression] Recorded tx 'cooking': +40 EXP for Guild Hero, resulting total: Level 0 (40/50 EXP)
+[Progression] +5 EXP for 'cooking' (undefined). Current: Level 0 (45/50 EXP)
+[Progression] Recorded tx 'cooking': +5 EXP for Guild Hero, resulting total: Level 0 (45/50 EXP)
+✔ Test 10 passed: Guaranteed discovery on match, Burnt Mush on invalid combo.
+
+--- Test 11: Chef Class Line Unlocking ---
+✔ Test 11 passed: All 4 Chef classes exist in crafting category.
+
+--- Test 13: Save Migration ---
+[GameState] 🍳 Save Migration applied: Food & Cooking V2.
+✔ Test 13 passed: Save migration cookingV2 cleanly converts legacy items.
+
+ALL FOOD & COOKING TESTS PASSED SUCCESSFULLY!

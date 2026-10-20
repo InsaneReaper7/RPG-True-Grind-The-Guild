@@ -179,6 +179,7 @@ export class CraftingSystem {
 
   public static canAfford(recipe: AnyRecipeDef, crafter?: Player): boolean {
     const gameState = GameState.getInstance();
+    if (!recipe || !recipe.ingredients) return false;
     for (const [item, qty] of Object.entries(recipe.ingredients)) {
       const stockpileCount = item === 'wood' ? gameState.getWood() : gameState.getItemCount(item);
       const carriedCount = (crafter && typeof crafter.getItemCount === 'function') ? crafter.getItemCount(item) : 0;

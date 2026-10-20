@@ -10,7 +10,7 @@
 [KnowledgeBase] 🐺 First encountered enemy: 'dummy_target_dummy'! (+1 RP)
 [Bestiary] 🐺 First encounter with Target Dummy! (+1 RP)
 [DIAG:Combat] ⚔️ Guild Hero attacks Target Dummy with Earth Magic! inCombat: false, Pre-EN: 100.0, Post-EN: 100.0, Range: 1, Dist: 1
-[Combat] Guild Hero attacks Target Dummy with Earth Magic for 17.0 damage! (Base: 10, Lv 0 Bonus: +0.0, Accuracy: 70.0%)
+[Combat] Guild Hero attacks Target Dummy with Earth Magic for 17.5 damage! (Base: 10, Lv 0 Bonus: +0.0, Accuracy: 70.0%)
 [KnowledgeBase] 🧪 Status effect discovered: 'stoneskin'! (+1 RP)
 [Combat:Earth] 🪨 Stoneskin applied to party (-10% damage taken for 4s)!
 [Progression] +2 EXP for 'earth_magic' (Guild Hero). Current: Level 0 (2/50 EXP)
@@ -28,7 +28,7 @@
 [Combat] Target Dummy defeated/downed by Guild Hero!
 [Progression] +4 EXP for 'earth_magic' (Guild Hero). Current: Level 0 (6/50 EXP)
 [Progression] Recorded tx 'earth_magic': +4 EXP for Guild Hero, resulting total: Level 0 (6/50 EXP)
-  ✓ stoneheart_initiate: 17.00 vs 10.00 => ratio 1.7000 (expected 1.7)
+  ✓ stoneheart_initiate: 17.50 vs 10.00 => ratio 1.7500 (expected 1.75)
 [Progression] Set class 'elemental_sovereign' to Level 1 (0 EXP) on Guild Hero
 [Player:Guild Hero] Active class set to: elemental_sovereign
 [Player] Equipped skill: sovereign_bolt. Current loadout: [sovereign_bolt]
@@ -67,7 +67,7 @@
 [Progression] Recorded tx 'arcane_magic': +4 EXP for Guild Hero, resulting total: Level 0 (4/50 EXP)
 [Progression] +2 EXP for 'arcane_magic' (Guild Hero). Current: Level 0 (6/50 EXP)
 [Progression] Recorded tx 'arcane_magic': +2 EXP for Guild Hero, resulting total: Level 0 (6/50 EXP)
-  ✓ stoneheart_initiate spell skill: 19.04 vs 11.20 => ratio 1.7000 (expected 1.7)
+  ✓ stoneheart_initiate spell skill: 19.60 vs 11.20 => ratio 1.7500 (expected 1.75)
 [Progression] Set class 'elemental_sovereign' to Level 1 (0 EXP) on Guild Hero
 [Player:Guild Hero] Active class set to: elemental_sovereign
 [Player] Equipped skill: sovereign_bolt. Current loadout: [sovereign_bolt]
@@ -131,7 +131,7 @@
 [Player:Guild Hero] Active class set to: stoneheart_initiate
 [Player:Guild Hero] Cleared active class (Unranked).
   ✓ Switching stoneheart_initiate -> fencer resets multiplier to 1.0
-  ✓ Switching back to stoneheart_initiate restores 1.70
+  ✓ Switching back to stoneheart_initiate restores 1.75
   ✓ Switching to null resets multiplier to 1.0
 ✓ PASS: Class switch correctly recalculates classSpellDamageMultiplier.
 

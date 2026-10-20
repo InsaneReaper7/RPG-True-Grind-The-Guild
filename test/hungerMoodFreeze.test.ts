@@ -408,7 +408,7 @@ async function runTests() {
   assert.strictEqual(ate, true, 'Hero must be able to eat stew');
   assert.strictEqual(heroEating.hunger, 100, 'Hunger remains at 100');
   assert.strictEqual(heroEating.mood, 50, 'Mood remains at 50');
-  assert.strictEqual(heroEating.wellFedRemainingMs, 15000, 'Well Fed buff duration is 15000ms');
+  assert.strictEqual(heroEating.wellFedRemainingMs, 120000, 'Well Fed buff duration is 120000ms');
   assert.strictEqual(heroEating.wellFedHpPerSec, 1, 'Well Fed buff baseline in-combat rate is 1 HP/sec');
 
   // Tick for 5 seconds to observe HP regeneration (Well Fed 2 HP/s out-of-combat + Base HP 0.5 HP/s out-of-combat = 12 HP)
@@ -441,12 +441,12 @@ async function runTests() {
   assert.strictEqual(gameState.getItemCount('herb_stew'), 1, 'Stockpile has 1 stew before advance');
 
   // Advance day by 5 (from day 1 to day 6)
-  (gameState as any).currentGameDay += 5;
+  (gameState as any).currentGameDay += 7;
   const spoiled = gameState.checkFoodSpoilage([heroEating]);
-  assert.strictEqual(spoiled, 2, 'Both hero bag and stockpile stew spoiled after 5 days');
+  assert.strictEqual(spoiled, 2, 'Both hero bag and stockpile stew spoiled after 7 days');
 
-  assert.strictEqual(heroEating.getItemCount('herb_stew'), 0, 'Hero stew spoiled after exceeding 5-day shelf life');
-  assert.strictEqual(gameState.getItemCount('herb_stew'), 0, 'Stockpile stew spoiled after exceeding 5-day shelf life');
+  assert.strictEqual(heroEating.getItemCount('herb_stew'), 0, 'Hero stew spoiled after exceeding 7-day shelf life');
+  assert.strictEqual(gameState.getItemCount('herb_stew'), 0, 'Stockpile stew spoiled after exceeding 7-day shelf life');
   console.log('✓ Test 4B Passed: Food spoilage remains active and enforced while meters are frozen.\n');
 
   // ---------------------------------------------------------------------------

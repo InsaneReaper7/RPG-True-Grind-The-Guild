@@ -24,6 +24,10 @@ export function formatRequirement(req: Requirement): string {
     return `One of: (${subItems})`;
   }
 
+  if (req.type === 'discoveredRecipes') {
+    return `${req.value ?? 0} Recipes`;
+  }
+
   if (req.type === 'classLevel') {
     const target = req.target ?? '';
     let className: string | undefined;

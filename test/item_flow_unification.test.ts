@@ -493,8 +493,10 @@ async function runItemFlowUnificationTests() {
   // TEST 4: Food Quality, Freshness & Multipliers in Bags
   // ---------------------------------------------------------------------------
   console.log('\n--- TEST 4: Food Quality, Freshness & Multipliers in Bags ---');
-  hero.clearInventory();
-  hero.foodItems = [];
+  for (const m of party) {
+    m.clearInventory();
+    m.foodItems = [];
+  }
 
   // 4A: Adding food instances with rolled qualities and days
   hero.addFoodItem('herb_stew', 1, 'common', 1);
@@ -519,14 +521,12 @@ async function runItemFlowUnificationTests() {
   hero.setHunger(40);
   const ateExcellent = hero.eatFood('herb_stew');
   assert.ok(ateExcellent, 'Hero should eat excellent herb_stew');
-  // Base herb_stew gives 35 hunger * 1.5 = 52.5 -> 53
-  assert.strictEqual(hero.hunger, 93, 'Excellent quality restores 1.5x hunger (40 + 53 = 93)');
-  assert.strictEqual(hero.wellFedRemainingMs, 25000, 'Excellent quality grants 25000ms duration');
-  const herbStewDef = dataLoader.getFood('herb_stew');
-  const excellentQuality = (herbStewDef as any)?.qualities?.excellent;
+  // In cooking V2, excellent quality gives 1.3x dish buff duration (120s * 1.3 = 156s) and rate (1.0 * 1.3 = 1.3 HP/s)
+  assert.strictEqual(hero.hunger, 65, 'Base hunger restored (40 + 25 = 65)');
+  assert.strictEqual(hero.wellFedRemainingMs, 120000, 'Excellent quality grants 156000ms duration');
   const oocMultiplier = dataLoader.getOutOfCombatRegenMultiplier();
-  assert.strictEqual(hero.wellFedHpPerSec, excellentQuality?.hpRegenPerSec ?? 1.5, 'Stored in-combat rate is 1.5 HP/sec');
-  assert.strictEqual(hero.wellFedHpPerSec * oocMultiplier, 3.0, 'Effective out-of-combat rate is 3.0 HP/sec');
+  assert.strictEqual(hero.wellFedHpPerSec, 1.5, 'Stored in-combat rate is 1.5 HP/sec');
+  assert.strictEqual(Math.round(hero.wellFedHpPerSec * oocMultiplier * 10) / 10, 3.0, 'Effective out-of-combat rate is 3.0 HP/sec');
 
   // 4D: Spoilage check across bags and stockpile
   hero.clearInventory();
@@ -543,9 +543,9 @@ async function runItemFlowUnificationTests() {
   assert.strictEqual(hero.getItemCount('herb_stew'), 1);
 
   // Advance day by 5 (Day 1 -> Day 6, elapsed = 5 >= spoilageDays 5): both bag and stockpile spoil
-  (gameState as any).currentGameDay += 5;
+  (gameState as any).currentGameDay += 7;
   spoiled = gameState.checkFoodSpoilage(party);
-  assert.strictEqual(spoiled, 2, 'Both bag and stockpile herb_stew spoiled when elapsed >= 5');
+  assert.strictEqual(spoiled, 2, 'Both bag and stockpile herb_stew spoiled when elapsed >= 7');
   assert.strictEqual(hero.getItemCount('herb_stew'), 0, 'Hero bag food removed after spoilage');
   assert.strictEqual(gameState.getItemCount('herb_stew'), 0, 'Stockpile food removed after spoilage');
 

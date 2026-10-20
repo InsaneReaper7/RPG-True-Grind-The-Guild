@@ -193,15 +193,15 @@ async function main() {
   const expectedTable: Record<string, number> = {
     ember_adept: 1.25,
     spark_adept: 1.35,
-    frost_initiate: 1.45,
+    frost_initiate: 1.50,
     acolyte: 1.40,
     tide_adept: 1.50,
-    sprout_keeper: 1.55,
+    sprout_keeper: 1.65,
     gale_adept: 1.40,
-    stoneheart_initiate: 1.70,
+    stoneheart_initiate: 1.75,
     cultist: 1.60,
     arcane_initiate: 1.05,
-    grove_walker: 1.10,
+    grove_walker: 1.15,
     flamecaller: 1.25,
     frostcaller: 1.65,
     stormtouched: 1.40,
@@ -506,7 +506,7 @@ async function main() {
     const switchedToStoneheart = player.setActiveClass('stoneheart_initiate');
     assert.ok(switchedToStoneheart, 'Switch to stoneheart_initiate must succeed');
     assert.strictEqual(player.activeClass, 'stoneheart_initiate');
-    assert.strictEqual(player.classSpellDamageMultiplier, 1.70);
+    assert.strictEqual(player.classSpellDamageMultiplier, 1.75);
 
     // Switch to weapon class (fencer)
     const switchedToFencer = player.setActiveClass('fencer');
@@ -518,7 +518,7 @@ async function main() {
     const switchedBack = player.setActiveClass('stoneheart_initiate');
     assert.ok(switchedBack, 'Switch back to stoneheart_initiate must succeed');
     assert.strictEqual(player.activeClass, 'stoneheart_initiate');
-    assert.strictEqual(player.classSpellDamageMultiplier, 1.70);
+    assert.strictEqual(player.classSpellDamageMultiplier, 1.75);
 
     // Switch to null (unranked)
     const switchedToNull = player.setActiveClass(null);
@@ -527,7 +527,7 @@ async function main() {
     assert.strictEqual(player.classSpellDamageMultiplier, 1.0);
 
     console.log('  ✓ Switching stoneheart_initiate -> fencer resets multiplier to 1.0');
-    console.log('  ✓ Switching back to stoneheart_initiate restores 1.70');
+    console.log('  ✓ Switching back to stoneheart_initiate restores 1.75');
     console.log('  ✓ Switching to null resets multiplier to 1.0');
   }
   console.log('✓ PASS: Class switch correctly recalculates classSpellDamageMultiplier.\n');

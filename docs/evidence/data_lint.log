@@ -1,7 +1,7 @@
 === DATA LINT GLOBAL GUARD TEST ===
 
 1. Checking ID uniqueness...
-✓ PASS: 95 class IDs and 430 skill IDs are unique.
+✓ PASS: 99 class IDs and 430 skill IDs are unique.
 
 2. Checking combat class skill counts...
 ✓ PASS: All 86 combat classes have exactly 5 skills.
@@ -24,5 +24,8 @@
 
 9. Checking class spellDamageMultiplier values...
 ✓ PASS: All spellDamageMultiplier values are numbers > 0 and <= 2.
+
+10. Checking Food & Cooking data integrity...
+✓ PASS: All Food & Cooking data integrity rules verified.
 
 🎉 ALL DATA LINT CHECKS PASSED PERFECTLY!
