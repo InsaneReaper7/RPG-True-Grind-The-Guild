@@ -461,7 +461,7 @@ export class Player extends Entity {
     this.updateEncumbrance();
   }
 
-  public addFoodItem(foodId: string, count: number = 1, quality?: FoodQuality, acquiredDay?: number): void {
+  public addFoodItem(foodId: string, count: number = 1, quality?: FoodQuality, acquiredDay?: number, tier?: number): void {
     if (count <= 0) return;
     const day = acquiredDay !== undefined ? acquiredDay : GameState.getInstance().getCurrentGameDay();
     for (let i = 0; i < count; i++) {
@@ -469,7 +469,8 @@ export class Player extends Entity {
         id: foodId,
         acquiredDay: day,
         instanceId: `${foodId}_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
-        quality: quality ?? 'common'
+        quality: quality ?? 'common',
+        tier: tier ?? 1
       });
     }
     this.syncFoodInventory();
@@ -1671,6 +1672,7 @@ export class Player extends Entity {
 
     const targetFoodId = consumedInstance.id;
     const consumedQuality: FoodQuality = consumedInstance.quality || 'common';
+    const consumedTier: number = consumedInstance.tier || 1;
 
     if (!targetFoodId) return false;
     const foodDef = dataLoader.getFood(targetFoodId);
@@ -1690,7 +1692,7 @@ export class Player extends Entity {
     // Apply dish buff and refresh Well Fed (Change 1)
     const recipe = dataLoader.getCookingRecipe(foodDef.recipeId || targetFoodId);
     if (recipe) {
-      const computedDish = CookingSystem.computeDish(recipe, consumedQuality, Object.keys(recipe.ingredients || {}), this);
+      const computedDish = CookingSystem.computeDish(recipe, consumedQuality, consumedTier);
       if (computedDish) {
         this.applyDishBuff(computedDish.name, {
           durationMs: computedDish.buffs.durationMs,

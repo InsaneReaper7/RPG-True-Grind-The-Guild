@@ -13,7 +13,8 @@
         "hpRegenPerSec": 1,
         "description": "+1 HP/sec in-combat (+2 HP/sec out-of-combat) for 15s"
       },
-      "description": "Standard field ration. Restores 40 Hunger and grants Well Fed (+1 HP/sec in-combat, +2 HP/sec out-of-combat for 15s). Spoils in 7 game days."
+      "description": "Standard field ration. Restores 40 Hunger and grants Well Fed (+1 HP/sec in-combat, +2 HP/sec out-of-combat for 15s). Spoils in 7 game days.",
+      "icon": "🍖"
     },
     {
       "id": "burnt_mush",
@@ -28,20 +29,22 @@
         "hpRegenPerSec": 0,
         "description": "No buffs granted."
       },
-      "description": "An unrecognizable, charred culinary failure. Restores 10 Hunger and grants no buffs."
+      "description": "An unrecognizable, charred culinary failure. Restores 10 Hunger and grants no buffs.",
+      "icon": "🥣"
     },
     {
       "id": "herb_stew",
       "name": "Herb Stew",
       "weight": 0.5,
       "hungerRestored": 25,
-      "spoilageDays": 7,
+      "spoilageDays": 5,
       "recipeId": "herb_stew",
       "rarity": "common",
       "buffs": [
         "H"
       ],
-      "description": "A warm, fragrant stew of wild herbs and meat simmered to perfection."
+      "description": "A warm, fragrant stew of wild herbs and meat simmered to perfection.",
+      "icon": "🍲"
     },
     {
       "id": "salted_jerky",
@@ -54,7 +57,8 @@
       "buffs": [
         "H"
       ],
-      "description": "Cured strips of hearty meat, salted for long journeys."
+      "description": "Cured strips of hearty meat, salted for long journeys.",
+      "icon": "🥩"
     },
     {
       "id": "grilled_skewer",
@@ -67,7 +71,8 @@
       "buffs": [
         "D"
       ],
-      "description": "Fire-roasted meat and fresh vegetables on a skewer."
+      "description": "Fire-roasted meat and fresh vegetables on a skewer.",
+      "icon": "🍢"
     },
     {
       "id": "grilled_fish",
@@ -80,7 +85,8 @@
       "buffs": [
         "E"
       ],
-      "description": "Tender fish grilled over open flames with garden herbs."
+      "description": "Tender fish grilled over open flames with garden herbs.",
+      "icon": "🐟"
     },
     {
       "id": "seaweed_salad",
@@ -93,7 +99,8 @@
       "buffs": [
         "T"
       ],
-      "description": "Crisp seaweed tossed with fresh vegetables in a refreshing salad."
+      "description": "Crisp seaweed tossed with fresh vegetables in a refreshing salad.",
+      "icon": "🥗"
     },
     {
       "id": "slime_jelly",
@@ -106,7 +113,8 @@
       "buffs": [
         "E"
       ],
-      "description": "A sweetened gelatinous treat providing an invigorating kick."
+      "description": "A sweetened gelatinous treat providing an invigorating kick.",
+      "icon": "🍮"
     },
     {
       "id": "baked_potato",
@@ -119,7 +127,8 @@
       "buffs": [
         "H"
       ],
-      "description": "A steaming hot roasted potato dusted with mineral salt."
+      "description": "A steaming hot roasted potato dusted with mineral salt.",
+      "icon": "🥔"
     },
     {
       "id": "garlic_mushrooms",
@@ -132,7 +141,8 @@
       "buffs": [
         "T"
       ],
-      "description": "Earthy cave mushrooms sautéed in fragrant crushed garlic."
+      "description": "Earthy cave mushrooms sautéed in fragrant crushed garlic.",
+      "icon": "🍄"
     },
     {
       "id": "peppered_eel",
@@ -145,7 +155,8 @@
       "buffs": [
         "D"
       ],
-      "description": "Rich, oily eel spiced with freshly cracked black pepper."
+      "description": "Rich, oily eel spiced with freshly cracked black pepper.",
+      "icon": "🍱"
     },
     {
       "id": "cinnamon_carrots",
@@ -158,21 +169,23 @@
       "buffs": [
         "V"
       ],
-      "description": "Sweet glazed carrots spiced with aromatic cinnamon bark."
+      "description": "Sweet glazed carrots spiced with aromatic cinnamon bark.",
+      "icon": "🥕"
     },
     {
       "id": "beast_stew",
       "name": "Hearty Beast Stew",
       "weight": 0.6,
       "hungerRestored": 35,
-      "spoilageDays": 7,
+      "spoilageDays": 6,
       "recipeId": "beast_stew",
       "rarity": "common",
       "buffs": [
         "H",
         "T"
       ],
-      "description": "A fortifying, rich stew of simmered game, vegetables, and savory seasoning."
+      "description": "A fortifying, rich stew of simmered game, vegetables, and savory seasoning.",
+      "icon": "🍲"
     },
     {
       "id": "seafood_chowder",
@@ -186,7 +199,8 @@
         "H",
         "E"
       ],
-      "description": "A creamy, restorative chowder loaded with fresh seafood."
+      "description": "A creamy, restorative chowder loaded with fresh seafood.",
+      "icon": "🥣"
     },
     {
       "id": "peppered_steak",
@@ -199,7 +213,8 @@
       "buffs": [
         "D"
       ],
-      "description": "Thick cut steak seasoned heavily with crushed peppercorns and salt."
+      "description": "Thick cut steak seasoned heavily with crushed peppercorns and salt.",
+      "icon": "🥩"
     },
     {
       "id": "garden_medley",
@@ -213,7 +228,8 @@
         "H",
         "T"
       ],
-      "description": "A wholesome roasted medley of freshly harvested dungeon produce."
+      "description": "A wholesome roasted medley of freshly harvested dungeon produce.",
+      "icon": "🥗"
     },
     {
       "id": "shellfish_bisque",
@@ -227,7 +243,8 @@
         "E",
         "T"
       ],
-      "description": "A velvety, aromatic bisque made from crushed shellfish and aromatic herbs."
+      "description": "A velvety, aromatic bisque made from crushed shellfish and aromatic herbs.",
+      "icon": "🦞"
     },
     {
       "id": "onion_soup",
@@ -240,7 +257,8 @@
       "buffs": [
         "H"
       ],
-      "description": "Caramelized sweet onions simmered in savory broth with herbs."
+      "description": "Caramelized sweet onions simmered in savory broth with herbs.",
+      "icon": "🧅"
     },
     {
       "id": "spiced_salmon",
@@ -254,7 +272,8 @@
         "E",
         "D"
       ],
-      "description": "Wild salmon fillet crusted in exotic spices and fresh garden herbs."
+      "description": "Wild salmon fillet crusted in exotic spices and fresh garden herbs.",
+      "icon": "🐟"
     },
     {
       "id": "urchin_tartare",
@@ -267,7 +286,8 @@
       "buffs": [
         "E"
       ],
-      "description": "Delicate sea urchin roe seasoned lightly with mineral salt and crisp seaweed."
+      "description": "Delicate sea urchin roe seasoned lightly with mineral salt and crisp seaweed.",
+      "icon": "🦪"
     },
     {
       "id": "catfish_fry",
@@ -281,7 +301,8 @@
         "H",
         "V"
       ],
-      "description": "Crisp golden-fried catfish served with roasted potatoes."
+      "description": "Crisp golden-fried catfish served with roasted potatoes.",
+      "icon": "🐟"
     },
     {
       "id": "hunters_feast",
@@ -295,7 +316,8 @@
         "H",
         "D"
       ],
-      "description": "A bountiful roast of prime meats and vegetables fit for a victorious hunter."
+      "description": "A bountiful roast of prime meats and vegetables fit for a victorious hunter.",
+      "icon": "🍖"
     },
     {
       "id": "fishermans_platter",
@@ -309,7 +331,8 @@
         "E",
         "D"
       ],
-      "description": "A grand coastal platter featuring twin catches, seaweed, and spices."
+      "description": "A grand coastal platter featuring twin catches, seaweed, and spices.",
+      "icon": "🍤"
     },
     {
       "id": "spiced_octopus",
@@ -322,7 +345,8 @@
       "buffs": [
         "D"
       ],
-      "description": "Tender braised octopus infused with fiery peppers and warming spices."
+      "description": "Tender braised octopus infused with fiery peppers and warming spices.",
+      "icon": "🐙"
     },
     {
       "id": "mushroom_ragout",
@@ -336,7 +360,8 @@
         "H",
         "T"
       ],
-      "description": "A thick, earthy ragout of double cave mushrooms, tender meat, and herbs."
+      "description": "A thick, earthy ragout of double cave mushrooms, tender meat, and herbs.",
+      "icon": "🍄"
     },
     {
       "id": "crab_cakes",
@@ -350,7 +375,8 @@
         "D",
         "V"
       ],
-      "description": "Crispy pan-seared crab cakes seasoned with potato and zesty spices."
+      "description": "Crispy pan-seared crab cakes seasoned with potato and zesty spices.",
+      "icon": "🦀"
     },
     {
       "id": "sweet_potato_pie",
@@ -364,7 +390,8 @@
         "H",
         "E"
       ],
-      "description": "A rich, decadent pie of sweet potatoes baked with cinnamon and salt."
+      "description": "A rich, decadent pie of sweet potatoes baked with cinnamon and salt.",
+      "icon": "🥧"
     },
     {
       "id": "cabbage_rolls",
@@ -378,7 +405,8 @@
         "H",
         "T"
       ],
-      "description": "Crisp frost cabbage leaves wrapped around seasoned meat and vegetables."
+      "description": "Crisp frost cabbage leaves wrapped around seasoned meat and vegetables.",
+      "icon": "🥬"
     },
     {
       "id": "guild_banquet",
@@ -393,7 +421,8 @@
         "E",
         "T"
       ],
-      "description": "A magnificent celebratory banquet combining guild catches, hunts, and garden produce."
+      "description": "A magnificent celebratory banquet combining guild catches, hunts, and garden produce.",
+      "icon": "🍗"
     },
     {
       "id": "surf_and_turf",
@@ -407,7 +436,8 @@
         "D",
         "E"
       ],
-      "description": "The pinnacle of meat and seafood pairing, perfectly seared with salt and pepper."
+      "description": "The pinnacle of meat and seafood pairing, perfectly seared with salt and pepper.",
+      "icon": "🥩"
     },
     {
       "id": "abyssal_eel_pie",
@@ -421,7 +451,8 @@
         "H",
         "T"
       ],
-      "description": "A deeply savory pie filled with tender eel, garden vegetables, and aromatic seasoning."
+      "description": "A deeply savory pie filled with tender eel, garden vegetables, and aromatic seasoning.",
+      "icon": "🥧"
     },
     {
       "id": "lobster_thermidor",
@@ -435,7 +466,8 @@
         "D",
         "E"
       ],
-      "description": "Decadent whole lobster baked in a creamy sauce with garlic, herbs, and spices."
+      "description": "Decadent whole lobster baked in a creamy sauce with garlic, herbs, and spices.",
+      "icon": "🦞"
     },
     {
       "id": "inferno_chili",
@@ -449,7 +481,8 @@
         "D",
         "V"
       ],
-      "description": "A scorching chili of double fire peppers and seasoned meat that sets the blood ablaze."
+      "description": "A scorching chili of double fire peppers and seasoned meat that sets the blood ablaze.",
+      "icon": "🌶️"
     },
     {
       "id": "glacial_hotpot",
@@ -464,7 +497,8 @@
         "E",
         "T"
       ],
-      "description": "A steaming hotpot defying sub-zero temperatures with winter greens and fresh protein."
+      "description": "A steaming hotpot defying sub-zero temperatures with winter greens and fresh protein.",
+      "icon": "🍲"
     },
     {
       "id": "warlords_roast",
@@ -479,7 +513,8 @@
         "D",
         "T"
       ],
-      "description": "A legendary roasted feast once prepared for conquerors of the Ancient Crypts."
+      "description": "A legendary roasted feast once prepared for conquerors of the Ancient Crypts.",
+      "icon": "🍖"
     },
     {
       "id": "treant_harvest",
@@ -494,7 +529,8 @@
         "E",
         "V"
       ],
-      "description": "A mystical harvest dish brimming with natural earth energies and vitality."
+      "description": "A mystical harvest dish brimming with natural earth energies and vitality.",
+      "icon": "🥗"
     },
     {
       "id": "abyssal_deep_stew",
@@ -509,7 +545,8 @@
         "E",
         "T"
       ],
-      "description": "An enigmatic stew simmered with prime abyssal cut and cave mushrooms."
+      "description": "An enigmatic stew simmered with prime abyssal cut and cave mushrooms.",
+      "icon": "🍲"
     },
     {
       "id": "golden_sashimi",
@@ -524,7 +561,8 @@
         "D",
         "V"
       ],
-      "description": "Exquisitely sliced golden carp and sea urchin dusted with precious saffron."
+      "description": "Exquisitely sliced golden carp and sea urchin dusted with precious saffron.",
+      "icon": "🍣"
     },
     {
       "id": "magma_glazed_ribs",
@@ -538,7 +576,8 @@
         "H",
         "D"
       ],
-      "description": "Tender cinder haunches glazed in caramelized fire pepper and sweet potato."
+      "description": "Tender cinder haunches glazed in caramelized fire pepper and sweet potato.",
+      "icon": "🍖"
     },
     {
       "id": "frostbite_broth",
@@ -552,7 +591,8 @@
         "E",
         "T"
       ],
-      "description": "An invigorating broth prepared from frostbeast meat and sub-zero winter vegetables."
+      "description": "An invigorating broth prepared from frostbeast meat and sub-zero winter vegetables.",
+      "icon": "🥣"
     },
     {
       "id": "wardens_ossuary_feast",
@@ -567,7 +607,8 @@
         "D",
         "T"
       ],
-      "description": "A legendary banquet whose fortifying aromas empower the entire adventuring party."
+      "description": "A legendary banquet whose fortifying aromas empower the entire adventuring party.",
+      "icon": "👑"
     },
     {
       "id": "colossus_banquet",
@@ -582,7 +623,8 @@
         "D",
         "T"
       ],
-      "description": "A feast of titanic proportions yielding enduring strength to every party member."
+      "description": "A feast of titanic proportions yielding enduring strength to every party member.",
+      "icon": "👑"
     },
     {
       "id": "tyrants_ember_feast",
@@ -597,7 +639,8 @@
         "D",
         "V"
       ],
-      "description": "A radiant feast cooked over volcanic embers, granting unparalleled prowess to the full party."
+      "description": "A radiant feast cooked over volcanic embers, granting unparalleled prowess to the full party.",
+      "icon": "👑"
     },
     {
       "id": "sovereigns_winter_table",
@@ -614,7 +657,8 @@
         "T",
         "V"
       ],
-      "description": "The ultimate culinary triumph, providing all combat buffs to the entire party."
+      "description": "The ultimate culinary triumph, providing all combat buffs to the entire party.",
+      "icon": "👑"
     }
   ]
 }

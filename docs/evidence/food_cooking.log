@@ -41,4 +41,13 @@
 [GameState] 🍳 Save Migration applied: Food & Cooking V2.
 ✔ Test 13 passed: Save migration cookingV2 cleanly converts legacy items.
 
+--- Test 14: Dish Tier Preservation & Executive Chef vs Eater ---
+[Progression] Set class 'executive_chef' to Level 1 (0 EXP) on undefined
+[KnowledgeBase] 🧪 Status effect discovered: 'dish_buff'! (+1 RP)
+[Player] 🍖 Ate Salted Jerky! Restored +25.0 Hunger (Now: 75.0/100). Well Fed buff refreshed (180s @ +1.6 HP/s).
+[Player] 🍖 Ate Salted Jerky! Restored +25.0 Hunger (Now: 75.0/100). Well Fed buff refreshed (180s @ +1.4 HP/s).
+[Player] 🍖 Ate Salted Jerky! Restored +25.0 Hunger (Now: 75.0/100). Well Fed buff refreshed (180s @ +1 HP/s).
+[Food] Added 1x 'salted_jerky' (common) on Day 1. Total: 1
+✔ Test 14 passed: Dish tier locked at cook time, preserved on eating, and survives save/load.
+
 ALL FOOD & COOKING TESTS PASSED SUCCESSFULLY!

@@ -1,0 +1,21 @@
+--- STARTING COOKING MODAL TEST SUITE ---
+
+--- Step 1: Grep Cleanliness Guard on src/ui/HUD.ts ---
+✔ Guard 1 passed: Grep check is completely clean.
+
+--- Step 2: Cooking 30 Slot Rendering & Ingredient Options ---
+✔ Step 2 passed: Exactly 4 visible selects rendered at Lv 30 with correct ingredient options.
+
+--- Step 3: Experiment Discovery of salted_jerky ---
+[Cooking] ✨ Recipe permanently discovered: 'salted_jerky'! (+1 RP)
+[Progression] +40 EXP for 'cooking' (undefined). Current: Level 30 (40/170 EXP)
+[Progression] Recorded tx 'cooking': +40 EXP for Guild Hero, resulting total: Level 30 (40/170 EXP)
+✔ Step 3 passed: salted_jerky successfully discovered via experiment.
+
+--- Step 4: Recipe Journal 1 / 32 Progress ---
+✔ Step 4 passed: Recipe journal displays exactly 1 / 32 Discovered.
+
+--- Step 5: Lost Recipes Tab Lists 10 Entries ---
+✔ Step 5 passed: Lost tab lists exactly 10 entries with dropping enemy hints.
+
+ALL COOKING MODAL TESTS PASSED SUCCESSFULLY!

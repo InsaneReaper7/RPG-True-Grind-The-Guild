@@ -873,13 +873,14 @@ export class GameState {
     return spoiledCount;
   }
 
-  public addFoodItem(foodId: string, count: number = 1, quality?: FoodQuality): void {
+  public addFoodItem(foodId: string, count: number = 1, quality?: FoodQuality, tier?: number): void {
     for (let i = 0; i < count; i++) {
       this.foodItems.push({
         id: foodId,
         acquiredDay: this.currentGameDay,
         instanceId: `${foodId}_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
-        quality: quality ?? 'common'
+        quality: quality ?? 'common',
+        tier: tier ?? 1
       });
     }
     this.syncFoodInventory();

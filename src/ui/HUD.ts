@@ -1,6 +1,7 @@
 import type { Player } from '../entities/Player.ts';
 import { ProgressionSystem } from '../systems/ProgressionSystem.ts';
-import type { ClassDef, HiddenSkillDef, TrainableStat, FoodQuality, ExpTransaction, ArmorSlot, ArmorDef, ResearchNodeDef, KnowledgeBaseTab } from '../types/game.ts';
+import type { ClassDef, HiddenSkillDef, TrainableStat, ExpTransaction, ArmorSlot, ArmorDef, ResearchNodeDef, KnowledgeBaseTab } from '../types/game.ts';
+import { CookingSystem } from '../systems/CookingSystem.ts';
 import { getArmorHpSplit } from '../types/game.ts';
 import { DataLoader } from '../utils/DataLoader.ts';
 import { GameState } from '../systems/GameState.ts';
@@ -212,15 +213,27 @@ export class HUD {
   private cookingModalEl: HTMLElement | null;
   private closeCookingBtn: HTMLElement | null;
   private cookingModalProfEl: HTMLElement | null;
-  private cookingStockpileHerbsEl: HTMLElement | null;
-  private cookingStockpileMonsterMeatEl: HTMLElement | null;
-  private cookingStockpileWolfMeatEl: HTMLElement | null;
+  private cookingTabCookBtn: HTMLElement | null;
+  private cookingTabJournalBtn: HTMLElement | null;
+  private cookingTabLostBtn: HTMLElement | null;
+  private cookingTabCookView: HTMLElement | null;
+  private cookingTabJournalView: HTMLElement | null;
+  private cookingTabLostView: HTMLElement | null;
+  private cookingSlotsInfoEl: HTMLElement | null;
   private cookingExpSlot1El: HTMLSelectElement | null;
   private cookingExpSlot2El: HTMLSelectElement | null;
+  private cookingExpSlot3El: HTMLSelectElement | null;
+  private cookingExpSlot4El: HTMLSelectElement | null;
+  private cookingExpSlot5El: HTMLSelectElement | null;
   private cookingExperimentBtn: HTMLElement | null;
   private cookingExpStatusEl: HTMLElement | null;
   private cookingRecipesContainerEl: HTMLElement | null;
   private cookingDishesContainerEl: HTMLElement | null;
+  private cookingJournalProgressEl: HTMLElement | null;
+  private cookingJournalContainerEl: HTMLElement | null;
+  private cookingLostProgressEl: HTMLElement | null;
+  private cookingLostContainerEl: HTMLElement | null;
+  private activeCookingTab: 'cook' | 'journal' | 'lost' = 'cook';
 
   // Milestone 21 Modal Elements (Blacksmithing Station)
   private blacksmithingModalEl: HTMLElement | null;
@@ -711,15 +724,26 @@ export class HUD {
     this.cookingModalEl = document.getElementById('cooking-modal');
     this.closeCookingBtn = document.getElementById('close-cooking-btn');
     this.cookingModalProfEl = document.getElementById('cooking-modal-prof');
-    this.cookingStockpileHerbsEl = document.getElementById('cooking-stockpile-herbs');
-    this.cookingStockpileMonsterMeatEl = document.getElementById('cooking-stockpile-monster-meat');
-    this.cookingStockpileWolfMeatEl = document.getElementById('cooking-stockpile-wolf-meat');
+    this.cookingTabCookBtn = document.getElementById('cooking-tab-cook-btn');
+    this.cookingTabJournalBtn = document.getElementById('cooking-tab-journal-btn');
+    this.cookingTabLostBtn = document.getElementById('cooking-tab-lost-btn');
+    this.cookingTabCookView = document.getElementById('cooking-tab-cook-view');
+    this.cookingTabJournalView = document.getElementById('cooking-tab-journal-view');
+    this.cookingTabLostView = document.getElementById('cooking-tab-lost-view');
+    this.cookingSlotsInfoEl = document.getElementById('cooking-slots-info');
     this.cookingExpSlot1El = document.getElementById('cooking-exp-slot1') as HTMLSelectElement | null;
     this.cookingExpSlot2El = document.getElementById('cooking-exp-slot2') as HTMLSelectElement | null;
+    this.cookingExpSlot3El = document.getElementById('cooking-exp-slot3') as HTMLSelectElement | null;
+    this.cookingExpSlot4El = document.getElementById('cooking-exp-slot4') as HTMLSelectElement | null;
+    this.cookingExpSlot5El = document.getElementById('cooking-exp-slot5') as HTMLSelectElement | null;
     this.cookingExperimentBtn = document.getElementById('cooking-experiment-btn');
     this.cookingExpStatusEl = document.getElementById('cooking-exp-status');
     this.cookingRecipesContainerEl = document.getElementById('cooking-recipes-container');
     this.cookingDishesContainerEl = document.getElementById('cooking-dishes-container');
+    this.cookingJournalProgressEl = document.getElementById('cooking-journal-progress');
+    this.cookingJournalContainerEl = document.getElementById('cooking-journal-container');
+    this.cookingLostProgressEl = document.getElementById('cooking-lost-progress');
+    this.cookingLostContainerEl = document.getElementById('cooking-lost-container');
 
     // Milestone 21 Elements (Blacksmithing Station)
     this.blacksmithingModalEl = document.getElementById('blacksmithing-modal');
@@ -1226,6 +1250,22 @@ export class HUD {
     if (this.cookingExperimentBtn) {
       this.cookingExperimentBtn.onclick = () => {
         HUD.activeInstance?.handleCookingExperiment();
+      };
+    }
+
+    if (this.cookingTabCookBtn) {
+      this.cookingTabCookBtn.onclick = () => {
+        HUD.activeInstance?.switchCookingTab('cook');
+      };
+    }
+    if (this.cookingTabJournalBtn) {
+      this.cookingTabJournalBtn.onclick = () => {
+        HUD.activeInstance?.switchCookingTab('journal');
+      };
+    }
+    if (this.cookingTabLostBtn) {
+      this.cookingTabLostBtn.onclick = () => {
+        HUD.activeInstance?.switchCookingTab('lost');
       };
     }
 
@@ -6726,6 +6766,7 @@ export class HUD {
     this.currentProgression = progression;
     if (this.cookingModalEl) {
       this.cookingModalEl.classList.add('active');
+      this.switchCookingTab(this.activeCookingTab || 'cook');
       this.renderCookingModal(player, progression);
     }
   }
@@ -6740,177 +6781,106 @@ export class HUD {
     return this.cookingModalEl?.classList.contains('active') ?? false;
   }
 
-  public updateCookingStockpileLive(): void {
-    const gameState = GameState.getInstance();
-    if (this.cookingStockpileHerbsEl) {
-      this.setElementTextIfChanged(this.cookingStockpileHerbsEl, `${gameState.getItemCount('wild_herbs')}`);
-    }
-    if (this.cookingStockpileMonsterMeatEl) {
-      this.setElementTextIfChanged(this.cookingStockpileMonsterMeatEl, `${gameState.getItemCount('monster_meat')}`);
-    }
-    if (this.cookingStockpileWolfMeatEl) {
-      this.setElementTextIfChanged(this.cookingStockpileWolfMeatEl, `${gameState.getItemCount('wolf_meat')}`);
+  public switchCookingTab(tab: 'cook' | 'journal' | 'lost'): void {
+    this.activeCookingTab = tab;
+    if (this.cookingTabCookView) this.cookingTabCookView.style.display = tab === 'cook' ? 'block' : 'none';
+    if (this.cookingTabJournalView) this.cookingTabJournalView.style.display = tab === 'journal' ? 'block' : 'none';
+    if (this.cookingTabLostView) this.cookingTabLostView.style.display = tab === 'lost' ? 'block' : 'none';
+
+    const setTabStyle = (btn: HTMLElement | null, active: boolean) => {
+      if (!btn) return;
+      if (active) {
+        btn.style.background = '#ea580c';
+        btn.style.borderColor = '#f97316';
+      } else {
+        btn.style.background = '#374151';
+        btn.style.borderColor = '#4b5563';
+      }
+    };
+    setTabStyle(this.cookingTabCookBtn, tab === 'cook');
+    setTabStyle(this.cookingTabJournalBtn, tab === 'journal');
+    setTabStyle(this.cookingTabLostBtn, tab === 'lost');
+
+    if (this.currentPlayer && this.currentProgression) {
+      this.renderCookingModal(this.currentPlayer, this.currentProgression);
     }
   }
 
-  public static calculateDishQuality(cookingLevel: number, maxQuality?: FoodQuality, rollOverride?: number): FoodQuality {
-    const roll = rollOverride !== undefined ? rollOverride : Math.random();
-    // Quality odds scaling with Cooking proficiency level
-    // At Lv 0: Perfect 0%, Excellent 5%, Good 25%, Common 70%
-    // At Lv 10: Perfect 6%, Excellent 14%, Good 28%, Common 52%
-    // At Lv 30+: Perfect 18%, Excellent 32%, Good 34%, Common 16%
-    // At Lv 50+: Perfect 30%, Excellent 45%, Good 20%, Common 5%
-    const pPerfect = Math.min(0.35, cookingLevel * 0.006);
-    const pExcellent = Math.min(0.45, 0.05 + cookingLevel * 0.009);
-    const pGood = Math.min(0.35, 0.25 + cookingLevel * 0.003);
-
-    let determined: FoodQuality = 'common';
-    if (roll < pPerfect) {
-      determined = 'perfect';
-    } else if (roll < pPerfect + pExcellent) {
-      determined = 'excellent';
-    } else if (roll < pPerfect + pExcellent + pGood) {
-      determined = 'good';
-    } else {
-      determined = 'common';
+  public updateCookingStockpileLive(): void {
+    if (this.isCookingModalOpen() && this.currentPlayer && this.currentProgression) {
+      this.renderCookingModal(this.currentPlayer, this.currentProgression);
     }
-
-    // HARD CEILING ENFORCEMENT:
-    // Design doc: Monster Meat dishes hard-capped at Excellent; Wolf Meat can reach Perfect.
-    if (maxQuality) {
-      const tierRanks: Record<FoodQuality, number> = {
-        common: 0,
-        good: 1,
-        excellent: 2,
-        perfect: 3
-      };
-      if (tierRanks[determined] > tierRanks[maxQuality]) {
-        determined = maxQuality;
-      }
-    }
-
-    return determined;
   }
 
   public handleCookingExperiment(): void {
     if (!this.currentPlayer || !this.currentProgression) return;
-    if (!this.cookingExpSlot1El || !this.cookingExpSlot2El) return;
+    const cookingLvl = this.currentProgression.getProficiencyStat('cooking').level;
+    const allowedSlots = CookingSystem.getSlotCount(cookingLvl);
 
-    const slot1 = this.cookingExpSlot1El.value;
-    const slot2 = this.cookingExpSlot2El.value;
-
-    const gameState = GameState.getInstance();
-    const herbsCount = gameState.getItemCount('wild_herbs');
-    const monsterMeatCount = gameState.getItemCount('monster_meat');
-    const wolfMeatCount = gameState.getItemCount('wolf_meat');
-
-    const counts: Record<string, number> = {
-      wild_herbs: herbsCount,
-      monster_meat: monsterMeatCount,
-      wolf_meat: wolfMeatCount
-    };
-
-    const needed: Record<string, number> = {};
-    needed[slot1] = (needed[slot1] || 0) + 1;
-    needed[slot2] = (needed[slot2] || 0) + 1;
-
-    for (const [k, v] of Object.entries(needed)) {
-      if ((counts[k] || 0) < v) {
-        this.showToast(`Not enough ${k.replace(/_/g, ' ')} in stockpile!`, 'error');
-        if (this.cookingExpStatusEl) {
-          this.cookingExpStatusEl.innerText = `⚠️ Need at least ${v}x ${k.replace(/_/g, ' ')}.`;
-          this.cookingExpStatusEl.style.color = '#ef4444';
-        }
-        return;
+    const slotElements = [
+      this.cookingExpSlot1El,
+      this.cookingExpSlot2El,
+      this.cookingExpSlot3El,
+      this.cookingExpSlot4El,
+      this.cookingExpSlot5El
+    ];
+    const selectedIds: string[] = [];
+    for (let i = 0; i < allowedSlots; i++) {
+      const sel = slotElements[i];
+      if (sel && sel.value) {
+        selectedIds.push(sel.value);
       }
     }
 
-    const dataLoader = DataLoader.getInstance();
-    const allRecipes = dataLoader.getCookingRecipes();
+    if (selectedIds.length < 2) {
+      const msg = '⚠️ Select at least 2 ingredients to experiment.';
+      this.showToast(msg, 'warn');
+      if (this.cookingExpStatusEl) {
+        this.cookingExpStatusEl.innerText = msg;
+        this.cookingExpStatusEl.style.color = '#ef4444';
+      }
+      return;
+    }
 
-    // Find recipe matching slot1 + slot2
-    const matchedRecipe = allRecipes.find((r) => {
-      const keys = Object.keys(r.ingredients);
-      if (keys.length !== 2) return false;
-      return (
-        keys.includes(slot1) &&
-        keys.includes(slot2) &&
-        r.ingredients[slot1] === 1 &&
-        r.ingredients[slot2] === 1
-      );
-    });
+    const sigKey = CookingSystem.getTriedSignatureKey(selectedIds);
+    const wasAlreadyTried = GameState.getInstance().hasTriedCookingSignature(sigKey);
 
-    const cookingStat = this.currentProgression.getProficiencyStat('cooking');
-    const cookingLevel = cookingStat.level;
+    const result = CookingSystem.experiment(this.currentPlayer, selectedIds);
 
-    // Deduct raw ingredients
-    gameState.consumeItem(slot1, 1);
-    gameState.consumeItem(slot2, 1);
-
-    if (matchedRecipe) {
-      const isAlreadyKnown = gameState.isCookingRecipeDiscovered(matchedRecipe.id);
-
-      if (isAlreadyKnown) {
-        // RE-COMBINATION SAFETY NET: Already known! Routes straight to cooking without re-rolling discovery.
-        const quality = HUD.calculateDishQuality(cookingLevel, matchedRecipe.maxQuality);
-        if (this.currentPlayer) {
-          const wasEnc = this.currentPlayer.isEncumbered;
-          this.currentPlayer.addFoodItem(matchedRecipe.resultFoodId, 1, quality);
-          if (!wasEnc && this.currentPlayer.isEncumbered) {
-            this.showToast(`⚠️ ${this.currentPlayer.entityName} is ENCUMBERED (-80% Movement Speed)!`, 'warn', 3000);
-          }
-        }
-        this.currentProgression.addProficiencyExp('cooking', matchedRecipe.expGranted);
-
-        const qualityBadge = quality.toUpperCase();
-        this.showToast(`🍳 You already know how to make ${matchedRecipe.name}! Cooked 1x [${qualityBadge}].`, 'info', 3500);
-        if (this.cookingExpStatusEl) {
-          this.cookingExpStatusEl.innerText = `ℹ️ You already know how to make ${matchedRecipe.name}! Cooked 1x [${qualityBadge}]. (Use the Known Recipes list below to cook on demand).`;
-          this.cookingExpStatusEl.style.color = '#38bdf8';
-        }
-      } else {
-        // Undiscovered recipe: Roll discovery (85% base chance, guaranteed at Cooking Lv 1+)
-        const discoveryRoll = Math.random();
-        const discoverySuccess = cookingLevel >= 1 || discoveryRoll < 0.85;
-
-        if (discoverySuccess) {
-          gameState.discoverCookingRecipe(matchedRecipe.id);
-          const quality = HUD.calculateDishQuality(cookingLevel, matchedRecipe.maxQuality);
-          if (this.currentPlayer) {
-            const wasEnc = this.currentPlayer.isEncumbered;
-            this.currentPlayer.addFoodItem(matchedRecipe.resultFoodId, 1, quality);
-            if (!wasEnc && this.currentPlayer.isEncumbered) {
-              this.showToast(`⚠️ ${this.currentPlayer.entityName} is ENCUMBERED (-80% Movement Speed)!`, 'warn', 3000);
-            }
-          }
-          // Discovery bonus EXP
-          const exp = matchedRecipe.expGranted + 20;
-          this.currentProgression.addProficiencyExp('cooking', exp);
-
-          const qualityBadge = quality.toUpperCase();
-          this.showToast(`✨ RECIPE DISCOVERED: ${matchedRecipe.name}! Cooked 1x [${qualityBadge}] (+${exp} Cooking EXP, +${GameState.DISCOVERY_RP_BONUS} RP)`, 'success', 4000);
-          if (this.cookingExpStatusEl) {
-            this.cookingExpStatusEl.innerText = `✨ DISCOVERY! Learned ${matchedRecipe.name} [${qualityBadge}]! Permanently added to Known Recipes below.`;
-            this.cookingExpStatusEl.style.color = '#34d399';
-          }
+    if (this.cookingExpStatusEl) {
+      if (result.refusedLostRecipe) {
+        this.cookingExpStatusEl.innerText = `📜 ${result.message}`;
+        this.cookingExpStatusEl.style.color = '#eab308';
+      } else if (result.isBurntMush) {
+        if (wasAlreadyTried) {
+          this.cookingExpStatusEl.innerText = `⚠️ You have already tried this combination! It burned into Burnt Mush (+5 Cooking EXP).`;
+          this.cookingExpStatusEl.style.color = '#f87171';
         } else {
-          // Discovery mishap
-          this.currentProgression.addProficiencyExp('cooking', 5);
-          this.showToast('Experiment scorched the ingredients, but you gained +5 Cooking EXP.', 'warn', 3000);
-          if (this.cookingExpStatusEl) {
-            this.cookingExpStatusEl.innerText = '⚠️ Experiment scorched the ingredients. You gained +5 Cooking EXP. Try again!';
-            this.cookingExpStatusEl.style.color = '#fbbf24';
-          }
+          this.cookingExpStatusEl.innerText = `❌ ${result.message}`;
+          this.cookingExpStatusEl.style.color = '#f87171';
         }
+      } else if (result.isNewDiscovery) {
+        this.cookingExpStatusEl.innerText = result.message;
+        this.cookingExpStatusEl.style.color = '#34d399';
+      } else if (result.success) {
+        this.cookingExpStatusEl.innerText = `ℹ️ ${result.message}`;
+        this.cookingExpStatusEl.style.color = '#38bdf8';
+      } else {
+        this.cookingExpStatusEl.innerText = `⚠️ ${result.message}`;
+        this.cookingExpStatusEl.style.color = '#ef4444';
+      }
+    }
+
+    if (result.success) {
+      if (result.isNewDiscovery) {
+        this.showToast(result.message, 'success', 4000);
+      } else if (result.isBurntMush) {
+        this.showToast(result.message, 'warn', 3000);
+      } else {
+        this.showToast(result.message, 'info', 3000);
       }
     } else {
-      // Invalid combination
-      this.currentProgression.addProficiencyExp('cooking', 5);
-      this.showToast('The ingredients failed to produce a valid dish (+5 Cooking EXP).', 'warn', 3000);
-      if (this.cookingExpStatusEl) {
-        this.cookingExpStatusEl.innerText = '❌ Failed experiment — these ingredients do not form any known dish (+5 Cooking EXP).';
-        this.cookingExpStatusEl.style.color = '#f87171';
-      }
+      this.showToast(result.message, result.refusedLostRecipe ? 'warn' : 'error', 3000);
     }
 
     this.renderCookingModal(this.currentPlayer, this.currentProgression);
@@ -6922,6 +6892,8 @@ export class HUD {
 
     const dataLoader = DataLoader.getInstance();
     const gameState = GameState.getInstance();
+    this.currentPlayer = player;
+    this.currentProgression = progression;
 
     // 1. Cooking proficiency
     const cookingStat = progression.getProficiencyStat('cooking');
@@ -6938,100 +6910,157 @@ export class HUD {
       }
     }
 
-    // 2. Narrowly scoped live ingredient counts
-    const herbs = gameState.getItemCount('wild_herbs');
-    const monsterMeat = gameState.getItemCount('monster_meat');
-    const wolfMeat = gameState.getItemCount('wolf_meat');
+    const cookingLevel = cookingStat.level;
+    const allowedSlots = CookingSystem.getSlotCount(cookingLevel);
 
-    if (this.cookingStockpileHerbsEl) {
-      this.cookingStockpileHerbsEl.innerText = `${herbs}`;
-    }
-    if (this.cookingStockpileMonsterMeatEl) {
-      this.cookingStockpileMonsterMeatEl.innerText = `${monsterMeat}`;
-    }
-    if (this.cookingStockpileWolfMeatEl) {
-      this.cookingStockpileWolfMeatEl.innerText = `${wolfMeat}`;
+    // 2. Slot count label
+    if (this.cookingSlotsInfoEl) {
+      let slotsText = `${allowedSlots} / 5 slots`;
+      if (allowedSlots === 2) slotsText += ', next at Cooking 15';
+      else if (allowedSlots === 3) slotsText += ', next at Cooking 30';
+      else if (allowedSlots === 4) slotsText += ', next at Cooking 45';
+      else slotsText += ' (Max)';
+      this.cookingSlotsInfoEl.innerText = slotsText;
     }
 
-    this.currentPlayer = player;
-    this.currentProgression = progression;
-    this.updateCraftingFilterToggleUI('cooking');
-    const isCraftableOnly = this.isCraftingFilterActive('cooking');
+    // 3. Pool available ingredients for selects
+    const availableIngredients: { id: string; name: string; count: number; icon: string }[] = [];
+    const itemMap = new Map<string, number>();
 
-    // 3. Known / Discovered Recipes
+    for (const [id, count] of gameState.getInventoryMap().entries()) {
+      if (count > 0) {
+        const def = dataLoader.getItem(id);
+        if (def?.ingredient) {
+          itemMap.set(id, (itemMap.get(id) || 0) + count);
+        }
+      }
+    }
+    if (player && player.inventory) {
+      for (const [id, count] of player.inventory.entries()) {
+        if (count > 0) {
+          const def = dataLoader.getItem(id);
+          if (def?.ingredient) {
+            itemMap.set(id, (itemMap.get(id) || 0) + count);
+          }
+        }
+      }
+    }
+
+    for (const [id, count] of itemMap.entries()) {
+      const def = dataLoader.getItem(id);
+      if (def) {
+        availableIngredients.push({
+          id,
+          name: def.name,
+          count,
+          icon: def.icon || '🍲'
+        });
+      }
+    }
+    availableIngredients.sort((a, b) => a.name.localeCompare(b.name));
+
+    // 4. Update the 5 select elements & visibility
+    const slotElements = [
+      this.cookingExpSlot1El,
+      this.cookingExpSlot2El,
+      this.cookingExpSlot3El,
+      this.cookingExpSlot4El,
+      this.cookingExpSlot5El
+    ];
+    for (let i = 1; i <= 5; i++) {
+      const sel = slotElements[i - 1];
+      const wrap = document.getElementById(`cooking-slot${i}-wrap`);
+      const isVisible = i <= allowedSlots;
+      if (wrap) {
+        wrap.style.display = isVisible ? 'block' : 'none';
+      }
+      if (sel) {
+        sel.style.display = isVisible ? 'block' : 'none';
+        const currentVal = sel.value;
+        sel.innerHTML = '';
+        const defOpt = document.createElement('option');
+        defOpt.value = '';
+        defOpt.innerText = '-- Select Ingredient --';
+        sel.appendChild(defOpt);
+
+        for (const ing of availableIngredients) {
+          const opt = document.createElement('option');
+          opt.value = ing.id;
+          opt.innerText = `${ing.icon} ${ing.name} (${ing.count})`;
+          sel.appendChild(opt);
+        }
+        if (currentVal && itemMap.has(currentVal)) {
+          sel.value = currentVal;
+        }
+      }
+    }
+
+    // 5. Render Discovered Recipes in Cook Tab
     if (this.cookingRecipesContainerEl) {
       this.cookingRecipesContainerEl.innerHTML = '';
       const allRecipes = dataLoader.getCookingRecipes();
       let visibleCount = 0;
-      let undiscoveredCount = 0;
 
       for (const recipe of allRecipes) {
         if (recipe.id === 'burnt_mush') continue;
         const isDiscovered = gameState.isCookingRecipeDiscovered(recipe.id);
-
-        if (!isDiscovered) {
-          undiscoveredCount++;
-          // Secrecy rule: never render undiscovered recipes as cards, names, ingredients or badges
-          continue;
-        }
+        if (!isDiscovered) continue;
 
         visibleCount++;
-
         const card = document.createElement('div');
-        card.style.cssText = `background: rgba(31, 41, 55, 0.85); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 8px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; gap: 10px;`;
+        card.style.cssText = 'background: rgba(31, 41, 55, 0.85); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 8px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; gap: 10px;';
 
-        const canCook = CraftingSystem.canAfford(recipe, player);
-        const ingStrings: string[] = [];
-        for (const [item, qty] of Object.entries(recipe.ingredients)) {
-          const stockpileCount = item === 'wood' ? gameState.getWood() : gameState.getItemCount(item);
-          const carriedCount = (player && typeof player.getItemCount === 'function') ? player.getItemCount(item) : 0;
-          const has = stockpileCount + carriedCount;
-          const itemLabel = item.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-          ingStrings.push(`${itemLabel} (${has}/${qty})`);
+        const canCook = CookingSystem.findBestIngredientsForRecipe(player, recipe) !== null;
+
+        const slotReqs: string[] = [];
+        if (recipe.slots) {
+          for (const s of recipe.slots) {
+            if (s.item) {
+              const itemDef = dataLoader.getItem(s.item);
+              slotReqs.push(itemDef?.name || s.item);
+            } else if (s.tag) {
+              slotReqs.push(`Any ${s.tag}`);
+            }
+          }
         }
 
-        const ceilingBadge = recipe.maxQuality === 'excellent'
-          ? `<span style="font-size: 10px; color: #f87171; background: rgba(239, 68, 68, 0.2); border: 1px solid #ef4444; border-radius: 3px; padding: 1px 5px;">Max: Excellent (Monster Meat)</span>`
-          : `<span style="font-size: 10px; color: #a855f7; background: rgba(168, 85, 247, 0.2); border: 1px solid #a855f7; border-radius: 3px; padding: 1px 5px;">Max: Perfect (Wolf Meat)</span>`;
+        const rarityBadge = recipe.rarity === 'legendary'
+          ? '<span style="font-size: 10px; color: #fbbf24; background: rgba(245, 158, 11, 0.2); border: 1px solid #f59e0b; border-radius: 3px; padding: 1px 5px;">Legendary</span>'
+          : recipe.rarity === 'epic'
+          ? '<span style="font-size: 10px; color: #c084fc; background: rgba(192, 132, 252, 0.2); border: 1px solid #c084fc; border-radius: 3px; padding: 1px 5px;">Epic</span>'
+          : `<span style="font-size: 10px; color: #94a3b8; background: rgba(148, 163, 184, 0.2); border: 1px solid #94a3b8; border-radius: 3px; padding: 1px 5px;">${recipe.slots?.length || 2} Slots</span>`;
 
         let cookBtnHtml = '';
         if (canCook) {
-          cookBtnHtml = `<button type="button" class="btn-action" style="background: #ea580c; border-color: #f97316; font-size: 11px; padding: 5px 12px;" data-cook-recipe="${recipe.id}">🍲 Cook (+${recipe.expGranted} EXP)</button>`;
+          cookBtnHtml = `<button type="button" class="btn-action" style="background: #ea580c; border-color: #f97316; font-size: 11px; padding: 5px 12px;" data-cook-recipe="${recipe.id}">🍲 Cook</button>`;
         } else {
-          cookBtnHtml = `<button type="button" disabled style="background: #374151; color: #9ca3af; border: 1px solid #4b5563; border-radius: 6px; font-size: 11px; padding: 5px 12px; cursor: not-allowed;">Missing Ingredients</button>`;
+          cookBtnHtml = '<button type="button" disabled style="background: #374151; color: #9ca3af; border: 1px solid #4b5563; border-radius: 6px; font-size: 11px; padding: 5px 12px; cursor: not-allowed;">Missing Ingredients</button>';
         }
 
         card.innerHTML = `
           <div style="flex: 1;">
             <div style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: bold; color: #f97316;">
               <span>${recipe.name}</span>
-              ${ceilingBadge}
+              ${rarityBadge}
               <span style="font-size: 10px; color: #60a5fa; font-weight: normal;">+${recipe.expGranted} Cooking EXP</span>
             </div>
-            <div style="font-size: 10px; color: #9ca3af; margin-top: 2px;">${recipe.description}</div>
+            <div style="font-size: 10px; color: #9ca3af; margin-top: 2px;">${recipe.description || ''}</div>
             <div style="font-size: 11px; color: ${canCook ? '#34d399' : '#fbbf24'}; margin-top: 4px;">
-              Ingredients: ${ingStrings.join(', ')}
+              Requirements: ${slotReqs.join(', ')}
             </div>
           </div>
           <div>${cookBtnHtml}</div>
         `;
 
-        const btn = card.querySelector<HTMLButtonElement>(`[data-cook-recipe="${recipe.id}"]`);
-        if (btn) {
-          btn.onclick = () => {
-            for (const [item, qty] of Object.entries(recipe.ingredients)) {
-              gameState.consumeItem(item, qty);
+        const cookBtn = card.querySelector<HTMLButtonElement>(`[data-cook-recipe="${recipe.id}"]`);
+        if (cookBtn) {
+          cookBtn.onclick = () => {
+            const res = CookingSystem.cookKnown(player, recipe.id);
+            if (res.success) {
+              this.showToast(res.message, 'success', 3000);
+            } else {
+              this.showToast(res.message, 'error', 3000);
             }
-            const quality = HUD.calculateDishQuality(cookingStat.level, recipe.maxQuality);
-            const wasEnc = player.isEncumbered;
-            player.addFoodItem(recipe.resultFoodId, 1, quality);
-            if (!wasEnc && player.isEncumbered) {
-              this.showToast(`⚠️ ${player.entityName} is ENCUMBERED (-80% Movement Speed)!`, 'warn', 3000);
-            }
-            progression.addProficiencyExp('cooking', recipe.expGranted);
-
-            const qBadge = quality.toUpperCase();
-            this.showToast(`🍲 Cooked 1x ${recipe.name} [${qBadge}]! (+${recipe.expGranted} Cooking EXP)`, 'success', 2500);
             this.renderCookingModal(player, progression);
             this.update(player, progression, 0);
           };
@@ -7046,18 +7075,9 @@ export class HUD {
         emptyDiv.innerText = 'No recipes discovered yet. Combine ingredients in the Experimentation panel above to discover dishes.';
         this.cookingRecipesContainerEl.appendChild(emptyDiv);
       }
-
-      // In "Show All" (!isCraftableOnly), show single undiscovered count line if any remain undiscovered
-      if (!isCraftableOnly && undiscoveredCount > 0) {
-        const countDiv = document.createElement('div');
-        countDiv.className = 'cooking-undiscovered-count-banner';
-        countDiv.style.cssText = 'background: rgba(31, 41, 55, 0.4); border: 1px dashed rgba(148, 163, 184, 0.25); border-radius: 8px; padding: 10px; text-align: center; color: #94a3b8; font-size: 12px; font-weight: 500; margin-top: 4px;';
-        countDiv.innerHTML = `🔒 ${undiscoveredCount} recipe${undiscoveredCount === 1 ? '' : 's'} still undiscovered`;
-        this.cookingRecipesContainerEl.appendChild(countDiv);
-      }
     }
 
-    // 4. Prepared Dishes In Pack (with Quick-Eat button)
+    // 6. Prepared Dishes In Pack
     if (this.cookingDishesContainerEl) {
       this.cookingDishesContainerEl.innerHTML = '';
       const allFood = gameState.getFoodItems();
@@ -7108,6 +7128,146 @@ export class HUD {
 
           this.cookingDishesContainerEl.appendChild(row);
         }
+      }
+    }
+
+    // 7. Render Recipe Journal Tab
+    if (this.cookingJournalContainerEl) {
+      this.cookingJournalContainerEl.innerHTML = '';
+      const allRecipes = dataLoader.getCookingRecipes();
+      const discoverable = allRecipes.filter(r => r.id !== 'burnt_mush' && r.rarity !== 'epic' && r.rarity !== 'legendary');
+      let discoveredCount = 0;
+
+      const cookedSizes = new Set<number>();
+      for (const r of discoverable) {
+        if (gameState.isCookingRecipeDiscovered(r.id)) {
+          cookedSizes.add(r.slots?.length || 2);
+        }
+      }
+
+      for (const recipe of discoverable) {
+        const isDiscovered = gameState.isCookingRecipeDiscovered(recipe.id);
+        if (isDiscovered) discoveredCount++;
+
+        const card = document.createElement('div');
+        card.style.cssText = 'background: rgba(31, 41, 55, 0.85); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 8px; padding: 10px 14px; display: flex; flex-direction: column; gap: 4px;';
+
+        const size = recipe.slots?.length || 2;
+
+        if (isDiscovered) {
+          const slotStrings = recipe.slots?.map(s => {
+            if (s.item) {
+              const def = dataLoader.getItem(s.item);
+              return def?.name || s.item;
+            }
+            return `Any ${s.tag}`;
+          }) || [];
+          card.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-weight: bold; color: #f97316; font-size: 13px;">${recipe.name}</span>
+              <span style="font-size: 10px; color: #34d399; font-weight: bold;">✔ DISCOVERED</span>
+            </div>
+            <div style="font-size: 11px; color: #9ca3af;">${recipe.description || ''}</div>
+            <div style="font-size: 11px; color: #60a5fa; margin-top: 2px;">
+              <strong>Slots (${size}):</strong> ${slotStrings.join(', ')}
+            </div>
+          `;
+        } else {
+          const hasCookedSize = cookedSizes.has(size);
+          let revealedHint = '???';
+          if (hasCookedSize && recipe.slots && recipe.slots.length > 0) {
+            const firstSlot = recipe.slots[0];
+            if (firstSlot.item) {
+              const def = dataLoader.getItem(firstSlot.item);
+              revealedHint = def?.name || firstSlot.item;
+            } else if (firstSlot.tag) {
+              revealedHint = `Any ${firstSlot.tag}`;
+            }
+          }
+          const slotsHint = recipe.slots?.map((_, idx) => idx === 0 && hasCookedSize ? revealedHint : '???').join(', ') || '???';
+
+          card.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-weight: bold; color: #9ca3af; font-size: 13px;">??? (${size} Slots)</span>
+              <span style="font-size: 10px; color: #6b7280;">🔒 UNDISCOVERED</span>
+            </div>
+            <div style="font-size: 11px; color: #6b7280; font-style: italic;">A secret ${size}-ingredient culinary dish.</div>
+            <div style="font-size: 11px; color: #fbbf24; margin-top: 2px;">
+              <strong>Slots:</strong> ${slotsHint}
+            </div>
+          `;
+        }
+
+        this.cookingJournalContainerEl.appendChild(card);
+      }
+
+      if (this.cookingJournalProgressEl) {
+        this.cookingJournalProgressEl.innerText = `${discoveredCount} / ${discoverable.length} Discovered`;
+      }
+    }
+
+    // 8. Render Lost Recipes Tab
+    if (this.cookingLostContainerEl) {
+      this.cookingLostContainerEl.innerHTML = '';
+      const allRecipes = dataLoader.getCookingRecipes();
+      const lostRecipes = allRecipes.filter(r => r.rarity === 'epic' || r.rarity === 'legendary');
+      let decipheredCount = 0;
+
+      for (const recipe of lostRecipes) {
+        const isLearned = gameState.isCookingRecipeDiscovered(recipe.id);
+        if (isLearned) decipheredCount++;
+
+        const card = document.createElement('div');
+        card.style.cssText = 'background: rgba(31, 41, 55, 0.85); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 8px; padding: 10px 14px; display: flex; flex-direction: column; gap: 4px;';
+
+        const rarityBadge = recipe.rarity === 'legendary'
+          ? '<span style="font-size: 10px; color: #fbbf24; background: rgba(245, 158, 11, 0.2); border: 1px solid #f59e0b; border-radius: 3px; padding: 1px 5px; text-transform: uppercase;">Legendary</span>'
+          : '<span style="font-size: 10px; color: #c084fc; background: rgba(192, 132, 252, 0.2); border: 1px solid #c084fc; border-radius: 3px; padding: 1px 5px; text-transform: uppercase;">Epic</span>';
+
+        if (isLearned) {
+          const slotStrings = recipe.slots?.map(s => {
+            if (s.item) {
+              const def = dataLoader.getItem(s.item);
+              return def?.name || s.item;
+            }
+            return `Any ${s.tag}`;
+          }) || [];
+          card.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-weight: bold; color: #eab308; font-size: 13px;">${recipe.name}</span>
+                ${rarityBadge}
+              </div>
+              <span style="font-size: 10px; color: #34d399; font-weight: bold;">✔ DECIPHERED</span>
+            </div>
+            <div style="font-size: 11px; color: #9ca3af;">${recipe.description || ''}</div>
+            <div style="font-size: 11px; color: #60a5fa; margin-top: 2px;">
+              <strong>Ingredients:</strong> ${slotStrings.join(', ')}
+            </div>
+          `;
+        } else {
+          const dropping = CookingSystem.getDroppingEnemiesForLostRecipe(recipe.id);
+          const dropLabel = dropping.length > 0 ? dropping.join(', ') : 'Elite Horrors & Bosses';
+
+          card.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-weight: bold; color: #eab308; font-size: 13px;">${recipe.name}</span>
+                ${rarityBadge}
+              </div>
+              <span style="font-size: 10px; color: #f87171; font-weight: bold;">🔒 UNDECIPHERED</span>
+            </div>
+            <div style="font-size: 11px; color: #9ca3af; margin-top: 2px;">
+              <strong style="color: #cbd5e1;">Dropped By:</strong> <span style="color: #fb923c;">${dropLabel}</span>
+            </div>
+          `;
+        }
+
+        this.cookingLostContainerEl.appendChild(card);
+      }
+
+      if (this.cookingLostProgressEl) {
+        this.cookingLostProgressEl.innerText = `${decipheredCount} / ${lostRecipes.length} Deciphered`;
       }
     }
   }
@@ -8184,8 +8344,6 @@ export class HUD {
     }
 
     // 3. Crafting Reagents & Monster Salvage
-    registerItem('monster_meat', 'Monster Meat', 'reagents', '🥩');
-    registerItem('wolf_meat', 'Wolf Meat', 'reagents', '🥩');
     registerItem('wolf_pelt', 'Wolf Pelt', 'reagents', '🐺');
     registerItem('wolf_claw', 'Wolf Claw', 'reagents', '🐾');
     registerItem('spider_silk', 'Spider Silk', 'reagents', '🕸️');
@@ -8262,15 +8420,25 @@ export class HUD {
     registerItem('revive_potion', 'Revive Potion', 'consumables', '💛');
     registerItem('escape_stone', 'Escape Stone', 'consumables', '🌀');
     registerItem('ration', 'Field Ration', 'consumables', '🍖');
-    registerItem('vegetable', 'Fresh Vegetable', 'consumables', '🥕');
     registerItem('herb_stew', 'Herb Stew', 'consumables', '🍲');
     registerItem('beast_stew', 'Hearty Beast Stew', 'consumables', '🍲');
 
-    // Dynamically discover foods
+    // Dynamically discover items from items.json (Plan Change 6)
+    const allItems = dataLoader.getItems ? dataLoader.getItems() : [];
+    for (const item of allItems) {
+      if (!registry.has(item.id)) {
+        const cat = (item.category === 'ingredients' || item.category === 'reagents' || item.category === 'gathering' || item.category === 'consumables' || item.category === 'equipment' || item.category === 'currencies')
+          ? item.category
+          : 'reagents';
+        registerItem(item.id, item.name || item.id, cat as any, item.icon || '📦');
+      }
+    }
+
+    // Dynamically discover foods from food.json
     const foods = dataLoader.getFoods ? dataLoader.getFoods() : [];
     for (const food of foods) {
       if (!registry.has(food.id)) {
-        registerItem(food.id, food.name || food.id.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()), 'consumables', '🍲');
+        registerItem(food.id, food.name || food.id.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()), 'consumables', food.icon || '🍲');
       }
     }
 

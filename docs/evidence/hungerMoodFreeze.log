@@ -1,0 +1,56 @@
+========================================================================
+🧪 VERIFICATION SUITE: HUNGER & MOOD FREEZE AT NEUTRAL 🧪
+========================================================================
+
+--- TEST 1: Data-Driven Configuration Verification ---
+✓ Test 1 Passed: Switches are configured as false in data/moodEffects.json.
+
+--- TEST 2: Switches OFF — Simulated 10 Minutes in Dungeon ---
+  Initial State: Hunger = 100.0, Mood = 50.0
+  [Dungeon 2m] Hunger: 100.0/100, Mood: 50.0/100 (Held Neutral)
+  [Dungeon 4m] Hunger: 100.0/100, Mood: 50.0/100 (Held Neutral)
+  [Dungeon 6m] Hunger: 100.0/100, Mood: 50.0/100 (Held Neutral)
+  [Dungeon 8m] Hunger: 100.0/100, Mood: 50.0/100 (Held Neutral)
+  [Dungeon 10m] Hunger: 100.0/100, Mood: 50.0/100 (Held Neutral)
+  Combat Stats: Damage Multiplier = ×1, Accuracy Bonus = +0
+✓ Test 2 Passed: 10 simulated minutes in dungeon kept Hunger at 100 and Mood at 50 with ×1.0 damage and +0 accuracy.
+
+--- TEST 3: Switches ON — Simulated 10 Minutes in Dungeon Reproduces Drain Rates ---
+  Initial State: Hunger = 100.0, Mood = 80.0
+  [Dungeon 2m] Hunger: 40.0/100, Mood: 14.0/100
+  [Drain Event] Hunger completely emptied at 200 seconds (~3.3 minutes)
+  [Dungeon 4m] Hunger: 0.0/100, Mood: 0.0/100
+  [Dungeon 6m] Hunger: 0.0/100, Mood: 0.0/100
+  [Dungeon 8m] Hunger: 0.0/100, Mood: 0.0/100
+  [Dungeon 10m] Hunger: 0.0/100, Mood: 0.0/100
+  Drained Combat Stats: Damage Multiplier = ×0.85 (-15%), Accuracy Bonus = -0.1 (-10%)
+✓ Test 3 Passed: Switches ON reproduces exact original drain rates and penalties.
+
+--- TEST 4: Eating Stew Applies Well Fed Buff While Meters Frozen ---
+[KnowledgeBase] 🧪 Status effect discovered: 'dish_buff'! (+1 RP)
+[Player] 🍖 Ate Herb Stew! Restored +0.0 Hunger (Now: 100.0/100). Well Fed buff refreshed (120s @ +1 HP/s).
+[Well Fed] Regenerated +2 HP from food buff!
+[Well Fed] Regenerated +2 HP from food buff!
+[Well Fed] Regenerated +2 HP from food buff!
+[Well Fed] Regenerated +2 HP from food buff!
+[Well Fed] Regenerated +2 HP from food buff!
+  Regenerated HP from 30 to 42 while Hunger held at 100 and Mood held at 50
+✓ Test 4 Passed: Eating stew applies Well Fed HP regen without affecting frozen meters.
+
+--- TEST 4B: Food Still Spoils on Day Advance While Meters Frozen ---
+[Spoilage] 🪰 1x Herb Stew (acquired Day 1) in stockpile exceeded 5-day shelf life on Day 6 and was deleted.
+[Spoilage] 🪰 1x Herb Stew (acquired Day 1) in Guild Hero's bag exceeded 5-day shelf life on Day 6 and spoiled.
+✓ Test 4B Passed: Food spoilage remains active and enforced while meters are frozen.
+
+--- TEST 5: Save Persistence — Neutral Overrides and Saved Value Preservation ---
+✓ Test 5 Passed: Existing saves load into neutral state without deleting saved values; switches ON restores original values.
+
+--- TEST 6: HUD Presentation (Paused Indicators & Grey Style) ---
+  Switches OFF HUD: Hunger = "100 / 100 (paused)" (#9ca3af), Mood = "50 / 100 (Content) (paused)" (#9ca3af)
+  Switches ON HUD: Hunger = "0 / 100" (#ef4444), Mood = "0 / 100 (Low Mood)" (#ef4444)
+✓ Test 6 Passed: HUD displays neutral paused indicators and grey style when frozen, normal colors when active.
+
+========================================================================
+🎉 ALL HUNGER & MOOD FREEZE VERIFICATION TESTS PASSED SUCCESSFULLY! 🎉
+========================================================================
+

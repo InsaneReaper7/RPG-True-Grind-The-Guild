@@ -1,0 +1,263 @@
+=================================================================================
+🧪 MILESTONE AUDIT: REGEN REFINEMENT (OUT-OF-COMBAT = 2× IN-COMBAT) 🧪
+=================================================================================
+
+--- 1. STATIC DATA CHECK & RATIO 2.0 AUDIT ---
+✓ PASS: Static data check confirmed: All sources store in-combat baseline with NO hardcoded out-of-combat values.
+
+--- BEFORE / AFTER REGEN TABLE & EXACT 2.0 RATIO VERIFICATION ---
+Source                      | In-Combat   | Out-of-Combat | Ratio   | Before (In / Out)
+-------------------------------------------------------------------------------------
+Base Energy Regen           | 0.50/s      | 1.00/s        | 2.0x    | 0.0 / 5.0 EN/s
+Base HP Regen               | 0.25/s      | 0.50/s        | 2.0x    | 0.0 / 0.0 HP/s
+Health Regen (Lv 0)         | 0.00/proc   | 0.00/proc     | N/A (0/0)| 0 / 0 HP/proc
+Energy Regen (Lv 0)         | 0.00/proc   | 0.00/proc     | N/A (0/0)| 0 / 0 EN/proc
+[Progression] +1300 EXP for 'health_regen' (Guild Hero). Current: Level 16 (20/114 EXP)
+[Progression] Recorded tx 'health_regen': +1300 EXP for Guild Hero, resulting total: Level 16 (20/114 EXP)
+[Progression] LEVEL UP! 'health_regen' is now Level 16! (Gained 16 level(s))
+[Progression] ✨ SKILL DISCOVERED: 'health_regen' reached Level 16 by Guild Hero! ✨
+[Progression] +1300 EXP for 'energy_regen' (Guild Hero). Current: Level 16 (20/114 EXP)
+[Progression] Recorded tx 'energy_regen': +1300 EXP for Guild Hero, resulting total: Level 16 (20/114 EXP)
+[Progression] LEVEL UP! 'energy_regen' is now Level 16! (Gained 16 level(s))
+[Progression] ✨ SKILL DISCOVERED: 'energy_regen' reached Level 16 by Guild Hero! ✨
+[Progression] +1300 EXP for 'mana_regen' (Guild Hero). Current: Level 16 (20/114 EXP)
+[Progression] Recorded tx 'mana_regen': +1300 EXP for Guild Hero, resulting total: Level 16 (20/114 EXP)
+[Progression] LEVEL UP! 'mana_regen' is now Level 16! (Gained 16 level(s))
+[Progression] ✨ SKILL DISCOVERED: 'mana_regen' reached Level 16 by Guild Hero! ✨
+[Progression] +1 EXP for 'health_regen' (Guild Hero). Current: Level 15 (1/110 EXP)
+[Progression] Recorded tx 'health_regen': +1 EXP for Guild Hero, resulting total: Level 15 (1/110 EXP)
+[Progression] +1 EXP for 'energy_regen' (Guild Hero). Current: Level 15 (1/110 EXP)
+[Progression] Recorded tx 'energy_regen': +1 EXP for Guild Hero, resulting total: Level 15 (1/110 EXP)
+[Progression] +1 EXP for 'mana_regen' (Guild Hero). Current: Level 15 (1/110 EXP)
+[Progression] Recorded tx 'mana_regen': +1 EXP for Guild Hero, resulting total: Level 15 (1/110 EXP)
+[Progression] +1 EXP for 'health_regen' (Guild Hero). Current: Level 15 (2/110 EXP)
+[Progression] Recorded tx 'health_regen': +1 EXP for Guild Hero, resulting total: Level 15 (2/110 EXP)
+[Progression] +1 EXP for 'energy_regen' (Guild Hero). Current: Level 15 (2/110 EXP)
+[Progression] Recorded tx 'energy_regen': +1 EXP for Guild Hero, resulting total: Level 15 (2/110 EXP)
+[Progression] +1 EXP for 'mana_regen' (Guild Hero). Current: Level 15 (2/110 EXP)
+[Progression] Recorded tx 'mana_regen': +1 EXP for Guild Hero, resulting total: Level 15 (2/110 EXP)
+Health Regen (Lv 15)        | 0.5 HP/proc | 1.0 HP/proc   | 2.0x    | Before: 0 / 1
+[Progression] +1 EXP for 'health_regen' (Guild Hero). Current: Level 15 (3/110 EXP)
+[Progression] Recorded tx 'health_regen': +1 EXP for Guild Hero, resulting total: Level 15 (3/110 EXP)
+[Progression] +1 EXP for 'energy_regen' (Guild Hero). Current: Level 15 (3/110 EXP)
+[Progression] Recorded tx 'energy_regen': +1 EXP for Guild Hero, resulting total: Level 15 (3/110 EXP)
+[Progression] +1 EXP for 'health_regen' (Guild Hero). Current: Level 15 (4/110 EXP)
+[Progression] Recorded tx 'health_regen': +1 EXP for Guild Hero, resulting total: Level 15 (4/110 EXP)
+[Progression] +1 EXP for 'energy_regen' (Guild Hero). Current: Level 15 (4/110 EXP)
+[Progression] Recorded tx 'energy_regen': +1 EXP for Guild Hero, resulting total: Level 15 (4/110 EXP)
+Energy Regen (Lv 15)        | 2.0 EN/proc | 4.0 EN/proc   | 2.0x    | Before: 0 / 4
+[Progression] +1 EXP for 'health_regen' (Guild Hero). Current: Level 15 (5/110 EXP)
+[Progression] Recorded tx 'health_regen': +1 EXP for Guild Hero, resulting total: Level 15 (5/110 EXP)
+[Progression] +1 EXP for 'energy_regen' (Guild Hero). Current: Level 15 (5/110 EXP)
+[Progression] Recorded tx 'energy_regen': +1 EXP for Guild Hero, resulting total: Level 15 (5/110 EXP)
+[Progression] +1 EXP for 'mana_regen' (Guild Hero). Current: Level 15 (3/110 EXP)
+[Progression] Recorded tx 'mana_regen': +1 EXP for Guild Hero, resulting total: Level 15 (3/110 EXP)
+[Progression] +1 EXP for 'health_regen' (Guild Hero). Current: Level 15 (6/110 EXP)
+[Progression] Recorded tx 'health_regen': +1 EXP for Guild Hero, resulting total: Level 15 (6/110 EXP)
+[Progression] +1 EXP for 'energy_regen' (Guild Hero). Current: Level 15 (6/110 EXP)
+[Progression] Recorded tx 'energy_regen': +1 EXP for Guild Hero, resulting total: Level 15 (6/110 EXP)
+[Progression] +1 EXP for 'mana_regen' (Guild Hero). Current: Level 15 (4/110 EXP)
+[Progression] Recorded tx 'mana_regen': +1 EXP for Guild Hero, resulting total: Level 15 (4/110 EXP)
+[Progression] +3700 EXP for 'health_regen' (Guild Hero). Current: Level 32 (116/178 EXP)
+[Progression] Recorded tx 'health_regen': +3700 EXP for Guild Hero, resulting total: Level 32 (116/178 EXP)
+[Progression] LEVEL UP! 'health_regen' is now Level 32! (Gained 32 level(s))
+[Progression] ✨ SKILL DISCOVERED: 'health_regen' reached Level 32 by Guild Hero! ✨
+[Progression] +3700 EXP for 'energy_regen' (Guild Hero). Current: Level 32 (116/178 EXP)
+[Progression] Recorded tx 'energy_regen': +3700 EXP for Guild Hero, resulting total: Level 32 (116/178 EXP)
+[Progression] LEVEL UP! 'energy_regen' is now Level 32! (Gained 32 level(s))
+[Progression] ✨ SKILL DISCOVERED: 'energy_regen' reached Level 32 by Guild Hero! ✨
+[Progression] +3700 EXP for 'mana_regen' (Guild Hero). Current: Level 32 (116/178 EXP)
+[Progression] Recorded tx 'mana_regen': +3700 EXP for Guild Hero, resulting total: Level 32 (116/178 EXP)
+[Progression] LEVEL UP! 'mana_regen' is now Level 32! (Gained 32 level(s))
+[Progression] ✨ SKILL DISCOVERED: 'mana_regen' reached Level 32 by Guild Hero! ✨
+[Progression] +1 EXP for 'health_regen' (Guild Hero). Current: Level 45 (1/230 EXP)
+[Progression] Recorded tx 'health_regen': +1 EXP for Guild Hero, resulting total: Level 45 (1/230 EXP)
+[Progression] +1 EXP for 'energy_regen' (Guild Hero). Current: Level 45 (1/230 EXP)
+[Progression] Recorded tx 'energy_regen': +1 EXP for Guild Hero, resulting total: Level 45 (1/230 EXP)
+[Progression] +1 EXP for 'mana_regen' (Guild Hero). Current: Level 45 (1/230 EXP)
+[Progression] Recorded tx 'mana_regen': +1 EXP for Guild Hero, resulting total: Level 45 (1/230 EXP)
+[Progression] +1 EXP for 'health_regen' (Guild Hero). Current: Level 45 (2/230 EXP)
+[Progression] Recorded tx 'health_regen': +1 EXP for Guild Hero, resulting total: Level 45 (2/230 EXP)
+[Progression] +1 EXP for 'energy_regen' (Guild Hero). Current: Level 45 (2/230 EXP)
+[Progression] Recorded tx 'energy_regen': +1 EXP for Guild Hero, resulting total: Level 45 (2/230 EXP)
+[Progression] +1 EXP for 'mana_regen' (Guild Hero). Current: Level 45 (2/230 EXP)
+[Progression] Recorded tx 'mana_regen': +1 EXP for Guild Hero, resulting total: Level 45 (2/230 EXP)
+Health Regen (Lv 45)        | 1.0 HP/proc | 2.0 HP/proc   | 2.0x    | Before: 1 / 1
+[Progression] +1 EXP for 'health_regen' (Guild Hero). Current: Level 45 (3/230 EXP)
+[Progression] Recorded tx 'health_regen': +1 EXP for Guild Hero, resulting total: Level 45 (3/230 EXP)
+[Progression] +1 EXP for 'energy_regen' (Guild Hero). Current: Level 45 (3/230 EXP)
+[Progression] Recorded tx 'energy_regen': +1 EXP for Guild Hero, resulting total: Level 45 (3/230 EXP)
+[Progression] +1 EXP for 'health_regen' (Guild Hero). Current: Level 45 (4/230 EXP)
+[Progression] Recorded tx 'health_regen': +1 EXP for Guild Hero, resulting total: Level 45 (4/230 EXP)
+[Progression] +1 EXP for 'energy_regen' (Guild Hero). Current: Level 45 (4/230 EXP)
+[Progression] Recorded tx 'energy_regen': +1 EXP for Guild Hero, resulting total: Level 45 (4/230 EXP)
+Energy Regen (Lv 45)        | 5.0 EN/proc | 10.0 EN/proc  | 2.0x    | Before: 5 / 5
+[Progression] +1 EXP for 'health_regen' (Guild Hero). Current: Level 45 (5/230 EXP)
+[Progression] Recorded tx 'health_regen': +1 EXP for Guild Hero, resulting total: Level 45 (5/230 EXP)
+[Progression] +1 EXP for 'energy_regen' (Guild Hero). Current: Level 45 (5/230 EXP)
+[Progression] Recorded tx 'energy_regen': +1 EXP for Guild Hero, resulting total: Level 45 (5/230 EXP)
+[Progression] +1 EXP for 'mana_regen' (Guild Hero). Current: Level 45 (3/230 EXP)
+[Progression] Recorded tx 'mana_regen': +1 EXP for Guild Hero, resulting total: Level 45 (3/230 EXP)
+[Progression] +1 EXP for 'health_regen' (Guild Hero). Current: Level 45 (6/230 EXP)
+[Progression] Recorded tx 'health_regen': +1 EXP for Guild Hero, resulting total: Level 45 (6/230 EXP)
+[Progression] +1 EXP for 'energy_regen' (Guild Hero). Current: Level 45 (6/230 EXP)
+[Progression] Recorded tx 'energy_regen': +1 EXP for Guild Hero, resulting total: Level 45 (6/230 EXP)
+[Progression] +1 EXP for 'mana_regen' (Guild Hero). Current: Level 45 (4/230 EXP)
+[Progression] Recorded tx 'mana_regen': +1 EXP for Guild Hero, resulting total: Level 45 (4/230 EXP)
+[Progression] +6100 EXP for 'health_regen' (Guild Hero). Current: Level 44 (116/226 EXP)
+[Progression] Recorded tx 'health_regen': +6100 EXP for Guild Hero, resulting total: Level 44 (116/226 EXP)
+[Progression] LEVEL UP! 'health_regen' is now Level 44! (Gained 44 level(s))
+[Progression] ✨ SKILL DISCOVERED: 'health_regen' reached Level 44 by Guild Hero! ✨
+[Progression] +6100 EXP for 'energy_regen' (Guild Hero). Current: Level 44 (116/226 EXP)
+[Progression] Recorded tx 'energy_regen': +6100 EXP for Guild Hero, resulting total: Level 44 (116/226 EXP)
+[Progression] LEVEL UP! 'energy_regen' is now Level 44! (Gained 44 level(s))
+[Progression] ✨ SKILL DISCOVERED: 'energy_regen' reached Level 44 by Guild Hero! ✨
+[Progression] +6100 EXP for 'mana_regen' (Guild Hero). Current: Level 44 (116/226 EXP)
+[Progression] Recorded tx 'mana_regen': +6100 EXP for Guild Hero, resulting total: Level 44 (116/226 EXP)
+[Progression] LEVEL UP! 'mana_regen' is now Level 44! (Gained 44 level(s))
+[Progression] ✨ SKILL DISCOVERED: 'mana_regen' reached Level 44 by Guild Hero! ✨
+[Progression] +1 EXP for 'health_regen' (Guild Hero). Current: Level 75 (1/350 EXP)
+[Progression] Recorded tx 'health_regen': +1 EXP for Guild Hero, resulting total: Level 75 (1/350 EXP)
+[Progression] +1 EXP for 'energy_regen' (Guild Hero). Current: Level 75 (1/350 EXP)
+[Progression] Recorded tx 'energy_regen': +1 EXP for Guild Hero, resulting total: Level 75 (1/350 EXP)
+[Progression] +1 EXP for 'mana_regen' (Guild Hero). Current: Level 75 (1/350 EXP)
+[Progression] Recorded tx 'mana_regen': +1 EXP for Guild Hero, resulting total: Level 75 (1/350 EXP)
+[Progression] +1 EXP for 'health_regen' (Guild Hero). Current: Level 75 (2/350 EXP)
+[Progression] Recorded tx 'health_regen': +1 EXP for Guild Hero, resulting total: Level 75 (2/350 EXP)
+[Progression] +1 EXP for 'energy_regen' (Guild Hero). Current: Level 75 (2/350 EXP)
+[Progression] Recorded tx 'energy_regen': +1 EXP for Guild Hero, resulting total: Level 75 (2/350 EXP)
+[Progression] +1 EXP for 'mana_regen' (Guild Hero). Current: Level 75 (2/350 EXP)
+[Progression] Recorded tx 'mana_regen': +1 EXP for Guild Hero, resulting total: Level 75 (2/350 EXP)
+Health Regen (Lv 75)        | 2.0 HP/proc | 4.0 HP/proc   | 2.0x    | Before: 2 / 2
+[Progression] +1 EXP for 'health_regen' (Guild Hero). Current: Level 75 (3/350 EXP)
+[Progression] Recorded tx 'health_regen': +1 EXP for Guild Hero, resulting total: Level 75 (3/350 EXP)
+[Progression] +1 EXP for 'energy_regen' (Guild Hero). Current: Level 75 (3/350 EXP)
+[Progression] Recorded tx 'energy_regen': +1 EXP for Guild Hero, resulting total: Level 75 (3/350 EXP)
+[Progression] +1 EXP for 'health_regen' (Guild Hero). Current: Level 75 (4/350 EXP)
+[Progression] Recorded tx 'health_regen': +1 EXP for Guild Hero, resulting total: Level 75 (4/350 EXP)
+[Progression] +1 EXP for 'energy_regen' (Guild Hero). Current: Level 75 (4/350 EXP)
+[Progression] Recorded tx 'energy_regen': +1 EXP for Guild Hero, resulting total: Level 75 (4/350 EXP)
+Energy Regen (Lv 75)        | 8.0 EN/proc | 16.0 EN/proc  | 2.0x    | Before: 8 / 8
+[Progression] +1 EXP for 'health_regen' (Guild Hero). Current: Level 75 (5/350 EXP)
+[Progression] Recorded tx 'health_regen': +1 EXP for Guild Hero, resulting total: Level 75 (5/350 EXP)
+[Progression] +1 EXP for 'energy_regen' (Guild Hero). Current: Level 75 (5/350 EXP)
+[Progression] Recorded tx 'energy_regen': +1 EXP for Guild Hero, resulting total: Level 75 (5/350 EXP)
+[Progression] +1 EXP for 'mana_regen' (Guild Hero). Current: Level 75 (3/350 EXP)
+[Progression] Recorded tx 'mana_regen': +1 EXP for Guild Hero, resulting total: Level 75 (3/350 EXP)
+[Progression] +1 EXP for 'health_regen' (Guild Hero). Current: Level 75 (6/350 EXP)
+[Progression] Recorded tx 'health_regen': +1 EXP for Guild Hero, resulting total: Level 75 (6/350 EXP)
+[Progression] +1 EXP for 'energy_regen' (Guild Hero). Current: Level 75 (6/350 EXP)
+[Progression] Recorded tx 'energy_regen': +1 EXP for Guild Hero, resulting total: Level 75 (6/350 EXP)
+[Progression] +1 EXP for 'mana_regen' (Guild Hero). Current: Level 75 (4/350 EXP)
+[Progression] Recorded tx 'mana_regen': +1 EXP for Guild Hero, resulting total: Level 75 (4/350 EXP)
+[Progression] +7700 EXP for 'health_regen' (Guild Hero). Current: Level 51 (50/254 EXP)
+[Progression] Recorded tx 'health_regen': +7700 EXP for Guild Hero, resulting total: Level 51 (50/254 EXP)
+[Progression] LEVEL UP! 'health_regen' is now Level 51! (Gained 51 level(s))
+[Progression] ✨ SKILL DISCOVERED: 'health_regen' reached Level 51 by Guild Hero! ✨
+[Progression] +7700 EXP for 'energy_regen' (Guild Hero). Current: Level 51 (50/254 EXP)
+[Progression] Recorded tx 'energy_regen': +7700 EXP for Guild Hero, resulting total: Level 51 (50/254 EXP)
+[Progression] LEVEL UP! 'energy_regen' is now Level 51! (Gained 51 level(s))
+[Progression] ✨ SKILL DISCOVERED: 'energy_regen' reached Level 51 by Guild Hero! ✨
+[Progression] +7700 EXP for 'mana_regen' (Guild Hero). Current: Level 51 (50/254 EXP)
+[Progression] Recorded tx 'mana_regen': +7700 EXP for Guild Hero, resulting total: Level 51 (50/254 EXP)
+[Progression] LEVEL UP! 'mana_regen' is now Level 51! (Gained 51 level(s))
+[Progression] ✨ SKILL DISCOVERED: 'mana_regen' reached Level 51 by Guild Hero! ✨
+[Progression] +1 EXP for 'health_regen' (Guild Hero). Current: Level 95 (1/430 EXP)
+[Progression] Recorded tx 'health_regen': +1 EXP for Guild Hero, resulting total: Level 95 (1/430 EXP)
+[Progression] +1 EXP for 'energy_regen' (Guild Hero). Current: Level 95 (1/430 EXP)
+[Progression] Recorded tx 'energy_regen': +1 EXP for Guild Hero, resulting total: Level 95 (1/430 EXP)
+[Progression] +1 EXP for 'mana_regen' (Guild Hero). Current: Level 95 (1/430 EXP)
+[Progression] Recorded tx 'mana_regen': +1 EXP for Guild Hero, resulting total: Level 95 (1/430 EXP)
+[Progression] +1 EXP for 'health_regen' (Guild Hero). Current: Level 95 (2/430 EXP)
+[Progression] Recorded tx 'health_regen': +1 EXP for Guild Hero, resulting total: Level 95 (2/430 EXP)
+[Progression] +1 EXP for 'energy_regen' (Guild Hero). Current: Level 95 (2/430 EXP)
+[Progression] Recorded tx 'energy_regen': +1 EXP for Guild Hero, resulting total: Level 95 (2/430 EXP)
+[Progression] +1 EXP for 'mana_regen' (Guild Hero). Current: Level 95 (2/430 EXP)
+[Progression] Recorded tx 'mana_regen': +1 EXP for Guild Hero, resulting total: Level 95 (2/430 EXP)
+Health Regen (Lv 95)        | 3.0 HP/proc | 6.0 HP/proc   | 2.0x    | Before: 3 / 3
+[Progression] +1 EXP for 'health_regen' (Guild Hero). Current: Level 95 (3/430 EXP)
+[Progression] Recorded tx 'health_regen': +1 EXP for Guild Hero, resulting total: Level 95 (3/430 EXP)
+[Progression] +1 EXP for 'energy_regen' (Guild Hero). Current: Level 95 (3/430 EXP)
+[Progression] Recorded tx 'energy_regen': +1 EXP for Guild Hero, resulting total: Level 95 (3/430 EXP)
+[Progression] +1 EXP for 'health_regen' (Guild Hero). Current: Level 95 (4/430 EXP)
+[Progression] Recorded tx 'health_regen': +1 EXP for Guild Hero, resulting total: Level 95 (4/430 EXP)
+[Progression] +1 EXP for 'energy_regen' (Guild Hero). Current: Level 95 (4/430 EXP)
+[Progression] Recorded tx 'energy_regen': +1 EXP for Guild Hero, resulting total: Level 95 (4/430 EXP)
+Energy Regen (Lv 95)        | 12.0 EN/proc| 24.0 EN/proc  | 2.0x    | Before: 12 / 12
+[Progression] +1 EXP for 'health_regen' (Guild Hero). Current: Level 95 (5/430 EXP)
+[Progression] Recorded tx 'health_regen': +1 EXP for Guild Hero, resulting total: Level 95 (5/430 EXP)
+[Progression] +1 EXP for 'energy_regen' (Guild Hero). Current: Level 95 (5/430 EXP)
+[Progression] Recorded tx 'energy_regen': +1 EXP for Guild Hero, resulting total: Level 95 (5/430 EXP)
+[Progression] +1 EXP for 'mana_regen' (Guild Hero). Current: Level 95 (3/430 EXP)
+[Progression] Recorded tx 'mana_regen': +1 EXP for Guild Hero, resulting total: Level 95 (3/430 EXP)
+[Progression] +1 EXP for 'health_regen' (Guild Hero). Current: Level 95 (6/430 EXP)
+[Progression] Recorded tx 'health_regen': +1 EXP for Guild Hero, resulting total: Level 95 (6/430 EXP)
+[Progression] +1 EXP for 'energy_regen' (Guild Hero). Current: Level 95 (6/430 EXP)
+[Progression] Recorded tx 'energy_regen': +1 EXP for Guild Hero, resulting total: Level 95 (6/430 EXP)
+[Progression] +1 EXP for 'mana_regen' (Guild Hero). Current: Level 95 (4/430 EXP)
+[Progression] Recorded tx 'mana_regen': +1 EXP for Guild Hero, resulting total: Level 95 (4/430 EXP)
+Well Fed (Vegetable)        | 0.50/s      | 1.00/s        | 2.0x    | 1.0 / 1.0 HP/s
+Well Fed (Ration)           | 1.00/s      | 2.00/s        | 2.0x    | 2.0 / 2.0 HP/s
+Well Fed (Stew Common)      | 1.00/s      | 2.00/s        | 2.0x    | 2.0 / 2.0 HP/s
+Well Fed (Stew Good)        | 1.25/s      | 2.50/s        | 2.0x    | 2.5 / 2.5 HP/s
+Well Fed (Stew Excellent)   | 1.50/s      | 3.00/s        | 2.0x    | 3.0 / 3.0 HP/s
+Well Fed (Stew Perfect)     | 2.00/s      | 4.00/s        | 2.0x    | 4.0 / 4.0 HP/s
+Well Fed (Beast Common)     | 1.50/s      | 3.00/s        | 2.0x    | 3.0 / 3.0 HP/s
+Well Fed (Beast Good)       | 1.75/s      | 3.50/s        | 2.0x    | 3.5 / 3.5 HP/s
+Well Fed (Beast Excellent)  | 2.00/s      | 4.00/s        | 2.0x    | 4.0 / 4.0 HP/s
+Well Fed (Beast Perfect)    | 2.50/s      | 5.00/s        | 2.0x    | 5.0 / 5.0 HP/s
+✓ PASS: All passive recovery sources maintain exactly 2.0 ratio out-of-combat.
+
+--- 2. CASTER DRY RUN TEST (0 POTIONS, IN COMBAT) ---
+Starting caster dry run: 100 base EN, 22 EN cost per cast, 1300ms interval, inCombat base regen 0.5 EN/s
+  [Cast #1] at 0.0s -> Energy remaining: 78.00 EN
+  [Cast #2] at 1.3s -> Energy remaining: 56.65 EN
+  [Cast #3] at 2.6s -> Energy remaining: 35.30 EN
+  [Cast #4] at 3.9s -> Energy remaining: 13.95 EN
+  [DRY] At 5.2s -> Energy is 14.60 EN (< 22). Caster cannot cast!
+  Result: 4 casts to dry, took 5.2 seconds to run dry.
+✓ PASS: Caster dry run target verified: Exactly 4 casts (within 4-5 target).
+
+--- 3. RECOVERY TIMES OUT OF COMBAT (REPORT ONLY) ---
+Base Stat Character (Lv 0 Hidden Skills, No Buffs/Potions):
+  0 → 100 Energy: 100.0s (~1.67 min)
+  0 → 25 Critical HP: 50.0s (~0.83 min)
+  0 → 50 Main HP: 100.0s (~1.67 min)
+  Total HP (Critical + Main = 75 HP): 150.0s (~2.50 min)
+
+Character with Lv 15 Hidden Skills:
+  Average Out-of-Combat Energy Rate: 1.333 EN/s -> 0 → 100 Energy in 75.0s
+  Average Out-of-Combat HP Rate: 0.583 HP/s -> 0 → 25 Critical HP in 42.9s, 0 → 50 Main HP in 85.7s
+
+Character with Lv 45 Hidden Skills:
+  Average Out-of-Combat Energy Rate: 2.833 EN/s -> 0 → 100 Energy in 35.3s
+  Average Out-of-Combat HP Rate: 0.867 HP/s -> 0 → 25 Critical HP in 28.8s, 0 → 50 Main HP in 57.7s
+✓ PASS: Recovery times reported accurately without retuning.
+
+--- 4. POTION INTERACTION TEST ---
+[Progression] +1 EXP for 'mana_regen' (Guild Hero). Current: Level 15 (1/110 EXP)
+[Progression] Recorded tx 'mana_regen': +1 EXP for Guild Hero, resulting total: Level 15 (1/110 EXP)
+[Progression] +2 EXP for 'mana_regen' (Guild Hero). Current: Level 15 (3/110 EXP)
+[Progression] Recorded tx 'mana_regen': +2 EXP for Guild Hero, resulting total: Level 15 (3/110 EXP)
+✓ PASS: Potion interaction verified: 2 EN in combat without buff, 4 EN in combat with potion buff.
+
+--- 5. FRACTIONAL ACCUMULATOR 60-SECOND ACCURACY TEST ---
+  Accumulator healed 15 HP over 60s at 0.25 HP/s
+  Accumulator healed 30 total HP (25 Crit + 5 Main) over 60s at 0.5 HP/s out-of-combat
+✓ PASS: Fractional accumulator maintains exact rate over 60 seconds within ±1 HP.
+
+--- 6. DOWNED MEMBERS DO NOT REGEN ---
+✓ PASS: Downed members do not regenerate HP or Energy.
+
+--- 7. HIDDEN REGEN SKILLS EXP TRAINING RATE COMPARISON ---
+Skill: Health Regen (Lv 1, proc chance = 11%, 3s tick = 20 rolls/min):
+  Before: In-combat = 0 EXP/min (gated), Out-of-combat = ~2.2 EXP/min
+  After:  In-combat = ~2.2 EXP/min (unlocked), Out-of-combat = ~2.2 EXP/min (unchanged)
+Skill: Energy Regen (Lv 1, proc chance = 11%, 3s tick = 20 rolls/min):
+  Before: In-combat = 0 EXP/min (gated), Out-of-combat = ~2.2 EXP/min
+  After:  In-combat = ~2.2 EXP/min (unlocked), Out-of-combat = ~2.2 EXP/min (unchanged)
+✓ Reported EXP training rates before and after.
+
+=================================================================================
+🎉 ALL REGEN REFINEMENT AUDIT CHECKS PASSED WITH 100% COMPLIANCE! 🎉
+=================================================================================

@@ -387,6 +387,69 @@ async function runTests() {
   assert.ok(gs.isCookingRecipeDiscovered('beast_stew'), 'beast_stew preserved');
   console.log('✔ Test 13 passed: Save migration cookingV2 cleanly converts legacy items.');
 
+  // ==========================================
+  // Test 14: Dish Tier Preservation (Blocking 2)
+  // ==========================================
+  console.log('\n--- Test 14: Dish Tier Preservation & Executive Chef vs Eater ---');
+  const jerkyRecipe = dl.getCookingRecipe('salted_jerky')!;
+  assert.ok(jerkyRecipe, 'salted_jerky recipe exists');
+
+  // 1. Caldera meat tier-3 at Common gives x1.4 multiplier
+  const nonChefDish = CookingSystem.computeDish(jerkyRecipe, 'common', ['caldera_meat', 'salt']);
+  assert.equal(nonChefDish.tier, 3, 'Caldera meat (tier 3) cooked by non-chef yields tier 3 dish');
+  assert.equal(nonChefDish.buffs.hpRegenPerSec, 1.4, 'Tier 3 dish gives H 1.4 (base 1.0 * 1.4)');
+
+  // 2. Executive Chef cooks tier-3 -> tier-4 (x1.6)
+  const execChefPlayer = new Player(mockScene, 0, 0, 'ChefHero');
+  execChefPlayer.progression.setClassLevel('executive_chef', 1);
+  assert.ok(execChefPlayer.progression.isClassUnlocked('executive_chef'));
+  const chefDish = CookingSystem.computeDish(jerkyRecipe, 'common', ['caldera_meat', 'salt'], execChefPlayer);
+  assert.equal(chefDish.tier, 4, 'Executive Chef cooks tier 3 ingredient to tier 4 dish');
+  assert.equal(chefDish.buffs.hpRegenPerSec, 1.6, 'Tier 4 dish gives H 1.6 (base 1.0 * 1.6)');
+
+  // Add the tier-4 food item to a non-chef player bag
+  const nonChefEater = new Player(mockScene, 0, 0, 'EaterHero');
+  nonChefEater.addFoodItem('salted_jerky', 1, 'common', undefined, chefDish.tier);
+  const eaterItems = nonChefEater.getFoodItems();
+  assert.equal(eaterItems[0].tier, 4, 'Stored tier on FoodItemInstance is 4');
+
+  // Non-chef eats tier-4 dish -> gets tier-4 buffs (x1.6)
+  nonChefEater.hunger = 50;
+  nonChefEater.eatFood('salted_jerky');
+  assert.equal(nonChefEater.wellFedHpPerSec, 1.6, 'Non-chef eater gets tier-4 buff (1.6 HP/s) from stored tier 4');
+
+  // 3. Non-chef cooks tier-3 -> Executive Chef eats at tier-3 (x1.4, unchanged)
+  execChefPlayer.hunger = 50;
+  execChefPlayer.addFoodItem('salted_jerky', 1, 'common', undefined, nonChefDish.tier);
+  execChefPlayer.eatFood('salted_jerky');
+  assert.equal(execChefPlayer.wellFedHpPerSec, 1.4, 'Executive Chef eater gets tier-3 buff (1.4 HP/s), class perks never re-applied on eating');
+
+  // 4. Old food instances with no tier read as tier 1 (x1.0)
+  const legacyEater = new Player(mockScene, 0, 0, 'LegacyHero');
+  legacyEater.addFoodInstance({
+    id: 'salted_jerky',
+    acquiredDay: 1,
+    instanceId: 'legacy_food_no_tier',
+    quality: 'common'
+    // no tier property
+  });
+  legacyEater.hunger = 50;
+  legacyEater.eatFood('salted_jerky');
+  assert.equal(legacyEater.wellFedHpPerSec, 1.0, 'Old food instances with no tier read as tier 1 (1.0 HP/s)');
+
+  // 5. Stored tier survives save/load
+  gs.addFoodItem('salted_jerky', 1, 'common', 3);
+  const snapWithTier = gs.getSnapshot()!;
+  assert.ok(snapWithTier, 'Snapshot exists');
+  const foundInSnap = snapWithTier.foodItems.find((f: any) => f.id === 'salted_jerky' && f.tier === 3);
+  assert.ok(foundInSnap, 'Stored tier 3 persisted into save snapshot');
+
+  gs.restoreFromLoadedSnapshot(snapWithTier);
+  const restoredItems = gs.getFoodItems();
+  const restoredJerky = restoredItems.find(f => f.id === 'salted_jerky');
+  assert.equal(restoredJerky?.tier, 3, 'Stored tier 3 survives save/load restoration');
+  console.log('✔ Test 14 passed: Dish tier locked at cook time, preserved on eating, and survives save/load.');
+
   console.log('\nALL FOOD & COOKING TESTS PASSED SUCCESSFULLY!');
 }
 

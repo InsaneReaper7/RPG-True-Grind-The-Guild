@@ -3438,40 +3438,20 @@ export class MainScene extends Phaser.Scene {
 
 
     // Regional vegetable node harvest tables
-    if (node.nodeDef.id === 'vegetable_node' || node.nodeDef.resourceId === 'carrot' || node.nodeDef.resourceId === 'vegetable') {
+    if (node.nodeDef.id === 'vegetable_node' || node.nodeDef.resourceId === 'carrot') {
       const currentFloor = GameState.getInstance().getDungeonFloorCount() || 1;
       const region = DataLoader.getInstance().getRegionForFloor(currentFloor);
-      let vegTable = [
+      const dataLoader = DataLoader.getInstance();
+      const nodeDef = node.nodeDef.regionTables ? node.nodeDef : dataLoader.getGatheringNode('vegetable_node');
+      const regionTables = nodeDef?.regionTables;
+      const vegTable = regionTables?.[region.id] || regionTables?.['crypts'] || [
         { item: 'carrot', weight: 30 },
         { item: 'potato', weight: 25 },
         { item: 'onion', weight: 25 },
         { item: 'garlic', weight: 20 }
       ];
-      if (region.id === 'abyss') {
-        vegTable = [
-          { item: 'cave_mushroom', weight: 40 },
-          { item: 'turnip', weight: 30 },
-          { item: 'carrot', weight: 10 },
-          { item: 'potato', weight: 10 },
-          { item: 'garlic', weight: 10 }
-        ];
-      } else if (region.id === 'caldera') {
-        vegTable = [
-          { item: 'fire_pepper', weight: 40 },
-          { item: 'sweet_potato', weight: 30 },
-          { item: 'cave_mushroom', weight: 15 },
-          { item: 'turnip', weight: 15 }
-        ];
-      } else if (region.id === 'glacial') {
-        vegTable = [
-          { item: 'frost_cabbage', weight: 40 },
-          { item: 'snow_pea', weight: 30 },
-          { item: 'fire_pepper', weight: 15 },
-          { item: 'sweet_potato', weight: 15 }
-        ];
-      }
 
-      const totalVegWeight = vegTable.reduce((sum, e) => sum + e.weight, 0);
+      const totalVegWeight = vegTable.reduce((sum: number, e: { weight: number }) => sum + e.weight, 0);
       const rollVal = (lootRollFn ? lootRollFn() : Math.random()) * totalVegWeight;
       let acc = 0;
       let selectedVeg = vegTable[0].item;

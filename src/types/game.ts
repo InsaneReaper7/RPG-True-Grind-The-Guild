@@ -1006,6 +1006,7 @@ export interface FoodBuffDef {
 export interface FoodDef {
   id: string;
   name: string;
+  icon?: string;
   hungerRestored: number;
   weight?: number;
   spoilageDays: number;
@@ -1056,6 +1057,8 @@ export interface RecruitsData {
 
 export interface FoodItemInstance {
   id: string;
+  name?: string;
+  tier?: number;
   acquiredDay: number;
   instanceId: string;
   quality?: FoodQuality;
@@ -1239,6 +1242,7 @@ export interface GatheringNodeDef {
   requiredToolItemId?: string;
   bonusLootPerk?: string;
   bonusClassExp?: { classId: string; amount: number }[];
+  regionTables?: Record<string, { item: string; weight: number }[]>;
 }
 
 export interface GatheringNodesConfig {

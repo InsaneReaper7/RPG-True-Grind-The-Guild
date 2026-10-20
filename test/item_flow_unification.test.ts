@@ -543,9 +543,9 @@ async function runItemFlowUnificationTests() {
   assert.strictEqual(hero.getItemCount('herb_stew'), 1);
 
   // Advance day by 5 (Day 1 -> Day 6, elapsed = 5 >= spoilageDays 5): both bag and stockpile spoil
-  (gameState as any).currentGameDay += 7;
+  (gameState as any).currentGameDay += 5;
   spoiled = gameState.checkFoodSpoilage(party);
-  assert.strictEqual(spoiled, 2, 'Both bag and stockpile herb_stew spoiled when elapsed >= 7');
+  assert.strictEqual(spoiled, 2, 'Both bag and stockpile herb_stew spoiled when elapsed >= 5');
   assert.strictEqual(hero.getItemCount('herb_stew'), 0, 'Hero bag food removed after spoilage');
   assert.strictEqual(gameState.getItemCount('herb_stew'), 0, 'Stockpile food removed after spoilage');
 

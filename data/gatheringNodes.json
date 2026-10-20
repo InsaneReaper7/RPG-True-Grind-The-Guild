@@ -139,7 +139,85 @@
       "label": "Wild Vegetable",
       "depletedLabel": "Harvested",
       "color": "#22c55e",
-      "actionVerb": "Gardening"
+      "actionVerb": "Gardening",
+      "regionTables": {
+        "crypts": [
+          {
+            "item": "carrot",
+            "weight": 30
+          },
+          {
+            "item": "potato",
+            "weight": 25
+          },
+          {
+            "item": "onion",
+            "weight": 25
+          },
+          {
+            "item": "garlic",
+            "weight": 20
+          }
+        ],
+        "abyss": [
+          {
+            "item": "cave_mushroom",
+            "weight": 40
+          },
+          {
+            "item": "turnip",
+            "weight": 30
+          },
+          {
+            "item": "carrot",
+            "weight": 10
+          },
+          {
+            "item": "potato",
+            "weight": 10
+          },
+          {
+            "item": "garlic",
+            "weight": 10
+          }
+        ],
+        "caldera": [
+          {
+            "item": "fire_pepper",
+            "weight": 40
+          },
+          {
+            "item": "sweet_potato",
+            "weight": 30
+          },
+          {
+            "item": "cave_mushroom",
+            "weight": 15
+          },
+          {
+            "item": "turnip",
+            "weight": 15
+          }
+        ],
+        "glacial": [
+          {
+            "item": "frost_cabbage",
+            "weight": 40
+          },
+          {
+            "item": "snow_pea",
+            "weight": 30
+          },
+          {
+            "item": "fire_pepper",
+            "weight": 15
+          },
+          {
+            "item": "sweet_potato",
+            "weight": 15
+          }
+        ]
+      }
     },
     "fishing_spot": {
       "id": "fishing_spot",

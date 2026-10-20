@@ -198,35 +198,40 @@ export class CookingSystem {
   public static computeDish(
     recipe: CookingRecipeDef,
     quality: FoodQuality,
-    ingredients: string[],
+    ingredientsOrTier: string[] | number,
     cook?: Player
   ): ComputedDish {
     const dataLoader = DataLoader.getInstance();
     const isLostRecipe = recipe.rarity === 'epic' || recipe.rarity === 'legendary';
 
     // 1. Calculate Dish Tier
-    let highestNonSeasoningTier = 1;
-    for (const id of ingredients) {
-      const item = dataLoader.getItem(id);
-      if (!item) continue;
-      const tags = CookingSystem.getItemTags(id);
-      const isSeasoningOnly = tags.includes('seasoning') && !tags.includes('meat') && !tags.includes('fish') && !tags.includes('vegetable');
-      if (!isSeasoningOnly && item.ingredientTier) {
-        if (item.ingredientTier > highestNonSeasoningTier) {
-          highestNonSeasoningTier = item.ingredientTier;
+    let finalTier = 1;
+    if (typeof ingredientsOrTier === 'number') {
+      finalTier = Math.max(1, Math.min(4, ingredientsOrTier));
+    } else {
+      let highestNonSeasoningTier = 1;
+      for (const id of ingredientsOrTier) {
+        const item = dataLoader.getItem(id);
+        if (!item) continue;
+        const tags = CookingSystem.getItemTags(id);
+        const isSeasoningOnly = tags.includes('seasoning') && !tags.includes('meat') && !tags.includes('fish') && !tags.includes('vegetable');
+        if (!isSeasoningOnly && item.ingredientTier) {
+          if (item.ingredientTier > highestNonSeasoningTier) {
+            highestNonSeasoningTier = item.ingredientTier;
+          }
         }
       }
-    }
 
-    let finalTier = highestNonSeasoningTier;
-    if (!isLostRecipe && cook?.progression?.isClassUnlocked('executive_chef')) {
-      finalTier = Math.min(4, finalTier + 1);
+      finalTier = highestNonSeasoningTier;
+      if (!isLostRecipe && cook?.progression?.isClassUnlocked('executive_chef')) {
+        finalTier = Math.min(4, finalTier + 1);
+      }
     }
 
     const tierMult = CookingSystem.TIER_MULTIPLIER[finalTier] || 1.0;
     const qualityPotency = CookingSystem.QUALITY_POTENCY[quality] || 1.0;
 
-    const slotCount = Math.max(2, Math.min(5, (recipe.slots?.length || ingredients.length)));
+    const slotCount = Math.max(2, Math.min(5, (recipe.slots?.length || (Array.isArray(ingredientsOrTier) ? ingredientsOrTier.length : 2))));
     const base = CookingSystem.BASE_BUFFS_BY_SLOTS[slotCount] || CookingSystem.BASE_BUFFS_BY_SLOTS[2];
 
     let baseDuration = base.durationSec;
@@ -382,7 +387,7 @@ export class CookingSystem {
       const sigKey = CookingSystem.getTriedSignatureKey(itemIds);
       gameState.recordTriedCookingSignature(sigKey);
       cook.progression?.addProficiencyExp('cooking', 5);
-      cook.addFoodItem('burnt_mush', 1, 'common');
+      cook.addFoodItem('burnt_mush', 1, 'common', undefined, 1);
       return {
         success: true,
         count: 1,
@@ -414,7 +419,7 @@ export class CookingSystem {
       }
     }
 
-    cook.addFoodItem(dish.foodId, yieldCount, quality);
+    cook.addFoodItem(dish.foodId, yieldCount, quality, undefined, dish.tier);
 
     // EXP Grants:
     const expToAward = isNewDiscovery ? dish.expGranted + 20 : dish.expGranted;
@@ -524,5 +529,19 @@ export class CookingSystem {
       message: `✨ Lost Recipe Learned: ${recipe.name}! Added to your Recipe Journal.`,
       expAwarded: 0
     };
+  }
+
+  public static getDroppingEnemiesForLostRecipe(recipeId: string): string[] {
+    const dataLoader = DataLoader.getInstance();
+    const enemiesData = dataLoader.getEnemiesData();
+    if (!enemiesData?.enemies) return [];
+    const scrollId = recipeId.startsWith('lost_recipe_') ? recipeId : `lost_recipe_${recipeId}`;
+    const result: string[] = [];
+    for (const enemy of enemiesData.enemies) {
+      if (enemy.lostRecipeScrolls && enemy.lostRecipeScrolls.includes(scrollId)) {
+        result.push(enemy.name || enemy.id);
+      }
+    }
+    return result;
   }
 }

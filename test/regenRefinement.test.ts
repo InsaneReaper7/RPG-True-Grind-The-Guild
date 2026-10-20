@@ -64,6 +64,7 @@ import { DataLoader } from '../src/utils/DataLoader.ts';
 import { ProgressionSystem } from '../src/systems/ProgressionSystem.ts';
 import { HiddenSkillSystem } from '../src/systems/HiddenSkillSystem.ts';
 import { Pathfinder } from '../src/utils/Pathfinder.ts';
+import { CookingSystem } from '../src/systems/CookingSystem.ts';
 import type { WeaponDef, PlayerData } from '../src/types/game.ts';
 
 async function runRefinementAudit() {
@@ -200,6 +201,20 @@ async function runRefinementAudit() {
   const foodRaw = JSON.parse(fs.readFileSync('data/food.json', 'utf8'));
   const foodsMap = new Map<string, any>(foodRaw.foods.map((f: any) => [f.id, f]));
   assert.equal(foodsMap.get('ration').buff.hpRegenPerSec, 1.0);
+
+  const herbStewRecipe = dataLoader.getCookingRecipe('herb_stew')!;
+  assert.ok(herbStewRecipe, 'herb_stew recipe exists');
+  assert.equal(CookingSystem.computeDish(herbStewRecipe, 'common', ['crypt_meat', 'wild_herbs']).buffs.hpRegenPerSec, 1.0);
+  assert.equal(CookingSystem.computeDish(herbStewRecipe, 'good', ['crypt_meat', 'wild_herbs']).buffs.hpRegenPerSec, 1.25);
+  assert.equal(CookingSystem.computeDish(herbStewRecipe, 'excellent', ['crypt_meat', 'wild_herbs']).buffs.hpRegenPerSec, 1.5);
+  assert.equal(CookingSystem.computeDish(herbStewRecipe, 'perfect', ['crypt_meat', 'wild_herbs']).buffs.hpRegenPerSec, 2.0);
+
+  const beastStewRecipe = dataLoader.getCookingRecipe('beast_stew')!;
+  assert.ok(beastStewRecipe, 'beast_stew recipe exists');
+  assert.equal(CookingSystem.computeDish(beastStewRecipe, 'common', ['crypt_meat', 'wild_herbs', 'carrot']).buffs.hpRegenPerSec, 1.5);
+  assert.equal(CookingSystem.computeDish(beastStewRecipe, 'good', ['crypt_meat', 'wild_herbs', 'carrot']).buffs.hpRegenPerSec, 1.88);
+  assert.equal(CookingSystem.computeDish(beastStewRecipe, 'excellent', ['crypt_meat', 'wild_herbs', 'carrot']).buffs.hpRegenPerSec, 2.25);
+  assert.equal(CookingSystem.computeDish(beastStewRecipe, 'perfect', ['crypt_meat', 'wild_herbs', 'carrot']).buffs.hpRegenPerSec, 3.0);
 
   console.log('✓ PASS: Static data check confirmed: All sources store in-combat baseline with NO hardcoded out-of-combat values.\n');
 

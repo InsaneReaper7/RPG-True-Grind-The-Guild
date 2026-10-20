@@ -5,6 +5,7 @@ import { LevelingSystem } from '../src/systems/LevelingSystem.ts';
 import { DataLoader } from '../src/utils/DataLoader.ts';
 import { GameState } from '../src/systems/GameState.ts';
 import { HUD } from '../src/ui/HUD.ts';
+import { CookingSystem } from '../src/systems/CookingSystem.ts';
 import type { WeaponDef, EnemyDef, ClassesData, PlayerData, FoodQuality } from '../src/types/game.ts';
 
 // Setup mock fetch for node testing
@@ -144,14 +145,14 @@ async function runTests() {
   // ==========================================================================
   // Test 5a: Monster Meat dish hard ceiling (maxQuality = 'excellent')
   // Even with maxed Cooking level and a roll that would be Perfect, it CANNOT exceed Excellent
-  const monsterMeatQuality = HUD.calculateDishQuality(100, 'excellent', 0.001);
+  const monsterMeatQuality = CookingSystem.calculateDishQuality(100, 0, false, 0, 0.001);
   assert.equal(monsterMeatQuality, 'excellent', 'Monster meat dishes MUST hard-clamp to Excellent, never Perfect');
 
-  const monsterMeatCommon = HUD.calculateDishQuality(0, 'excellent', 0.99);
+  const monsterMeatCommon = CookingSystem.calculateDishQuality(0, 0, false, 0, 0.99);
   assert.equal(monsterMeatCommon, 'common', 'Roll of 0.99 must produce Common');
 
   // Test 5b: Wolf Meat dish can reach Perfect (maxQuality = 'perfect')
-  const wolfMeatPerfect = HUD.calculateDishQuality(100, 'perfect', 0.001);
+  const wolfMeatPerfect = CookingSystem.calculateDishQuality(100, 0, true, 0, 0.001);
   assert.equal(wolfMeatPerfect, 'perfect', 'Wolf meat dishes CAN reach Perfect');
 
   const beastStewRecipe = cookingRecipes.find((r) => r.id === 'beast_stew')!;

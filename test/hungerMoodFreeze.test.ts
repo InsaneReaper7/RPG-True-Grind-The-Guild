@@ -441,12 +441,12 @@ async function runTests() {
   assert.strictEqual(gameState.getItemCount('herb_stew'), 1, 'Stockpile has 1 stew before advance');
 
   // Advance day by 5 (from day 1 to day 6)
-  (gameState as any).currentGameDay += 7;
+  (gameState as any).currentGameDay += 5;
   const spoiled = gameState.checkFoodSpoilage([heroEating]);
-  assert.strictEqual(spoiled, 2, 'Both hero bag and stockpile stew spoiled after 7 days');
+  assert.strictEqual(spoiled, 2, 'Both hero bag and stockpile stew spoiled after 5 days');
 
-  assert.strictEqual(heroEating.getItemCount('herb_stew'), 0, 'Hero stew spoiled after exceeding 7-day shelf life');
-  assert.strictEqual(gameState.getItemCount('herb_stew'), 0, 'Stockpile stew spoiled after exceeding 7-day shelf life');
+  assert.strictEqual(heroEating.getItemCount('herb_stew'), 0, 'Hero stew spoiled after exceeding 5-day shelf life');
+  assert.strictEqual(gameState.getItemCount('herb_stew'), 0, 'Stockpile stew spoiled after exceeding 5-day shelf life');
   console.log('✓ Test 4B Passed: Food spoilage remains active and enforced while meters are frozen.\n');
 
   // ---------------------------------------------------------------------------
