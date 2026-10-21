@@ -240,11 +240,11 @@ async function runMilestoneThrowerTests() {
   );
   console.log(`  ✓ Verified Journeyman Alchemist in Crafting Mastery table at line 250: ${line250}`);
 
-  // Confirm Journeyman Alchemist is NOT an existing class in classes.json
+  // Confirm Journeyman Alchemist is an existing class in classes.json
   const rawClasses = dataLoader.getClassesData().classes;
   const journeymanAlchemist = rawClasses.find((c: any) => c.id === 'journeyman_alchemist' || c.name === 'Journeyman Alchemist');
-  assert.equal(journeymanAlchemist, undefined, 'Journeyman Alchemist must NOT exist in classes.json yet');
-  console.log('  ✓ Confirmed Journeyman Alchemist does not exist in classes.json (missing prerequisite).');
+  assert.ok(journeymanAlchemist, 'Journeyman Alchemist now exists in classes.json');
+  console.log('  ✓ Confirmed Journeyman Alchemist exists in classes.json.');
 
   // Verify deferred_features.md records the explicit deferral
   const defDocPath = path.resolve(rootDir, 'docs/deferred_features.md');

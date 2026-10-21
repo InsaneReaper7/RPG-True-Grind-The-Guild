@@ -72,3 +72,9 @@ Outputs:
   2. `SkillSystem.ts`: skill execution when `effect.scaling === 'spell'` (`attrMult * classSpellDamageMultiplier`).
 - **Exclusions**: Does not apply to heals, HoTs, shields, DoT ticks, reflect, or weapon-scaling damage.
 
+### 4. Crafting × Combat Hybrid Weapon Mappings
+- `battlesmith → mace`: mapped explicitly in `chooseWeaponId` matching the blacksmithing hammer theme (`hammerfall`), rather than taking the first `anyOf` physical weapon in data order (`katana`).
+- `runeblade → longsword_1h`: mapped explicitly in `chooseWeaponId` matching the class kit requirement (needs a longsword to use the kit, matching Spellsword default).
+- `alchemical_bomber → throwing_weapons`: resolved via the class's throwing weapons requirement.
+- `herbwarden → nature_staff`: resolved via the class's nature magic requirement.
+

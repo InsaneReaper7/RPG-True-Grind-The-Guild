@@ -30,6 +30,7 @@ export interface WeaponLevelBonus {
 export interface GearItemInstance {
   instanceId: string;
   baseItemId: string;
+  crafterId?: string;
   crafterName: string;
   bonusPercent: number;
   craftedAt?: number;
@@ -145,6 +146,7 @@ export interface ClassDef {
   passiveImbuement?: PassiveImbuementDef;
   primaryAttribute?: 'str' | 'dex' | 'int';
   spellDamageMultiplier?: number;
+  selfCraftedWeaponBonus?: number;
 }
 
 export interface ClassesData {
@@ -1405,4 +1407,15 @@ export interface CampConfig {
   };
   excludedRooms: string[];
   perks: CampPerksConfig;
+}
+
+export interface CraftingRanksData {
+  perkCap: number;
+  ranks: {
+    apprentice: { levelCap: number; perkCap: number };
+    journeyman: { unlockProficiency: number; unlockPrereqLevel: number; perkCap: number; refundUnitCount: number };
+    master: { unlockProficiency: number; unlockPrereqLevel: number; perkCap: number; maxCombinedGearBonus: number };
+    grandmaster: { unlockProficiency: number; unlockPrereqLevel: number; perkCap: number; exceptionalGearBonusPercent: number; exceptionalStackableYieldMultiplier: number };
+  };
+  professions: Record<string, { apprentice: string; journeyman: string; master: string; grandmaster: string }>;
 }

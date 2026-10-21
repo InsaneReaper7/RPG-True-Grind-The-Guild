@@ -1,0 +1,66 @@
+=== CRAFTING RANKS TEST SUITE ===
+
+1. Checking Expected-Table Guards for 15 Crafting Ranks...
+✓ PASS: All 15 crafting rank classes verified against expected table.
+
+2. Checking Unlock Gates for all 15 Ranks...
+[Progression] Class Unlocked: Journeyman Smith (journeyman_smith) for Guild Hero!
+[Progression] Class Unlocked: Master Smith (master_smith) for Guild Hero!
+[Progression] Class Unlocked: Grandmaster Smith (grandmaster_smith) for Guild Hero!
+[Progression] Class Unlocked: Journeyman Armorer (journeyman_armorer) for Guild Hero!
+[Progression] Class Unlocked: Master Armorer (master_armorer) for Guild Hero!
+[Progression] Class Unlocked: Grandmaster Armorer (grandmaster_armorer) for Guild Hero!
+[Progression] Class Unlocked: Journeyman Bowyer (journeyman_bowyer) for Guild Hero!
+[Progression] Class Unlocked: Master Bowyer (master_bowyer) for Guild Hero!
+[Progression] Class Unlocked: Grandmaster Bowyer (grandmaster_bowyer) for Guild Hero!
+[Progression] Class Unlocked: Journeyman Alchemist (journeyman_alchemist) for Guild Hero!
+[Progression] Class Unlocked: Master Alchemist (master_alchemist) for Guild Hero!
+[Progression] Class Unlocked: Archalchemist (archalchemist) for Guild Hero!
+[Progression] Class Unlocked: Journeyman Enchanter (journeyman_enchanter) for Guild Hero!
+[Progression] Class Unlocked: Master Enchanter (master_enchanter) for Guild Hero!
+[Progression] Class Unlocked: Runeweaver (runeweaver) for Guild Hero!
+✓ PASS: All 15 crafting ranks unlock at exact gate thresholds.
+
+3. Checking Perks Through CraftingSystem.applyCraft...
+  3a. Thrifty perk simulation (5,000 seeded crafts)...
+    Thrifty procs: 512/5000 (10.24%, expected 10.0% ± 1.5%)
+[Progression] +25 EXP for 'blacksmithing' (Guild Hero). Current: Level 220 (65/930 EXP)
+[Progression] Recorded tx 'blacksmithing': +25 EXP for Guild Hero, resulting total: Level 220 (65/930 EXP)
+[Progression] +25 Class EXP for 'apprentice_smith' (Guild Hero). Current: Level 212 (11/898 EXP)
+[Progression] CLASS LEVEL UP! 'apprentice_smith' is now Level 212!
+[Progression] +25 Class EXP for 'journeyman_smith' (Guild Hero). Current: Level 10 (45/90 EXP)
+[Progression] +13 EXP for 'blacksmithing' (Guild Hero). Current: Level 220 (78/930 EXP)
+[Progression] Recorded tx 'blacksmithing': +13 EXP for Guild Hero, resulting total: Level 220 (78/930 EXP)
+[Progression] +13 Class EXP for 'apprentice_smith' (Guild Hero). Current: Level 212 (24/898 EXP)
+    ✓ Thrifty rate verified and 0 refund on salvage confirmed.
+  3b. Masterwork perk test...
+[Progression] +20 EXP for 'blacksmithing' (Guild Hero). Current: Level 65 (20/310 EXP)
+[Progression] Recorded tx 'blacksmithing': +20 EXP for Guild Hero, resulting total: Level 65 (20/310 EXP)
+[Progression] +20 Class EXP for 'apprentice_smith' (Guild Hero). Current: Level 7 (20/78 EXP)
+[Progression] +20 Class EXP for 'journeyman_smith' (Guild Hero). Current: Level 15 (20/110 EXP)
+[Progression] +20 Class EXP for 'master_smith' (Guild Hero). Current: Level 8 (20/82 EXP)
+    ✓ Masterwork additive gear bonus and stackable second yield roll confirmed.
+  3c. Exceptional perk simulation (5,000 seeded crafts)...
+    Exceptional procs: 499/5000 (9.98%, expected 10.0% ± 1.5%)
+[Progression] +25 EXP for 'alchemy' (Guild Hero). Current: Level 0 (25/50 EXP)
+[Progression] Recorded tx 'alchemy': +25 EXP for Guild Hero, resulting total: Level 0 (25/50 EXP)
+[Progression] +25 Class EXP for 'apprentice_alchemist' (Guild Hero). Current: Level 0 (25/50 EXP)
+[Progression] +25 Class EXP for 'journeyman_alchemist' (Guild Hero). Current: Level 1 (25/54 EXP)
+[Progression] +25 Class EXP for 'master_alchemist' (Guild Hero). Current: Level 0 (25/50 EXP)
+[Progression] +25 Class EXP for 'archalchemist' (Guild Hero). Current: Level 10 (25/90 EXP)
+    ✓ Exceptional rate, +25% gear bonus, and x2 stackables confirmed.
+  3d. Chef-line EXP propagation across all unlocked ranks...
+[Progression] +20 EXP for 'blacksmithing' (Guild Hero). Current: Level 0 (20/50 EXP)
+[Progression] Recorded tx 'blacksmithing': +20 EXP for Guild Hero, resulting total: Level 0 (20/50 EXP)
+[Progression] +20 Class EXP for 'apprentice_smith' (Guild Hero). Current: Level 1 (20/54 EXP)
+[Progression] +20 Class EXP for 'journeyman_smith' (Guild Hero). Current: Level 1 (20/54 EXP)
+[Progression] +20 Class EXP for 'master_smith' (Guild Hero). Current: Level 1 (20/54 EXP)
+[Progression] +20 Class EXP for 'grandmaster_smith' (Guild Hero). Current: Level 1 (20/54 EXP)
+    ✓ Every unlocked profession rank received class EXP equal to recipe expGranted.
+  3e. Stash/inspect panel bonus display test (+55%)...
+    ✓ Stash/inspect format displays: "Short Swords (+55%)" (Crafted by MultiHero, +55%)
+
+4. Checking Item 0: C-Key Single-Fire Handler...
+✓ PASS: Exactly one call to startMakeCamp() on C press.
+
+🎉 ALL CRAFTING RANKS TESTS PASSED PERFECTLY!

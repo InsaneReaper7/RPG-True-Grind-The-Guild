@@ -69,6 +69,13 @@ export interface SalvageItemInfo {
 }
 
 export class CraftingSystem {
+  public static readonly PROFESSION_RANKS: Record<string, { apprentice: string; journeyman?: string; master?: string; grandmaster?: string }> = {
+    blacksmithing: { apprentice: 'apprentice_smith', journeyman: 'journeyman_smith', master: 'master_smith', grandmaster: 'grandmaster_smith' },
+    armorsmithing: { apprentice: 'apprentice_armorer', journeyman: 'journeyman_armorer', master: 'master_armorer', grandmaster: 'grandmaster_armorer' },
+    bowyer: { apprentice: 'apprentice_bowyer', journeyman: 'journeyman_bowyer', master: 'master_bowyer', grandmaster: 'grandmaster_bowyer' },
+    alchemy: { apprentice: 'apprentice_alchemist', journeyman: 'journeyman_alchemist', master: 'master_alchemist', grandmaster: 'archalchemist' },
+    enchanting: { apprentice: 'apprentice_enchanter', journeyman: 'journeyman_enchanter', master: 'master_enchanter', grandmaster: 'runeweaver' }
+  };
   public static getMatchingClassId(professionId: string): string | null {
     switch (professionId) {
       case 'blacksmithing':
@@ -105,20 +112,77 @@ export class CraftingSystem {
     classLevel: number;
     perkPercent: number; // 0 to 15 (%)
     bonusYieldChance: number; // 0 to 15 (%)
-    gearStatBonusPercent: number; // 0 to 15 (%)
+    secondBonusYieldChance?: number;
+    gearStatBonusPercent: number; // 0 to 30 (%)
+    thriftyChance?: number;
+    exceptionalChance?: number;
     savePickChance: number; // 0 to 15 (%)
     perkDescription?: string;
     detectionBonusChance?: number;
     detectionRadius?: number;
     cacheBonusRollChance?: number;
   } {
-    const classId = CraftingSystem.getMatchingClassId(professionId) || (DataLoader.getInstance().getClass(professionId) ? professionId : null);
     const progression: ProgressionSystem | undefined =
       crafter instanceof ProgressionSystem
         ? crafter
         : (crafter && 'progression' in crafter && (crafter as any).progression instanceof ProgressionSystem)
         ? (crafter as any).progression
         : (crafter as any)?.progression;
+
+    const ranks = DataLoader.getInstance().getCraftingRanks()?.professions?.[professionId] || CraftingSystem.PROFESSION_RANKS?.[professionId];
+    if (ranks && progression) {
+      const appUnlocked = progression.isClassUnlocked(ranks.apprentice);
+      const jnyUnlocked = progression.isClassUnlocked(ranks.journeyman);
+      const mtrUnlocked = progression.isClassUnlocked(ranks.master);
+      const gmrUnlocked = progression.isClassUnlocked(ranks.grandmaster);
+
+      const appLvl = appUnlocked ? progression.getClassLevel(ranks.apprentice) : 0;
+      const jnyLvl = jnyUnlocked ? progression.getClassLevel(ranks.journeyman) : 0;
+      const mtrLvl = mtrUnlocked ? progression.getClassLevel(ranks.master) : 0;
+      const gmrLvl = gmrUnlocked ? progression.getClassLevel(ranks.grandmaster) : 0;
+
+      const appBonus = Math.min(15, Math.max(0, appLvl));
+      const jnyBonus = Math.min(15, Math.max(0, jnyLvl));
+      const mtrBonus = Math.min(15, Math.max(0, mtrLvl));
+      const gmrBonus = Math.min(15, Math.max(0, gmrLvl));
+
+      const gearStatBonusPercent = appBonus + mtrBonus;
+      const bonusYieldChance = appBonus;
+      const secondBonusYieldChance = mtrBonus;
+      const thriftyChance = jnyBonus;
+      const exceptionalChance = gmrBonus;
+
+      const hasAnyUnlocked = appUnlocked || jnyUnlocked || mtrUnlocked || gmrUnlocked;
+      const activeClsId = gmrUnlocked ? ranks.grandmaster : mtrUnlocked ? ranks.master : jnyUnlocked ? ranks.journeyman : appUnlocked ? ranks.apprentice : ranks.apprentice;
+      const activeLvl = gmrUnlocked ? gmrLvl : mtrUnlocked ? mtrLvl : jnyUnlocked ? jnyLvl : appUnlocked ? appLvl : 0;
+      const clsDef = DataLoader.getInstance().getClass(activeClsId);
+
+      const perkParts: string[] = [];
+      if (appBonus > 0) perkParts.push(`Apprentice: +${appBonus}%`);
+      if (jnyBonus > 0) perkParts.push(`Thrifty: ${jnyBonus}%`);
+      if (mtrBonus > 0) perkParts.push(`Masterwork: +${mtrBonus}%`);
+      if (gmrBonus > 0) perkParts.push(`Exceptional: ${gmrBonus}%`);
+      const perkDescription = perkParts.length > 0 ? perkParts.join(' | ') : undefined;
+
+      return {
+        classId: hasAnyUnlocked ? activeClsId : ranks.apprentice,
+        className: hasAnyUnlocked ? (clsDef?.name ?? activeClsId) : 'None',
+        classLevel: hasAnyUnlocked ? activeLvl : 0,
+        perkPercent: appBonus,
+        bonusYieldChance,
+        secondBonusYieldChance,
+        gearStatBonusPercent,
+        thriftyChance,
+        exceptionalChance,
+        savePickChance: 0,
+        perkDescription,
+        detectionBonusChance: 0,
+        detectionRadius: 3,
+        cacheBonusRollChance: 0
+      };
+    }
+
+    const classId = CraftingSystem.getMatchingClassId(professionId) || (DataLoader.getInstance().getClass(professionId) ? professionId : null);
 
     if (!classId || !progression || !progression.isClassUnlocked(classId)) {
       return {
@@ -127,7 +191,10 @@ export class CraftingSystem {
         classLevel: 0,
         perkPercent: 0,
         bonusYieldChance: 0,
+        secondBonusYieldChance: 0,
         gearStatBonusPercent: 0,
+        thriftyChance: 0,
+        exceptionalChance: 0,
         savePickChance: 0,
         detectionBonusChance: 0,
         detectionRadius: 3,
@@ -161,7 +228,10 @@ export class CraftingSystem {
       classLevel,
       perkPercent: cappedBonus,
       bonusYieldChance: cappedBonus,
+      secondBonusYieldChance: 0,
       gearStatBonusPercent: cappedBonus,
+      thriftyChance: 0,
+      exceptionalChance: 0,
       savePickChance: cappedBonus,
       perkDescription,
       detectionBonusChance: cappedBonus / 100,
@@ -169,7 +239,6 @@ export class CraftingSystem {
       cacheBonusRollChance: cappedBonus
     };
   }
-
 
   public static getSurvivalistPerks(
     party: any[],
@@ -318,21 +387,52 @@ export class CraftingSystem {
     );
 
     // 4. Crafter perks
-    const perks = CraftingSystem.getCrafterPerks(crafter, professionId);
+    const perks = CraftingSystem.getCrafterPerks(crafter, professionId) as any;
     let quantity = 1;
     let bonusProc = false;
+    let isExceptional = false;
     let instanceId: string | undefined = undefined;
+
+    // 4a. Thrifty perk (Journeyman): perk% chance to refund one random ingredient unit to stockpile
+    let thriftyRefund: { item: string; quantity: number } | undefined = undefined;
+    if (perks.thriftyChance > 0) {
+      const roll = Math.random() * 100;
+      if (roll < perks.thriftyChance) {
+        const ingEntries = Object.entries(recipe.ingredients).filter(([_, qty]) => (qty as number) > 0);
+        if (ingEntries.length > 0) {
+          const [refundItem] = ingEntries[Math.floor(Math.random() * ingEntries.length)];
+          if (refundItem === 'wood') {
+            gameState.addWood(1);
+          } else {
+            gameState.addItem(refundItem, 1);
+          }
+          thriftyRefund = { item: refundItem, quantity: 1 };
+        }
+      }
+    }
 
     if (isGear) {
       // Duplicate-gear rule: gear ALWAYS crafts exactly 1 copy (never gets bonus yield)
       quantity = 1;
-      if (perks.gearStatBonusPercent > 0) {
+      let totalBonusPercent = perks.gearStatBonusPercent || 0;
+
+      // Grandmaster Exceptional roll for gear: +25% instance bonus
+      if (perks.exceptionalChance > 0) {
+        const roll = Math.random() * 100;
+        if (roll < perks.exceptionalChance) {
+          isExceptional = true;
+          totalBonusPercent += 25;
+        }
+      }
+
+      if (totalBonusPercent > 0) {
         instanceId = `gear_${baseResultId}_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
         const gearInst: GearItemInstance = {
           instanceId,
           baseItemId: baseResultId,
+          crafterId: crafter.id,
           crafterName: crafter.entityName,
-          bonusPercent: perks.gearStatBonusPercent,
+          bonusPercent: totalBonusPercent,
           craftedAt: Date.now()
         };
         gameState.registerGearInstance(gearInst);
@@ -350,7 +450,7 @@ export class CraftingSystem {
       }
       let totalYield = Math.max(1, Math.floor(baseYield * moodMult));
 
-      // Bonus yield chance: +1% per level, capped at 15% -> +1 extra item on proc
+      // 1st bonus yield roll (Apprentice): +1 extra item on proc
       if (perks.bonusYieldChance > 0) {
         const roll = Math.random() * 100;
         if (roll < perks.bonusYieldChance) {
@@ -358,6 +458,25 @@ export class CraftingSystem {
           totalYield += 1;
         }
       }
+
+      // 2nd bonus yield roll (Master): +1 extra item on proc
+      if (perks.secondBonusYieldChance > 0) {
+        const roll = Math.random() * 100;
+        if (roll < perks.secondBonusYieldChance) {
+          bonusProc = true;
+          totalYield += 1;
+        }
+      }
+
+      // Grandmaster Exceptional roll for stackables: yield x 2
+      if (perks.exceptionalChance > 0) {
+        const roll = Math.random() * 100;
+        if (roll < perks.exceptionalChance) {
+          isExceptional = true;
+          totalYield *= 2;
+        }
+      }
+
       quantity = totalYield;
       crafter.addItem(resultId, totalYield);
       TutorialSystem.getInstance().onItemCrafted(resultId, totalYield, crafter);
@@ -367,11 +486,26 @@ export class CraftingSystem {
     const expGranted = recipe.expGranted;
     crafter.progression.addProficiencyExp(professionId, expGranted);
 
-    // 6. Award class EXP (equal to profession EXP) if matching Apprentice class is unlocked
+    // 6. Award class EXP (equal to profession EXP) to EVERY unlocked rank of that profession (Chef-line rule)
     let classExpGranted = 0;
-    if (perks.classId && crafter.progression.isClassUnlocked(perks.classId)) {
+    const profRanks = DataLoader.getInstance().getCraftingRanks()?.professions?.[professionId] || CraftingSystem.PROFESSION_RANKS?.[professionId];
+    if (profRanks) {
+      for (const rankClassId of Object.values(profRanks)) {
+        if (crafter.progression.isClassUnlocked(rankClassId)) {
+          crafter.progression.addClassExp(rankClassId, expGranted);
+          classExpGranted = expGranted;
+        }
+      }
+    } else if (perks.classId && crafter.progression.isClassUnlocked(perks.classId)) {
+      crafter.progression.addClassExp(perks.classId, expGranted);
       classExpGranted = expGranted;
-      crafter.progression.addClassExp(perks.classId, classExpGranted);
+    }
+
+    if (isExceptional) {
+      const hud = (window as any).game?.scene?.getScene?.("MainScene")?.hud || (window as any).game?.scene?.getScene?.("OutpostScene")?.hud;
+      if (hud && typeof hud.showToast === 'function') {
+        hud.showToast('Exceptional craft!', 'success', 3000);
+      }
     }
 
     EventLog.getInstance().add('craft', `${crafter?.entityName || 'Hero'}: Crafted ${quantity}x ${recipe.name}`, { recipeId: recipe.id, quantity, isGear });
@@ -384,10 +518,12 @@ export class CraftingSystem {
       isGear,
       quantity,
       bonusProc,
-      bonusPercent: isGear ? perks.gearStatBonusPercent : 0,
+      isExceptional,
+      bonusPercent: isGear ? (instanceId ? GameState.getInstance().getGearInstance(instanceId)?.bonusPercent ?? 0 : 0) : 0,
+      thriftyRefund,
       expGranted,
       classExpGranted,
-      message: `Crafted ${quantity}x ${recipe.name}!`
+      message: `Crafted ${quantity}x ${recipe.name}!${isExceptional ? ' (Exceptional!)' : ''}`
     };
   }
 

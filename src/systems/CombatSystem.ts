@@ -2247,6 +2247,13 @@ export class CombatSystem {
         }
       }
     }
+    const activeClassDef = DataLoader.getInstance().getClass(member.activeClass || member.progression?.activeClassId);
+    if (activeClassDef?.selfCraftedWeaponBonus && member.equippedWeapon) {
+      const inst = GameState.getInstance().getGearInstance(member.equippedWeapon.id);
+      if (inst && inst.crafterId && inst.crafterId === member.id) {
+        statusBonusDamagePercent += activeClassDef.selfCraftedWeaponBonus;
+      }
+    }
     if (statusBonusDamagePercent > 0) {
       damage *= (1 + statusBonusDamagePercent);
     }

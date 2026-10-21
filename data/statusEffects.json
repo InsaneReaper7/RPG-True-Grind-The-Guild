@@ -384,6 +384,67 @@
       "energyRegenPerSecond": 0.25,
       "color": "#38bdf8",
       "isHarmful": false
+    },
+    {
+      "id": "forge_guard",
+      "name": "Forge Guard",
+      "durationMs": 8000,
+      "tickIntervalMs": 8000,
+      "damagePerTick": 0,
+      "damageTakenMultiplier": 0.8,
+      "isHarmful": false,
+      "color": "#38bdf8"
+    },
+    {
+      "id": "whetstone",
+      "name": "Whetstone",
+      "durationMs": 10000,
+      "tickIntervalMs": 10000,
+      "damagePerTick": 0,
+      "bonusDamagePercent": 0.20,
+      "isHarmful": false,
+      "color": "#f59e0b"
+    },
+    {
+      "id": "inscribed_blade",
+      "name": "Inscribed Blade",
+      "durationMs": 10000,
+      "tickIntervalMs": 10000,
+      "damagePerTick": 0,
+      "bonusDamagePercent": 0.15,
+      "energySiphonOnHit": 3,
+      "isHarmful": false,
+      "color": "#818cf8"
+    },
+    {
+      "id": "smoke_bomb",
+      "name": "Smoke Bomb",
+      "durationMs": 6000,
+      "tickIntervalMs": 6000,
+      "damagePerTick": 0,
+      "evasionBonus": 0.30,
+      "isHarmful": false,
+      "color": "#64748b"
+    },
+    {
+      "id": "bark_ward",
+      "name": "Bark Ward",
+      "durationMs": 8000,
+      "tickIntervalMs": 8000,
+      "damagePerTick": 0,
+      "damageTakenMultiplier": 0.8,
+      "isHarmful": false,
+      "color": "#16a34a"
+    },
+    {
+      "id": "rune_ward",
+      "name": "Rune Ward",
+      "durationMs": 8000,
+      "tickIntervalMs": 8000,
+      "damagePerTick": 0,
+      "shieldAmount": 40,
+      "isHarmful": false,
+      "color": "#38bdf8"
     }
   ]
 }

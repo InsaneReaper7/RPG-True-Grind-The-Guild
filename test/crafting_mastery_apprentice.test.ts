@@ -323,6 +323,11 @@ async function runTests() {
   for (let i = 0; i < 1000; i++) {
     alchemistPlayer20.progression.getClassStat('apprentice_alchemist').level = 20;
     alchemistPlayer20.progression.getClassStat('apprentice_alchemist').currentExp = 0;
+    (alchemistPlayer20.progression as any).unlockedClasses.delete('journeyman_alchemist');
+    (alchemistPlayer20.progression as any).unlockedClasses.delete('master_alchemist');
+    (alchemistPlayer20.progression as any).unlockedClasses.delete('archalchemist');
+    const prof = alchemistPlayer20.progression.getProficiencyStat('alchemy');
+    if (prof) { prof.level = 10; prof.currentExp = 0; }
     const res = CraftingSystem.applyCraft(alchemistPlayer20, antidoteRecipe, 'alchemy');
     if (res.bonusProc) {
       procsAt20++;

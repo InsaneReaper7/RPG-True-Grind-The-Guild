@@ -159,6 +159,10 @@ export function chooseWeaponId(classDef: any, profs: string[], classSkills: any[
   let chosenWeaponId = '';
   if (classDef.id === 'brawler') {
     chosenWeaponId = 'fist';
+  } else if (classDef.id === 'battlesmith') {
+    chosenWeaponId = 'mace';
+  } else if (classDef.id === 'runeblade') {
+    chosenWeaponId = 'longsword_1h';
   } else if (classDef.id === 'necromancer') {
     chosenWeaponId = 'dark_staff';
   } else if (['grove_walker', 'herbalist', 'druid', 'natures_avatar', 'archdruid'].includes(classDef.id)) {

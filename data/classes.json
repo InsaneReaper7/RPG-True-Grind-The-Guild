@@ -2611,6 +2611,429 @@
       ],
       "fantasy": "Legendary guide — parties seek them out before the hardest runs",
       "perkDescription": "Emergency Shelter: in-combat camp at double cost, 3s channel"
+    },
+    {
+      "id": "journeyman_smith",
+      "name": "Journeyman Smith",
+      "tier": "adept",
+      "category": "crafting",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "blacksmithing",
+          "value": 30
+        },
+        {
+          "type": "classLevel",
+          "target": "apprentice_smith",
+          "value": 10
+        }
+      ],
+      "fantasy": "Refining forging techniques to minimize waste and shape harder steel",
+      "perkDescription": "Thrifty: min(15, Lv)% chance to refund 1 random ingredient unit"
+    },
+    {
+      "id": "master_smith",
+      "name": "Master Smith",
+      "tier": "expert",
+      "category": "crafting",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "blacksmithing",
+          "value": 60
+        },
+        {
+          "type": "classLevel",
+          "target": "journeyman_smith",
+          "value": 15
+        }
+      ],
+      "fantasy": "Folding tempered steel into flawless masterwork armaments",
+      "perkDescription": "Masterwork: extra +min(15, Lv)% gear stats"
+    },
+    {
+      "id": "grandmaster_smith",
+      "name": "Grandmaster Smith",
+      "tier": "master",
+      "category": "crafting",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "blacksmithing",
+          "value": 90
+        },
+        {
+          "type": "classLevel",
+          "target": "master_smith",
+          "value": 25
+        }
+      ],
+      "fantasy": "Forging weapons of legendary perfection that echo with primordial power",
+      "perkDescription": "Exceptional: min(15, Lv)% chance for +25% bonus stats"
+    },
+    {
+      "id": "journeyman_armorer",
+      "name": "Journeyman Armorer",
+      "tier": "adept",
+      "category": "crafting",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "armorsmithing",
+          "value": 30
+        },
+        {
+          "type": "classLevel",
+          "target": "apprentice_armorer",
+          "value": 10
+        }
+      ],
+      "fantasy": "Tailoring reinforced laminates and treated hides with economical precision",
+      "perkDescription": "Thrifty: min(15, Lv)% chance to refund 1 random ingredient unit"
+    },
+    {
+      "id": "master_armorer",
+      "name": "Master Armorer",
+      "tier": "expert",
+      "category": "crafting",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "armorsmithing",
+          "value": 60
+        },
+        {
+          "type": "classLevel",
+          "target": "journeyman_armorer",
+          "value": 15
+        }
+      ],
+      "fantasy": "Crafting fitted plate and woven silk defense of exquisite resilience",
+      "perkDescription": "Masterwork: extra +min(15, Lv)% gear stats"
+    },
+    {
+      "id": "grandmaster_armorer",
+      "name": "Grandmaster Armorer",
+      "tier": "master",
+      "category": "crafting",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "armorsmithing",
+          "value": 90
+        },
+        {
+          "type": "classLevel",
+          "target": "master_armorer",
+          "value": 25
+        }
+      ],
+      "fantasy": "Weaving impenetrable bulwarks that defy mortal damage",
+      "perkDescription": "Exceptional: min(15, Lv)% chance for +25% bonus stats"
+    },
+    {
+      "id": "journeyman_bowyer",
+      "name": "Journeyman Bowyer",
+      "tier": "adept",
+      "category": "crafting",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "bowyer",
+          "value": 30
+        },
+        {
+          "type": "classLevel",
+          "target": "apprentice_bowyer",
+          "value": 10
+        }
+      ],
+      "fantasy": "Selecting seasoned woodgrain to craft resilient bows with minimal offcuts",
+      "perkDescription": "Thrifty: min(15, Lv)% chance to refund 1 random ingredient unit"
+    },
+    {
+      "id": "master_bowyer",
+      "name": "Master Bowyer",
+      "tier": "expert",
+      "category": "crafting",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "bowyer",
+          "value": 60
+        },
+        {
+          "type": "classLevel",
+          "target": "journeyman_bowyer",
+          "value": 15
+        }
+      ],
+      "fantasy": "Carving composite arcs and balanced recurves of masterwork tension",
+      "perkDescription": "Masterwork: extra +min(15, Lv)% gear stats"
+    },
+    {
+      "id": "grandmaster_bowyer",
+      "name": "Grandmaster Bowyer",
+      "tier": "master",
+      "category": "crafting",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "bowyer",
+          "value": 90
+        },
+        {
+          "type": "classLevel",
+          "target": "master_bowyer",
+          "value": 25
+        }
+      ],
+      "fantasy": "Bending mythical limbs that fire true across horizon and storm",
+      "perkDescription": "Exceptional: min(15, Lv)% chance for +25% bonus stats"
+    },
+    {
+      "id": "journeyman_alchemist",
+      "name": "Journeyman Alchemist",
+      "tier": "adept",
+      "category": "crafting",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "alchemy",
+          "value": 30
+        },
+        {
+          "type": "classLevel",
+          "target": "apprentice_alchemist",
+          "value": 10
+        }
+      ],
+      "fantasy": "Conserving delicate extracts and reagents through refined distillation",
+      "perkDescription": "Thrifty: min(15, Lv)% chance to refund 1 random ingredient unit"
+    },
+    {
+      "id": "master_alchemist",
+      "name": "Master Alchemist",
+      "tier": "expert",
+      "category": "crafting",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "alchemy",
+          "value": 60
+        },
+        {
+          "type": "classLevel",
+          "target": "journeyman_alchemist",
+          "value": 15
+        }
+      ],
+      "fantasy": "Refining distillation columns to extract a second potent yield from rare herbs",
+      "perkDescription": "Masterwork: second bonus-yield roll at min(15, Lv)%"
+    },
+    {
+      "id": "archalchemist",
+      "name": "Archalchemist",
+      "tier": "master",
+      "category": "crafting",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "alchemy",
+          "value": 90
+        },
+        {
+          "type": "classLevel",
+          "target": "master_alchemist",
+          "value": 25
+        }
+      ],
+      "fantasy": "Transmuting matter and catalyst into miraculous double yields",
+      "perkDescription": "Exceptional: min(15, Lv)% chance for ×2 yield"
+    },
+    {
+      "id": "journeyman_enchanter",
+      "name": "Journeyman Enchanter",
+      "tier": "adept",
+      "category": "crafting",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "enchanting",
+          "value": 30
+        },
+        {
+          "type": "classLevel",
+          "target": "apprentice_enchanter",
+          "value": 10
+        }
+      ],
+      "fantasy": "Etching runes with calculated efficiency to preserve valuable conduit dust",
+      "perkDescription": "Thrifty: min(15, Lv)% chance to refund 1 random ingredient unit"
+    },
+    {
+      "id": "master_enchanter",
+      "name": "Master Enchanter",
+      "tier": "expert",
+      "category": "crafting",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "enchanting",
+          "value": 60
+        },
+        {
+          "type": "classLevel",
+          "target": "journeyman_enchanter",
+          "value": 15
+        }
+      ],
+      "fantasy": "Infusing conduits and crystals with harmonics that amplify gear stats and duplicate reagent yields",
+      "perkDescription": "Masterwork: extra +min(15, Lv)% gear stats & 2nd yield roll"
+    },
+    {
+      "id": "runeweaver",
+      "name": "Runeweaver",
+      "tier": "master",
+      "category": "crafting",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "enchanting",
+          "value": 90
+        },
+        {
+          "type": "classLevel",
+          "target": "master_enchanter",
+          "value": 25
+        }
+      ],
+      "fantasy": "Weaving cosmic leylines into gear of transcendent majesty",
+      "perkDescription": "Exceptional: min(15, Lv)% chance for +25% bonus stats or ×2 yield"
+    },
+    {
+      "id": "battlesmith",
+      "name": "Battlesmith",
+      "tier": "expert",
+      "primaryAttribute": "str",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "blacksmithing",
+          "value": 30
+        },
+        {
+          "type": "anyOf",
+          "count": 1,
+          "of": [
+            { "type": "proficiency", "target": "katana", "value": 60 },
+            { "type": "proficiency", "target": "short_swords", "value": 60 },
+            { "type": "proficiency", "target": "longswords", "value": 60 },
+            { "type": "proficiency", "target": "greatswords", "value": 60 },
+            { "type": "proficiency", "target": "daggers", "value": 60 },
+            { "type": "proficiency", "target": "mace", "value": 60 },
+            { "type": "proficiency", "target": "spears", "value": 60 },
+            { "type": "proficiency", "target": "bows", "value": 60 },
+            { "type": "proficiency", "target": "crossbows", "value": 60 },
+            { "type": "proficiency", "target": "throwing_weapons", "value": 60 },
+            { "type": "proficiency", "target": "staff", "value": 60 },
+            { "type": "proficiency", "target": "fist", "value": 60 }
+          ]
+        },
+        {
+          "type": "classLevel",
+          "target": "journeyman_smith",
+          "value": 15
+        }
+      ],
+      "fantasy": "Fights with weapons of their own making",
+      "hiddenSkillBonuses": {
+        "resilience": 0.05
+      },
+      "selfCraftedWeaponBonus": 0.10
+    },
+    {
+      "id": "runeblade",
+      "name": "Runeblade",
+      "tier": "expert",
+      "primaryAttribute": "str",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "enchanting",
+          "value": 30
+        },
+        {
+          "type": "proficiency",
+          "target": "arcane_magic",
+          "value": 60
+        },
+        {
+          "type": "classLevel",
+          "target": "journeyman_enchanter",
+          "value": 15
+        }
+      ],
+      "fantasy": "Carves living magic into blades",
+      "hiddenSkillBonuses": {
+        "mana_regen": 0.05
+      }
+    },
+    {
+      "id": "alchemical_bomber",
+      "name": "Alchemical Bomber",
+      "tier": "expert",
+      "primaryAttribute": "dex",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "alchemy",
+          "value": 30
+        },
+        {
+          "type": "proficiency",
+          "target": "throwing_weapons",
+          "value": 60
+        },
+        {
+          "type": "classLevel",
+          "target": "journeyman_alchemist",
+          "value": 15
+        }
+      ],
+      "fantasy": "Turns volatile potions into weapons",
+      "hiddenSkillBonuses": {
+        "counterattack": 0.05
+      }
+    },
+    {
+      "id": "herbwarden",
+      "name": "Herbwarden",
+      "tier": "expert",
+      "primaryAttribute": "int",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "gardening",
+          "value": 60
+        },
+        {
+          "type": "proficiency",
+          "target": "foraging",
+          "value": 60
+        },
+        {
+          "type": "proficiency",
+          "target": "nature_magic",
+          "value": 30
+        }
+      ],
+      "fantasy": "Cultivator whose garden magic bites back",
+      "hiddenSkillBonuses": {
+        "health_regen": 0.05
+      },
+      "spellDamageMultiplier": 1.40
     }
   ]
 }

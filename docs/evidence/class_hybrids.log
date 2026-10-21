@@ -1,0 +1,137 @@
+=== CLASS HYBRIDS TEST SUITE ===
+
+1. Checking Expected-Table Guards for 4 Hybrid Kits...
+✓ PASS: All 4 hybrid classes and 20 skills match expected tables.
+
+2. Checking Unlock Gates for Hybrid Classes...
+  2a. Battlesmith unlock gates (testing anyOf with different weapon proficiencies)...
+[Progression] Class Unlocked: Apprentice Smith (apprentice_smith) for Guild Hero!
+[Progression] Class Unlocked: Swordsman (swordsman) for Guild Hero!
+[Progression] Class Unlocked: Battlesmith (battlesmith) for Guild Hero!
+[Progression] Class Unlocked: Apprentice Smith (apprentice_smith) for Guild Hero!
+[Progression] Class Unlocked: Fencer (fencer) for Guild Hero!
+[Progression] Class Unlocked: Battlesmith (battlesmith) for Guild Hero!
+[Progression] Class Unlocked: Apprentice Smith (apprentice_smith) for Guild Hero!
+[Progression] Class Unlocked: Squire (squire) for Guild Hero!
+[Progression] Class Unlocked: Battlesmith (battlesmith) for Guild Hero!
+[Progression] Class Unlocked: Apprentice Smith (apprentice_smith) for Guild Hero!
+[Progression] Class Unlocked: Brute (brute) for Guild Hero!
+[Progression] Class Unlocked: Battlesmith (battlesmith) for Guild Hero!
+[Progression] Class Unlocked: Apprentice Smith (apprentice_smith) for Guild Hero!
+[Progression] Class Unlocked: Cutthroat (cutthroat) for Guild Hero!
+[Progression] Class Unlocked: Battlesmith (battlesmith) for Guild Hero!
+[Progression] Class Unlocked: Apprentice Smith (apprentice_smith) for Guild Hero!
+[Progression] Class Unlocked: Bludgeoner (bludgeoner) for Guild Hero!
+[Progression] Class Unlocked: Battlesmith (battlesmith) for Guild Hero!
+[Progression] Class Unlocked: Apprentice Smith (apprentice_smith) for Guild Hero!
+[Progression] Class Unlocked: Lancer (lancer) for Guild Hero!
+[Progression] Class Unlocked: Battlesmith (battlesmith) for Guild Hero!
+[Progression] Class Unlocked: Apprentice Smith (apprentice_smith) for Guild Hero!
+[Progression] Class Unlocked: Marksman (marksman) for Guild Hero!
+[Progression] Class Unlocked: Battlesmith (battlesmith) for Guild Hero!
+[Progression] Class Unlocked: Apprentice Smith (apprentice_smith) for Guild Hero!
+[Progression] Class Unlocked: Loader (loader) for Guild Hero!
+[Progression] Class Unlocked: Battlesmith (battlesmith) for Guild Hero!
+[Progression] Class Unlocked: Apprentice Smith (apprentice_smith) for Guild Hero!
+[Progression] Class Unlocked: Skirmisher (skirmisher) for Guild Hero!
+[Progression] Class Unlocked: Battlesmith (battlesmith) for Guild Hero!
+[Progression] Class Unlocked: Apprentice Smith (apprentice_smith) for Guild Hero!
+[Progression] Class Unlocked: Staff Adept (staff_adept) for Guild Hero!
+[Progression] Class Unlocked: Battlesmith (battlesmith) for Guild Hero!
+[Progression] Class Unlocked: Apprentice Smith (apprentice_smith) for Guild Hero!
+[Progression] Class Unlocked: Brawler (brawler) for Guild Hero!
+[Progression] Class Unlocked: Battlesmith (battlesmith) for Guild Hero!
+    ✓ Battlesmith unlocks correctly across any of the 12 Weaponmaster proficiencies at 60.
+  2b. Runeblade unlock gates...
+[Progression] Class Unlocked: Arcane Initiate (arcane_initiate) for Guild Hero!
+[Progression] Class Unlocked: Apprentice Enchanter (apprentice_enchanter) for Guild Hero!
+[Progression] Class Unlocked: Runeblade (runeblade) for Guild Hero!
+    ✓ Runeblade unlock gates verified.
+  2c. Alchemical Bomber unlock gates...
+[Progression] Class Unlocked: Apprentice Alchemist (apprentice_alchemist) for Guild Hero!
+[Progression] Class Unlocked: Skirmisher (skirmisher) for Guild Hero!
+[Progression] Class Unlocked: Alchemical Bomber (alchemical_bomber) for Guild Hero!
+    ✓ Alchemical Bomber unlock gates verified.
+  2d. Herbwarden unlock gates...
+[Progression] Class Unlocked: Sprout Keeper (sprout_keeper) for Guild Hero!
+[Progression] Class Unlocked: Naturalist (naturalist) for Guild Hero!
+[Progression] Class Unlocked: Herbwarden (herbwarden) for Guild Hero!
+    ✓ Herbwarden unlock gates verified.
+
+3. Checking Battlesmith selfCraftedWeaponBonus (1.10x main weapon damage)...
+[Progression] Set class 'battlesmith' to Level 50 (0 EXP) on Guild Hero
+[Progression] Set class 'battlesmith' to Level 50 (0 EXP) on Guild Hero
+[Progression] +2 EXP for 'gear_mace_hero_crafted' (Guild Hero). Current: Level 0 (2/50 EXP)
+[Progression] Recorded tx 'gear_mace_hero_crafted': +2 EXP for Guild Hero, resulting total: Level 0 (2/50 EXP)
+[Progression] +2 EXP for 'gear_mace_other_crafted' (Guild Hero). Current: Level 0 (2/50 EXP)
+[Progression] Recorded tx 'gear_mace_other_crafted': +2 EXP for Guild Hero, resulting total: Level 0 (2/50 EXP)
+[Progression] +2 EXP for 'gear_mace_legacy_no_id' (Guild Hero). Current: Level 0 (2/50 EXP)
+[Progression] Recorded tx 'gear_mace_legacy_no_id': +2 EXP for Guild Hero, resulting total: Level 0 (2/50 EXP)
+[Progression] +2 EXP for 'gear_mace_hero_crafted' (Guild Hero). Current: Level 0 (2/50 EXP)
+[Progression] Recorded tx 'gear_mace_hero_crafted': +2 EXP for Guild Hero, resulting total: Level 0 (2/50 EXP)
+  Damage with self-crafted weapon: 12.09
+  Damage with other character's weapon: 10.99
+  Damage with legacy weapon (no crafterId): 10.99
+  Damage by companion wearing hero's weapon: 10.99
+  Ratio (self / other): 1.1000 (expected 1.1000)
+✓ PASS: Battlesmith self-crafted weapon bonus (+10%) verified strictly by Player.id.
+
+4. Checking Skills Execution, Fillers Cap, and DurationMs Guard...
+[Progression] Set class 'battlesmith' to Level 50 (0 EXP) on Guild Hero
+[Progression] +2 EXP for 'short_swords' (Guild Hero). Current: Level 0 (2/50 EXP)
+[Progression] Recorded tx 'short_swords': +2 EXP for Guild Hero, resulting total: Level 0 (2/50 EXP)
+[KnowledgeBase] 🧪 Status effect discovered: 'forge_guard'! (+1 RP)
+[Progression] +2 EXP for 'short_swords' (Guild Hero). Current: Level 0 (4/50 EXP)
+[Progression] Recorded tx 'short_swords': +2 EXP for Guild Hero, resulting total: Level 0 (4/50 EXP)
+[Progression] +2 EXP for 'short_swords' (Guild Hero). Current: Level 0 (6/50 EXP)
+[Progression] Recorded tx 'short_swords': +2 EXP for Guild Hero, resulting total: Level 0 (6/50 EXP)
+[KnowledgeBase] 🧪 Status effect discovered: 'stun'! (+1 RP)
+[KnowledgeBase] 🧪 Status effect discovered: 'whetstone'! (+1 RP)
+[Progression] +2 EXP for 'short_swords' (Guild Hero). Current: Level 0 (8/50 EXP)
+[Progression] Recorded tx 'short_swords': +2 EXP for Guild Hero, resulting total: Level 0 (8/50 EXP)
+[Progression] +2 EXP for 'short_swords' (Guild Hero). Current: Level 0 (10/50 EXP)
+[Progression] Recorded tx 'short_swords': +2 EXP for Guild Hero, resulting total: Level 0 (10/50 EXP)
+[KnowledgeBase] 🧪 Status effect discovered: 'expose'! (+1 RP)
+[Progression] Set class 'runeblade' to Level 50 (0 EXP) on Guild Hero
+[Skill] TestCaster casts Rune Slash but MISSED! (Hit Chance: 60.0%, Roll: 60.9%)
+[KnowledgeBase] 🧪 Status effect discovered: 'rune_ward'! (+1 RP)
+[Progression] +2 EXP for 'short_swords' (Guild Hero). Current: Level 0 (2/50 EXP)
+[Progression] Recorded tx 'short_swords': +2 EXP for Guild Hero, resulting total: Level 0 (2/50 EXP)
+[Progression] +2 EXP for 'short_swords' (Guild Hero). Current: Level 0 (4/50 EXP)
+[Progression] Recorded tx 'short_swords': +2 EXP for Guild Hero, resulting total: Level 0 (4/50 EXP)
+[KnowledgeBase] 🧪 Status effect discovered: 'inscribed_blade'! (+1 RP)
+[Progression] +2 EXP for 'short_swords' (Guild Hero). Current: Level 0 (6/50 EXP)
+[Progression] Recorded tx 'short_swords': +2 EXP for Guild Hero, resulting total: Level 0 (6/50 EXP)
+[Skill] TestCaster casts Runic Cataclysm but MISSED! (Hit Chance: 60.0%, Roll: 71.2%)
+[Progression] Set class 'alchemical_bomber' to Level 50 (0 EXP) on Guild Hero
+[Progression] +2 EXP for 'short_swords' (Guild Hero). Current: Level 0 (2/50 EXP)
+[Progression] Recorded tx 'short_swords': +2 EXP for Guild Hero, resulting total: Level 0 (2/50 EXP)
+[KnowledgeBase] 🧪 Status effect discovered: 'burn'! (+1 RP)
+[KnowledgeBase] 🧪 Status effect discovered: 'smoke_bomb'! (+1 RP)
+[Progression] +2 EXP for 'short_swords' (Guild Hero). Current: Level 0 (4/50 EXP)
+[Progression] Recorded tx 'short_swords': +2 EXP for Guild Hero, resulting total: Level 0 (4/50 EXP)
+[StatusEffect] Applied Bleed to Training Dummy!
+[KnowledgeBase] 🧪 Status effect discovered: 'bleed'! (+1 RP)
+[Progression] +2 EXP for 'short_swords' (Guild Hero). Current: Level 0 (6/50 EXP)
+[Progression] Recorded tx 'short_swords': +2 EXP for Guild Hero, resulting total: Level 0 (6/50 EXP)
+[Progression] +2 EXP for 'short_swords' (Guild Hero). Current: Level 0 (8/50 EXP)
+[Progression] Recorded tx 'short_swords': +2 EXP for Guild Hero, resulting total: Level 0 (8/50 EXP)
+[KnowledgeBase] 🧪 Status effect discovered: 'poison'! (+1 RP)
+[Skill] TestCaster casts Grand Detonation but MISSED! (Hit Chance: 60.0%, Roll: 86.0%)
+[Progression] Set class 'herbwarden' to Level 50 (0 EXP) on Guild Hero
+[Progression] +2 EXP for 'short_swords' (Guild Hero). Current: Level 0 (2/50 EXP)
+[Progression] Recorded tx 'short_swords': +2 EXP for Guild Hero, resulting total: Level 0 (2/50 EXP)
+[KnowledgeBase] 🧪 Status effect discovered: 'bark_ward'! (+1 RP)
+[Progression] +2 EXP for 'short_swords' (Guild Hero). Current: Level 0 (4/50 EXP)
+[Progression] Recorded tx 'short_swords': +2 EXP for Guild Hero, resulting total: Level 0 (4/50 EXP)
+[KnowledgeBase] 🧪 Status effect discovered: 'regrowth'! (+1 RP)
+[Progression] +2 EXP for 'short_swords' (Guild Hero). Current: Level 0 (6/50 EXP)
+[Progression] Recorded tx 'short_swords': +2 EXP for Guild Hero, resulting total: Level 0 (6/50 EXP)
+[KnowledgeBase] 🧪 Status effect discovered: 'slow'! (+1 RP)
+[Progression] +2 EXP for 'short_swords' (Guild Hero). Current: Level 0 (8/50 EXP)
+[Progression] Recorded tx 'short_swords': +2 EXP for Guild Hero, resulting total: Level 0 (8/50 EXP)
+[Progression] +2 EXP for 'short_swords' (Guild Hero). Current: Level 0 (10/50 EXP)
+[Progression] Recorded tx 'short_swords': +2 EXP for Guild Hero, resulting total: Level 0 (10/50 EXP)
+✓ PASS: All 20 hybrid skills executed cleanly; fillers <= +25%; no inline durationMs except poison 6s.
+
+🎉 ALL CLASS HYBRIDS TESTS PASSED PERFECTLY!

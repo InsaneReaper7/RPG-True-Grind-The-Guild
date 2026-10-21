@@ -53,7 +53,8 @@ import type {
   IntroNarrativeData,
   EnchantingRecipeDef,
   EnchantingRecipesData,
-  StatGainsData
+  StatGainsData,
+  CraftingRanksData
 } from '../types/game.ts';
 import { HiddenSkillSystem } from '../systems/HiddenSkillSystem.ts';
 import { resolveGearStats, getBaseItemId, isCraftingClass, resolvePartyGearSource, getPartyGearOwnership, canEquipBowDaggerSidearm } from './gearResolver.ts';
@@ -92,6 +93,7 @@ export class DataLoader {
   private cropsConfig?: CropsConfig;
   private cookingConfigData?: CookingConfig;
   private campConfigData?: CampConfig;
+  private craftingRanksData?: CraftingRanksData;
 
   private constructor() {}
 
@@ -103,7 +105,7 @@ export class DataLoader {
   }
 
   public async loadAll(): Promise<void> {
-    const [player, weapons, classes, enemies, skills, statusEffects, buildables, rooms, hiddenSkills, skillBooks, researchTree, alchemyRecipes, cookingRecipes, blacksmithRecipes, bowyerRecipes, armors, armorsmithRecipes, foods, moodEffects, dungeon, gathering, items, recruits, craftingConfig, introNarrative, enchantingRecipes, statGains, crops, cookingConfig, campConfig] = await Promise.all([
+    const [player, weapons, classes, enemies, skills, statusEffects, buildables, rooms, hiddenSkills, skillBooks, researchTree, alchemyRecipes, cookingRecipes, blacksmithRecipes, bowyerRecipes, armors, armorsmithRecipes, foods, moodEffects, dungeon, gathering, items, recruits, craftingConfig, introNarrative, enchantingRecipes, statGains, crops, cookingConfig, campConfig, craftingRanks] = await Promise.all([
       fetch('/data/player.json').then((res) => res.json()),
       fetch('/data/weapons.json').then((res) => res.json()),
       fetch('/data/classes.json').then((res) => res.json()),
@@ -133,7 +135,8 @@ export class DataLoader {
       fetch('/data/statGains.json').then((res) => res.json()).catch(() => null),
       fetch('/data/crops.json').then((res) => res.json()).catch(() => null),
       fetch('/data/cookingConfig.json').then((res) => res.json()).catch(() => null),
-      fetch('/data/campConfig.json').then((res) => res.json()).catch(() => null)
+      fetch('/data/campConfig.json').then((res) => res.json()).catch(() => null),
+      fetch('/data/craftingRanks.json').then((res) => res.json()).catch(() => null)
     ]);
 
     this.playerData = player as PlayerData;
@@ -177,6 +180,9 @@ export class DataLoader {
     };
     if (campConfig) {
       this.campConfigData = campConfig as CampConfig;
+    }
+    if (craftingRanks) {
+      this.craftingRanksData = craftingRanks as CraftingRanksData;
     }
     if (craftingConfig) {
       this.craftingConfigData = craftingConfig as CraftingConfigData;
@@ -890,6 +896,22 @@ export class DataLoader {
         grandSurvivalistChannelMs: 3000
       }
     };
+  }
+
+  public getCraftingRanks(): CraftingRanksData | undefined {
+    if (this.craftingRanksData) {
+      return this.craftingRanksData;
+    }
+    try {
+      if (typeof process !== 'undefined' && process.versions?.node) {
+        const fsModule = (globalThis as any).fs || (typeof require !== 'undefined' ? require('node:fs') : undefined);
+        if (fsModule && fsModule.existsSync('data/craftingRanks.json')) {
+          this.craftingRanksData = JSON.parse(fsModule.readFileSync('data/craftingRanks.json', 'utf8'));
+          return this.craftingRanksData;
+        }
+      }
+    } catch { /* fallback */ }
+    return this.craftingRanksData;
   }
 
   public getCookingConfig(): CookingConfig {

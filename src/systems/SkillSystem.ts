@@ -2,6 +2,7 @@ import { Player } from '../entities/Player.ts';
 import { Enemy } from '../entities/Enemy.ts';
 import { Entity } from '../entities/Entity.ts';
 import { DataLoader } from '../utils/DataLoader.ts';
+import { GameState } from './GameState.ts';
 import type { SkillDef, SkillRole, SkillEffect } from '../types/game.ts';
 import type { CombatSystem } from './CombatSystem.ts';
 
@@ -383,6 +384,13 @@ export class SkillSystem {
             }
           }
         }
+        const activeClassDef = DataLoader.getInstance().getClass(caster.activeClass || caster.progression?.activeClassId);
+        if (activeClassDef?.selfCraftedWeaponBonus && caster.equippedWeapon) {
+          const inst = GameState.getInstance().getGearInstance(caster.equippedWeapon.id);
+          if (inst && inst.crafterId && inst.crafterId === caster.id) {
+            statusBonusDamagePercent += activeClassDef.selfCraftedWeaponBonus;
+          }
+        }
         if (statusBonusDamagePercent > 0) {
           hitDamage *= (1 + statusBonusDamagePercent);
         }
@@ -511,7 +519,11 @@ export class SkillSystem {
       }
 
       case 'applyStatus': {
-        const effTarget = target || (caster.targetEntity instanceof Enemy ? caster.targetEntity : caster);
+        const effTarget = effect.target === 'lowestAlly'
+          ? this.resolveAllyTarget(caster, target, 'lowestAlly')
+          : effect.target === 'self'
+          ? caster
+          : target || (caster.targetEntity instanceof Enemy ? caster.targetEntity : caster);
         if (!effTarget || effTarget.state === 'dead' || effTarget.state === 'downed') return;
 
         // If a preceding weapon attack was executed and missed, on-hit enemy statuses do not apply.
@@ -619,7 +631,7 @@ export class SkillSystem {
       case 'buff':
       case 'debuff': {
         const hasShield = (skillDef.effects || []).some((e) => e.type === 'shield');
-        const buffId = hasShield ? `${skillDef.id}_buff` : skillDef.id;
+        const buffId = (effect as any).statusEffectId || (effect as any).status || (hasShield ? `${skillDef.id}_buff` : skillDef.id);
         const baseDef = dataLoader.getStatusEffect(buffId);
 
         const statObj: any = baseDef

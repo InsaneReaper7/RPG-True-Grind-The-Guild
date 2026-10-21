@@ -74,8 +74,8 @@ for (const c of combatClasses) {
 
 assert.deepStrictEqual(
   diffClasses.sort(),
-  ['archmage', 'deathbringer', 'elemental_sovereign', 'weaponmaster'].sort(),
-  'Diff between minimal and full chains must be exactly the 4 classes'
+  ['archmage', 'battlesmith', 'deathbringer', 'elemental_sovereign', 'weaponmaster'].sort(),
+  'Diff between minimal and full chains must be exactly the 5 anyOf classes'
 );
 
 // 3. weaponProficiencyId checks

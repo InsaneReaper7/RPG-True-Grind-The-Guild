@@ -85,3 +85,7 @@ dark_lord,prestige,greatswords,170.9,363.7,13,23.4,23,44,596,4.8,139.9,greatswor
 archdruid,prestige,druid_staff,109.9,206.6,2.2,9.5,25,46,660,18.5,91.2,druid_staff;nature_magic;healing_magic,natures_avatar;druid;herbalist
 elemental_sovereign,prestige,fire_staff,232,249.4,0,0,44,46,1330,69.3,65.7,fire_magic;water_magic;lightning_magic;wind_magic;longswords;arcane_magic,elemental_knight;battlemage;spellsword;elementalist
 deathbringer,prestige,greatswords,123.2,219,1.4,7.2,20,35,510,12.3,108.1,dark_magic;greatswords;daggers;druid_staff,necromancer;warlock
+battlesmith,expert,mace,45.3,93.1,0,0,11,50,220,3.3,40.9,blacksmithing;katana,journeyman_smith;apprentice_smith
+runeblade,expert,longsword_1h,51.9,79,0,0,19.3,44,369.3,12.3,46.6,enchanting;arcane_magic,journeyman_enchanter;apprentice_enchanter
+alchemical_bomber,expert,throwing_weapons,51,106.4,0,0,9,58,200,1.8,42.7,alchemy;throwing_weapons,journeyman_alchemist;apprentice_alchemist
+herbwarden,expert,nature_staff,41.8,65.9,0.3,2.9,6,53,322,4.8,39.6,gardening;foraging;nature_magic,

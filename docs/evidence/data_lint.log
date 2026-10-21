@@ -1,121 +1,31 @@
-=== WEAPONS & SHIELDS ===
-Weapon/Shield: id=katana, name="Katana", category=melee_1h, recipe=katana (blacksmithing)
-Weapon/Shield: id=short_swords, name="Short Swords", category=melee_1h, recipe=short_sword (blacksmithing)
-Weapon/Shield: id=shields, name="Shields", category=offhand, recipe=iron_shield (blacksmithing)
-Weapon/Shield: id=longsword_1h, name="Iron Longsword", category=melee_1h, recipe=longsword_1h (blacksmithing)
-Weapon/Shield: id=longsword_2h, name="Two-Handed Longsword", category=melee_2h, recipe=longsword_2h (blacksmithing)
-Weapon/Shield: id=greatswords, name="Greatswords", category=melee_2h, recipe=greatsword (blacksmithing)
-Weapon/Shield: id=daggers, name="Daggers", category=melee_1h, recipe=daggers (blacksmithing)
-Weapon/Shield: id=bows, name="Hunting Bow", category=ranged, recipe=hunting_bow (bowyer)
-Weapon/Shield: id=composite_bow, name="Composite Bow", category=ranged, recipe=composite_bow (bowyer)
-Weapon/Shield: id=war_bow, name="War Bow", category=ranged, recipe=war_bow (bowyer)
-Weapon/Shield: id=mace, name="Mace", category=melee_1h, recipe=mace (blacksmithing)
-Weapon/Shield: id=heavy_mace, name="Heavy War Mace", category=melee_1h, recipe=heavy_mace (blacksmithing)
-Weapon/Shield: id=spiked_morningstar, name="Spiked Morningstar", category=melee_1h, recipe=spiked_morningstar (blacksmithing)
-Weapon/Shield: id=throwing_weapons, name="Throwing Weapons", category=ranged, recipe=throwing_weapons (blacksmithing)
-Weapon/Shield: id=arcane_magic, name="Arcane Magic", category=magic, recipe=NO RECIPE
-Weapon/Shield: id=arcane_staff, name="Arcane Staff", category=melee_2h, recipe=NO RECIPE
-Weapon/Shield: id=fire_magic, name="Fire Magic", category=magic, recipe=NO RECIPE
-Weapon/Shield: id=water_magic, name="Water Magic", category=magic, recipe=NO RECIPE
-Weapon/Shield: id=ice_magic, name="Ice Magic", category=magic, recipe=NO RECIPE
-Weapon/Shield: id=earth_magic, name="Earth Magic", category=magic, recipe=NO RECIPE
-Weapon/Shield: id=nature_magic, name="Nature Magic", category=magic, recipe=NO RECIPE
-Weapon/Shield: id=lightning_magic, name="Lightning Magic", category=magic, recipe=NO RECIPE
-Weapon/Shield: id=wind_magic, name="Wind Magic", category=magic, recipe=NO RECIPE
-Weapon/Shield: id=healing_magic, name="Healing Magic", category=magic, recipe=NO RECIPE
-Weapon/Shield: id=healing_staff, name="Healing Staff", category=melee_2h, recipe=NO RECIPE
-Weapon/Shield: id=fire_staff, name="Fire Staff", category=melee_2h, recipe=NO RECIPE
-Weapon/Shield: id=lightning_staff, name="Lightning Staff", category=melee_2h, recipe=NO RECIPE
-Weapon/Shield: id=ice_staff, name="Ice Staff", category=melee_2h, recipe=NO RECIPE
-Weapon/Shield: id=staff, name="Staff", category=melee_2h, recipe=quarterstaff (bowyer)
-Weapon/Shield: id=spears, name="One-Handed Spear", category=melee_1h, recipe=spear (blacksmithing)
-Weapon/Shield: id=spears_2h, name="Two-Handed Spear", category=melee_2h, recipe=spears_2h (blacksmithing)
-Weapon/Shield: id=crossbows, name="Crossbows", category=ranged, recipe=crossbow (blacksmithing)
-Weapon/Shield: id=holy_magic, name="Holy Magic", category=magic, recipe=NO RECIPE
-Weapon/Shield: id=holy_staff, name="Holy Staff", category=melee_2h, recipe=NO RECIPE
-Weapon/Shield: id=dark_magic, name="Dark Magic", category=magic, recipe=NO RECIPE
-Weapon/Shield: id=dark_staff, name="Dark Staff", category=melee_2h, recipe=NO RECIPE
-Weapon/Shield: id=water_staff, name="Water Staff", category=melee_2h, recipe=NO RECIPE
-Weapon/Shield: id=earth_staff, name="Earth Staff", category=melee_2h, recipe=NO RECIPE
-Weapon/Shield: id=nature_staff, name="Nature Staff", category=melee_2h, recipe=NO RECIPE
-Weapon/Shield: id=wind_staff, name="Wind Staff", category=melee_2h, recipe=NO RECIPE
-Weapon/Shield: id=druid_staff, name="Druid Staff", category=melee_2h, recipe=NO RECIPE
-Weapon/Shield: id=fist, name="Fist", category=unarmed, recipe=NO RECIPE
-Weapon/Shield: id=steel_short_sword, name="Steel Short Sword", category=melee_1h, recipe=steel_short_sword (blacksmithing)
-Weapon/Shield: id=void_short_sword, name="Voidforged Short Sword", category=melee_1h, recipe=void_short_sword (blacksmithing)
-Weapon/Shield: id=steel_longsword, name="Steel Longsword", category=melee_1h, recipe=steel_longsword (blacksmithing)
-Weapon/Shield: id=void_longsword, name="Voidforged Longsword", category=melee_1h, recipe=void_longsword (blacksmithing)
-Weapon/Shield: id=steel_katana, name="Folded Steel Katana", category=melee_1h, recipe=steel_katana (blacksmithing)
-Weapon/Shield: id=void_katana, name="Voidforged Katana", category=melee_1h, recipe=void_katana (blacksmithing)
-Weapon/Shield: id=void_greatsword, name="Voidforged Greatsword", category=melee_2h, recipe=void_greatsword (blacksmithing)
-Weapon/Shield: id=steel_spear, name="Steel Spear", category=melee_1h, recipe=steel_spear (blacksmithing)
-Weapon/Shield: id=void_spear, name="Voidforged Spear", category=melee_1h, recipe=void_spear (blacksmithing)
-Weapon/Shield: id=steel_halberd, name="Steel Halberd", category=melee_2h, recipe=steel_halberd (blacksmithing)
-Weapon/Shield: id=void_halberd, name="Voidforged Halberd", category=melee_2h, recipe=void_halberd (blacksmithing)
-Weapon/Shield: id=serrated_daggers, name="Serrated Daggers", category=melee_1h, recipe=serrated_daggers (blacksmithing)
-Weapon/Shield: id=void_daggers, name="Voidforged Daggers", category=melee_1h, recipe=void_daggers (blacksmithing)
-Weapon/Shield: id=heavy_crossbow, name="Heavy Crossbow", category=ranged, recipe=heavy_crossbow (blacksmithing)
-Weapon/Shield: id=void_crossbow, name="Voidforged Crossbow", category=ranged, recipe=void_crossbow (blacksmithing)
-Weapon/Shield: id=reinforced_staff, name="Reinforced Staff", category=melee_2h, recipe=reinforced_staff (bowyer)
-Weapon/Shield: id=void_staff, name="Voidforged Staff", category=melee_2h, recipe=void_staff (bowyer)
-Weapon/Shield: id=steel_shield, name="Steel Kite Shield", category=offhand, recipe=steel_shield (blacksmithing)
-Weapon/Shield: id=void_shield, name="Voidforged Tower Shield", category=offhand, recipe=void_shield (blacksmithing)
-Weapon/Shield: id=steel_throwing_weapons, name="Steel Chakrams", category=ranged, recipe=steel_throwing_weapons (blacksmithing)
-Weapon/Shield: id=void_throwing_weapons, name="Voidforged Throwing Blades", category=ranged, recipe=void_throwing_weapons (blacksmithing)
-Weapon/Shield: id=frost_short_sword, name="Frostbound Short Sword", category=melee_1h, recipe=frost_short_sword (blacksmithing)
-Weapon/Shield: id=frost_longsword, name="Frostbound Longsword", category=melee_1h, recipe=frost_longsword (blacksmithing)
-Weapon/Shield: id=frost_katana, name="Frostbound Katana", category=melee_1h, recipe=frost_katana (blacksmithing)
-Weapon/Shield: id=frost_greatsword, name="Frostbound Greatsword", category=melee_2h, recipe=frost_greatsword (blacksmithing)
-Weapon/Shield: id=frost_spear, name="Frostbound Spear", category=melee_1h, recipe=frost_spear (blacksmithing)
-Weapon/Shield: id=frost_halberd, name="Frostbound Halberd", category=melee_2h, recipe=frost_halberd (blacksmithing)
-Weapon/Shield: id=frost_daggers, name="Frostbound Daggers", category=melee_1h, recipe=frost_daggers (blacksmithing)
-Weapon/Shield: id=frost_morningstar, name="Frostbound Morningstar", category=melee_1h, recipe=frost_morningstar (blacksmithing)
-Weapon/Shield: id=frost_staff, name="Frostbound Staff", category=melee_2h, recipe=frost_staff (bowyer)
-Weapon/Shield: id=frost_bow, name="Frostbound Bow", category=ranged, recipe=frost_bow (bowyer)
-Weapon/Shield: id=frost_crossbow, name="Frostbound Crossbow", category=ranged, recipe=frost_crossbow (blacksmithing)
-Weapon/Shield: id=frost_shield, name="Frostbound Shield", category=offhand, recipe=frost_shield (blacksmithing)
-Weapon/Shield: id=frost_throwing_weapons, name="Frostbound Throwing Blades", category=ranged, recipe=frost_throwing_weapons (blacksmithing)
+=== DATA LINT GLOBAL GUARD TEST ===
 
-=== ARMOR & ACCESSORIES ===
-Armor/Accessory: id=leather_cap, name="Leather Cap", slot=helmet, recipe=leather_cap (armorsmithing)
-Armor/Accessory: id=padded_tunic, name="Padded Tunic", slot=body, recipe=padded_tunic (armorsmithing)
-Armor/Accessory: id=reinforced_leather_helm, name="Reinforced Leather Helm", slot=helmet, recipe=reinforced_leather_helm (armorsmithing)
-Armor/Accessory: id=leather_armor, name="Leather Armor", slot=body, recipe=leather_armor (armorsmithing)
-Armor/Accessory: id=iron_greathelm, name="Iron Greathelm", slot=helmet, recipe=iron_greathelm (armorsmithing)
-Armor/Accessory: id=iron_plate_armor, name="Iron Plate Armor", slot=body, recipe=iron_plate_armor (armorsmithing)
-Armor/Accessory: id=silk_cowl, name="Silk Cowl", slot=helmet, recipe=silk_cowl (armorsmithing)
-Armor/Accessory: id=silk_robe, name="Silk Robe", slot=body, recipe=silk_robe (armorsmithing)
-Armor/Accessory: id=studded_leather_helm, name="Studded Leather Helm", slot=helmet, recipe=studded_leather_helm (armorsmithing)
-Armor/Accessory: id=studded_leather_armor, name="Studded Leather Armor", slot=body, recipe=studded_leather_armor (armorsmithing)
-Armor/Accessory: id=steel_greathelm, name="Steel Greathelm", slot=helmet, recipe=steel_greathelm (armorsmithing)
-Armor/Accessory: id=steel_plate_armor, name="Steel Plate Armor", slot=body, recipe=steel_plate_armor (armorsmithing)
-Armor/Accessory: id=bone_necklace, name="Bone Necklace", slot=necklace, recipe=bone_necklace (armorsmithing)
-Armor/Accessory: id=wolf_claw_ring, name="Wolf Claw Ring", slot=ring, recipe=wolf_claw_ring (armorsmithing)
-Armor/Accessory: id=venom_charm, name="Venom Charm", slot=accessory, recipe=venom_charm (armorsmithing)
-Armor/Accessory: id=void_greathelm, name="Voidforged Greathelm", slot=helmet, recipe=void_greathelm (armorsmithing)
-Armor/Accessory: id=void_plate_armor, name="Voidforged Plate Armor", slot=body, recipe=void_plate_armor (armorsmithing)
-Armor/Accessory: id=void_pendant, name="Voidforged Pendant", slot=necklace, recipe=void_pendant (armorsmithing)
-Armor/Accessory: id=void_ring, name="Voidforged Band", slot=ring, recipe=void_ring (armorsmithing)
-Armor/Accessory: id=void_relic, name="Voidforged Relic", slot=accessory, recipe=void_relic (armorsmithing)
-Armor/Accessory: id=ingredient_bag, name="Ingredient Bag", slot=accessory, recipe=ingredient_bag (armorsmithing)
-Armor/Accessory: id=frost_hood, name="Frostweave Hood", slot=helmet, recipe=frost_hood (armorsmithing)
-Armor/Accessory: id=frost_robe, name="Frostweave Robe", slot=body, recipe=frost_robe (armorsmithing)
-Armor/Accessory: id=frost_leather_helm, name="Rimehide Helm", slot=helmet, recipe=frost_leather_helm (armorsmithing)
-Armor/Accessory: id=frost_leather_armor, name="Rimehide Armor", slot=body, recipe=frost_leather_armor (armorsmithing)
-Armor/Accessory: id=frost_greathelm, name="Rimeforged Greathelm", slot=helmet, recipe=frost_greathelm (armorsmithing)
-Armor/Accessory: id=frost_plate_armor, name="Rimeforged Plate", slot=body, recipe=frost_plate_armor (armorsmithing)
-Armor/Accessory: id=frost_pendant, name="Frost Pendant", slot=necklace, recipe=frost_pendant (armorsmithing)
-Armor/Accessory: id=frost_ring, name="Frost Ring", slot=ring, recipe=frost_ring (armorsmithing)
-Armor/Accessory: id=frost_relic, name="Glacial Heart Relic", slot=accessory, recipe=frost_relic (armorsmithing)
-Armor/Accessory: id=sovereign_signet, name="Sovereign's Signet", slot=ring, recipe=sovereign_signet (armorsmithing)
+1. Checking ID uniqueness...
+✓ PASS: 122 class IDs and 450 skill IDs are unique.
 
-=== ENEMY DROPS CHECK ===
-Enemy drops: []
+2. Checking combat class skill counts...
+✓ PASS: All 90 combat classes have exactly 5 skills.
 
-=== STARTING KITS GEAR ===
-Starting gear short_swords: recipe=short_sword (blacksmithing)
-Starting gear shields: recipe=iron_shield (blacksmithing)
-Starting gear longsword_2h: recipe=longsword_2h (blacksmithing)
-Starting gear bows: recipe=hunting_bow (bowyer)
-Starting gear daggers: recipe=daggers (blacksmithing)
-Starting gear fire_staff: recipe=NO RECIPE
+3. Checking status effect references...
+✓ PASS: All status references exist in statusEffects.json (45 valid statuses).
+
+4. Checking requirement targets (recursing into anyOf/oneOf)...
+✓ PASS: Every requirement target exists across all classes and skills.
+
+5. Checking applyStatus.durationMs rule...
+✓ PASS: applyStatus.durationMs verified (18 poison, 4 durationOverrideReason overrides).
+
+6. Checking skill definition completeness...
+7. Checking weapon levelBonus.damagePerLevel rule...
+✓ PASS: All non-magic, non-offhand weapons have positive damagePerLevel.
+
+8. Checking stat gains proficiency assignment rule...
+✓ PASS: All 56 proficiencies in ProgressionSystem defaults are assigned exactly once in statGains.json.
+
+9. Checking class spellDamageMultiplier values...
+✓ PASS: All spellDamageMultiplier values are numbers > 0 and <= 2.
+
+10. Checking Food & Cooking data integrity...
+✓ PASS: All Food & Cooking data integrity rules verified.
+
+🎉 ALL DATA LINT CHECKS PASSED PERFECTLY!

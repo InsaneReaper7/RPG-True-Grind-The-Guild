@@ -1,0 +1,60 @@
+{
+  "perkCap": 15,
+  "ranks": {
+    "apprentice": {
+      "levelCap": 10,
+      "perkCap": 15
+    },
+    "journeyman": {
+      "unlockProficiency": 30,
+      "unlockPrereqLevel": 10,
+      "perkCap": 15,
+      "refundUnitCount": 1
+    },
+    "master": {
+      "unlockProficiency": 60,
+      "unlockPrereqLevel": 15,
+      "perkCap": 15,
+      "maxCombinedGearBonus": 30
+    },
+    "grandmaster": {
+      "unlockProficiency": 90,
+      "unlockPrereqLevel": 25,
+      "perkCap": 15,
+      "exceptionalGearBonusPercent": 25,
+      "exceptionalStackableYieldMultiplier": 2
+    }
+  },
+  "professions": {
+    "blacksmithing": {
+      "apprentice": "apprentice_smith",
+      "journeyman": "journeyman_smith",
+      "master": "master_smith",
+      "grandmaster": "grandmaster_smith"
+    },
+    "armorsmithing": {
+      "apprentice": "apprentice_armorer",
+      "journeyman": "journeyman_armorer",
+      "master": "master_armorer",
+      "grandmaster": "grandmaster_armorer"
+    },
+    "bowyer": {
+      "apprentice": "apprentice_bowyer",
+      "journeyman": "journeyman_bowyer",
+      "master": "master_bowyer",
+      "grandmaster": "grandmaster_bowyer"
+    },
+    "alchemy": {
+      "apprentice": "apprentice_alchemist",
+      "journeyman": "journeyman_alchemist",
+      "master": "master_alchemist",
+      "grandmaster": "archalchemist"
+    },
+    "enchanting": {
+      "apprentice": "apprentice_enchanter",
+      "journeyman": "journeyman_enchanter",
+      "master": "master_enchanter",
+      "grandmaster": "runeweaver"
+    }
+  }
+}

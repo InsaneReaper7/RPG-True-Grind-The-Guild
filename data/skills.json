@@ -14215,6 +14215,651 @@
           }
         }
       ]
+    },
+    {
+      "id": "tempered_strike",
+      "name": "Tempered Strike",
+      "energyCost": 16,
+      "cooldownMs": 3000,
+      "damageMultiplier": 1.4,
+      "targetType": "enemy",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "battlesmith",
+          "value": 1
+        }
+      ],
+      "description": "A balanced, methodical strike dealing 140% weapon damage.",
+      "ai": {
+        "role": "rotation",
+        "priority": 30
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 1.4,
+          "scaling": "weapon"
+        }
+      ]
+    },
+    {
+      "id": "forge_guard",
+      "name": "Forge Guard",
+      "energyCost": 20,
+      "cooldownMs": 16000,
+      "targetType": "self",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "battlesmith",
+          "value": 10
+        }
+      ],
+      "description": "Braces behind solid forged iron, reducing damage taken by 20% for 8 seconds.",
+      "ai": {
+        "role": "defensive",
+        "priority": 60
+      },
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "damageTakenMultiplier",
+          "value": 0.8,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "hammerfall",
+      "name": "Hammerfall",
+      "energyCost": 26,
+      "cooldownMs": 9000,
+      "damageMultiplier": 2.2,
+      "targetType": "enemy",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "battlesmith",
+          "value": 20
+        }
+      ],
+      "description": "Slams the ground with blacksmith's might dealing 220% weapon damage in a 1.5-tile radius with a 25% stun chance.",
+      "ai": {
+        "role": "rotation",
+        "priority": 45,
+        "enemiesInRadius": 2
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 2.2,
+          "scaling": "weapon",
+          "area": {
+            "shape": "radius",
+            "radius": 1.5,
+            "center": "target"
+          }
+        },
+        {
+          "type": "applyStatus",
+          "status": "stun",
+          "chance": 0.25
+        }
+      ]
+    },
+    {
+      "id": "whetstone",
+      "name": "Whetstone",
+      "energyCost": 22,
+      "cooldownMs": 18000,
+      "targetType": "self",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "battlesmith",
+          "value": 30
+        }
+      ],
+      "description": "Hones weapon edges to keen perfection, increasing damage dealt by 20% for 10 seconds.",
+      "ai": {
+        "role": "support",
+        "priority": 50
+      },
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "bonusDamagePercent",
+          "value": 0.20,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "masterwork_blow",
+      "name": "Masterwork Blow",
+      "energyCost": 40,
+      "cooldownMs": 16000,
+      "damageMultiplier": 3.5,
+      "targetType": "enemy",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "battlesmith",
+          "value": 40
+        }
+      ],
+      "description": "Delivers a devastating masterwork strike dealing 350% weapon damage and exposing the target.",
+      "ai": {
+        "role": "finisher",
+        "priority": 70
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 3.5,
+          "scaling": "weapon"
+        },
+        {
+          "type": "applyStatus",
+          "status": "expose",
+          "chance": 1
+        }
+      ]
+    },
+    {
+      "id": "rune_slash",
+      "name": "Rune Slash",
+      "energyCost": 16,
+      "cooldownMs": 3000,
+      "damageMultiplier": 1.3,
+      "targetType": "enemy",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "runeblade",
+          "value": 1
+        }
+      ],
+      "description": "Carves an arcane rune through the enemy dealing 130% weapon damage plus 0.15 damage per Arcane Magic level.",
+      "ai": {
+        "role": "rotation",
+        "priority": 30
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 1.3,
+          "scaling": "weapon",
+          "profBonus": {
+            "prof": "arcane_magic",
+            "perLevel": 0.15
+          }
+        }
+      ]
+    },
+    {
+      "id": "rune_ward",
+      "name": "Rune Ward",
+      "energyCost": 22,
+      "cooldownMs": 18000,
+      "targetType": "self",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "runeblade",
+          "value": 10
+        }
+      ],
+      "description": "Summons a glowing barrier absorbing up to 40 damage for 8 seconds.",
+      "ai": {
+        "role": "defensive",
+        "priority": 60
+      },
+      "effects": [
+        {
+          "type": "shield",
+          "shieldAmount": 40,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "sigil_burst",
+      "name": "Sigil Burst",
+      "energyCost": 26,
+      "cooldownMs": 9000,
+      "damageMultiplier": 1.8,
+      "targetType": "enemy",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "runeblade",
+          "value": 20
+        }
+      ],
+      "description": "Detonates arcane sigils dealing 180% spell damage in a 1.5-tile radius.",
+      "ai": {
+        "role": "rotation",
+        "priority": 45,
+        "enemiesInRadius": 2
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 1.8,
+          "scaling": "spell",
+          "area": {
+            "shape": "radius",
+            "radius": 1.5,
+            "center": "target"
+          }
+        }
+      ]
+    },
+    {
+      "id": "inscribe_blade",
+      "name": "Inscribe Blade",
+      "energyCost": 24,
+      "cooldownMs": 20000,
+      "targetType": "self",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "runeblade",
+          "value": 30
+        }
+      ],
+      "description": "Inscribes the blade with arcane flow, granting +15% damage and 3 energy siphon on hit for 10 seconds.",
+      "ai": {
+        "role": "support",
+        "priority": 50
+      },
+      "effects": [
+        {
+          "type": "buff",
+          "statusEffectId": "inscribed_blade",
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "runic_cataclysm",
+      "name": "Runic Cataclysm",
+      "energyCost": 42,
+      "cooldownMs": 18000,
+      "damageMultiplier": 3.4,
+      "targetType": "enemy",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "runeblade",
+          "value": 40
+        }
+      ],
+      "description": "Unleashes an overwhelming runic catastrophe dealing 340% weapon damage plus 0.15 per Arcane Magic level and afflicting 100% arcane vulnerability.",
+      "ai": {
+        "role": "finisher",
+        "priority": 70
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 3.4,
+          "scaling": "weapon",
+          "profBonus": {
+            "prof": "arcane_magic",
+            "perLevel": 0.15
+          }
+        },
+        {
+          "type": "applyStatus",
+          "status": "arcane_vulnerability",
+          "chance": 1
+        }
+      ]
+    },
+    {
+      "id": "volatile_flask",
+      "name": "Volatile Flask",
+      "energyCost": 18,
+      "cooldownMs": 3000,
+      "damageMultiplier": 1.3,
+      "targetType": "enemy",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "alchemical_bomber",
+          "value": 1
+        }
+      ],
+      "description": "Hurls an unstable volatile flask dealing 130% weapon damage in a 1-tile radius with a 30% burn chance.",
+      "ai": {
+        "role": "rotation",
+        "priority": 30
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 1.3,
+          "scaling": "weapon",
+          "area": {
+            "shape": "radius",
+            "radius": 1,
+            "center": "target"
+          }
+        },
+        {
+          "type": "applyStatus",
+          "status": "burn",
+          "chance": 0.3
+        }
+      ]
+    },
+    {
+      "id": "smoke_bomb",
+      "name": "Smoke Bomb",
+      "energyCost": 20,
+      "cooldownMs": 16000,
+      "targetType": "self",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "alchemical_bomber",
+          "value": 10
+        }
+      ],
+      "description": "Drops a dense smoke bomb granting +30% evasion for 6 seconds.",
+      "ai": {
+        "role": "defensive",
+        "priority": 60
+      },
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "evasionBonus",
+          "value": 0.30,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "acid_vial",
+      "name": "Acid Vial",
+      "energyCost": 26,
+      "cooldownMs": 9000,
+      "damageMultiplier": 1.6,
+      "targetType": "enemy",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "alchemical_bomber",
+          "value": 20
+        }
+      ],
+      "description": "Shatters a vial of corrosive acid dealing 160% weapon damage in a 1.5-tile radius and exposing all targets.",
+      "ai": {
+        "role": "rotation",
+        "priority": 45,
+        "enemiesInRadius": 2
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 1.6,
+          "scaling": "weapon",
+          "area": {
+            "shape": "radius",
+            "radius": 1.5,
+            "center": "target"
+          }
+        },
+        {
+          "type": "applyStatus",
+          "status": "expose",
+          "chance": 1
+        }
+      ]
+    },
+    {
+      "id": "toxic_cloud",
+      "name": "Toxic Cloud",
+      "energyCost": 28,
+      "cooldownMs": 12000,
+      "damageMultiplier": 1.0,
+      "targetType": "enemy",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "alchemical_bomber",
+          "value": 30
+        }
+      ],
+      "description": "Releases a noxious toxic cloud dealing 100% weapon damage in a 2-tile radius and poisoning targets for 6 seconds.",
+      "ai": {
+        "role": "rotation",
+        "priority": 50,
+        "enemiesInRadius": 2
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 1.0,
+          "scaling": "weapon",
+          "area": {
+            "shape": "radius",
+            "radius": 2,
+            "center": "target"
+          }
+        },
+        {
+          "type": "applyStatus",
+          "status": "poison",
+          "chance": 1,
+          "durationMs": 6000
+        }
+      ]
+    },
+    {
+      "id": "grand_detonation",
+      "name": "Grand Detonation",
+      "energyCost": 44,
+      "cooldownMs": 18000,
+      "damageMultiplier": 3.2,
+      "targetType": "enemy",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "alchemical_bomber",
+          "value": 40
+        }
+      ],
+      "description": "Triggers a massive alchemical explosion dealing 320% weapon damage in a 2-tile radius and burning all enemies.",
+      "ai": {
+        "role": "finisher",
+        "priority": 70
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 3.2,
+          "scaling": "weapon",
+          "area": {
+            "shape": "radius",
+            "radius": 2,
+            "center": "target"
+          }
+        },
+        {
+          "type": "applyStatus",
+          "status": "burn",
+          "chance": 1
+        }
+      ]
+    },
+    {
+      "id": "bramble_lash",
+      "name": "Bramble Lash",
+      "energyCost": 20,
+      "cooldownMs": 3000,
+      "damageMultiplier": 1.1,
+      "targetType": "enemy",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "herbwarden",
+          "value": 1
+        }
+      ],
+      "description": "Lashes out with thorned brambles dealing 110% spell damage with a 20% poison chance (6s).",
+      "ai": {
+        "role": "rotation",
+        "priority": 30
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 1.1,
+          "scaling": "spell"
+        },
+        {
+          "type": "applyStatus",
+          "status": "poison",
+          "chance": 0.2,
+          "durationMs": 6000
+        }
+      ]
+    },
+    {
+      "id": "bark_ward",
+      "name": "Bark Ward",
+      "energyCost": 22,
+      "cooldownMs": 16000,
+      "targetType": "self",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "herbwarden",
+          "value": 10
+        }
+      ],
+      "description": "Encases the body in hardened ironwood bark, reducing damage taken by 20% for 8 seconds.",
+      "ai": {
+        "role": "defensive",
+        "priority": 60
+      },
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "damageTakenMultiplier",
+          "value": 0.8,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "harvest_bloom",
+      "name": "Harvest Bloom",
+      "energyCost": 28,
+      "cooldownMs": 10000,
+      "targetType": "friendly",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "herbwarden",
+          "value": 20
+        }
+      ],
+      "description": "Blooms restorative flora healing an injured ally for 25 HP and applying regrowth.",
+      "ai": {
+        "role": "support",
+        "priority": 65,
+        "allyHpBelow": 0.7
+      },
+      "effects": [
+        {
+          "type": "heal",
+          "amount": 25,
+          "target": "lowestAlly"
+        },
+        {
+          "type": "applyStatus",
+          "status": "regrowth",
+          "chance": 1,
+          "target": "lowestAlly"
+        }
+      ]
+    },
+    {
+      "id": "snaring_roots",
+      "name": "Snaring Roots",
+      "energyCost": 26,
+      "cooldownMs": 10000,
+      "damageMultiplier": 1.4,
+      "targetType": "enemy",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "herbwarden",
+          "value": 30
+        }
+      ],
+      "description": "Causes thorny root systems to surge up, dealing 140% spell damage in a 1.5-tile radius and slowing targets 100%.",
+      "ai": {
+        "role": "rotation",
+        "priority": 45,
+        "enemiesInRadius": 2
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 1.4,
+          "scaling": "spell",
+          "area": {
+            "shape": "radius",
+            "radius": 1.5,
+            "center": "target"
+          }
+        },
+        {
+          "type": "applyStatus",
+          "status": "slow",
+          "chance": 1
+        }
+      ]
+    },
+    {
+      "id": "verdant_wrath",
+      "name": "Verdant Wrath",
+      "energyCost": 44,
+      "cooldownMs": 18000,
+      "damageMultiplier": 3.4,
+      "targetType": "enemy",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "herbwarden",
+          "value": 40
+        }
+      ],
+      "description": "Channels the primordial fury of the wilds dealing 340% spell damage and afflicting targets with lethal poison for 6 seconds.",
+      "ai": {
+        "role": "finisher",
+        "priority": 70
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 3.4,
+          "scaling": "spell"
+        },
+        {
+          "type": "applyStatus",
+          "status": "poison",
+          "chance": 1,
+          "durationMs": 6000
+        }
+      ]
     }
   ]
 }

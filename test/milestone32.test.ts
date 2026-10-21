@@ -463,7 +463,7 @@ async function runTests() {
   assert.equal(attemptRes.reason, 'Must skin corpse before butchering');
 
   // Perform Skinning on Wolf
-  const hero = new Player(mockScene, 10, 10, 'hero', mockPlayerData);
+  const hero = new Player(mockScene, 10, 10, mockPlayerData, dataLoader.getWeapon('short_swords')!);
   const initialPelts = hero.getItemCount('wolf_pelt');
   const initialMeat = hero.getItemCount('crypt_meat');
 
