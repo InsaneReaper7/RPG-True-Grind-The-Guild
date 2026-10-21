@@ -609,8 +609,8 @@
       "id": "glacial_sovereign",
       "name": "Glacial Sovereign",
       "tier": "boss",
-      "hp": 420,
-      "criticalHpMax": 210,
+      "hp": 3400,
+      "criticalHpMax": 1700,
       "meleeDamage": 32,
       "aggroRadius": 8,
       "attackIntervalMs": 1400,
@@ -670,7 +670,8 @@
       ],
       "lostRecipeScrolls": [
         "lost_recipe_sovereigns_winter_table"
-      ]
+      ],
+      "frostbiteChance": 0.25
     },
     {
       "id": "holy_elemental",
@@ -1521,6 +1522,262 @@
       "lostRecipeScrolls": [
         "lost_recipe_treant_harvest",
         "lost_recipe_magma_glazed_ribs"
+      ]
+    },
+    {
+      "id": "frostfang_stalker",
+      "name": "Frostfang Stalker",
+      "tier": "common",
+      "hp": 40,
+      "criticalHpMax": 20,
+      "meleeDamage": 8,
+      "aggroRadius": 7,
+      "attackIntervalMs": 900,
+      "moveSpeed": 105,
+      "attackRangeTiles": 1,
+      "dropChance": 0.4,
+      "frostbiteChance": 0.15,
+      "description": "A swift pack predator native to the sub-zero glacial caverns. Its frozen fangs inflict biting frostbite with rapid strikes.",
+      "harvest": [
+        {
+          "method": "salvage",
+          "item": "bone",
+          "weight": 2,
+          "tags": [
+            "blacksmithing",
+            "bowyer"
+          ]
+        },
+        {
+          "method": "rare_drop",
+          "item": "wolf_claw",
+          "weight": 1,
+          "tags": [
+            "blacksmithing",
+            "bowyer"
+          ]
+        }
+      ],
+      "corpseHarvest": {
+        "skinning": {
+          "item": "wolf_pelt",
+          "name": "Wolf Pelt",
+          "count": 1,
+          "exp": 15,
+          "tags": [
+            "armorsmithing"
+          ]
+        },
+        "butchering": {
+          "item": "glacial_meat",
+          "name": "Glacial Haunch",
+          "count": 1,
+          "exp": 15,
+          "premiumItem": "prime_glacial_meat",
+          "premiumChance": 0.1,
+          "tags": [
+            "cooking"
+          ]
+        }
+      },
+      "ingredientDrops": [
+        {
+          "item": "black_pepper",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "id": "glacier_yeti",
+      "name": "Glacier Yeti",
+      "tier": "common",
+      "hp": 80,
+      "criticalHpMax": 40,
+      "meleeDamage": 16,
+      "aggroRadius": 6,
+      "attackIntervalMs": 1700,
+      "moveSpeed": 70,
+      "attackRangeTiles": 1,
+      "dropChance": 0.4,
+      "stunChance": 0.1,
+      "description": "A massive hulking beast encased in permafrost. Delivers bone-crushing blows capable of stunning even armored warriors.",
+      "harvest": [
+        {
+          "method": "salvage",
+          "item": "bone",
+          "weight": 2,
+          "tags": [
+            "blacksmithing",
+            "bowyer"
+          ]
+        },
+        {
+          "method": "salvage",
+          "item": "steel_scrap",
+          "weight": 1,
+          "tags": [
+            "blacksmithing",
+            "armorsmithing"
+          ]
+        }
+      ],
+      "corpseHarvest": {
+        "butchering": {
+          "item": "glacial_meat",
+          "name": "Glacial Haunch",
+          "count": 1,
+          "exp": 15,
+          "premiumItem": "prime_glacial_meat",
+          "premiumChance": 0.1,
+          "tags": [
+            "cooking"
+          ]
+        }
+      },
+      "ingredientDrops": [
+        {
+          "item": "salt",
+          "weight": 2
+        }
+      ]
+    },
+    {
+      "id": "ice_wraith",
+      "name": "Ice Wraith",
+      "tier": "common",
+      "hp": 34,
+      "criticalHpMax": 17,
+      "meleeDamage": 10,
+      "aggroRadius": 8,
+      "attackIntervalMs": 1250,
+      "moveSpeed": 80,
+      "attackRangeTiles": 4,
+      "dropChance": 0.4,
+      "frostbiteChance": 0.2,
+      "description": "A spectral entity composed of howling arctic winds. Flings sub-zero crystalline rime from a distance to cripple foes with frostbite.",
+      "harvest": [
+        {
+          "method": "salvage",
+          "item": "ectoplasm",
+          "weight": 2,
+          "tags": [
+            "alchemy",
+            "enchanting"
+          ]
+        },
+        {
+          "method": "salvage",
+          "item": "glacial_essence",
+          "weight": 1,
+          "tags": [
+            "alchemy",
+            "enchanting"
+          ]
+        }
+      ],
+      "ingredientDrops": [
+        {
+          "item": "black_pepper",
+          "weight": 2
+        }
+      ]
+    },
+    {
+      "id": "rime_golem",
+      "name": "Rime Golem",
+      "tier": "common",
+      "hp": 95,
+      "criticalHpMax": 47,
+      "meleeDamage": 6,
+      "aggroRadius": 6,
+      "attackIntervalMs": 1600,
+      "moveSpeed": 60,
+      "attackRangeTiles": 1,
+      "dropChance": 0.4,
+      "slowChance": 0.25,
+      "description": "An animate construct of compacted glacial ice and subterranean ore. Its icy presence chills the air, slowing nearby attackers.",
+      "harvest": [
+        {
+          "method": "salvage",
+          "item": "ore",
+          "weight": 3,
+          "tags": [
+            "blacksmithing",
+            "armorsmithing"
+          ]
+        },
+        {
+          "method": "salvage",
+          "item": "steel_scrap",
+          "weight": 1,
+          "tags": [
+            "blacksmithing",
+            "armorsmithing"
+          ]
+        }
+      ],
+      "ingredientDrops": [
+        {
+          "item": "salt",
+          "weight": 2
+        }
+      ]
+    },
+    {
+      "id": "frost_troll",
+      "name": "Frost Troll",
+      "tier": "elite",
+      "hp": 110,
+      "criticalHpMax": 55,
+      "meleeDamage": 15,
+      "aggroRadius": 6,
+      "attackIntervalMs": 1300,
+      "moveSpeed": 85,
+      "attackRangeTiles": 1,
+      "slowChance": 0.2,
+      "researchPoints": {
+        "min": 4,
+        "max": 7
+      },
+      "description": "A savage troll adapted to the perpetual freezing cold of the Glacial Caverns. Swings heavy frost-coated weaponry that slows its victims.",
+      "harvest": [
+        {
+          "method": "salvage",
+          "item": "steel_scrap",
+          "amount": [
+            2,
+            3
+          ],
+          "weight": 2,
+          "tags": [
+            "blacksmithing",
+            "armorsmithing"
+          ]
+        },
+        {
+          "method": "salvage",
+          "item": "glacial_essence",
+          "amount": 1,
+          "weight": 1,
+          "tags": [
+            "alchemy",
+            "enchanting"
+          ]
+        },
+        {
+          "method": "rare_drop",
+          "item": "orc_heavy_hide",
+          "amount": 1,
+          "chance": 0.35,
+          "weight": 1,
+          "tags": [
+            "armorsmithing",
+            "leatherworking"
+          ]
+        }
+      ],
+      "lostRecipeScrolls": [
+        "lost_recipe_frostbite_broth"
       ]
     }
   ]

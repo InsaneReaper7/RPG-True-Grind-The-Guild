@@ -1,6 +1,6 @@
 ================================================================================
-BUG REPORT: TG-B2OBAL
-DATE: 2026-10-17T12:49:27.747Z
+BUG REPORT: TG-8B2B8C
+DATE: 2026-10-21T00:24:43.965Z
 CATEGORY: Combat
 VERSION: unknown
 WHAT HAPPENED:
@@ -12,8 +12,8 @@ Damage should be normal tier 1 amount.
 [+00:00:00.000] Outpost session     Session started. Version: e9ab511. Build date: 2026-10-17T12:00:00.000Z
 [+00:00:00.002] Outpost equip       Valerie: Equipped offhand weapon: Shields
 [+00:00:00.002] Outpost item        Valerie: +1 shields
-[+00:00:00.003] Outpost equip       Valerie: off-hand Shields unequipped: Greatswords is two-handed
-[+00:00:00.003] Outpost equip       Valerie: Equipped main weapon: Greatswords
+[+00:00:00.002] Outpost equip       Valerie: off-hand Shields unequipped: Greatswords is two-handed
+[+00:00:00.002] Outpost equip       Valerie: Equipped main weapon: Greatswords
 [+00:00:00.003] F1      class       Valerie: Active class set to: scout
 [+00:00:00.003] F1      skill       Valerie: Equipped skill quickshot
 [+00:00:00.003] F1      class       Valerie: Active class set to: fighter

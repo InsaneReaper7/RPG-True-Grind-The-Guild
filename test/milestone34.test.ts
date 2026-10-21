@@ -517,7 +517,7 @@ async function runMilestone34Tests() {
         totalBossCount++;
       } else if (espawn.enemyId === 'void_knight') {
         totalEpicCount++;
-      } else if (espawn.enemyId === 'orc_warrior') {
+      } else if (espawn.enemyId === 'orc_warrior' || espawn.enemyId === 'frost_troll') {
         totalEliteCount++;
       } else {
         const isCommon = dungeonConfig.enemyPool.includes(espawn.enemyId) ||

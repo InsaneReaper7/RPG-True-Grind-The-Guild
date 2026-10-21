@@ -17,23 +17,47 @@
   "roomTypes": {
     "gathering": {
       "weight": 25,
-      "bushesRange": [2, 4],
-      "enemiesRange": [0, 0]
+      "bushesRange": [
+        2,
+        4
+      ],
+      "enemiesRange": [
+        0,
+        0
+      ]
     },
     "light_combat": {
       "weight": 45,
-      "bushesRange": [1, 3],
-      "enemiesRange": [1, 2]
+      "bushesRange": [
+        1,
+        3
+      ],
+      "enemiesRange": [
+        1,
+        2
+      ]
     },
     "heavy_combat": {
       "weight": 30,
-      "bushesRange": [2, 5],
-      "enemiesRange": [3, 5]
+      "bushesRange": [
+        2,
+        5
+      ],
+      "enemiesRange": [
+        3,
+        5
+      ]
     },
     "boss": {
       "weight": 0,
-      "bushesRange": [0, 0],
-      "enemiesRange": [1, 1]
+      "bushesRange": [
+        0,
+        0
+      ],
+      "enemiesRange": [
+        1,
+        1
+      ]
     }
   },
   "enemyPool": [
@@ -98,11 +122,31 @@
       "bossEnemyId": "bone_warden",
       "depthScalingOffset": 0,
       "enemyPool": [
-        { "enemyId": "wolf", "weight": 25, "type": "core" },
-        { "enemyId": "skeleton", "weight": 25, "type": "core" },
-        { "enemyId": "goblin", "weight": 20, "type": "core" },
-        { "enemyId": "goblin_archer", "weight": 20, "type": "core" },
-        { "enemyId": "slime", "weight": 10, "type": "core" }
+        {
+          "enemyId": "wolf",
+          "weight": 25,
+          "type": "core"
+        },
+        {
+          "enemyId": "skeleton",
+          "weight": 25,
+          "type": "core"
+        },
+        {
+          "enemyId": "goblin",
+          "weight": 20,
+          "type": "core"
+        },
+        {
+          "enemyId": "goblin_archer",
+          "weight": 20,
+          "type": "core"
+        },
+        {
+          "enemyId": "slime",
+          "weight": 10,
+          "type": "core"
+        }
       ]
     },
     {
@@ -122,14 +166,46 @@
       "epicEnemyId": null,
       "depthScalingOffset": 0,
       "enemyPool": [
-        { "enemyId": "spider", "weight": 20, "type": "core" },
-        { "enemyId": "deep_crawler", "weight": 16, "type": "core" },
-        { "enemyId": "abyssal_lurker", "weight": 14, "type": "core" },
-        { "enemyId": "void_thrall", "weight": 10, "type": "core" },
-        { "enemyId": "undead", "weight": 10, "type": "core" },
-        { "enemyId": "skeleton", "weight": 10, "type": "carry_over" },
-        { "enemyId": "goblin_archer", "weight": 10, "type": "carry_over" },
-        { "enemyId": "wolf", "weight": 10, "type": "carry_over" }
+        {
+          "enemyId": "spider",
+          "weight": 20,
+          "type": "core"
+        },
+        {
+          "enemyId": "deep_crawler",
+          "weight": 16,
+          "type": "core"
+        },
+        {
+          "enemyId": "abyssal_lurker",
+          "weight": 14,
+          "type": "core"
+        },
+        {
+          "enemyId": "void_thrall",
+          "weight": 10,
+          "type": "core"
+        },
+        {
+          "enemyId": "undead",
+          "weight": 10,
+          "type": "core"
+        },
+        {
+          "enemyId": "skeleton",
+          "weight": 10,
+          "type": "carry_over"
+        },
+        {
+          "enemyId": "goblin_archer",
+          "weight": 10,
+          "type": "carry_over"
+        },
+        {
+          "enemyId": "wolf",
+          "weight": 10,
+          "type": "carry_over"
+        }
       ]
     },
     {
@@ -149,12 +225,36 @@
       "epicEnemyId": "void_knight",
       "depthScalingOffset": 5,
       "enemyPool": [
-        { "enemyId": "cinder_hound", "weight": 25, "type": "core" },
-        { "enemyId": "magma_brute", "weight": 18, "type": "core" },
-        { "enemyId": "ash_wraith", "weight": 15, "type": "core" },
-        { "enemyId": "obsidian_sentry", "weight": 12, "type": "core" },
-        { "enemyId": "spider", "weight": 15, "type": "carry_over" },
-        { "enemyId": "undead", "weight": 15, "type": "carry_over" }
+        {
+          "enemyId": "cinder_hound",
+          "weight": 25,
+          "type": "core"
+        },
+        {
+          "enemyId": "magma_brute",
+          "weight": 18,
+          "type": "core"
+        },
+        {
+          "enemyId": "ash_wraith",
+          "weight": 15,
+          "type": "core"
+        },
+        {
+          "enemyId": "obsidian_sentry",
+          "weight": 12,
+          "type": "core"
+        },
+        {
+          "enemyId": "spider",
+          "weight": 15,
+          "type": "carry_over"
+        },
+        {
+          "enemyId": "undead",
+          "weight": 15,
+          "type": "carry_over"
+        }
       ]
     },
     {
@@ -169,14 +269,45 @@
       "bossEnemyId": "glacial_sovereign",
       "corePercentage": 70,
       "carryOverPercentage": 30,
-      "eliteEnemyId": "orc_warrior",
+      "eliteEnemyId": "frost_troll",
       "epicEnemyId": "void_knight",
       "depthScalingOffset": 10,
       "enemyPool": [
-        { "enemyId": "undead", "weight": 35, "type": "core" },
-        { "enemyId": "skeleton_archer", "weight": 35, "type": "core" },
-        { "enemyId": "spider", "weight": 15, "type": "carry_over" },
-        { "enemyId": "skeleton", "weight": 15, "type": "carry_over" }
+        {
+          "enemyId": "frostfang_stalker",
+          "weight": 22,
+          "type": "core"
+        },
+        {
+          "enemyId": "ice_wraith",
+          "weight": 18,
+          "type": "core"
+        },
+        {
+          "enemyId": "glacier_yeti",
+          "weight": 16,
+          "type": "core"
+        },
+        {
+          "enemyId": "rime_golem",
+          "weight": 14,
+          "type": "core"
+        },
+        {
+          "enemyId": "cinder_hound",
+          "weight": 10,
+          "type": "carry_over"
+        },
+        {
+          "enemyId": "magma_brute",
+          "weight": 10,
+          "type": "carry_over"
+        },
+        {
+          "enemyId": "ash_wraith",
+          "weight": 10,
+          "type": "carry_over"
+        }
       ]
     }
   ]

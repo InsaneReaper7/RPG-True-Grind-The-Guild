@@ -10,6 +10,7 @@ import { HiddenSkillSystem, type CombatContext, type CounterattackResult } from 
 import { GameState } from './GameState.ts';
 import { SkillSystem } from './SkillSystem.ts';
 import { EventLog } from './EventLog.ts';
+import { CookingSystem } from './CookingSystem.ts';
 
 export class CombatSystem {
   public static readonly DEBUG_AI: boolean = false;
@@ -27,6 +28,9 @@ export class CombatSystem {
   public skillSystem: SkillSystem;
 
   private wasInCombat: boolean = false;
+  private materialLootRng?: () => number;
+  private cookingLootRng?: () => number;
+  private enableCookingDrops: boolean = true;
   private combatStartTimeMs: number = 0;
   private damageDealtByMember: Map<string, number> = new Map();
   private damageTakenByMember: Map<string, number> = new Map();
@@ -55,6 +59,18 @@ export class CombatSystem {
 
   public get progressionSystem(): ProgressionSystem {
     return this.party[0]?.progression;
+  }
+
+  public setMaterialLootRng(rng: (() => number) | undefined): void {
+    this.materialLootRng = rng;
+  }
+
+  public setCookingLootRng(rng: (() => number) | undefined): void {
+    this.cookingLootRng = rng;
+  }
+
+  public setEnableCookingDrops(enabled: boolean): void {
+    this.enableCookingDrops = enabled;
   }
 
   public setParty(party: Player[]): void {
@@ -1019,23 +1035,7 @@ export class CombatSystem {
                       }
                     }
 
-                    // Signature Mechanic 2: Rime Frostbite (Chill & Movement Cripple)
-                    // Inflicts deep freezing cold: 50% slow and frostbite DoT (3 damage per tick for 4.5s)
-                    if (!targetDowned) {
-                      const frostbiteEffect = {
-                        id: 'frostbite',
-                        name: 'Frostbite',
-                        durationMs: 4500,
-                        tickIntervalMs: 1500,
-                        damagePerTick: 3,
-                        moveSpeedMultiplier: 0.5,
-                        isHarmful: true,
-                        color: '#06b6d4'
-                      };
-                      target.applyStatusEffect(frostbiteEffect);
-                      this.createFloatingText(target.x, target.y - 28, 'FROSTBITE! SLOWED!', '#06b6d4');
-                      console.log(`[Combat:Frostbite] ❄️ ${enemy.entityName} afflicts ${target.entityName} with Frostbite (-50% Move Speed, 3 frost DoT)!`);
-                    }
+                    // Signature Mechanic 2: Rime Frostbite handled generically via frostbiteChance: 0.25
                   }
 
                   // Milestone 42: Enemy Status Effect Proc (Spider Poison proc chance on attack)
@@ -1071,7 +1071,7 @@ export class CombatSystem {
 
                   // Milestone: Infernal Caldera - Stun proc (Magma Brute only: 1s duration)
                   // Note: Magma Tyrant does NOT stun. Stun is strictly limited to Magma Brute (1s) and Abyssal Colossus (Milestone 34 shockwave).
-                  if (enemy.enemyData.id === 'magma_brute' && enemy.enemyData.stunChance && actualDamage > 0 && !targetDowned) {
+                  if (enemy.enemyData.stunChance && actualDamage > 0 && !targetDowned) {
                     if (Math.random() < enemy.enemyData.stunChance) {
                       const stunDuration = 1000;
                       const loadedStun = DataLoader.getInstance().getStatusEffect('stun');
@@ -1126,6 +1126,20 @@ export class CombatSystem {
 
                   // Milestone: Abyssal Depths Expansion - Blind proc (Abyssal Lurker)
                   // Uses standard Blind definition from statusEffects.json (4000ms duration, 35% miss penalty)
+                                    // Milestone: Glacial Caverns - Frostbite proc (Frostfang Stalker, Ice Wraith, Glacial Sovereign)
+                  // Uses standard Frostbite definition from statusEffects.json (4500ms duration, 1500ms interval, 3 dmg/tick = 2 DPS, 0.5 move speed)
+                  if (enemy.enemyData.frostbiteChance && actualDamage > 0 && !targetDowned) {
+                    const frostRoll = (this as any).combatRng ? (this as any).combatRng() : Math.random();
+                    if (frostRoll < enemy.enemyData.frostbiteChance) {
+                      const frostbiteDef = DataLoader.getInstance().getStatusEffect('frostbite');
+                      if (frostbiteDef) {
+                        target.applyStatusEffect(frostbiteDef);
+                        this.createFloatingText(target.x, target.y - 28, 'FROSTBITE!', frostbiteDef.color || '#06b6d4');
+                        console.log(`[Combat] ❄️ ${enemy.entityName} inflicts Frostbite on ${target.entityName}!`);
+                      }
+                    }
+                  }
+
                   if (enemy.enemyData.blindChance && actualDamage > 0 && !targetDowned) {
                     if (Math.random() < enemy.enemyData.blindChance) {
                       const blindDef = DataLoader.getInstance().getStatusEffect('blind');
@@ -2720,6 +2734,11 @@ export class CombatSystem {
       const gameState = GameState.getInstance();
       const isBoss = target.enemyData.tier === 'boss';
 
+      let recipient: Player = killer;
+      if (!recipient || recipient.state === 'downed' || recipient.state === 'dead' || (recipient.hp <= 0 && recipient.criticalHp <= 0)) {
+        recipient = (this.party && this.party[0]) ? this.party[0] : killer;
+      }
+
       // Milestone: Research Points Kill Rewards (Elite, Epic, Boss)
       const rpReward = CombatSystem.calculateResearchPointsForEnemy(target.enemyData);
       if (rpReward > 0) {
@@ -2752,13 +2771,11 @@ export class CombatSystem {
                  !['wolf_pelt', 'spider_silk', 'wolf_meat', 'monster_meat'].includes(h.item)
         );
 
-        let recipient: Player = killer;
-        if (!recipient || recipient.state === 'downed' || recipient.state === 'dead' || (recipient.hp <= 0 && recipient.criticalHp <= 0)) {
-          recipient = (this.party && this.party[0]) ? this.party[0] : killer;
-        }
+
+        const matRng = this.materialLootRng || Math.random;
 
         if (target.enemyData.tier === 'common') {
-          const chosen = CombatSystem.rollCommonEnemyDrop(target.enemyData);
+          const chosen = CombatSystem.rollCommonEnemyDrop(target.enemyData, matRng);
           if (chosen) {
             if (recipient) {
               recipient.addItem(chosen.item, 1);
@@ -2782,14 +2799,14 @@ export class CombatSystem {
             if (h.method === 'guaranteed') {
               shouldDrop = true;
               count = Array.isArray(h.amount)
-                ? Math.floor(Math.random() * (h.amount[1] - h.amount[0] + 1)) + h.amount[0]
+                ? Math.floor(matRng() * (h.amount[1] - h.amount[0] + 1)) + h.amount[0]
                 : (typeof h.amount === 'number' ? h.amount : 1);
             } else {
               const chance = (h as any).chance ?? (h.method === 'rare_drop' ? 0.35 : 0.5);
-              if (Math.random() < chance) {
+              if (matRng() < chance) {
                 shouldDrop = true;
                 count = Array.isArray(h.amount)
-                  ? Math.floor(Math.random() * (h.amount[1] - h.amount[0] + 1)) + h.amount[0]
+                  ? Math.floor(matRng() * (h.amount[1] - h.amount[0] + 1)) + h.amount[0]
                   : (typeof h.amount === 'number' ? h.amount : 1);
               }
             }
@@ -2818,7 +2835,7 @@ export class CombatSystem {
           this.createFloatingText(target.x, target.y - 35, '+3 Bone', '#e4e4e7');
           this.createFloatingText(target.x, target.y - 50, '+2 Ore', '#a1a1aa');
           // 2. Guaranteed 1 Gemstone: Holy or Dark 50/50
-          const gemItem = Math.random() < 0.50 ? 'holy_gemstone' : 'dark_gemstone';
+          const gemItem = matRng() < 0.50 ? 'holy_gemstone' : 'dark_gemstone';
           const gemName = gemItem === 'holy_gemstone' ? 'Holy Gemstone' : 'Dark Gemstone';
           if (recipient) recipient.addItem(gemItem, 1);
           else gameState.addItem(gemItem, 1);
@@ -2826,25 +2843,25 @@ export class CombatSystem {
         } else if (target.enemyData.id === 'magma_tyrant') {
           // Director-mandated drops for Magma Tyrant (Band 3 Milestone Boss):
           // 1. void_plate: 1 at 50%
-          if (Math.random() < 0.50) {
+          if (matRng() < 0.50) {
             if (recipient) recipient.addItem('void_plate', 1);
             else gameState.addItem('void_plate', 1);
             this.createFloatingText(target.x, target.y - 35, '+1 Void Plate', '#ef4444');
           }
           // 2. void_essence: 1 at 50%
-          if (Math.random() < 0.50) {
+          if (matRng() < 0.50) {
             if (recipient) recipient.addItem('void_essence', 1);
             else gameState.addItem('void_essence', 1);
             this.createFloatingText(target.x, target.y - 50, '+1 Void Essence', '#ef4444');
           }
           // 3. Gemstone: 1 guaranteed (Fire or Lightning 50/50)
-          const gemItem = Math.random() < 0.50 ? 'fire_gemstone' : 'lightning_gemstone';
+          const gemItem = matRng() < 0.50 ? 'fire_gemstone' : 'lightning_gemstone';
           const gemName = gemItem === 'fire_gemstone' ? 'Fire Gemstone' : 'Lightning Gemstone';
           if (recipient) recipient.addItem(gemItem, 1);
           else gameState.addItem(gemItem, 1);
           this.createFloatingText(target.x, target.y - 65, `+1 ${gemName}`, '#38bdf8');
           // 4. void_core: 10% chase drop
-          if (Math.random() < 0.10) {
+          if (matRng() < 0.10) {
             if (recipient) recipient.addItem('void_core', 1);
             else gameState.addItem('void_core', 1);
             this.createFloatingText(target.x, target.y - 80, '+1 Void Core', '#c084fc');
@@ -2853,14 +2870,14 @@ export class CombatSystem {
           // Elite, Epic and Boss keep their existing tiered reward structure
           // Guaranteed Gemstones for Abyssal Colossus and Glacial Sovereign:
           if (target.enemyData.id === 'abyssal_colossus') {
-            const roll = Math.random();
+            const roll = matRng();
             const gemItem = roll < 1 / 3 ? 'arcane_gemstone' : roll < 2 / 3 ? 'water_gemstone' : 'earth_gemstone';
             const gemName = gemItem === 'arcane_gemstone' ? 'Arcane Gemstone' : gemItem === 'water_gemstone' ? 'Water Gemstone' : 'Earth Gemstone';
             if (recipient) recipient.addItem(gemItem, 1);
             else gameState.addItem(gemItem, 1);
             this.createFloatingText(target.x, target.y - 65, `+1 ${gemName}`, '#38bdf8');
           } else if (target.enemyData.id === 'glacial_sovereign') {
-            const gemItem = Math.random() < 0.50 ? 'ice_gemstone' : 'wind_gemstone';
+            const gemItem = matRng() < 0.50 ? 'ice_gemstone' : 'wind_gemstone';
             const gemName = gemItem === 'ice_gemstone' ? 'Ice Gemstone' : 'Wind Gemstone';
             if (recipient) recipient.addItem(gemItem, 1);
             else gameState.addItem(gemItem, 1);
@@ -2872,10 +2889,10 @@ export class CombatSystem {
             if (h.method === 'firstKillGuaranteed') {
               const flagName = h.flag || `${h.item}Obtained`;
               const alreadyObtained = gameState.getWorldFlag(flagName);
-              const shouldDrop = !alreadyObtained || Math.random() < (h.chance ?? 0.15);
+              const shouldDrop = !alreadyObtained || matRng() < (h.chance ?? 0.15);
               if (shouldDrop) {
                 const harvestCount = Array.isArray(h.amount)
-                  ? Math.floor(Math.random() * (h.amount[1] - h.amount[0] + 1)) + h.amount[0]
+                  ? Math.floor(matRng() * (h.amount[1] - h.amount[0] + 1)) + h.amount[0]
                   : typeof h.amount === 'number'
                   ? h.amount
                   : 1;
@@ -2888,15 +2905,15 @@ export class CombatSystem {
               continue;
             }
             const isRare = h.method === 'rare_drop';
-            const roll = Math.random();
+            const roll = matRng();
             const rareThreshold = h.chance ?? (isBoss ? 0.60 : 0.35);
             if (!isRare || roll < rareThreshold) {
               const harvestCount = Array.isArray(h.amount)
-                ? Math.floor(Math.random() * (h.amount[1] - h.amount[0] + 1)) + h.amount[0]
+                ? Math.floor(matRng() * (h.amount[1] - h.amount[0] + 1)) + h.amount[0]
                 : typeof h.amount === 'number'
                 ? h.amount
                 : Array.isArray(h.count)
-                ? Math.floor(Math.random() * (h.count[1] - h.count[0] + 1)) + h.count[0]
+                ? Math.floor(matRng() * (h.count[1] - h.count[0] + 1)) + h.count[0]
                 : typeof h.count === 'number'
                 ? h.count
                 : 1;
@@ -2912,6 +2929,101 @@ export class CombatSystem {
           }
         }
       }
+      // Milestone: Food & Cooking Drop Rolls (Ingredient roll, Chef bonus, Peppercorn swap, Lost Recipes)
+      if (this.enableCookingDrops) {
+        const cookRng = this.cookingLootRng || Math.random;
+        const cookingConfig = DataLoader.getInstance().getCookingConfig();
+
+        // 1. Ingredient drop roll
+        if (target.enemyData.ingredientDrops && target.enemyData.ingredientDrops.length > 0) {
+          if (cookRng() < cookingConfig.ingredientDropChance) {
+            const totalWeight = target.enemyData.ingredientDrops.reduce((sum, i) => sum + (i.weight || 1), 0);
+            let roll = cookRng() * totalWeight;
+            let chosenItem = target.enemyData.ingredientDrops[0].item;
+            for (const entry of target.enemyData.ingredientDrops) {
+              const w = entry.weight || 1;
+              if (roll < w) {
+                chosenItem = entry.item;
+                break;
+              }
+              roll -= w;
+            }
+
+            // Peppercorn swap: 2% of pepper results become peppercorn seeds
+            if (chosenItem === 'black_pepper' && cookRng() < cookingConfig.peppercornSeedChance) {
+              chosenItem = 'peppercorn_seed';
+            }
+
+            if (recipient) {
+              recipient.addItem(chosenItem, 1);
+            } else {
+              gameState.addItem(chosenItem, 1);
+            }
+            const itemName = chosenItem.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+            this.createFloatingText(target.x, target.y - 45, `+1 ${itemName} (Cooking)`, '#38bdf8');
+          }
+
+          // 2. Chef bonus roll: highest Chef-line level in party to that Chef's bag
+          let highestChefLevel = 0;
+          let highestChefMember: Player | null = null;
+          const chefClassIds = CookingSystem.CHEF_CLASSES || ['apprentice_cook', 'line_cook', 'chef', 'executive_chef'];
+
+          const partyMembers = this.party && this.party.length > 0 ? this.party : (killer ? [killer] : []);
+          for (const member of partyMembers) {
+            if (!member.progression) continue;
+            for (const cId of chefClassIds) {
+              const lvl = member.progression.getClassLevel(cId) || 0;
+              if (lvl > highestChefLevel) {
+                highestChefLevel = lvl;
+                highestChefMember = member;
+              }
+            }
+          }
+
+          if (highestChefLevel > 0 && highestChefMember) {
+            const chefBonusChance = highestChefLevel * cookingConfig.chefBonusRollFactor;
+            if (cookRng() < chefBonusChance) {
+              const totalWeight = target.enemyData.ingredientDrops.reduce((sum, i) => sum + (i.weight || 1), 0);
+              let roll = cookRng() * totalWeight;
+              let chosenItem = target.enemyData.ingredientDrops[0].item;
+              for (const entry of target.enemyData.ingredientDrops) {
+                const w = entry.weight || 1;
+                if (roll < w) {
+                  chosenItem = entry.item;
+                  break;
+                }
+                roll -= w;
+              }
+
+              if (chosenItem === 'black_pepper' && cookRng() < cookingConfig.peppercornSeedChance) {
+                chosenItem = 'peppercorn_seed';
+              }
+
+              highestChefMember.addItem(chosenItem, 1);
+              const itemName = chosenItem.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+              this.createFloatingText(target.x, target.y - 60, `+1 ${itemName} (Chef Bonus)`, '#facc15');
+            }
+          }
+        }
+
+        // 3. Lost-recipe scroll roll by tier
+        if (target.enemyData.lostRecipeScrolls && target.enemyData.lostRecipeScrolls.length > 0) {
+          const scrollChance = cookingConfig.lostRecipeChanceByTier[target.enemyData.tier] ?? 0;
+          if (cookRng() < scrollChance) {
+            const scrolls = target.enemyData.lostRecipeScrolls;
+            const chosenScroll = scrolls[Math.floor(cookRng() * scrolls.length)];
+            if (recipient) {
+              recipient.addItem(chosenScroll, 1);
+            } else {
+              gameState.addItem(chosenScroll, 1);
+            }
+            const scrollDef = DataLoader.getInstance().getItem(chosenScroll);
+            const scrollName = scrollDef?.name || chosenScroll.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+            this.createFloatingText(target.x, target.y - 75, `📜 ${scrollName}!`, '#a855f7');
+          }
+        }
+      }
+
       if (this.onEnemyDeathCallback) {
         this.onEnemyDeathCallback(target);
       }

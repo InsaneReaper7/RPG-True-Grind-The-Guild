@@ -245,8 +245,8 @@ async function runSecondBossMilestoneTests() {
   assert.ok(sovereign, "'glacial_sovereign' must be registered in enemies.json");
   assert.strictEqual(sovereign.name, 'Glacial Sovereign', "Name must be 'Glacial Sovereign'");
   assert.strictEqual(sovereign.tier, 'boss', "Tier must be strictly 'boss'");
-  assert.strictEqual(sovereign.hp, 420, 'HP must be 420');
-  assert.strictEqual(sovereign.criticalHpMax, 210, 'Critical HP Max must be 210 (50% HP)');
+  assert.strictEqual(sovereign.hp, 3400, 'HP must be 3400');
+  assert.strictEqual(sovereign.criticalHpMax, 1700, 'Critical HP Max must be 1700 (50% HP)');
   assert.strictEqual(sovereign.meleeDamage, 32, 'Attack damage must be 32');
   assert.strictEqual(sovereign.aggroRadius, 8, 'Aggro radius must be 8');
   assert.strictEqual(sovereign.attackIntervalMs, 1400, 'Attack interval must be 1400ms');
@@ -399,7 +399,13 @@ async function runSecondBossMilestoneTests() {
   (combatSystem as any).enemies = [bossSovereign];
   bossSovereign.targetEntity = partyHero;
   bossSovereign.lastAttackTime = 0;
-  combatSystem.update(2000, 16);
+  const origRng = Math.random;
+  Math.random = () => 0.1;
+  try {
+    combatSystem.update(2000, 16);
+  } finally {
+    Math.random = origRng;
+  }
 
   assert.ok(partyHero.hp < initialHeroHp, 'Hero must take direct damage from ranged attack');
   assert.ok(partyArcher.hp < initialArcherHp, 'Archer must take splash damage from Glacial Spike Nova (dist <= 3 to Hero)');
@@ -413,7 +419,7 @@ async function runSecondBossMilestoneTests() {
   assert.strictEqual(bossSovereign.iceBarrierHp, 0, 'No barrier before 50% HP');
 
   // Deal damage to drop boss to critical HP (<= 210 HP)
-  bossSovereign.takeDamage(215);
+  bossSovereign.takeDamage(1705);
   assert.ok(bossSovereign.hp <= bossSovereign.criticalHp, 'Boss must be at critical HP');
   assert.strictEqual(bossSovereign.isGlaciated, true, 'Boss must enter Permafrost Glaciation state');
   assert.strictEqual(bossSovereign.iceBarrierHp, 100, 'Boss must conjure a 100 HP Crystalline Ice Barrier');

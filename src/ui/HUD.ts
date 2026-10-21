@@ -6894,6 +6894,8 @@ export class HUD {
     const gameState = GameState.getInstance();
     this.currentPlayer = player;
     this.currentProgression = progression;
+    this.updateCraftingFilterToggleUI('cooking');
+    const isCraftableOnly = this.isCraftingFilterActive('cooking');
 
     // 1. Cooking proficiency
     const cookingStat = progression.getProficiencyStat('cooking');
@@ -7000,11 +7002,15 @@ export class HUD {
       this.cookingRecipesContainerEl.innerHTML = '';
       const allRecipes = dataLoader.getCookingRecipes();
       let visibleCount = 0;
+      let undiscoveredCount = 0;
 
       for (const recipe of allRecipes) {
-        if (recipe.id === 'burnt_mush') continue;
+        if (recipe.id === 'burnt_mush' || recipe.lostRecipe) continue;
         const isDiscovered = gameState.isCookingRecipeDiscovered(recipe.id);
-        if (!isDiscovered) continue;
+        if (!isDiscovered) {
+          undiscoveredCount++;
+          continue;
+        }
 
         visibleCount++;
         const card = document.createElement('div');
@@ -7074,6 +7080,14 @@ export class HUD {
         emptyDiv.style.cssText = 'font-size: 11px; color: #9ca3af; font-style: italic; background: rgba(31, 41, 55, 0.4); padding: 12px; border-radius: 6px; text-align: center;';
         emptyDiv.innerText = 'No recipes discovered yet. Combine ingredients in the Experimentation panel above to discover dishes.';
         this.cookingRecipesContainerEl.appendChild(emptyDiv);
+      }
+
+      if (!isCraftableOnly && undiscoveredCount > 0) {
+        const countDiv = document.createElement('div');
+        countDiv.className = 'cooking-undiscovered-count-banner';
+        countDiv.style.cssText = 'background: rgba(31, 41, 55, 0.4); border: 1px dashed rgba(148, 163, 184, 0.25); border-radius: 8px; padding: 10px; text-align: center; color: #94a3b8; font-size: 12px; font-weight: 500; margin-top: 4px;';
+        countDiv.innerHTML = `🔒 ${undiscoveredCount} recipe${undiscoveredCount === 1 ? '' : 's'} still undiscovered`;
+        this.cookingRecipesContainerEl.appendChild(countDiv);
       }
     }
 

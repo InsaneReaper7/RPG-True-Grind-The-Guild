@@ -1,0 +1,23 @@
+========================================================================================
+GLACIAL CAVERNS SUPPLY PACING SIMULATION: F16–20 BEFORE (c343c01) VS AFTER
+========================================================================================
+
+| Material / Food | Before (c343c01) | After (Glacial Native) | Change (%) | Flagged (> 25% drop)? | Note |
+| :--- | :---: | :---: | :---: | :---: | :--- |
+| bone               |            1.544 |                  1.384 |     -10.4% |                    NO |  |
+| ore                |              4.1 |                  4.732 |     +15.4% |                    NO |  |
+| wood               |            8.168 |                  8.168 |      +0.0% |                    NO |  |
+| steel_scrap        |            0.908 |                  0.868 |      -4.4% |                    NO |  |
+| ectoplasm          |              0.8 |                  0.604 |     -24.5% |                    NO |  |
+| bowstring          |            0.352 |                      0 |    -100.0% |               FLAGGED | Expected: skeleton_archer leaves pool |
+| spider_silk        |            1.176 |                      0 |    -100.0% |               FLAGGED | Expected: spider leaves pool |
+| glacial_essence    |              0.2 |                   0.62 |    +210.0% |                    NO |  |
+| wolf_pelt          |                0 |                   2.64 | +∞ (new source) |                    NO | Native Glacial harvest source introduced |
+| glacial_meat       |                0 |                  2.968 | +∞ (new source) |                    NO | Native Glacial harvest source introduced |
+| prime_glacial_meat |                0 |                  0.312 | +∞ (new source) |                    NO | Native Glacial harvest source introduced |
+| salt               |            0.148 |                  0.412 |    +178.4% |                    NO |  |
+| black_pepper       |                0 |                  0.492 | +∞ (new source) |                    NO | Native Glacial harvest source introduced |
+
+========================================================================================
+SUPPLY PACING ANALYSIS COMPLETE
+========================================================================================

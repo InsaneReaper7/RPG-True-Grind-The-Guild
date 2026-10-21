@@ -115,6 +115,7 @@ export class MainScene extends Phaser.Scene {
   public visitedRoomIndices: Set<number> = new Set();
   public undiscoveredCaches: { x: number; y: number; roomIndex: number }[] = [];
   public cacheDetectionRng: () => number = Math.random;
+  public cookingLootRng?: () => number;
   private cacheDetectionAccumulatorMs: number = 0;
 
   private wasdKeys!: {
@@ -2702,8 +2703,8 @@ export class MainScene extends Phaser.Scene {
   }
 
   public isEnemyAnimalType(enemyId: string): boolean {
-    const id = enemyId.toLowerCase();
-    return id === 'wolf' || id === 'spider' || id === 'deep_crawler';
+    const enemyDef = DataLoader.getInstance().getEnemy(enemyId.toLowerCase());
+    return !!enemyDef?.corpseHarvest?.skinning;
   }
 
   public isEnemyUndeadOrSkeleton(enemyId: string): boolean {
@@ -2712,7 +2713,8 @@ export class MainScene extends Phaser.Scene {
   }
 
   public isEnemyButcherEligible(enemyId: string): boolean {
-    return !this.isEnemyUndeadOrSkeleton(enemyId);
+    const enemyDef = DataLoader.getInstance().getEnemy(enemyId.toLowerCase());
+    return !!enemyDef?.corpseHarvest?.butchering;
   }
 
   public checkAndCreateCorpseGatheringNode(deadEnemy: Enemy): GatheringNode | null {
@@ -3421,7 +3423,7 @@ export class MainScene extends Phaser.Scene {
     }
   }
 
-  public harvestGatheringNode(node: GatheringNode, character: Player = this.player, lootRollFn?: () => number, isFromQueue: boolean = false): void {
+  public harvestGatheringNode(node: GatheringNode, character: Player = this.player, lootRollFn?: () => number, isFromQueue: boolean = false, cookingLootRollFn?: () => number): void {
     if (node.isHarvested) return;
 
     node.isHarvested = true;
@@ -3601,18 +3603,21 @@ export class MainScene extends Phaser.Scene {
     let saffronName: string | null = null;
     let cinnamonName: string | null = null;
 
+    const cookingConfig = DataLoader.getInstance().getCookingConfig();
+    const cookRng = cookingLootRollFn || this.cookingLootRng || Math.random;
+
     if (node.nodeDef.skillId === 'foraging') {
       // 8% herb roll (thyme 40, rosemary 35, sage 25)
-      const herbRoll = lootRollFn ? lootRollFn() : Math.random();
-      if (herbRoll < 0.08) {
-        const subRoll = (lootRollFn ? lootRollFn() : Math.random()) * 100;
+      const herbRoll = cookRng();
+      if (herbRoll < cookingConfig.herbRollChance) {
+        const subRoll = cookRng() * 100;
         const herbId = subRoll < 40 ? 'thyme' : subRoll < 75 ? 'rosemary' : 'sage';
         character.addItem(herbId, 1);
         extraHerbName = DataLoader.getInstance().getItem(herbId)?.name || herbId;
       }
       // 1% saffron roll (separate roll)
-      const saffronRoll = lootRollFn ? lootRollFn() : Math.random();
-      if (saffronRoll < 0.01) {
+      const saffronRoll = cookRng();
+      if (saffronRoll < cookingConfig.saffronRollChance) {
         character.addItem('saffron', 1);
         saffronName = 'Saffron';
       }
@@ -3620,8 +3625,8 @@ export class MainScene extends Phaser.Scene {
 
     if (node.nodeDef.skillId === 'woodcutting') {
       // 5% cinnamon roll (separate roll)
-      const cinRoll = lootRollFn ? lootRollFn() : Math.random();
-      if (cinRoll < 0.05) {
+      const cinRoll = cookRng();
+      if (cinRoll < cookingConfig.cinnamonRollChance) {
         character.addItem('cinnamon', 1);
         cinnamonName = 'Cinnamon Bark';
       }

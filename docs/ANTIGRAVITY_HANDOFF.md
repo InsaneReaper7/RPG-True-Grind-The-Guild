@@ -1875,7 +1875,7 @@ The following three intentional behavioural changes were reviewed and accepted b
 | `CombatSystem.ts` L898 `member.takeDamage(splashDamage)` | Boss cleave shockwave | **Mitigated** (recipient's armor) |
 | `CombatSystem.ts` L953 `member.takeDamage(shardDamage)` | Glacial Sovereign shards | **Mitigated** (recipient's armor) |
 | `CombatSystem.ts` L2347 `member.takeDamage(reflectDamage)` | Frost Thorns reflect | Exempt |
-| `Entity.ts` L629 `this.takeDamage(damage)` | DoT tick | Exempt |
+| `Entity.ts` L650 `this.takeDamage(damage)` | Frostbite DoT tick (3 dmg / 1.5s) / generic DoT tick | Exempt |
 | `SkillSystem.ts` L793 `caster.hp -= cost` | Skill `hpCost` (self) | Exempt |
 | `CombatSystem.ts` L1374, L1796, L2340 | Party hitting enemies | n/a |
 
@@ -2012,5 +2012,61 @@ The following three intentional behavioural changes were reviewed and accepted b
     - `docs/evidence/full_suite.log` (143/143 test suites passed)
   - Production build: `npm run build` succeeds cleanly.
 
+### Glacial Caverns: Native Enemies, Frostbite Proc, Recalibrated Sovereign & Food Drops Wiring (2026-10-20)
 
+**Resolved and shipped: Implemented the native Glacial Caverns (F16–20) enemy roster, generic `frostbiteChance` proc, Frost Troll elite with E6 recipe scroll, Glacial Sovereign recalibration (F20 boss), Glacial meat sources via butchering, and wired all uncalled Cooking drop rolls from `cookingConfig.json` into real runtime game paths.**
 
+- **0. Food & Cooking Drop Rolls Wired (Item 0)**:
+  - `CombatSystem.ts` (~L2930): On enemy defeat, rolls `ingredientDropChance` (12%), rolls `chefBonusRollFactor` (0.0035 * highest Chef level in party) to highest Chef's bag, applies 2% `peppercornSeedChance` swap on pepper results, and rolls `lostRecipeChanceByTier` (elite 5%, epic 5%, boss 20%).
+  - `MainScene.ts` (~L3605): On gathering node harvest, foraging bushes roll 8% `herbRollChance` (thyme 40%, rosemary 35%, sage 25%) and separate 1% `saffronRollChance`; woodcutting trees roll 5% `cinnamonRollChance`.
+  - RNG Isolation: Uses dedicated seeded RNG streams (`cookingLootRng` in CombatSystem and `cookingLootRollFn` / `cookingLootRng` in MainScene) so material harvest rolls are bit-for-bit identical kill-for-kill and harvest-for-harvest with cooking rolls on vs off.
+  - Data Guard: `test/cooking_drops.test.ts` validates that all 8 config keys are active in `src/` outside `DataLoader.ts` and `types/game.ts`.
+
+- **1. Native Glacial Commons (`data/enemies.json`, `data/dungeonConfig.json`)**:
+  - `frostfang_stalker` (common): 40+20 HP, 8 dmg, 900ms interval, 105 speed, range 1, aggro 7, frostbite 15%, drops: bone (weight 2), wolf_claw (weight 1, rare). Corpse: skinning `wolf_pelt`, butchering `glacial_meat` (10% `prime_glacial_meat`). Cooking: `black_pepper` (weight 1).
+  - `glacier_yeti` (common): 80+40 HP, 16 dmg, 1700ms interval, 70 speed, range 1, aggro 6, stun 10%, drops: bone (weight 2), steel_scrap (weight 1). Corpse: butchering `glacial_meat` (10% `prime_glacial_meat`). Cooking: `salt` (weight 2).
+  - `ice_wraith` (common): 34+17 HP, 10 dmg, 1250ms interval, 80 speed, range 4, aggro 8, frostbite 20%, drops: ectoplasm (weight 2), glacial_essence (weight 1). Cooking: `black_pepper` (weight 2).
+  - `rime_golem` (common): 95+47 HP, 6 dmg, 1600ms interval, 60 speed, range 1, aggro 6, slow 25%, drops: ore (weight 3), steel_scrap (weight 1). Cooking: `salt` (weight 2).
+  - Region Pool (`glacial_caverns`): 70% Core (stalker 22, wraith 18, yeti 16, golem 14) / 30% Carry (cinder_hound 10, magma_brute 10, ash_wraith 10).
+  - Stand-in Removal: `undead`, `skeleton_archer`, `spider`, and `skeleton` strictly removed from Glacial Caverns.
+
+- **2. Generic Enemy Frostbite Proc (`src/systems/CombatSystem.ts`, `src/types/game.ts`)**:
+  - Added `frostbiteChance?: number;` to `EnemyDef`.
+  - Wired in enemy attack resolution (`CombatSystem.ts` ~L1130) applying canonical `frostbite` from `statusEffects.json` (4500ms duration, 1500ms interval, 3 dmg/tick = 2 DPS, 0.5 move speed).
+  - Added DoT tick row to `takeDamage` table.
+
+- **3. Glacial Elite: Frost Troll (`data/enemies.json`, `data/dungeonConfig.json`)**:
+  - `frost_troll`: tier elite, 110+55 HP, 15 dmg, 1300ms interval, 85 speed, 5 RP (range 4–7), slow 20%.
+  - Drops: steel_scrap [2,3], glacial_essence 1, rare orc_heavy_hide.
+  - `lostRecipeScrolls: ["lost_recipe_frostbite_broth"]`: native source for E6 Frostbite Broth.
+  - Configured as `glacial_caverns.eliteEnemyId`. Epic remains `void_knight`.
+
+- **4. Glacial Sovereign Recalibration (`data/enemies.json`, `src/systems/CombatSystem.ts`, `scripts/calibrate_combat_sim.ts`)**:
+  - Replaced inline 100% frostbite application with generic 25% canonical proc (`frostbiteChance: 0.25`), preserving Glacial Spike Nova cleave and permafrost shards.
+  - Calibrated HP: 3400 HP + 1700 crit HP (5100 total EHP; 2:1 ratio).
+  - Combat sim results: Band 3 party in Void gear achieves 99.4% win rate; Band 2 party achieves 0.0% win rate (< 25% target).
+  - Mean fight length: ~51.5s (vs ~29.1s for Magma Tyrant).
+
+- **5. Behaviour Changes**:
+  - Glacial Sovereign frostbite proc shifted from custom inline 100% object to 25% data-driven canonical proc.
+  - Generalized `stunChance` in `CombatSystem.ts` to apply to any enemy with `stunChance` in data (magma_brute and glacier_yeti; Abyssal Colossus boss stun path remains dedicated).
+  - `isEnemyAnimalType` and `isEnemyButcherEligible` in `MainScene.ts` made completely data-driven (reading `corpseHarvest.skinning` and `corpseHarvest.butchering` respectively with zero hardcoded ID fallback lists).
+  - Cooking drop rolls (ingredient drops, chef party bonus, peppercorn swap, lost recipe scrolls, foraging herbs/saffron, woodcutting cinnamon) are now actively rolled in runtime paths.
+
+- **6. Edited Tests**:
+  - `test/milestone_second_boss.test.ts`: Updated Sovereign HP assertion from 420 + 210 to 3400 + 1700; updated combat test damage from 215 to 1705 to test critical HP transition; seeded Math.random for 25% frostbite check.
+  - `test/milestone34.test.ts`: Updated elite classification in the 100-floor procedural generation enemy distribution assertion to recognize the new Glacial elite `frost_troll` (`espawn.enemyId === 'orc_warrior' || espawn.enemyId === 'frost_troll'`).
+
+- **7. Verification & Committed Evidence Logs**:
+  - `test/cooking_drops.test.ts`: Monte Carlo verification of all 7 cooking drop rules across 10,000 seeded kills and harvests.
+  - `test/glacial_enemies.test.ts`: All 8 test suites pass (schema invariants, 70/30 pool weights, zero stand-ins, frostbite proc rates, butchering prime rate, Frost Troll E6 scroll, Sovereign calibration, determinism fixture, and data guards).
+  - `scripts/recompute_glacial_supply.ts`: Headless simulation comparing c343c01 vs current commit over 50 seeds F16–20; bowstring (-100%) and spider_silk (-100%) flagged as expected removals.
+  - `scripts/calibrate_combat_sim.ts`: Calibrated Sovereign danger simulation and sweep table.
+  - `test/data_lint.test.ts`: Global data lint passes with all 10 checks green.
+  - Committed logs:
+    - `docs/evidence/cooking_drops.log`
+    - `docs/evidence/glacial_enemies.log`
+    - `docs/evidence/glacial_supply.log`
+    - `docs/evidence/sovereign_calibration.log`
+    - `docs/evidence/data_lint.log`
+    - `docs/evidence/full_suite.log`

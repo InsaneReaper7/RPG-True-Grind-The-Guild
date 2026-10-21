@@ -1241,6 +1241,156 @@ export class TextureGenerator {
       g.destroy();
     }
 
+    // 4p. Glacial Caverns Procedural Avatars (Milestone: Glacial Caverns)
+    // Frostfang Stalker Avatar
+    if (!scene.textures.exists('frostfang_stalker-avatar')) {
+      const size = 28;
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      const cx = size / 2;
+      const cy = size / 2;
+      // Pale arctic wolf body
+      g.fillStyle(0x94a3b8, 1);
+      g.fillRoundedRect(cx - 9, cy - 6, 18, 12, 4);
+      // Head
+      g.fillStyle(0xcfd8dc, 1);
+      g.fillCircle(cx + 6, cy - 4, 5);
+      // Icy ears
+      g.fillStyle(0x06b6d4, 1);
+      g.fillTriangle(cx + 5, cy - 9, cx + 8, cy - 10, cx + 7, cy - 4);
+      // Glowing sub-zero eyes
+      g.fillStyle(0x38bdf8, 1);
+      g.fillCircle(cx + 8, cy - 5, 1.2);
+      // Frozen fangs
+      g.fillStyle(0xffffff, 1);
+      g.fillTriangle(cx + 8, cy - 2, cx + 11, cy - 2, cx + 9, cy + 1);
+      // Rime mane/spine
+      g.fillStyle(0x06b6d4, 0.9);
+      g.fillTriangle(cx - 6, cy - 9, cx - 3, cy - 6, cx - 8, cy - 5);
+      g.fillTriangle(cx - 1, cy - 10, cx + 2, cy - 6, cx - 3, cy - 5);
+      // Frost tail
+      g.lineStyle(2, 0x06b6d4, 0.85);
+      g.lineBetween(cx - 9, cy, cx - 13, cy - 4);
+
+      g.generateTexture('frostfang_stalker-avatar', size, size);
+      g.destroy();
+    }
+
+    // Glacier Yeti Avatar
+    if (!scene.textures.exists('glacier_yeti-avatar')) {
+      const size = 34;
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      const cx = size / 2;
+      const cy = size / 2;
+      // Heavy furred torso
+      g.fillStyle(0xe2e8f0, 1);
+      g.fillCircle(cx, cy + 2, 13);
+      // Massive shoulders
+      g.fillStyle(0xcbd5e1, 1);
+      g.fillCircle(cx - 11, cy, 6);
+      g.fillCircle(cx + 11, cy, 6);
+      // Dark face recess
+      g.fillStyle(0x1e293b, 1);
+      g.fillCircle(cx, cy - 4, 6);
+      // Sub-zero glowing eyes
+      g.fillStyle(0x06b6d4, 1);
+      g.fillCircle(cx - 2.5, cy - 4, 1.5);
+      g.fillCircle(cx + 2.5, cy - 4, 1.5);
+      // Frozen icicle horns / crest
+      g.fillStyle(0x38bdf8, 1);
+      g.fillTriangle(cx - 7, cy - 8, cx - 12, cy - 15, cx - 3, cy - 10);
+      g.fillTriangle(cx + 7, cy - 8, cx + 12, cy - 15, cx + 3, cy - 10);
+
+      g.generateTexture('glacier_yeti-avatar', size, size);
+      g.destroy();
+    }
+
+    // Ice Wraith Avatar
+    if (!scene.textures.exists('ice_wraith-avatar')) {
+      const size = 28;
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      const cx = size / 2;
+      const cy = size / 2;
+      // Spectral frost shroud
+      g.fillStyle(0x06b6d4, 0.85);
+      g.fillCircle(cx, cy - 4, 8);
+      // Trailing sub-zero mist wisps
+      g.beginPath();
+      g.moveTo(cx - 8, cy - 4);
+      g.lineTo(cx - 5, cy + 10);
+      g.lineTo(cx, cy + 6);
+      g.lineTo(cx + 5, cy + 11);
+      g.lineTo(cx + 8, cy - 4);
+      g.closePath();
+      g.fillPath();
+      // Deep frost hood recess
+      g.fillStyle(0x083344, 0.95);
+      g.fillCircle(cx, cy - 5, 5);
+      // Piercing glowing eyes
+      g.fillStyle(0xa5f3fc, 1);
+      g.fillCircle(cx - 2.5, cy - 5, 1.2);
+      g.fillCircle(cx + 2.5, cy - 5, 1.2);
+      // Floating frost crystals
+      g.fillStyle(0xffffff, 0.9);
+      g.fillCircle(cx - 8, cy + 2, 1);
+      g.fillCircle(cx + 9, cy, 1);
+
+      g.generateTexture('ice_wraith-avatar', size, size);
+      g.destroy();
+    }
+
+    // Rime Golem Avatar
+    if (!scene.textures.exists('rime_golem-avatar')) {
+      const size = 32;
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      const cx = size / 2;
+      const cy = size / 2;
+      // Faceted glacial ice monolith body
+      g.fillStyle(0x0e7490, 1);
+      g.fillTriangle(cx, cy - 12, cx - 11, cy + 4, cx + 11, cy + 4);
+      g.fillTriangle(cx, cy + 13, cx - 11, cy + 4, cx + 11, cy + 4);
+      // Crystalline fractures
+      g.lineStyle(1.5, 0x67e8f9, 0.85);
+      g.lineBetween(cx, cy - 12, cx, cy + 13);
+      g.lineBetween(cx - 11, cy + 4, cx + 11, cy + 4);
+      // Glowing sub-zero crystalline core
+      g.fillStyle(0x06b6d4, 1);
+      g.fillCircle(cx, cy + 2, 3.5);
+      g.fillStyle(0xffffff, 1);
+      g.fillCircle(cx, cy + 2, 1.5);
+
+      g.generateTexture('rime_golem-avatar', size, size);
+      g.destroy();
+    }
+
+    // Frost Troll Avatar
+    if (!scene.textures.exists('frost_troll-avatar')) {
+      const size = 34;
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      const cx = size / 2;
+      const cy = size / 2;
+      // Icy blue troll torso
+      g.fillStyle(0x0369a1, 1);
+      g.fillCircle(cx, cy + 2, 12);
+      // Frozen rock shoulder pauldrons
+      g.fillStyle(0x334155, 1);
+      g.fillCircle(cx - 11, cy - 2, 5);
+      g.fillCircle(cx + 11, cy - 2, 5);
+      // Head
+      g.fillStyle(0x0284c7, 1);
+      g.fillRect(cx - 6, cy - 11, 12, 7);
+      // Icicle beard / tusks
+      g.fillStyle(0xa5f3fc, 1);
+      g.fillTriangle(cx - 5, cy - 4, cx - 3, cy + 2, cx - 1, cy - 4);
+      g.fillTriangle(cx + 1, cy - 4, cx + 3, cy + 2, cx + 5, cy - 4);
+      // Piercing icy eyes
+      g.fillStyle(0x38bdf8, 1);
+      g.fillCircle(cx - 3, cy - 8, 1.5);
+      g.fillCircle(cx + 3, cy - 8, 1.5);
+
+      g.generateTexture('frost_troll-avatar', size, size);
+      g.destroy();
+    }
+
     // 5. Target Selection Reticle
     if (!scene.textures.exists('target-reticle')) {
       const size = 32;

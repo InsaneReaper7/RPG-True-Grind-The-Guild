@@ -211,6 +211,7 @@ export interface EnemyDef {
   bleedChance?: number;
   slowChance?: number;
   blindChance?: number;
+  frostbiteChance?: number;
   description?: string;
   researchPoints?: number | { min: number; max: number };
 }

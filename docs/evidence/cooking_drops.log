@@ -1,0 +1,55 @@
+================================================================
+🍳 RUNNING FOOD & COOKING DROP ROLLS TEST SUITE 🍳
+================================================================
+
+--- TEST 1: Ingredient Drop Roll Rate & Bag Placement ---
+  Seeded kills: 10000
+  Ingredients dropped into killer bag: 1181 (salt: 759, slime_gel: 422)
+  Observed rate: 11.81% (Target: 12.0% ± 1%)
+✔ PASS: Test 1 - Ingredient roll rate and bag placement verified.
+
+--- TEST 2: Material Rolls Determinism (Cooking On vs Off) ---
+  Evaluated 1000 seeded kills.
+  Material drops with Cooking OFF: 387
+  Material drops with Cooking ON:  387
+✔ PASS: Test 2 - Material drops are 100% identical kill-for-kill with cooking on vs off.
+
+--- TEST 3: Chef Bonus Roll Rates & Party Routing ---
+  Subtest 3A: L = 0 gives 0 bonus drops (verified)
+  Subtest 3B: L = 40 Chef bonus count = 1434/10000 (14.34%) (Target: 14% ± 1%)
+  Subtest 3C: L = 100 Chef bonus count = 3540/10000 (35.40%) (Target: 35% ± 1.5%)
+  Subtest 3D: Party (Hero Lv 10, Ally Lv 40). Bonus count = 1403 (14.03%)
+✔ PASS: Test 3 - All Chef bonus roll behaviors confirmed.
+
+--- TEST 4: Peppercorn Swap Rate (2% ± 0.3%) ---
+  Total pepper outcomes: 10000 (black_pepper: 9810, peppercorn_seed: 190)
+  Observed swap rate: 1.900% (Target: 2.0% ± 0.3%)
+✔ PASS: Test 4 - Peppercorn swap rate verified.
+
+--- TEST 5: Lost Recipe Scrolls Drop Rates ---
+  orc_warrior (elite): 501/10000 scrolls (5.01%) (Target: 5% ± 1%)
+  bone_warden (boss): 1966/10000 scrolls (19.66%) (Target: 20% ± 1.5%)
+  frost_troll (elite): 477/10000 scrolls (4.77%) (Target: 5% ± 1%)
+✔ PASS: Test 5 - Lost Recipe scroll drop rates verified across elite, boss, and frost troll.
+
+--- TEST 6: Gathering Extra Rolls Through Real harvestGatheringNode ---
+  Foraging harvests: 10000
+  Herbs awarded: 788 (7.88%) (Target: 8% ± 0.5%) [thyme: 321, rosemary: 258, sage: 209]
+  Saffron awarded: 107 (1.07%) (Target: 1% ± 0.3%)
+  Woodcutting harvests: 10000
+  Cinnamon awarded: 504 (5.04%) (Target: 5% ± 0.5%)
+✔ PASS: Test 6 - Gathering extra rolls through real harvestGatheringNode verified.
+
+--- TEST 7: Cooking Config Key Usage Guard in src/ ---
+  ✔ Verified usage of config key: 'ingredientDropChance'
+  ✔ Verified usage of config key: 'lostRecipeChanceByTier'
+  ✔ Verified usage of config key: 'peppercornSeedChance'
+  ✔ Verified usage of config key: 'chefBonusRollFactor'
+  ✔ Verified usage of config key: 'herbRollChance'
+  ✔ Verified usage of config key: 'saffronRollChance'
+  ✔ Verified usage of config key: 'cinnamonRollChance'
+✔ PASS: Test 7 - All cooking config keys verified actively wired in game source.
+
+================================================================
+🎉 ALL COOKING DROPS MONTE CARLO & USAGE TESTS PASSED! 🎉
+================================================================
