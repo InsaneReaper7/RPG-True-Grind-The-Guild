@@ -1,0 +1,29 @@
+{
+  "setupCost": {
+    "wood": 5,
+    "wild_herbs": 2
+  },
+  "setupChannelMs": 5000,
+  "campRadiusTiles": 3,
+  "campRegenMultiplier": 2.0,
+  "respawnHpPercent": 0.5,
+  "minRestSecondsForBuff": 20,
+  "campRestedStatusId": "camp_rested",
+  "classExp": {
+    "onSetup": 50,
+    "onBreakBuff": 25
+  },
+  "excludedRooms": ["boss", "entrance", "crystal"],
+  "perks": {
+    "perkMaxEffectiveLevel": 15,
+    "survivalistCostReductionPerLevel": 0.02,
+    "survivalistTimeReductionPerLevel": 0.02,
+    "trailblazerDurationBonusPerLevel": 0.04,
+    "wildernessWardenDetectionPpPerLevel": 1.0,
+    "wildernessWardenRadiusBonus": 1,
+    "wildernessWardenSenseDurationMs": 60000,
+    "grandSurvivalistCombatSetupAllowed": true,
+    "grandSurvivalistCostMultiplier": 2.0,
+    "grandSurvivalistChannelMs": 3000
+  }
+}

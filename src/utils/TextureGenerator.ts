@@ -2633,6 +2633,52 @@ export class TextureGenerator {
       g.generateTexture('harvest-icon', size, size);
       g.destroy();
     }
+
+    // Campfire (Active camp with warm logs and burning flame)
+    if (!scene.textures.exists('campfire')) {
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      // Ground shadow
+      g.fillStyle(0x0f172a, 0.6);
+      g.fillEllipse(tileSize / 2, tileSize - 4, 14, 6);
+      // Outer stone ring
+      g.fillStyle(0x64748b, 1);
+      const cx = tileSize / 2;
+      const cy = tileSize / 2 + 3;
+      for (let a = 0; a < Math.PI * 2; a += Math.PI / 4) {
+        g.fillCircle(cx + Math.cos(a) * 9, cy + Math.sin(a) * 6, 2.5);
+      }
+      // Charcoal bed
+      g.fillStyle(0x1e293b, 1);
+      g.fillEllipse(cx, cy, 10, 5);
+      // Wood logs
+      g.lineStyle(2, 0x78350f, 1);
+      g.lineBetween(cx - 7, cy + 2, cx + 7, cy - 2);
+      g.lineBetween(cx - 7, cy - 2, cx + 7, cy + 2);
+      // Flickering orange & yellow flame
+      g.fillStyle(0xf97316, 0.95);
+      g.fillTriangle(cx - 5, cy + 1, cx + 5, cy + 1, cx, cy - 8);
+      g.fillStyle(0xfacc15, 1);
+      g.fillTriangle(cx - 3, cy, cx + 3, cy, cx, cy - 5);
+      g.generateTexture('campfire', tileSize, tileSize);
+      g.destroy();
+    }
+
+    // Campfire Depleted (Cold ashes and stones)
+    if (!scene.textures.exists('campfire-depleted')) {
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      const cx = tileSize / 2;
+      const cy = tileSize / 2 + 3;
+      // Stones
+      g.fillStyle(0x475569, 1);
+      for (let a = 0; a < Math.PI * 2; a += Math.PI / 4) {
+        g.fillCircle(cx + Math.cos(a) * 9, cy + Math.sin(a) * 6, 2.5);
+      }
+      // Ash pile
+      g.fillStyle(0x334155, 1);
+      g.fillEllipse(cx, cy, 8, 4);
+      g.generateTexture('campfire-depleted', tileSize, tileSize);
+      g.destroy();
+    }
   }
 }
 

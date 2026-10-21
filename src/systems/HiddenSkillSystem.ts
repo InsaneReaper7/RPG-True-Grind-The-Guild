@@ -16,6 +16,7 @@ export interface CombatContext {
   hasManaPotionBuff?: boolean;
   evasionBonus?: number;
   parryBonus?: number;
+  campMultiplier?: number;
 }
 
 export interface AvoidanceResult {
@@ -348,7 +349,8 @@ export class HiddenSkillSystem {
       if (hpRes.procced) {
         healthProcced = true;
         const baseAmount = hpRes.tierEffect?.healAmount ?? (hpLevel >= 1 ? 0.5 : 0);
-        const mult = context.inCombat ? 1.0 : oocMultiplier;
+        const campMult = (!context.inCombat && context.campMultiplier) ? context.campMultiplier : 1.0;
+        const mult = (context.inCombat ? 1.0 : oocMultiplier) * campMult;
         healthRestored = baseAmount * mult;
       }
     }
@@ -361,7 +363,8 @@ export class HiddenSkillSystem {
         energyRegenProcced = true;
         const baseAmount = energyRes.tierEffect?.energyAmount ?? (energyLevel >= 1 ? 2 : 0);
         const isOocOrPotion = !context.inCombat || !!context.hasEnergyPotionBuff;
-        const mult = isOocOrPotion ? oocMultiplier : 1.0;
+        const campMult = (!context.inCombat && context.campMultiplier) ? context.campMultiplier : 1.0;
+        const mult = (isOocOrPotion ? oocMultiplier : 1.0) * campMult;
         energyRestored += baseAmount * mult;
       }
     }
@@ -374,7 +377,8 @@ export class HiddenSkillSystem {
         manaProcced = true;
         const baseAmount = manaRes.tierEffect?.energyAmount ?? (manaLevel >= 1 ? 2 : 0);
         const isOocOrPotion = !context.inCombat || !!context.hasManaPotionBuff;
-        const mult = isOocOrPotion ? oocMultiplier : 1.0;
+        const campMult = (!context.inCombat && context.campMultiplier) ? context.campMultiplier : 1.0;
+        const mult = (isOocOrPotion ? oocMultiplier : 1.0) * campMult;
         energyRestored += baseAmount * mult;
       }
     }

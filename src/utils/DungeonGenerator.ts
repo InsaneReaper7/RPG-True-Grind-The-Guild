@@ -1444,7 +1444,8 @@ export class DungeonGenerator {
       band,
       overgrownGrove,
       groveEligible,
-      hiddenCaches
+      hiddenCaches,
+      crystalRoomIdx
     };
   }
 }

@@ -36,6 +36,7 @@ export interface GearItemInstance {
 }
 
 export interface WeaponDef {
+  frostbiteChance?: number;
   id: string;
   name: string;
   category: string;
@@ -127,6 +128,7 @@ export interface PassiveImbuementExpDef {
 
 export interface PassiveImbuementDef {
   bonusDamagePercent?: number;
+  energyRegenPerSecond?: number;
   bonusDamageMultiplier?: number;
   proc?: PassiveImbuementProcDef;
   secondaryExp?: PassiveImbuementExpDef;
@@ -867,6 +869,7 @@ export interface SkillDef {
   reflectPercent?: number;
   distanceBonusMultiplier?: number;
   damageToEnergyPercent?: number;
+  energyRegenPerSecond?: number;
   spellDamageMultiplier?: number;
   spellEnergyCostMultiplier?: number;
   bonusDamagePercent?: number;
@@ -883,6 +886,7 @@ export interface SkillsData {
 }
 
 export interface StatusEffectDef {
+  energyRegenPerSecond?: number;
   id: string;
   name: string;
   durationMs?: number;
@@ -1282,6 +1286,7 @@ export interface GeneratedDungeon {
   overgrownGrove?: { roomIndex: number; treantPos: GridPos } | null;
   groveEligible?: boolean;
   hiddenCaches?: { x: number; y: number; roomIndex: number }[];
+  crystalRoomIdx?: number;
 }
 
 export interface DynamicObstaclesConfig {
@@ -1371,4 +1376,33 @@ export interface CookingConfig {
   herbRollChance: number;
   saffronRollChance: number;
   cinnamonRollChance: number;
+}
+
+export interface CampPerksConfig {
+  perkMaxEffectiveLevel: number;
+  survivalistCostReductionPerLevel: number;
+  survivalistTimeReductionPerLevel: number;
+  trailblazerDurationBonusPerLevel: number;
+  wildernessWardenDetectionPpPerLevel: number;
+  wildernessWardenRadiusBonus: number;
+  wildernessWardenSenseDurationMs: number;
+  grandSurvivalistCombatSetupAllowed: boolean;
+  grandSurvivalistCostMultiplier: number;
+  grandSurvivalistChannelMs: number;
+}
+
+export interface CampConfig {
+  setupCost: Record<string, number>;
+  setupChannelMs: number;
+  campRadiusTiles: number;
+  campRegenMultiplier: number;
+  respawnHpPercent: number;
+  minRestSecondsForBuff: number;
+  campRestedStatusId: string;
+  classExp: {
+    onSetup: number;
+    onBreakBuff: number;
+  };
+  excludedRooms: string[];
+  perks: CampPerksConfig;
 }

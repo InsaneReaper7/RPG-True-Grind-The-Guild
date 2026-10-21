@@ -373,6 +373,17 @@
       "energySiphonOnHit": 4,
       "isHarmful": false,
       "color": "#818cf8"
+    },
+    {
+      "id": "camp_rested",
+      "name": "Camp Rested",
+      "durationMs": 60000,
+      "tickIntervalMs": 1000,
+      "damagePerTick": 0,
+      "bonusDamagePercent": 0.05,
+      "energyRegenPerSecond": 0.25,
+      "color": "#38bdf8",
+      "isHarmful": false
     }
   ]
 }

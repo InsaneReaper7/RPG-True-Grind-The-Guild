@@ -18,6 +18,7 @@ import { TileClaimDebugOverlay } from '../ui/TileClaimDebugOverlay';
 import { TutorialSystem } from '../systems/TutorialSystem';
 import { isTypingInTextField } from '../utils/inputGuard';
 import { runDetectionTick, findStepReveals, findNewlyEnteredRooms, rollNodeBonuses } from '../utils/perception';
+import { DungeonCamp } from '../entities/DungeonCamp';
 import { EventLog } from '../systems/EventLog';
 
 export interface GatheringNode {
@@ -113,6 +114,20 @@ export class MainScene extends Phaser.Scene {
   public currentFloorSeed: number | null = null;
   public bossesDefeatedThisRun: Set<string> = new Set();
   public visitedRoomIndices: Set<number> = new Set();
+  public currentCamp: DungeonCamp | null = null;
+  public floorCampCreatedCount: number = 0;
+  public trailblazerSenseRemainingMs: number = 0;
+  public activeCampChannel: {
+    character: Player;
+    durationMs: number;
+    elapsedMs: number;
+    barContainer: Phaser.GameObjects.Container;
+    barBg: Phaser.GameObjects.Graphics;
+    barFill: Phaser.GameObjects.Graphics;
+    labelText: Phaser.GameObjects.Text;
+    cost: { wood: number; wild_herbs: number };
+    inCombatSetup: boolean;
+  } | null = null;
   public undiscoveredCaches: { x: number; y: number; roomIndex: number }[] = [];
   public cacheDetectionRng: () => number = Math.random;
   public cookingLootRng?: () => number;
@@ -213,6 +228,14 @@ export class MainScene extends Phaser.Scene {
     this.gatheringQueue = [];
     this.gatheringQueueWorkers.clear();
     this.gatheringWorkerNodeAssignments.clear();
+
+    // Dungeon Camp clean-up on floor change, exit, or visit reset
+    this.destroyCamp();
+    this.floorCampCreatedCount = 0;
+    this.trailblazerSenseRemainingMs = 0;
+    if (this.activeCampChannel) {
+      this.cancelCampChannel();
+    }
 
     // Perception & Hidden Caches per-floor state reset
     this.visitedRoomIndices.clear();
@@ -706,6 +729,11 @@ export class MainScene extends Phaser.Scene {
     (window as any).__dealDebugDamage = (amount: number = 5) => this.dealDebugDamageToEnemy(amount);
     (window as any).__instantReviveParty = () => this.debugInstantReviveParty();
     (window as any).__triggerPartyWipe = () => this.handlePartyWipe();
+    (window as any).__startMakeCamp = () => this.startMakeCamp();
+    (window as any).__breakCamp = () => this.breakCamp();
+    (window as any).__getCamp = () => this.currentCamp;
+    (window as any).__canMakeCamp = () => this.canMakeCamp();
+    (window as any).__destroyCamp = () => this.destroyCamp();
     (window as any).__toggleGatheringMode = (force?: boolean) => this.toggleGatheringMode(force);
     (window as any).__startGatheringQueue = (nodes: GatheringNode[]) => this.startGatheringQueue(nodes);
     (window as any).__spawnFishingSpot = (x: number, y: number) => this.spawnGatheringNode(x, y, 'fishing_spot');
@@ -2053,6 +2081,10 @@ export class MainScene extends Phaser.Scene {
   }
 
   public handlePartyWipe(): void {
+    if (this.currentCamp) {
+      this.respawnAtCamp();
+      return;
+    }
     if (this.isWiping || this.isTransitioning) return;
     this.isWiping = true;
     this.isTransitioning = true;
@@ -2105,6 +2137,400 @@ export class MainScene extends Phaser.Scene {
     } else {
       finishWipe();
     }
+  }
+
+
+  public isCampExcludedRoom(room: DungeonRoom): boolean {
+    const config = DataLoader.getInstance().getCampConfig();
+    const excluded = config.excludedRooms ?? ['boss', 'entrance', 'crystal'];
+    if (excluded.includes('boss') && room.type === 'boss') return true;
+    if (excluded.includes('entrance') && room.id === 0) return true;
+    if (excluded.includes('crystal') && this.dungeon && room.id === this.dungeon.crystalRoomIdx) return true;
+    return false;
+  }
+
+  public getTrailblazerSenseBonusForMember(member: Player): number {
+        const perks = CraftingSystem.getSurvivalistPerks(this.party);
+    if (perks.trailblazerSenseDetectionPp <= 0) return 0;
+
+    let inRoomWithCamp = false;
+    if (this.currentCamp && this.dungeon) {
+      const campRoom = this.dungeon.rooms.find(r => this.currentCamp!.x >= r.x && this.currentCamp!.x < r.x + r.width && this.currentCamp!.y >= r.y && this.currentCamp!.y < r.y + r.height);
+      if (campRoom) {
+        inRoomWithCamp = member.gridPos.x >= campRoom.x && member.gridPos.x < campRoom.x + campRoom.width && member.gridPos.y >= campRoom.y && member.gridPos.y < campRoom.y + campRoom.height;
+      }
+    }
+
+    const hasLingeringSense = this.trailblazerSenseRemainingMs > 0;
+    if (inRoomWithCamp || hasLingeringSense) {
+      return perks.trailblazerSenseDetectionPp / 100;
+    }
+    return 0;
+  }
+
+  public isInCampRadius(xOrEntity: number | { gridPos?: { x: number; y: number }; x: number; y: number }, y?: number): boolean {
+    if (!this.currentCamp) return false;
+    if (typeof xOrEntity === 'number') {
+      return this.currentCamp.isInRadius(xOrEntity, y ?? 0);
+    }
+    if (xOrEntity && xOrEntity.gridPos) {
+      return this.currentCamp.isInRadius(xOrEntity.gridPos.x, xOrEntity.gridPos.y);
+    }
+    if (xOrEntity && typeof xOrEntity.x === 'number') {
+      const gx = xOrEntity.x > 50 ? Math.floor(xOrEntity.x / 32) : xOrEntity.x;
+      const gy = xOrEntity.y > 50 ? Math.floor(xOrEntity.y / 32) : xOrEntity.y;
+      return this.currentCamp.isInRadius(gx, gy);
+    }
+    return false;
+  }
+
+  public canMakeCamp(): { allowed: boolean; reason?: string; cost: { wood: number; wild_herbs: number }; channelMs: number; inCombatSetup: boolean } {
+    const campConfig = DataLoader.getInstance().getCampConfig();
+    const defaultCost = { wood: 5, wild_herbs: 2 };
+    const defaultChannelMs = 5000;
+
+    if (!this.dungeon) {
+      return { allowed: false, reason: 'Camp can only be made in the dungeon', cost: defaultCost, channelMs: defaultChannelMs, inCombatSetup: false };
+    }
+
+    if (!TutorialSystem.getInstance().getIsCompleted()) {
+      return { allowed: false, reason: 'Complete the tutorial before making camp', cost: defaultCost, channelMs: defaultChannelMs, inCombatSetup: false };
+    }
+
+    if (this.floorCampCreatedCount > 0 || this.currentCamp) {
+      return { allowed: false, reason: 'Only one camp per floor allowed', cost: defaultCost, channelMs: defaultChannelMs, inCombatSetup: false };
+    }
+
+    const leader = this.player;
+    const leaderRoom = this.dungeon.rooms.find(r => leader.gridPos.x >= r.x && leader.gridPos.x < r.x + r.width && leader.gridPos.y >= r.y && leader.gridPos.y < r.y + r.height);
+    if (leaderRoom && this.isCampExcludedRoom(leaderRoom)) {
+      return { allowed: false, reason: 'Cannot make camp in boss, entrance, or crystal rooms', cost: defaultCost, channelMs: defaultChannelMs, inCombatSetup: false };
+    }
+
+    const inCombat = this.combatSystem ? this.combatSystem.isInCombat() : false;
+    const perks = CraftingSystem.getSurvivalistPerks(this.party);
+    if (inCombat && !perks.emergencyShelterUnlocked) {
+      return { allowed: false, reason: 'Cannot make camp during combat', cost: defaultCost, channelMs: defaultChannelMs, inCombatSetup: false };
+    }
+
+    if (!inCombat && leaderRoom && this.enemies) {
+      const hasAggroed = this.enemies.some(e =>
+        e.state !== 'dead' && e.state !== 'downed' && e.isAggroed &&
+        (e.roomIndex === leaderRoom.id || (e.gridPos.x >= leaderRoom.x && e.gridPos.x < leaderRoom.x + leaderRoom.width && e.gridPos.y >= leaderRoom.y && e.gridPos.y < leaderRoom.y + leaderRoom.height))
+      );
+      if (hasAggroed) {
+        return { allowed: false, reason: 'Aggroed enemies nearby', cost: defaultCost, channelMs: defaultChannelMs, inCombatSetup: false };
+      }
+    }
+
+    const baseWood = campConfig.setupCost?.wood ?? 5;
+    const baseHerbs = campConfig.setupCost?.wild_herbs ?? 2;
+    const discount = perks.quickCampDiscountPercent;
+    const costMult = inCombat ? (campConfig.perks?.grandSurvivalistCostMultiplier ?? 2.0) : 1.0;
+    const reqWood = Math.max(1, Math.floor(baseWood * (1 - discount) * costMult));
+    const reqHerbs = Math.max(1, Math.floor(baseHerbs * (1 - discount) * costMult));
+    const cost = { wood: reqWood, wild_herbs: reqHerbs };
+
+    const channelMs = inCombat ? (campConfig.perks?.grandSurvivalistChannelMs ?? 3000) : Math.round(campConfig.setupChannelMs * (1 - discount));
+
+    const carriedWood = this.party.reduce((sum, m) => sum + m.getItemCount('wood'), 0);
+    const carriedHerbs = this.party.reduce((sum, m) => sum + m.getItemCount('wild_herbs'), 0);
+
+    if (carriedWood < reqWood || carriedHerbs < reqHerbs) {
+      return { allowed: false, reason: `Need ${reqWood} Wood, ${reqHerbs} Wild Herbs`, cost, channelMs, inCombatSetup: inCombat };
+    }
+
+    return { allowed: true, cost, channelMs, inCombatSetup: inCombat };
+  }
+
+  public startMakeCamp(): boolean {
+    const check = this.canMakeCamp();
+    if (!check.allowed) {
+      this.hud?.showToast(`⚠️ ${check.reason || 'Cannot make camp'}`, 'warn', 2500);
+      return false;
+    }
+
+    const leader = this.player;
+    if (this.activeGatherChannels.has(leader)) {
+      this.cancelGatherChannel(leader);
+    }
+    if (this.activeCampChannel) {
+      this.cancelCampChannel();
+    }
+
+    leader.state = 'channeling';
+    leader.claimedDestination = null;
+    leader.clearTarget();
+
+    const durationMs = check.channelMs;
+    const posX = leader.x;
+    const posY = leader.y - 28;
+
+    let barContainer: Phaser.GameObjects.Container;
+    let barBg: Phaser.GameObjects.Graphics;
+    let barFill: Phaser.GameObjects.Graphics;
+    let labelText: Phaser.GameObjects.Text;
+
+    if (this.add) {
+      barContainer = this.add.container(posX, posY).setDepth(10001);
+      barBg = this.add.graphics();
+      barBg.fillStyle(0x111827, 0.85);
+      barBg.fillRect(-18, -3, 36, 6);
+      barBg.lineStyle(1, 0x374151, 1);
+      barBg.strokeRect(-18, -3, 36, 6);
+
+      barFill = this.add.graphics();
+      labelText = this.add.text(0, -12, 'Making Camp... 0%', {
+        fontSize: '9px',
+        fontStyle: 'bold',
+        color: '#f97316',
+        backgroundColor: 'rgba(0,0,0,0.7)',
+        padding: { x: 3, y: 1 }
+      }).setOrigin(0.5);
+
+      barContainer.add([barBg, barFill, labelText]);
+    } else {
+      barContainer = { setPosition: () => {}, destroy: () => {} } as any;
+      barBg = { destroy: () => {} } as any;
+      barFill = { clear: () => {}, fillStyle: () => {}, fillRect: () => {}, destroy: () => {} } as any;
+      labelText = { setText: () => {}, destroy: () => {} } as any;
+    }
+
+    this.activeCampChannel = {
+      character: leader,
+      durationMs,
+      elapsedMs: 0,
+      barContainer,
+      barBg,
+      barFill,
+      labelText,
+      cost: check.cost,
+      inCombatSetup: check.inCombatSetup
+    };
+
+    console.log(`[Camp] 🏕️ ${leader.entityName} started pitching camp (${durationMs}ms)...`);
+    return true;
+  }
+
+  public completeMakeCamp(): void {
+    if (!this.activeCampChannel) return;
+    const { character, cost } = this.activeCampChannel;
+    this.activeCampChannel.barContainer.destroy();
+    this.activeCampChannel = null;
+
+    if (character.state === 'channeling') {
+      character.state = 'idle';
+    }
+
+    // Deduct cost from party bags only (leader bag first)
+    const members = [character, ...this.party.filter(m => m !== character)];
+    let woodNeeded = cost.wood;
+    for (const m of members) {
+      const have = m.getItemCount('wood');
+      const take = Math.min(have, woodNeeded);
+      if (take > 0) {
+        m.removeItem('wood', take);
+        woodNeeded -= take;
+      }
+      if (woodNeeded <= 0) break;
+    }
+
+    let herbsNeeded = cost.wild_herbs;
+    for (const m of members) {
+      const have = m.getItemCount('wild_herbs');
+      const take = Math.min(have, herbsNeeded);
+      if (take > 0) {
+        m.removeItem('wild_herbs', take);
+        herbsNeeded -= take;
+      }
+      if (herbsNeeded <= 0) break;
+    }
+
+    const campConfig = DataLoader.getInstance().getCampConfig();
+    const perks = CraftingSystem.getSurvivalistPerks(this.party);
+    const radius = (campConfig.campRadiusTiles ?? 3) + perks.trailblazerSenseRadiusBonus;
+    const leaderRoom = this.dungeon ? this.dungeon.rooms.find(r => character.gridPos.x >= r.x && character.gridPos.x < r.x + r.width && character.gridPos.y >= r.y && character.gridPos.y < r.y + r.height) : undefined;
+    const roomIndex = leaderRoom ? leaderRoom.id : -1;
+
+    const campX = character.gridPos.x;
+    const campY = character.gridPos.y;
+    const nowTime = this.time ? this.time.now : Date.now();
+    this.currentCamp = new DungeonCamp(this, campX, campY, roomIndex, radius, nowTime);
+    this.floorCampCreatedCount++;
+
+    // Mark 1x1 tile obstacle
+    if (this.gridMatrix && this.gridMatrix[campY]) {
+      this.gridMatrix[campY][campX] = 1;
+      if (this.pathfinder) {
+        this.pathfinder.updateGrid(this.gridMatrix);
+      }
+    }
+
+    // Nudge leader to an adjacent walkable tile if available
+    const adjWalkable = [
+      { x: campX, y: campY + 1 },
+      { x: campX, y: campY - 1 },
+      { x: campX + 1, y: campY },
+      { x: campX - 1, y: campY }
+    ].find(t => t.x > 0 && t.x < this.mapWidth - 1 && t.y > 0 && t.y < this.mapHeight - 1 && this.gridMatrix[t.y]?.[t.x] === 0);
+
+    if (adjWalkable) {
+      character.setPosition(adjWalkable.x * this.tileSize + this.tileSize / 2, adjWalkable.y * this.tileSize + this.tileSize / 2);
+      character.gridPos = { x: adjWalkable.x, y: adjWalkable.y };
+    }
+
+    // Activity: every conscious party member in camp radius records "Dungeon Camp Setup" +1
+    for (const member of this.party) {
+      if (member.state !== 'downed' && member.state !== 'dead') {
+        if (this.currentCamp.isInRadius(member.gridPos.x, member.gridPos.y)) {
+          member.progression.recordActivity('Dungeon Camp Setup', 1);
+          for (const clsId of ['survivalist', 'trailblazer', 'wilderness_warden', 'grand_survivalist']) {
+            if (member.progression.isClassUnlocked(clsId)) {
+              member.progression.addClassExp(clsId, campConfig.classExp.onSetup);
+            }
+          }
+        }
+      }
+    }
+
+    GameState.getInstance().discoverGatheringNode('campfire');
+    this.hud?.showToast('🏕️ Camp pitched! Rest and recover.', 'success', 3000);
+  }
+
+  public cancelCampChannel(): void {
+    if (this.activeCampChannel) {
+      this.activeCampChannel.barContainer.destroy();
+      if (this.activeCampChannel.character.state === 'channeling') {
+        this.activeCampChannel.character.state = 'idle';
+      }
+      this.activeCampChannel = null;
+    }
+  }
+
+  public breakCamp(): void {
+    if (!this.currentCamp) return;
+    if (this.combatSystem && this.combatSystem.isInCombat()) {
+      this.hud?.showToast('⚠️ Cannot break camp during combat!', 'warn', 2500);
+      return;
+    }
+
+    const campConfig = DataLoader.getInstance().getCampConfig();
+    const nowMs = this.time ? this.time.now : Date.now();
+    const stoodSec = this.currentCamp.getStandingDurationSeconds(nowMs);
+
+    if (stoodSec >= (campConfig.minRestSecondsForBuff ?? 20)) {
+      const perks = CraftingSystem.getSurvivalistPerks(this.party, (m) => this.currentCamp!.isInRadius(m.gridPos.x, m.gridPos.y));
+      const durBonus = perks.wellRestedDurationBonusPercent;
+      const statusDef = DataLoader.getInstance().getStatusEffect(campConfig.campRestedStatusId);
+      const baseDurationMs = statusDef?.durationMs ?? 60000;
+      const finalDurationMs = Math.round(baseDurationMs * (1 + durBonus));
+
+      const campRestedDef: any = {
+        id: campConfig.campRestedStatusId,
+        name: statusDef?.name || 'Camp Rested',
+        durationMs: finalDurationMs,
+        tickIntervalMs: statusDef?.tickIntervalMs || 1000,
+        damagePerTick: 0,
+        bonusDamagePercent: statusDef?.bonusDamagePercent ?? 0.05,
+        energyRegenPerSecond: statusDef?.energyRegenPerSecond ?? 0.25,
+        color: statusDef?.color || '#38bdf8',
+        isHarmful: false
+      };
+
+      for (const member of this.party) {
+        if (member.state !== 'downed' && member.state !== 'dead') {
+          if (this.currentCamp.isInRadius(member.gridPos.x, member.gridPos.y)) {
+            member.applyStatusEffect({ ...campRestedDef });
+            for (const clsId of ['survivalist', 'trailblazer', 'wilderness_warden', 'grand_survivalist']) {
+              if (member.progression.isClassUnlocked(clsId)) {
+                member.progression.addClassExp(clsId, campConfig.classExp.onBreakBuff);
+              }
+            }
+          }
+        }
+      }
+
+      this.trailblazerSenseRemainingMs = campConfig.perks?.wildernessWardenSenseDurationMs ?? 60000;
+      this.hud?.showToast('⛺ Camp broken. The party feels rested and alert!', 'success', 3000);
+    } else {
+      this.hud?.showToast('⛺ Camp broken.', 'info', 2000);
+    }
+
+    this.destroyCamp(false);
+  }
+
+  public destroyCamp(_isConsumedByRespawn: boolean = false): void {
+    if (!this.currentCamp) return;
+    const cx = this.currentCamp.x;
+    const cy = this.currentCamp.y;
+    this.currentCamp.destroy();
+    this.currentCamp = null;
+
+    if (this.gridMatrix && this.gridMatrix[cy]?.[cx] === 1) {
+      this.gridMatrix[cy][cx] = 0;
+      if (this.pathfinder) {
+        this.pathfinder.updateGrid(this.gridMatrix);
+      }
+    }
+  }
+
+  public respawnAtCamp(): void {
+    if (!this.currentCamp) return;
+
+    console.log('%c[Camp Respawn] 🏕️ Party wiped with camp standing! Respawning at campfire...', 'color: #f59e0b; font-weight: bold;');
+    if (this.hud) {
+      this.hud.showToast("The campfire's embers pull you back… (camp consumed)", 'info', 3500);
+    }
+
+    // Disengage enemies, clear targets, reset isAggroed (exactly as wipe does)
+    if (this.enemies) {
+      for (const enemy of this.enemies) {
+        enemy.targetEntity = null;
+        enemy.isAggroed = false;
+        if ((enemy.state as any) === 'combat') {
+          enemy.state = 'idle';
+        }
+      }
+    }
+    this.clearMoveDestinationHighlights();
+
+    const campX = this.currentCamp.x;
+    const campY = this.currentCamp.y;
+    const campConfig = DataLoader.getInstance().getCampConfig();
+
+    // Distinct walkable tiles adjacent to the campfire (ring search 1-2 tiles, never the campfire tile itself)
+    const candidateTiles: { x: number; y: number }[] = [];
+    for (let r = 1; r <= 3; r++) {
+      for (let dy = -r; dy <= r; dy++) {
+        for (let dx = -r; dx <= r; dx++) {
+          if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
+          const tx = campX + dx;
+          const ty = campY + dy;
+          if (tx > 0 && tx < this.mapWidth - 1 && ty > 0 && ty < this.mapHeight - 1 && this.gridMatrix[ty]?.[tx] === 0) {
+            candidateTiles.push({ x: tx, y: ty });
+          }
+        }
+      }
+    }
+
+    const placedTiles = new Set<string>();
+    placedTiles.add(`${campX},${campY}`);
+
+    for (const member of this.party) {
+      const tile = candidateTiles.find(t => !placedTiles.has(`${t.x},${t.y}`)) || candidateTiles[0] || { x: campX + 1, y: campY };
+      placedTiles.add(`${tile.x},${tile.y}`);
+
+      member.hp = Math.max(1, Math.floor(member.maxHp * (campConfig.respawnHpPercent ?? 0.5)));
+      member.criticalHp = member.maxCriticalHp;
+      member.clearDownedState();
+      member.setPosition(tile.x * this.tileSize + this.tileSize / 2, tile.y * this.tileSize + this.tileSize / 2);
+      member.gridPos = { x: tile.x, y: tile.y };
+      member.claimedDestination = null;
+      member.clearTarget();
+      member.state = 'idle';
+    }
+
+    this.destroyCamp(true);
   }
 
   public debugInstantReviveParty(): boolean {
@@ -2337,6 +2763,33 @@ export class MainScene extends Phaser.Scene {
       this.tileClaimOverlay.update(time);
     }
 
+    // Update Active Camp Channel
+    if (this.activeCampChannel) {
+      const { character, durationMs, barContainer, barFill, labelText } = this.activeCampChannel;
+      if (character.state !== 'channeling' || character.hp <= 0 || (character.state as any) === 'downed' || (character.state as any) === 'dead') {
+        this.cancelCampChannel();
+      } else {
+        this.activeCampChannel.elapsedMs += delta;
+        const pct = Math.min(1, this.activeCampChannel.elapsedMs / durationMs);
+        barContainer.setPosition(character.x, character.y - 28);
+        barFill.clear();
+        barFill.fillStyle(0xf97316, 1);
+        const fillW = Math.max(0, Math.floor(34 * pct));
+        if (fillW > 0) {
+          barFill.fillRect(-17, -2, fillW, 4);
+        }
+        labelText.setText(`Making Camp... ${Math.floor(pct * 100)}%`);
+
+        if (this.activeCampChannel.elapsedMs >= durationMs) {
+          this.completeMakeCamp();
+        }
+      }
+    }
+
+    if (this.trailblazerSenseRemainingMs > 0) {
+      this.trailblazerSenseRemainingMs = Math.max(0, this.trailblazerSenseRemainingMs - delta);
+    }
+
     // Milestone 17: Update Active Gathering Channels
     for (const [character, channel] of Array.from(this.activeGatherChannels.entries())) {
       if (character.state !== 'channeling' || character.hp <= 0 || (character.state as any) === 'downed' || (character.state as any) === 'dead') {
@@ -2444,7 +2897,14 @@ export class MainScene extends Phaser.Scene {
       this.undiscoveredCaches,
       this.party,
       this.cacheDetectionRng,
-      (m) => CraftingSystem.getCrafterPerks(m, 'perception')
+      (m) => {
+        const base = CraftingSystem.getCrafterPerks(m, 'perception');
+        const senseBonus = this.getTrailblazerSenseBonusForMember(m as Player);
+        return {
+          ...base,
+          detectionBonusChance: (base.detectionBonusChance ?? 0) + senseBonus
+        };
+      }
     );
     for (const reveal of detectionReveals) {
       this.revealHiddenCache(reveal.cache, reveal.revealer);
@@ -3782,6 +4242,16 @@ export class MainScene extends Phaser.Scene {
   }
 
   public interruptGatherChannel(character: Player, attacker?: Enemy): boolean {
+    if (this.activeCampChannel && this.activeCampChannel.character === character) {
+      this.cancelCampChannel();
+      this.createFloatingText(character.x, character.y - 20, 'INTERRUPTED!', '#ef4444');
+      this.hud?.showToast('⚠️ Camp setup interrupted!', 'warn', 2500);
+      if (attacker && attacker.state !== 'dead' && attacker.state !== 'downed') {
+        this.engageEnemy(attacker, [character]);
+      }
+      return true;
+    }
+
     const channel = this.activeGatherChannels.get(character);
     if (!channel) return false;
 

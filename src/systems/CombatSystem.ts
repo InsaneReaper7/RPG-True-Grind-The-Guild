@@ -1542,7 +1542,8 @@ export class CombatSystem {
           hasMagicProficiency,
           inCombat,
           hasEnergyPotionBuff: member.energyPotionRemainingMs > 0,
-          hasManaPotionBuff: member.manaPotionRemainingMs > 0
+          hasManaPotionBuff: member.manaPotionRemainingMs > 0,
+          campMultiplier: (!inCombat && (this as any).scene?.isInCampRadius && (this as any).scene.isInCampRadius(member)) ? (dataLoader.getCampConfig()?.campRegenMultiplier ?? 2.0) : 1.0
         };
 
         const regenResult = hiddenSystem.resolvePassiveRegen(context, member.progression);

@@ -305,7 +305,7 @@ export class CookingSystem {
     return tags;
   }
 
-  public static experiment(cook: Player, itemIds: string[]): CookingResult {
+  public static experiment(cook: Player, itemIds: string[], options?: { bagOnly?: boolean; party?: Player[] }): CookingResult {
     const gameState = GameState.getInstance();
     const dataLoader = DataLoader.getInstance();
 
@@ -324,9 +324,10 @@ export class CookingSystem {
     const counts: Record<string, number> = {};
     for (const id of itemIds) counts[id] = (counts[id] || 0) + 1;
 
+    const partyMembers = options?.party && options.party.length > 0 ? options.party : [cook];
     for (const [id, reqQty] of Object.entries(counts)) {
-      const stock = gameState.getItemCount(id);
-      const carried = cook.getItemCount(id);
+      const stock = options?.bagOnly ? 0 : gameState.getItemCount(id);
+      const carried = partyMembers.reduce((sum, m) => sum + m.getItemCount(id), 0);
       if (stock + carried < reqQty) {
         return {
           success: false,
@@ -355,17 +356,28 @@ export class CookingSystem {
       }
     }
 
-    // Consume materials: stockpile first, then cook bag
+    // Consume materials: stockpile first (if not bagOnly), then party bags
     for (const [id, reqQty] of Object.entries(counts)) {
       let remaining = reqQty;
-      const stock = gameState.getItemCount(id);
-      const fromStock = Math.min(stock, remaining);
-      if (fromStock > 0) {
-        gameState.consumeItem(id, fromStock);
-        remaining -= fromStock;
+      if (!options?.bagOnly) {
+        const stock = gameState.getItemCount(id);
+        const fromStock = Math.min(stock, remaining);
+        if (fromStock > 0) {
+          gameState.consumeItem(id, fromStock);
+          remaining -= fromStock;
+        }
       }
       if (remaining > 0) {
-        cook.removeItem(id, remaining);
+        const order = [cook, ...partyMembers.filter((m) => m !== cook)];
+        for (const member of order) {
+          const carried = member.getItemCount(id);
+          const take = Math.min(carried, remaining);
+          if (take > 0) {
+            member.removeItem(id, take);
+            remaining -= take;
+          }
+          if (remaining <= 0) break;
+        }
       }
     }
 
@@ -440,39 +452,44 @@ export class CookingSystem {
     };
   }
 
-  public static cookKnown(cook: Player, recipeId: string, itemIds?: string[]): CookingResult {
+  public static cookKnown(cook: Player, recipeId: string, itemIds?: string[], options?: { bagOnly?: boolean; party?: Player[] }): CookingResult {
     const dataLoader = DataLoader.getInstance();
     const recipe = dataLoader.getCookingRecipe(recipeId);
     if (!recipe) {
       return { success: false, count: 0, isNewDiscovery: false, message: 'Unknown recipe', expAwarded: 0 };
     }
 
-    const ingredientsToUse = itemIds || CookingSystem.findBestIngredientsForRecipe(cook, recipe);
+    const ingredientsToUse = itemIds || CookingSystem.findBestIngredientsForRecipe(cook, recipe, options);
     if (!ingredientsToUse || ingredientsToUse.length === 0) {
       return { success: false, count: 0, isNewDiscovery: false, message: 'Missing required ingredients', expAwarded: 0 };
     }
 
-    return CookingSystem.experiment(cook, ingredientsToUse);
+    return CookingSystem.experiment(cook, ingredientsToUse, options);
   }
 
-  public static findBestIngredientsForRecipe(cook: Player, recipe: CookingRecipeDef): string[] | null {
+  public static findBestIngredientsForRecipe(cook: Player, recipe: CookingRecipeDef, options?: { bagOnly?: boolean; party?: Player[] }): string[] | null {
     const slots = recipe.slots;
     if (!slots || slots.length === 0) return null;
     const gameState = GameState.getInstance();
     const dataLoader = DataLoader.getInstance();
 
-    // Pool all available ingredients in stockpile + cook bag
+    // Pool all available ingredients in stockpile (if not bagOnly) + party bags
+    const partyMembers = options?.party && options.party.length > 0 ? options.party : [cook];
     const available = new Map<string, number>();
-    for (const [id, count] of cook.inventory.entries()) {
-      const item = dataLoader.getItem(id);
-      if (item?.ingredient) {
-        available.set(id, (available.get(id) || 0) + count);
+    for (const member of partyMembers) {
+      for (const [id, count] of member.inventory.entries()) {
+        const item = dataLoader.getItem(id);
+        if (item?.ingredient) {
+          available.set(id, (available.get(id) || 0) + count);
+        }
       }
     }
-    for (const [id, count] of gameState.getInventoryMap().entries()) {
-      const item = dataLoader.getItem(id);
-      if (item?.ingredient) {
-        available.set(id, (available.get(id) || 0) + count);
+    if (!options?.bagOnly) {
+      for (const [id, count] of gameState.getInventoryMap().entries()) {
+        const item = dataLoader.getItem(id);
+        if (item?.ingredient) {
+          available.set(id, (available.get(id) || 0) + count);
+        }
       }
     }
 

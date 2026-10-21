@@ -2506,6 +2506,111 @@
       ],
       "fantasy": "Culinary authority elevating dishes to transcendent perfection",
       "perkDescription": "Dishes gain +1 dish tier (max 4; excludes lost recipes)"
+    },
+    {
+      "id": "survivalist",
+      "name": "Survivalist",
+      "tier": "novice",
+      "category": "crafting",
+      "requirements": [
+        {
+          "type": "activityCount",
+          "target": "Dungeon Camp Setup",
+          "value": 5
+        }
+      ],
+      "fantasy": "Knows how to not die between fights",
+      "perkDescription": "Quick Camp: setup time and wood/herb cost -2 * min(15, Lv)%"
+    },
+    {
+      "id": "trailblazer",
+      "name": "Trailblazer",
+      "tier": "adept",
+      "category": "crafting",
+      "requirements": [
+        {
+          "type": "activityCount",
+          "target": "Dungeon Camp Setup",
+          "value": 15
+        },
+        {
+          "type": "proficiency",
+          "target": "foraging",
+          "value": 30
+        },
+        {
+          "type": "proficiency",
+          "target": "woodcutting",
+          "value": 30
+        },
+        {
+          "type": "classLevel",
+          "target": "survivalist",
+          "value": 10
+        }
+      ],
+      "fantasy": "The one the party trusts to find the safe spot",
+      "perkDescription": "Well-Rested: camp_rested duration +4 * min(15, Lv)%"
+    },
+    {
+      "id": "wilderness_warden",
+      "name": "Wilderness Warden",
+      "tier": "expert",
+      "category": "crafting",
+      "requirements": [
+        {
+          "type": "activityCount",
+          "target": "Dungeon Camp Setup",
+          "value": 30
+        },
+        {
+          "type": "proficiency",
+          "target": "foraging",
+          "value": 60
+        },
+        {
+          "type": "proficiency",
+          "target": "woodcutting",
+          "value": 60
+        },
+        {
+          "type": "classLevel",
+          "target": "trailblazer",
+          "value": 20
+        }
+      ],
+      "fantasy": "Turns any dungeon corridor into a fortified rest stop",
+      "perkDescription": "Trailblazer's Sense: +min(15, Lv) pp cache detection, camp radius +1 tile"
+    },
+    {
+      "id": "grand_survivalist",
+      "name": "Grand Survivalist",
+      "tier": "master",
+      "category": "crafting",
+      "requirements": [
+        {
+          "type": "activityCount",
+          "target": "Dungeon Camp Setup",
+          "value": 50
+        },
+        {
+          "type": "proficiency",
+          "target": "nature_magic",
+          "value": 60
+        },
+        {
+          "type": "proficiency",
+          "target": "perception",
+          "value": 60
+        },
+        {
+          "type": "classLevel",
+          "target": "wilderness_warden",
+          "value": 30
+        }
+      ],
+      "fantasy": "Legendary guide — parties seek them out before the hardest runs",
+      "perkDescription": "Emergency Shelter: in-combat camp at double cost, 3s channel"
     }
   ]
 }

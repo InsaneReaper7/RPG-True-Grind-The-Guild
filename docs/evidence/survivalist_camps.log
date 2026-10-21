@@ -1,0 +1,306 @@
+================================================================
+🏕️ RUNNING SURVIVALIST & DUNGEON CAMPS TEST SUITE
+================================================================
+
+--- TEST 1: Expected-Table Guards ---
+✔ Test 1 passed: All expected-table guards verified for data files.
+
+--- TEST 2: Make Camp Refusal Conditions ---
+[TutorialSystem] 🎓 Guild Onboarding & Tutorial COMPLETED! Full loop verified.
+[TutorialSystem] 🧭 Tutorial reset to default beginning (Step 1: Guild Roster).
+[TutorialSystem] 🎓 Guild Onboarding & Tutorial COMPLETED! Full loop verified.
+✔ Test 2 passed: All refusal conditions verified without bag mutations.
+
+--- TEST 3: Setup Channel, Cost Deduction & Activity/EXP ---
+[Progression] Activity 'Dungeon Camp Setup' count: 0 -> 4 (+4)
+[Progression] Activity 'Dungeon Camp Setup' count: 0 -> 4 (+4)
+[Camp] 🏕️ Guild Hero started pitching camp (5000ms)...
+[Progression] Activity 'Dungeon Camp Setup' count: 4 -> 5 (+1)
+[Progression] Class Unlocked: Survivalist (survivalist) for Guild Hero!
+[Progression] +50 Class EXP for 'survivalist' (Guild Hero). Current: Level 1 (50/54 EXP)
+[KnowledgeBase] 🪵 Gathering node discovered: 'campfire'! (+1 RP)
+[Camp] 🏕️ Guild Hero started pitching camp (4900ms)...
+✔ Test 3 passed: Channel completion, cost deduction, and interruption verified.
+
+--- TEST 4: Rest Regen & Flat energyRegenPerSecond ---
+[Camp] 🏕️ Guild Hero started pitching camp (4900ms)...
+[Progression] Activity 'Dungeon Camp Setup' count: 5 -> 6 (+1)
+[Progression] +50 Class EXP for 'survivalist' (Guild Hero). Current: Level 2 (46/58 EXP)
+[Progression] CLASS LEVEL UP! 'survivalist' is now Level 2!
+[DIAG:Regen] Guild Hero | inCombat: false | Rate: 4.00 EN/s | Energy: 50.0 -> 54.0 (+4.00)
+[KnowledgeBase] 🧪 Status effect discovered: 'camp_rested'! (+1 RP)
+✔ Test 4 passed: Rest regen multipliers and flat status energy ticks verified.
+
+--- TEST 5: Party Wipe Respawn at Camp ---
+CHECK CAN MAKE CAMP: {
+  allowed: true,
+  cost: { wood: 4, wild_herbs: 1 },
+  channelMs: 4800,
+  inCombatSetup: false
+} leaderPos: { x: 8, y: 3 }
+[Camp] 🏕️ Guild Hero started pitching camp (4800ms)...
+[Progression] Activity 'Dungeon Camp Setup' count: 6 -> 7 (+1)
+[Progression] +50 Class EXP for 'survivalist' (Guild Hero). Current: Level 3 (38/62 EXP)
+[Progression] CLASS LEVEL UP! 'survivalist' is now Level 3!
+[Camp Respawn] 🏕️ Party wiped with camp standing! Respawning at campfire...
+[Party Wipe] ☠️ FULL PARTY WIPED! Teleporting back to Guild Outpost...
+[SceneTransition Handoff-OUT] Saved party snapshot (2 members) at sceneTime=1000ms: [
+  {
+    id: 'player',
+    name: 'Guild Hero',
+    avatarKey: 'player-avatar',
+    avatarTextureKey: 'player-avatar',
+    x: 7,
+    y: 2,
+    hp: 25,
+    criticalHp: 25.2,
+    energy: 50,
+    equippedWeaponId: 'short_swords',
+    offhandWeaponId: null,
+    equippedHelmetId: null,
+    equippedBodyArmorId: null,
+    equippedNecklaceId: null,
+    equippedRingId: null,
+    equippedAccessoryId: null,
+    baseCarryCapacity: 45,
+    inventory: { wood: 7, wild_herbs: 4 },
+    foodItems: [],
+    knownSkillIds: [],
+    equippedSkillIds: [],
+    autocastMap: {},
+    skillCooldownsRemainingMs: {},
+    activeClass: null,
+    proficiencies: {
+      short_swords: [Object],
+      daggers: [Object],
+      shields: [Object],
+      mace: [Object],
+      staff: [Object],
+      druid_staff: [Object],
+      healing_magic: [Object],
+      fire_magic: [Object],
+      lightning_magic: [Object],
+      ice_magic: [Object],
+      holy_magic: [Object],
+      dark_magic: [Object],
+      arcane_magic: [Object],
+      water_magic: [Object],
+      earth_magic: [Object],
+      nature_magic: [Object],
+      wind_magic: [Object],
+      dual_wielding: [Object],
+      construction: [Object],
+      alchemy: [Object],
+      cooking: [Object],
+      blacksmithing: [Object],
+      foraging: [Object],
+      woodcutting: [Object],
+      mining: [Object],
+      armorsmithing: [Object],
+      digging: [Object],
+      perception: [Object],
+      skinning: [Object],
+      butchering: [Object],
+      bows: [Object],
+      crossbows: [Object],
+      bowyer: [Object],
+      lockpicking: [Object],
+      gardening: [Object],
+      fist: [Object],
+      longswords: [Object],
+      greatswords: [Object],
+      spears: [Object],
+      katana: [Object],
+      throwing_weapons: [Object],
+      light_armor: [Object],
+      medium_armor: [Object],
+      heavy_armor: [Object],
+      fishing: [Object],
+      enchanting: [Object],
+      evasion: [Object],
+      parry: [Object],
+      block: [Object],
+      counterattack: [Object],
+      resilience: [Object],
+      health_regen: [Object],
+      mana_regen: [Object],
+      energy_regen: [Object],
+      iron_back: [Object],
+      poison_resistance: [Object]
+    },
+    classLevels: { survivalist: 3 },
+    classStats: { survivalist: [Object] },
+    unlockedClasses: [ 'survivalist' ],
+    activityCounts: { 'Dungeon Camp Setup': 7 },
+    bookLearnedSkills: [],
+    hunger: 100,
+    mood: 50,
+    state: 'idle'
+  },
+  {
+    id: 'player',
+    name: 'Valerie',
+    avatarKey: 'companion-avatar',
+    avatarTextureKey: 'companion-avatar',
+    x: 8,
+    y: 2,
+    hp: 25,
+    criticalHp: 25,
+    energy: 100,
+    equippedWeaponId: 'short_swords',
+    offhandWeaponId: null,
+    equippedHelmetId: null,
+    equippedBodyArmorId: null,
+    equippedNecklaceId: null,
+    equippedRingId: null,
+    equippedAccessoryId: null,
+    baseCarryCapacity: 45,
+    inventory: {},
+    foodItems: [],
+    knownSkillIds: [],
+    equippedSkillIds: [],
+    autocastMap: {},
+    skillCooldownsRemainingMs: {},
+    activeClass: null,
+    proficiencies: {
+      short_swords: [Object],
+      daggers: [Object],
+      shields: [Object],
+      mace: [Object],
+      staff: [Object],
+      druid_staff: [Object],
+      healing_magic: [Object],
+      fire_magic: [Object],
+      lightning_magic: [Object],
+      ice_magic: [Object],
+      holy_magic: [Object],
+      dark_magic: [Object],
+      arcane_magic: [Object],
+      water_magic: [Object],
+      earth_magic: [Object],
+      nature_magic: [Object],
+      wind_magic: [Object],
+      dual_wielding: [Object],
+      construction: [Object],
+      alchemy: [Object],
+      cooking: [Object],
+      blacksmithing: [Object],
+      foraging: [Object],
+      woodcutting: [Object],
+      mining: [Object],
+      armorsmithing: [Object],
+      digging: [Object],
+      perception: [Object],
+      skinning: [Object],
+      butchering: [Object],
+      bows: [Object],
+      crossbows: [Object],
+      bowyer: [Object],
+      lockpicking: [Object],
+      gardening: [Object],
+      fist: [Object],
+      longswords: [Object],
+      greatswords: [Object],
+      spears: [Object],
+      katana: [Object],
+      throwing_weapons: [Object],
+      light_armor: [Object],
+      medium_armor: [Object],
+      heavy_armor: [Object],
+      fishing: [Object],
+      enchanting: [Object],
+      evasion: [Object],
+      parry: [Object],
+      block: [Object],
+      counterattack: [Object],
+      resilience: [Object],
+      health_regen: [Object],
+      mana_regen: [Object],
+      energy_regen: [Object],
+      iron_back: [Object],
+      poison_resistance: [Object]
+    },
+    classLevels: {},
+    classStats: {},
+    unlockedClasses: [],
+    activityCounts: { 'Dungeon Camp Setup': 4 },
+    bookLearnedSkills: [],
+    hunger: 100,
+    mood: 50,
+    state: 'idle'
+  }
+]
+[SceneTransition Handoff-OUT] Saved state snapshot at sceneTime=1000ms:
+  HP: 25.0 / 50.4
+  Critical HP: 25.2 / 25.2
+  Energy: 50.0 / 100
+  Equipped Skills: []
+  Autocast: {}
+  Remaining Cooldowns (ms): {}
+  Proficiencies: {"short_swords":{"level":0,"currentExp":0},"daggers":{"level":0,"currentExp":0},"shields":{"level":0,"currentExp":0},"mace":{"level":0,"currentExp":0},"staff":{"level":0,"currentExp":0},"druid_staff":{"level":0,"currentExp":0},"healing_magic":{"level":0,"currentExp":0},"fire_magic":{"level":0,"currentExp":0},"lightning_magic":{"level":0,"currentExp":0},"ice_magic":{"level":0,"currentExp":0},"holy_magic":{"level":0,"currentExp":0},"dark_magic":{"level":0,"currentExp":0},"arcane_magic":{"level":0,"currentExp":0},"water_magic":{"level":0,"currentExp":0},"earth_magic":{"level":0,"currentExp":0},"nature_magic":{"level":0,"currentExp":0},"wind_magic":{"level":0,"currentExp":0},"dual_wielding":{"level":0,"currentExp":0},"construction":{"level":0,"currentExp":0},"alchemy":{"level":0,"currentExp":0},"cooking":{"level":0,"currentExp":0},"blacksmithing":{"level":0,"currentExp":0},"foraging":{"level":0,"currentExp":0},"woodcutting":{"level":0,"currentExp":0},"mining":{"level":0,"currentExp":0},"armorsmithing":{"level":0,"currentExp":0},"digging":{"level":0,"currentExp":0},"perception":{"level":0,"currentExp":0},"skinning":{"level":0,"currentExp":0},"butchering":{"level":0,"currentExp":0},"bows":{"level":0,"currentExp":0},"crossbows":{"level":0,"currentExp":0},"bowyer":{"level":0,"currentExp":0},"lockpicking":{"level":0,"currentExp":0},"gardening":{"level":0,"currentExp":0},"fist":{"level":0,"currentExp":0},"longswords":{"level":0,"currentExp":0},"greatswords":{"level":0,"currentExp":0},"spears":{"level":0,"currentExp":0},"katana":{"level":0,"currentExp":0},"throwing_weapons":{"level":0,"currentExp":0},"light_armor":{"level":0,"currentExp":0},"medium_armor":{"level":0,"currentExp":0},"heavy_armor":{"level":0,"currentExp":0},"fishing":{"level":0,"currentExp":0},"enchanting":{"level":0,"currentExp":0},"evasion":{"level":0,"currentExp":0},"parry":{"level":0,"currentExp":0},"block":{"level":0,"currentExp":0},"counterattack":{"level":0,"currentExp":0},"resilience":{"level":0,"currentExp":0},"health_regen":{"level":0,"currentExp":0},"mana_regen":{"level":0,"currentExp":0},"energy_regen":{"level":0,"currentExp":0},"iron_back":{"level":0,"currentExp":0},"poison_resistance":{"level":0,"currentExp":0}}
+  Unlocked Classes: [survivalist]
+  Wood: 200
+  Placed Buildables: 0
+  Day: 1, Hunger: 100.0, Mood: 50.0, Rations: 0
+[GameState] 💾 Checkpoint persisted to storage (Day 1, 2 members, 9675 bytes)
+✔ Test 5 passed: Camp respawn restoration and subsequent Outpost wipe verified.
+
+--- TEST 6: Campfire Cooking ---
+[Progression] +5 EXP for 'cooking' (Guild Hero). Current: Level 0 (5/50 EXP)
+[Progression] Recorded tx 'cooking': +5 EXP for Guild Hero, resulting total: Level 0 (5/50 EXP)
+✔ Test 6 passed: Campfire cooking strictly consumed bag materials.
+
+--- TEST 7: Break Camp & Buff Stacking ---
+[Camp] 🏕️ Guild Hero started pitching camp (4700ms)...
+[Progression] Activity 'Dungeon Camp Setup' count: 7 -> 8 (+1)
+[Progression] +50 Class EXP for 'survivalist' (Guild Hero). Current: Level 4 (26/66 EXP)
+[Progression] CLASS LEVEL UP! 'survivalist' is now Level 4!
+[Progression] Activity 'Dungeon Camp Setup' count: 4 -> 5 (+1)
+[Progression] Class Unlocked: Survivalist (survivalist) for Guild Hero!
+[Progression] +50 Class EXP for 'survivalist' (Guild Hero). Current: Level 1 (50/54 EXP)
+CHECK CAN MAKE CAMP: {
+  allowed: true,
+  cost: { wood: 4, wild_herbs: 1 },
+  channelMs: 4600,
+  inCombatSetup: false
+} leaderPos: { x: 8, y: 4 }
+[Camp] 🏕️ Guild Hero started pitching camp (4600ms)...
+[Progression] Activity 'Dungeon Camp Setup' count: 8 -> 9 (+1)
+[Progression] +50 Class EXP for 'survivalist' (Guild Hero). Current: Level 5 (10/70 EXP)
+[Progression] CLASS LEVEL UP! 'survivalist' is now Level 5!
+[Progression] Activity 'Dungeon Camp Setup' count: 5 -> 6 (+1)
+[Progression] +50 Class EXP for 'survivalist' (Guild Hero). Current: Level 2 (46/58 EXP)
+[Progression] CLASS LEVEL UP! 'survivalist' is now Level 2!
+[KnowledgeBase] 🧪 Status effect discovered: 'dish_buff'! (+1 RP)
+[Progression] +25 Class EXP for 'survivalist' (Guild Hero). Current: Level 5 (35/70 EXP)
+[Progression] +25 Class EXP for 'survivalist' (Guild Hero). Current: Level 3 (13/62 EXP)
+[Progression] CLASS LEVEL UP! 'survivalist' is now Level 3!
+✔ Test 7 passed: 20s threshold and buff stacking verified.
+
+--- TEST 8: Survivalist Perks Scaling ---
+[Progression] Activity 'Dungeon Camp Setup' count: 9 -> 59 (+50)
+[Progression] Activity 'foraging' count: 0 -> 60 (+60)
+[Progression] Activity 'woodcutting' count: 0 -> 60 (+60)
+[Progression] Activity 'nature_magic' count: 0 -> 60 (+60)
+[Progression] Activity 'perception' count: 0 -> 60 (+60)
+[Progression] Set class 'survivalist' to Level 15 (0 EXP) on Guild Hero
+[Progression] Set class 'trailblazer' to Level 15 (0 EXP) on Guild Hero
+[Progression] Set class 'wilderness_warden' to Level 15 (0 EXP) on Guild Hero
+[Progression] Set class 'grand_survivalist' to Level 1 (0 EXP) on Guild Hero
+✔ Test 8 passed: All 4 perk scalings and Emergency Shelter verified.
+
+--- TEST 9: Camp Clean-up on Floor Change / Visit Reset ---
+[Camp] 🏕️ Guild Hero started pitching camp (3500ms)...
+[Progression] Activity 'Dungeon Camp Setup' count: 59 -> 60 (+1)
+[Progression] +50 Class EXP for 'survivalist' (Guild Hero). Current: Level 15 (50/110 EXP)
+[Progression] +50 Class EXP for 'trailblazer' (Guild Hero). Current: Level 15 (50/110 EXP)
+[Progression] +50 Class EXP for 'wilderness_warden' (Guild Hero). Current: Level 15 (50/110 EXP)
+[Progression] +50 Class EXP for 'grand_survivalist' (Guild Hero). Current: Level 1 (50/54 EXP)
+[Progression] Activity 'Dungeon Camp Setup' count: 6 -> 7 (+1)
+[Progression] +50 Class EXP for 'survivalist' (Guild Hero). Current: Level 4 (1/66 EXP)
+[Progression] CLASS LEVEL UP! 'survivalist' is now Level 4!
+✔ Test 9 passed: Per-visit reset cleanly removes camp and clears grid obstacle.
+
+================================================================
+🎉 ALL 9 SURVIVALIST & DUNGEON CAMPS TESTS PASSED WITH 100% SUCCESS!
+================================================================

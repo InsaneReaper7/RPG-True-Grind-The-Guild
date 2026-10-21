@@ -170,6 +170,65 @@ export class CraftingSystem {
     };
   }
 
+
+  public static getSurvivalistPerks(
+    party: any[],
+    inRadiusCheck?: (member: any) => boolean
+  ): {
+    highestSurvivalistLevel: number;
+    highestTrailblazerLevel: number;
+    highestWildernessWardenLevel: number;
+    highestGrandSurvivalistLevel: number;
+    quickCampDiscountPercent: number;
+    wellRestedDurationBonusPercent: number;
+    trailblazerSenseDetectionPp: number;
+    trailblazerSenseRadiusBonus: number;
+    emergencyShelterUnlocked: boolean;
+  } {
+    let sLv = 0;
+    let tLv = 0;
+    let wLv = 0;
+    let gLv = 0;
+
+    for (const member of party) {
+      if (inRadiusCheck && !inRadiusCheck(member)) continue;
+      const prog = member.progression || member;
+      if (!prog || typeof prog.isClassUnlocked !== 'function') continue;
+
+      if (prog.isClassUnlocked('survivalist')) {
+        sLv = Math.max(sLv, prog.getClassLevel('survivalist'));
+      }
+      if (prog.isClassUnlocked('trailblazer')) {
+        tLv = Math.max(tLv, prog.getClassLevel('trailblazer'));
+      }
+      if (prog.isClassUnlocked('wilderness_warden')) {
+        wLv = Math.max(wLv, prog.getClassLevel('wilderness_warden'));
+      }
+      if (prog.isClassUnlocked('grand_survivalist')) {
+        gLv = Math.max(gLv, prog.getClassLevel('grand_survivalist'));
+      }
+    }
+
+    const campConfig = DataLoader.getInstance().getCampConfig();
+    const maxEff = campConfig?.perks?.perkMaxEffectiveLevel ?? 15;
+    const costRedRate = campConfig?.perks?.survivalistCostReductionPerLevel ?? 0.02;
+    const durBonusRate = campConfig?.perks?.trailblazerDurationBonusPerLevel ?? 0.04;
+    const detPpRate = campConfig?.perks?.wildernessWardenDetectionPpPerLevel ?? 1.0;
+    const radBonus = campConfig?.perks?.wildernessWardenRadiusBonus ?? 1;
+
+    return {
+      highestSurvivalistLevel: sLv,
+      highestTrailblazerLevel: tLv,
+      highestWildernessWardenLevel: wLv,
+      highestGrandSurvivalistLevel: gLv,
+      quickCampDiscountPercent: Math.min(maxEff, sLv) * costRedRate,
+      wellRestedDurationBonusPercent: Math.min(maxEff, tLv) * durBonusRate,
+      trailblazerSenseDetectionPp: Math.min(maxEff, wLv) * detPpRate,
+      trailblazerSenseRadiusBonus: wLv >= 1 ? radBonus : 0,
+      emergencyShelterUnlocked: gLv >= 1
+    };
+  }
+
   public static getGatherPerks(
     member: Player | ProgressionSystem | { progression: ProgressionSystem },
     skillId: string

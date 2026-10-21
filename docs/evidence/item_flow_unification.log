@@ -1,0 +1,371 @@
+================================================================
+📦 RUNNING ITEM FLOW UNIFICATION TEST SUITE 📦
+================================================================
+[GameState] Initialized from player.json boot seed with Hero & Valerie: {
+  hp: undefined,
+  criticalHp: undefined,
+  energy: undefined,
+  knownSkillIds: [],
+  equippedSkillIds: [],
+  autocastMap: {},
+  skillCooldownsRemainingMs: {},
+  proficiencies: {
+    short_swords: { level: 0, currentExp: 0 },
+    construction: { level: 0, currentExp: 0 },
+    fist: { level: 0, currentExp: 0 }
+  },
+  classLevels: {},
+  unlockedClasses: [],
+  resources: { wood: 0, ore: 0 },
+  placedBuildables: [],
+  hunger: 100,
+  mood: 50,
+  currentGameDay: 1,
+  foodItems: [],
+  equippedWeaponId: 'short_swords',
+  offhandWeaponId: null,
+  dungeonFloorCount: 0,
+  encounteredEnemies: [],
+  discoveredProficiencies: [ 'short_swords' ],
+  discoveredStatusEffects: [],
+  discoveredGatheringNodes: [],
+  defeatedAreaBosses: [],
+  quickSlots: [ 'revive_potion', 'bandage', 'energy_potion', 'antidote' ],
+  worldFlags: {},
+  grovePityCounter: 0,
+  party: [
+    {
+      id: 'hero',
+      name: 'Guild Hero',
+      avatarKey: 'player-avatar',
+      hp: undefined,
+      criticalHp: undefined,
+      energy: undefined,
+      equippedWeaponId: 'short_swords',
+      offhandWeaponId: null,
+      inventory: [Object],
+      knownSkillIds: [],
+      equippedSkillIds: [],
+      autocastMap: {},
+      skillCooldownsRemainingMs: {},
+      proficiencies: [Object],
+      classLevels: {},
+      classStats: {},
+      unlockedClasses: [],
+      activeClass: null,
+      bookLearnedSkills: [],
+      hunger: 100,
+      mood: 50,
+      state: 'idle'
+    },
+    {
+      id: 'companion_1',
+      name: 'Valerie',
+      avatarKey: 'companion-avatar',
+      avatarTextureKey: 'companion-avatar',
+      hp: 50,
+      criticalHp: 25,
+      energy: 100,
+      equippedWeaponId: 'bows',
+      offhandWeaponId: 'daggers',
+      inventory: [Object],
+      knownSkillIds: [Array],
+      equippedSkillIds: [Array],
+      autocastMap: [Object],
+      skillCooldownsRemainingMs: {},
+      proficiencies: [Object],
+      classLevels: [Object],
+      classStats: [Object],
+      unlockedClasses: [Array],
+      activeClass: 'scout',
+      bookLearnedSkills: [],
+      hunger: 100,
+      mood: 50,
+      state: 'idle'
+    }
+  ]
+}
+
+--- TEST 1: Conservation Per Source During Dungeon Runs ---
+[Progression] +15 EXP for 'woodcutting' (Guild Hero). Current: Level 0 (15/50 EXP)
+[Progression] Recorded tx 'woodcutting': +15 EXP for Guild Hero, resulting total: Level 0 (15/50 EXP)
+[KnowledgeBase] 🪵 Gathering node discovered: 'tree'! (+1 RP)
+[KnowledgeBase] ⚔️ Proficiency discovered: 'woodcutting'! (+1 RP)
+[Gathering] 🌿 Harvested 3x Tree! (+15 Woodcutting EXP)
+[Gathering] Tree at (10, 10) stays depleted for remainder of floor visit.
+✔ 1A: Gathering harvest strictly routes to gatherer personal bag; stockpile delta = 0.
+[Progression] +15 EXP for 'skinning' (Guild Hero). Current: Level 0 (15/50 EXP)
+[Progression] Recorded tx 'skinning': +15 EXP for Guild Hero, resulting total: Level 0 (15/50 EXP)
+[KnowledgeBase] 🪵 Gathering node discovered: 'corpse_wolf'! (+1 RP)
+[KnowledgeBase] ⚔️ Proficiency discovered: 'skinning'! (+1 RP)
+[Gathering] 🌿 Harvested 1x Wolf Corpse! (+15 Skinning EXP)
+[Gathering] Wolf Corpse at (10, 10) stays depleted for remainder of floor visit.
+✔ 1B: Corpse harvest strictly routes to harvester personal bag; stockpile delta = 0.
+[Combat] Wolf defeated/downed by Guild Hero!
+[Progression] +4 EXP for 'short_swords' (Guild Hero). Current: Level 0 (4/50 EXP)
+[Progression] Recorded tx 'short_swords': +4 EXP for Guild Hero, resulting total: Level 0 (4/50 EXP)
+[Combat] Wolf defeated/downed by Valerie!
+[Progression] +4 EXP for 'short_swords' (Guild Hero). Current: Level 0 (4/50 EXP)
+[Progression] Recorded tx 'short_swords': +4 EXP for Guild Hero, resulting total: Level 0 (4/50 EXP)
+✔ 1C: Kill loot routes to killer bag (or leader if downed); stockpile delta = 0.
+[Progression] +50 EXP for 'lockpicking' (Guild Hero). Current: Level 1 (0/54 EXP)
+[Progression] Recorded tx 'lockpicking': +50 EXP for Guild Hero, resulting total: Level 1 (0/54 EXP)
+[Progression] LEVEL UP! 'lockpicking' is now Level 1! (Gained 1 level(s))
+[Progression] ✨ SKILL DISCOVERED: 'lockpicking' reached Level 1 by Guild Hero! ✨
+[Progression] +35 EXP for 'lockpicking' (Guild Hero). Current: Level 1 (35/54 EXP)
+[Progression] Recorded tx 'lockpicking': +35 EXP for Guild Hero, resulting total: Level 1 (35/54 EXP)
+[Lockpicking] ✨ Success! Guild Hero picked the lock on roll 1 (+35 Lockpicking EXP)! Found: Research Points x10, Ore x5, Spider Silk x2, Bandage x2, Revive Potion x1, Bone Necklace x1. (Lockpick survived intact)
+✔ 1D: Dungeon lockbox rewards route to opener bag; stockpile delta = 0.
+
+--- TEST 2: Round-Trip Auto-Deposit on Return With { fromDungeon: true } ---
+[Auto-Deposit] 📦 Deposited to stockpile: 10 Wood, 5 Ore, 3 Monster Bone, 2 Wolf Pelt, 4 Spider Silk
+✔ Test 2 passed: Auto-deposit accurately routes materials to stockpile and keeps consumables, food, and tools in bags.
+
+--- TEST 3: Party Wipe Recovery Sets { fromDungeon: true } & Shows Deposit Toast ---
+[Party Wipe] ☠️ FULL PARTY WIPED! Teleporting back to Guild Outpost...
+[SceneTransition Handoff-OUT] Saved party snapshot (2 members) at sceneTime=1000ms: [
+  {
+    id: 'hero',
+    name: 'Guild Hero',
+    avatarKey: 'player-avatar',
+    avatarTextureKey: 'player-avatar',
+    x: 5,
+    y: 5,
+    hp: 50,
+    criticalHp: 25.05,
+    energy: 100.1,
+    equippedWeaponId: 'short_swords',
+    offhandWeaponId: null,
+    equippedHelmetId: null,
+    equippedBodyArmorId: null,
+    equippedNecklaceId: null,
+    equippedRingId: null,
+    equippedAccessoryId: null,
+    baseCarryCapacity: 45,
+    inventory: {
+      lockpick: 2,
+      fishing_rod: 1,
+      bandage: 3,
+      antidote: 1,
+      herb_stew: 2
+    },
+    foodItems: [ [Object], [Object] ],
+    knownSkillIds: [],
+    equippedSkillIds: [],
+    autocastMap: {},
+    skillCooldownsRemainingMs: {},
+    activeClass: null,
+    proficiencies: {
+      short_swords: [Object],
+      daggers: [Object],
+      shields: [Object],
+      mace: [Object],
+      staff: [Object],
+      druid_staff: [Object],
+      healing_magic: [Object],
+      fire_magic: [Object],
+      lightning_magic: [Object],
+      ice_magic: [Object],
+      holy_magic: [Object],
+      dark_magic: [Object],
+      arcane_magic: [Object],
+      water_magic: [Object],
+      earth_magic: [Object],
+      nature_magic: [Object],
+      wind_magic: [Object],
+      dual_wielding: [Object],
+      construction: [Object],
+      alchemy: [Object],
+      cooking: [Object],
+      blacksmithing: [Object],
+      foraging: [Object],
+      woodcutting: [Object],
+      mining: [Object],
+      armorsmithing: [Object],
+      digging: [Object],
+      perception: [Object],
+      skinning: [Object],
+      butchering: [Object],
+      bows: [Object],
+      crossbows: [Object],
+      bowyer: [Object],
+      lockpicking: [Object],
+      gardening: [Object],
+      fist: [Object],
+      longswords: [Object],
+      greatswords: [Object],
+      spears: [Object],
+      katana: [Object],
+      throwing_weapons: [Object],
+      light_armor: [Object],
+      medium_armor: [Object],
+      heavy_armor: [Object],
+      fishing: [Object],
+      enchanting: [Object],
+      evasion: [Object],
+      parry: [Object],
+      block: [Object],
+      counterattack: [Object],
+      resilience: [Object],
+      health_regen: [Object],
+      mana_regen: [Object],
+      energy_regen: [Object],
+      iron_back: [Object],
+      poison_resistance: [Object]
+    },
+    classLevels: {},
+    classStats: {},
+    unlockedClasses: [],
+    activityCounts: {},
+    bookLearnedSkills: [],
+    hunger: 100,
+    mood: 50,
+    state: 'idle'
+  },
+  {
+    id: 'companion_1',
+    name: 'Valerie',
+    avatarKey: 'companion-avatar',
+    avatarTextureKey: 'companion-avatar',
+    x: 6,
+    y: 5,
+    hp: 50,
+    criticalHp: 25,
+    energy: 100,
+    equippedWeaponId: 'short_swords',
+    offhandWeaponId: null,
+    equippedHelmetId: null,
+    equippedBodyArmorId: null,
+    equippedNecklaceId: null,
+    equippedRingId: null,
+    equippedAccessoryId: null,
+    baseCarryCapacity: 45,
+    inventory: { lockpick: 1, energy_potion: 2, ration: 1 },
+    foodItems: [ [Object] ],
+    knownSkillIds: [],
+    equippedSkillIds: [],
+    autocastMap: {},
+    skillCooldownsRemainingMs: {},
+    activeClass: null,
+    proficiencies: {
+      short_swords: [Object],
+      daggers: [Object],
+      shields: [Object],
+      mace: [Object],
+      staff: [Object],
+      druid_staff: [Object],
+      healing_magic: [Object],
+      fire_magic: [Object],
+      lightning_magic: [Object],
+      ice_magic: [Object],
+      holy_magic: [Object],
+      dark_magic: [Object],
+      arcane_magic: [Object],
+      water_magic: [Object],
+      earth_magic: [Object],
+      nature_magic: [Object],
+      wind_magic: [Object],
+      dual_wielding: [Object],
+      construction: [Object],
+      alchemy: [Object],
+      cooking: [Object],
+      blacksmithing: [Object],
+      foraging: [Object],
+      woodcutting: [Object],
+      mining: [Object],
+      armorsmithing: [Object],
+      digging: [Object],
+      perception: [Object],
+      skinning: [Object],
+      butchering: [Object],
+      bows: [Object],
+      crossbows: [Object],
+      bowyer: [Object],
+      lockpicking: [Object],
+      gardening: [Object],
+      fist: [Object],
+      longswords: [Object],
+      greatswords: [Object],
+      spears: [Object],
+      katana: [Object],
+      throwing_weapons: [Object],
+      light_armor: [Object],
+      medium_armor: [Object],
+      heavy_armor: [Object],
+      fishing: [Object],
+      enchanting: [Object],
+      evasion: [Object],
+      parry: [Object],
+      block: [Object],
+      counterattack: [Object],
+      resilience: [Object],
+      health_regen: [Object],
+      mana_regen: [Object],
+      energy_regen: [Object],
+      iron_back: [Object],
+      poison_resistance: [Object]
+    },
+    classLevels: {},
+    classStats: {},
+    unlockedClasses: [],
+    activityCounts: {},
+    bookLearnedSkills: [],
+    hunger: 100,
+    mood: 50,
+    state: 'idle'
+  }
+]
+[SceneTransition Handoff-OUT] Saved state snapshot at sceneTime=1000ms:
+  HP: 50.0 / NaN
+  Critical HP: 25.1 / 25.05
+  Energy: 100.1 / 100.1
+  Equipped Skills: []
+  Autocast: {}
+  Remaining Cooldowns (ms): {}
+  Proficiencies: {"short_swords":{"level":0,"currentExp":4},"daggers":{"level":0,"currentExp":0},"shields":{"level":0,"currentExp":0},"mace":{"level":0,"currentExp":0},"staff":{"level":0,"currentExp":0},"druid_staff":{"level":0,"currentExp":0},"healing_magic":{"level":0,"currentExp":0},"fire_magic":{"level":0,"currentExp":0},"lightning_magic":{"level":0,"currentExp":0},"ice_magic":{"level":0,"currentExp":0},"holy_magic":{"level":0,"currentExp":0},"dark_magic":{"level":0,"currentExp":0},"arcane_magic":{"level":0,"currentExp":0},"water_magic":{"level":0,"currentExp":0},"earth_magic":{"level":0,"currentExp":0},"nature_magic":{"level":0,"currentExp":0},"wind_magic":{"level":0,"currentExp":0},"dual_wielding":{"level":0,"currentExp":0},"construction":{"level":0,"currentExp":0},"alchemy":{"level":0,"currentExp":0},"cooking":{"level":0,"currentExp":0},"blacksmithing":{"level":0,"currentExp":0},"foraging":{"level":0,"currentExp":0},"woodcutting":{"level":0,"currentExp":15},"mining":{"level":0,"currentExp":0},"armorsmithing":{"level":0,"currentExp":0},"digging":{"level":0,"currentExp":0},"perception":{"level":0,"currentExp":0},"skinning":{"level":0,"currentExp":0},"butchering":{"level":0,"currentExp":0},"bows":{"level":0,"currentExp":0},"crossbows":{"level":0,"currentExp":0},"bowyer":{"level":0,"currentExp":0},"lockpicking":{"level":1,"currentExp":35},"gardening":{"level":0,"currentExp":0},"fist":{"level":0,"currentExp":0},"longswords":{"level":0,"currentExp":0},"greatswords":{"level":0,"currentExp":0},"spears":{"level":0,"currentExp":0},"katana":{"level":0,"currentExp":0},"throwing_weapons":{"level":0,"currentExp":0},"light_armor":{"level":0,"currentExp":0},"medium_armor":{"level":0,"currentExp":0},"heavy_armor":{"level":0,"currentExp":0},"fishing":{"level":0,"currentExp":0},"enchanting":{"level":0,"currentExp":0},"evasion":{"level":0,"currentExp":0},"parry":{"level":0,"currentExp":0},"block":{"level":0,"currentExp":0},"counterattack":{"level":0,"currentExp":0},"resilience":{"level":0,"currentExp":0},"health_regen":{"level":0,"currentExp":0},"mana_regen":{"level":0,"currentExp":0},"energy_regen":{"level":0,"currentExp":0},"iron_back":{"level":0,"currentExp":0},"poison_resistance":{"level":0,"currentExp":0}}
+  Unlocked Classes: []
+  Wood: 10
+  Placed Buildables: 0
+  Day: 1, Hunger: 100.0, Mood: 50.0, Rations: 0
+[GameState] ❌ Failed to persist save to disk: Error: Browser localStorage is not available or blocked.
+    at GameState.saveToDisk (C:\Users\insan\.gemini\antigravity\scratch\RPG True Gring - The Guild\src\systems\GameState.ts:2173:15)
+    at finishWipe (C:\Users\insan\.gemini\antigravity\scratch\RPG True Gring - The Guild\src\scenes\MainScene.ts:2122:31)
+    at Object.delayedCall (C:\Users\insan\.gemini\antigravity\scratch\RPG True Gring - The Guild\test\item_flow_unification.test.ts:439:68)
+    at Object.handlePartyWipe (C:\Users\insan\.gemini\antigravity\scratch\RPG True Gring - The Guild\src\scenes\MainScene.ts:2136:17)
+    at runItemFlowUnificationTests (C:\Users\insan\.gemini\antigravity\scratch\RPG True Gring - The Guild\test\item_flow_unification.test.ts:447:39)
+✔ 3A: Party wipe recovery passes { fromDungeon: true } ensuring materials auto-deposit without penalty.
+[Auto-Deposit] 📦 Deposited to stockpile: 4 Ore, 2 Wolf Pelt
+[Wipe Recovery Toast] Emitted toast: "📦 Deposited to stockpile: 4 Ore, 2 Wolf Pelt"
+✔ 3B: Outpost arrival after party wipe displayed deposit summary toast and conserved all materials.
+
+--- TEST 4: Food Quality, Freshness & Multipliers in Bags ---
+[Player] Hunger set to: 40.0 / 100
+[KnowledgeBase] 🧪 Status effect discovered: 'dish_buff'! (+1 RP)
+[Player] 🍖 Ate Herb Stew! Restored +25.0 Hunger (Now: 65.0/100). Well Fed buff refreshed (120s @ +1 HP/s).
+[Player] Hunger set to: 40.0 / 100
+[Player] 🍖 Ate Herb Stew [Excellent]! Restored +25.0 Hunger (Now: 65.0/100). Well Fed buff refreshed (120s @ +1.5 HP/s).
+[Spoilage] 🪰 1x Herb Stew (acquired Day 1) in stockpile exceeded 5-day shelf life on Day 6 and was deleted.
+[Spoilage] 🪰 1x Herb Stew (acquired Day 1) in Guild Hero's bag exceeded 5-day shelf life on Day 6 and spoiled.
+[Save Migration] Migrated 3x 'ration' in Guild Hero's bag to FoodItemInstances (Day 6, quality: common)
+✔ Test 4 passed: Food quality, oldest-eaten preservation, bag spoilage, and legacy save migration verified.
+
+--- TEST 5: Tools (Lockpick & Fishing Rod) Retained and Functional ---
+[Progression] +15 EXP for 'fishing' (Guild Hero). Current: Level 0 (15/50 EXP)
+[Progression] Recorded tx 'fishing': +15 EXP for Guild Hero, resulting total: Level 0 (15/50 EXP)
+[KnowledgeBase] 🪵 Gathering node discovered: 'fishing_spot'! (+1 RP)
+[KnowledgeBase] ⚔️ Proficiency discovered: 'fishing'! (+1 RP)
+[Gathering] 🌿 Harvested 1x undefined! (+15 Fishing EXP)
+[Gathering] undefined at (2, 2) stays depleted for remainder of floor visit.
+✔ Test 5 passed: Tools stay in personal bags and enable interactions.
+
+--- TEST 6: Outpost Locked Box Opening Auto-Deposits Materials Immediately ---
+[Progression] +35 EXP for 'lockpicking' (Guild Hero). Current: Level 2 (16/58 EXP)
+[Progression] Recorded tx 'lockpicking': +35 EXP for Guild Hero, resulting total: Level 2 (16/58 EXP)
+[Progression] LEVEL UP! 'lockpicking' is now Level 2! (Gained 1 level(s))
+[Lockpicking] ✨ Success! Guild Hero picked the lock on roll 1 (+35 Lockpicking EXP)! Found: Research Points x10, Ore x5, Spider Silk x2, Bandage x2, Revive Potion x1, Bone Necklace x1. (Lockpick survived intact)
+✔ Test 6 passed: Outpost locked box opens and deposits material rewards immediately.
+
+================================================================
+🎉 ALL ITEM FLOW UNIFICATION TESTS PASSED WITH 100% INVARIANTS! 🎉
+================================================================
+

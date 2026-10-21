@@ -52,6 +52,11 @@ export class HUD {
   private playerEscapeStoneTextEl: HTMLElement | null;
   private hudUseEscapeStoneBtn: HTMLElement | null;
   private alchemyModalEscapeStonesEl: HTMLElement | null;
+  public campMakeBtnEl: HTMLElement | null = null;
+  public campCookBtnEl: HTMLElement | null = null;
+  public campBreakBtnEl: HTMLElement | null = null;
+  public isCampfireMode: boolean = false;
+  public cookingParty?: Player[];
 
   // Milestone 40: Teleporter Crystal Modal Elements
   private teleporterCrystalModalEl: HTMLElement | null;
@@ -2012,6 +2017,14 @@ export class HUD {
           active.debugCycleHunger();
         } else if (e.key === 'm' || e.key === 'M') {
           active.debugCycleMood();
+        } else if (e.key === 'c' || e.key === 'C') {
+          const targetTag = (e.target as HTMLElement)?.tagName?.toLowerCase();
+          if (targetTag !== 'input' && targetTag !== 'textarea' && targetTag !== 'select') {
+            if (!active.isOutpost) {
+              const scene = (active.currentPlayer?.scene || (window as any).game?.scene?.getScene("MainScene")) as any;
+              scene?.startMakeCamp?.();
+            }
+          }
         } else if (e.key === 'g' || e.key === 'G' || e.code === 'KeyG') {
           const targetTag = (e.target as HTMLElement)?.tagName?.toLowerCase();
           if (targetTag !== 'input' && targetTag !== 'textarea' && targetTag !== 'select') {
@@ -6761,7 +6774,9 @@ export class HUD {
 
   // --- COOKING STATION & RECIPE DISCOVERY (Milestone 10) ---
 
-  public openCookingModal(player: Player, progression: ProgressionSystem): void {
+  public openCookingModal(player: Player, progression: ProgressionSystem, options?: { campfireMode?: boolean; party?: Player[] }): void {
+    this.isCampfireMode = !!options?.campfireMode;
+    this.cookingParty = options?.party;
     this.currentPlayer = player;
     this.currentProgression = progression;
     if (this.cookingModalEl) {
@@ -6845,7 +6860,7 @@ export class HUD {
     const sigKey = CookingSystem.getTriedSignatureKey(selectedIds);
     const wasAlreadyTried = GameState.getInstance().hasTriedCookingSignature(sigKey);
 
-    const result = CookingSystem.experiment(this.currentPlayer, selectedIds);
+    const result = CookingSystem.experiment(this.currentPlayer, selectedIds, { bagOnly: this.isCampfireMode, party: this.cookingParty });
 
     if (this.cookingExpStatusEl) {
       if (result.refusedLostRecipe) {
@@ -7016,7 +7031,7 @@ export class HUD {
         const card = document.createElement('div');
         card.style.cssText = 'background: rgba(31, 41, 55, 0.85); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 8px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; gap: 10px;';
 
-        const canCook = CookingSystem.findBestIngredientsForRecipe(player, recipe) !== null;
+        const canCook = CookingSystem.findBestIngredientsForRecipe(player, recipe, { bagOnly: this.isCampfireMode, party: this.cookingParty }) !== null;
 
         const slotReqs: string[] = [];
         if (recipe.slots) {
@@ -7061,7 +7076,7 @@ export class HUD {
         const cookBtn = card.querySelector<HTMLButtonElement>(`[data-cook-recipe="${recipe.id}"]`);
         if (cookBtn) {
           cookBtn.onclick = () => {
-            const res = CookingSystem.cookKnown(player, recipe.id);
+            const res = CookingSystem.cookKnown(player, recipe.id, undefined, { bagOnly: this.isCampfireMode, party: this.cookingParty });
             if (res.success) {
               this.showToast(res.message, 'success', 3000);
             } else {
@@ -9025,6 +9040,21 @@ export class HUD {
           ]
         });
       }
+    }
+
+    if (gameState.isGatheringNodeDiscovered('campfire')) {
+      discoveredGathering.push({
+        id: 'campfire',
+        name: 'Dungeon Campfire',
+        badge: 'REST & SHELTER',
+        description: 'A temporary safe sanctuary pitched inside dungeon corridors. Grants 4x out-of-combat regeneration, a wipe respawn point, campfire cooking, and the Camp Rested status upon breaking.',
+        stats: [
+          { label: 'Setup Cost', value: '5 Wood, 2 Wild Herbs' },
+          { label: 'Rest Multiplier', value: '2.0x Out-of-Combat (4x Combat Rate)' },
+          { label: 'Respawn Recovery', value: '50% HP / Full Critical HP' },
+          { label: 'Break Buff', value: 'Camp Rested (+5% DMG, +0.25 EN/s, 60s)' }
+        ]
+      });
     }
 
     // Check gathering proficiencies

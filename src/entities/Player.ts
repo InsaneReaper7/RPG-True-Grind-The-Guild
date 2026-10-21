@@ -1773,7 +1773,10 @@ export class Player extends Entity {
     if ((this.state as string) !== 'downed' && (this.state as string) !== 'dead') {
       const dataLoader = DataLoader.getInstance();
       const oocMultiplier = dataLoader.getOutOfCombatRegenMultiplier();
-      const currentRegenMultiplier = this.inCombat ? 1.0 : oocMultiplier;
+      const scene = this.scene as any;
+      const inCamp = !this.inCombat && scene && typeof scene.isInCampRadius === 'function' && scene.isInCampRadius(this);
+      const campRegenMultiplier = inCamp ? (dataLoader.getCampConfig()?.campRegenMultiplier ?? 2.0) : 1.0;
+      const currentRegenMultiplier = (this.inCombat ? 1.0 : oocMultiplier) * campRegenMultiplier;
 
       // 1a. Base Passive Energy regeneration over time (in-combat = 1.0x, out-of-combat = 2.0x)
       if (this.energy < this.maxEnergy) {
@@ -1823,7 +1826,7 @@ export class Player extends Entity {
           this.wellFedNextTickMs += 1000;
           if (this.state !== 'downed' && this.state !== 'dead') {
             if (this.hp < this.maxHp || this.criticalHp < this.maxCriticalHp) {
-              const foodMultiplier = this.inCombat ? 1.0 : oocMultiplier;
+              const foodMultiplier = (this.inCombat ? 1.0 : oocMultiplier) * campRegenMultiplier;
               const effectiveHeal = this.wellFedHpPerSec * foodMultiplier;
               const healed = this.heal(effectiveHeal);
               if (healed > 0) {

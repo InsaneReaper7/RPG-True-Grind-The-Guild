@@ -33,6 +33,7 @@ import type {
   ArmorSlot,
   ArmorsmithRecipeDef,
   ArmorsmithRecipesData,
+  CampConfig,
   BowyerRecipeDef,
   BowyerRecipesData,
   FoodDef,
@@ -90,6 +91,7 @@ export class DataLoader {
   private statGainsData?: StatGainsData;
   private cropsConfig?: CropsConfig;
   private cookingConfigData?: CookingConfig;
+  private campConfigData?: CampConfig;
 
   private constructor() {}
 
@@ -101,7 +103,7 @@ export class DataLoader {
   }
 
   public async loadAll(): Promise<void> {
-    const [player, weapons, classes, enemies, skills, statusEffects, buildables, rooms, hiddenSkills, skillBooks, researchTree, alchemyRecipes, cookingRecipes, blacksmithRecipes, bowyerRecipes, armors, armorsmithRecipes, foods, moodEffects, dungeon, gathering, items, recruits, craftingConfig, introNarrative, enchantingRecipes, statGains, crops, cookingConfig] = await Promise.all([
+    const [player, weapons, classes, enemies, skills, statusEffects, buildables, rooms, hiddenSkills, skillBooks, researchTree, alchemyRecipes, cookingRecipes, blacksmithRecipes, bowyerRecipes, armors, armorsmithRecipes, foods, moodEffects, dungeon, gathering, items, recruits, craftingConfig, introNarrative, enchantingRecipes, statGains, crops, cookingConfig, campConfig] = await Promise.all([
       fetch('/data/player.json').then((res) => res.json()),
       fetch('/data/weapons.json').then((res) => res.json()),
       fetch('/data/classes.json').then((res) => res.json()),
@@ -130,7 +132,8 @@ export class DataLoader {
       fetch('/data/enchantingRecipes.json').then((res) => res.json()).catch(() => null),
       fetch('/data/statGains.json').then((res) => res.json()).catch(() => null),
       fetch('/data/crops.json').then((res) => res.json()).catch(() => null),
-      fetch('/data/cookingConfig.json').then((res) => res.json()).catch(() => null)
+      fetch('/data/cookingConfig.json').then((res) => res.json()).catch(() => null),
+      fetch('/data/campConfig.json').then((res) => res.json()).catch(() => null)
     ]);
 
     this.playerData = player as PlayerData;
@@ -172,6 +175,9 @@ export class DataLoader {
         quote: 'Barris has arrived from Guild HQ equipped with a Healing Staff. Our four-member expedition is complete!'
       }
     };
+    if (campConfig) {
+      this.campConfigData = campConfig as CampConfig;
+    }
     if (craftingConfig) {
       this.craftingConfigData = craftingConfig as CraftingConfigData;
     }
@@ -845,6 +851,45 @@ export class DataLoader {
 
   public getCrop(seedId: string): CropDef | undefined {
     return this.cropsConfig?.crops?.[seedId];
+  }
+
+  public getCampConfig(): CampConfig {
+    if (this.campConfigData) {
+      return this.campConfigData;
+    }
+    try {
+      if (typeof process !== 'undefined' && process.versions?.node) {
+        const fsModule = (globalThis as any).fs || (typeof require !== 'undefined' ? require('node:fs') : undefined);
+        if (fsModule && fsModule.existsSync('data/campConfig.json')) {
+          this.campConfigData = JSON.parse(fsModule.readFileSync('data/campConfig.json', 'utf8'));
+          return this.campConfigData!;
+        }
+      }
+    } catch { /* fallback */ }
+
+    return {
+      setupCost: { wood: 5, wild_herbs: 2 },
+      setupChannelMs: 5000,
+      campRadiusTiles: 3,
+      campRegenMultiplier: 2.0,
+      respawnHpPercent: 0.5,
+      minRestSecondsForBuff: 20,
+      campRestedStatusId: 'camp_rested',
+      classExp: { onSetup: 50, onBreakBuff: 25 },
+      excludedRooms: ['boss', 'entrance', 'crystal'],
+      perks: {
+        perkMaxEffectiveLevel: 15,
+        survivalistCostReductionPerLevel: 0.02,
+        survivalistTimeReductionPerLevel: 0.02,
+        trailblazerDurationBonusPerLevel: 0.04,
+        wildernessWardenDetectionPpPerLevel: 1.0,
+        wildernessWardenRadiusBonus: 1,
+        wildernessWardenSenseDurationMs: 60000,
+        grandSurvivalistCombatSetupAllowed: true,
+        grandSurvivalistCostMultiplier: 2.0,
+        grandSurvivalistChannelMs: 3000
+      }
+    };
   }
 
   public getCookingConfig(): CookingConfig {

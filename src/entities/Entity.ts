@@ -635,6 +635,17 @@ export class Entity extends Phaser.GameObjects.Container {
       activeEffect.nextTickMs -= deltaMs;
 
       if (activeEffect.nextTickMs <= 0 && (isPersistent || activeEffect.remainingMs >= 0)) {
+        if (this.state !== 'downed' && this.state !== 'dead') {
+          if (activeEffect.def?.energyRegenPerSecond && activeEffect.def.energyRegenPerSecond > 0 && typeof (this as any).energy === 'number') {
+            const p = this as any;
+            const prevEn = p.energy;
+            p.energy = Math.min(p.maxEnergy, p.energy + activeEffect.def.energyRegenPerSecond);
+            const enGain = p.energy - prevEn;
+            if (enGain > 0) {
+              this.createFloatingText(`+${enGain.toFixed(2)} EN`, '#38bdf8');
+            }
+          }
+        }
         if (activeEffect.def?.healPerTick && activeEffect.def.healPerTick > 0) {
           const restored = this.heal(activeEffect.def.healPerTick);
           console.log(`[HoT] ${this.entityName} heals ${restored} HP from ${activeEffect.def.name}!`);
