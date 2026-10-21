@@ -2058,14 +2058,6 @@ export class HUD {
           active.debugCycleHunger();
         } else if (e.key === 'm' || e.key === 'M') {
           active.debugCycleMood();
-        } else if (e.key === 'c' || e.key === 'C') {
-          const targetTag = (e.target as HTMLElement)?.tagName?.toLowerCase();
-          if (targetTag !== 'input' && targetTag !== 'textarea' && targetTag !== 'select') {
-            if (!active.isOutpost) {
-              const scene = (active.currentPlayer?.scene || (window as any).game?.scene?.getScene("MainScene")) as any;
-              scene?.startMakeCamp?.();
-            }
-          }
         } else if (e.key === 'g' || e.key === 'G' || e.code === 'KeyG') {
           const targetTag = (e.target as HTMLElement)?.tagName?.toLowerCase();
           if (targetTag !== 'input' && targetTag !== 'textarea' && targetTag !== 'select') {
