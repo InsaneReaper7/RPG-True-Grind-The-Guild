@@ -622,7 +622,7 @@ export interface ArmorDef {
   weightClass?: ArmorWeightClass;
   hpBonus: number;
   armorRating?: number;
-  tier?: 'starter' | 'mid' | 'void';
+  tier?: 'starter' | 'mid' | 'void' | 'frost';
   weight?: number;
   carryCapacityBonus?: number;
   splitRatio?: string | [number, number];

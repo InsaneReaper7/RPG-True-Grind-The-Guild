@@ -198,24 +198,24 @@ async function runTests() {
   const maceRecipe = bsRecipes.find(r => r.id === 'mace');
   assert.equal(maceRecipe?.requiredLevel, 0, 'Mace recipe must be requiredLevel 0 (Band 1)');
   for (const r of bsRecipes) {
-    assert.ok((r.requiredLevel ?? 0) <= 10, `Blacksmith recipe ${r.id} must be in starter band (0-10)`);
+    assert.ok((r.requiredLevel ?? 0) <= 12, `Blacksmith recipe ${r.id} must be in bands 1-4 (0-12)`);
   }
 
   const armRecipes = dl.getArmorsmithRecipes();
   for (const r of armRecipes) {
-    assert.ok((r.requiredLevel ?? 0) <= 10, `Armorsmith recipe ${r.id} must be in starter band (0-10)`);
+    assert.ok((r.requiredLevel ?? 0) <= 12, `Armorsmith recipe ${r.id} must be in bands 1-4 (0-12)`);
   }
 
   const bowRecipes = dl.getBowyerRecipes();
   for (const r of bowRecipes) {
-    assert.ok((r.requiredLevel ?? 0) <= 10, `Bowyer recipe ${r.id} must be in starter band (0-10)`);
+    assert.ok((r.requiredLevel ?? 0) <= 12, `Bowyer recipe ${r.id} must be in bands 1-4 (0-12)`);
   }
 
   const alcRecipes = dl.getAlchemyRecipes();
   for (const r of alcRecipes) {
     assert.equal(r.requiredLevel, 0, `Alchemy recipe ${r.id} must be requiredLevel 0`);
   }
-  console.log('✔ Recipe levels adhere strictly to starter bands (0-10) and Alchemy at 0.');
+  console.log('✔ Recipe levels adhere strictly to bands 1-4 (0-12) and Alchemy at 0.');
 
   // ------------------------------------------------------------------------
   // Test 2: Decoupled Crafting Classes & Proficiency 10 Unlock

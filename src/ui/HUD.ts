@@ -8865,6 +8865,9 @@ export class HUD {
         if (w.bleedChance) {
           stats.push({ label: 'Bleed Chance', value: `${(w.bleedChance * 100).toFixed(0)}%` });
         }
+        if (w.frostbiteChance) {
+          stats.push({ label: 'Frostbite Chance', value: `${(w.frostbiteChance * 100).toFixed(0)}%` });
+        }
         if (w.stunChance) {
           stats.push({ label: 'Stun Chance', value: `${(w.stunChance * 100).toFixed(0)}%` });
         }

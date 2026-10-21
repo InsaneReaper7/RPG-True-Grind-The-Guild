@@ -1,5 +1,5 @@
 {
-  "_comment": "Modular armor registry. Defines armor pieces, equipment slots ('helmet' | 'body' | 'necklace' | 'ring' | 'accessory'), weight classes ('light' | 'medium' | 'heavy' for true armor slots 'helmet' | 'body'; accessories/jewelry are pure stat items without weightClass), weights, flat HP bonuses, armor ratings, tiers ('starter' | 'mid' | 'void' for true armors), and per-item HP split ratio (default 50/50 across Main HP and Critical HP).",
+  "_comment": "Modular armor registry. Defines armor pieces, equipment slots ('helmet' | 'body' | 'necklace' | 'ring' | 'accessory'), weight classes ('light' | 'medium' | 'heavy' for true armor slots 'helmet' | 'body'; accessories/jewelry are pure stat items without weightClass), weights, flat HP bonuses, armor ratings, tiers ('starter' | 'mid' | 'void' | 'frost' for true armors), and per-item HP split ratio (default 50/50 across Main HP and Critical HP).",
   "armors": [
     {
       "id": "leather_cap",
@@ -232,6 +232,115 @@
       "weight": 0.5,
       "ingredientCapacityKg": 15,
       "description": "A specialized pack worn as an accessory. Carried ingredients are weight-exempt up to 15 kg during dungeon expeditions."
+    },
+    {
+      "id": "frost_hood",
+      "name": "Frostweave Hood",
+      "slot": "helmet",
+      "tier": "frost",
+      "weightClass": "light",
+      "weight": 1.2,
+      "armorRating": 6,
+      "hpBonus": 90,
+      "splitRatio": "50/50",
+      "description": "An enchanted hood spun from arctic wolf pelt and ectoplasm. Increases Max HP by 45 and Critical HP by 45."
+    },
+    {
+      "id": "frost_robe",
+      "name": "Frostweave Robe",
+      "slot": "body",
+      "tier": "frost",
+      "weightClass": "light",
+      "weight": 3.5,
+      "armorRating": 10,
+      "hpBonus": 150,
+      "splitRatio": "50/50",
+      "description": "A flowing robe woven from pelt and ghostly ectoplasm, infused with glacial essence. Increases Max HP by 75 and Critical HP by 75."
+    },
+    {
+      "id": "frost_leather_helm",
+      "name": "Rimehide Helm",
+      "slot": "helmet",
+      "tier": "frost",
+      "weightClass": "medium",
+      "weight": 3,
+      "armorRating": 10,
+      "hpBonus": 90,
+      "splitRatio": "50/50",
+      "description": "A hardened helm sewn from cured wolf pelt and reinforced with orc heavy hide. Increases Max HP by 45 and Critical HP by 45."
+    },
+    {
+      "id": "frost_leather_armor",
+      "name": "Rimehide Armor",
+      "slot": "body",
+      "tier": "frost",
+      "weightClass": "medium",
+      "weight": 7,
+      "armorRating": 17,
+      "hpBonus": 150,
+      "splitRatio": "50/50",
+      "description": "A supple cuirass fashioned from orc heavy hide and glacial essence. Increases Max HP by 75 and Critical HP by 75."
+    },
+    {
+      "id": "frost_greathelm",
+      "name": "Rimeforged Greathelm",
+      "slot": "helmet",
+      "tier": "frost",
+      "weightClass": "heavy",
+      "weight": 5,
+      "armorRating": 18,
+      "hpBonus": 90,
+      "splitRatio": "50/50",
+      "description": "A dense greathelm forged of steel and chilled with glacial essence. Increases Max HP by 45 and Critical HP by 45."
+    },
+    {
+      "id": "frost_plate_armor",
+      "name": "Rimeforged Plate",
+      "slot": "body",
+      "tier": "frost",
+      "weightClass": "heavy",
+      "weight": 13,
+      "armorRating": 30,
+      "hpBonus": 150,
+      "splitRatio": "50/50",
+      "description": "A monumental suit of heavy plate armored with the Sovereign's rime carapace. Increases Max HP by 75 and Critical HP by 75."
+    },
+    {
+      "id": "frost_pendant",
+      "name": "Frost Pendant",
+      "slot": "necklace",
+      "weight": 0.5,
+      "hpBonus": 60,
+      "splitRatio": "50/50",
+      "description": "A crystal pendant radiating soothing cold. Increases Max HP by 30 and Critical HP by 30."
+    },
+    {
+      "id": "frost_ring",
+      "name": "Frost Ring",
+      "slot": "ring",
+      "weight": 0.2,
+      "hpBonus": 42,
+      "splitRatio": "50/50",
+      "description": "A glistening ring carved with glacial frost. Increases Max HP by 21 and Critical HP by 21."
+    },
+    {
+      "id": "frost_relic",
+      "name": "Glacial Heart Relic",
+      "slot": "accessory",
+      "weight": 0.5,
+      "carryCapacityBonus": 15,
+      "hpBonus": 75,
+      "splitRatio": "50/50",
+      "description": "An ancient relic housing the Sovereign's glacial core. Increases Max HP by 38, Critical HP by 37, and Carry Capacity by 15kg."
+    },
+    {
+      "id": "sovereign_signet",
+      "name": "Sovereign's Signet",
+      "slot": "ring",
+      "weight": 0.2,
+      "hpBonus": 60,
+      "splitRatio": "50/50",
+      "description": "A regal signet set with the Eye of the Sovereign. Increases Max HP by 30 and Critical HP by 30."
     }
   ]
 }

@@ -458,6 +458,153 @@
       },
       "expGranted": 75,
       "description": "Balanced throwing discs honed from void metal that curve through the air with unerring precision."
+    },
+    {
+      "id": "frost_short_sword",
+      "name": "Frostbound Short Sword",
+      "resultWeaponId": "frost_short_sword",
+      "requiredLevel": 12,
+      "ingredients": {
+        "ore": 8,
+        "steel_scrap": 3,
+        "glacial_essence": 1
+      },
+      "expGranted": 110,
+      "description": "A swift short sword forged from steel scrap and infused with glacial essence. Inflicts biting frostbite."
+    },
+    {
+      "id": "frost_longsword",
+      "name": "Frostbound Longsword",
+      "resultWeaponId": "frost_longsword",
+      "requiredLevel": 12,
+      "ingredients": {
+        "ore": 8,
+        "steel_scrap": 3,
+        "glacial_essence": 1
+      },
+      "expGranted": 110,
+      "description": "A balanced longsword imbued with glacial essence. Strikes with freezing power."
+    },
+    {
+      "id": "frost_katana",
+      "name": "Frostbound Katana",
+      "resultWeaponId": "frost_katana",
+      "requiredLevel": 12,
+      "ingredients": {
+        "ore": 8,
+        "steel_scrap": 3,
+        "glacial_essence": 1
+      },
+      "expGranted": 110,
+      "description": "A razor-sharp katana folded with glacial essence. Rapid strikes numb and chill foes."
+    },
+    {
+      "id": "frost_spear",
+      "name": "Frostbound Spear",
+      "resultWeaponId": "frost_spear",
+      "requiredLevel": 12,
+      "ingredients": {
+        "ore": 8,
+        "wood": 2,
+        "steel_scrap": 3,
+        "glacial_essence": 1
+      },
+      "expGranted": 110,
+      "description": "A spear tipped with sub-zero glacial steel. Keeps enemies at bay with piercing frostbite."
+    },
+    {
+      "id": "frost_daggers",
+      "name": "Frostbound Daggers",
+      "resultWeaponId": "frost_daggers",
+      "requiredLevel": 12,
+      "ingredients": {
+        "ore": 6,
+        "steel_scrap": 2,
+        "glacial_essence": 1
+      },
+      "expGranted": 110,
+      "description": "Pair of quick daggers coated with perennial frost. Rapid attacks bite deeply into enemy flesh."
+    },
+    {
+      "id": "frost_morningstar",
+      "name": "Frostbound Morningstar",
+      "resultWeaponId": "frost_morningstar",
+      "requiredLevel": 12,
+      "ingredients": {
+        "ore": 9,
+        "steel_scrap": 4,
+        "orc_heavy_hide": 1,
+        "glacial_essence": 1
+      },
+      "expGranted": 110,
+      "description": "A crushing spiked morningstar reinforced with heavy hide and glacial essence. Bludgeons foes with freezing impact."
+    },
+    {
+      "id": "frost_greatsword",
+      "name": "Frostbound Greatsword",
+      "resultWeaponId": "frost_greatsword",
+      "requiredLevel": 12,
+      "ingredients": {
+        "ore": 10,
+        "steel_scrap": 4,
+        "glacial_essence": 2
+      },
+      "expGranted": 110,
+      "description": "A massive two-handed greatsword radiating arctic winds. Sweeps cleave through enemies with devastating chill."
+    },
+    {
+      "id": "frost_halberd",
+      "name": "Frostbound Halberd",
+      "resultWeaponId": "frost_halberd",
+      "requiredLevel": 12,
+      "ingredients": {
+        "ore": 10,
+        "wood": 3,
+        "steel_scrap": 4,
+        "glacial_essence": 2
+      },
+      "expGranted": 110,
+      "description": "A two-handed polearm forged of glacial steel. Deals crushing reach strikes that freeze targets."
+    },
+    {
+      "id": "frost_crossbow",
+      "name": "Frostbound Crossbow",
+      "resultWeaponId": "frost_crossbow",
+      "requiredLevel": 12,
+      "ingredients": {
+        "ore": 8,
+        "wood": 3,
+        "steel_scrap": 3,
+        "glacial_essence": 1
+      },
+      "expGranted": 110,
+      "description": "A powerful mechanised crossbow engineered to propel frost-tipped bolts with piercing force."
+    },
+    {
+      "id": "frost_throwing_weapons",
+      "name": "Frostbound Throwing Blades",
+      "resultWeaponId": "frost_throwing_weapons",
+      "requiredLevel": 12,
+      "ingredients": {
+        "ore": 6,
+        "steel_scrap": 2,
+        "glacial_essence": 1
+      },
+      "expGranted": 110,
+      "description": "Aerodynamic steel blades infused with glacial frost. Fast ranged projectiles that inflict frostbite."
+    },
+    {
+      "id": "frost_shield",
+      "name": "Frostbound Shield",
+      "resultWeaponId": "frost_shield",
+      "requiredLevel": 12,
+      "ingredients": {
+        "ore": 8,
+        "steel_scrap": 3,
+        "glacial_essence": 1
+      },
+      "expGranted": 110,
+      "description": "A reinforced shield clad in glacial steel, deflecting mortal blows and turning aside incoming attacks."
     }
   ]
 }

@@ -1,0 +1,174 @@
+﻿=== BAND 4 FROST GEAR COMPREHENSIVE TEST SUITE ===
+
+[GameState] Initialized from player.json boot seed with Hero & Valerie: {
+  hp: 50,
+  criticalHp: 25,
+  energy: 100,
+  knownSkillIds: [],
+  equippedSkillIds: [],
+  autocastMap: {},
+  skillCooldownsRemainingMs: {},
+  proficiencies: {
+    short_swords: { level: 0, currentExp: 0 },
+    construction: { level: 0, currentExp: 0 },
+    fist: { level: 0, currentExp: 0 },
+    daggers: { level: 0, currentExp: 0 },
+    shields: { level: 0, currentExp: 0 },
+    dual_wielding: { level: 0, currentExp: 0 },
+    alchemy: { level: 0, currentExp: 0 },
+    evasion: { level: 0, currentExp: 0 },
+    parry: { level: 0, currentExp: 0 },
+    block: { level: 0, currentExp: 0 },
+    counterattack: { level: 0, currentExp: 0 },
+    resilience: { level: 0, currentExp: 0 },
+    health_regen: { level: 0, currentExp: 0 },
+    mana_regen: { level: 0, currentExp: 0 },
+    energy_regen: { level: 0, currentExp: 0 },
+    staff: { level: 0, currentExp: 0 },
+    druid_staff: { level: 0, currentExp: 0 },
+    healing_magic: { level: 0, currentExp: 0 },
+    fire_magic: { level: 0, currentExp: 0 },
+    foraging: { level: 0, currentExp: 0 },
+    woodcutting: { level: 0, currentExp: 0 },
+    mining: { level: 0, currentExp: 0 },
+    mace: { level: 0, currentExp: 0 },
+    blacksmithing: { level: 0, currentExp: 0 },
+    armorsmithing: { level: 0, currentExp: 0 },
+    digging: { level: 0, currentExp: 0 },
+    perception: { level: 0, currentExp: 0 },
+    skinning: { level: 0, currentExp: 0 },
+    butchering: { level: 0, currentExp: 0 },
+    lockpicking: { level: 0, currentExp: 0 },
+    gardening: { level: 0, currentExp: 0 },
+    longswords: { level: 0, currentExp: 0 },
+    dark_magic: { level: 0, currentExp: 0 },
+    light_armor: { level: 0, currentExp: 0 },
+    medium_armor: { level: 0, currentExp: 0 },
+    heavy_armor: { level: 0, currentExp: 0 },
+    fishing: { level: 0, currentExp: 0 },
+    enchanting: { level: 0, currentExp: 0 },
+    water_magic: { level: 0, currentExp: 0 },
+    earth_magic: { level: 0, currentExp: 0 },
+    nature_magic: { level: 0, currentExp: 0 },
+    wind_magic: { level: 0, currentExp: 0 }
+  },
+  classLevels: {},
+  unlockedClasses: [],
+  resources: { wood: 100, ore: 0 },
+  placedBuildables: [],
+  hunger: 100,
+  mood: 50,
+  currentGameDay: 1,
+  foodItems: [],
+  equippedWeaponId: 'short_swords',
+  offhandWeaponId: null,
+  dungeonFloorCount: 0,
+  encounteredEnemies: [],
+  discoveredProficiencies: [ 'short_swords' ],
+  discoveredStatusEffects: [],
+  discoveredGatheringNodes: [],
+  defeatedAreaBosses: [],
+  quickSlots: [ 'revive_potion', 'bandage', 'energy_potion', 'antidote' ],
+  worldFlags: {},
+  grovePityCounter: 0,
+  party: [
+    {
+      id: 'player',
+      name: 'Guild Hero',
+      avatarKey: 'player-avatar',
+      hp: 50,
+      criticalHp: 25,
+      energy: 100,
+      equippedWeaponId: 'short_swords',
+      offhandWeaponId: null,
+      inventory: [Object],
+      knownSkillIds: [],
+      equippedSkillIds: [],
+      autocastMap: {},
+      skillCooldownsRemainingMs: {},
+      proficiencies: [Object],
+      classLevels: {},
+      classStats: {},
+      unlockedClasses: [],
+      activeClass: null,
+      bookLearnedSkills: [],
+      hunger: 100,
+      mood: 50,
+      state: 'idle'
+    },
+    {
+      id: 'companion_1',
+      name: 'Valerie',
+      avatarKey: 'companion-avatar',
+      avatarTextureKey: 'companion-avatar',
+      hp: 50,
+      criticalHp: 25,
+      energy: 100,
+      equippedWeaponId: 'bows',
+      offhandWeaponId: 'daggers',
+      inventory: [Object],
+      knownSkillIds: [Array],
+      equippedSkillIds: [Array],
+      autocastMap: [Object],
+      skillCooldownsRemainingMs: {},
+      proficiencies: [Object],
+      classLevels: [Object],
+      classStats: [Object],
+      unlockedClasses: [Array],
+      activeClass: 'scout',
+      bookLearnedSkills: [],
+      hunger: 100,
+      mood: 50,
+      state: 'idle'
+    }
+  ]
+}
+--- Test 1: Expected-Table Guards (Sections 1 and 2) ---
+Γ£ö PASS: All 13 weapons/shields and 10 armor/accessory pieces verified against expected tables.
+
+--- Test 2: DPS Rule (+20% to +30% over Band 3 Reference) ---
+Γ£ö PASS: All 12 Frost weapons satisfy +20ΓÇô30% DPS rule, handedness, intervals, and weight +0.5.
+
+--- Test 3: Inheritance of levelBonus and proficiencyId ---
+Γ£ö PASS: Each Frost weapon correctly inherits its base family's levelBonus and proficiencyId.
+
+--- Test 4: Weapon Frostbite Proc (10% ┬▒ 1% over 10,000 seeded hits & Canonical Def) ---
+  Seeded Hits: 10000 | Frostbite Procs: 1013 | Rate: 10.13%
+[StatusEffect] Applied Frostbite to Glacier Yeti!
+Γ£ö PASS: Weapon frostbite proc lands at 10% ┬▒ 1% over 10k hits, applies canonical def, and never procs on miss.
+
+--- Test 5: Crafting via CraftingSystem.applyCraft ---
+[Progression] +110 EXP for 'blacksmithing' (Guild Hero). Current: Level 13 (12/102 EXP)
+[Progression] Recorded tx 'blacksmithing': +110 EXP for Guild Hero, resulting total: Level 13 (12/102 EXP)
+[Progression] LEVEL UP! 'blacksmithing' is now Level 13! (Gained 1 level(s))
+[Progression] Class Unlocked: Apprentice Smith (apprentice_smith) for Guild Hero!
+[Progression] +110 Class EXP for 'apprentice_smith' (Guild Hero). Current: Level 2 (56/58 EXP)
+[Progression] CLASS LEVEL UP! 'apprentice_smith' is now Level 2!
+[Progression] +110 EXP for 'armorsmithing' (Guild Hero). Current: Level 13 (12/102 EXP)
+[Progression] Recorded tx 'armorsmithing': +110 EXP for Guild Hero, resulting total: Level 13 (12/102 EXP)
+[Progression] LEVEL UP! 'armorsmithing' is now Level 13! (Gained 1 level(s))
+[Progression] Class Unlocked: Apprentice Armorer (apprentice_armorer) for Guild Hero!
+[Progression] +110 Class EXP for 'apprentice_armorer' (Guild Hero). Current: Level 2 (56/58 EXP)
+[Progression] CLASS LEVEL UP! 'apprentice_armorer' is now Level 2!
+[Progression] Set class 'apprentice_armorer' to Level 3 (0 EXP) on Guild Hero
+[Progression] +120 EXP for 'armorsmithing' (Guild Hero). Current: Level 14 (18/106 EXP)
+[Progression] Recorded tx 'armorsmithing': +120 EXP for Guild Hero, resulting total: Level 14 (18/106 EXP)
+[Progression] LEVEL UP! 'armorsmithing' is now Level 14! (Gained 1 level(s))
+[Progression] +120 Class EXP for 'apprentice_armorer' (Guild Hero). Current: Level 4 (58/66 EXP)
+[Progression] CLASS LEVEL UP! 'apprentice_armorer' is now Level 4!
+Γ£ö PASS: Crafting weapon, armor, and top piece crafts exactly 1 and records gear instances.
+
+--- Test 6: Salvage of Frost Item (50% Refund, Half EXP) ---
+[Progression] +55 EXP for 'blacksmithing' (Guild Hero). Current: Level 12 (55/98 EXP)
+[Progression] Recorded tx 'blacksmithing': +55 EXP for Guild Hero, resulting total: Level 12 (55/98 EXP)
+[Progression] +55 Class EXP for 'apprentice_smith' (Guild Hero). Current: Level 3 (53/62 EXP)
+[Progression] CLASS LEVEL UP! 'apprentice_smith' is now Level 3!
+Γ£ö PASS: Salvage of Frostbound Short Sword refunds 50% of ingredients with half EXP.
+
+--- Test 7: Armor "Heavy Doesn't Dominate" Guard & HP Tier/Slot Progression ---
+Γ£ö PASS: "Heavy doesn't dominate" verified; ratings/weights strictly rise and HP strictly scales 15/25 -> 30/50 -> 60/100 -> 90/150.
+
+--- Test 8: Supply Log Existence and Content ---
+Γ£ö PASS: frost_supply.log confirmed with floors-per-craft data and Sovereign drop rates.
+
+≡ƒÄë ALL FROST GEAR TESTS PASSED PERFECTLY! ≡ƒÄë

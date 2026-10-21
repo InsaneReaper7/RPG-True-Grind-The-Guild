@@ -75,6 +75,33 @@
       },
       "expGranted": 80,
       "description": "A dark quarterstaff bound in void metal. Humms with concentrated planar force that shatters enemy defenses."
+    },
+    {
+      "id": "frost_staff",
+      "name": "Frostbound Staff",
+      "resultWeaponId": "frost_staff",
+      "requiredLevel": 12,
+      "ingredients": {
+        "wood": 8,
+        "steel_scrap": 2,
+        "glacial_essence": 1
+      },
+      "expGranted": 110,
+      "description": "A heavy quarterstaff bound in glacial steel. Strikes with sub-zero bludgeoning force."
+    },
+    {
+      "id": "frost_bow",
+      "name": "Frostbound Bow",
+      "resultWeaponId": "frost_bow",
+      "requiredLevel": 12,
+      "ingredients": {
+        "wood": 8,
+        "wolf_claw": 2,
+        "bone": 2,
+        "glacial_essence": 1
+      },
+      "expGranted": 110,
+      "description": "A recurve war bow braced with wolf claws and glacial essence. Shoots freezing arrows over long distances."
     }
   ]
 }

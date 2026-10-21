@@ -260,6 +260,133 @@
       },
       "expGranted": 25,
       "description": "Craft an ingredient bag providing 15 kg of weight exemption for culinary ingredients."
+    },
+    {
+      "id": "frost_hood",
+      "name": "Frostweave Hood",
+      "resultArmorId": "frost_hood",
+      "requiredLevel": 12,
+      "ingredients": {
+        "wolf_pelt": 2,
+        "ectoplasm": 2,
+        "glacial_essence": 1
+      },
+      "expGranted": 110,
+      "description": "Weave arctic wolf pelts and spectral ectoplasm into an enchanted light hood."
+    },
+    {
+      "id": "frost_robe",
+      "name": "Frostweave Robe",
+      "resultArmorId": "frost_robe",
+      "requiredLevel": 12,
+      "ingredients": {
+        "wolf_pelt": 3,
+        "ectoplasm": 3,
+        "glacial_essence": 2
+      },
+      "expGranted": 110,
+      "description": "Tailor a light robe infused with ghostly ectoplasm and glacial essence."
+    },
+    {
+      "id": "frost_leather_helm",
+      "name": "Rimehide Helm",
+      "resultArmorId": "frost_leather_helm",
+      "requiredLevel": 12,
+      "ingredients": {
+        "wolf_pelt": 3,
+        "orc_heavy_hide": 1,
+        "glacial_essence": 1
+      },
+      "expGranted": 110,
+      "description": "Shape cured pelts and dense orc hide into a protective medium helm."
+    },
+    {
+      "id": "frost_leather_armor",
+      "name": "Rimehide Armor",
+      "resultArmorId": "frost_leather_armor",
+      "requiredLevel": 12,
+      "ingredients": {
+        "wolf_pelt": 4,
+        "orc_heavy_hide": 2,
+        "glacial_essence": 2
+      },
+      "expGranted": 110,
+      "description": "Stitch tough orc hide and glacial essence into a resilient medium cuirass."
+    },
+    {
+      "id": "frost_greathelm",
+      "name": "Rimeforged Greathelm",
+      "resultArmorId": "frost_greathelm",
+      "requiredLevel": 12,
+      "ingredients": {
+        "ore": 5,
+        "steel_scrap": 3,
+        "glacial_essence": 1
+      },
+      "expGranted": 110,
+      "description": "Forge a heavy steel greathelm chilled with sub-zero glacial essence."
+    },
+    {
+      "id": "frost_plate_armor",
+      "name": "Rimeforged Plate",
+      "resultArmorId": "frost_plate_armor",
+      "requiredLevel": 12,
+      "ingredients": {
+        "ore": 7,
+        "steel_scrap": 4,
+        "glacial_essence": 2,
+        "rime_carapace": 1
+      },
+      "expGranted": 120,
+      "description": "Forge a pinnacle suit of heavy armor mounted with the Sovereign's rime carapace."
+    },
+    {
+      "id": "frost_pendant",
+      "name": "Frost Pendant",
+      "resultArmorId": "frost_pendant",
+      "requiredLevel": 12,
+      "ingredients": {
+        "glacial_essence": 1,
+        "bone": 3
+      },
+      "expGranted": 110,
+      "description": "String a protective glacial crystal pendant onto carved bone beads."
+    },
+    {
+      "id": "frost_ring",
+      "name": "Frost Ring",
+      "resultArmorId": "frost_ring",
+      "requiredLevel": 12,
+      "ingredients": {
+        "glacial_essence": 1,
+        "wolf_claw": 2
+      },
+      "expGranted": 110,
+      "description": "Craft a gleaming finger band from polished wolf claws and glacial essence."
+    },
+    {
+      "id": "frost_relic",
+      "name": "Glacial Heart Relic",
+      "resultArmorId": "frost_relic",
+      "requiredLevel": 12,
+      "ingredients": {
+        "glacial_core": 1,
+        "glacial_essence": 2
+      },
+      "expGranted": 120,
+      "description": "Anchor the Sovereign's glacial core into a wondrous accessory granting massive health and carry capacity."
+    },
+    {
+      "id": "sovereign_signet",
+      "name": "Sovereign's Signet",
+      "resultArmorId": "sovereign_signet",
+      "requiredLevel": 12,
+      "ingredients": {
+        "eye_of_the_sovereign": 1,
+        "glacial_essence": 2
+      },
+      "expGranted": 120,
+      "description": "Set the legendary Eye of the Sovereign into an ornate signet ring of extraordinary durability."
     }
   ]
 }

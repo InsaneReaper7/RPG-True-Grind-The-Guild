@@ -507,7 +507,7 @@ async function run() {
   const armors = dl.getArmorsData().armors;
   const trueArmors = armors.filter((a) => a.slot === 'helmet' || a.slot === 'body');
 
-  const tiers: ('starter' | 'mid' | 'void')[] = ['starter', 'mid', 'void'];
+  const tiers: ('starter' | 'mid' | 'void' | 'frost')[] = ['starter', 'mid', 'void', 'frost'];
   const slots: ('helmet' | 'body')[] = ['helmet', 'body'];
 
   for (const tier of tiers) {

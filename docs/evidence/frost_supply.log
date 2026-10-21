@@ -1,0 +1,130 @@
+========================================================================================
+BAND 4 (GLACIAL CAVERNS F16–20) SUPPLY CHECK: RUN 1 (BASELINE) VS RUN 2 (PRE-APPROVED KNOB)
+========================================================================================
+
+--- RUN 1: Baseline Enemies Configuration ---
+Floors Sampled: 250 | Glacial Sovereign Kills: 57
+Yields per floor:
+  wood                  : 8.220 / floor
+  ore                   : 4.740 / floor
+  wild_herbs            : 4.056 / floor
+  vegetable             : 1.316 / floor
+  bone                  : 1.440 / floor
+  glacial_essence       : 0.632 / floor
+  wolf_pelt             : 2.472 / floor
+  void_plate            : 0.288 / floor
+  void_essence          : 0.188 / floor
+  void_core             : 0.052 / floor
+  ectoplasm             : 0.584 / floor
+  wolf_claw             : 0.204 / floor
+  steel_scrap           : 0.812 / floor
+  glacial_core          : 0.228 / floor
+  rime_carapace         : 0.228 / floor
+  ice_gemstone          : 0.228 / floor
+  eye_of_the_sovereign  : 0.132 / floor
+  nature_gemstone       : 0.396 / floor
+  druid_staff           : 0.068 / floor
+  orc_heavy_hide        : 0.064 / floor
+
+Floors per craft (Run 1):
+| Recipe (Item) | Required Ingredients | Essence Flrs | Limiting Material | Total Flrs / Craft | Target | Status |
+| :--- | :--- | :---: | :--- | :---: | :---: | :---: |
+| Frostbound Short Sword | 8 ore, 3 steel_scrap, 1 glacial_essence | 1.58 | steel_scrap (0.81/flr) | 3.69 | ~3.5 | MET |
+| Frostbound Longsword | 8 ore, 3 steel_scrap, 1 glacial_essence | 1.58 | steel_scrap (0.81/flr) | 3.69 | ~3.5 | MET |
+| Frostbound Katana | 8 ore, 3 steel_scrap, 1 glacial_essence | 1.58 | steel_scrap (0.81/flr) | 3.69 | ~3.5 | MET |
+| Frostbound Spear | 8 ore, 2 wood, 3 steel_scrap, 1 glacial_essence | 1.58 | steel_scrap (0.81/flr) | 3.69 | ~3.5 | MET |
+| Frostbound Daggers | 6 ore, 2 steel_scrap, 1 glacial_essence | 1.58 | steel_scrap (0.81/flr) | 2.46 | ~3.5 | MET |
+| Frostbound Morningstar | 9 ore, 4 steel_scrap, 1 orc_heavy_hide, 1 glacial_essence | 1.58 | orc_heavy_hide (0.06/flr) | 15.63 | ~3.5 | ABOVE (Off-band/Rare mat) |
+| Frostbound Greatsword | 10 ore, 4 steel_scrap, 2 glacial_essence | 3.16 | steel_scrap (0.81/flr) | 4.93 | ~7.0 | MET |
+| Frostbound Halberd | 10 ore, 3 wood, 4 steel_scrap, 2 glacial_essence | 3.16 | steel_scrap (0.81/flr) | 4.93 | ~7.0 | MET |
+| Frostbound Staff | 8 wood, 2 steel_scrap, 1 glacial_essence | 1.58 | steel_scrap (0.81/flr) | 2.46 | ~3.5 | MET |
+| Frostbound Bow | 8 wood, 2 wolf_claw, 2 bone, 1 glacial_essence | 1.58 | wolf_claw (0.20/flr) | 9.80 | ~3.5 | ABOVE (Off-band/Rare mat) |
+| Frostbound Crossbow | 8 ore, 3 wood, 3 steel_scrap, 1 glacial_essence | 1.58 | steel_scrap (0.81/flr) | 3.69 | ~3.5 | MET |
+| Frostbound Throwing Blades | 6 ore, 2 steel_scrap, 1 glacial_essence | 1.58 | steel_scrap (0.81/flr) | 2.46 | ~3.5 | MET |
+| Frostbound Shield | 8 ore, 3 steel_scrap, 1 glacial_essence | 1.58 | steel_scrap (0.81/flr) | 3.69 | ~3.5 | MET |
+| Frostweave Hood | 2 wolf_pelt, 2 ectoplasm, 1 glacial_essence | 1.58 | ectoplasm (0.58/flr) | 3.42 | ~3.5 | MET |
+| Frostweave Robe | 3 wolf_pelt, 3 ectoplasm, 2 glacial_essence | 3.16 | ectoplasm (0.58/flr) | 5.14 | ~7.0 | MET |
+| Rimehide Helm | 3 wolf_pelt, 1 orc_heavy_hide, 1 glacial_essence | 1.58 | orc_heavy_hide (0.06/flr) | 15.63 | ~3.5 | ABOVE (Off-band/Rare mat) |
+| Rimehide Armor | 4 wolf_pelt, 2 orc_heavy_hide, 2 glacial_essence | 3.16 | orc_heavy_hide (0.06/flr) | 31.25 | ~7.0 | ABOVE (Off-band/Rare mat) |
+| Rimeforged Greathelm | 5 ore, 3 steel_scrap, 1 glacial_essence | 1.58 | steel_scrap (0.81/flr) | 3.69 | ~3.5 | MET |
+| Rimeforged Plate | 7 ore, 4 steel_scrap, 2 glacial_essence, 1 rime_carapace | 3.16 | steel_scrap (0.81/flr) | 4.93 | ~7.0 | MET |
+| Frost Pendant | 1 glacial_essence, 3 bone | 1.58 | bone (1.44/flr) | 2.08 | ~3.5 | MET |
+| Frost Ring | 1 glacial_essence, 2 wolf_claw | 1.58 | wolf_claw (0.20/flr) | 9.80 | ~3.5 | ABOVE (Off-band/Rare mat) |
+| Glacial Heart Relic | 1 glacial_core, 2 glacial_essence | 3.16 | glacial_core (0.23/flr) | 4.39 | ~7.0 | MET |
+| Sovereign's Signet | 1 eye_of_the_sovereign, 2 glacial_essence | 3.16 | eye_of_the_sovereign (0.13/flr) | 7.58 | ~7.0 | MET |
+
+----------------------------------------------------------------------------------------
+--- RUN 2: Pre-Approved Supply Knob Applied ---
+Knob changes:
+  1. ice_wraith glacial_essence salvage weight: 1 -> 2
+  2. glacier_yeti add salvage glacial_essence weight: 1
+----------------------------------------------------------------------------------------
+Floors Sampled: 250 | Glacial Sovereign Kills: 57
+Yields per floor (Run 2):
+  wood                  : 8.220 / floor
+  ore                   : 4.740 / floor
+  wild_herbs            : 4.056 / floor
+  vegetable             : 1.316 / floor
+  bone                  : 1.328 / floor
+  glacial_essence       : 0.860 / floor
+  wolf_pelt             : 2.472 / floor
+  void_plate            : 0.288 / floor
+  void_essence          : 0.188 / floor
+  void_core             : 0.052 / floor
+  ectoplasm             : 0.480 / floor
+  wolf_claw             : 0.204 / floor
+  glacial_core          : 0.228 / floor
+  rime_carapace         : 0.228 / floor
+  ice_gemstone          : 0.228 / floor
+  steel_scrap           : 0.800 / floor
+  eye_of_the_sovereign  : 0.132 / floor
+  nature_gemstone       : 0.396 / floor
+  druid_staff           : 0.068 / floor
+  orc_heavy_hide        : 0.064 / floor
+
+Floors per craft (Run 2 with Knob):
+| Recipe (Item) | Required Ingredients | Essence Flrs | Limiting Material | Total Flrs / Craft | Target | Status |
+| :--- | :--- | :---: | :--- | :---: | :---: | :---: |
+| Frostbound Short Sword | 8 ore, 3 steel_scrap, 1 glacial_essence | 1.16 | steel_scrap (0.80/flr) | 3.75 | ~3.5 | MET |
+| Frostbound Longsword | 8 ore, 3 steel_scrap, 1 glacial_essence | 1.16 | steel_scrap (0.80/flr) | 3.75 | ~3.5 | MET |
+| Frostbound Katana | 8 ore, 3 steel_scrap, 1 glacial_essence | 1.16 | steel_scrap (0.80/flr) | 3.75 | ~3.5 | MET |
+| Frostbound Spear | 8 ore, 2 wood, 3 steel_scrap, 1 glacial_essence | 1.16 | steel_scrap (0.80/flr) | 3.75 | ~3.5 | MET |
+| Frostbound Daggers | 6 ore, 2 steel_scrap, 1 glacial_essence | 1.16 | steel_scrap (0.80/flr) | 2.50 | ~3.5 | MET |
+| Frostbound Morningstar | 9 ore, 4 steel_scrap, 1 orc_heavy_hide, 1 glacial_essence | 1.16 | orc_heavy_hide (0.06/flr) | 15.63 | ~3.5 | ABOVE (Off-band/Rare mat) |
+| Frostbound Greatsword | 10 ore, 4 steel_scrap, 2 glacial_essence | 2.33 | steel_scrap (0.80/flr) | 5.00 | ~7.0 | MET |
+| Frostbound Halberd | 10 ore, 3 wood, 4 steel_scrap, 2 glacial_essence | 2.33 | steel_scrap (0.80/flr) | 5.00 | ~7.0 | MET |
+| Frostbound Staff | 8 wood, 2 steel_scrap, 1 glacial_essence | 1.16 | steel_scrap (0.80/flr) | 2.50 | ~3.5 | MET |
+| Frostbound Bow | 8 wood, 2 wolf_claw, 2 bone, 1 glacial_essence | 1.16 | wolf_claw (0.20/flr) | 9.80 | ~3.5 | ABOVE (Off-band/Rare mat) |
+| Frostbound Crossbow | 8 ore, 3 wood, 3 steel_scrap, 1 glacial_essence | 1.16 | steel_scrap (0.80/flr) | 3.75 | ~3.5 | MET |
+| Frostbound Throwing Blades | 6 ore, 2 steel_scrap, 1 glacial_essence | 1.16 | steel_scrap (0.80/flr) | 2.50 | ~3.5 | MET |
+| Frostbound Shield | 8 ore, 3 steel_scrap, 1 glacial_essence | 1.16 | steel_scrap (0.80/flr) | 3.75 | ~3.5 | MET |
+| Frostweave Hood | 2 wolf_pelt, 2 ectoplasm, 1 glacial_essence | 1.16 | ectoplasm (0.48/flr) | 4.17 | ~3.5 | MET |
+| Frostweave Robe | 3 wolf_pelt, 3 ectoplasm, 2 glacial_essence | 2.33 | ectoplasm (0.48/flr) | 6.25 | ~7.0 | MET |
+| Rimehide Helm | 3 wolf_pelt, 1 orc_heavy_hide, 1 glacial_essence | 1.16 | orc_heavy_hide (0.06/flr) | 15.63 | ~3.5 | ABOVE (Off-band/Rare mat) |
+| Rimehide Armor | 4 wolf_pelt, 2 orc_heavy_hide, 2 glacial_essence | 2.33 | orc_heavy_hide (0.06/flr) | 31.25 | ~7.0 | ABOVE (Off-band/Rare mat) |
+| Rimeforged Greathelm | 5 ore, 3 steel_scrap, 1 glacial_essence | 1.16 | steel_scrap (0.80/flr) | 3.75 | ~3.5 | MET |
+| Rimeforged Plate | 7 ore, 4 steel_scrap, 2 glacial_essence, 1 rime_carapace | 2.33 | steel_scrap (0.80/flr) | 5.00 | ~7.0 | MET |
+| Frost Pendant | 1 glacial_essence, 3 bone | 1.16 | bone (1.33/flr) | 2.26 | ~3.5 | MET |
+| Frost Ring | 1 glacial_essence, 2 wolf_claw | 1.16 | wolf_claw (0.20/flr) | 9.80 | ~3.5 | ABOVE (Off-band/Rare mat) |
+| Glacial Heart Relic | 1 glacial_core, 2 glacial_essence | 2.33 | glacial_core (0.23/flr) | 4.39 | ~7.0 | MET |
+| Sovereign's Signet | 1 eye_of_the_sovereign, 2 glacial_essence | 2.33 | eye_of_the_sovereign (0.13/flr) | 7.58 | ~7.0 | MET |
+
+========================================================================================
+COMPARISON SUMMARY: ESSENCE PACING
+========================================================================================
+Run 1 Glacial Essence Yield: 0.632 / floor -> 1 essence = 1.58 floors, 2 essence = 3.16 floors
+Run 2 Glacial Essence Yield: 0.860 / floor -> 1 essence = 1.16 floors, 2 essence = 2.33 floors
+Glacial Essence Yield Change: +36.1%
+
+========================================================================================
+GLACIAL SOVEREIGN TOP PIECES DROP RATES & TIME-TO-ACQUIRE (FROM REAL BOSS DROP CODE)
+========================================================================================
+Source: src/systems/CombatSystem.ts:2768-2775, 2907-2925
+- glacial_core:          salvage (isRare: false)  -> 100% per kill (1.00 / kill)
+- rime_carapace:         salvage (isRare: false)  -> 100% per kill (1.00 / kill)
+- eye_of_the_sovereign:  rare_drop (threshold 0.60 for boss) -> 60% per kill (0.60 / kill)
+
+Kills required for Top Pieces:
+- Rimeforged Plate (rime_carapace x1):        1 Sovereign kill (1.0 expected)
+- Glacial Heart Relic (glacial_core x1):      1 Sovereign kill (1.0 expected)
+- Sovereign's Signet (eye_of_the_sovereign x1): 1.67 Sovereign kills (~2 kills expected)

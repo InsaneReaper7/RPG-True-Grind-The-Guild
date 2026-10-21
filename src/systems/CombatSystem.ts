@@ -1427,6 +1427,7 @@ export class CombatSystem {
                 }
 
                 this.checkAndApplyStun(member, target, offWpn);
+                this.checkAndApplyFrostbite(member, target, offWpn);
                 if (passiveImbuement?.proc) {
                   this.checkAndApplyPassiveImbuementProc(member, target, passiveImbuement.proc);
                 }
@@ -1614,6 +1615,21 @@ export class CombatSystem {
         console.log(`[StatusEffect] Applied Bleed to ${target.entityName}!`);
         target.applyStatusEffect(bleedDef);
         this.createFloatingText(target.x, target.y - 25, 'BLEED!', '#ef4444');
+      }
+    }
+  }
+
+  private checkAndApplyFrostbite(attacker: Player, target: Entity, weaponOverride?: WeaponDef): void {
+    const weapon = weaponOverride ?? attacker.equippedWeapon;
+    if (!weapon.frostbiteChance) return;
+
+    const roll = (this as any).combatRng ? (this as any).combatRng() : ((attacker as any).combatRng ? (attacker as any).combatRng() : Math.random());
+    if (roll < weapon.frostbiteChance) {
+      const frostbiteDef = DataLoader.getInstance().getStatusEffect('frostbite');
+      if (frostbiteDef) {
+        console.log(`[StatusEffect] Applied Frostbite to ${target.entityName}!`);
+        target.applyStatusEffect(frostbiteDef);
+        this.createFloatingText(target.x, target.y - 25, 'FROSTBITE!', frostbiteDef.color || '#06b6d4');
       }
     }
   }
@@ -1866,6 +1882,7 @@ export class CombatSystem {
     this.checkAndApplyBleed(caster, target, effectiveWeapon);
     this.checkAndApplyBurn(caster, target, effectiveWeapon);
     this.checkAndApplyStun(caster, target, effectiveWeapon);
+    this.checkAndApplyFrostbite(caster, target, effectiveWeapon);
 
     let totalSiphon = 0;
     if (caster.activeStatusEffects) {
@@ -2270,6 +2287,7 @@ export class CombatSystem {
     this.checkAndApplySlow(member, target, effectiveWeapon);
     this.checkAndApplyCurse(member, target, effectiveWeapon, weaponLevel);
     this.checkAndApplyPoison(member, target, effectiveWeapon, weaponLevel);
+    this.checkAndApplyFrostbite(member, target, effectiveWeapon);
     if (isHoly) {
       this.applyHolyRadiance(member, target, effectiveWeapon, weaponLevel);
     }

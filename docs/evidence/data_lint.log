@@ -1,31 +1,31 @@
-=== DATA LINT GLOBAL GUARD TEST ===
+﻿=== DATA LINT GLOBAL GUARD TEST ===
 
 1. Checking ID uniqueness...
-✓ PASS: 99 class IDs and 430 skill IDs are unique.
+Γ£ô PASS: 99 class IDs and 430 skill IDs are unique.
 
 2. Checking combat class skill counts...
-✓ PASS: All 86 combat classes have exactly 5 skills.
+Γ£ô PASS: All 86 combat classes have exactly 5 skills.
 
 3. Checking status effect references...
-✓ PASS: All status references exist in statusEffects.json (38 valid statuses).
+Γ£ô PASS: All status references exist in statusEffects.json (38 valid statuses).
 
 4. Checking requirement targets (recursing into anyOf/oneOf)...
-✓ PASS: Every requirement target exists across all classes and skills.
+Γ£ô PASS: Every requirement target exists across all classes and skills.
 
 5. Checking applyStatus.durationMs rule...
-✓ PASS: applyStatus.durationMs verified (15 poison, 4 durationOverrideReason overrides).
+Γ£ô PASS: applyStatus.durationMs verified (15 poison, 4 durationOverrideReason overrides).
 
 6. Checking skill definition completeness...
 7. Checking weapon levelBonus.damagePerLevel rule...
-✓ PASS: All non-magic, non-offhand weapons have positive damagePerLevel.
+Γ£ô PASS: All non-magic, non-offhand weapons have positive damagePerLevel.
 
 8. Checking stat gains proficiency assignment rule...
-✓ PASS: All 56 proficiencies in ProgressionSystem defaults are assigned exactly once in statGains.json.
+Γ£ô PASS: All 56 proficiencies in ProgressionSystem defaults are assigned exactly once in statGains.json.
 
 9. Checking class spellDamageMultiplier values...
-✓ PASS: All spellDamageMultiplier values are numbers > 0 and <= 2.
+Γ£ô PASS: All spellDamageMultiplier values are numbers > 0 and <= 2.
 
 10. Checking Food & Cooking data integrity...
-✓ PASS: All Food & Cooking data integrity rules verified.
+Γ£ô PASS: All Food & Cooking data integrity rules verified.
 
-🎉 ALL DATA LINT CHECKS PASSED PERFECTLY!
+≡ƒÄë ALL DATA LINT CHECKS PASSED PERFECTLY!
