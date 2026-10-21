@@ -52,11 +52,12 @@ export class HUD {
   private playerEscapeStoneTextEl: HTMLElement | null;
   private hudUseEscapeStoneBtn: HTMLElement | null;
   private alchemyModalEscapeStonesEl: HTMLElement | null;
-  public campMakeBtnEl: HTMLElement | null = null;
-  public campCookBtnEl: HTMLElement | null = null;
-  public campBreakBtnEl: HTMLElement | null = null;
+  public campMakeBtnEl: HTMLButtonElement | null = null;
+  public campCookBtnEl: HTMLButtonElement | null = null;
+  public campBreakBtnEl: HTMLButtonElement | null = null;
   public isCampfireMode: boolean = false;
   public cookingParty?: Player[];
+  public scene?: any;
 
   // Milestone 40: Teleporter Crystal Modal Elements
   private teleporterCrystalModalEl: HTMLElement | null;
@@ -482,6 +483,10 @@ export class HUD {
 
     this.gatheringModeBannerEl = document.getElementById('gathering-mode-banner');
     this.gatheringModeBtnEl = document.getElementById('gathering-mode-toggle-btn');
+
+    this.campMakeBtnEl = document.getElementById('camp-make-btn') as HTMLButtonElement | null;
+    this.campCookBtnEl = document.getElementById('camp-cook-btn') as HTMLButtonElement | null;
+    this.campBreakBtnEl = document.getElementById('camp-break-btn') as HTMLButtonElement | null;
 
     this.portraitCardEls = [];
     this.portraitNameEls = [];
@@ -1143,6 +1148,42 @@ export class HUD {
       this.gatheringModeBtnEl.onclick = (e: MouseEvent) => {
         e.stopPropagation();
         HUD.activeInstance?.triggerGatheringModeToggle();
+      };
+    }
+
+    if (this.campMakeBtnEl) {
+      this.campMakeBtnEl.onclick = (e: MouseEvent) => {
+        e.stopPropagation();
+        if (this.campMakeBtnEl?.disabled) return;
+        const scene = this.getScene();
+        if (scene && typeof scene.startMakeCamp === 'function') {
+          scene.startMakeCamp();
+        }
+      };
+    }
+
+    if (this.campCookBtnEl) {
+      this.campCookBtnEl.onclick = (e: MouseEvent) => {
+        e.stopPropagation();
+        if (this.campCookBtnEl?.disabled) return;
+        const scene = this.getScene();
+        const leader = this.currentPlayer || scene?.player;
+        const progression = this.currentProgression || scene?.progressionSystem;
+        const party = (this.currentParty && this.currentParty.length > 0) ? this.currentParty : scene?.party;
+        if (leader && progression) {
+          this.openCookingModal(leader, progression, { campfireMode: true, party });
+        }
+      };
+    }
+
+    if (this.campBreakBtnEl) {
+      this.campBreakBtnEl.onclick = (e: MouseEvent) => {
+        e.stopPropagation();
+        if (this.campBreakBtnEl?.disabled) return;
+        const scene = this.getScene();
+        if (scene && typeof scene.breakCamp === 'function') {
+          scene.breakCamp();
+        }
       };
     }
 
@@ -2083,6 +2124,76 @@ export class HUD {
           }
         }
       });
+    }
+  }
+
+  public getScene(): any {
+    return this.scene || this.currentPlayer?.scene || (window as any).game?.scene?.getScene('MainScene');
+  }
+
+  public updateCampButtons(sceneOverride?: any): void {
+    const scene = sceneOverride || this.getScene();
+
+    if (!scene || !scene.dungeon || this.isOutpost) {
+      if (this.campMakeBtnEl) this.campMakeBtnEl.style.display = 'none';
+      if (this.campCookBtnEl) this.campCookBtnEl.style.display = 'none';
+      if (this.campBreakBtnEl) this.campBreakBtnEl.style.display = 'none';
+      return;
+    }
+
+    const currentCamp = scene.currentCamp;
+    const hasActiveCamp = !!(currentCamp && !currentCamp.isDestroyed);
+
+    if (!hasActiveCamp) {
+      // Dungeon floor with no camp standing:
+      // Make Camp is visible, Cook and Break are hidden
+      if (this.campCookBtnEl) this.campCookBtnEl.style.display = 'none';
+      if (this.campBreakBtnEl) this.campBreakBtnEl.style.display = 'none';
+
+      if (this.campMakeBtnEl) {
+        this.campMakeBtnEl.style.display = 'inline-block';
+        if (typeof scene.canMakeCamp === 'function') {
+          const check = scene.canMakeCamp();
+          if (check.allowed) {
+            this.campMakeBtnEl.disabled = false;
+            this.campMakeBtnEl.title = 'Make Camp (Hotkey: C)';
+            this.campMakeBtnEl.textContent = '🏕️ Make Camp [C]';
+            this.campMakeBtnEl.style.opacity = '1';
+            this.campMakeBtnEl.style.cursor = 'pointer';
+          } else {
+            const reason = check.reason || 'Cannot make camp';
+            this.campMakeBtnEl.disabled = true;
+            this.campMakeBtnEl.title = reason;
+            this.campMakeBtnEl.textContent = `🏕️ Make Camp [C] (${reason})`;
+            this.campMakeBtnEl.style.opacity = '0.6';
+            this.campMakeBtnEl.style.cursor = 'not-allowed';
+          }
+        } else {
+          this.campMakeBtnEl.disabled = false;
+          this.campMakeBtnEl.title = 'Make Camp (Hotkey: C)';
+          this.campMakeBtnEl.textContent = '🏕️ Make Camp [C]';
+          this.campMakeBtnEl.style.opacity = '1';
+          this.campMakeBtnEl.style.cursor = 'pointer';
+        }
+      }
+    } else {
+      // Camp stands: Make Camp is hidden, Cook & Break visible when leader is in radius
+      if (this.campMakeBtnEl) this.campMakeBtnEl.style.display = 'none';
+
+      const leader = this.currentPlayer || scene.player;
+      const inRadius = leader
+        ? (typeof scene.isInCampRadius === 'function'
+            ? scene.isInCampRadius(leader)
+            : currentCamp.isInRadius(leader.gridPos?.x ?? leader.x, leader.gridPos?.y ?? leader.y))
+        : false;
+
+      const display = inRadius ? 'inline-block' : 'none';
+      if (this.campCookBtnEl) {
+        this.campCookBtnEl.style.display = display;
+      }
+      if (this.campBreakBtnEl) {
+        this.campBreakBtnEl.style.display = display;
+      }
     }
   }
 
@@ -3196,6 +3307,9 @@ export class HUD {
         }
       }
     }
+
+    // 13. Update Dungeon Camp buttons
+    this.updateCampButtons();
   }
 
   private setElementTextIfChanged(el: HTMLElement | null, text: string): void {
@@ -5472,6 +5586,15 @@ export class HUD {
       if (this.partyReselectAllBtn) {
         this.partyReselectAllBtn.onclick = null;
       }
+      if (this.campMakeBtnEl) {
+        this.campMakeBtnEl.onclick = null;
+      }
+      if (this.campCookBtnEl) {
+        this.campCookBtnEl.onclick = null;
+      }
+      if (this.campBreakBtnEl) {
+        this.campBreakBtnEl.onclick = null;
+      }
       HUD.activeInstance = null;
       if ((globalThis as any).activeHUD === this) (globalThis as any).activeHUD = null;
       if ((window as any)?.activeHUD === this) (window as any).activeHUD = null;
@@ -6944,20 +7067,25 @@ export class HUD {
     const availableIngredients: { id: string; name: string; count: number; icon: string }[] = [];
     const itemMap = new Map<string, number>();
 
-    for (const [id, count] of gameState.getInventoryMap().entries()) {
-      if (count > 0) {
-        const def = dataLoader.getItem(id);
-        if (def?.ingredient) {
-          itemMap.set(id, (itemMap.get(id) || 0) + count);
-        }
-      }
-    }
-    if (player && player.inventory) {
-      for (const [id, count] of player.inventory.entries()) {
+    if (!this.isCampfireMode) {
+      for (const [id, count] of gameState.getInventoryMap().entries()) {
         if (count > 0) {
           const def = dataLoader.getItem(id);
           if (def?.ingredient) {
             itemMap.set(id, (itemMap.get(id) || 0) + count);
+          }
+        }
+      }
+    }
+    const cookingMembers = (this.cookingParty && this.cookingParty.length > 0) ? this.cookingParty : (player ? [player] : []);
+    for (const member of cookingMembers) {
+      if (member && member.inventory) {
+        for (const [id, count] of member.inventory.entries()) {
+          if (count > 0) {
+            const def = dataLoader.getItem(id);
+            if (def?.ingredient) {
+              itemMap.set(id, (itemMap.get(id) || 0) + count);
+            }
           }
         }
       }

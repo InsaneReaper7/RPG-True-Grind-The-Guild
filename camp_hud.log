@@ -1,0 +1,155 @@
+================================================================
+🏕️ RUNNING CAMP HUD & INTERACTIVE CONTROLS TEST SUITE
+================================================================
+
+[TutorialSystem] 🎓 Guild Onboarding & Tutorial COMPLETED! Full loop verified.
+[GameState] Initialized from player.json boot seed with Hero & Valerie: {
+  hp: 50,
+  criticalHp: 25,
+  energy: 100,
+  knownSkillIds: [],
+  equippedSkillIds: [],
+  autocastMap: {},
+  skillCooldownsRemainingMs: {},
+  proficiencies: {
+    short_swords: { level: 0, currentExp: 0 },
+    construction: { level: 0, currentExp: 0 },
+    fist: { level: 0, currentExp: 0 },
+    daggers: { level: 0, currentExp: 0 },
+    shields: { level: 0, currentExp: 0 },
+    dual_wielding: { level: 0, currentExp: 0 },
+    alchemy: { level: 0, currentExp: 0 },
+    evasion: { level: 0, currentExp: 0 },
+    parry: { level: 0, currentExp: 0 },
+    block: { level: 0, currentExp: 0 },
+    counterattack: { level: 0, currentExp: 0 },
+    resilience: { level: 0, currentExp: 0 },
+    health_regen: { level: 0, currentExp: 0 },
+    mana_regen: { level: 0, currentExp: 0 },
+    energy_regen: { level: 0, currentExp: 0 },
+    staff: { level: 0, currentExp: 0 },
+    druid_staff: { level: 0, currentExp: 0 },
+    healing_magic: { level: 0, currentExp: 0 },
+    fire_magic: { level: 0, currentExp: 0 },
+    foraging: { level: 0, currentExp: 0 },
+    woodcutting: { level: 0, currentExp: 0 },
+    mining: { level: 0, currentExp: 0 },
+    mace: { level: 0, currentExp: 0 },
+    blacksmithing: { level: 0, currentExp: 0 },
+    armorsmithing: { level: 0, currentExp: 0 },
+    digging: { level: 0, currentExp: 0 },
+    perception: { level: 0, currentExp: 0 },
+    skinning: { level: 0, currentExp: 0 },
+    butchering: { level: 0, currentExp: 0 },
+    lockpicking: { level: 0, currentExp: 0 },
+    gardening: { level: 0, currentExp: 0 },
+    longswords: { level: 0, currentExp: 0 },
+    dark_magic: { level: 0, currentExp: 0 },
+    light_armor: { level: 0, currentExp: 0 },
+    medium_armor: { level: 0, currentExp: 0 },
+    heavy_armor: { level: 0, currentExp: 0 },
+    fishing: { level: 0, currentExp: 0 },
+    enchanting: { level: 0, currentExp: 0 },
+    water_magic: { level: 0, currentExp: 0 },
+    earth_magic: { level: 0, currentExp: 0 },
+    nature_magic: { level: 0, currentExp: 0 },
+    wind_magic: { level: 0, currentExp: 0 }
+  },
+  classLevels: {},
+  unlockedClasses: [],
+  resources: { wood: 100, ore: 0 },
+  placedBuildables: [],
+  hunger: 100,
+  mood: 50,
+  currentGameDay: 1,
+  foodItems: [],
+  equippedWeaponId: 'short_swords',
+  offhandWeaponId: null,
+  dungeonFloorCount: 0,
+  encounteredEnemies: [],
+  discoveredProficiencies: [ 'short_swords' ],
+  discoveredStatusEffects: [],
+  discoveredGatheringNodes: [],
+  defeatedAreaBosses: [],
+  quickSlots: [ 'revive_potion', 'bandage', 'energy_potion', 'antidote' ],
+  worldFlags: {},
+  grovePityCounter: 0,
+  party: [
+    {
+      id: 'player',
+      name: 'Guild Hero',
+      avatarKey: 'player-avatar',
+      hp: 50,
+      criticalHp: 25,
+      energy: 100,
+      equippedWeaponId: 'short_swords',
+      offhandWeaponId: null,
+      inventory: [Object],
+      knownSkillIds: [],
+      equippedSkillIds: [],
+      autocastMap: {},
+      skillCooldownsRemainingMs: {},
+      proficiencies: [Object],
+      classLevels: {},
+      classStats: {},
+      unlockedClasses: [],
+      activeClass: null,
+      bookLearnedSkills: [],
+      hunger: 100,
+      mood: 50,
+      state: 'idle'
+    },
+    {
+      id: 'companion_1',
+      name: 'Valerie',
+      avatarKey: 'companion-avatar',
+      avatarTextureKey: 'companion-avatar',
+      hp: 50,
+      criticalHp: 25,
+      energy: 100,
+      equippedWeaponId: 'bows',
+      offhandWeaponId: 'daggers',
+      inventory: [Object],
+      knownSkillIds: [Array],
+      equippedSkillIds: [Array],
+      autocastMap: [Object],
+      skillCooldownsRemainingMs: {},
+      proficiencies: [Object],
+      classLevels: [Object],
+      classStats: [Object],
+      unlockedClasses: [Array],
+      activeClass: 'scout',
+      bookLearnedSkills: [],
+      hunger: 100,
+      mood: 50,
+      state: 'idle'
+    }
+  ]
+}
+--- Test 1: Dungeon with no camp -> Make Camp visible -> Click & complete channel ---
+[Camp] 🏕️ Guild Hero started pitching camp (5000ms)...
+[Progression] Activity 'Dungeon Camp Setup' count: 0 -> 1 (+1)
+[Progression] Activity 'Dungeon Camp Setup' count: 0 -> 1 (+1)
+[KnowledgeBase] 🪵 Gathering node discovered: 'campfire'! (+1 RP)
+✔ Test 1 passed: Make Camp button initiates channel and transitions to Cook & Break buttons.
+
+--- Test 2: Cook at Campfire UI -> campfireMode bagOnly dropdowns ---
+✔ Test 2 passed: Cook at Campfire opens modal in campfireMode with bag-only ingredient options.
+
+--- Test 3: Wait 20s scene time -> Click Break Camp -> camp_rested applied & buttons reset ---
+[KnowledgeBase] 🧪 Status effect discovered: 'camp_rested'! (+1 RP)
+✔ Test 3 passed: Break Camp applies camp_rested and resets HUD buttons.
+
+--- Test 4: Aggroed enemy in room -> "Enemies nearby" reason & click does nothing ---
+✔ Test 4 passed: Aggroed enemy causes "Enemies nearby" disabled reason and blocks action.
+
+--- Test 5: Hotkey [C] behaves the same as Make Camp button without granting Construction EXP ---
+[Camp] 🏕️ Guild Hero started pitching camp (5000ms)...
+[Progression] Activity 'Dungeon Camp Setup' count: 1 -> 2 (+1)
+[Progression] Activity 'Dungeon Camp Setup' count: 1 -> 2 (+1)
+✔ Test 5 passed: C key triggers Make Camp with zero Construction EXP side-effects.
+
+================================================================
+🎉 ALL 5 CAMP HUD TESTS PASSED WITH 100% SUCCESS!
+================================================================
+

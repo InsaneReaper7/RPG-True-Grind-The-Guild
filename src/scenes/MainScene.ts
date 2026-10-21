@@ -417,6 +417,7 @@ export class MainScene extends Phaser.Scene {
     const leaderName = leaderSnap?.name || playerData.name || 'Hero';
     this.progressionSystem = new ProgressionSystem(classesData, leaderName);
     this.hud = new HUD();
+    this.hud.scene = this;
     this.hud.setGatheringModeActive(false);
     const hasBossRoom = this.dungeon.rooms.some((r) => r.type === 'boss');
     this.hud.setLocation(`${activeRegion.name} — Floor ${floorNumber}${hasBossRoom ? ' (Boss Chamber)' : ''}`, false, activeRegion.accentColor);
@@ -1012,7 +1013,7 @@ export class MainScene extends Phaser.Scene {
       console.log(`[Debug] Spawned ${spawned.length} swarm enemies surrounding ${member.entityName} at (${mx}, ${my})`);
       return spawned;
     };
-    console.log('[Debug Tools] Hotkeys: [X] +25 Wpn Exp, [Z] +100 Wpn Exp, [C] +25 Const Exp. Debug Panel (`): +680 Wpn Exp (Lv10 Fencer Gate), Respawn Enemies. Console: __grantExp(id, amt, [idx]), __grantHiddenExp(id, amt, [idx]), __setLevel(id, lv, [idx]), __spawnTestCompanion(), __reviveParty([idx]), __spawnEnemy(id, x, y), __spawnSwarmAround(idx), __respawnEnemies().');
+    console.log('[Debug Tools] Hotkeys: [X] +25 Wpn Exp, [Z] +100 Wpn Exp. Debug Panel (`): +680 Wpn Exp (Lv10 Fencer Gate), Respawn Enemies. Console: __grantExp(id, amt, [idx]), __grantHiddenExp(id, amt, [idx]), __setLevel(id, lv, [idx]), __spawnTestCompanion(), __reviveParty([idx]), __spawnEnemy(id, x, y), __spawnSwarmAround(idx), __respawnEnemies().');
 
     // Scroll Wheel Zoom
     this.input.on('wheel', (_pointer: Phaser.Input.Pointer, _gameObjects: unknown[], _deltaX: number, deltaY: number) => {
@@ -2219,7 +2220,7 @@ export class MainScene extends Phaser.Scene {
         (e.roomIndex === leaderRoom.id || (e.gridPos.x >= leaderRoom.x && e.gridPos.x < leaderRoom.x + leaderRoom.width && e.gridPos.y >= leaderRoom.y && e.gridPos.y < leaderRoom.y + leaderRoom.height))
       );
       if (hasAggroed) {
-        return { allowed: false, reason: 'Aggroed enemies nearby', cost: defaultCost, channelMs: defaultChannelMs, inCombatSetup: false };
+        return { allowed: false, reason: 'Enemies nearby', cost: defaultCost, channelMs: defaultChannelMs, inCombatSetup: false };
       }
     }
 
@@ -2236,8 +2237,14 @@ export class MainScene extends Phaser.Scene {
     const carriedWood = this.party.reduce((sum, m) => sum + m.getItemCount('wood'), 0);
     const carriedHerbs = this.party.reduce((sum, m) => sum + m.getItemCount('wild_herbs'), 0);
 
-    if (carriedWood < reqWood || carriedHerbs < reqHerbs) {
+    if (carriedWood < reqWood && carriedHerbs < reqHerbs) {
       return { allowed: false, reason: `Need ${reqWood} Wood, ${reqHerbs} Wild Herbs`, cost, channelMs, inCombatSetup: inCombat };
+    }
+    if (carriedWood < reqWood) {
+      return { allowed: false, reason: `Need ${reqWood} Wood`, cost, channelMs, inCombatSetup: inCombat };
+    }
+    if (carriedHerbs < reqHerbs) {
+      return { allowed: false, reason: `Need ${reqHerbs} Wild Herbs`, cost, channelMs, inCombatSetup: inCombat };
     }
 
     return { allowed: true, cost, channelMs, inCombatSetup: inCombat };
@@ -2365,6 +2372,7 @@ export class MainScene extends Phaser.Scene {
         this.pathfinder.updateGrid(this.gridMatrix);
       }
     }
+    this.hud?.updateCampButtons?.(this);
 
     // Nudge leader to an adjacent walkable tile if available
     const adjWalkable = [
@@ -2395,6 +2403,7 @@ export class MainScene extends Phaser.Scene {
 
     GameState.getInstance().discoverGatheringNode('campfire');
     this.hud?.showToast('🏕️ Camp pitched! Rest and recover.', 'success', 3000);
+    this.hud?.updateCampButtons?.(this);
   }
 
   public cancelCampChannel(): void {
@@ -2472,6 +2481,7 @@ export class MainScene extends Phaser.Scene {
         this.pathfinder.updateGrid(this.gridMatrix);
       }
     }
+    this.hud?.updateCampButtons?.(this);
   }
 
   public respawnAtCamp(): void {
@@ -2685,9 +2695,9 @@ export class MainScene extends Phaser.Scene {
         this.progressionSystem.addProficiencyExp(this.player.equippedWeapon.id, 100);
       }
 
-      // Debug Grant +25 Construction EXP [C]
+      // Make Camp [C]
       if (this.cKey && Phaser.Input.Keyboard.JustDown(this.cKey)) {
-        this.progressionSystem.addProficiencyExp('construction', 25);
+        this.startMakeCamp();
       }
 
       // WASD Camera Panning
