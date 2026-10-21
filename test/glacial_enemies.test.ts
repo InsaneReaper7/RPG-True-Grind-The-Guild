@@ -331,13 +331,13 @@ async function runGlacialEnemiesTests() {
     const sovereign = dl.getEnemy('glacial_sovereign');
     assert.ok(sovereign, 'glacial_sovereign must exist in enemies.json');
     assert.strictEqual(sovereign.tier, 'boss');
-    assert.strictEqual(sovereign.hp, 3400);
-    assert.strictEqual(sovereign.criticalHpMax, 1700);
+    assert.strictEqual(sovereign.hp, 2400);
+    assert.strictEqual(sovereign.criticalHpMax, 1200);
     assert.strictEqual(sovereign.meleeDamage, 32);
     assert.strictEqual(sovereign.attackIntervalMs, 1400);
     assert.strictEqual(sovereign.attackRangeTiles, 4);
     assert.strictEqual(sovereign.frostbiteChance, 0.25);
-    console.log('  ✔ Glacial Sovereign stats verified (HP: 3400 + 1700, Damage: 32, Range: 4, Frostbite: 25%).');
+    console.log('  ✔ Glacial Sovereign stats verified (HP: 2400 + 1200, Damage: 32, Range: 4, Frostbite: 25%).');
 
     console.log('✔ PASS: Test 1 - All schema and stat invariants confirmed.\n');
   }
@@ -674,17 +674,17 @@ async function runGlacialEnemiesTests() {
   console.log('--- TEST 6: Glacial Sovereign Combat Calibration Targets ---');
   {
     const sovereignDef = dl.getEnemy('glacial_sovereign')!;
-    assert.strictEqual(sovereignDef.hp, 3400, 'Sovereign HP must be 3400');
-    assert.strictEqual(sovereignDef.criticalHpMax, 1700, 'Sovereign Crit HP must be 1700');
+    assert.strictEqual(sovereignDef.hp, 2400, 'Sovereign HP must be 2400');
+    assert.strictEqual(sovereignDef.criticalHpMax, 1200, 'Sovereign Crit HP must be 1200');
     assert.strictEqual(sovereignDef.frostbiteChance, 0.25, 'Sovereign Frostbite must be 0.25');
 
     // Run calibration sim Step 3 to verify targets
     const { evaluateSovereign } = await import('../scripts/calibrate_combat_sim.ts');
     muteLogs();
-    const results = evaluateSovereign(3400, 32, 100);
+    const results = evaluateSovereign(2400, 32, 100);
     unmuteLogs();
 
-    console.log(`  Simulated 100 runs for Sovereign HP 3400 + 1700:`);
+    console.log(`  Simulated 100 runs for Sovereign HP 2400 + 1200:`);
     console.log(`    Band 3 Win Rate: ${(results.band3Res.winRate * 100).toFixed(1)}% (Target: 85% - 100%)`);
     console.log(`    Band 3 Sloppy:   ${(results.band3SloppyRes.winRate * 100).toFixed(1)}%`);
     console.log(`    Band 2 Win Rate: ${(results.band2Res.winRate * 100).toFixed(1)}% (Target: < 25%)`);

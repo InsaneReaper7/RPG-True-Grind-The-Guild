@@ -56,6 +56,9 @@ function runCombatSim(
     burnChance: number;
     burnDps: number;
     burnDurationMs: number;
+    frostbiteChance?: number;
+    frostbiteDps?: number;
+    frostbiteDurationMs?: number;
     enrageThresholdHp: number;
     enragedIntervalMs: number;
   }
@@ -166,6 +169,15 @@ function runCombatSim(
               // On-hit Burn proc (e.g. Magma Tyrant Searing Immolation)
               if (options.burnChance > 0 && Math.random() < options.burnChance) {
                 target.activeStatus.push({ id: 'burn', durationMs: options.burnDurationMs, dps: options.burnDps });
+              }
+
+              // On-hit Frostbite proc (e.g. Glacial Sovereign Rime Frostbite)
+              if (options.frostbiteChance && options.frostbiteChance > 0 && Math.random() < options.frostbiteChance) {
+                target.activeStatus.push({
+                  id: 'frostbite',
+                  durationMs: options.frostbiteDurationMs || 4500,
+                  dps: options.frostbiteDps || 2.0
+                });
               }
             }
           }
@@ -419,7 +431,7 @@ function createMagmaTyrant(hp: number = 550, damage: number = 30): () => SimComb
 }
 
 // Glacial Sovereign (Band 4 Boss, F20)
-function createGlacialSovereign(hp: number = 3400, damage: number = 32): () => SimCombatant {
+function createGlacialSovereign(hp: number = 2400, damage: number = 32): () => SimCombatant {
   return () => ({
     name: 'Glacial Sovereign',
     hp, maxHp: hp, critHp: Math.floor(hp * 0.5), maxCritHp: Math.floor(hp * 0.5),
@@ -586,7 +598,7 @@ for (let hpTry = 1500; hpTry <= 3600; hpTry += (hpTry >= 3000 ? 200 : 300)) {
   console.log(`| ${hpTry} | ${Math.floor(hpTry * 0.5)} | ${hpTry + Math.floor(hpTry * 0.5)} | ${(res.band3Res.winRate * 100).toFixed(1)}% | ${res.band3Res.avgDurationSec.toFixed(1)}s | ${(res.band3SloppyRes.winRate * 100).toFixed(1)}% | ${(res.band2Res.winRate * 100).toFixed(1)}% |`);
 }
 
-const finalSovereignHp = 3400;
+const finalSovereignHp = 2400;
 const finalSovereignDmg = 32;
 const finalSovereignRes = evaluateSovereign(finalSovereignHp, finalSovereignDmg);
 
@@ -601,7 +613,7 @@ console.log('| :--- | :--- | :---: | :---: | :---: | :---: | :--- | :---: |');
 console.log(`| Abyssal Colossus (F5 Boss) | Band 1 (Iron + 1 Potion) | ${(colossusResult.winRate * 100).toFixed(1)}% | ${colossusResult.avgDurationSec.toFixed(1)}s | ${(colossusResult as any).avgPartyDowned.toFixed(2)} | ${(colossusResult as any).avgPartyHpRemaining.toFixed(1)} HP | Baseline F5 clear | YES |`);
 console.log(`| Magma Tyrant (F10 Boss) | Band 2 (Steel + 2 Potions) | ${(band2Res.winRate * 100).toFixed(1)}% | ${band2Res.avgDurationSec.toFixed(1)}s | ${(band2Res as any).avgPartyDowned.toFixed(2)} | ${(band2Res as any).avgPartyHpRemaining.toFixed(1)} HP | Win 70–95% of attempts | YES |`);
 console.log(`| Magma Tyrant (F10 Boss) | Band 1 (Iron + 1 Potion) | ${(band1Res.winRate * 100).toFixed(1)}% | ${band1Res.avgDurationSec.toFixed(1)}s | ${(band1Res as any).avgPartyDowned.toFixed(2)} | ${(band1Res as any).avgPartyHpRemaining.toFixed(1)} HP | Win < 25% (Loses/Wipes) | YES |`);
-console.log(`| Glacial Sovereign (F20 Boss) | Band 3 (Void + 3 Potions) | ${(finalSovereignRes.band3Res.winRate * 100).toFixed(1)}% | ${finalSovereignRes.band3Res.avgDurationSec.toFixed(1)}s | ${(finalSovereignRes.band3Res as any).avgPartyDowned.toFixed(2)} | ${(finalSovereignRes.band3Res as any).avgPartyHpRemaining.toFixed(1)} HP | Win 85–95% of attempts | ${finalSovereignRes.band3Res.winRate >= 0.85 && finalSovereignRes.band3Res.winRate <= 0.95 ? 'YES' : 'YES (Calibrated)'} |`);
+console.log(`| Glacial Sovereign (F20 Boss) | Band 3 (Void + 3 Potions) | ${(finalSovereignRes.band3Res.winRate * 100).toFixed(1)}% | ${finalSovereignRes.band3Res.avgDurationSec.toFixed(1)}s | ${(finalSovereignRes.band3Res as any).avgPartyDowned.toFixed(2)} | ${(finalSovereignRes.band3Res as any).avgPartyHpRemaining.toFixed(1)} HP | Win 85–95% of attempts | ${finalSovereignRes.band3Res.winRate >= 0.85 && finalSovereignRes.band3Res.winRate <= 0.95 ? 'MET' : 'ABOVE BAND (sim ceiling)'} |`);
 console.log(`| Glacial Sovereign (F20 Boss) | Band 3 Sloppy (Void + 1 Potion) | ${(finalSovereignRes.band3SloppyRes.winRate * 100).toFixed(1)}% | ${finalSovereignRes.band3SloppyRes.avgDurationSec.toFixed(1)}s | ${(finalSovereignRes.band3SloppyRes as any).avgPartyDowned.toFixed(2)} | ${(finalSovereignRes.band3SloppyRes as any).avgPartyHpRemaining.toFixed(1)} HP | Sloppy play clearance test | INFORMATIONAL |`);
-console.log(`| Glacial Sovereign (F20 Boss) | Band 2 (Steel + 2 Potions) | ${(finalSovereignRes.band2Res.winRate * 100).toFixed(1)}% | ${finalSovereignRes.band2Res.avgDurationSec.toFixed(1)}s | ${(finalSovereignRes.band2Res as any).avgPartyDowned.toFixed(2)} | ${(finalSovereignRes.band2Res as any).avgPartyHpRemaining.toFixed(1)} HP | Win < 25% (Under-geared wipe) | YES |`);
+console.log(`| Glacial Sovereign (F20 Boss) | Band 2 (Steel + 2 Potions) | ${(finalSovereignRes.band2Res.winRate * 100).toFixed(1)}% | ${finalSovereignRes.band2Res.avgDurationSec.toFixed(1)}s | ${(finalSovereignRes.band2Res as any).avgPartyDowned.toFixed(2)} | ${(finalSovereignRes.band2Res as any).avgPartyHpRemaining.toFixed(1)} HP | Win < 25% (Under-geared wipe) | ${finalSovereignRes.band2Res.winRate < 0.25 ? 'MET' : 'MISSED'} |`);
 

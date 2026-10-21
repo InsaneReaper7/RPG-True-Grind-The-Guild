@@ -5,42 +5,42 @@ DANGER SIMULATION CALIBRATION: ABYSSAL COLOSSUS (F5) VS. BAND 1 & MAGMA TYRANT (
 --- Step 1: Calibration Test (Abyssal Colossus on F5 vs. Band 1 Party) ---
 Encounter: Abyssal Colossus (F5 Boss)
 Party Gear: Band 1 (Iron + 1 Potion)
-Win Rate: 73.0% | Avg Duration: 19.2s | Avg Downed: 1.90 | Avg HP Remaining: 37.4 HP
+Win Rate: 71.2% | Avg Duration: 19.4s | Avg Downed: 2.02 | Avg HP Remaining: 35.3 HP
 Calibration Verdict: VALID (Players win most attempts on F5 as expected)
 
 --- Step 2: Magma Tyrant Initial Tuning (HP: 550, Damage: 30) ---
 - Band 2 Win Rate: 100.0% (Target: 70–95%) | Avg Duration: 12.9s | Downed: 0.00
-- Band 1 Win Rate: 64.6% (Target: < 25%)  | Avg Duration: 23.2s | Downed: 2.47
+- Band 1 Win Rate: 62.8% (Target: < 25%)  | Avg Duration: 23.2s | Downed: 2.50
 
 Band 2 win rate (100.0%) is above 95%. Adjusting HP upward...
-  -> HP 600: Band 2 Win Rate = 100.0%, Band 1 Win Rate = 42.4%
-  -> HP 650: Band 2 Win Rate = 100.0%, Band 1 Win Rate = 22.0%
-  -> HP 700: Band 2 Win Rate = 100.0%, Band 1 Win Rate = 12.0%
-  -> HP 750: Band 2 Win Rate = 100.0%, Band 1 Win Rate = 6.2%
-  -> HP 800: Band 2 Win Rate = 100.0%, Band 1 Win Rate = 3.2%
-  -> HP 850: Band 2 Win Rate = 100.0%, Band 1 Win Rate = 2.0%
-  -> HP 900: Band 2 Win Rate = 100.0%, Band 1 Win Rate = 0.0%
-  -> HP 950: Band 2 Win Rate = 99.8%, Band 1 Win Rate = 0.2%
-  -> HP 1000: Band 2 Win Rate = 100.0%, Band 1 Win Rate = 0.0%
-  -> HP 1050: Band 2 Win Rate = 98.4%, Band 1 Win Rate = 0.0%
+  -> HP 600: Band 2 Win Rate = 100.0%, Band 1 Win Rate = 41.8%
+  -> HP 650: Band 2 Win Rate = 100.0%, Band 1 Win Rate = 26.4%
+  -> HP 700: Band 2 Win Rate = 100.0%, Band 1 Win Rate = 16.6%
+  -> HP 750: Band 2 Win Rate = 100.0%, Band 1 Win Rate = 8.0%
+  -> HP 800: Band 2 Win Rate = 100.0%, Band 1 Win Rate = 2.0%
+  -> HP 850: Band 2 Win Rate = 100.0%, Band 1 Win Rate = 1.0%
+  -> HP 900: Band 2 Win Rate = 99.8%, Band 1 Win Rate = 0.6%
+  -> HP 950: Band 2 Win Rate = 100.0%, Band 1 Win Rate = 0.0%
+  -> HP 1000: Band 2 Win Rate = 99.8%, Band 1 Win Rate = 0.2%
+  -> HP 1050: Band 2 Win Rate = 98.2%, Band 1 Win Rate = 0.0%
   -> HP 1100: Band 2 Win Rate = 97.0%, Band 1 Win Rate = 0.0%
-  -> HP 1150: Band 2 Win Rate = 95.2%, Band 1 Win Rate = 0.0%
-  -> HP 1200: Band 2 Win Rate = 92.4%, Band 1 Win Rate = 0.0%
+  -> HP 1150: Band 2 Win Rate = 95.6%, Band 1 Win Rate = 0.0%
+  -> HP 1200: Band 2 Win Rate = 92.6%, Band 1 Win Rate = 0.0%
 
 --- Step 3: Glacial Sovereign Recalibration Tuning Table (HP Sweep from 1500 to 3600) ---
 | Boss HP | Crit HP | Total EHP | Band 3 Win Rate | Band 3 Avg Sec | Band 3 Sloppy Win | Band 2 Win Rate |
 | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| 1500 | 750 | 2250 | 100.0% | 23.1s | 100.0% | 90.4% |
-| 1800 | 900 | 2700 | 100.0% | 27.4s | 100.0% | 65.0% |
-| 2100 | 1050 | 3150 | 100.0% | 32.0s | 100.0% | 23.0% |
-| 2400 | 1200 | 3600 | 100.0% | 36.4s | 100.0% | 7.6% |
-| 2700 | 1350 | 4050 | 100.0% | 40.7s | 100.0% | 1.0% |
-| 3000 | 1500 | 4500 | 100.0% | 45.1s | 99.8% | 0.6% |
-| 3200 | 1600 | 4800 | 100.0% | 48.5s | 99.4% | 0.0% |
-| 3400 | 1700 | 5100 | 99.8% | 51.4s | 99.8% | 0.0% |
-| 3600 | 1800 | 5400 | 99.6% | 54.4s | 98.8% | 0.0% |
+| 1500 | 750 | 2250 | 100.0% | 23.1s | 100.0% | 72.0% |
+| 1800 | 900 | 2700 | 100.0% | 27.4s | 100.0% | 40.8% |
+| 2100 | 1050 | 3150 | 100.0% | 32.0s | 100.0% | 10.4% |
+| 2400 | 1200 | 3600 | 100.0% | 36.4s | 100.0% | 2.2% |
+| 2700 | 1350 | 4050 | 100.0% | 40.8s | 100.0% | 0.2% |
+| 3000 | 1500 | 4500 | 99.8% | 45.4s | 99.2% | 0.0% |
+| 3200 | 1600 | 4800 | 98.8% | 49.1s | 97.4% | 0.0% |
+| 3400 | 1700 | 5100 | 98.2% | 52.3s | 94.0% | 0.0% |
+| 3600 | 1800 | 5400 | 97.2% | 55.4s | 92.8% | 0.0% |
 
-Note for the owner: the Sovereign fight runs about 51 s vs about 29 s for the Tyrant.
+Note for the owner: the Sovereign fight runs about 36 s vs about 29 s for the Tyrant.
 
 ========================================================================================================
 FINAL CALIBRATED DANGER RESULTS (MAGMA TYRANT HP: 1200, DAMAGE: 30)
@@ -48,9 +48,9 @@ FINAL CALIBRATED DANGER RESULTS (MAGMA TYRANT HP: 1200, DAMAGE: 30)
 
 | Encounter | Party Gear | Win Rate | Avg Combat Duration | Avg Party Downed | Avg Party HP Remaining | Design Target | Met? |
 | :--- | :--- | :---: | :---: | :---: | :---: | :--- | :---: |
-| Abyssal Colossus (F5 Boss) | Band 1 (Iron + 1 Potion) | 73.0% | 19.2s | 1.90 | 37.4 HP | Baseline F5 clear | YES |
-| Magma Tyrant (F10 Boss) | Band 2 (Steel + 2 Potions) | 92.4% | 29.1s | 1.04 | 73.6 HP | Win 70–95% of attempts | YES |
-| Magma Tyrant (F10 Boss) | Band 1 (Iron + 1 Potion) | 0.0% | 35.0s | 4.00 | 0.0 HP | Win < 25% (Loses/Wipes) | YES |
-| Glacial Sovereign (F20 Boss) | Band 3 (Void + 3 Potions) | 100.0% | 51.3s | 0.10 | 138.2 HP | Win 85–95% of attempts | YES (Calibrated) |
-| Glacial Sovereign (F20 Boss) | Band 3 Sloppy (Void + 1 Potion) | 99.2% | 52.1s | 0.36 | 127.1 HP | Sloppy play clearance test | INFORMATIONAL |
-| Glacial Sovereign (F20 Boss) | Band 2 (Steel + 2 Potions) | 0.0% | 66.5s | 4.00 | 0.0 HP | Win < 25% (Under-geared wipe) | YES |
+| Abyssal Colossus (F5 Boss) | Band 1 (Iron + 1 Potion) | 71.2% | 19.4s | 2.02 | 35.3 HP | Baseline F5 clear | YES |
+| Magma Tyrant (F10 Boss) | Band 2 (Steel + 2 Potions) | 92.6% | 29.2s | 1.11 | 73.1 HP | Win 70–95% of attempts | YES |
+| Magma Tyrant (F10 Boss) | Band 1 (Iron + 1 Potion) | 0.0% | 35.3s | 4.00 | 0.0 HP | Win < 25% (Loses/Wipes) | YES |
+| Glacial Sovereign (F20 Boss) | Band 3 (Void + 3 Potions) | 100.0% | 36.4s | 0.03 | 147.5 HP | Win 85–95% of attempts | ABOVE BAND (sim ceiling) |
+| Glacial Sovereign (F20 Boss) | Band 3 Sloppy (Void + 1 Potion) | 100.0% | 36.5s | 0.07 | 145.7 HP | Sloppy play clearance test | INFORMATIONAL |
+| Glacial Sovereign (F20 Boss) | Band 2 (Steel + 2 Potions) | 3.2% | 55.6s | 3.93 | 1.6 HP | Win < 25% (Under-geared wipe) | MET |

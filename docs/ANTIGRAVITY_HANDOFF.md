@@ -2043,9 +2043,9 @@ The following three intentional behavioural changes were reviewed and accepted b
 
 - **4. Glacial Sovereign Recalibration (`data/enemies.json`, `src/systems/CombatSystem.ts`, `scripts/calibrate_combat_sim.ts`)**:
   - Replaced inline 100% frostbite application with generic 25% canonical proc (`frostbiteChance: 0.25`), preserving Glacial Spike Nova cleave and permafrost shards.
-  - Calibrated HP: 3400 HP + 1700 crit HP (5100 total EHP; 2:1 ratio).
-  - Combat sim results: Band 3 party in Void gear achieves 99.4% win rate; Band 2 party achieves 0.0% win rate (< 25% target).
-  - Mean fight length: ~51.5s (vs ~29.1s for Magma Tyrant).
+  - Calibrated HP: 2400 HP + 1200 crit HP (3600 total EHP; 2:1 ratio).
+  - Combat sim results: Band 3 party in Void gear achieves 100.0% win rate (ABOVE BAND / sim ceiling); Band 2 party achieves 3.2% win rate (MET, < 25% target).
+  - Mean fight length: ~36.4s (vs ~29.2s for Magma Tyrant).
 
 - **5. Behaviour Changes**:
   - Glacial Sovereign frostbite proc shifted from custom inline 100% object to 25% data-driven canonical proc.
@@ -2054,7 +2054,7 @@ The following three intentional behavioural changes were reviewed and accepted b
   - Cooking drop rolls (ingredient drops, chef party bonus, peppercorn swap, lost recipe scrolls, foraging herbs/saffron, woodcutting cinnamon) are now actively rolled in runtime paths.
 
 - **6. Edited Tests**:
-  - `test/milestone_second_boss.test.ts`: Updated Sovereign HP assertion from 420 + 210 to 3400 + 1700; updated combat test damage from 215 to 1705 to test critical HP transition; seeded Math.random for 25% frostbite check.
+  - `test/milestone_second_boss.test.ts`: Updated Sovereign HP assertion from 420 + 210 to 2400 + 1200; updated combat test damage from 215 to 1205 to test critical HP transition; seeded Math.random for 25% frostbite check.
   - `test/milestone34.test.ts`: Updated elite classification in the 100-floor procedural generation enemy distribution assertion to recognize the new Glacial elite `frost_troll` (`espawn.enemyId === 'orc_warrior' || espawn.enemyId === 'frost_troll'`).
 
 - **7. Verification & Committed Evidence Logs**:
