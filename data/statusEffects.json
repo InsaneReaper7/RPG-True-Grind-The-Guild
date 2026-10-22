@@ -447,8 +447,8 @@
       "color": "#38bdf8"
     },
     {
-      "id": "bulwark_stance",
-      "name": "Bulwark Stance",
+      "id": "bastion_stance",
+      "name": "Bastion Stance",
       "durationMs": 6000,
       "tickIntervalMs": 6000,
       "damagePerTick": 0,
@@ -480,8 +480,8 @@
       "color": "#eab308"
     },
     {
-      "id": "second_wind",
-      "name": "Second Wind",
+      "id": "renewing_winds",
+      "name": "Renewing Winds",
       "durationMs": 8000,
       "tickIntervalMs": 1000,
       "damagePerTick": 0,

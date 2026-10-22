@@ -755,6 +755,7 @@ export interface SkillEffectHeal {
   amount?: number;
   percent?: number;
   target?: 'self' | 'lowestAlly' | 'party' | 'radius';
+  radiusTiles?: number;
 }
 
 export interface SkillEffectHealOverTime {

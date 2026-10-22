@@ -32,9 +32,11 @@
 [Progression] Set class 'bulwark' to Level 50 (0 EXP) on Guild Hero
 [Progression] Set class 'riposte_master' to Level 50 (0 EXP) on Guild Hero
 [Progression] Set class 'vitality_warden' to Level 50 (0 EXP) on Guild Hero
+[StatusEffect] Applied Bleed to Training Dummy!
+[KnowledgeBase] ≡ƒº¬ Status effect discovered: 'bleed'! (+1 RP)
 [Progression] +2 EXP for 'short_swords' (Guild Hero). Current: Level 0 (2/50 EXP)
 [Progression] Recorded tx 'short_swords': +2 EXP for Guild Hero, resulting total: Level 0 (2/50 EXP)
-[KnowledgeBase] ≡ƒº¬ Status effect discovered: 'bulwark_stance'! (+1 RP)
+[KnowledgeBase] ≡ƒº¬ Status effect discovered: 'bastion_stance'! (+1 RP)
 [Progression] +2 EXP for 'short_swords' (Guild Hero). Current: Level 0 (4/50 EXP)
 [Progression] Recorded tx 'short_swords': +2 EXP for Guild Hero, resulting total: Level 0 (4/50 EXP)
 [KnowledgeBase] ≡ƒº¬ Status effect discovered: 'rally_wall'! (+1 RP)
@@ -42,21 +44,19 @@
 [Progression] Recorded tx 'short_swords': +2 EXP for Guild Hero, resulting total: Level 0 (6/50 EXP)
 [Progression] +2 EXP for 'short_swords' (Guild Hero). Current: Level 0 (8/50 EXP)
 [Progression] Recorded tx 'short_swords': +2 EXP for Guild Hero, resulting total: Level 0 (8/50 EXP)
-[Skill] BulwarkHero casts Aegis Slam but MISSED! (Hit Chance: 60.0%, Roll: 73.5%)
+[Skill] BulwarkHero casts Aegis Slam but MISSED! (Hit Chance: 60.0%, Roll: 93.4%)
 [Progression] +2 EXP for 'katana' (Guild Hero). Current: Level 0 (2/50 EXP)
 [Progression] Recorded tx 'katana': +2 EXP for Guild Hero, resulting total: Level 0 (2/50 EXP)
 [KnowledgeBase] ≡ƒº¬ Status effect discovered: 'riposte_stance'! (+1 RP)
 [Progression] +2 EXP for 'katana' (Guild Hero). Current: Level 0 (4/50 EXP)
 [Progression] Recorded tx 'katana': +2 EXP for Guild Hero, resulting total: Level 0 (4/50 EXP)
-[Skill] RiposteHero casts Flurry of Blades but MISSED! (Hit Chance: 65.0%, Roll: 69.4%)
-[StatusEffect] Applied Bleed to Training Dummy!
-[KnowledgeBase] ≡ƒº¬ Status effect discovered: 'bleed'! (+1 RP)
 [Progression] +2 EXP for 'katana' (Guild Hero). Current: Level 0 (6/50 EXP)
 [Progression] Recorded tx 'katana': +2 EXP for Guild Hero, resulting total: Level 0 (6/50 EXP)
-[KnowledgeBase] ≡ƒº¬ Status effect discovered: 'stun'! (+1 RP)
+[Progression] +2 EXP for 'katana' (Guild Hero). Current: Level 0 (8/50 EXP)
+[Progression] Recorded tx 'katana': +2 EXP for Guild Hero, resulting total: Level 0 (8/50 EXP)
 [Progression] +2 EXP for 'staff' (Guild Hero). Current: Level 0 (2/50 EXP)
 [Progression] Recorded tx 'staff': +2 EXP for Guild Hero, resulting total: Level 0 (2/50 EXP)
-[KnowledgeBase] ≡ƒº¬ Status effect discovered: 'second_wind'! (+1 RP)
+[KnowledgeBase] ≡ƒº¬ Status effect discovered: 'renewing_winds'! (+1 RP)
 [Progression] +2 EXP for 'staff' (Guild Hero). Current: Level 0 (4/50 EXP)
 [Progression] Recorded tx 'staff': +2 EXP for Guild Hero, resulting total: Level 0 (4/50 EXP)
 [KnowledgeBase] ≡ƒº¬ Status effect discovered: 'mana_tide'! (+1 RP)
@@ -88,17 +88,39 @@
 [Progression] Recorded tx 'short_swords': +2 EXP for Guild Hero, resulting total: Level 0 (2/50 EXP)
 [Progression] +2 EXP for 'staff' (Guild Hero). Current: Level 0 (2/50 EXP)
 [Progression] Recorded tx 'staff': +2 EXP for Guild Hero, resulting total: Level 0 (2/50 EXP)
-[HoT] Leader heals 3 HP from Second Wind!
+[HoT] Leader heals 3 HP from Renewing Winds!
 [DIAG:Regen] Leader | inCombat: false | Rate: 1.20 EN/s | Energy: 72.0 -> 73.2 (+1.20)
-[HoT] ConsciousAlly heals 3 HP from Second Wind!
+[HoT] ConsciousAlly heals 3 HP from Renewing Winds!
 [DIAG:Regen] ConsciousAlly | inCombat: false | Rate: 1.20 EN/s | Energy: 74.0 -> 75.2 (+1.20)
 [Progression] +2 EXP for 'staff' (Guild Hero). Current: Level 0 (4/50 EXP)
 [Progression] Recorded tx 'staff': +2 EXP for Guild Hero, resulting total: Level 0 (4/50 EXP)
-[HoT] Leader heals 3 HP from Second Wind!
-[HoT] ConsciousAlly heals 3 HP from Second Wind!
+[HoT] Leader heals 3 HP from Renewing Winds!
+[HoT] ConsciousAlly heals 3 HP from Renewing Winds!
 Γ£ô PASS: Party buffs reach conscious members, skip downed, heal 3/tick, and grant flat +1.0 EN/s.
 
 6. Checking Fillers <= +25% and No durationMs outside poison...
 Γ£ô PASS: Fillers <= +25%, finishers within 3.0-3.6x, and no applyStatus.durationMs in any kit.
+
+7. Checking Party-Heal Radius reads only effect radiusTiles...
+[Progression] Set class 'combat_medic' to Level 50 (0 EXP) on Guild Hero
+[Progression] Set class 'vitality_warden' to Level 50 (0 EXP) on Guild Hero
+[Progression] Set class 'vitality_warden' to Level 50 (0 EXP) on Guild Hero
+[Progression] +3 EXP for 'healing_magic' (Guild Hero). Current: Level 0 (3/50 EXP)
+[Progression] Recorded tx 'healing_magic': +3 EXP for Guild Hero, resulting total: Level 0 (3/50 EXP)
+[Progression] Set class 'vitality_warden' to Level 50 (0 EXP) on Guild Hero
+[Progression] +2 EXP for 'staff' (Guild Hero). Current: Level 0 (2/50 EXP)
+[Progression] Recorded tx 'staff': +2 EXP for Guild Hero, resulting total: Level 0 (2/50 EXP)
+Γ£ô PASS: Party heal reads only effect.radiusTiles (holy_nova is party-wide, vital_surge is scoped to 6 tiles).
+
+8. Checking Data-Driven openRiposteWindow...
+[Progression] Set class 'fencer' to Level 50 (0 EXP) on Guild Hero
+[Progression] Set class 'fencer' to Level 20 (0 EXP) on Guild Hero
+[Combat] ΓÜí Riposte window opened for FencerHero against Training Dummy!
+[Progression] Set class 'riposte_master' to Level 50 (0 EXP) on Guild Hero
+[Progression] Set class 'riposte_master' to Level 20 (0 EXP) on Guild Hero
+[Combat] ΓÜí Riposte window opened for RMHero against Training Dummy!
+[Progression] Set class 'knight' to Level 50 (0 EXP) on Guild Hero
+[Progression] Set class 'knight' to Level 50 (0 EXP) on Guild Hero
+Γ£ô PASS: openRiposteWindow is data-driven by ai.condition.requiresRiposteReady.
 
 ≡ƒÄë ALL DEFENSIVE HYBRID CLASS TESTS PASSED PERFECTLY! ≡ƒÄë

@@ -2822,8 +2822,8 @@
       }
     },
     {
-      "id": "catch_breath",
-      "name": "Catch Breath",
+      "id": "second_wind",
+      "name": "Second Wind",
       "energyCost": 20,
       "cooldownMs": 20000,
       "targetType": "self",
@@ -8783,8 +8783,8 @@
       ]
     },
     {
-      "id": "fortress_stance",
-      "name": "Fortress Stance",
+      "id": "bulwark_stance",
+      "name": "Bulwark Stance",
       "energyCost": 24,
       "cooldownMs": 15000,
       "targetType": "self",
@@ -8795,7 +8795,7 @@
           "value": 10
         }
       ],
-      "description": "Takes a fortified stance reducing damage taken to 60% (DT 0.6) for 6s on the caster.",
+      "description": "Takes a fortified bulwark stance reducing damage taken to 60% (DT 0.6) for 6s on the caster.",
       "ai": {
         "role": "defensive",
         "priority": 65
@@ -14893,8 +14893,8 @@
       ]
     },
     {
-      "id": "bulwark_stance",
-      "name": "Bulwark Stance",
+      "id": "bastion_stance",
+      "name": "Bastion Stance",
       "energyCost": 24,
       "cooldownMs": 18000,
       "targetType": "self",
@@ -14913,7 +14913,7 @@
       "effects": [
         {
           "type": "buff",
-          "status": "bulwark_stance",
+          "status": "bastion_stance",
           "target": "self"
         }
       ]
@@ -15192,8 +15192,8 @@
       ]
     },
     {
-      "id": "second_wind",
-      "name": "Second Wind",
+      "id": "renewing_winds",
+      "name": "Renewing Winds",
       "energyCost": 26,
       "cooldownMs": 18000,
       "targetType": "self",
@@ -15216,7 +15216,7 @@
       "effects": [
         {
           "type": "buff",
-          "status": "second_wind",
+          "status": "renewing_winds",
           "target": "party"
         }
       ]

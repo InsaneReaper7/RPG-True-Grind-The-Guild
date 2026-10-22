@@ -348,10 +348,9 @@ export class CombatSystem {
    */
   public openRiposteWindow(target: Player, enemy: Entity): void {
     const dataLoader = DataLoader.getInstance();
-    const riposteDef = dataLoader.getSkill('riposte');
-    const punishingDef = dataLoader.getSkill('punishing_riposte');
-    const hasRiposteSkill = (riposteDef && target.progression.isSkillUnlocked(riposteDef, target)) ||
-      (punishingDef && target.progression.isSkillUnlocked(punishingDef, target));
+    const hasRiposteSkill = dataLoader.getSkills().some(s =>
+      s.ai?.condition?.requiresRiposteReady === true && target.progression.isSkillUnlocked(s, target)
+    );
     if (!hasRiposteSkill) {
       return;
     }

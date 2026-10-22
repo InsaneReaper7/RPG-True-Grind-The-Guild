@@ -556,7 +556,7 @@ export class SkillSystem {
           healTarget = caster;
         } else if (effect.target === 'party') {
           const amt = Math.round((effect.amount ?? 20) * intMult);
-          const radius = effect.radiusTiles ?? skillDef.radiusTiles;
+          const radius = effect.radiusTiles;
           const cTile = radius !== undefined ? { x: Math.floor(caster.x / caster.tileSize), y: Math.floor(caster.y / caster.tileSize) } : null;
           for (const m of this.combatSystem.party) {
             if (m.state === 'dead' || m.state === 'downed') continue;

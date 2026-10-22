@@ -259,7 +259,7 @@ async function run() {
         fantasy: 'Immovable wall of a person',
         skills: [
           { id: 'shield_crush', level: 1, energyCost: 16, cooldownMs: 3000, role: 'rotation', priority: 30 },
-          { id: 'bulwark_stance', level: 10, energyCost: 24, cooldownMs: 18000, role: 'defensive', priority: 65 },
+          { id: 'bastion_stance', level: 10, energyCost: 24, cooldownMs: 18000, role: 'defensive', priority: 65 },
           { id: 'rally_wall', level: 20, energyCost: 28, cooldownMs: 20000, role: 'support', priority: 55 },
           { id: 'provoke_line', level: 30, energyCost: 20, cooldownMs: 12000, role: 'defensive', priority: 55 },
           { id: 'aegis_slam', level: 40, energyCost: 40, cooldownMs: 16000, role: 'finisher', priority: 70 }
@@ -287,7 +287,7 @@ async function run() {
         fantasy: 'Sustains a whole fight through sheer recovery',
         skills: [
           { id: 'vital_pulse', level: 1, energyCost: 16, cooldownMs: 3000, role: 'support', priority: 60 },
-          { id: 'second_wind', level: 10, energyCost: 26, cooldownMs: 18000, role: 'support', priority: 55 },
+          { id: 'renewing_winds', level: 10, energyCost: 26, cooldownMs: 18000, role: 'support', priority: 55 },
           { id: 'mana_tide', level: 20, energyCost: 28, cooldownMs: 24000, role: 'support', priority: 50 },
           { id: 'lifebloom_ward', level: 30, energyCost: 26, cooldownMs: 14000, role: 'support', priority: 60 },
           { id: 'vital_surge', level: 40, energyCost: 48, cooldownMs: 30000, role: 'support', priority: 75 }
@@ -330,7 +330,7 @@ async function run() {
       healPerTick?: number;
       energyRegenPerSecond?: number;
     }> = {
-      bulwark_stance: {
+      bastion_stance: {
         durationMs: 6000,
         tickIntervalMs: 6000,
         damagePerTick: 0,
@@ -352,7 +352,7 @@ async function run() {
         parryBonus: 0.25,
         counterOnHit: { consume: false }
       },
-      second_wind: {
+      renewing_winds: {
         durationMs: 8000,
         tickIntervalMs: 1000,
         damagePerTick: 0,
@@ -460,11 +460,11 @@ async function run() {
 
     const testSkills = [
       // Bulwark
-      'shield_crush', 'bulwark_stance', 'rally_wall', 'provoke_line', 'aegis_slam',
+      'shield_crush', 'bastion_stance', 'rally_wall', 'provoke_line', 'aegis_slam',
       // Riposte Master
       'feint_cut', 'riposte_stance', 'flurry_of_blades', 'perfect_counter',
       // Vitality Warden
-      'vital_pulse', 'second_wind', 'mana_tide', 'lifebloom_ward', 'vital_surge'
+      'vital_pulse', 'renewing_winds', 'mana_tide', 'lifebloom_ward', 'vital_surge'
     ];
 
     const bulwarkHero = createTestPlayer('bw_hero', 'BulwarkHero', 'bulwark', 'short_swords');
@@ -569,20 +569,20 @@ async function run() {
     const rwStatus = consciousAlly.activeStatusEffects.get('rally_wall');
     assert.strictEqual(rwStatus?.def?.damageTakenMultiplier, 0.85, 'rally_wall provides damageTakenMultiplier 0.85');
 
-    // 5b. second_wind (heal 3 per tick, tick 1000, 8s)
+    // 5b. renewing_winds (heal 3 per tick, tick 1000, 8s)
     consciousAlly.hp = consciousAlly.maxHp - 20;
     leader.hp = leader.maxHp - 20;
     downedAlly.hp = 0;
 
-    const secondWindDef = dl.getSkill('second_wind')!;
+    const renewingWindsDef = dl.getSkill('renewing_winds')!;
     consciousAlly.energy = 100;
     consciousAlly.lastSkillUseTimes.clear();
-    const swCast = skillSystem.execute(consciousAlly, secondWindDef, consciousAlly, 2000);
-    assert.strictEqual(swCast, true, 'second_wind casts successfully');
+    const swCast = skillSystem.execute(consciousAlly, renewingWindsDef, consciousAlly, 2000);
+    assert.strictEqual(swCast, true, 'renewing_winds casts successfully');
 
-    assert.strictEqual(leader.hasStatusEffect('second_wind'), true, 'Leader received second_wind');
-    assert.strictEqual(consciousAlly.hasStatusEffect('second_wind'), true, 'Conscious ally received second_wind');
-    assert.strictEqual(downedAlly.hasStatusEffect('second_wind'), false, 'Downed ally skipped by second_wind');
+    assert.strictEqual(leader.hasStatusEffect('renewing_winds'), true, 'Leader received renewing_winds');
+    assert.strictEqual(consciousAlly.hasStatusEffect('renewing_winds'), true, 'Conscious ally received renewing_winds');
+    assert.strictEqual(downedAlly.hasStatusEffect('renewing_winds'), false, 'Downed ally skipped by renewing_winds');
 
     // Advance 1 second tick:
     const leaderHpPreTick = leader.hp;
@@ -591,8 +591,8 @@ async function run() {
     consciousAlly.update(1000, 1000);
     downedAlly.update(1000, 1000);
 
-    assert.strictEqual(leader.hp - leaderHpPreTick, 3, 'Leader healed exactly 3 HP from second_wind tick');
-    assert.strictEqual(consciousAlly.hp - allyHpPreTick, 3, 'Conscious ally healed exactly 3 HP from second_wind tick');
+    assert.strictEqual(leader.hp - leaderHpPreTick, 3, 'Leader healed exactly 3 HP from renewing_winds tick');
+    assert.strictEqual(consciousAlly.hp - allyHpPreTick, 3, 'Conscious ally healed exactly 3 HP from renewing_winds tick');
     assert.strictEqual(downedAlly.hp, 0, 'Downed ally remained at 0 HP');
 
     // 5c. mana_tide (+1.0 EN/s, tick 1000, 8s)
@@ -655,9 +655,9 @@ async function run() {
 
     // Guard all 15 skills for durationMs on applyStatus
     const hybridSkillIds = [
-      'shield_crush', 'bulwark_stance', 'rally_wall', 'provoke_line', 'aegis_slam',
+      'shield_crush', 'bastion_stance', 'rally_wall', 'provoke_line', 'aegis_slam',
       'feint_cut', 'riposte_stance', 'punishing_riposte', 'flurry_of_blades', 'perfect_counter',
-      'vital_pulse', 'second_wind', 'mana_tide', 'lifebloom_ward', 'vital_surge'
+      'vital_pulse', 'renewing_winds', 'mana_tide', 'lifebloom_ward', 'vital_surge'
     ];
 
     for (const sId of hybridSkillIds) {
@@ -670,6 +670,98 @@ async function run() {
     }
 
     console.log('✓ PASS: Fillers <= +25%, finishers within 3.0-3.6x, and no applyStatus.durationMs in any kit.\n');
+  }
+
+  // ------------------------------------------------------------------------
+  // 7. Party-Heal Radius: Read only the effect's own radiusTiles
+  // ------------------------------------------------------------------------
+  console.log('7. Checking Party-Heal Radius reads only effect radiusTiles...');
+  {
+    const mockScene = createMockScene();
+    const emptyGrid = Array.from({ length: 40 }, () => new Array(40).fill(0));
+    const pathfinder = new Pathfinder(emptyGrid);
+    const combat = new CombatSystem(mockScene, pathfinder);
+    const skillSystem = new SkillSystem(combat);
+
+    // holy_nova has skill-level radiusTiles: 4, but effect.radiusTiles is undefined -> party-wide
+    // vital_surge has effect.radiusTiles: 6 -> limited to 6 tiles
+    const medic = createTestPlayer('medic', 'Medic', 'combat_medic', 'healing_staff');
+    medic.x = 10 * medic.tileSize;
+    medic.y = 10 * medic.tileSize;
+
+    const farAlly = createTestPlayer('far_ally', 'FarAlly', 'vitality_warden', 'healing_staff');
+    farAlly.x = 18 * farAlly.tileSize; // 8 tiles away
+    farAlly.y = 10 * farAlly.tileSize;
+
+    const nearAlly = createTestPlayer('near_ally', 'NearAlly', 'vitality_warden', 'healing_staff');
+    nearAlly.x = 15 * nearAlly.tileSize; // 5 tiles away
+    nearAlly.y = 10 * nearAlly.tileSize;
+
+    combat.party = [medic, farAlly, nearAlly];
+
+    // Test holy_nova: ally 8 tiles away MUST be healed
+    const holyNovaDef = dl.getSkill('holy_nova')!;
+    farAlly.hp = farAlly.maxHp - 20;
+    const farHpBeforeHolyNova = farAlly.hp;
+    medic.energy = 100;
+    medic.lastSkillUseTimes.clear();
+
+    const hnCast = skillSystem.execute(medic, holyNovaDef, medic, 1000);
+    assert.strictEqual(hnCast, true, 'holy_nova casts cleanly');
+    assert.ok(farAlly.hp > farHpBeforeHolyNova, 'holy_nova still heals an ally 8 tiles away (party-wide effect)');
+
+    // Test vital_surge: ally 8 tiles away must NOT be healed, ally 5 tiles away MUST be healed
+    const warden = createTestPlayer('warden', 'Warden', 'vitality_warden', 'healing_staff');
+    warden.x = 10 * warden.tileSize;
+    warden.y = 10 * warden.tileSize;
+    combat.party = [warden, farAlly, nearAlly];
+
+    const vitalSurgeDef = dl.getSkill('vital_surge')!;
+    farAlly.hp = farAlly.maxHp - 30;
+    nearAlly.hp = nearAlly.maxHp - 30;
+    const farHpBeforeSurge = farAlly.hp;
+    const nearHpBeforeSurge = nearAlly.hp;
+    warden.energy = 100;
+    warden.lastSkillUseTimes.clear();
+
+    const vsCast = skillSystem.execute(warden, vitalSurgeDef, warden, 2000);
+    assert.strictEqual(vsCast, true, 'vital_surge casts cleanly');
+    assert.strictEqual(farAlly.hp, farHpBeforeSurge, 'vital_surge does NOT heal an ally 8 tiles away (radius 6 exceeded)');
+    assert.ok(nearAlly.hp > nearHpBeforeSurge, 'vital_surge heals an ally 5 tiles away (within radius 6)');
+
+    console.log('✓ PASS: Party heal reads only effect.radiusTiles (holy_nova is party-wide, vital_surge is scoped to 6 tiles).\n');
+  }
+
+  // ------------------------------------------------------------------------
+  // 8. Data-Driven openRiposteWindow
+  // ------------------------------------------------------------------------
+  console.log('8. Checking Data-Driven openRiposteWindow...');
+  {
+    const mockScene = createMockScene();
+    const emptyGrid = Array.from({ length: 40 }, () => new Array(40).fill(0));
+    const pathfinder = new Pathfinder(emptyGrid);
+    const combat = new CombatSystem(mockScene, pathfinder);
+    const dummyEnemy = createTestEnemy('dummy_enemy');
+
+    // Case 1: Fencer with riposte unlocked (Fencer Lv 20) -> gets window
+    const fencerHero = createTestPlayer('fencer_hero', 'FencerHero', 'fencer', 'katana');
+    fencerHero.progression.setClassLevel('fencer', 20);
+    combat.openRiposteWindow(fencerHero, dummyEnemy);
+    assert.strictEqual(fencerHero.hasStatusEffect('riposte_window'), true, 'Fencer with unlocked riposte gets riposte_window');
+
+    // Case 2: Riposte Master with punishing_riposte unlocked (Riposte Master Lv 20) -> gets window
+    const rmHero = createTestPlayer('rm_hero_2', 'RMHero', 'riposte_master', 'katana');
+    rmHero.progression.setClassLevel('riposte_master', 20);
+    combat.openRiposteWindow(rmHero, dummyEnemy);
+    assert.strictEqual(rmHero.hasStatusEffect('riposte_window'), true, 'Riposte Master with unlocked punishing_riposte gets riposte_window');
+
+    // Case 3: Class without any requiresRiposteReady skill (e.g. Knight / Guardian) -> does NOT get window
+    const knightHero = createTestPlayer('knight_hero', 'KnightHero', 'knight', 'short_swords');
+    knightHero.progression.setClassLevel('knight', 50);
+    combat.openRiposteWindow(knightHero, dummyEnemy);
+    assert.strictEqual(knightHero.hasStatusEffect('riposte_window'), false, 'Knight without requiresRiposteReady skill does NOT get riposte_window');
+
+    console.log('✓ PASS: openRiposteWindow is data-driven by ai.condition.requiresRiposteReady.\n');
   }
 
   console.log('🎉 ALL DEFENSIVE HYBRID CLASS TESTS PASSED PERFECTLY! 🎉');
