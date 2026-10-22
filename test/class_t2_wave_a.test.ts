@@ -218,7 +218,7 @@ const t2WaveAClasses: {
     name: 'Knight',
     weaponProf: 'short_swords',
     defaultWeaponId: 'short_swords',
-    skills: ['shield_strike', 'bulwark_stance', 'valorous_strike', 'provoke', 'last_bastion']
+    skills: ['shield_strike', 'fortress_stance', 'valorous_strike', 'provoke', 'last_bastion']
   },
   {
     classId: 'paladin',
@@ -295,7 +295,7 @@ const expectedWaveATable: Record<string, {
   inquisition: { en: 44, cd: 16000, role: 'finisher', priority: 80 },
   // Knight
   shield_strike: { en: 16, cd: 3000, role: 'rotation', priority: 30 },
-  bulwark_stance: { en: 24, cd: 15000, role: 'defensive', priority: 65 },
+  fortress_stance: { en: 24, cd: 15000, role: 'defensive', priority: 65 },
   valorous_strike: { en: 30, cd: 10000, role: 'rotation', priority: 55 },
   provoke: { en: 24, cd: 12000, role: 'defensive', priority: 70, condition: { enemiesInRadius: 1 } },
   last_bastion: { en: 40, cd: 40000, role: 'defensive', priority: 95, condition: { selfHpBelow: 0.35 } },

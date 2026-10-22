@@ -1,0 +1,104 @@
+﻿=== DEFENSIVE HYBRID CLASSES TEST SUITE ===
+
+1. Testing Item 0: Hidden skill requirement evaluation in ProgressionSystem...
+Γ£ô PASS: ProgressionSystem.evaluateRequirement natively reads hidden skill levels via getProficiencyLevel at lines 406-408 in src/systems/ProgressionSystem.ts.
+
+2. Checking Expected-Table Guards for 3 Kits (Bulwark, Riposte Master, Vitality Warden)...
+Γ£ô PASS: All 3 classes, 15 skills, and 5 statuses match the expected-table specification.
+
+3. Checking Unlock Gates...
+  3a. Bulwark unlock gates (Shields 60 + Block 30 + Resilience 30)...
+[Progression] Class Unlocked: Guardian (guardian) for Guild Hero!
+[Progression] Class Unlocked: Bulwark (bulwark) for Guild Hero!
+  3b. Riposte Master unlock gates (Parry 30 + Counterattack 30 + anyOf 60)...
+[Progression] Class Unlocked: Swordsman (swordsman) for Guild Hero!
+[Progression] Class Unlocked: Riposte Master (riposte_master) for Guild Hero!
+[Progression] Class Unlocked: Fencer (fencer) for Guild Hero!
+[Progression] Class Unlocked: Riposte Master (riposte_master) for Guild Hero!
+[Progression] Class Unlocked: Squire (squire) for Guild Hero!
+[Progression] Class Unlocked: Riposte Master (riposte_master) for Guild Hero!
+[Progression] Class Unlocked: Brute (brute) for Guild Hero!
+[Progression] Class Unlocked: Riposte Master (riposte_master) for Guild Hero!
+[Progression] Class Unlocked: Lancer (lancer) for Guild Hero!
+[Progression] Class Unlocked: Riposte Master (riposte_master) for Guild Hero!
+[Progression] Class Unlocked: Cutthroat (cutthroat) for Guild Hero!
+[Progression] Class Unlocked: Riposte Master (riposte_master) for Guild Hero!
+  3c. Vitality Warden unlock gates (Health Regen 30 + Mana Regen 30 + Healing Magic 30)...
+[Progression] Class Unlocked: Medic (medic) for Guild Hero!
+[Progression] Class Unlocked: Vitality Warden (vitality_warden) for Guild Hero!
+Γ£ô PASS: All unlock gates validated correctly.
+
+4. Checking Cast Smoke Tests through SkillSystem.execute...
+[Progression] Set class 'bulwark' to Level 50 (0 EXP) on Guild Hero
+[Progression] Set class 'riposte_master' to Level 50 (0 EXP) on Guild Hero
+[Progression] Set class 'vitality_warden' to Level 50 (0 EXP) on Guild Hero
+[Progression] +2 EXP for 'short_swords' (Guild Hero). Current: Level 0 (2/50 EXP)
+[Progression] Recorded tx 'short_swords': +2 EXP for Guild Hero, resulting total: Level 0 (2/50 EXP)
+[KnowledgeBase] ≡ƒº¬ Status effect discovered: 'bulwark_stance'! (+1 RP)
+[Progression] +2 EXP for 'short_swords' (Guild Hero). Current: Level 0 (4/50 EXP)
+[Progression] Recorded tx 'short_swords': +2 EXP for Guild Hero, resulting total: Level 0 (4/50 EXP)
+[KnowledgeBase] ≡ƒº¬ Status effect discovered: 'rally_wall'! (+1 RP)
+[Progression] +2 EXP for 'short_swords' (Guild Hero). Current: Level 0 (6/50 EXP)
+[Progression] Recorded tx 'short_swords': +2 EXP for Guild Hero, resulting total: Level 0 (6/50 EXP)
+[Progression] +2 EXP for 'short_swords' (Guild Hero). Current: Level 0 (8/50 EXP)
+[Progression] Recorded tx 'short_swords': +2 EXP for Guild Hero, resulting total: Level 0 (8/50 EXP)
+[Skill] BulwarkHero casts Aegis Slam but MISSED! (Hit Chance: 60.0%, Roll: 73.5%)
+[Progression] +2 EXP for 'katana' (Guild Hero). Current: Level 0 (2/50 EXP)
+[Progression] Recorded tx 'katana': +2 EXP for Guild Hero, resulting total: Level 0 (2/50 EXP)
+[KnowledgeBase] ≡ƒº¬ Status effect discovered: 'riposte_stance'! (+1 RP)
+[Progression] +2 EXP for 'katana' (Guild Hero). Current: Level 0 (4/50 EXP)
+[Progression] Recorded tx 'katana': +2 EXP for Guild Hero, resulting total: Level 0 (4/50 EXP)
+[Skill] RiposteHero casts Flurry of Blades but MISSED! (Hit Chance: 65.0%, Roll: 69.4%)
+[StatusEffect] Applied Bleed to Training Dummy!
+[KnowledgeBase] ≡ƒº¬ Status effect discovered: 'bleed'! (+1 RP)
+[Progression] +2 EXP for 'katana' (Guild Hero). Current: Level 0 (6/50 EXP)
+[Progression] Recorded tx 'katana': +2 EXP for Guild Hero, resulting total: Level 0 (6/50 EXP)
+[KnowledgeBase] ≡ƒº¬ Status effect discovered: 'stun'! (+1 RP)
+[Progression] +2 EXP for 'staff' (Guild Hero). Current: Level 0 (2/50 EXP)
+[Progression] Recorded tx 'staff': +2 EXP for Guild Hero, resulting total: Level 0 (2/50 EXP)
+[KnowledgeBase] ≡ƒº¬ Status effect discovered: 'second_wind'! (+1 RP)
+[Progression] +2 EXP for 'staff' (Guild Hero). Current: Level 0 (4/50 EXP)
+[Progression] Recorded tx 'staff': +2 EXP for Guild Hero, resulting total: Level 0 (4/50 EXP)
+[KnowledgeBase] ≡ƒº¬ Status effect discovered: 'mana_tide'! (+1 RP)
+[Progression] +2 EXP for 'staff' (Guild Hero). Current: Level 0 (6/50 EXP)
+[Progression] Recorded tx 'staff': +2 EXP for Guild Hero, resulting total: Level 0 (6/50 EXP)
+[KnowledgeBase] ≡ƒº¬ Status effect discovered: 'lifebloom_ward'! (+1 RP)
+[KnowledgeBase] ≡ƒº¬ Status effect discovered: 'regrowth'! (+1 RP)
+[Progression] +2 EXP for 'staff' (Guild Hero). Current: Level 0 (8/50 EXP)
+[Progression] Recorded tx 'staff': +2 EXP for Guild Hero, resulting total: Level 0 (8/50 EXP)
+[Progression] +2 EXP for 'staff' (Guild Hero). Current: Level 0 (10/50 EXP)
+[Progression] Recorded tx 'staff': +2 EXP for Guild Hero, resulting total: Level 0 (10/50 EXP)
+  Γ£ô 14 skills cast cleanly via SkillSystem.execute.
+  4b. Testing punishing_riposte driven by a real parry proc...
+[Progression] +1 EXP for 'parry' (Guild Hero). Current: Level 30 (1/170 EXP)
+[Progression] Recorded tx 'parry': +1 EXP for Guild Hero, resulting total: Level 30 (1/170 EXP)
+[KnowledgeBase] ≡ƒº¬ Status effect discovered: 'riposte_window'! (+1 RP)
+[Combat] ΓÜí Riposte window opened for RiposteHero against Training Dummy!
+[KnowledgeBase] ≡ƒÉ║ First encountered enemy: 'real_attacker'! (+1 RP)
+[Bestiary] ≡ƒÉ║ First encounter with Training Dummy! (+1 RP)
+[Combat] ΓÜí COUNTERATTACK! RiposteHero retaliates against Training Dummy for 21 damage!
+[Combat] Training Dummy aggroed immediately due to damage!
+Γ£ô PASS: punishing_riposte strictly gated on real parry proc and consumes window.
+
+5. Checking Party Buffs (rally_wall, second_wind, mana_tide) reach conscious members and skip downed...
+[Progression] Set class 'bulwark' to Level 50 (0 EXP) on Guild Hero
+[Progression] Set class 'vitality_warden' to Level 50 (0 EXP) on Guild Hero
+[Progression] Set class 'vitality_warden' to Level 50 (0 EXP) on Guild Hero
+[Progression] +2 EXP for 'short_swords' (Guild Hero). Current: Level 0 (2/50 EXP)
+[Progression] Recorded tx 'short_swords': +2 EXP for Guild Hero, resulting total: Level 0 (2/50 EXP)
+[Progression] +2 EXP for 'staff' (Guild Hero). Current: Level 0 (2/50 EXP)
+[Progression] Recorded tx 'staff': +2 EXP for Guild Hero, resulting total: Level 0 (2/50 EXP)
+[HoT] Leader heals 3 HP from Second Wind!
+[DIAG:Regen] Leader | inCombat: false | Rate: 1.20 EN/s | Energy: 72.0 -> 73.2 (+1.20)
+[HoT] ConsciousAlly heals 3 HP from Second Wind!
+[DIAG:Regen] ConsciousAlly | inCombat: false | Rate: 1.20 EN/s | Energy: 74.0 -> 75.2 (+1.20)
+[Progression] +2 EXP for 'staff' (Guild Hero). Current: Level 0 (4/50 EXP)
+[Progression] Recorded tx 'staff': +2 EXP for Guild Hero, resulting total: Level 0 (4/50 EXP)
+[HoT] Leader heals 3 HP from Second Wind!
+[HoT] ConsciousAlly heals 3 HP from Second Wind!
+Γ£ô PASS: Party buffs reach conscious members, skip downed, heal 3/tick, and grant flat +1.0 EN/s.
+
+6. Checking Fillers <= +25% and No durationMs outside poison...
+Γ£ô PASS: Fillers <= +25%, finishers within 3.0-3.6x, and no applyStatus.durationMs in any kit.
+
+≡ƒÄë ALL DEFENSIVE HYBRID CLASS TESTS PASSED PERFECTLY! ≡ƒÄë

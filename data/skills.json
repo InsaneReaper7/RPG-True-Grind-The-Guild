@@ -2822,8 +2822,8 @@
       }
     },
     {
-      "id": "second_wind",
-      "name": "Second Wind",
+      "id": "catch_breath",
+      "name": "Catch Breath",
       "energyCost": 20,
       "cooldownMs": 20000,
       "targetType": "self",
@@ -8783,8 +8783,8 @@
       ]
     },
     {
-      "id": "bulwark_stance",
-      "name": "Bulwark Stance",
+      "id": "fortress_stance",
+      "name": "Fortress Stance",
       "energyCost": 24,
       "cooldownMs": 15000,
       "targetType": "self",
@@ -8795,7 +8795,7 @@
           "value": 10
         }
       ],
-      "description": "Takes a fortified bulwark stance reducing damage taken to 60% (DT 0.6) for 6s on the caster.",
+      "description": "Takes a fortified stance reducing damage taken to 60% (DT 0.6) for 6s on the caster.",
       "ai": {
         "role": "defensive",
         "priority": 65
@@ -14858,6 +14858,461 @@
           "status": "poison",
           "chance": 1,
           "durationMs": 6000
+        }
+      ]
+    },
+    {
+      "id": "shield_crush",
+      "name": "Shield Crush",
+      "energyCost": 16,
+      "cooldownMs": 3000,
+      "targetType": "enemy",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "bulwark",
+          "value": 1
+        }
+      ],
+      "description": "Strike with your shield dealing 130% weapon damage with a 15% chance to stun.",
+      "ai": {
+        "role": "rotation",
+        "priority": 30
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 1.3,
+          "scaling": "weapon"
+        },
+        {
+          "type": "applyStatus",
+          "status": "stun",
+          "chance": 0.15
+        }
+      ]
+    },
+    {
+      "id": "bulwark_stance",
+      "name": "Bulwark Stance",
+      "energyCost": 24,
+      "cooldownMs": 18000,
+      "targetType": "self",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "bulwark",
+          "value": 10
+        }
+      ],
+      "description": "Take a stalwart defensive stance reducing damage taken by 40% for 6s.",
+      "ai": {
+        "role": "defensive",
+        "priority": 65
+      },
+      "effects": [
+        {
+          "type": "buff",
+          "status": "bulwark_stance",
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "rally_wall",
+      "name": "Rally Wall",
+      "energyCost": 28,
+      "cooldownMs": 20000,
+      "targetType": "self",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "bulwark",
+          "value": 20
+        }
+      ],
+      "description": "Form an immovable front, granting conscious party members 15% damage reduction for 8s.",
+      "ai": {
+        "role": "support",
+        "priority": 55
+      },
+      "effects": [
+        {
+          "type": "buff",
+          "status": "rally_wall",
+          "target": "party"
+        }
+      ]
+    },
+    {
+      "id": "provoke_line",
+      "name": "Provoke Line",
+      "energyCost": 20,
+      "cooldownMs": 12000,
+      "radiusTiles": 3,
+      "targetType": "self",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "bulwark",
+          "value": 30
+        }
+      ],
+      "description": "Roar a ferocious challenge taunting all enemies within 3 tiles for 5s.",
+      "ai": {
+        "role": "defensive",
+        "priority": 55,
+        "condition": {
+          "enemiesInRadius": 2
+        }
+      },
+      "effects": [
+        {
+          "type": "taunt",
+          "radiusTiles": 3,
+          "durationMs": 5000
+        }
+      ]
+    },
+    {
+      "id": "aegis_slam",
+      "name": "Aegis Slam",
+      "energyCost": 40,
+      "cooldownMs": 16000,
+      "radiusTiles": 1.5,
+      "targetType": "enemy",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "bulwark",
+          "value": 40
+        }
+      ],
+      "description": "Slam your reinforced aegis dealing 300% weapon damage in a 1.5 tile radius with a 50% chance to stun.",
+      "ai": {
+        "role": "finisher",
+        "priority": 70
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 3.0,
+          "scaling": "weapon",
+          "area": {
+            "shape": "radius",
+            "radius": 1.5,
+            "center": "target"
+          }
+        },
+        {
+          "type": "applyStatus",
+          "status": "stun",
+          "chance": 0.5
+        }
+      ]
+    },
+    {
+      "id": "feint_cut",
+      "name": "Feint Cut",
+      "energyCost": 16,
+      "cooldownMs": 3000,
+      "targetType": "enemy",
+      "accuracyBonus": 0.2,
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "riposte_master",
+          "value": 1
+        }
+      ],
+      "description": "A deceptive cut with +20% accuracy dealing 140% weapon damage.",
+      "ai": {
+        "role": "rotation",
+        "priority": 30
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 1.4,
+          "scaling": "weapon",
+          "accuracyBonus": 0.2
+        }
+      ]
+    },
+    {
+      "id": "riposte_stance",
+      "name": "Riposte Stance",
+      "energyCost": 24,
+      "cooldownMs": 18000,
+      "targetType": "self",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "riposte_master",
+          "value": 10
+        }
+      ],
+      "description": "Ready your weapon for instant retribution, gaining +25% parry chance and countering on hit for 6s.",
+      "ai": {
+        "role": "defensive",
+        "priority": 60
+      },
+      "effects": [
+        {
+          "type": "buff",
+          "status": "riposte_stance",
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "punishing_riposte",
+      "name": "Punishing Riposte",
+      "energyCost": 18,
+      "cooldownMs": 4000,
+      "targetType": "enemy",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "riposte_master",
+          "value": 20
+        }
+      ],
+      "description": "Retaliate with precision during a riposte opening, dealing 240% weapon damage.",
+      "ai": {
+        "role": "rotation",
+        "priority": 65,
+        "condition": {
+          "requiresRiposteReady": true
+        }
+      },
+      "effects": [
+        {
+          "type": "reactive",
+          "windowStatus": "riposte_window"
+        },
+        {
+          "type": "consumeStatus",
+          "status": "riposte_window"
+        },
+        {
+          "type": "damage",
+          "multiplier": 2.4,
+          "scaling": "weapon",
+          "asCounterattack": true
+        }
+      ]
+    },
+    {
+      "id": "flurry_of_blades",
+      "name": "Flurry of Blades",
+      "energyCost": 26,
+      "cooldownMs": 10000,
+      "targetType": "enemy",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "riposte_master",
+          "value": 30
+        }
+      ],
+      "description": "Unleash a rapid sequence of 3 strikes dealing 90% weapon damage per strike.",
+      "ai": {
+        "role": "rotation",
+        "priority": 45
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 0.9,
+          "hits": 3,
+          "scaling": "weapon"
+        }
+      ]
+    },
+    {
+      "id": "perfect_counter",
+      "name": "Perfect Counter",
+      "energyCost": 40,
+      "cooldownMs": 16000,
+      "targetType": "enemy",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "riposte_master",
+          "value": 40
+        }
+      ],
+      "description": "Execute a flawless finishing counterstrike dealing 360% weapon damage with a 50% chance to stun.",
+      "ai": {
+        "role": "finisher",
+        "priority": 70
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "multiplier": 3.6,
+          "scaling": "weapon"
+        },
+        {
+          "type": "applyStatus",
+          "status": "stun",
+          "chance": 0.5
+        }
+      ]
+    },
+    {
+      "id": "vital_pulse",
+      "name": "Vital Pulse",
+      "energyCost": 16,
+      "cooldownMs": 3000,
+      "targetType": "friendly",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "vitality_warden",
+          "value": 1
+        }
+      ],
+      "description": "Send a focused wave of restorative vital energy healing the lowest health ally for 18 HP.",
+      "ai": {
+        "role": "support",
+        "priority": 60,
+        "condition": {
+          "allyHpBelow": 0.7
+        },
+        "allyHpBelow": 0.7
+      },
+      "effects": [
+        {
+          "type": "heal",
+          "amount": 18,
+          "target": "lowestAlly"
+        }
+      ]
+    },
+    {
+      "id": "second_wind",
+      "name": "Second Wind",
+      "energyCost": 26,
+      "cooldownMs": 18000,
+      "targetType": "self",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "vitality_warden",
+          "value": 10
+        }
+      ],
+      "description": "Breathe new vigor into the party, healing 3 HP every second for 8s to all conscious allies.",
+      "ai": {
+        "role": "support",
+        "priority": 55,
+        "condition": {
+          "allyHpBelow": 0.7
+        },
+        "allyHpBelow": 0.7
+      },
+      "effects": [
+        {
+          "type": "buff",
+          "status": "second_wind",
+          "target": "party"
+        }
+      ]
+    },
+    {
+      "id": "mana_tide",
+      "name": "Mana Tide",
+      "energyCost": 28,
+      "cooldownMs": 24000,
+      "targetType": "self",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "vitality_warden",
+          "value": 20
+        }
+      ],
+      "description": "Channel a surge of ambient leylines granting all conscious party members +1.0 Energy regen per second for 8s.",
+      "ai": {
+        "role": "support",
+        "priority": 50
+      },
+      "effects": [
+        {
+          "type": "buff",
+          "status": "mana_tide",
+          "target": "party"
+        }
+      ]
+    },
+    {
+      "id": "lifebloom_ward",
+      "name": "Lifebloom Ward",
+      "energyCost": 26,
+      "cooldownMs": 14000,
+      "targetType": "friendly",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "vitality_warden",
+          "value": 30
+        }
+      ],
+      "description": "Surround the lowest health ally with a 50 HP protective barrier and apply regrowth.",
+      "ai": {
+        "role": "support",
+        "priority": 60,
+        "condition": {
+          "allyHpBelow": 0.7
+        },
+        "allyHpBelow": 0.7
+      },
+      "effects": [
+        {
+          "type": "shield",
+          "shieldAmount": 50,
+          "durationMs": 8000,
+          "target": "lowestAlly"
+        },
+        {
+          "type": "applyStatus",
+          "status": "regrowth",
+          "chance": 1,
+          "target": "lowestAlly"
+        }
+      ]
+    },
+    {
+      "id": "vital_surge",
+      "name": "Vital Surge",
+      "energyCost": 48,
+      "cooldownMs": 30000,
+      "radiusTiles": 6,
+      "targetType": "self",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "vitality_warden",
+          "value": 40
+        }
+      ],
+      "description": "Release a transcendent burst of regenerative essence healing all party members within 6 tiles for 60 HP.",
+      "ai": {
+        "role": "support",
+        "priority": 75,
+        "condition": {
+          "allyHpBelow": 0.5
+        },
+        "allyHpBelow": 0.5
+      },
+      "effects": [
+        {
+          "type": "heal",
+          "amount": 60,
+          "target": "party",
+          "radiusTiles": 6
         }
       ]
     }

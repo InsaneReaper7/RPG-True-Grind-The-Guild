@@ -445,6 +445,59 @@
       "shieldAmount": 40,
       "isHarmful": false,
       "color": "#38bdf8"
+    },
+    {
+      "id": "bulwark_stance",
+      "name": "Bulwark Stance",
+      "durationMs": 6000,
+      "tickIntervalMs": 6000,
+      "damagePerTick": 0,
+      "damageTakenMultiplier": 0.6,
+      "isHarmful": false,
+      "color": "#3b82f6"
+    },
+    {
+      "id": "rally_wall",
+      "name": "Rally Wall",
+      "durationMs": 8000,
+      "tickIntervalMs": 8000,
+      "damagePerTick": 0,
+      "damageTakenMultiplier": 0.85,
+      "isHarmful": false,
+      "color": "#3b82f6"
+    },
+    {
+      "id": "riposte_stance",
+      "name": "Riposte Stance",
+      "durationMs": 6000,
+      "tickIntervalMs": 6000,
+      "damagePerTick": 0,
+      "parryBonus": 0.25,
+      "counterOnHit": {
+        "consume": false
+      },
+      "isHarmful": false,
+      "color": "#eab308"
+    },
+    {
+      "id": "second_wind",
+      "name": "Second Wind",
+      "durationMs": 8000,
+      "tickIntervalMs": 1000,
+      "damagePerTick": 0,
+      "healPerTick": 3,
+      "isHarmful": false,
+      "color": "#22c55e"
+    },
+    {
+      "id": "mana_tide",
+      "name": "Mana Tide",
+      "durationMs": 8000,
+      "tickIntervalMs": 1000,
+      "damagePerTick": 0,
+      "energyRegenPerSecond": 1.0,
+      "isHarmful": false,
+      "color": "#38bdf8"
     }
   ]
 }

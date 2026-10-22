@@ -175,7 +175,7 @@ const wave1Classes: { classId: string; weaponProf: string; defaultWeaponId: stri
     classId: 'squire',
     weaponProf: 'longswords',
     defaultWeaponId: 'longsword_1h',
-    skills: ['measured_cut', 'sunder', 'wide_swing', 'second_wind', 'valiant_strike']
+    skills: ['measured_cut', 'sunder', 'wide_swing', 'catch_breath', 'valiant_strike']
   },
   {
     classId: 'brute',

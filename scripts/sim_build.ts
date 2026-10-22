@@ -167,8 +167,12 @@ export function chooseWeaponId(classDef: any, profs: string[], classSkills: any[
     chosenWeaponId = 'dark_staff';
   } else if (['grove_walker', 'herbalist', 'druid', 'natures_avatar', 'archdruid'].includes(classDef.id)) {
     chosenWeaponId = 'druid_staff';
-  } else if (classDef.id === 'guardian') {
+  } else if (classDef.id === 'guardian' || classDef.id === 'bulwark') {
     chosenWeaponId = 'short_swords';
+  } else if (classDef.id === 'riposte_master') {
+    chosenWeaponId = 'katana';
+  } else if (classDef.id === 'vitality_warden') {
+    chosenWeaponId = 'healing_staff';
   } else if (hasWeaponScaling) {
     const firstWpnProf = profs.find(p => weaponProfList.includes(p) && p !== 'shields');
     if (firstWpnProf && profToWeapon[firstWpnProf]) {

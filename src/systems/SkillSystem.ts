@@ -556,13 +556,20 @@ export class SkillSystem {
           healTarget = caster;
         } else if (effect.target === 'party') {
           const amt = Math.round((effect.amount ?? 20) * intMult);
+          const radius = effect.radiusTiles ?? skillDef.radiusTiles;
+          const cTile = radius !== undefined ? { x: Math.floor(caster.x / caster.tileSize), y: Math.floor(caster.y / caster.tileSize) } : null;
           for (const m of this.combatSystem.party) {
             if (m.state === 'dead' || m.state === 'downed') continue;
+            if (cTile && radius !== undefined) {
+              const mTile = { x: Math.floor(m.x / m.tileSize), y: Math.floor(m.y / m.tileSize) };
+              const dist = Math.max(Math.abs(cTile.x - mTile.x), Math.abs(cTile.y - mTile.y));
+              if (dist > radius) continue;
+            }
             const res = m.heal(amt);
             this.combatSystem.createHealEffect(m.x, m.y);
             this.combatSystem.createFloatingText(m.x, m.y - 12, `+${res} HP`, '#22c55e');
           }
-          return;
+          break;
         } else {
           healTarget = this.resolveAllyTarget(caster, target, effect.target);
         }

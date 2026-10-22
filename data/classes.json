@@ -3034,6 +3034,94 @@
         "health_regen": 0.05
       },
       "spellDamageMultiplier": 1.40
+    },
+    {
+      "id": "bulwark",
+      "name": "Bulwark",
+      "tier": "expert",
+      "primaryAttribute": "str",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "shields",
+          "value": 60
+        },
+        {
+          "type": "proficiency",
+          "target": "block",
+          "value": 30
+        },
+        {
+          "type": "proficiency",
+          "target": "resilience",
+          "value": 30
+        }
+      ],
+      "fantasy": "Immovable wall of a person",
+      "hiddenSkillBonuses": {
+        "block": 0.08
+      }
+    },
+    {
+      "id": "riposte_master",
+      "name": "Riposte Master",
+      "tier": "expert",
+      "primaryAttribute": "str",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "parry",
+          "value": 30
+        },
+        {
+          "type": "proficiency",
+          "target": "counterattack",
+          "value": 30
+        },
+        {
+          "type": "anyOf",
+          "count": 1,
+          "of": [
+            { "type": "proficiency", "target": "katana", "value": 60 },
+            { "type": "proficiency", "target": "short_swords", "value": 60 },
+            { "type": "proficiency", "target": "longswords", "value": 60 },
+            { "type": "proficiency", "target": "greatswords", "value": 60 },
+            { "type": "proficiency", "target": "spears", "value": 60 },
+            { "type": "proficiency", "target": "daggers", "value": 60 }
+          ]
+        }
+      ],
+      "fantasy": "Punishes every mistake an enemy makes",
+      "hiddenSkillBonuses": {
+        "parry": 0.08
+      }
+    },
+    {
+      "id": "vitality_warden",
+      "name": "Vitality Warden",
+      "tier": "expert",
+      "primaryAttribute": "int",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "health_regen",
+          "value": 30
+        },
+        {
+          "type": "proficiency",
+          "target": "mana_regen",
+          "value": 30
+        },
+        {
+          "type": "proficiency",
+          "target": "healing_magic",
+          "value": 30
+        }
+      ],
+      "fantasy": "Sustains a whole fight through sheer recovery",
+      "hiddenSkillBonuses": {
+        "health_regen": 0.08
+      }
     }
   ]
 }

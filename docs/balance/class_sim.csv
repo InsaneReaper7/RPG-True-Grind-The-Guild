@@ -89,3 +89,6 @@ battlesmith,expert,mace,45.3,93.1,0,0,11,50,220,3.3,40.9,blacksmithing;katana,jo
 runeblade,expert,longsword_1h,51.9,79,0,0,19.3,44,369.3,12.3,46.6,enchanting;arcane_magic,journeyman_enchanter;apprentice_enchanter
 alchemical_bomber,expert,throwing_weapons,51,106.4,0,0,9,58,200,1.8,42.7,alchemy;throwing_weapons,journeyman_alchemist;apprentice_alchemist
 herbwarden,expert,nature_staff,41.8,65.9,0.3,2.9,6,53,322,4.8,39.6,gardening;foraging;nature_magic,
+bulwark,expert,short_swords,52.6,78.1,0,0,11,52,200,1.5,50.4,shields;block;resilience,
+riposte_master,expert,katana,79.8,121.1,0,0,9,64,178,2.3,60.4,parry;counterattack;katana,
+vitality_warden,expert,healing_staff,0.6,0,33.7,43.5,18,46,517.3,7.3,0.6,health_regen;mana_regen;healing_magic,
