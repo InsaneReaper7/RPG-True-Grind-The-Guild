@@ -1657,6 +1657,7 @@ export class GameState {
       classStats: progData.classStats,
       activeClass: player.activeClass,
       activityCounts: progData.activityCounts,
+          triggerCounts: (progData as any).triggerCounts,
       resources: { ...this.resources },
       placedBuildables: [...this.placedBuildables],
       researchPoints: this.researchPoints,
@@ -1814,6 +1815,7 @@ export class GameState {
       classLevels: snap.classLevels,
       unlockedClasses: snap.unlockedClasses,
       activityCounts: snap.activityCounts,
+        triggerCounts: (snap as any).triggerCounts,
       classStats: snap.classStats
     });
 

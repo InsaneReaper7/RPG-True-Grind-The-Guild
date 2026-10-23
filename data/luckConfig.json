@@ -1,0 +1,19 @@
+{
+  "baseProcChance": 0.01,
+  "procChancePerLevel": 0.002,
+  "fortuneTriggerChance": 0.05,
+  "ladyFortuneExpPerLuckProc": 5,
+  "ladyFortuneExpPerFortuneTrigger": 50,
+  "fortunesFavorMultiplierPerPerk": 2.0,
+  "goldenTouchIngredientDropChancePerPerk": 1.0,
+  "jackpotExtraRollMultiplier": 2,
+  "fortunesShieldChancePerPerk": 0.5,
+  "fortunesShieldMaxChance": 0.075,
+  "fortunesBlessingDamageBonus": 0.05,
+  "fortunesBlessingDurationMs": 15000,
+  "critChanceBase": 0.01,
+  "critChancePerLevel": 0.002,
+  "critDamageBaseMultiplier": 1.5,
+  "critDamagePerLevelMultiplier": 0.005,
+  "lifeStealPerLevel": 0.001
+}

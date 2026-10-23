@@ -101,21 +101,23 @@ export class Player extends Entity {
     avatarKey: string = 'player-avatar',
     progression?: ProgressionSystem
   ) {
+    const initialMaxHp = playerData.maxHp ?? (playerData as any).hp ?? 100;
+    const initialCritHpMax = playerData.criticalHpMax ?? (playerData as any).criticalHp ?? 25;
     super(
       scene,
       x,
       y,
       avatarKey,
       playerData.name,
-      playerData.maxHp,
-      playerData.criticalHpMax,
+      initialMaxHp,
+      initialCritHpMax,
       tileSize
     );
 
     this.id = playerData.id || 'hero';
     this.isPartyMember = true;
-    this.baseMaxHp = playerData.maxHp;
-    this.baseMaxCriticalHp = playerData.criticalHpMax ?? 25;
+    this.baseMaxHp = initialMaxHp;
+    this.baseMaxCriticalHp = initialCritHpMax;
     this.avatarTextureKey = avatarKey;
     this.moveSpeed = playerData.moveSpeed;
     this.equippedWeapon = startingWeapon ?? DataLoader.getInstance().getWeapon('fist') ?? DataLoader.getInstance().getWeapon('short_swords')!;
@@ -1418,6 +1420,7 @@ export class Player extends Entity {
       classStats: progData.classStats,
       unlockedClasses: progData.unlockedClasses,
       activityCounts: progData.activityCounts,
+      triggerCounts: (progData as any).triggerCounts,
       bookLearnedSkills: Array.from(this.bookLearnedSkills),
       hunger: (!dataLoader.isHungerEnabled() && this.savedHunger !== undefined) ? this.savedHunger : this.hunger,
       mood: (!dataLoader.isMoodEnabled() && this.savedMood !== undefined) ? this.savedMood : this.mood,
@@ -1524,7 +1527,8 @@ export class Player extends Entity {
       classLevels: snapshot.classLevels,
       classStats: snapshot.classStats,
       unlockedClasses: snapshot.unlockedClasses,
-      activityCounts: snapshot.activityCounts
+      activityCounts: snapshot.activityCounts,
+        triggerCounts: (snapshot as any).triggerCounts
     });
     this.checkSkillUnlocks();
 

@@ -1,3 +1,4 @@
+import { HiddenSkillSystem } from './HiddenSkillSystem.ts';
 import { GameState } from './GameState.ts';
 import { ProgressionSystem } from './ProgressionSystem.ts';
 import { DataLoader } from '../utils/DataLoader.ts';
@@ -194,7 +195,8 @@ export class LockpickingSystem {
     memberProgression: ProgressionSystem,
     memberName: string = 'Guild Hero',
     rng: () => number = Math.random,
-    playerEntity?: any
+    playerEntity?: any,
+    luckRng?: () => number
   ): LockpickAttemptResult {
     const gameState = GameState.getInstance();
 
@@ -230,6 +232,44 @@ export class LockpickingSystem {
         boxBroken: false,
         boxPreserved: false
       };
+    }
+
+    const lRng = luckRng || Math.random;
+    let cantBreakPick = false;
+    if (memberProgression) {
+      const luckDef = HiddenSkillSystem.getInstance().getSkillDef('luck');
+      if (luckDef) {
+        const res = HiddenSkillSystem.getInstance().rollProc(luckDef, { inCombat: false }, memberProgression, lRng);
+        if (res.procced) {
+          const luckCfg = DataLoader.getInstance().getLuckConfig();
+          if (lRng() < (luckCfg.fortuneTriggerChance ?? 0.05)) {
+            cantBreakPick = true;
+            memberProgression.recordTrigger('Fortune Trigger', 1);
+            if (memberProgression.isClassUnlocked('lady_fortune')) {
+              memberProgression.addClassExp('lady_fortune', luckCfg.ladyFortuneExpPerFortuneTrigger ?? 50);
+            }
+            const msg = `✨ Fortune smiles on ${memberName}!`;
+            if (playerEntity && typeof playerEntity.scene?.createFloatingText === 'function') {
+              playerEntity.scene.createFloatingText(playerEntity.x, playerEntity.y - 40, msg, '#facc15');
+            }
+            const hud = (playerEntity?.scene as any)?.hud || (globalThis as any).activeHUD;
+            if (hud && typeof hud.showToast === 'function') {
+              hud.showToast(msg, 'success', 3500);
+            }
+            if (memberProgression.isClassUnlocked('lady_fortune') && memberProgression.getClassLevel('lady_fortune') >= 40) {
+              const party = playerEntity?.getPartyMembers?.() || (playerEntity ? [playerEntity] : []);
+              const blessingDef = DataLoader.getInstance().getStatusEffect('fortunes_blessing');
+              if (blessingDef) {
+                for (const member of party) {
+                  if (member.state !== 'dead' && member.state !== 'downed') {
+                    member.applyStatusEffect(blessingDef);
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     }
 
     const maxRolls = Math.min(3, availableLockpicks);
@@ -346,7 +386,7 @@ export class LockpickingSystem {
           }
         }
 
-        if (!pickSaved) {
+        if (!pickSaved && !cantBreakPick) {
           if (playerEntity && typeof playerEntity.consumeCarriedConsumable === 'function') {
             playerEntity.consumeCarriedConsumable('lockpick', 1);
           } else {

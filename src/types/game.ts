@@ -341,6 +341,7 @@ export interface CharacterSnapshot {
   activeClass?: string | null;
   unlockedClasses: string[];
   activityCounts?: Record<string, number>;
+  triggerCounts?: Record<string, number>;
   bookLearnedSkills?: string[];
   hunger?: number;
   mood?: number;
@@ -361,6 +362,7 @@ export interface PlayerSnapshot {
   activeClass?: string | null;
   unlockedClasses: string[];
   activityCounts?: Record<string, number>;
+  triggerCounts?: Record<string, number>;
   resources: {
     wood: number;
     ore?: number;
@@ -745,6 +747,7 @@ export interface SkillEffectDamage {
 export interface SkillEffectApplyStatus {
   type: 'applyStatus';
   status: string;
+  target?: 'self' | 'lowestAlly' | 'target';
   chance?: number;
   durationMs?: number;
   durationOverrideReason?: string;
@@ -1419,4 +1422,24 @@ export interface CraftingRanksData {
     grandmaster: { unlockProficiency: number; unlockPrereqLevel: number; perkCap: number; exceptionalGearBonusPercent: number; exceptionalStackableYieldMultiplier: number };
   };
   professions: Record<string, { apprentice: string; journeyman: string; master: string; grandmaster: string }>;
+}
+
+export interface LuckConfig {
+  baseProcChance: number;
+  procChancePerLevel: number;
+  fortuneTriggerChance: number;
+  ladyFortuneExpPerLuckProc: number;
+  ladyFortuneExpPerFortuneTrigger: number;
+  fortunesFavorMultiplierPerPerk: number;
+  goldenTouchIngredientDropChancePerPerk: number;
+  jackpotExtraRollMultiplier: number;
+  fortunesShieldChancePerPerk: number;
+  fortunesShieldMaxChance: number;
+  fortunesBlessingDamageBonus: number;
+  fortunesBlessingDurationMs: number;
+  critChanceBase: number;
+  critChancePerLevel: number;
+  critDamageBaseMultiplier: number;
+  critDamagePerLevelMultiplier: number;
+  lifeStealPerLevel: number;
 }

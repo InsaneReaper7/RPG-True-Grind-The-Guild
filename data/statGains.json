@@ -2,78 +2,158 @@
   "categories": {
     "weapon": {
       "maxHpPerLevel": 0.5,
-      "maxEnergyPerLevel": 0.0,
+      "maxEnergyPerLevel": 0,
       "inCombatEnergyRegenPerLevel": 0.005
     },
     "magic": {
-      "maxHpPerLevel": 0.0,
+      "maxHpPerLevel": 0,
       "maxEnergyPerLevel": 0.5,
       "inCombatEnergyRegenPerLevel": 0.02
     },
     "profession": {
       "maxHpPerLevel": 0.1,
       "maxEnergyPerLevel": 0.1,
-      "inCombatEnergyRegenPerLevel": 0.0
+      "inCombatEnergyRegenPerLevel": 0
     },
     "classLevel": {
       "maxHpPerLevel": 0.2,
-      "maxEnergyPerLevel": 0.0,
+      "maxEnergyPerLevel": 0,
       "inCombatEnergyRegenPerLevel": 0.002
     },
     "armor": {
       "maxHpPerLevel": 0.3,
-      "maxEnergyPerLevel": 0.0,
-      "inCombatEnergyRegenPerLevel": 0.0
+      "maxEnergyPerLevel": 0,
+      "inCombatEnergyRegenPerLevel": 0
     }
   },
   "criticalHpMultiplier": 0.5,
   "baseAttributes": {
-    "str": 1.0,
-    "dex": 1.0,
-    "int": 1.0
+    "str": 1,
+    "dex": 1,
+    "int": 1
   },
   "damageMultiplierPerAttributePoint": 0.02,
   "classLevelAttributeGain": 0.02,
   "attributeGains": {
-    "short_swords": { "str": 0.1 },
-    "longswords": { "str": 0.1 },
-    "greatswords": { "str": 0.1 },
-    "katana": { "str": 0.1 },
-    "daggers": { "str": 0.1 },
-    "mace": { "str": 0.1 },
-    "spears": { "str": 0.1 },
-    "fist": { "str": 0.1 },
-    "staff": { "str": 0.1 },
-    "shields": { "str": 0.1 },
-    "bows": { "dex": 0.1 },
-    "crossbows": { "dex": 0.1 },
-    "throwing_weapons": { "dex": 0.1 },
-    "healing_magic": { "int": 0.1 },
-    "fire_magic": { "int": 0.1 },
-    "lightning_magic": { "int": 0.1 },
-    "ice_magic": { "int": 0.1 },
-    "holy_magic": { "int": 0.1 },
-    "dark_magic": { "int": 0.1 },
-    "arcane_magic": { "int": 0.1 },
-    "water_magic": { "int": 0.1 },
-    "earth_magic": { "int": 0.1 },
-    "nature_magic": { "int": 0.1 },
-    "wind_magic": { "int": 0.1 },
-    "druid_staff": { "str": 0.05, "int": 0.05 },
-    "blacksmithing": { "str": 0.02 },
-    "armorsmithing": { "str": 0.02 },
-    "mining": { "str": 0.02 },
-    "woodcutting": { "str": 0.02 },
-    "construction": { "str": 0.02 },
-    "bowyer": { "dex": 0.02 },
-    "fishing": { "dex": 0.02 },
-    "lockpicking": { "dex": 0.02 },
-    "skinning": { "dex": 0.02 },
-    "enchanting": { "int": 0.02 },
-    "alchemy": { "int": 0.02 },
-    "light_armor": { "dex": 0.05 },
-    "medium_armor": { "str": 0.025, "dex": 0.025 },
-    "heavy_armor": { "str": 0.05 }
+    "short_swords": {
+      "str": 0.1
+    },
+    "longswords": {
+      "str": 0.1
+    },
+    "greatswords": {
+      "str": 0.1
+    },
+    "katana": {
+      "str": 0.1
+    },
+    "daggers": {
+      "str": 0.1
+    },
+    "mace": {
+      "str": 0.1
+    },
+    "spears": {
+      "str": 0.1
+    },
+    "fist": {
+      "str": 0.1
+    },
+    "staff": {
+      "str": 0.1
+    },
+    "shields": {
+      "str": 0.1
+    },
+    "bows": {
+      "dex": 0.1
+    },
+    "crossbows": {
+      "dex": 0.1
+    },
+    "throwing_weapons": {
+      "dex": 0.1
+    },
+    "healing_magic": {
+      "int": 0.1
+    },
+    "fire_magic": {
+      "int": 0.1
+    },
+    "lightning_magic": {
+      "int": 0.1
+    },
+    "ice_magic": {
+      "int": 0.1
+    },
+    "holy_magic": {
+      "int": 0.1
+    },
+    "dark_magic": {
+      "int": 0.1
+    },
+    "arcane_magic": {
+      "int": 0.1
+    },
+    "water_magic": {
+      "int": 0.1
+    },
+    "earth_magic": {
+      "int": 0.1
+    },
+    "nature_magic": {
+      "int": 0.1
+    },
+    "wind_magic": {
+      "int": 0.1
+    },
+    "druid_staff": {
+      "str": 0.05,
+      "int": 0.05
+    },
+    "blacksmithing": {
+      "str": 0.02
+    },
+    "armorsmithing": {
+      "str": 0.02
+    },
+    "mining": {
+      "str": 0.02
+    },
+    "woodcutting": {
+      "str": 0.02
+    },
+    "construction": {
+      "str": 0.02
+    },
+    "bowyer": {
+      "dex": 0.02
+    },
+    "fishing": {
+      "dex": 0.02
+    },
+    "lockpicking": {
+      "dex": 0.02
+    },
+    "skinning": {
+      "dex": 0.02
+    },
+    "enchanting": {
+      "int": 0.02
+    },
+    "alchemy": {
+      "int": 0.02
+    },
+    "light_armor": {
+      "dex": 0.05
+    },
+    "medium_armor": {
+      "str": 0.025,
+      "dex": 0.025
+    },
+    "heavy_armor": {
+      "str": 0.05
+    }
   },
   "assignments": {
     "short_swords": "weapon",
@@ -131,6 +211,9 @@
     "dual_wielding": "excluded",
     "light_armor": "armor",
     "medium_armor": "armor",
-    "heavy_armor": "armor"
+    "heavy_armor": "armor",
+    "luck": "excluded",
+    "critical_strike": "excluded",
+    "life_steal": "excluded"
   }
 }

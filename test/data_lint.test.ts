@@ -15,6 +15,7 @@ const statusEffectsData = JSON.parse(fs.readFileSync(path.join(rootDir, 'data/st
 const playerData = JSON.parse(fs.readFileSync(path.join(rootDir, 'data/player.json'), 'utf8'));
 const weaponsData = JSON.parse(fs.readFileSync(path.join(rootDir, 'data/weapons.json'), 'utf8'));
 const statGainsData = JSON.parse(fs.readFileSync(path.join(rootDir, 'data/statGains.json'), 'utf8'));
+const hiddenSkillsData = JSON.parse(fs.readFileSync(path.join(rootDir, 'data/hiddenSkills.json'), 'utf8'));
 
 console.log('=== DATA LINT GLOBAL GUARD TEST ===\n');
 
@@ -107,6 +108,11 @@ const validProficiencies = new Set<string>([
   'evasion', 'parry', 'block', 'counterattack', 'resilience',
   'health_regen', 'mana_regen', 'energy_regen', 'dual_wielding'
 ]);
+
+// Include hidden skills
+for (const h of hiddenSkillsData.hiddenSkills) {
+  if (h.id) validProficiencies.add(h.id);
+}
 
 // Include weapons categories and IDs
 for (const w of weaponsData.weapons) {

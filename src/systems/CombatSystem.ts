@@ -30,6 +30,18 @@ export class CombatSystem {
   private wasInCombat: boolean = false;
   private materialLootRng?: () => number;
   private cookingLootRng?: () => number;
+  private static createPassiveRng(seed: number): () => number {
+    let s = seed >>> 0;
+    return () => {
+      s |= 0;
+      s = (s + 0x6d2b79f5) | 0;
+      let t = Math.imul(s ^ (s >>> 15), 1 | s);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  private luckRng: () => number = CombatSystem.createPassiveRng(0x7f4a7c15);
+  private combatPassiveRng: () => number = CombatSystem.createPassiveRng(0x9e3779b9);
   private enableCookingDrops: boolean = true;
   private combatStartTimeMs: number = 0;
   private damageDealtByMember: Map<string, number> = new Map();
@@ -67,6 +79,22 @@ export class CombatSystem {
 
   public setCookingLootRng(rng: (() => number) | undefined): void {
     this.cookingLootRng = rng;
+  }
+
+  public setLuckRng(rng: (() => number) | undefined): void {
+    this.luckRng = rng ?? CombatSystem.createPassiveRng(0x7f4a7c15);
+  }
+
+  public getLuckRng(): () => number {
+    return this.luckRng;
+  }
+
+  public setCombatPassiveRng(rng: (() => number) | undefined): void {
+    this.combatPassiveRng = rng ?? CombatSystem.createPassiveRng(0x9e3779b9);
+  }
+
+  public getCombatPassiveRng(): () => number {
+    return this.combatPassiveRng;
   }
 
   public setEnableCookingDrops(enabled: boolean): void {
@@ -878,6 +906,27 @@ export class CombatSystem {
                   target?.awardArmorWearExp?.('hit');
 
                   let actualDamage = rawDamage;
+                  let fortuneShieldNegated = false;
+                  if (target.progression && typeof target.progression.isClassUnlocked === 'function' && target.progression.isClassUnlocked('lady_fortune')) {
+                    const lfLevel = target.progression.getClassLevel('lady_fortune');
+                    if (lfLevel >= 30) {
+                      const luckCfg = DataLoader.getInstance().getLuckConfig();
+                      const perkPct = Math.min(15, lfLevel);
+                      const shieldChance = Math.min(
+                        luckCfg.fortunesShieldMaxChance ?? 0.075,
+                        (perkPct * (luckCfg.fortunesShieldChancePerPerk ?? 0.5)) / 100
+                      );
+                      const lRng = this.getLuckRng();
+                      if (lRng() < shieldChance) {
+                        fortuneShieldNegated = true;
+                        actualDamage = 0;
+                        this.createFloatingText(target.x, target.y - 20, 'LUCKY!', '#fde047');
+                        console.log(`[Combat:FortuneShield] ✨ LUCKY! ${target.entityName}'s Fortune's Shield negated direct attack from ${enemy.entityName}!`);
+                      }
+                    }
+                  }
+
+                  if (!fortuneShieldNegated) {
 
                   if (typeof (target as any).applyArmorMitigation === 'function') {
                     const armorRes = (target as any).applyArmorMitigation(rawDamage);
@@ -900,6 +949,7 @@ export class CombatSystem {
                     console.log(`[Combat] ${enemy.entityName} hits ${target.entityName} for ${actualDamage} damage!`);
                   }
 
+                  }
                   // Generic shield status reflectPercent (e.g. Kenjutsu Deflection)
                   if (actualDamage > 0) {
                     for (const [effId, eff] of target.activeStatusEffects.entries()) {
@@ -2249,7 +2299,7 @@ export class CombatSystem {
         }
       }
     }
-    const activeClassDef = DataLoader.getInstance().getClass(member.activeClass || member.progression?.activeClassId);
+    const activeClassDef = DataLoader.getInstance().getClass(member.activeClass || (member.progression as any)?.activeClassId);
     if (activeClassDef?.selfCraftedWeaponBonus && member.equippedWeapon) {
       const inst = GameState.getInstance().getGearInstance(member.equippedWeapon.id);
       if (inst && inst.crafterId && inst.crafterId === member.id) {
@@ -2269,6 +2319,50 @@ export class CombatSystem {
         ? (member.dexMultiplier ?? (1 + 0.02 * ((member.dexterity ?? 1.0) - 1)))
         : (member.strMultiplier ?? (1 + 0.02 * ((member.strength ?? 1.0) - 1)));
     damage *= attrMult;
+
+    // Critical Strike & Life Steal
+    const pRng = this.getCombatPassiveRng();
+    const hiddenSystem = HiddenSkillSystem.getInstance();
+    if (member.progression) {
+      // 1. Critical Strike growth proc on damaging hit
+      const critDef = hiddenSystem.getSkillDef('critical_strike');
+      if (critDef) {
+        hiddenSystem.rollProc(critDef, { inCombat: true, equippedWeapon: effectiveWeapon }, member.progression, pRng);
+      }
+      // 2. Critical Strike damage multiplier once Lv >= 1
+      const critLvl = member.progression.getProficiencyLevel('critical_strike');
+      if (critLvl >= 1) {
+        const luckCfg = DataLoader.getInstance().getLuckConfig();
+        const critChance = (luckCfg.critChanceBase ?? 0.01) + (luckCfg.critChancePerLevel ?? 0.002) * critLvl;
+        if (pRng() < critChance) {
+          const critMult = (luckCfg.critDamageBaseMultiplier ?? 1.5) + (luckCfg.critDamagePerLevelMultiplier ?? 0.005) * critLvl;
+          damage *= critMult;
+          this.createFloatingText(target.x, target.y - 30, 'CRIT!', '#facc15');
+        }
+      }
+
+      // 3. Life Steal (melee weapon only)
+      const isMeleeWeapon = !['ranged', 'bows', 'bow', 'crossbows', 'crossbow', 'throwing', 'throwing_weapons', 'staff', 'magic'].includes((effectiveWeapon.category || '').toLowerCase()) && !['ranged', 'bows', 'bow', 'crossbows', 'crossbow', 'throwing', 'throwing_weapons', 'staff', 'magic'].includes((effectiveWeapon.id || '').toLowerCase());
+      if (isMeleeWeapon) {
+        const lsDef = hiddenSystem.getSkillDef('life_steal');
+        if (lsDef) {
+          hiddenSystem.rollProc(lsDef, { inCombat: true, equippedWeapon: effectiveWeapon }, member.progression, pRng);
+        }
+        const lsLvl = member.progression.getProficiencyLevel('life_steal');
+        if (lsLvl >= 1 && damage > 0) {
+          const luckCfg = DataLoader.getInstance().getLuckConfig();
+          const lsPercent = (luckCfg.lifeStealPerLevel ?? 0.001) * lsLvl;
+          if (lsPercent > 0) {
+            const healedAmount = Math.max(1, Math.round(damage * lsPercent));
+            const actualHealed = member.heal(healedAmount);
+            if (actualHealed > 0) {
+              this.createHealEffect(member.x, member.y);
+              this.createFloatingText(member.x, member.y - 12, `+${actualHealed} HP (LEECH)`, '#22c55e');
+            }
+          }
+        }
+      }
+    }
 
     let totalSiphon = 0;
     if (member.activeStatusEffects) {
@@ -2762,6 +2856,44 @@ export class CombatSystem {
       const gameState = GameState.getInstance();
       const isBoss = target.enemyData.tier === 'boss';
 
+      // Luck Proc & Fortune Trigger on kill
+      let fortuneTriggerProcced = false;
+      const lRng = this.getLuckRng();
+      if (killer && killer.progression) {
+        const luckDef = HiddenSkillSystem.getInstance().getSkillDef('luck');
+        if (luckDef) {
+          const res = HiddenSkillSystem.getInstance().rollProc(luckDef, { inCombat: true }, killer.progression, lRng);
+          if (res.procced) {
+            const luckCfg = DataLoader.getInstance().getLuckConfig();
+            if (lRng() < (luckCfg.fortuneTriggerChance ?? 0.05)) {
+              fortuneTriggerProcced = true;
+              if (typeof killer.progression.recordTrigger === 'function') killer.progression.recordTrigger('Fortune Trigger', 1);
+              if (typeof killer.progression.isClassUnlocked === 'function' && killer.progression.isClassUnlocked('lady_fortune')) {
+                if (typeof killer.progression.addClassExp === 'function') killer.progression.addClassExp('lady_fortune', luckCfg.ladyFortuneExpPerFortuneTrigger ?? 50);
+              }
+              const msg = `✨ Fortune smiles on ${killer.entityName}!`;
+              this.createFloatingText(killer.x, killer.y - 40, msg, '#facc15');
+              const hud = (this.scene as any)?.hud;
+              if (hud && typeof hud.showToast === 'function') {
+                hud.showToast(msg, 'success', 3500);
+              }
+              // Lady Fortune's Blessing (Lv 40 node)
+              if (typeof killer.progression.isClassUnlocked === 'function' && killer.progression.isClassUnlocked('lady_fortune') && (typeof killer.progression.getClassLevel === 'function' ? killer.progression.getClassLevel('lady_fortune') : 0) >= 40) {
+                const party = this.party && this.party.length > 0 ? this.party : [killer];
+                const blessingDef = DataLoader.getInstance().getStatusEffect('fortunes_blessing');
+                if (blessingDef) {
+                  for (const member of party) {
+                    if (member.state !== 'dead' && member.state !== 'downed' && (member.hp > 0 || member.criticalHp > 0)) {
+                      member.applyStatusEffect(blessingDef);
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+
       let recipient: Player = killer;
       if (!recipient || recipient.state === 'downed' || recipient.state === 'dead' || (recipient.hp <= 0 && recipient.criticalHp <= 0)) {
         recipient = (this.party && this.party[0]) ? this.party[0] : killer;
@@ -2814,6 +2946,22 @@ export class CombatSystem {
             const isRare = chosen.method === 'rare_drop';
             const floatColor = isRare ? '#f59e0b' : '#34d399';
             this.createFloatingText(target.x, target.y - 35, `+1 ${itemName}`, floatColor);
+          }
+          if (fortuneTriggerProcced) {
+            const jackpot = typeof killer?.progression?.isClassUnlocked === 'function' && killer.progression.isClassUnlocked('lady_fortune') && (typeof killer.progression.getClassLevel === 'function' ? killer.progression.getClassLevel('lady_fortune') : 0) >= 20;
+            const extraCount = jackpot ? 2 : 1;
+            for (let r = 0; r < extraCount; r++) {
+              const extraChosen = CombatSystem.rollCommonEnemyDrop(target.enemyData, matRng);
+              if (extraChosen) {
+                if (recipient) {
+                  recipient.addItem(extraChosen.item, 1);
+                } else {
+                  gameState.addItem(extraChosen.item, 1);
+                }
+                const itemName = extraChosen.item.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+                this.createFloatingText(target.x, target.y - (50 + r * 15), `+1 ${itemName} (Fortune)`, '#facc15');
+              }
+            }
           }
         } else if (target.enemyData.tier === 'elemental') {
           // Milestone: Magical Crafting - Elemental Enemy Drops
@@ -2912,6 +3060,34 @@ export class CombatSystem {
             this.createFloatingText(target.x, target.y - 65, `+1 ${gemName}`, '#38bdf8');
           }
 
+          // Fortune Trigger extra rare drop rolls for Elite / Epic
+          if (fortuneTriggerProcced && !isBoss) {
+            const rareEntries = validHarvest.filter(h => h.method === 'rare_drop');
+            if (rareEntries.length > 0) {
+              const jackpot = typeof killer?.progression?.isClassUnlocked === 'function' && killer.progression.isClassUnlocked('lady_fortune') && (typeof killer.progression.getClassLevel === 'function' ? killer.progression.getClassLevel('lady_fortune') : 0) >= 20;
+              const extraRolls = jackpot ? 2 : 1;
+              for (let r = 0; r < extraRolls; r++) {
+                for (const h of rareEntries) {
+                  const rareChance = h.chance ?? 0.35;
+                  if (matRng() < rareChance) {
+                    const harvestCount = Array.isArray(h.amount)
+                      ? Math.floor(matRng() * (h.amount[1] - h.amount[0] + 1)) + h.amount[0]
+                      : typeof h.amount === 'number'
+                      ? h.amount
+                      : 1;
+                    if (recipient) {
+                      recipient.addItem(h.item, harvestCount);
+                    } else {
+                      gameState.addItem(h.item, harvestCount);
+                    }
+                    const itemName = h.item.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+                    this.createFloatingText(target.x, target.y - (50 + r * 15), `+${harvestCount} ${itemName} (Fortune)`, '#facc15');
+                  }
+                }
+              }
+            }
+          }
+
           for (const h of validHarvest) {
             if (h.item === 'arcane_gemstone' || h.item === 'ice_gemstone') continue; // handled above
             if (h.method === 'firstKillGuaranteed') {
@@ -2958,6 +3134,37 @@ export class CombatSystem {
         }
       }
       // Milestone: Food & Cooking Drop Rolls (Ingredient roll, Chef bonus, Peppercorn swap, Lost Recipes)
+      // Golden Touch (Lady Fortune Lv 10): perk% chance of one extra ingredient roll
+      if (typeof killer?.progression?.isClassUnlocked === 'function' && killer.progression.isClassUnlocked('lady_fortune') && (typeof killer.progression.getClassLevel === 'function' ? killer.progression.getClassLevel('lady_fortune') : 0) >= 10) {
+        const perkPercent = Math.min(15, killer.progression.getClassLevel('lady_fortune'));
+        if (lRng() < (perkPercent / 100)) {
+          if (target.enemyData.ingredientDrops && target.enemyData.ingredientDrops.length > 0) {
+            const totalWeight = target.enemyData.ingredientDrops.reduce((sum, i) => sum + (i.weight || 1), 0);
+            let roll = lRng() * totalWeight;
+            let chosenItem = target.enemyData.ingredientDrops[0].item;
+            for (const entry of target.enemyData.ingredientDrops) {
+              const w = entry.weight || 1;
+              if (roll < w) {
+                chosenItem = entry.item;
+                break;
+              }
+              roll -= w;
+            }
+            const cookingConfig = DataLoader.getInstance().getCookingConfig();
+            if (chosenItem === 'black_pepper' && cookingConfig && lRng() < cookingConfig.peppercornSeedChance) {
+              chosenItem = 'peppercorn_seed';
+            }
+            if (recipient) {
+              recipient.addItem(chosenItem, 1);
+            } else {
+              gameState.addItem(chosenItem, 1);
+            }
+            const itemName = chosenItem.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+            this.createFloatingText(target.x, target.y - 65, `+1 ${itemName} (Golden Touch)`, '#facc15');
+          }
+        }
+      }
+
       if (this.enableCookingDrops) {
         const cookRng = this.cookingLootRng || Math.random;
         const cookingConfig = DataLoader.getInstance().getCookingConfig();

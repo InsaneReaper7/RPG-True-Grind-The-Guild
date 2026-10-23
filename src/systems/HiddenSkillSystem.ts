@@ -133,8 +133,15 @@ export class HiddenSkillSystem {
    * Calculates exact proc probability:
    * formula: baseProcChance + (currentLevel * procChancePerLevel) + classBonus
    */
-  public calculateProcChance(skillDef: HiddenSkillDef, currentLevel: number, classBonus: number = 0): number {
-    const chance = skillDef.baseProcChance + (currentLevel * skillDef.procChancePerLevel) + classBonus;
+  public calculateProcChance(skillDef: HiddenSkillDef, currentLevel: number, classBonus: number = 0, progression?: ProgressionSystem): number {
+    let chance = skillDef.baseProcChance + (currentLevel * skillDef.procChancePerLevel) + classBonus;
+    if (skillDef.id === 'luck' && progression && typeof progression.isClassUnlocked === 'function' && progression.isClassUnlocked('lady_fortune')) {
+      const luckCfg = DataLoader.getInstance().getLuckConfig();
+      const lfLvl = typeof progression.getClassLevel === 'function' ? progression.getClassLevel('lady_fortune') : 0;
+      const perkPercent = Math.min(15, Math.max(0, lfLvl));
+      const multPerPerk = luckCfg?.fortunesFavorMultiplierPerPerk ?? 2.0;
+      chance *= (1 + multPerPerk * (perkPercent / 100));
+    }
     return Math.max(0, Math.min(1.0, chance));
   }
 
@@ -162,14 +169,15 @@ export class HiddenSkillSystem {
   public rollProc(
     skillDef: HiddenSkillDef,
     context: CombatContext,
-    progression: ProgressionSystem
+    progression: ProgressionSystem,
+    rng: () => number = Math.random
   ): { eligible: boolean; procced: boolean; expAwarded: number; newLevel: number; tierEffect?: HiddenSkillTierEffect } {
     if (!this.evaluateEligibility(skillDef, context)) {
       return { eligible: false, procced: false, expAwarded: 0, newLevel: progression.getProficiencyLevel(skillDef.id) };
     }
 
-    const currentLevel = progression.getProficiencyLevel(skillDef.id);
-    let classBonus = progression.getClassHiddenBonus(skillDef.id);
+    const currentLevel = typeof progression.getProficiencyLevel === 'function' ? progression.getProficiencyLevel(skillDef.id) : 0;
+    let classBonus = typeof progression.getClassHiddenBonus === 'function' ? progression.getClassHiddenBonus(skillDef.id) : 0;
     if (skillDef.id === 'block' && context.shieldBlockBonus) {
       classBonus += context.shieldBlockBonus;
     }
@@ -179,9 +187,9 @@ export class HiddenSkillSystem {
     if (skillDef.id === 'parry' && context.parryBonus) {
       classBonus += context.parryBonus;
     }
-    const procChance = this.calculateProcChance(skillDef, currentLevel, classBonus);
+    const procChance = this.calculateProcChance(skillDef, currentLevel, classBonus, progression);
 
-    const roll = Math.random();
+    const roll = rng();
     const procced = roll < procChance;
 
     let expToAward = 0;
@@ -192,10 +200,18 @@ export class HiddenSkillSystem {
       } else if (skillDef.id === 'mana_regen' && context.hasManaPotionBuff) {
         expToAward += 1;
       }
-      progression.addProficiencyExp(skillDef.id, expToAward);
+      if (typeof progression.addProficiencyExp === 'function') {
+        progression.addProficiencyExp(skillDef.id, expToAward);
+      }
+      if (skillDef.id === 'luck' && typeof progression.isClassUnlocked === 'function' && progression.isClassUnlocked('lady_fortune')) {
+        const luckCfg = DataLoader.getInstance().getLuckConfig();
+        if (typeof progression.addClassExp === 'function') {
+          progression.addClassExp('lady_fortune', luckCfg?.ladyFortuneExpPerLuckProc ?? 5);
+        }
+      }
     }
 
-    const updatedLevel = progression.getProficiencyLevel(skillDef.id);
+    const updatedLevel = typeof progression.getProficiencyLevel === 'function' ? progression.getProficiencyLevel(skillDef.id) : currentLevel;
     const tierEffect = this.getTierEffect(skillDef, updatedLevel);
 
     return {

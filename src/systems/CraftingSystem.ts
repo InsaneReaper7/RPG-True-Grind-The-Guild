@@ -32,6 +32,8 @@ export interface CraftResult {
   quantity: number;
   bonusProc: boolean;
   bonusPercent: number;
+  isExceptional?: boolean;
+  thriftyRefund?: { item: string; quantity: number };
   expGranted: number;
   classExpGranted: number;
   message: string;
@@ -131,15 +133,15 @@ export class CraftingSystem {
 
     const ranks = DataLoader.getInstance().getCraftingRanks()?.professions?.[professionId] || CraftingSystem.PROFESSION_RANKS?.[professionId];
     if (ranks && progression) {
-      const appUnlocked = progression.isClassUnlocked(ranks.apprentice);
-      const jnyUnlocked = progression.isClassUnlocked(ranks.journeyman);
-      const mtrUnlocked = progression.isClassUnlocked(ranks.master);
-      const gmrUnlocked = progression.isClassUnlocked(ranks.grandmaster);
+      const appUnlocked = !!(ranks.apprentice && progression.isClassUnlocked(ranks.apprentice));
+      const jnyUnlocked = !!(ranks.journeyman && progression.isClassUnlocked(ranks.journeyman));
+      const mtrUnlocked = !!(ranks.master && progression.isClassUnlocked(ranks.master));
+      const gmrUnlocked = !!(ranks.grandmaster && progression.isClassUnlocked(ranks.grandmaster));
 
-      const appLvl = appUnlocked ? progression.getClassLevel(ranks.apprentice) : 0;
-      const jnyLvl = jnyUnlocked ? progression.getClassLevel(ranks.journeyman) : 0;
-      const mtrLvl = mtrUnlocked ? progression.getClassLevel(ranks.master) : 0;
-      const gmrLvl = gmrUnlocked ? progression.getClassLevel(ranks.grandmaster) : 0;
+      const appLvl = (appUnlocked && ranks.apprentice) ? progression.getClassLevel(ranks.apprentice) : 0;
+      const jnyLvl = (jnyUnlocked && ranks.journeyman) ? progression.getClassLevel(ranks.journeyman) : 0;
+      const mtrLvl = (mtrUnlocked && ranks.master) ? progression.getClassLevel(ranks.master) : 0;
+      const gmrLvl = (gmrUnlocked && ranks.grandmaster) ? progression.getClassLevel(ranks.grandmaster) : 0;
 
       const appBonus = Math.min(15, Math.max(0, appLvl));
       const jnyBonus = Math.min(15, Math.max(0, jnyLvl));
@@ -153,7 +155,7 @@ export class CraftingSystem {
       const exceptionalChance = gmrBonus;
 
       const hasAnyUnlocked = appUnlocked || jnyUnlocked || mtrUnlocked || gmrUnlocked;
-      const activeClsId = gmrUnlocked ? ranks.grandmaster : mtrUnlocked ? ranks.master : jnyUnlocked ? ranks.journeyman : appUnlocked ? ranks.apprentice : ranks.apprentice;
+      const activeClsId = (gmrUnlocked ? ranks.grandmaster : mtrUnlocked ? ranks.master : jnyUnlocked ? ranks.journeyman : ranks.apprentice) || ranks.apprentice;
       const activeLvl = gmrUnlocked ? gmrLvl : mtrUnlocked ? mtrLvl : jnyUnlocked ? jnyLvl : appUnlocked ? appLvl : 0;
       const clsDef = DataLoader.getInstance().getClass(activeClsId);
 

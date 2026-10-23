@@ -3893,7 +3893,7 @@ export class MainScene extends Phaser.Scene {
     }
   }
 
-  public harvestGatheringNode(node: GatheringNode, character: Player = this.player, lootRollFn?: () => number, isFromQueue: boolean = false, cookingLootRollFn?: () => number): void {
+  public harvestGatheringNode(node: GatheringNode, character: Player = this.player, lootRollFn?: () => number, isFromQueue: boolean = false, cookingLootRollFn?: () => number, luckRngFn?: () => number): void {
     if (node.isHarvested) return;
 
     node.isHarvested = true;
@@ -3968,6 +3968,39 @@ export class MainScene extends Phaser.Scene {
     }
 
     let bonusDrop: { resourceId: string; itemName: string; count: number } | null = null;
+
+    // Luck Proc & Fortune Trigger on gathering harvest
+    const lRng = luckRngFn || (this as any).luckRng || Math.random;
+    if (character && character.progression) {
+      const luckDef = HiddenSkillSystem.getInstance().getSkillDef('luck');
+      if (luckDef) {
+        const res = HiddenSkillSystem.getInstance().rollProc(luckDef, { inCombat: false }, character.progression, lRng);
+        if (res.procced) {
+          const luckCfg = DataLoader.getInstance().getLuckConfig();
+          if (lRng() < (luckCfg.fortuneTriggerChance ?? 0.05)) {
+            character.progression.recordTrigger('Fortune Trigger', 1);
+            if (character.progression.isClassUnlocked('lady_fortune')) {
+              character.progression.addClassExp('lady_fortune', luckCfg.ladyFortuneExpPerFortuneTrigger ?? 50);
+            }
+            awardedCount += 1;
+            const msg = `✨ Fortune smiles on ${character.entityName}!`;
+            this.createFloatingText(character.x, character.y - 40, msg, '#facc15');
+            this.hud?.showToast(msg, 'success', 3500);
+            if (character.progression.isClassUnlocked('lady_fortune') && character.progression.getClassLevel('lady_fortune') >= 40) {
+              const party = (character as any).getPartyMembers?.() || [character];
+              const blessingDef = DataLoader.getInstance().getStatusEffect('fortunes_blessing');
+              if (blessingDef) {
+                for (const member of party) {
+                  if (member.state !== 'dead' && member.state !== 'downed') {
+                    member.applyStatusEffect(blessingDef);
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
 
     if (node.nodeDef.skillId === 'digging') {
       const perks = CraftingSystem.getCrafterPerks(character, 'digging');

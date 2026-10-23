@@ -2927,18 +2927,66 @@
           "type": "anyOf",
           "count": 1,
           "of": [
-            { "type": "proficiency", "target": "katana", "value": 60 },
-            { "type": "proficiency", "target": "short_swords", "value": 60 },
-            { "type": "proficiency", "target": "longswords", "value": 60 },
-            { "type": "proficiency", "target": "greatswords", "value": 60 },
-            { "type": "proficiency", "target": "daggers", "value": 60 },
-            { "type": "proficiency", "target": "mace", "value": 60 },
-            { "type": "proficiency", "target": "spears", "value": 60 },
-            { "type": "proficiency", "target": "bows", "value": 60 },
-            { "type": "proficiency", "target": "crossbows", "value": 60 },
-            { "type": "proficiency", "target": "throwing_weapons", "value": 60 },
-            { "type": "proficiency", "target": "staff", "value": 60 },
-            { "type": "proficiency", "target": "fist", "value": 60 }
+            {
+              "type": "proficiency",
+              "target": "katana",
+              "value": 60
+            },
+            {
+              "type": "proficiency",
+              "target": "short_swords",
+              "value": 60
+            },
+            {
+              "type": "proficiency",
+              "target": "longswords",
+              "value": 60
+            },
+            {
+              "type": "proficiency",
+              "target": "greatswords",
+              "value": 60
+            },
+            {
+              "type": "proficiency",
+              "target": "daggers",
+              "value": 60
+            },
+            {
+              "type": "proficiency",
+              "target": "mace",
+              "value": 60
+            },
+            {
+              "type": "proficiency",
+              "target": "spears",
+              "value": 60
+            },
+            {
+              "type": "proficiency",
+              "target": "bows",
+              "value": 60
+            },
+            {
+              "type": "proficiency",
+              "target": "crossbows",
+              "value": 60
+            },
+            {
+              "type": "proficiency",
+              "target": "throwing_weapons",
+              "value": 60
+            },
+            {
+              "type": "proficiency",
+              "target": "staff",
+              "value": 60
+            },
+            {
+              "type": "proficiency",
+              "target": "fist",
+              "value": 60
+            }
           ]
         },
         {
@@ -2951,7 +2999,7 @@
       "hiddenSkillBonuses": {
         "resilience": 0.05
       },
-      "selfCraftedWeaponBonus": 0.10
+      "selfCraftedWeaponBonus": 0.1
     },
     {
       "id": "runeblade",
@@ -3033,7 +3081,7 @@
       "hiddenSkillBonuses": {
         "health_regen": 0.05
       },
-      "spellDamageMultiplier": 1.40
+      "spellDamageMultiplier": 1.4
     },
     {
       "id": "bulwark",
@@ -3082,12 +3130,36 @@
           "type": "anyOf",
           "count": 1,
           "of": [
-            { "type": "proficiency", "target": "katana", "value": 60 },
-            { "type": "proficiency", "target": "short_swords", "value": 60 },
-            { "type": "proficiency", "target": "longswords", "value": 60 },
-            { "type": "proficiency", "target": "greatswords", "value": 60 },
-            { "type": "proficiency", "target": "spears", "value": 60 },
-            { "type": "proficiency", "target": "daggers", "value": 60 }
+            {
+              "type": "proficiency",
+              "target": "katana",
+              "value": 60
+            },
+            {
+              "type": "proficiency",
+              "target": "short_swords",
+              "value": 60
+            },
+            {
+              "type": "proficiency",
+              "target": "longswords",
+              "value": 60
+            },
+            {
+              "type": "proficiency",
+              "target": "greatswords",
+              "value": 60
+            },
+            {
+              "type": "proficiency",
+              "target": "spears",
+              "value": 60
+            },
+            {
+              "type": "proficiency",
+              "target": "daggers",
+              "value": 60
+            }
           ]
         }
       ],
@@ -3122,6 +3194,25 @@
       "hiddenSkillBonuses": {
         "health_regen": 0.08
       }
+    },
+    {
+      "id": "lady_fortune",
+      "name": "Lady Fortune",
+      "tier": "novice",
+      "category": "crafting",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "luck",
+          "value": 10
+        },
+        {
+          "type": "triggerCount",
+          "target": "Fortune Trigger",
+          "value": 5
+        }
+      ],
+      "fantasy": "Bends the laws of probability in your favour"
     }
   ]
 }

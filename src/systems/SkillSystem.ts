@@ -1,3 +1,4 @@
+import { HiddenSkillSystem } from './HiddenSkillSystem.ts';
 import { Player } from '../entities/Player.ts';
 import { Enemy } from '../entities/Enemy.ts';
 import { Entity } from '../entities/Entity.ts';
@@ -384,7 +385,7 @@ export class SkillSystem {
             }
           }
         }
-        const activeClassDef = DataLoader.getInstance().getClass(caster.activeClass || caster.progression?.activeClassId);
+        const activeClassDef = DataLoader.getInstance().getClass(caster.activeClass || (caster.progression as any)?.activeClassId);
         if (activeClassDef?.selfCraftedWeaponBonus && caster.equippedWeapon) {
           const inst = GameState.getInstance().getGearInstance(caster.equippedWeapon.id);
           if (inst && inst.crafterId && inst.crafterId === caster.id) {
@@ -424,6 +425,40 @@ export class SkillSystem {
         }
         hitDamage *= attrMult;
 
+        // Critical Strike & Life Steal passive procs & crit roll
+        const combatPassiveRng = this.combatSystem.getCombatPassiveRng();
+        const hiddenSystem = HiddenSkillSystem.getInstance();
+        if (caster.progression) {
+          // Critical Strike growth proc
+          const critDef = hiddenSystem.getSkillDef('critical_strike');
+          if (critDef) {
+            hiddenSystem.rollProc(critDef, { inCombat: true }, caster.progression, combatPassiveRng);
+          }
+          // Critical Strike multiplier
+          const critLvl = caster.progression.getProficiencyLevel('critical_strike');
+          if (critLvl >= 1) {
+            const luckCfg = DataLoader.getInstance().getLuckConfig();
+            const critChance = (luckCfg.critChanceBase ?? 0.01) + (luckCfg.critChancePerLevel ?? 0.002) * critLvl;
+            if (combatPassiveRng() < critChance) {
+              const critMult = (luckCfg.critDamageBaseMultiplier ?? 1.5) + (luckCfg.critDamagePerLevelMultiplier ?? 0.005) * critLvl;
+              hitDamage *= critMult;
+              if (enemyTarget) {
+                this.combatSystem.createFloatingText(enemyTarget.x, enemyTarget.y - 30, 'CRIT!', '#facc15');
+              }
+            }
+          }
+
+          // Life Steal growth proc (melee only)
+          const effWep = this.combatSystem.getEffectiveWeaponForAttack(caster);
+          const isMelee = !['ranged', 'bows', 'bow', 'crossbows', 'crossbow', 'throwing', 'throwing_weapons', 'staff', 'magic'].includes((effWep.category || '').toLowerCase()) && !['ranged', 'bows', 'bow', 'crossbows', 'crossbow', 'throwing', 'throwing_weapons', 'staff', 'magic'].includes((effWep.id || '').toLowerCase());
+          if (isMelee) {
+            const lsDef = hiddenSystem.getSkillDef('life_steal');
+            if (lsDef) {
+              hiddenSystem.rollProc(lsDef, { inCombat: true, equippedWeapon: effWep }, caster.progression, combatPassiveRng);
+            }
+          }
+        }
+
         if (!enemyTarget || enemyTarget.isDowned?.() || enemyTarget.state === 'dead' || enemyTarget.state === 'downed') {
           if (effect.area && effect.area.center === 'caster') {
             this.executeAreaDamage(effect.area, caster, null, hitDamage, weaponId, time, skillDef);
@@ -461,11 +496,18 @@ export class SkillSystem {
             hits
           );
           if (isHit) {
-            if (effect.lifesteal && hitDamage > 0) {
-              const healedAmount = Math.max(1, Math.round(hitDamage * effect.lifesteal));
+            const effWep = this.combatSystem.getEffectiveWeaponForAttack(caster);
+            const isMelee = !['ranged', 'bows', 'bow', 'crossbows', 'crossbow', 'throwing', 'throwing_weapons', 'staff', 'magic'].includes((effWep.category || '').toLowerCase()) && !['ranged', 'bows', 'bow', 'crossbows', 'crossbow', 'throwing', 'throwing_weapons', 'staff', 'magic'].includes((effWep.id || '').toLowerCase());
+            const lsLvl = (isMelee && caster.progression) ? caster.progression.getProficiencyLevel('life_steal') : 0;
+            const hiddenLsPercent = lsLvl >= 1 ? (DataLoader.getInstance().getLuckConfig().lifeStealPerLevel ?? 0.001) * lsLvl : 0;
+            const totalLifesteal = (effect.lifesteal || 0) + hiddenLsPercent;
+            if (totalLifesteal > 0 && hitDamage > 0) {
+              const healedAmount = Math.max(1, Math.round(hitDamage * totalLifesteal));
               const actualHealed = caster.heal(healedAmount);
-              this.combatSystem.createHealEffect(caster.x, caster.y);
-              this.combatSystem.createFloatingText(caster.x, caster.y - 12, `+${actualHealed} HP (DRAIN)`, '#22c55e');
+              if (actualHealed > 0) {
+                this.combatSystem.createHealEffect(caster.x, caster.y);
+                this.combatSystem.createFloatingText(caster.x, caster.y - 12, `+${actualHealed} HP (DRAIN)`, '#22c55e');
+              }
             }
             if (skillDef.partnerExp && effect.profBonus) {
               let profId = effect.profBonus.prof;
@@ -500,11 +542,18 @@ export class SkillSystem {
               break;
             }
           }
-          if (effect.lifesteal && hitDamage > 0) {
-            const healedAmount = Math.max(1, Math.round(hitDamage * effect.lifesteal));
+          const effWep = this.combatSystem.getEffectiveWeaponForAttack(caster);
+          const isMelee = !['ranged', 'bows', 'bow', 'crossbows', 'crossbow', 'throwing', 'throwing_weapons', 'staff', 'magic'].includes((effWep.category || '').toLowerCase()) && !['ranged', 'bows', 'bow', 'crossbows', 'crossbow', 'throwing', 'throwing_weapons', 'staff', 'magic'].includes((effWep.id || '').toLowerCase());
+          const lsLvl = (isMelee && caster.progression) ? caster.progression.getProficiencyLevel('life_steal') : 0;
+          const hiddenLsPercent = lsLvl >= 1 ? (DataLoader.getInstance().getLuckConfig().lifeStealPerLevel ?? 0.001) * lsLvl : 0;
+          const totalLifesteal = (effect.lifesteal || 0) + hiddenLsPercent;
+          if (totalLifesteal > 0 && hitDamage > 0) {
+            const healedAmount = Math.max(1, Math.round(hitDamage * totalLifesteal));
             const actualHealed = caster.heal(healedAmount);
-            this.combatSystem.createHealEffect(caster.x, caster.y);
-            this.combatSystem.createFloatingText(caster.x, caster.y - 12, `+${actualHealed} HP (DRAIN)`, '#22c55e');
+            if (actualHealed > 0) {
+              this.combatSystem.createHealEffect(caster.x, caster.y);
+              this.combatSystem.createFloatingText(caster.x, caster.y - 12, `+${actualHealed} HP (DRAIN)`, '#22c55e');
+            }
           }
           if (effect.area) {
             this.executeAreaDamage(effect.area, caster, enemyTarget, hitDamage, weaponId, time, skillDef);

@@ -30,7 +30,10 @@ export class ProgressionSystem {
     'mana_regen',
     'energy_regen',
     'iron_back',
-    'poison_resistance'
+    'poison_resistance',
+    'luck',
+    'critical_strike',
+    'life_steal'
   ];
 
   public static readonly ARMOR_PROFICIENCY_IDS: readonly string[] = [
@@ -568,6 +571,7 @@ export class ProgressionSystem {
     classStats?: Record<string, TrainableStat>;
     unlockedClasses: string[];
     activityCounts?: Record<string, number>;
+  triggerCounts?: Record<string, number>;
   } {
     const profObj: Record<string, TrainableStat> = {};
     for (const [k, v] of this.proficiencies.entries()) {
@@ -585,12 +589,17 @@ export class ProgressionSystem {
     for (const [k, v] of this.activityCounts.entries()) {
       actObj[k] = v;
     }
+    const trigObj: Record<string, number> = {};
+    for (const [k, v] of this.triggerCounts.entries()) {
+      trigObj[k] = v;
+    }
     return {
       proficiencies: profObj,
       classLevels: classObj,
       classStats: classStatsObj,
       unlockedClasses: Array.from(this.unlockedClasses),
-      activityCounts: actObj
+      activityCounts: actObj,
+    triggerCounts: trigObj
     };
   }
 
@@ -600,6 +609,7 @@ export class ProgressionSystem {
     classStats?: Record<string, TrainableStat>;
     unlockedClasses: string[];
     activityCounts?: Record<string, number>;
+  triggerCounts?: Record<string, number>;
   }): void {
     this.initDefaultProficiencies();
     for (const [k, v] of Object.entries(data.proficiencies)) {
@@ -641,6 +651,12 @@ export class ProgressionSystem {
     if (data.activityCounts) {
       for (const [k, v] of Object.entries(data.activityCounts)) {
         this.activityCounts.set(k, v);
+      }
+    }
+    this.triggerCounts.clear();
+    if (data.triggerCounts) {
+      for (const [k, v] of Object.entries(data.triggerCounts)) {
+        this.triggerCounts.set(k, v);
       }
     }
     this.checkDualWieldUnlock();

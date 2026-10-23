@@ -749,6 +749,17 @@ Never ask Antigravity to jump ahead in this list — each milestone assumes the 
   - `Entity.heal()` (and `Player.heal()`) verified as the single healing sink across all paths (potions, bandages, food Well Fed buff, passive base HP regen, hidden skills, life leech, paladin heals, etc.).
   - Always fills Critical HP first before overflowing to Main HP.
   - Downed characters do not passively regenerate HP or Energy.
+  - **Healing Pathways Classification**:
+    | Source / Pathway | Trigger / Scaling | Healing Sink & Invariant |
+    |---|---|---|
+    | Health Potion | Immediate consumable channel | `Entity.heal()`, Critical HP first, 10s CD |
+    | Bandage / First Aid | Immediate consumable / skill | `Entity.heal()`, Critical HP first |
+    | Well Fed Food Buff | Passive regen over time (1.0–3.0 HP/s) | `Entity.heal()`, Critical HP first |
+    | Base HP Regen | Passive tick (0.25 in-combat, 0.5 OOC) | `Entity.heal()`, Critical HP first via fractional accumulator |
+    | Hidden Skill `health_regen` | Passive tick | `Entity.heal()`, Critical HP first |
+    | Hidden Skill `life_steal` | Direct melee damage hit (`0.001 * Lv`, stacks additively with skill `lifesteal`) | `Entity.heal()`, Critical HP first, downed members never heal |
+    | Skill `lifesteal` (`drain_strike`) | Direct weapon/spell hit (`hitDamage * effect.lifesteal`) | `Entity.heal()`, Critical HP first |
+    | Paladin Heals (`lay_on_hands`) | Active cast | `Entity.heal()`, Critical HP first |
 - **4. Verification & Caster Dry Test**:
   - Verified caster dry test with 0 potions: Fire Mage runs dry after 4 casts (5.2s), matching the target 4-5 casts constraint.
   - Full test suite `test/regenRefinement.test.ts` (100% pass) and audit suite `test/hpRegenFillOrderAudit.test.ts` (100% pass across 13 tests).
@@ -1871,6 +1882,7 @@ The following three intentional behavioural changes were reviewed and accepted b
 
 | Site | What it is | Armor |
 |---|---|---|
+| `CombatSystem.ts` L880 before mitigation | Enemy direct hit (Fortune's Shield Lv 30) | **Full Negation** (0 dmg, "LUCKY!" on `luckRng`) |
 | `CombatSystem.ts` L875 `target.takeDamage(actualDamage)` | Enemy direct hit (melee, ranged or spell) | **Mitigated** |
 | `CombatSystem.ts` L898 `member.takeDamage(splashDamage)` | Boss cleave shockwave | **Mitigated** (recipient's armor) |
 | `CombatSystem.ts` L953 `member.takeDamage(shardDamage)` | Glacial Sovereign shards | **Mitigated** (recipient's armor) |

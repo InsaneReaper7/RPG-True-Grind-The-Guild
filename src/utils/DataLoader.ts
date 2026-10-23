@@ -54,7 +54,8 @@ import type {
   EnchantingRecipeDef,
   EnchantingRecipesData,
   StatGainsData,
-  CraftingRanksData
+  CraftingRanksData,
+  LuckConfig
 } from '../types/game.ts';
 import { HiddenSkillSystem } from '../systems/HiddenSkillSystem.ts';
 import { resolveGearStats, getBaseItemId, isCraftingClass, resolvePartyGearSource, getPartyGearOwnership, canEquipBowDaggerSidearm } from './gearResolver.ts';
@@ -94,6 +95,7 @@ export class DataLoader {
   private cookingConfigData?: CookingConfig;
   private campConfigData?: CampConfig;
   private craftingRanksData?: CraftingRanksData;
+  private luckConfigData?: LuckConfig;
 
   private constructor() {}
 
@@ -105,7 +107,7 @@ export class DataLoader {
   }
 
   public async loadAll(): Promise<void> {
-    const [player, weapons, classes, enemies, skills, statusEffects, buildables, rooms, hiddenSkills, skillBooks, researchTree, alchemyRecipes, cookingRecipes, blacksmithRecipes, bowyerRecipes, armors, armorsmithRecipes, foods, moodEffects, dungeon, gathering, items, recruits, craftingConfig, introNarrative, enchantingRecipes, statGains, crops, cookingConfig, campConfig, craftingRanks] = await Promise.all([
+    const [player, weapons, classes, enemies, skills, statusEffects, buildables, rooms, hiddenSkills, skillBooks, researchTree, alchemyRecipes, cookingRecipes, blacksmithRecipes, bowyerRecipes, armors, armorsmithRecipes, foods, moodEffects, dungeon, gathering, items, recruits, craftingConfig, introNarrative, enchantingRecipes, statGains, crops, cookingConfig, campConfig, craftingRanks, luckConfig] = await Promise.all([
       fetch('/data/player.json').then((res) => res.json()),
       fetch('/data/weapons.json').then((res) => res.json()),
       fetch('/data/classes.json').then((res) => res.json()),
@@ -136,7 +138,8 @@ export class DataLoader {
       fetch('/data/crops.json').then((res) => res.json()).catch(() => null),
       fetch('/data/cookingConfig.json').then((res) => res.json()).catch(() => null),
       fetch('/data/campConfig.json').then((res) => res.json()).catch(() => null),
-      fetch('/data/craftingRanks.json').then((res) => res.json()).catch(() => null)
+      fetch('/data/craftingRanks.json').then((res) => res.json()).catch(() => null),
+      fetch('/data/luckConfig.json').then((res) => res.json()).catch(() => null)
     ]);
 
     this.playerData = player as PlayerData;
@@ -183,6 +186,9 @@ export class DataLoader {
     }
     if (craftingRanks) {
       this.craftingRanksData = craftingRanks as CraftingRanksData;
+    }
+    if (luckConfig) {
+      this.luckConfigData = luckConfig as LuckConfig;
     }
     if (craftingConfig) {
       this.craftingConfigData = craftingConfig as CraftingConfigData;
@@ -913,6 +919,40 @@ export class DataLoader {
     } catch { /* fallback */ }
     return this.craftingRanksData;
   }
+  public getLuckConfig(): LuckConfig {
+    if (this.luckConfigData) {
+      return this.luckConfigData;
+    }
+    try {
+      if (typeof process !== 'undefined' && process.versions?.node) {
+        const fsModule = (globalThis as any).fs || (typeof require !== 'undefined' ? require('node:fs') : undefined);
+        if (fsModule && fsModule.existsSync('data/luckConfig.json')) {
+          this.luckConfigData = JSON.parse(fsModule.readFileSync('data/luckConfig.json', 'utf8'));
+          return this.luckConfigData!;
+        }
+      }
+    } catch { /* fallback */ }
+    return this.luckConfigData || {
+      baseProcChance: 0.01,
+      procChancePerLevel: 0.002,
+      fortuneTriggerChance: 0.05,
+      ladyFortuneExpPerLuckProc: 5,
+      ladyFortuneExpPerFortuneTrigger: 50,
+      fortunesFavorMultiplierPerPerk: 2.0,
+      goldenTouchIngredientDropChancePerPerk: 1.0,
+      jackpotExtraRollMultiplier: 2,
+      fortunesShieldChancePerPerk: 0.5,
+      fortunesShieldMaxChance: 0.075,
+      fortunesBlessingDamageBonus: 0.05,
+      fortunesBlessingDurationMs: 15000,
+      critChanceBase: 0.01,
+      critChancePerLevel: 0.002,
+      critDamageBaseMultiplier: 1.5,
+      critDamagePerLevelMultiplier: 0.005,
+      lifeStealPerLevel: 0.001
+    };
+  }
+
 
   public getCookingConfig(): CookingConfig {
     return this.cookingConfigData || {
