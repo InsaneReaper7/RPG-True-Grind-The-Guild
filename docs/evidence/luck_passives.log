@@ -5167,9 +5167,10 @@
 [Progression] +1 EXP for 'life_steal' (Guild Hero). Current: Level 0 (1/50 EXP)
 [Progression] Recorded tx 'life_steal': +1 EXP for Guild Hero, resulting total: Level 0 (1/50 EXP)
 [Combat] Guild Hero attacks Slime with Short Swords for 8.8 damage! (Base: 5, Lv 0 Bonus: +0.0, Accuracy: 100.0%)
+[StatusEffect] Applied Bleed to Slime!
+[KnowledgeBase] 🧪 Status effect discovered: 'bleed'! (+1 RP)
 [Progression] +2 EXP for 'short_swords' (Guild Hero). Current: Level 0 (4/50 EXP)
 [Progression] Recorded tx 'short_swords': +2 EXP for Guild Hero, resulting total: Level 0 (4/50 EXP)
-[KnowledgeBase] 🧪 Status effect discovered: 'bleed'! (+1 RP)
 [DoT] Slime takes 3 damage from Bleed!
 ✓ PASS: Critical Strike rate, damage ratio (1.75), and DoT exclusion verified.
 

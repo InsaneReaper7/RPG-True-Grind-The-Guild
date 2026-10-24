@@ -2949,7 +2949,8 @@ export class CombatSystem {
           }
           if (fortuneTriggerProcced) {
             const jackpot = typeof killer?.progression?.isClassUnlocked === 'function' && killer.progression.isClassUnlocked('lady_fortune') && (typeof killer.progression.getClassLevel === 'function' ? killer.progression.getClassLevel('lady_fortune') : 0) >= 20;
-            const extraCount = jackpot ? 2 : 1;
+            const luckCfg = DataLoader.getInstance().getLuckConfig();
+            const extraCount = jackpot ? (luckCfg.jackpotExtraRollMultiplier ?? 2) : 1;
             for (let r = 0; r < extraCount; r++) {
               const extraChosen = CombatSystem.rollCommonEnemyDrop(target.enemyData, matRng);
               if (extraChosen) {
@@ -3065,7 +3066,8 @@ export class CombatSystem {
             const rareEntries = validHarvest.filter(h => h.method === 'rare_drop');
             if (rareEntries.length > 0) {
               const jackpot = typeof killer?.progression?.isClassUnlocked === 'function' && killer.progression.isClassUnlocked('lady_fortune') && (typeof killer.progression.getClassLevel === 'function' ? killer.progression.getClassLevel('lady_fortune') : 0) >= 20;
-              const extraRolls = jackpot ? 2 : 1;
+              const luckCfg = DataLoader.getInstance().getLuckConfig();
+              const extraRolls = jackpot ? (luckCfg.jackpotExtraRollMultiplier ?? 2) : 1;
               for (let r = 0; r < extraRolls; r++) {
                 for (const h of rareEntries) {
                   const rareChance = h.chance ?? 0.35;
@@ -3137,7 +3139,9 @@ export class CombatSystem {
       // Golden Touch (Lady Fortune Lv 10): perk% chance of one extra ingredient roll
       if (typeof killer?.progression?.isClassUnlocked === 'function' && killer.progression.isClassUnlocked('lady_fortune') && (typeof killer.progression.getClassLevel === 'function' ? killer.progression.getClassLevel('lady_fortune') : 0) >= 10) {
         const perkPercent = Math.min(15, killer.progression.getClassLevel('lady_fortune'));
-        if (lRng() < (perkPercent / 100)) {
+        const luckCfg = DataLoader.getInstance().getLuckConfig();
+        const dropChancePerPerk = luckCfg.goldenTouchIngredientDropChancePerPerk ?? 1.0;
+        if (lRng() < ((perkPercent * dropChancePerPerk) / 100)) {
           if (target.enemyData.ingredientDrops && target.enemyData.ingredientDrops.length > 0) {
             const totalWeight = target.enemyData.ingredientDrops.reduce((sum, i) => sum + (i.weight || 1), 0);
             let roll = lRng() * totalWeight;

@@ -1435,8 +1435,6 @@ export interface LuckConfig {
   jackpotExtraRollMultiplier: number;
   fortunesShieldChancePerPerk: number;
   fortunesShieldMaxChance: number;
-  fortunesBlessingDamageBonus: number;
-  fortunesBlessingDurationMs: number;
   critChanceBase: number;
   critChancePerLevel: number;
   critDamageBaseMultiplier: number;

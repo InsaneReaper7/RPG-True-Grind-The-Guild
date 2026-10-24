@@ -189,8 +189,6 @@ console.log('1. Checking Expected-Table Guards...');
   assert.strictEqual(luckConfig.jackpotExtraRollMultiplier, 2, 'jackpotExtraRollMultiplier must be 2');
   assert.strictEqual(luckConfig.fortunesShieldChancePerPerk, 0.5, 'fortunesShieldChancePerPerk must be 0.5');
   assert.strictEqual(luckConfig.fortunesShieldMaxChance, 0.075, 'fortunesShieldMaxChance must be 0.075');
-  assert.strictEqual(luckConfig.fortunesBlessingDamageBonus, 0.05, 'fortunesBlessingDamageBonus must be 0.05');
-  assert.strictEqual(luckConfig.fortunesBlessingDurationMs, 15000, 'fortunesBlessingDurationMs must be 15000');
   assert.strictEqual(luckConfig.critChanceBase, 0.01, 'critChanceBase must be 0.01');
   assert.strictEqual(luckConfig.critChancePerLevel, 0.002, 'critChancePerLevel must be 0.002');
   assert.strictEqual(luckConfig.critDamageBaseMultiplier, 1.5, 'critDamageBaseMultiplier must be 1.5');
