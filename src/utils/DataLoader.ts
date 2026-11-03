@@ -943,8 +943,6 @@ export class DataLoader {
       jackpotExtraRollMultiplier: 2,
       fortunesShieldChancePerPerk: 0.5,
       fortunesShieldMaxChance: 0.075,
-      fortunesBlessingDamageBonus: 0.05,
-      fortunesBlessingDurationMs: 15000,
       critChanceBase: 0.01,
       critChancePerLevel: 0.002,
       critDamageBaseMultiplier: 1.5,

@@ -290,8 +290,10 @@ export class LockpickingSystem {
             const currentLevel = memberProgression.getProficiencyLevel('lockpicking');
       const thUnlocked = typeof memberProgression.isClassUnlocked === 'function' && memberProgression.isClassUnlocked('treasure_hunter');
       const thLevel = thUnlocked ? (typeof memberProgression.getClassLevel === 'function' ? memberProgression.getClassLevel('treasure_hunter') : 0) : 0;
-      const thPerk = Math.min(15, Math.max(0, thLevel));
-      const pickmasterBonus = (thPerk / 2) / 100;
+      const thPerk = CraftingSystem.getTreasureHunterPerkPercent(thLevel);
+      const thCfg = DataLoader.getInstance().getLuckConfig()?.treasureHunter;
+      const pickmasterDivisor = thCfg?.pickmasterDivisor ?? 2;
+      const pickmasterBonus = (thPerk / pickmasterDivisor) / 100;
       const successRate = this.calculateSuccessRate(currentLevel, pickmasterBonus);
       const roll = rng();
 

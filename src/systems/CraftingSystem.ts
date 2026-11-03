@@ -186,9 +186,11 @@ export class CraftingSystem {
 
         const thUnlocked = !!(progression && typeof progression.isClassUnlocked === 'function' && progression.isClassUnlocked('treasure_hunter'));
     const thLevel = thUnlocked ? progression.getClassLevel('treasure_hunter') : 0;
-    const thPerk = Math.min(15, Math.max(0, thLevel));
+    const thPerk = CraftingSystem.getTreasureHunterPerkPercent(thLevel);
+    const thCfg = DataLoader.getInstance().getLuckConfig()?.treasureHunter;
+    const pickmasterDivisor = thCfg?.pickmasterDivisor ?? 2;
     const keenSearchBonus = thPerk / 100;
-    const pickmasterBonus = (thPerk / 2) / 100;
+    const pickmasterBonus = (thPerk / pickmasterDivisor) / 100;
     const treasureSenseChance = thPerk / 100;
 
     const classId = CraftingSystem.getMatchingClassId(professionId) || (DataLoader.getInstance().getClass(professionId) ? professionId : null);
@@ -290,6 +292,12 @@ export class CraftingSystem {
     };
   }
 
+  public static getTreasureHunterPerkPercent(level: number): number {
+    const cfg = DataLoader.getInstance().getLuckConfig()?.treasureHunter;
+    const maxPerk = cfg?.keenSearchPerkPercentMax ?? 15;
+    return Math.min(maxPerk, Math.max(0, level));
+  }
+
   public static getTreasureHunterPerks(
     crafter: Player | ProgressionSystem | { progression: ProgressionSystem }
   ): {
@@ -310,14 +318,16 @@ export class CraftingSystem {
 
     const unlocked = !!(progression && typeof progression.isClassUnlocked === 'function' && progression.isClassUnlocked('treasure_hunter'));
     const level = unlocked ? progression.getClassLevel('treasure_hunter') : 0;
-    const perkPercent = Math.min(15, Math.max(0, level));
+    const perkPercent = CraftingSystem.getTreasureHunterPerkPercent(level);
+    const thCfg = DataLoader.getInstance().getLuckConfig()?.treasureHunter;
+    const pickmasterDivisor = thCfg?.pickmasterDivisor ?? 2;
     return {
       unlocked,
       level,
       perkPercent,
       keenSearchBonus: perkPercent / 100,
       keenSearchBonusChance: perkPercent / 100,
-      pickmasterBonus: (perkPercent / 2) / 100,
+      pickmasterBonus: (perkPercent / pickmasterDivisor) / 100,
       treasureSenseChance: perkPercent / 100
     };
   }

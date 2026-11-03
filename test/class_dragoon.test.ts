@@ -478,6 +478,9 @@ async function runDragoonTests() {
   // ============================================================================
   console.log('--- TEST 5: Dragon Dive Mechanics (Leap + Radius 1.5 Splash) ---');
   {
+    const origRng = Math.random;
+    Math.random = () => 0.1;
+    try {
     const scene = createMockScene();
     const combat = new CombatSystem(scene);
     const spearDef = dataLoader.getWeapon('spears')!;
@@ -525,6 +528,9 @@ async function runDragoonTests() {
 
     console.log(`  dragon_dive verified: Caster leaped from dist 4 to dist ${finalCasterDist}; primary took ${hpBeforePrimary - primaryTarget.hp} dmg; neighbor took ${hpBeforeSplash - splashEnemy.hp} dmg; distant took 0 dmg.`);
     console.log('✓ PASS: Dragon Dive leap movement and target-centered radius 1.5 AoE verified.\n');
+    } finally {
+      Math.random = origRng;
+    }
   }
 
   // ============================================================================

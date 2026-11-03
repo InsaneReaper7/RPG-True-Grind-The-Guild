@@ -194,7 +194,7 @@ async function runTests() {
   // ------------------------------------------------------------------------
   console.log('--- TEST 1: Item 0 Key-Driven Behaviours ---');
   {
-    // A. Verify duplicate Blessing keys deleted from luckConfig
+    // A. Verify duplicate Blessing keys deleted from luckConfig and NO occurrences in src/
     assert.strictEqual(
       (luckConfig as any).fortunesBlessingDamageBonus,
       undefined,
@@ -204,6 +204,28 @@ async function runTests() {
       (luckConfig as any).fortunesBlessingDurationMs,
       undefined,
       'fortunesBlessingDurationMs must be deleted from luckConfig'
+    );
+
+    // Recursively grep src/ for any 'fortunesBlessing' match
+    function grepSrcDir(dir: string, matches: string[] = []): string[] {
+      for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+        const full = path.join(dir, entry.name);
+        if (entry.isDirectory()) {
+          grepSrcDir(full, matches);
+        } else if (entry.name.endsWith('.ts')) {
+          const fileContent = fs.readFileSync(full, 'utf8');
+          if (fileContent.includes('fortunesBlessing')) {
+            matches.push(full);
+          }
+        }
+      }
+      return matches;
+    }
+    const matchingFiles = grepSrcDir(path.resolve(__dirname, '..', 'src'));
+    assert.strictEqual(
+      matchingFiles.length,
+      0,
+      `Found 'fortunesBlessing' in src files: ${matchingFiles.join(', ')}`
     );
 
     // B. Golden Touch reads goldenTouchIngredientDropChancePerPerk
@@ -735,14 +757,20 @@ async function runTests() {
     let treasureSenseProcs = 0;
     const trials = 5000;
 
-    for (let i = 0; i < trials; i++) {
-      // Force success roll to always succeed on first try
-      const forceSuccessRng = () => 0.01;
-      const res = lockSys.attemptUnlock(prog, 'TreasureHero', forceSuccessRng, undefined, luckRng);
-      assert.strictEqual(res.success, true);
-      if (res.treasureSenseProcced) {
-        treasureSenseProcs++;
+    const origLog = console.log;
+    try {
+      console.log = () => {};
+      for (let i = 0; i < trials; i++) {
+        // Force success roll to always succeed on first try
+        const forceSuccessRng = () => 0.01;
+        const res = lockSys.attemptUnlock(prog, 'TreasureHero', forceSuccessRng, undefined, luckRng);
+        assert.strictEqual(res.success, true);
+        if (res.treasureSenseProcced) {
+          treasureSenseProcs++;
+        }
       }
+    } finally {
+      console.log = origLog;
     }
 
     const procRate = treasureSenseProcs / trials;
@@ -823,6 +851,105 @@ async function runTests() {
     }
 
     console.log('✓ PASS: Fillers rule and applyStatus.durationMs rule verified.\n');
+  }
+
+
+  // ------------------------------------------------------------------------
+  // 8. AI condition merge verification (hammerfall and harvest_bloom)
+  // ------------------------------------------------------------------------
+  console.log('--- TEST 8: AI Condition Merge (hammerfall & harvest_bloom) ---');
+  {
+    const mockScene = createMockScene();
+    const combat = new CombatSystem(mockScene);
+    const pData = dl.getPlayer();
+    const hammerDef = dl.getWeapon('mace')!;
+    const prog = new ProgressionSystem(classesData, 'AiHero');
+    prog.setClassLevel('battlesmith', 20);
+    prog.setClassLevel('herbwarden', 10);
+
+    const companion = new Player(mockScene, 10, 10, pData, hammerDef, 16, 'companion', prog);
+    companion.energy = 100;
+    companion.maxEnergy = 100;
+    companion.hp = 100;
+    companion.maxHp = 100;
+    companion.knownSkillIds = ['hammerfall'];
+    companion.equippedSkillIds = ['hammerfall'];
+    combat.party = [companion];
+
+    const hammerfallDef = dl.getSkill('hammerfall')!;
+    assert.strictEqual(hammerfallDef.ai?.enemiesInRadius, 2, 'hammerfall has top-level enemiesInRadius: 2');
+
+    // Case A: 1 enemy in radius -> hammerfall must NOT fire
+    const enemy1 = new Enemy(mockScene, 11, 10, dl.getEnemy('wolf') as any, 'wolf-avatar', 16);
+    enemy1.hp = 100;
+    enemy1.maxHp = 100;
+    combat.enemies = [enemy1];
+
+    const chosenWith1 = combat.skillSystem.selectSkillForCompanion(companion, 'rotation', 10000, enemy1, 1);
+    assert.strictEqual(
+      chosenWith1,
+      null,
+      'hammerfall must NOT be selected when only 1 enemy is within radius'
+    );
+
+    // Case B: 2 enemies in radius -> hammerfall DOES fire
+    const enemy2 = new Enemy(mockScene, 11, 11, dl.getEnemy('wolf') as any, 'wolf-avatar', 16);
+    enemy2.hp = 100;
+    enemy2.maxHp = 100;
+    combat.enemies = [enemy1, enemy2];
+
+    const sDef = dl.getSkill('hammerfall')!;
+
+const chosenWith2 = combat.skillSystem.selectSkillForCompanion(companion, 'rotation', 10000, enemy1, 1);
+    assert.ok(
+      chosenWith2 !== null,
+      'hammerfall must be selected when 2 enemies are within radius'
+    );
+    assert.strictEqual(
+      chosenWith2.skillDef.id,
+      'hammerfall',
+      'hammerfall selected when 2 enemies in radius'
+    );
+
+    // Case C: harvest_bloom with allies at full HP -> must NOT fire
+    const staffDef = dl.getWeapon('nature_staff')!;
+    const healer = new Player(mockScene, 10, 10, pData, staffDef, 16, 'companion', prog);
+    healer.energy = 100;
+    healer.maxEnergy = 100;
+    healer.hp = 100;
+    healer.maxHp = 100;
+    healer.knownSkillIds = ['harvest_bloom'];
+    healer.equippedSkillIds = ['harvest_bloom'];
+
+    const ally = new Player(mockScene, 12, 10, pData, hammerDef, 16, 'companion', prog);
+    ally.hp = 100;
+    ally.maxHp = 100;
+    combat.party = [healer, ally];
+
+    const harvestDef = dl.getSkill('harvest_bloom')!;
+    assert.strictEqual(harvestDef.ai?.allyHpBelow, 0.7, 'harvest_bloom has top-level allyHpBelow: 0.7');
+
+    const healChoiceFullHp = combat.skillSystem.selectSkillForCompanion(healer, 'support', 10000);
+    assert.strictEqual(
+      healChoiceFullHp,
+      null,
+      'harvest_bloom must NOT fire when all allies are at full HP (100% > 70%)'
+    );
+
+    // Case D: ally damaged below 70% -> harvest_bloom DOES fire
+    ally.hp = 50; // 50% < 70%
+    const healChoiceDamaged = combat.skillSystem.selectSkillForCompanion(healer, 'support', 10000);
+    assert.ok(
+      healChoiceDamaged !== null,
+      'harvest_bloom must fire when an ally is below 70% HP'
+    );
+    assert.strictEqual(
+      healChoiceDamaged.skillDef.id,
+      'harvest_bloom',
+      'harvest_bloom selected for damaged ally'
+    );
+
+    console.log('✓ PASS: AI condition merge (hammerfall & harvest_bloom) verified.\n');
   }
 
   console.log('========================================================================');
