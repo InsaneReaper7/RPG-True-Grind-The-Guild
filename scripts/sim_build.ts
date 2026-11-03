@@ -173,6 +173,12 @@ export function chooseWeaponId(classDef: any, profs: string[], classSkills: any[
     chosenWeaponId = 'katana';
   } else if (classDef.id === 'vitality_warden') {
     chosenWeaponId = 'healing_staff';
+  } else if (classDef.id === 'trickster') {
+    chosenWeaponId = 'daggers';
+  } else if (classDef.id === 'bounty_hunter') {
+    chosenWeaponId = 'crossbows';
+  } else if (classDef.id === 'vampire') {
+    chosenWeaponId = 'dark_staff';
   } else if (hasWeaponScaling) {
     const firstWpnProf = profs.find(p => weaponProfList.includes(p) && p !== 'shields');
     if (firstWpnProf && profToWeapon[firstWpnProf]) {

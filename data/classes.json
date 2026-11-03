@@ -3213,6 +3213,97 @@
         }
       ],
       "fantasy": "Bends the laws of probability in your favour"
+    },
+    {
+      "id": "trickster",
+      "name": "Trickster",
+      "tier": "adept",
+      "primaryAttribute": "str",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "daggers",
+          "value": 30
+        },
+        {
+          "type": "proficiency",
+          "target": "luck",
+          "value": 10
+        }
+      ],
+      "fantasy": "Relies on blades and pure chance",
+      "hiddenSkillBonuses": {
+        "counterattack": 0.05
+      }
+    },
+    {
+      "id": "bounty_hunter",
+      "name": "Bounty Hunter",
+      "tier": "adept",
+      "primaryAttribute": "dex",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "crossbows",
+          "value": 30
+        },
+        {
+          "type": "proficiency",
+          "target": "perception",
+          "value": 30
+        }
+      ],
+      "fantasy": "Tracks marks others can't find",
+      "hiddenSkillBonuses": {
+        "evasion": 0.05
+      }
+    },
+    {
+      "id": "vampire",
+      "name": "Vampire",
+      "tier": "expert",
+      "primaryAttribute": "int",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "dark_magic",
+          "value": 30
+        },
+        {
+          "type": "proficiency",
+          "target": "life_steal",
+          "value": 60
+        }
+      ],
+      "fantasy": "Sustains through stolen life force",
+      "hiddenSkillBonuses": {
+        "mana_regen": 0.05
+      },
+      "spellDamageMultiplier": 1.4
+    },
+    {
+      "id": "treasure_hunter",
+      "name": "Treasure Hunter",
+      "tier": "expert",
+      "category": "crafting",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "perception",
+          "value": 60
+        },
+        {
+          "type": "proficiency",
+          "target": "luck",
+          "value": 10
+        },
+        {
+          "type": "proficiency",
+          "target": "lockpicking",
+          "value": 30
+        }
+      ],
+      "fantasy": "Nothing stays hidden or locked for long"
     }
   ]
 }

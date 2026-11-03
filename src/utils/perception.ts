@@ -7,10 +7,11 @@ import type { GatheringNodeDef } from '../types/game.ts';
  */
 export function computeDetectionChance(
   perceptionLevel: number,
-  perks?: { detectionBonusChance?: number }
+  perks?: { detectionBonusChance?: number; keenSearchBonus?: number; keenSearchBonusChance?: number }
 ): number {
   const explorerBonus = perks?.detectionBonusChance ?? 0;
-  const raw = 0.05 + 0.01 * perceptionLevel + explorerBonus;
+  const keenBonus = perks?.keenSearchBonus ?? perks?.keenSearchBonusChance ?? 0;
+  const raw = 0.05 + 0.01 * perceptionLevel + explorerBonus + keenBonus;
   return Math.min(0.90, Math.round(raw * 10000) / 10000);
 }
 

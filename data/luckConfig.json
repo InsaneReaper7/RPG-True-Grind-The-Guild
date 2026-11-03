@@ -4,8 +4,8 @@
   "fortuneTriggerChance": 0.05,
   "ladyFortuneExpPerLuckProc": 5,
   "ladyFortuneExpPerFortuneTrigger": 50,
-  "fortunesFavorMultiplierPerPerk": 2.0,
-  "goldenTouchIngredientDropChancePerPerk": 1.0,
+  "fortunesFavorMultiplierPerPerk": 2,
+  "goldenTouchIngredientDropChancePerPerk": 1,
   "jackpotExtraRollMultiplier": 2,
   "fortunesShieldChancePerPerk": 0.5,
   "fortunesShieldMaxChance": 0.075,
@@ -13,5 +13,12 @@
   "critChancePerLevel": 0.002,
   "critDamageBaseMultiplier": 1.5,
   "critDamagePerLevelMultiplier": 0.005,
-  "lifeStealPerLevel": 0.001
+  "lifeStealPerLevel": 0.001,
+  "treasureHunter": {
+    "keenSearchPerkPercentMax": 15,
+    "pickmasterDivisor": 2,
+    "expPerHiddenCacheRevealed": 25,
+    "expPerSuccessfulPick": 35,
+    "expPerLockedBoxOpened": 25
+  }
 }

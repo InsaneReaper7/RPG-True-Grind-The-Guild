@@ -29,8 +29,8 @@ export class LockpickingSystem {
    * Calculates success rate given a character's Lockpicking proficiency level.
    * Scales linearly from 25% at Level 0 to 100% at Level 100 (+0.75% per level).
    */
-  public calculateSuccessRate(level: number): number {
-    const raw = LockpickingSystem.BASE_SUCCESS_RATE + level * LockpickingSystem.SUCCESS_RATE_PER_LEVEL;
+  public calculateSuccessRate(level: number, pickmasterBonus: number = 0): number {
+    const raw = LockpickingSystem.BASE_SUCCESS_RATE + level * LockpickingSystem.SUCCESS_RATE_PER_LEVEL + pickmasterBonus;
     return Math.min(LockpickingSystem.MAX_SUCCESS_RATE, Math.max(LockpickingSystem.BASE_SUCCESS_RATE, raw));
   }
 
@@ -287,8 +287,12 @@ export class LockpickingSystem {
 
     for (let rollIndex = 1; rollIndex <= maxRolls; rollIndex++) {
       rollsAttempted = rollIndex;
-      const currentLevel = memberProgression.getProficiencyLevel('lockpicking');
-      const successRate = this.calculateSuccessRate(currentLevel);
+            const currentLevel = memberProgression.getProficiencyLevel('lockpicking');
+      const thUnlocked = typeof memberProgression.isClassUnlocked === 'function' && memberProgression.isClassUnlocked('treasure_hunter');
+      const thLevel = thUnlocked ? (typeof memberProgression.getClassLevel === 'function' ? memberProgression.getClassLevel('treasure_hunter') : 0) : 0;
+      const thPerk = Math.min(15, Math.max(0, thLevel));
+      const pickmasterBonus = (thPerk / 2) / 100;
+      const successRate = this.calculateSuccessRate(currentLevel, pickmasterBonus);
       const roll = rng();
 
       if (roll < successRate) {
@@ -310,8 +314,24 @@ export class LockpickingSystem {
           memberProgression.addClassExp('locksmith', LockpickingSystem.SUCCESS_EXP);
         }
 
+        if (thUnlocked) {
+          const luckCfg = DataLoader.getInstance().getLuckConfig();
+          const pickExp = luckCfg.treasureHunter?.expPerSuccessfulPick ?? 35;
+          const openExp = luckCfg.treasureHunter?.expPerLockedBoxOpened ?? 25;
+          memberProgression.addClassExp('treasure_hunter', pickExp);
+          memberProgression.addClassExp('treasure_hunter', openExp);
+        }
+
         // Roll & dispense loot
         const rewards = this.rollLockedBoxLoot(rng);
+        let treasureSenseProcced = false;
+        if (thUnlocked && thPerk > 0) {
+          if (lRng() < (thPerk / 100)) {
+            treasureSenseProcced = true;
+            const extraRewards = this.rollLockedBoxLoot(rng);
+            rewards.push(...extraRewards);
+          }
+        }
         const dataLoader = DataLoader.getInstance();
         const researchSystem = ResearchSystem.getInstance();
 
@@ -373,7 +393,8 @@ export class LockpickingSystem {
           rollsAttempted,
           lockpicksConsumed,
           boxBroken: false,
-          boxPreserved: false
+          boxPreserved: false,
+          treasureSenseProcced
         };
       } else {
         // Failed roll: check Locksmith perk (Steady hands: perk% chance a failed roll doesn't consume the lockpick)

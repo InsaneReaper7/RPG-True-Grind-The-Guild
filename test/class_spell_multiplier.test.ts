@@ -219,7 +219,8 @@ async function main() {
     natures_avatar: 1.20,
     archdruid: 1.45,
     elemental_sovereign: 0.80,
-    herbwarden: 1.40
+    herbwarden: 1.40,
+    vampire: 1.40
   };
 
   const classes = dataLoader.getClasses();
@@ -233,8 +234,8 @@ async function main() {
 
   assert.strictEqual(
     Object.keys(classesWithMultiplier).length,
-    29,
-    `Expected exactly 29 classes to have spellDamageMultiplier, found ${Object.keys(classesWithMultiplier).length}`
+    30,
+    `Expected exactly 30 classes to have spellDamageMultiplier, found ${Object.keys(classesWithMultiplier).length}`
   );
 
   for (const [clsId, expectedVal] of Object.entries(expectedTable)) {

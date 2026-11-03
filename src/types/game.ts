@@ -1321,6 +1321,7 @@ export interface LockpickAttemptResult {
   lockpicksConsumed?: number;
   boxBroken?: boolean;
   boxPreserved?: boolean;
+  treasureSenseProcced?: boolean;
 }
 
 // Stat Gains & Progression Level Up
@@ -1424,6 +1425,14 @@ export interface CraftingRanksData {
   professions: Record<string, { apprentice: string; journeyman: string; master: string; grandmaster: string }>;
 }
 
+export interface TreasureHunterConfig {
+  keenSearchPerkPercentMax?: number;
+  pickmasterDivisor?: number;
+  expPerHiddenCacheRevealed?: number;
+  expPerSuccessfulPick?: number;
+  expPerLockedBoxOpened?: number;
+}
+
 export interface LuckConfig {
   baseProcChance: number;
   procChancePerLevel: number;
@@ -1440,4 +1449,5 @@ export interface LuckConfig {
   critDamageBaseMultiplier: number;
   critDamagePerLevelMultiplier: number;
   lifeStealPerLevel: number;
+  treasureHunter?: TreasureHunterConfig;
 }

@@ -1112,7 +1112,7 @@ export class SkillSystem {
       const ai = skillDef.ai;
       const role = ai?.role ?? this.inferFallbackRole(skillDef);
       const priority = ai?.priority ?? 50;
-      const cond = ai?.condition;
+      const cond: any = ai?.condition ? { ...ai, ...ai.condition } : ai;
 
       // Handle context matching
       if (context === 'support') {

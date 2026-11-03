@@ -2927,9 +2927,13 @@ export class MainScene extends Phaser.Scene {
       this.undiscoveredCaches.splice(idx, 1);
     }
     this.hud?.showToast(`👁️ ${revealer.entityName} spotted a Hidden Cache!`, 'info');
-    revealer.progression.addProficiencyExp('perception', 10);
+        revealer.progression.addProficiencyExp('perception', 10);
     if (revealer.progression.isClassUnlocked('explorer')) {
       revealer.progression.addClassExp('explorer', 15);
+    }
+    if (revealer.progression.isClassUnlocked('treasure_hunter')) {
+      const luckCfg = DataLoader.getInstance().getLuckConfig();
+      revealer.progression.addClassExp('treasure_hunter', luckCfg.treasureHunter?.expPerHiddenCacheRevealed ?? 25);
     }
     this.spawnGatheringNode(cache.x, cache.y, 'hidden_cache');
   }

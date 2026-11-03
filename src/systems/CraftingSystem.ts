@@ -184,9 +184,41 @@ export class CraftingSystem {
       };
     }
 
+        const thUnlocked = !!(progression && typeof progression.isClassUnlocked === 'function' && progression.isClassUnlocked('treasure_hunter'));
+    const thLevel = thUnlocked ? progression.getClassLevel('treasure_hunter') : 0;
+    const thPerk = Math.min(15, Math.max(0, thLevel));
+    const keenSearchBonus = thPerk / 100;
+    const pickmasterBonus = (thPerk / 2) / 100;
+    const treasureSenseChance = thPerk / 100;
+
     const classId = CraftingSystem.getMatchingClassId(professionId) || (DataLoader.getInstance().getClass(professionId) ? professionId : null);
 
     if (!classId || !progression || !progression.isClassUnlocked(classId)) {
+      if (thUnlocked && (professionId === 'perception' || professionId === 'lockpicking' || professionId === 'treasure_hunter')) {
+        let perkDesc = `Treasure Hunter Lv ${thLevel}: Keen Search +${thPerk}% detection, Pickmaster +${(thPerk / 2).toFixed(1)}%, Treasure Sense ${thPerk}%`;
+        if (professionId === 'perception') perkDesc = `Treasure Hunter Lv ${thLevel}: Keen Search +${thPerk}% detection chance`;
+        if (professionId === 'lockpicking') perkDesc = `Treasure Hunter Lv ${thLevel}: Pickmaster +${(thPerk / 2).toFixed(1)}% success, Treasure Sense ${thPerk}% extra roll`;
+        return {
+          classId: 'treasure_hunter',
+          className: 'Treasure Hunter',
+          classLevel: thLevel,
+          perkPercent: thPerk,
+          bonusYieldChance: 0,
+          secondBonusYieldChance: 0,
+          gearStatBonusPercent: 0,
+          thriftyChance: 0,
+          exceptionalChance: 0,
+          savePickChance: 0,
+          perkDescription: perkDesc,
+          detectionBonusChance: 0,
+          detectionRadius: 3,
+          cacheBonusRollChance: 0,
+          keenSearchBonus: (professionId === 'perception' || professionId === 'treasure_hunter') ? keenSearchBonus : 0,
+          keenSearchBonusChance: (professionId === 'perception' || professionId === 'treasure_hunter') ? keenSearchBonus : 0,
+          pickmasterBonus: (professionId === 'lockpicking' || professionId === 'treasure_hunter') ? pickmasterBonus : 0,
+          treasureSenseChance: (professionId === 'lockpicking' || professionId === 'treasure_hunter') ? treasureSenseChance : 0
+        };
+      }
       return {
         classId,
         className: 'None',
@@ -200,7 +232,11 @@ export class CraftingSystem {
         savePickChance: 0,
         detectionBonusChance: 0,
         detectionRadius: 3,
-        cacheBonusRollChance: 0
+        cacheBonusRollChance: 0,
+        keenSearchBonus: 0,
+        keenSearchBonusChance: 0,
+        pickmasterBonus: 0,
+        treasureSenseChance: 0
       };
     }
 
@@ -224,6 +260,14 @@ export class CraftingSystem {
       perkDescription = `${clsDef?.name ?? classId} Lv ${classLevel}: +${cappedBonus}% detection chance${wideSearch ? ', 4-tile search radius' : ''}, +${cappedBonus}% cache loot roll`;
     }
 
+        if (thUnlocked && thPerk > 0) {
+      if (professionId === 'perception') {
+        perkDescription += ` | Keen Search: +${thPerk}% detection chance`;
+      } else if (professionId === 'lockpicking') {
+        perkDescription += ` | Pickmaster: +${(thPerk / 2).toFixed(1)}%, Treasure Sense: ${thPerk}%`;
+      }
+    }
+
     return {
       classId,
       className: clsDef?.name ?? classId,
@@ -238,7 +282,43 @@ export class CraftingSystem {
       perkDescription,
       detectionBonusChance: cappedBonus / 100,
       detectionRadius: cappedBonus >= 10 ? 4 : 3,
-      cacheBonusRollChance: cappedBonus
+      cacheBonusRollChance: cappedBonus,
+      keenSearchBonus: (professionId === 'perception' || professionId === 'treasure_hunter') ? keenSearchBonus : 0,
+      keenSearchBonusChance: (professionId === 'perception' || professionId === 'treasure_hunter') ? keenSearchBonus : 0,
+      pickmasterBonus: (professionId === 'lockpicking' || professionId === 'treasure_hunter') ? pickmasterBonus : 0,
+      treasureSenseChance: (professionId === 'lockpicking' || professionId === 'treasure_hunter') ? treasureSenseChance : 0
+    };
+  }
+
+  public static getTreasureHunterPerks(
+    crafter: Player | ProgressionSystem | { progression: ProgressionSystem }
+  ): {
+    unlocked: boolean;
+    level: number;
+    perkPercent: number;
+    keenSearchBonus: number;
+    keenSearchBonusChance: number;
+    pickmasterBonus: number;
+    treasureSenseChance: number;
+  } {
+    const progression: ProgressionSystem | undefined =
+      crafter instanceof ProgressionSystem
+        ? crafter
+        : (crafter && 'progression' in crafter && (crafter as any).progression instanceof ProgressionSystem)
+        ? (crafter as any).progression
+        : (crafter as any)?.progression;
+
+    const unlocked = !!(progression && typeof progression.isClassUnlocked === 'function' && progression.isClassUnlocked('treasure_hunter'));
+    const level = unlocked ? progression.getClassLevel('treasure_hunter') : 0;
+    const perkPercent = Math.min(15, Math.max(0, level));
+    return {
+      unlocked,
+      level,
+      perkPercent,
+      keenSearchBonus: perkPercent / 100,
+      keenSearchBonusChance: perkPercent / 100,
+      pickmasterBonus: (perkPercent / 2) / 100,
+      treasureSenseChance: perkPercent / 100
     };
   }
 
