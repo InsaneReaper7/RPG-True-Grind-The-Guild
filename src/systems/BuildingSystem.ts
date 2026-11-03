@@ -4,6 +4,8 @@ export interface EnclosureResult {
   isIndoor: boolean;
   reason?: string;
   enclosedTiles?: GridPos[];
+  perimeterWalls?: GridPos[];
+  perimeterDoors?: GridPos[];
 }
 
 export type ConstructionTierName = 'untrained' | 'novice' | 'adept' | 'expert' | 'master';
@@ -48,9 +50,75 @@ export class BuildingSystem {
     return Math.max(1, Math.floor(baseCost * tier.buildCostMultiplier));
   }
 
-  public static getEffectiveDemolishRefund(costPaid: number, level: number): number {
+  public static getEffectiveDemolishRefund(costPaid: number, level: number, salvageBonusPercent: number = 0): number {
     const tier = BuildingSystem.getConstructionTier(level);
-    return Math.floor(costPaid * tier.demolishRefundMultiplier);
+    const effectiveMultiplier = Math.min(1.0, tier.demolishRefundMultiplier + (salvageBonusPercent / 100));
+    return Math.floor(costPaid * effectiveMultiplier);
+  }
+
+  public static isWall(def?: BuildableDef | null): boolean {
+    if (!def) return false;
+    return def.structure === 'wall' || def.id === 'wall';
+  }
+
+  public static isDoor(def?: BuildableDef | null): boolean {
+    if (!def) return false;
+    return def.structure === 'door' || def.id === 'door';
+  }
+
+  public static isFloor(def?: BuildableDef | null): boolean {
+    if (!def) return false;
+    return def.structure === 'floor' || def.id === 'floor';
+  }
+
+  public static isFurniture(def?: BuildableDef | null): boolean {
+    if (!def || !def.itemCosts) return false;
+    return def.itemCosts[def.id] !== undefined;
+  }
+
+  public static getBlueprintCosts(
+    blueprint: BuildableDef,
+    level: number = 0
+  ): {
+    wood: number;
+    clay: number;
+    ore: number;
+    items: Record<string, number>;
+  } {
+    const wood = blueprint.woodCost > 0 ? BuildingSystem.getEffectiveBuildCost(blueprint.woodCost, level) : 0;
+    const clay = blueprint.clayCost ?? 0;
+    const ore = blueprint.oreCost ?? 0;
+    const items: Record<string, number> = {};
+    if (blueprint.itemCosts) {
+      for (const [itemId, count] of Object.entries(blueprint.itemCosts)) {
+        if (itemId === blueprint.id) {
+          // Furniture piece: consumed 1 item directly
+          items[itemId] = count;
+        } else {
+          items[itemId] = BuildingSystem.getEffectiveBuildCost(count, level);
+        }
+      }
+    }
+    return { wood, clay, ore, items };
+  }
+
+  public static createRng(seed: number): () => number {
+    let cur = seed % 2147483647;
+    if (cur <= 0) cur += 2147483646;
+    return () => {
+      cur = (cur * 16807) % 2147483647;
+      return (cur - 1) / 2147483646;
+    };
+  }
+
+  private freeHandsRng: () => number = BuildingSystem.createRng(1337);
+
+  public setFreeHandsRng(rng: () => number): void {
+    this.freeHandsRng = rng;
+  }
+
+  public rollFreeHands(): number {
+    return this.freeHandsRng() * 100;
   }
 
   /**
@@ -169,7 +237,15 @@ export class BuildingSystem {
 
     return {
       isIndoor: true,
-      enclosedTiles
+      enclosedTiles,
+      perimeterWalls: Array.from(perimeterWalls).map((k) => {
+        const [px, py] = k.split(',').map(Number);
+        return { x: px, y: py };
+      }),
+      perimeterDoors: Array.from(perimeterDoors).map((k) => {
+        const [px, py] = k.split(',').map(Number);
+        return { x: px, y: py };
+      })
     };
   }
 
@@ -190,7 +266,8 @@ export class BuildingSystem {
     currentClay: number = 0,
     gardeningLevel: number = 0,
     isUnlockedFn?: (id: string) => boolean,
-    currentOre: number = 0
+    currentOre: number = 0,
+    getItemCountFn?: (id: string) => number
   ): { valid: boolean; reason?: string } {
     // 0. Research unlock check for lockedByDefault buildables
     if (blueprint.lockedByDefault) {
@@ -215,7 +292,7 @@ export class BuildingSystem {
       }
     }
 
-    // 2. Resource checks (Wood, Clay & Ore)
+    // 2. Resource checks (Wood, Clay, Ore & ItemCosts)
     if (blueprint.woodCost > 0) {
       const effectiveCost = BuildingSystem.getEffectiveBuildCost(blueprint.woodCost, constructionLevel);
       if (currentWood < effectiveCost) {
@@ -244,6 +321,20 @@ export class BuildingSystem {
       }
     }
 
+    if (blueprint.itemCosts && getItemCountFn) {
+      const costs = BuildingSystem.getBlueprintCosts(blueprint, constructionLevel);
+      for (const [itemId, reqCount] of Object.entries(costs.items)) {
+        const have = getItemCountFn(itemId);
+        if (have < reqCount) {
+          const itemName = itemId.replace(/_/g, ' ');
+          return {
+            valid: false,
+            reason: `Not enough ${itemName}! Requires ${reqCount} ${itemName} (You have ${have}).`
+          };
+        }
+      }
+    }
+
     // 2. Map bounds check
     if (x <= 0 || x >= this.mapWidth - 1 || y <= 0 || y >= this.mapHeight - 1) {
       return { valid: false, reason: 'Cannot place on outer map boundary.' };
@@ -260,14 +351,14 @@ export class BuildingSystem {
     }
 
     // 5. Existing solid structure checks
-    if (blueprint.id === 'wall') {
+    if (BuildingSystem.isWall(blueprint)) {
       if (isWallFn(x, y)) {
         return { valid: false, reason: 'A wall already exists here.' };
       }
       if (isOccupiedStationFn(x, y)) {
         return { valid: false, reason: 'Cannot place wall on existing furniture or station.' };
       }
-    } else if (blueprint.id === 'door') {
+    } else if (BuildingSystem.isDoor(blueprint)) {
       if (isDoorFn(x, y)) {
         return { valid: false, reason: 'A door already exists here.' };
       }
@@ -309,7 +400,8 @@ export class BuildingSystem {
   public getWallTextureKey(
     x: number,
     y: number,
-    isWallOrDoor: (x: number, y: number) => boolean
+    isWallOrDoor: (x: number, y: number) => boolean,
+    prefix: string = 'buildable-wood-wall'
   ): string {
     const north = isWallOrDoor(x, y - 1);
     const south = isWallOrDoor(x, y + 1);
@@ -317,21 +409,21 @@ export class BuildingSystem {
     const east = isWallOrDoor(x + 1, y);
 
     if ((north || south) && (east || west)) {
-      if (south && east && !north && !west) return 'buildable-wood-wall-corner-nw';
-      if (south && west && !north && !east) return 'buildable-wood-wall-corner-ne';
-      if (north && east && !south && !west) return 'buildable-wood-wall-corner-sw';
-      if (north && west && !south && !east) return 'buildable-wood-wall-corner-se';
-      return 'buildable-wood-wall-junction';
+      if (south && east && !north && !west) return `${prefix}-corner-nw`;
+      if (south && west && !north && !east) return `${prefix}-corner-ne`;
+      if (north && east && !south && !west) return `${prefix}-corner-sw`;
+      if (north && west && !south && !east) return `${prefix}-corner-se`;
+      return `${prefix}-junction`;
     }
 
     if (north || south) {
-      return 'buildable-wood-wall-v';
+      return `${prefix}-v`;
     }
 
     if (east || west) {
-      return 'buildable-wood-wall-h';
+      return `${prefix}-h`;
     }
 
-    return 'buildable-wood-wall-single';
+    return `${prefix}-single`;
   }
 }

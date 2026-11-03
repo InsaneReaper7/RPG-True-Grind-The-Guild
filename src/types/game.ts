@@ -252,6 +252,11 @@ export interface BuildableDef {
   woodCost: number;
   clayCost?: number;
   oreCost?: number;
+  itemCosts?: Record<string, number>;
+  structure?: 'wall' | 'door' | 'floor';
+  materialTier?: number;
+  quality?: number;
+  textureKeyPrefix?: string;
   requiredProficiency?: { proficiency: string; level: number };
   footprint: FootprintDef;
   rotatable: boolean;
@@ -273,6 +278,7 @@ export interface PlacedBuildable {
   y: number;
   rotation: number; // 0, 90, 180, 270
   costPaid?: number;
+  itemsPaid?: Record<string, number>;
   gardeningData?: PlantingPlotData;
   seedMakerData?: SeedMakerData;
 }
@@ -287,6 +293,10 @@ export interface RoomRuleDef {
 
 export interface RoomsData {
   rules: RoomRuleDef[];
+  roomQuality?: {
+    wallTierWeight: number;
+    thresholds: Record<string, number> | Array<{ id: string; label: string; minQuality: number }>;
+  };
 }
 
 export interface PlayerData {
@@ -610,6 +620,36 @@ export interface BowyerRecipesData {
   salvageRefundRate?: number;
   salvageExpRate?: number;
   recipes: BowyerRecipeDef[];
+}
+
+export interface WoodworkingRecipeDef {
+  id: string;
+  name: string;
+  resultItemId?: string;
+  resultCount?: number;
+  requiredLevel: number;
+  ingredients: Record<string, number>;
+  expGranted: number;
+  description: string;
+}
+
+export interface WoodworkingRecipesData {
+  recipes: WoodworkingRecipeDef[];
+}
+
+export interface StonemasonRecipeDef {
+  id: string;
+  name: string;
+  resultItemId?: string;
+  resultCount?: number;
+  requiredLevel: number;
+  ingredients: Record<string, number>;
+  expGranted: number;
+  description: string;
+}
+
+export interface StonemasonRecipesData {
+  recipes: StonemasonRecipeDef[];
 }
 
 export type ArmorSlot = 'helmet' | 'body' | 'necklace' | 'ring' | 'accessory';
@@ -1094,6 +1134,12 @@ export interface MoodEffectsData {
   hungerEnabled?: boolean;
   moodEnabled?: boolean;
   moodTiers: MoodTierDef[];
+  roomQuality?: {
+    bedroomMoodPerSecPerPoint: number;
+    bedroomMoodCapPerSec: number;
+    diningMoodPerSecPerPoint: number;
+    diningMoodCapPerSec: number;
+  };
 }
 
 export interface ExpTransaction {
@@ -1416,6 +1462,7 @@ export interface CampConfig {
 
 export interface CraftingRanksData {
   perkCap: number;
+  builderExpPerPlacement?: number;
   ranks: {
     apprentice: { levelCap: number; perkCap: number };
     journeyman: { unlockProficiency: number; unlockPrereqLevel: number; perkCap: number; refundUnitCount: number };

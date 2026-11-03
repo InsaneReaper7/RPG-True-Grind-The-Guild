@@ -3304,6 +3304,229 @@
         }
       ],
       "fantasy": "Nothing stays hidden or locked for long"
+    },
+    {
+      "id": "apprentice_carpenter",
+      "name": "Apprentice Carpenter",
+      "tier": "novice",
+      "category": "crafting",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "woodworking",
+          "value": 10
+        }
+      ],
+      "fantasy": "Milling raw timber into sturdy planks and functional furnishings"
+    },
+    {
+      "id": "journeyman_carpenter",
+      "name": "Journeyman Carpenter",
+      "tier": "adept",
+      "category": "crafting",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "woodworking",
+          "value": 30
+        },
+        {
+          "type": "classLevel",
+          "target": "apprentice_carpenter",
+          "value": 10
+        }
+      ],
+      "fantasy": "Refining mortise and tenon joinery to minimize scrap and craft elegant woodworks",
+      "perkDescription": "Thrifty: min(15, Lv)% chance to refund 1 random ingredient unit"
+    },
+    {
+      "id": "master_carpenter",
+      "name": "Master Carpenter",
+      "tier": "expert",
+      "category": "crafting",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "woodworking",
+          "value": 60
+        },
+        {
+          "type": "classLevel",
+          "target": "journeyman_carpenter",
+          "value": 15
+        }
+      ],
+      "fantasy": "Crafting masterwork cabinets and royal thrones fit for high lords",
+      "perkDescription": "Masterwork: extra +min(15, Lv)% gear stats"
+    },
+    {
+      "id": "grandmaster_carpenter",
+      "name": "Grandmaster Carpenter",
+      "tier": "master",
+      "category": "crafting",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "woodworking",
+          "value": 90
+        },
+        {
+          "type": "classLevel",
+          "target": "master_carpenter",
+          "value": 25
+        }
+      ],
+      "fantasy": "Infusing raw timber with an enduring perfection that defies time",
+      "perkDescription": "Exceptional: min(15, Lv)% chance for double stackable yield"
+    },
+    {
+      "id": "apprentice_stonemason",
+      "name": "Apprentice Stonemason",
+      "tier": "novice",
+      "category": "crafting",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "stonemason",
+          "value": 10
+        }
+      ],
+      "fantasy": "Squaring rough-hewn stone blocks into uniform building bricks"
+    },
+    {
+      "id": "journeyman_stonemason",
+      "name": "Journeyman Stonemason",
+      "tier": "adept",
+      "category": "crafting",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "stonemason",
+          "value": 30
+        },
+        {
+          "type": "classLevel",
+          "target": "apprentice_stonemason",
+          "value": 10
+        }
+      ],
+      "fantasy": "Chiseling precise ashlar blocks and resilient garden fixtures with zero wasted stone",
+      "perkDescription": "Thrifty: min(15, Lv)% chance to refund 1 random ingredient unit"
+    },
+    {
+      "id": "master_stonemason",
+      "name": "Master Stonemason",
+      "tier": "expert",
+      "category": "crafting",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "stonemason",
+          "value": 60
+        },
+        {
+          "type": "classLevel",
+          "target": "journeyman_stonemason",
+          "value": 15
+        }
+      ],
+      "fantasy": "Sculpting lifelike marble statues and ornate fountains",
+      "perkDescription": "Masterwork: extra +min(15, Lv)% gear stats"
+    },
+    {
+      "id": "grandmaster_stonemason",
+      "name": "Grandmaster Stonemason",
+      "tier": "master",
+      "category": "crafting",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "stonemason",
+          "value": 90
+        },
+        {
+          "type": "classLevel",
+          "target": "master_stonemason",
+          "value": 25
+        }
+      ],
+      "fantasy": "Building monumental grand hearths and enduring monoliths",
+      "perkDescription": "Exceptional: min(15, Lv)% chance for double stackable yield"
+    },
+    {
+      "id": "apprentice_builder",
+      "name": "Apprentice Builder",
+      "tier": "novice",
+      "category": "crafting",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "construction",
+          "value": 10
+        }
+      ],
+      "fantasy": "Laying foundations and raising timber frames with practiced hands",
+      "perkDescription": "Free Hands: min(15, Lv)% chance that placing a structure consumes nothing"
+    },
+    {
+      "id": "journeyman_builder",
+      "name": "Journeyman Builder",
+      "tier": "adept",
+      "category": "crafting",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "construction",
+          "value": 30
+        },
+        {
+          "type": "classLevel",
+          "target": "apprentice_builder",
+          "value": 10
+        }
+      ],
+      "fantasy": "Erecting fortified walls and spacious guild outposts",
+      "perkDescription": "Free Hands: min(15, Lv)% chance that placing a structure consumes nothing"
+    },
+    {
+      "id": "master_builder",
+      "name": "Master Builder",
+      "tier": "expert",
+      "category": "crafting",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "construction",
+          "value": 60
+        },
+        {
+          "type": "classLevel",
+          "target": "journeyman_builder",
+          "value": 15
+        }
+      ],
+      "fantasy": "Architect of fortified strongholds and master salvage recovery",
+      "perkDescription": "Salvage Expert: +min(15, Lv)% demolish refund, capped at 100%"
+    },
+    {
+      "id": "grandmaster_builder",
+      "name": "Grandmaster Builder",
+      "tier": "master",
+      "category": "crafting",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "construction",
+          "value": 90
+        },
+        {
+          "type": "classLevel",
+          "target": "master_builder",
+          "value": 25
+        }
+      ],
+      "fantasy": "Legendary architect capable of raising runic citadels",
+      "perkDescription": "Salvage Expert: +min(15, Lv)% demolish refund, capped at 100%"
     }
   ]
 }

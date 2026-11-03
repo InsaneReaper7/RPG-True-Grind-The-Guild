@@ -1,0 +1,102 @@
+{
+  "recipes": [
+    {
+      "id": "planks",
+      "name": "Planks",
+      "resultItemId": "planks",
+      "resultCount": 1,
+      "requiredLevel": 10,
+      "ingredients": {
+        "wood": 2
+      },
+      "expGranted": 10,
+      "description": "Mill raw timber logs into uniform building planks."
+    },
+    {
+      "id": "wooden_chair",
+      "name": "Wooden Chair",
+      "resultItemId": "wooden_chair",
+      "resultCount": 1,
+      "requiredLevel": 0,
+      "ingredients": {
+        "wood": 3
+      },
+      "expGranted": 20,
+      "description": "A simple hand-carved wooden chair for dining and resting."
+    },
+    {
+      "id": "wooden_table",
+      "name": "Wooden Table",
+      "resultItemId": "wooden_table",
+      "resultCount": 1,
+      "requiredLevel": 0,
+      "ingredients": {
+        "wood": 5
+      },
+      "expGranted": 20,
+      "description": "A sturdy timber table for communal guild dining."
+    },
+    {
+      "id": "wall_shelf",
+      "name": "Wall Shelf",
+      "resultItemId": "wall_shelf",
+      "resultCount": 1,
+      "requiredLevel": 15,
+      "ingredients": {
+        "planks": 3
+      },
+      "expGranted": 30,
+      "description": "Milled wooden wall shelving for books, scrolls, and curios."
+    },
+    {
+      "id": "wardrobe",
+      "name": "Wardrobe",
+      "resultItemId": "wardrobe",
+      "resultCount": 1,
+      "requiredLevel": 25,
+      "ingredients": {
+        "planks": 6
+      },
+      "expGranted": 40,
+      "description": "A tall wooden wardrobe for storing adventuring apparel."
+    },
+    {
+      "id": "bookshelf",
+      "name": "Bookshelf",
+      "resultItemId": "bookshelf",
+      "resultCount": 1,
+      "requiredLevel": 35,
+      "ingredients": {
+        "planks": 8
+      },
+      "expGranted": 55,
+      "description": "A handsome multi-tiered bookshelf to hold arcane and martial lore."
+    },
+    {
+      "id": "carved_cabinet",
+      "name": "Carved Cabinet",
+      "resultItemId": "carved_cabinet",
+      "resultCount": 1,
+      "requiredLevel": 50,
+      "ingredients": {
+        "planks": 6,
+        "reinforced_plank": 2
+      },
+      "expGranted": 75,
+      "description": "A luxurious cabinet carved from fine planks and braced with reinforced timber."
+    },
+    {
+      "id": "masterwork_throne",
+      "name": "Masterwork Throne",
+      "resultItemId": "masterwork_throne",
+      "resultCount": 1,
+      "requiredLevel": 80,
+      "ingredients": {
+        "planks": 6,
+        "runic_plank": 4
+      },
+      "expGranted": 110,
+      "description": "An imposing masterwork throne woven with runic planks, radiating guild majesty."
+    }
+  ]
+}

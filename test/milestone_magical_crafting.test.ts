@@ -234,8 +234,12 @@ async function runTests() {
   // Test 4: Enchanting recipes and crafting EXP
   console.log('Test 4: Enchanting crystal & staff recipes, EXP values');
   const enchantingRecipes = dataLoader.getEnchantingRecipes();
-  assert.equal(enchantingRecipes.length, 22, 'There should be 11 crystal recipes + 11 staff recipes = 22 total enchanting recipes');
+  assert.equal(enchantingRecipes.length, 24, 'There should be 11 crystal recipes + 11 staff recipes + 2 runic materials = 24 total enchanting recipes');
   for (const r of enchantingRecipes) {
+    if (r.resultItemId === 'runic_plank' || r.resultItemId === 'runic_brick') {
+      assert.equal(r.requiredLevel, 60, `Recipe ${r.id} must be Level 60`);
+      continue;
+    }
     assert.equal(r.requiredLevel, 0, `Recipe ${r.id} must be Level 0`);
     if (r.resultItemId) {
       assert.equal(r.expGranted, 52, `Crystal recipe ${r.id} must grant 52 EXP`);

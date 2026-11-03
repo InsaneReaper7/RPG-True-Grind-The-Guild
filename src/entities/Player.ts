@@ -1872,6 +1872,14 @@ export class Player extends Entity {
         // Rest Input: Safe Outpost vs Dungeon Crawl Fatigue
         if (isSafeZone) {
           moodDeltaPerSec += 0.35; // Outpost recovery (+21/min)
+          const rqCfg = dataLoader.getMoodEffectsData()?.roomQuality;
+          if (rqCfg) {
+            const bestBedroom = GameState.getInstance().getBestRoomQuality('bedroom');
+            const bestDining = GameState.getInstance().getBestRoomQuality('cooking_dining');
+            const bedroomBonus = Math.min(rqCfg.bedroomMoodCapPerSec, bestBedroom * rqCfg.bedroomMoodPerSecPerPoint);
+            const diningBonus = Math.min(rqCfg.diningMoodCapPerSec, bestDining * rqCfg.diningMoodPerSecPerPoint);
+            moodDeltaPerSec += bedroomBonus + diningBonus;
+          }
         } else {
           moodDeltaPerSec -= 0.50; // Dungeon crawling stress (-30/min)
         }

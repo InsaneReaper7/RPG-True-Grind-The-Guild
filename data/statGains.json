@@ -126,6 +126,12 @@
     "construction": {
       "str": 0.02
     },
+    "woodworking": {
+      "dex": 0.02
+    },
+    "stonemason": {
+      "str": 0.02
+    },
     "bowyer": {
       "dex": 0.02
     },
@@ -182,6 +188,8 @@
     "nature_magic": "magic",
     "wind_magic": "magic",
     "construction": "profession",
+    "woodworking": "profession",
+    "stonemason": "profession",
     "alchemy": "profession",
     "cooking": "profession",
     "blacksmithing": "profession",

@@ -72,6 +72,34 @@
         "enchanting"
       ],
       "description": "Magical workshop with an enchanting altar for crafting conduit staves."
+    },
+    {
+      "id": "carpenters_workshop",
+      "name": "Carpenter's Workshop",
+      "priority": 10,
+      "requiredTags": [
+        "woodshop"
+      ],
+      "description": "Timber workshop with a woodworking bench for shaping planks and furniture."
+    },
+    {
+      "id": "masons_workshop",
+      "name": "Mason's Workshop",
+      "priority": 10,
+      "requiredTags": [
+        "masonry"
+      ],
+      "description": "Stonecutting yard for shaping stone blocks, bricks, and monumental masonry."
     }
-  ]
+  ],
+  "roomQuality": {
+    "wallTierWeight": 4,
+    "thresholds": {
+      "bare": 0,
+      "cozy": 5,
+      "fine": 15,
+      "lavish": 30,
+      "grand": 50
+    }
+  }
 }

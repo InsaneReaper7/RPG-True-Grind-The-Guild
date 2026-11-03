@@ -1,0 +1,94 @@
+{
+  "recipes": [
+    {
+      "id": "bricks",
+      "name": "Bricks",
+      "resultItemId": "bricks",
+      "resultCount": 2,
+      "requiredLevel": 10,
+      "ingredients": {
+        "stone": 2,
+        "clay": 1
+      },
+      "expGranted": 10,
+      "description": "Fired masonry bricks formed from quarried stone and binding clay."
+    },
+    {
+      "id": "stone_bench",
+      "name": "Stone Bench",
+      "resultItemId": "stone_bench",
+      "resultCount": 1,
+      "requiredLevel": 0,
+      "ingredients": {
+        "stone": 4
+      },
+      "expGranted": 20,
+      "description": "A heavy bench chiseled from natural stone."
+    },
+    {
+      "id": "stone_brazier",
+      "name": "Stone Brazier",
+      "resultItemId": "stone_brazier",
+      "resultCount": 1,
+      "requiredLevel": 0,
+      "ingredients": {
+        "stone": 3,
+        "ore": 1
+      },
+      "expGranted": 20,
+      "description": "A stone bowl holding an iron brazier core for continuous warmth."
+    },
+    {
+      "id": "stone_planter",
+      "name": "Stone Planter",
+      "resultItemId": "stone_planter",
+      "resultCount": 1,
+      "requiredLevel": 20,
+      "ingredients": {
+        "bricks": 4,
+        "dirt": 1
+      },
+      "expGranted": 40,
+      "description": "A masonry planter suitable for outdoor greenery."
+    },
+    {
+      "id": "stone_fountain",
+      "name": "Stone Fountain",
+      "resultItemId": "stone_fountain",
+      "resultCount": 1,
+      "requiredLevel": 40,
+      "ingredients": {
+        "bricks": 10,
+        "water_crystal": 2
+      },
+      "expGranted": 55,
+      "description": "An ornate masonry fountain animated by primal water crystals."
+    },
+    {
+      "id": "marble_statue",
+      "name": "Marble Statue",
+      "resultItemId": "marble_statue",
+      "resultCount": 1,
+      "requiredLevel": 60,
+      "ingredients": {
+        "bricks": 8,
+        "reinforced_brick": 2
+      },
+      "expGranted": 75,
+      "description": "A monumental heroic statue honoring ancient champions."
+    },
+    {
+      "id": "grand_hearth",
+      "name": "Grand Hearth",
+      "resultItemId": "grand_hearth",
+      "resultCount": 1,
+      "requiredLevel": 80,
+      "ingredients": {
+        "bricks": 10,
+        "runic_brick": 4
+      },
+      "expGranted": 110,
+      "description": "A towering hearth framed with runic masonry, warming the entire hall."
+    }
+  ]
+}

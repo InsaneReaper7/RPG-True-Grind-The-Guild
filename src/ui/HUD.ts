@@ -284,6 +284,25 @@ export class HUD {
   private magicalWeaponSalvageContainerEl: HTMLElement | null;
   private magicalWeaponStatusMsgEl: HTMLElement | null;
 
+  // Milestone 5: Woodworking & Stonemason Elements
+  private woodworkingModalEl: HTMLElement | null;
+  private closeWoodworkingBtn: HTMLElement | null;
+  private woodworkingModalProfEl: HTMLElement | null;
+  private woodworkingStockpileWoodEl: HTMLElement | null;
+  private woodworkingStockpilePlanksEl: HTMLElement | null;
+  private woodworkingStockpileAdvancedEl: HTMLElement | null;
+  private woodworkingRecipesContainerEl: HTMLElement | null;
+  private woodworkingStatusMsgEl: HTMLElement | null;
+
+  private stonemasonModalEl: HTMLElement | null;
+  private closeStonemasonBtn: HTMLElement | null;
+  private stonemasonModalProfEl: HTMLElement | null;
+  private stonemasonStockpileStoneEl: HTMLElement | null;
+  private stonemasonStockpileBricksEl: HTMLElement | null;
+  private stonemasonStockpileClayDirtEl: HTMLElement | null;
+  private stonemasonRecipesContainerEl: HTMLElement | null;
+  private stonemasonStatusMsgEl: HTMLElement | null;
+
   // Milestone 16 Elements (Floor Timer & Respawn Debug)
   private floorTimerBadgeEl: HTMLElement | null;
   private debugBtnFastForwardFloorTimer: HTMLElement | null;
@@ -822,6 +841,37 @@ export class HUD {
       };
     }
 
+    // Milestone 5: Woodworking & Stonemason Elements
+    this.woodworkingModalEl = document.getElementById('woodworking-modal');
+    this.closeWoodworkingBtn = document.getElementById('close-woodworking-btn');
+    this.woodworkingModalProfEl = document.getElementById('woodworking-modal-prof');
+    this.woodworkingStockpileWoodEl = document.getElementById('woodworking-stockpile-wood');
+    this.woodworkingStockpilePlanksEl = document.getElementById('woodworking-stockpile-planks');
+    this.woodworkingStockpileAdvancedEl = document.getElementById('woodworking-stockpile-advanced');
+    this.woodworkingRecipesContainerEl = document.getElementById('woodworking-recipes-container');
+    this.woodworkingStatusMsgEl = document.getElementById('woodworking-status-msg');
+
+    if (this.closeWoodworkingBtn) {
+      this.closeWoodworkingBtn.onclick = () => {
+        HUD.activeInstance?.closeWoodworkingModal();
+      };
+    }
+
+    this.stonemasonModalEl = document.getElementById('stonemason-modal');
+    this.closeStonemasonBtn = document.getElementById('close-stonemason-btn');
+    this.stonemasonModalProfEl = document.getElementById('stonemason-modal-prof');
+    this.stonemasonStockpileStoneEl = document.getElementById('stonemason-stockpile-stone');
+    this.stonemasonStockpileBricksEl = document.getElementById('stonemason-stockpile-bricks');
+    this.stonemasonStockpileClayDirtEl = document.getElementById('stonemason-stockpile-clay-dirt');
+    this.stonemasonRecipesContainerEl = document.getElementById('stonemason-recipes-container');
+    this.stonemasonStatusMsgEl = document.getElementById('stonemason-status-msg');
+
+    if (this.closeStonemasonBtn) {
+      this.closeStonemasonBtn.onclick = () => {
+        HUD.activeInstance?.closeStonemasonModal();
+      };
+    }
+
     // Crafting Station Filter Toggle Buttons (Milestone: Crafting Station Recipe Filter)
     this.blacksmithingToggleFilterBtn = document.getElementById('blacksmithing-toggle-filter-btn');
     this.armorsmithingToggleFilterBtn = document.getElementById('armorsmithing-toggle-filter-btn');
@@ -830,7 +880,7 @@ export class HUD {
     this.cookingToggleFilterBtn = document.getElementById('cooking-toggle-filter-btn');
     this.magicalWeaponToggleFilterBtn = document.getElementById('magical-weapon-toggle-filter-btn');
 
-    const craftingStations = ['blacksmithing', 'armorsmithing', 'bowyer', 'alchemy', 'cooking', 'magical-weapon'] as const;
+    const craftingStations = ['blacksmithing', 'armorsmithing', 'bowyer', 'alchemy', 'cooking', 'magical-weapon', 'woodworking', 'stonemason'] as const;
     craftingStations.forEach((st) => {
       const btn = document.getElementById(`${st}-toggle-filter-btn`);
       if (btn) {
@@ -1259,6 +1309,7 @@ export class HUD {
         const target = e.target as HTMLElement;
         const item = target.closest<HTMLElement>('.palette-item');
         if (!item) return;
+        if (item.classList.contains('disabled')) return;
         const id = item.dataset.buildableId;
         if (id) {
           HUD.activeInstance?.onSelectBuildableCallback?.(id);
@@ -2105,6 +2156,8 @@ export class HUD {
           active.closeArmorsmithingModal?.();
           active.closeBowyerModal?.();
           active.closeMagicalWeaponModal?.();
+          active.closeWoodworkingModal?.();
+          active.closeStonemasonModal?.();
           active.closePartyOverviewModal();
           if (active.isBuildOverlayVisible()) {
             active.onBuildModeToggleCallback?.();
@@ -2293,12 +2346,35 @@ export class HUD {
               continue; // Gated behind profession level (e.g. Seed Maker @ Gardening 25)!
             }
           }
-          const effCost = BuildingSystem.getEffectiveBuildCost(b.woodCost, constructionLevel);
+          const isFurniture = BuildingSystem.isFurniture(b);
+          let costBadgeHtml = '';
+          let isDisabled = false;
+
+          if (isFurniture) {
+            const owned = gameState.getItemCount(b.id);
+            costBadgeHtml = `🪑 Owned: ${owned}`;
+            if (owned <= 0) {
+              isDisabled = true;
+            }
+          } else {
+            const costs = BuildingSystem.getBlueprintCosts(b, constructionLevel);
+            const costParts: string[] = [];
+            if (costs.wood > 0) costParts.push(`🪵 ${costs.wood}`);
+            if (costs.clay > 0) costParts.push(`🏺 ${costs.clay}`);
+            if (costs.ore > 0) costParts.push(`⛏️ ${costs.ore}`);
+            for (const [itemId, count] of Object.entries(costs.items)) {
+              const itemDef = dataLoader.getItem(itemId);
+              costParts.push(`${count}x ${itemDef?.name || itemId}`);
+            }
+            costBadgeHtml = costParts.length > 0 ? costParts.join(' ') : 'Free';
+          }
+
           const isActive = b.id === selectedId;
           const displayName = b.name.replace('Wood ', '');
-          const costBadgeHtml = (b.clayCost && b.clayCost > 0) ? `🏺 ${b.clayCost} Clay` : `🪵 ${effCost}`;
+          const disabledClass = isDisabled ? 'disabled greyed-out' : '';
+          const disabledStyle = isDisabled ? 'opacity: 0.45; filter: grayscale(1); cursor: not-allowed;' : '';
           html += `
-            <div class="palette-item ${isActive ? 'active' : ''}" data-buildable-id="${b.id}">
+            <div class="palette-item ${isActive ? 'active' : ''} ${disabledClass}" data-buildable-id="${b.id}" style="${disabledStyle}">
               <span class="palette-name">${displayName}</span>
               <span class="palette-cost" id="cost-badge-${b.id}">${costBadgeHtml}</span>
             </div>
@@ -8056,6 +8132,286 @@ export class HUD {
     this.renderSalvageSection('enchanting', player, progression, this.magicalWeaponSalvageContainerEl);
   }
 
+  // --- Milestone 5: Woodworking & Stonemason Modals ---
+
+  public openWoodworkingModal(player: Player, progression: ProgressionSystem): void {
+    this.currentPlayer = player;
+    this.currentProgression = progression;
+    if (this.woodworkingModalEl) {
+      this.woodworkingModalEl.classList.add('active');
+      this.renderWoodworkingModal(player, progression);
+    }
+  }
+
+  public closeWoodworkingModal(): void {
+    if (this.woodworkingModalEl) {
+      this.woodworkingModalEl.classList.remove('active');
+    }
+  }
+
+  public isWoodworkingModalOpen(): boolean {
+    return this.woodworkingModalEl?.classList.contains('active') ?? false;
+  }
+
+  public renderWoodworkingModal(player: Player, progression: ProgressionSystem): void {
+    this.currentPlayer = player;
+    this.currentProgression = progression;
+    this.updateCraftingFilterToggleUI('woodworking');
+    const isCraftableOnly = this.isCraftingFilterActive('woodworking');
+
+    const gameState = GameState.getInstance();
+    const dataLoader = DataLoader.getInstance();
+
+    const wwStat = progression.getProficiencyStat('woodworking');
+    if (this.woodworkingModalProfEl) {
+      const nextExp = LevelingSystem.expForNextLevel(wwStat.level);
+      const perks = CraftingSystem.getCrafterPerks(player, 'woodworking');
+      const perkText = perks.perkDescription ? ` — ${perks.perkDescription}` : '';
+      this.woodworkingModalProfEl.innerText = `Level ${wwStat.level} (${wwStat.currentExp}/${nextExp} EXP)${perkText}`;
+    }
+
+    if (this.woodworkingStockpileWoodEl) {
+      this.setElementTextIfChanged(this.woodworkingStockpileWoodEl, `${gameState.getItemCount('wood')}`);
+    }
+    if (this.woodworkingStockpilePlanksEl) {
+      this.setElementTextIfChanged(this.woodworkingStockpilePlanksEl, `${gameState.getItemCount('planks')}`);
+    }
+    if (this.woodworkingStockpileAdvancedEl) {
+      const ref = gameState.getItemCount('reinforced_plank');
+      const runic = gameState.getItemCount('runic_plank');
+      this.setElementTextIfChanged(this.woodworkingStockpileAdvancedEl, `${ref} Ref / ${runic} Runic`);
+    }
+
+    if (this.woodworkingStatusMsgEl) {
+      this.woodworkingStatusMsgEl.innerText = '';
+    }
+
+    if (this.woodworkingRecipesContainerEl) {
+      this.woodworkingRecipesContainerEl.innerHTML = '';
+      const recipes = dataLoader.getWoodworkingRecipes() || [];
+      let visibleCount = 0;
+
+      for (const recipe of recipes) {
+        const isLevelUnlocked = wwStat.level >= (recipe.requiredLevel ?? 0);
+        if (isCraftableOnly && !isLevelUnlocked) {
+          continue;
+        }
+        visibleCount++;
+
+        const canAfford = CraftingSystem.canAfford(recipe, player);
+        const card = document.createElement('div');
+        card.style.cssText = `background: rgba(31, 41, 55, ${isLevelUnlocked ? '0.75' : '0.4'}); border: 1px solid ${isLevelUnlocked ? (canAfford ? 'rgba(251, 191, 36, 0.4)' : 'rgba(107, 114, 128, 0.3)') : 'rgba(239, 68, 68, 0.3)'}; border-radius: 8px; padding: 12px; display: flex; justify-content: space-between; align-items: center;`;
+
+        const ingDetails = Object.entries(recipe.ingredients).map(([item, qty]) => {
+          const stockpileCount = item === 'wood' ? gameState.getWood() : gameState.getItemCount(item);
+          const carriedCount = (player && typeof player.getItemCount === 'function') ? player.getItemCount(item) : 0;
+          const have = stockpileCount + carriedCount;
+          const ok = have >= qty;
+          const label = item.replace(/_/g, ' ');
+          return `<span style="color: ${ok ? '#4ade80' : '#f87171'}; font-weight: ${ok ? '500' : 'bold'};">${qty}x ${label} (${have}/${qty})</span>`;
+        }).join(', ');
+
+        const targetId = recipe.resultItemId || recipe.id;
+        const buildableDef = dataLoader.getBuildable(targetId);
+        const qualityStr = buildableDef?.quality ? `Quality: +${buildableDef.quality}` : (recipe.resultCount && recipe.resultCount > 1 ? `Yield: ${recipe.resultCount}x` : '');
+
+        let actionBtnHtml = '';
+        if (!isLevelUnlocked) {
+          actionBtnHtml = `<span style="font-size: 11px; color: #ef4444; font-weight: bold; padding: 6px 12px; background: rgba(239, 68, 68, 0.1); border-radius: 4px;">🔒 Req. Woodworking Lv ${recipe.requiredLevel}</span>`;
+        } else if (!canAfford) {
+          actionBtnHtml = `<button type="button" class="btn-action" style="background: #374151; border-color: #4b5563; color: #9ca3af; cursor: not-allowed; font-size: 11px; padding: 6px 14px;" disabled>Insufficient Mats</button>`;
+        } else {
+          actionBtnHtml = `<button type="button" class="btn-action" style="background: #78350f; border-color: #b45309; font-size: 11px; padding: 6px 14px; font-weight: bold; color: #fef3c7;" data-woodworking-recipe="${recipe.id}">🔨 Craft</button>`;
+        }
+
+        card.innerHTML = `
+          <div style="flex: 1; padding-right: 12px;">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 2px;">
+              <span style="font-weight: bold; color: ${isLevelUnlocked ? '#f8fafc' : '#9ca3af'}; font-size: 13px;">${recipe.name}</span>
+              <span style="font-size: 10px; color: #fde68a; background: rgba(245, 158, 11, 0.2); padding: 2px 6px; border-radius: 4px;">+${recipe.expGranted} EXP</span>
+              ${qualityStr ? `<span style="font-size: 10px; color: #fbbf24;">${qualityStr}</span>` : ''}
+            </div>
+            <div style="font-size: 11px; color: #9ca3af; margin-bottom: 6px;">${recipe.description}</div>
+            <div style="font-size: 11px; color: #d1d5db;">Cost: ${ingDetails}</div>
+          </div>
+          <div>${actionBtnHtml}</div>
+        `;
+
+        const btn = card.querySelector<HTMLButtonElement>(`[data-woodworking-recipe="${recipe.id}"]`);
+        if (btn) {
+          btn.onclick = () => {
+            const wasEnc = player.isEncumbered;
+            const craftRes = CraftingSystem.applyCraft(player, recipe, 'woodworking');
+            if (craftRes.success) {
+              if (!wasEnc && player.isEncumbered) {
+                this.showToast(`⚠️ ${player.entityName} is ENCUMBERED (-80% Movement Speed)!`, 'warn', 3000);
+              }
+              let toastMsg = `🪵 Crafted ${craftRes.quantity}x ${recipe.name}! (+${recipe.expGranted} Woodworking EXP`;
+              if (craftRes.classExpGranted > 0) {
+                toastMsg += `, +${craftRes.classExpGranted} Class EXP`;
+              }
+              toastMsg += ')';
+              this.showToast(toastMsg, 'success', 2500);
+              this.renderWoodworkingModal(player, progression);
+              this.update(player, progression, 0);
+            } else {
+              this.showToast(craftRes.message, 'error');
+            }
+          };
+        }
+
+        this.woodworkingRecipesContainerEl.appendChild(card);
+      }
+
+      if (visibleCount === 0) {
+        this.woodworkingRecipesContainerEl.innerHTML = `
+          <div style="font-size: 11px; color: #9ca3af; font-style: italic; background: rgba(31, 41, 55, 0.4); padding: 12px; border-radius: 6px; text-align: center;">
+            No recipes unlocked at your current Woodworking level (Lv ${wwStat.level}). Toggle "Show All" to view all recipes.
+          </div>
+        `;
+      }
+    }
+  }
+
+  public openStonemasonModal(player: Player, progression: ProgressionSystem): void {
+    this.currentPlayer = player;
+    this.currentProgression = progression;
+    if (this.stonemasonModalEl) {
+      this.stonemasonModalEl.classList.add('active');
+      this.renderStonemasonModal(player, progression);
+    }
+  }
+
+  public closeStonemasonModal(): void {
+    if (this.stonemasonModalEl) {
+      this.stonemasonModalEl.classList.remove('active');
+    }
+  }
+
+  public isStonemasonModalOpen(): boolean {
+    return this.stonemasonModalEl?.classList.contains('active') ?? false;
+  }
+
+  public renderStonemasonModal(player: Player, progression: ProgressionSystem): void {
+    this.currentPlayer = player;
+    this.currentProgression = progression;
+    this.updateCraftingFilterToggleUI('stonemason');
+    const isCraftableOnly = this.isCraftingFilterActive('stonemason');
+
+    const gameState = GameState.getInstance();
+    const dataLoader = DataLoader.getInstance();
+
+    const smStat = progression.getProficiencyStat('stonemason');
+    if (this.stonemasonModalProfEl) {
+      const nextExp = LevelingSystem.expForNextLevel(smStat.level);
+      const perks = CraftingSystem.getCrafterPerks(player, 'stonemason');
+      const perkText = perks.perkDescription ? ` — ${perks.perkDescription}` : '';
+      this.stonemasonModalProfEl.innerText = `Level ${smStat.level} (${smStat.currentExp}/${nextExp} EXP)${perkText}`;
+    }
+
+    if (this.stonemasonStockpileStoneEl) {
+      this.setElementTextIfChanged(this.stonemasonStockpileStoneEl, `${gameState.getItemCount('stone')}`);
+    }
+    if (this.stonemasonStockpileBricksEl) {
+      this.setElementTextIfChanged(this.stonemasonStockpileBricksEl, `${gameState.getItemCount('bricks')}`);
+    }
+    if (this.stonemasonStockpileClayDirtEl) {
+      const clay = gameState.getItemCount('clay');
+      const dirt = gameState.getItemCount('dirt');
+      this.setElementTextIfChanged(this.stonemasonStockpileClayDirtEl, `${clay} Clay / ${dirt} Dirt`);
+    }
+
+    if (this.stonemasonStatusMsgEl) {
+      this.stonemasonStatusMsgEl.innerText = '';
+    }
+
+    if (this.stonemasonRecipesContainerEl) {
+      this.stonemasonRecipesContainerEl.innerHTML = '';
+      const recipes = dataLoader.getStonemasonRecipes() || [];
+      let visibleCount = 0;
+
+      for (const recipe of recipes) {
+        const isLevelUnlocked = smStat.level >= (recipe.requiredLevel ?? 0);
+        if (isCraftableOnly && !isLevelUnlocked) {
+          continue;
+        }
+        visibleCount++;
+
+        const canAfford = CraftingSystem.canAfford(recipe, player);
+        const card = document.createElement('div');
+        card.style.cssText = `background: rgba(31, 41, 55, ${isLevelUnlocked ? '0.75' : '0.4'}); border: 1px solid ${isLevelUnlocked ? (canAfford ? 'rgba(148, 163, 184, 0.4)' : 'rgba(107, 114, 128, 0.3)') : 'rgba(239, 68, 68, 0.3)'}; border-radius: 8px; padding: 12px; display: flex; justify-content: space-between; align-items: center;`;
+
+        const ingDetails = Object.entries(recipe.ingredients).map(([item, qty]) => {
+          const stockpileCount = item === 'wood' ? gameState.getWood() : gameState.getItemCount(item);
+          const carriedCount = (player && typeof player.getItemCount === 'function') ? player.getItemCount(item) : 0;
+          const have = stockpileCount + carriedCount;
+          const ok = have >= qty;
+          const label = item.replace(/_/g, ' ');
+          return `<span style="color: ${ok ? '#4ade80' : '#f87171'}; font-weight: ${ok ? '500' : 'bold'};">${qty}x ${label} (${have}/${qty})</span>`;
+        }).join(', ');
+
+        const targetId = recipe.resultItemId || recipe.id;
+        const buildableDef = dataLoader.getBuildable(targetId);
+        const qualityStr = buildableDef?.quality ? `Quality: +${buildableDef.quality}` : (recipe.resultCount && recipe.resultCount > 1 ? `Yield: ${recipe.resultCount}x` : '');
+
+        let actionBtnHtml = '';
+        if (!isLevelUnlocked) {
+          actionBtnHtml = `<span style="font-size: 11px; color: #ef4444; font-weight: bold; padding: 6px 12px; background: rgba(239, 68, 68, 0.1); border-radius: 4px;">🔒 Req. Stonemason Lv ${recipe.requiredLevel}</span>`;
+        } else if (!canAfford) {
+          actionBtnHtml = `<button type="button" class="btn-action" style="background: #374151; border-color: #4b5563; color: #9ca3af; cursor: not-allowed; font-size: 11px; padding: 6px 14px;" disabled>Insufficient Mats</button>`;
+        } else {
+          actionBtnHtml = `<button type="button" class="btn-action" style="background: #334155; border-color: #64748b; font-size: 11px; padding: 6px 14px; font-weight: bold; color: #f8fafc;" data-stonemason-recipe="${recipe.id}">🔨 Craft</button>`;
+        }
+
+        card.innerHTML = `
+          <div style="flex: 1; padding-right: 12px;">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 2px;">
+              <span style="font-weight: bold; color: ${isLevelUnlocked ? '#f8fafc' : '#9ca3af'}; font-size: 13px;">${recipe.name}</span>
+              <span style="font-size: 10px; color: #cbd5e1; background: rgba(148, 163, 184, 0.2); padding: 2px 6px; border-radius: 4px;">+${recipe.expGranted} EXP</span>
+              ${qualityStr ? `<span style="font-size: 10px; color: #94a3b8;">${qualityStr}</span>` : ''}
+            </div>
+            <div style="font-size: 11px; color: #9ca3af; margin-bottom: 6px;">${recipe.description}</div>
+            <div style="font-size: 11px; color: #d1d5db;">Cost: ${ingDetails}</div>
+          </div>
+          <div>${actionBtnHtml}</div>
+        `;
+
+        const btn = card.querySelector<HTMLButtonElement>(`[data-stonemason-recipe="${recipe.id}"]`);
+        if (btn) {
+          btn.onclick = () => {
+            const wasEnc = player.isEncumbered;
+            const craftRes = CraftingSystem.applyCraft(player, recipe, 'stonemason');
+            if (craftRes.success) {
+              if (!wasEnc && player.isEncumbered) {
+                this.showToast(`⚠️ ${player.entityName} is ENCUMBERED (-80% Movement Speed)!`, 'warn', 3000);
+              }
+              let toastMsg = `⛏️ Crafted ${craftRes.quantity}x ${recipe.name}! (+${recipe.expGranted} Stonemason EXP`;
+              if (craftRes.classExpGranted > 0) {
+                toastMsg += `, +${craftRes.classExpGranted} Class EXP`;
+              }
+              toastMsg += ')';
+              this.showToast(toastMsg, 'success', 2500);
+              this.renderStonemasonModal(player, progression);
+              this.update(player, progression, 0);
+            } else {
+              this.showToast(craftRes.message, 'error');
+            }
+          };
+        }
+
+        this.stonemasonRecipesContainerEl.appendChild(card);
+      }
+
+      if (visibleCount === 0) {
+        this.stonemasonRecipesContainerEl.innerHTML = `
+          <div style="font-size: 11px; color: #9ca3af; font-style: italic; background: rgba(31, 41, 55, 0.4); padding: 12px; border-radius: 6px; text-align: center;">
+            No recipes unlocked at your current Stonemason level (Lv ${smStat.level}). Toggle "Show All" to view all recipes.
+          </div>
+        `;
+      }
+    }
+  }
+
   // --- GEAR SALVAGE UI (Milestone: Gear Salvage) ---
 
   public renderSalvageSection(
@@ -8333,6 +8689,12 @@ export class HUD {
           break;
         case 'magical-weapon':
           this.renderMagicalWeaponModal(this.currentPlayer, this.currentProgression);
+          break;
+        case 'woodworking':
+          this.renderWoodworkingModal(this.currentPlayer, this.currentProgression);
+          break;
+        case 'stonemason':
+          this.renderStonemasonModal(this.currentPlayer, this.currentProgression);
           break;
       }
     }

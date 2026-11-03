@@ -737,12 +737,19 @@ async function runGlacialEnemiesTests() {
       };
 
       const sha256 = crypto.createHash('sha256').update(JSON.stringify(floorData)).digest('hex');
+      if (process.env.UPDATE_FIXTURES) {
+        fixtureRecords[seed] = sha256;
+      }
       const expectedHash = typeof fixtureRecords[seed] === 'string' ? fixtureRecords[seed] : fixtureRecords[seed].sha256;
       assert.strictEqual(
         sha256,
         expectedHash,
         `Seed ${seed} floor data SHA-256 mismatch against fixture`
       );
+    }
+    if (process.env.UPDATE_FIXTURES) {
+      fs.writeFileSync(fixturePath, JSON.stringify(fixtureRecords, null, 2) + '\n');
+      console.log('  [Fixture] Updated', fixturePath);
     }
     console.log('  ✔ All 50 floor layouts and enemy spawns match pre-cache fixture 100%.');
     console.log('✔ PASS: Test 7 - Determinism preserved across earlier regions.\n');

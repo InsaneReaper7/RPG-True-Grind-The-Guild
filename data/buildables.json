@@ -3,6 +3,8 @@
     {
       "id": "floor",
       "name": "Wood Floor",
+      "structure": "floor",
+      "materialTier": 0,
       "woodCost": 2,
       "footprint": {
         "width": 1,
@@ -11,11 +13,14 @@
       "rotatable": true,
       "indoorRequired": false,
       "walkable": true,
+      "textureKeyPrefix": "buildable-wood",
       "description": "Clean timber floorboards. Can be placed on grass courtyard."
     },
     {
       "id": "wall",
       "name": "Wood Wall",
+      "structure": "wall",
+      "materialTier": 0,
       "woodCost": 5,
       "footprint": {
         "width": 1,
@@ -24,11 +29,14 @@
       "rotatable": false,
       "indoorRequired": false,
       "walkable": false,
+      "textureKeyPrefix": "buildable-wood-wall",
       "description": "Solid timber wall. Automatically connects to adjacent walls and doors."
     },
     {
       "id": "door",
       "name": "Wood Door",
+      "structure": "door",
+      "materialTier": 0,
       "woodCost": 8,
       "footprint": {
         "width": 1,
@@ -37,6 +45,7 @@
       "rotatable": true,
       "indoorRequired": false,
       "walkable": true,
+      "textureKeyPrefix": "buildable-wood-door",
       "description": "Passable wooden door frame. Required to enclose indoor rooms."
     },
     {
@@ -190,6 +199,471 @@
       "roomTag": "enchanting",
       "description": "Guild enchanting altar for infusing magical crystals and crafting elemental conduit staves. Requires a fully enclosed indoor room.",
       "lockedByDefault": true
+    },
+    {
+      "id": "woodworking_bench",
+      "name": "Woodworking Bench",
+      "woodCost": 25,
+      "footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "rotatable": true,
+      "indoorRequired": true,
+      "walkable": false,
+      "roomTag": "woodshop",
+      "description": "Guild woodworking bench for milling planks and crafting timber furniture. Requires a fully enclosed indoor room.",
+      "lockedByDefault": true
+    },
+    {
+      "id": "stonemason_yard",
+      "name": "Stonemason's Yard",
+      "woodCost": 20,
+      "itemCosts": {
+        "stone": 10
+      },
+      "footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "rotatable": true,
+      "indoorRequired": false,
+      "walkable": false,
+      "roomTag": "masonry",
+      "description": "Outdoor stonemason's yard for squaring stone blocks, masonry bricks, and monuments.",
+      "lockedByDefault": true
+    },
+    {
+      "id": "plank_floor",
+      "name": "Plank Floor",
+      "structure": "floor",
+      "materialTier": 1,
+      "woodCost": 0,
+      "itemCosts": {
+        "planks": 1
+      },
+      "footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "rotatable": true,
+      "indoorRequired": false,
+      "walkable": true,
+      "textureKeyPrefix": "buildable-plank",
+      "description": "Milled plank floorboards."
+    },
+    {
+      "id": "plank_wall",
+      "name": "Plank Wall",
+      "structure": "wall",
+      "materialTier": 1,
+      "woodCost": 0,
+      "itemCosts": {
+        "planks": 4
+      },
+      "footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "rotatable": false,
+      "indoorRequired": false,
+      "walkable": false,
+      "textureKeyPrefix": "buildable-plank-wall",
+      "description": "Sturdy milled plank wall. Connects to adjacent walls and doors."
+    },
+    {
+      "id": "plank_door",
+      "name": "Plank Door",
+      "structure": "door",
+      "materialTier": 1,
+      "woodCost": 0,
+      "itemCosts": {
+        "planks": 5
+      },
+      "footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "rotatable": true,
+      "indoorRequired": false,
+      "walkable": true,
+      "textureKeyPrefix": "buildable-plank-door",
+      "description": "Reinforced plank door frame. Encloses indoor rooms."
+    },
+    {
+      "id": "stone_floor",
+      "name": "Stone Floor",
+      "structure": "floor",
+      "materialTier": 2,
+      "woodCost": 0,
+      "itemCosts": {
+        "stone": 2
+      },
+      "footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "rotatable": true,
+      "indoorRequired": false,
+      "walkable": true,
+      "textureKeyPrefix": "buildable-stone",
+      "description": "Heavy stone slab flooring."
+    },
+    {
+      "id": "stone_wall",
+      "name": "Stone Wall",
+      "structure": "wall",
+      "materialTier": 2,
+      "woodCost": 0,
+      "itemCosts": {
+        "stone": 6
+      },
+      "footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "rotatable": false,
+      "indoorRequired": false,
+      "walkable": false,
+      "textureKeyPrefix": "buildable-stone-wall",
+      "description": "Thick rough-hewn stone wall. Connects to adjacent walls and doors."
+    },
+    {
+      "id": "brick_floor",
+      "name": "Brick Floor",
+      "structure": "floor",
+      "materialTier": 3,
+      "woodCost": 0,
+      "itemCosts": {
+        "bricks": 1
+      },
+      "footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "rotatable": true,
+      "indoorRequired": false,
+      "walkable": true,
+      "textureKeyPrefix": "buildable-brick",
+      "description": "Polished fired brick flooring."
+    },
+    {
+      "id": "brick_wall",
+      "name": "Brick Wall",
+      "structure": "wall",
+      "materialTier": 3,
+      "woodCost": 0,
+      "itemCosts": {
+        "bricks": 4
+      },
+      "footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "rotatable": false,
+      "indoorRequired": false,
+      "walkable": false,
+      "textureKeyPrefix": "buildable-brick-wall",
+      "description": "Mortared masonry brick wall. Connects to adjacent walls and doors."
+    },
+    {
+      "id": "reinforced_wall",
+      "name": "Reinforced Wall",
+      "structure": "wall",
+      "materialTier": 4,
+      "woodCost": 0,
+      "itemCosts": {
+        "reinforced_brick": 3
+      },
+      "footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "rotatable": false,
+      "indoorRequired": false,
+      "walkable": false,
+      "textureKeyPrefix": "buildable-reinforced-wall",
+      "description": "Steel-reinforced masonry wall. Connects to adjacent walls and doors."
+    },
+    {
+      "id": "reinforced_door",
+      "name": "Reinforced Door",
+      "structure": "door",
+      "materialTier": 4,
+      "woodCost": 0,
+      "itemCosts": {
+        "reinforced_plank": 4
+      },
+      "footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "rotatable": true,
+      "indoorRequired": false,
+      "walkable": true,
+      "textureKeyPrefix": "buildable-reinforced-door",
+      "description": "Heavy ironbound reinforced door frame."
+    },
+    {
+      "id": "runic_wall",
+      "name": "Runic Wall",
+      "structure": "wall",
+      "materialTier": 5,
+      "woodCost": 0,
+      "itemCosts": {
+        "runic_brick": 3
+      },
+      "footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "rotatable": false,
+      "indoorRequired": false,
+      "walkable": false,
+      "textureKeyPrefix": "buildable-runic-wall",
+      "description": "Arcane-infused runic brick wall radiating protective energy."
+    },
+    {
+      "id": "runic_door",
+      "name": "Runic Door",
+      "structure": "door",
+      "materialTier": 5,
+      "woodCost": 0,
+      "itemCosts": {
+        "runic_plank": 4
+      },
+      "footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "rotatable": true,
+      "indoorRequired": false,
+      "walkable": true,
+      "textureKeyPrefix": "buildable-runic-door",
+      "description": "Gleaming runic door frame glowing with ancient warding."
+    },
+    {
+      "id": "wooden_chair",
+      "name": "Wooden Chair",
+      "woodCost": 0,
+      "itemCosts": {
+        "wooden_chair": 1
+      },
+      "quality": 2,
+      "roomTag": "dining",
+      "footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "rotatable": true,
+      "indoorRequired": true,
+      "walkable": false,
+      "description": "Hand-carved wooden dining chair."
+    },
+    {
+      "id": "wooden_table",
+      "name": "Wooden Table",
+      "woodCost": 0,
+      "itemCosts": {
+        "wooden_table": 1
+      },
+      "quality": 3,
+      "roomTag": "dining",
+      "footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "rotatable": true,
+      "indoorRequired": true,
+      "walkable": false,
+      "description": "Sturdy timber dining table."
+    },
+    {
+      "id": "wall_shelf",
+      "name": "Wall Shelf",
+      "woodCost": 0,
+      "itemCosts": {
+        "wall_shelf": 1
+      },
+      "quality": 3,
+      "footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "rotatable": true,
+      "indoorRequired": true,
+      "walkable": false,
+      "description": "Mounted wooden shelving for books and curios."
+    },
+    {
+      "id": "wardrobe",
+      "name": "Wardrobe",
+      "woodCost": 0,
+      "itemCosts": {
+        "wardrobe": 1
+      },
+      "quality": 5,
+      "footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "rotatable": true,
+      "indoorRequired": true,
+      "walkable": false,
+      "description": "Spacious wooden wardrobe."
+    },
+    {
+      "id": "bookshelf",
+      "name": "Bookshelf",
+      "woodCost": 0,
+      "itemCosts": {
+        "bookshelf": 1
+      },
+      "quality": 6,
+      "footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "rotatable": true,
+      "indoorRequired": true,
+      "walkable": false,
+      "description": "Tall wooden bookshelf stacked with guild tomes."
+    },
+    {
+      "id": "carved_cabinet",
+      "name": "Carved Cabinet",
+      "woodCost": 0,
+      "itemCosts": {
+        "carved_cabinet": 1
+      },
+      "quality": 9,
+      "footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "rotatable": true,
+      "indoorRequired": true,
+      "walkable": false,
+      "description": "Elaborately carved cabinet reinforced with steel fittings."
+    },
+    {
+      "id": "masterwork_throne",
+      "name": "Masterwork Throne",
+      "woodCost": 0,
+      "itemCosts": {
+        "masterwork_throne": 1
+      },
+      "quality": 20,
+      "footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "rotatable": true,
+      "indoorRequired": true,
+      "walkable": false,
+      "description": "Magnificent masterwork throne infused with runic planks."
+    },
+    {
+      "id": "stone_bench",
+      "name": "Stone Bench",
+      "woodCost": 0,
+      "itemCosts": {
+        "stone_bench": 1
+      },
+      "quality": 2,
+      "footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "rotatable": true,
+      "indoorRequired": false,
+      "walkable": false,
+      "description": "Solid stone garden bench."
+    },
+    {
+      "id": "stone_brazier",
+      "name": "Stone Brazier",
+      "woodCost": 0,
+      "itemCosts": {
+        "stone_brazier": 1
+      },
+      "quality": 3,
+      "footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "rotatable": true,
+      "indoorRequired": true,
+      "walkable": false,
+      "description": "Carved stone brazier burning with eternal warmth."
+    },
+    {
+      "id": "stone_planter",
+      "name": "Stone Planter",
+      "woodCost": 0,
+      "itemCosts": {
+        "stone_planter": 1
+      },
+      "quality": 4,
+      "footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "rotatable": true,
+      "indoorRequired": false,
+      "walkable": false,
+      "description": "Chiseled stone planter filled with rich loam."
+    },
+    {
+      "id": "stone_fountain",
+      "name": "Stone Fountain",
+      "woodCost": 0,
+      "itemCosts": {
+        "stone_fountain": 1
+      },
+      "quality": 10,
+      "footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "rotatable": true,
+      "indoorRequired": false,
+      "walkable": false,
+      "description": "Graceful stone fountain fed by enchanted water crystals."
+    },
+    {
+      "id": "marble_statue",
+      "name": "Marble Statue",
+      "woodCost": 0,
+      "itemCosts": {
+        "marble_statue": 1
+      },
+      "quality": 14,
+      "footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "rotatable": true,
+      "indoorRequired": false,
+      "walkable": false,
+      "description": "Heroic marble statue depicting early guild founders."
+    },
+    {
+      "id": "grand_hearth",
+      "name": "Grand Hearth",
+      "woodCost": 0,
+      "itemCosts": {
+        "grand_hearth": 1
+      },
+      "quality": 20,
+      "footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "rotatable": true,
+      "indoorRequired": true,
+      "walkable": false,
+      "description": "Monumental stone hearth roaring with warm fire."
     }
   ]
 }

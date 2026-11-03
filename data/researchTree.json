@@ -91,6 +91,24 @@
         "research_blacksmithing_station"
       ],
       "description": "Unlocks the Magical Weapon Station for the Guild Outpost, enabling magical crystal cutting and staff enchantment."
+    },
+    {
+      "id": "research_woodworking_bench",
+      "name": "Woodworking Bench",
+      "targetBuildableId": "woodworking_bench",
+      "cost": 5,
+      "prerequisites": [],
+      "description": "Unlocks the Woodworking Bench for the Guild Outpost, enabling plank milling and fine timber furniture crafting."
+    },
+    {
+      "id": "research_stonemason_yard",
+      "name": "Stonemason's Yard",
+      "targetBuildableId": "stonemason_yard",
+      "cost": 10,
+      "prerequisites": [
+        "research_woodworking_bench"
+      ],
+      "description": "Unlocks the Stonemason's Yard for the Guild Outpost, enabling stone cutting, brick masonry, and grand architectural works."
     }
   ]
 }

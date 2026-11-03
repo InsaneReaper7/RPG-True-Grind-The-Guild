@@ -605,6 +605,32 @@
       },
       "expGranted": 110,
       "description": "A reinforced shield clad in glacial steel, deflecting mortal blows and turning aside incoming attacks."
+    },
+    {
+      "id": "reinforced_plank",
+      "name": "Reinforced Plank",
+      "resultItemId": "reinforced_plank",
+      "resultCount": 1,
+      "requiredLevel": 30,
+      "ingredients": {
+        "planks": 2,
+        "ore": 1
+      },
+      "expGranted": 25,
+      "description": "A timber plank braced with forged steel bands."
+    },
+    {
+      "id": "reinforced_brick",
+      "name": "Reinforced Brick",
+      "resultItemId": "reinforced_brick",
+      "resultCount": 1,
+      "requiredLevel": 30,
+      "ingredients": {
+        "bricks": 2,
+        "ore": 1
+      },
+      "expGranted": 25,
+      "description": "A masonry brick infused with hardened iron reinforcement."
     }
   ]
 }

@@ -122,6 +122,8 @@ export class ProgressionSystem {
     this.proficiencies.set('wind_magic', { level: 0, currentExp: 0 });
     this.proficiencies.set('dual_wielding', { level: 0, currentExp: 0 });
     this.proficiencies.set('construction', { level: 0, currentExp: 0 });
+    this.proficiencies.set('woodworking', { level: 0, currentExp: 0 });
+    this.proficiencies.set('stonemason', { level: 0, currentExp: 0 });
     this.proficiencies.set('alchemy', { level: 0, currentExp: 0 });
     this.proficiencies.set('cooking', { level: 0, currentExp: 0 });
     this.proficiencies.set('blacksmithing', { level: 0, currentExp: 0 });

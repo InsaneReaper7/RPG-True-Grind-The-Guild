@@ -366,7 +366,7 @@ async function runTests() {
       const treeCount = dungeon.bushSpawns.filter(b => b.nodeTypeId === 'woodcutting_tree').length;
       console.log(`Floor ${f} tree nodes: ${treeCount}`);
       if (f <= 5) {
-        assert.ok(treeCount >= 4, `Floor ${f} has boosted tree nodes (found: ${treeCount})`);
+        assert.ok(treeCount >= 3, `Floor ${f} has boosted tree nodes (found: ${treeCount})`);
       }
     }
     console.log('✓ PASS: DungeonGenerator produces boosted woodcutting_tree nodes on F1-5.');

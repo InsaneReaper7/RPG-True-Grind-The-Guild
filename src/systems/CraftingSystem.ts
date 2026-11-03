@@ -76,7 +76,10 @@ export class CraftingSystem {
     armorsmithing: { apprentice: 'apprentice_armorer', journeyman: 'journeyman_armorer', master: 'master_armorer', grandmaster: 'grandmaster_armorer' },
     bowyer: { apprentice: 'apprentice_bowyer', journeyman: 'journeyman_bowyer', master: 'master_bowyer', grandmaster: 'grandmaster_bowyer' },
     alchemy: { apprentice: 'apprentice_alchemist', journeyman: 'journeyman_alchemist', master: 'master_alchemist', grandmaster: 'archalchemist' },
-    enchanting: { apprentice: 'apprentice_enchanter', journeyman: 'journeyman_enchanter', master: 'master_enchanter', grandmaster: 'runeweaver' }
+    enchanting: { apprentice: 'apprentice_enchanter', journeyman: 'journeyman_enchanter', master: 'master_enchanter', grandmaster: 'runeweaver' },
+    woodworking: { apprentice: 'apprentice_carpenter', journeyman: 'journeyman_carpenter', master: 'master_carpenter', grandmaster: 'grandmaster_carpenter' },
+    stonemason: { apprentice: 'apprentice_stonemason', journeyman: 'journeyman_stonemason', master: 'master_stonemason', grandmaster: 'grandmaster_stonemason' },
+    construction: { apprentice: 'apprentice_builder', journeyman: 'journeyman_builder', master: 'master_builder', grandmaster: 'grandmaster_builder' }
   };
   public static getMatchingClassId(professionId: string): string | null {
     switch (professionId) {
@@ -92,6 +95,12 @@ export class CraftingSystem {
         return 'apprentice_cook';
       case 'enchanting':
         return 'apprentice_enchanter';
+      case 'woodworking':
+        return 'apprentice_carpenter';
+      case 'stonemason':
+        return 'apprentice_stonemason';
+      case 'construction':
+        return 'apprentice_builder';
       case 'digging':
         return 'excavator';
       case 'fishing':
@@ -118,6 +127,8 @@ export class CraftingSystem {
     gearStatBonusPercent: number; // 0 to 30 (%)
     thriftyChance?: number;
     exceptionalChance?: number;
+    freeHandsChance?: number;
+    salvageBonus?: number;
     savePickChance: number; // 0 to 15 (%)
     perkDescription?: string;
     detectionBonusChance?: number;
@@ -152,16 +163,47 @@ export class CraftingSystem {
       const mtrBonus = Math.min(15, Math.max(0, mtrLvl));
       const gmrBonus = Math.min(15, Math.max(0, gmrLvl));
 
+      const hasAnyUnlocked = appUnlocked || jnyUnlocked || mtrUnlocked || gmrUnlocked;
+      const activeClsId = (gmrUnlocked ? ranks.grandmaster : mtrUnlocked ? ranks.master : jnyUnlocked ? ranks.journeyman : ranks.apprentice) || ranks.apprentice;
+      const activeLvl = gmrUnlocked ? gmrLvl : mtrUnlocked ? mtrLvl : jnyUnlocked ? jnyLvl : appUnlocked ? appLvl : 0;
+      const clsDef = DataLoader.getInstance().getClass(activeClsId);
+
+      if (professionId === 'construction') {
+        const highestUnlockedLvl = gmrUnlocked ? gmrLvl : mtrUnlocked ? mtrLvl : jnyUnlocked ? jnyLvl : appUnlocked ? appLvl : 0;
+        const builderPerk = Math.min(15, Math.max(0, highestUnlockedLvl));
+        const freeHandsChance = appUnlocked ? builderPerk : 0;
+        const salvageBonus = (mtrUnlocked || gmrUnlocked) ? builderPerk : 0;
+
+        const bPerkParts: string[] = [];
+        if (freeHandsChance > 0) bPerkParts.push(`Free Hands: ${freeHandsChance}%`);
+        if (salvageBonus > 0) bPerkParts.push(`Salvage Expert: +${salvageBonus}%`);
+        const perkDescription = bPerkParts.length > 0 ? bPerkParts.join(' | ') : undefined;
+
+        return {
+          classId: hasAnyUnlocked ? activeClsId : ranks.apprentice,
+          className: hasAnyUnlocked ? (clsDef?.name ?? activeClsId) : 'None',
+          classLevel: hasAnyUnlocked ? activeLvl : 0,
+          perkPercent: builderPerk,
+          bonusYieldChance: 0,
+          secondBonusYieldChance: 0,
+          gearStatBonusPercent: 0,
+          thriftyChance: 0,
+          exceptionalChance: 0,
+          freeHandsChance,
+          salvageBonus,
+          savePickChance: 0,
+          perkDescription,
+          detectionBonusChance: 0,
+          detectionRadius: 3,
+          cacheBonusRollChance: 0
+        };
+      }
+
       const gearStatBonusPercent = appBonus + mtrBonus;
       const bonusYieldChance = appBonus;
       const secondBonusYieldChance = mtrBonus;
       const thriftyChance = jnyBonus;
       const exceptionalChance = gmrBonus;
-
-      const hasAnyUnlocked = appUnlocked || jnyUnlocked || mtrUnlocked || gmrUnlocked;
-      const activeClsId = (gmrUnlocked ? ranks.grandmaster : mtrUnlocked ? ranks.master : jnyUnlocked ? ranks.journeyman : ranks.apprentice) || ranks.apprentice;
-      const activeLvl = gmrUnlocked ? gmrLvl : mtrUnlocked ? mtrLvl : jnyUnlocked ? jnyLvl : appUnlocked ? appLvl : 0;
-      const clsDef = DataLoader.getInstance().getClass(activeClsId);
 
       const perkParts: string[] = [];
       if (appBonus > 0) perkParts.push(`Apprentice: +${appBonus}%`);
@@ -180,6 +222,8 @@ export class CraftingSystem {
         gearStatBonusPercent,
         thriftyChance,
         exceptionalChance,
+        freeHandsChance: 0,
+        salvageBonus: 0,
         savePickChance: 0,
         perkDescription,
         detectionBonusChance: 0,
@@ -676,6 +720,24 @@ export class CraftingSystem {
       const outputItemId = (r as any).resultWeaponId || (r as any).resultArmorId || (r as any).resultItemId;
       if (outputItemId === baseId) {
         return { recipe: r, station: 'enchanting' };
+      }
+    }
+
+    // 5. Woodworking
+    const wwRecipes = dataLoader.getWoodworkingRecipes?.() || [];
+    for (const r of wwRecipes) {
+      const outputItemId = (r as any).resultItemId || (r as any).resultWeaponId || (r as any).resultArmorId || r.id;
+      if (outputItemId === baseId) {
+        return { recipe: r, station: 'woodworking' };
+      }
+    }
+
+    // 6. Stonemason
+    const smRecipes = dataLoader.getStonemasonRecipes?.() || [];
+    for (const r of smRecipes) {
+      const outputItemId = (r as any).resultItemId || (r as any).resultWeaponId || (r as any).resultArmorId || r.id;
+      if (outputItemId === baseId) {
+        return { recipe: r, station: 'stonemason' };
       }
     }
 

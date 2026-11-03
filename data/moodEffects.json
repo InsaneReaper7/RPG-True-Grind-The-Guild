@@ -1,6 +1,12 @@
 {
   "hungerEnabled": false,
   "moodEnabled": false,
+  "roomQuality": {
+    "bedroomMoodPerSecPerPoint": 0.004,
+    "bedroomMoodCapPerSec": 0.2,
+    "diningMoodPerSecPerPoint": 0.002,
+    "diningMoodCapPerSec": 0.1
+  },
   "moodTiers": [
     {
       "tier": "high",

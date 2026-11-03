@@ -334,7 +334,7 @@ async function runTests() {
   // ---------------------------------------------------------------------------
   console.log('\n--- TEST 3: SVG Connector Lines (Prerequisite Connections) ---');
   const connectorLines = svg.querySelectorAll('.research-connector-line');
-  assert.equal(connectorLines.length, 4, 'Exactly 4 prerequisite connector lines must be drawn');
+  assert.equal(connectorLines.length, 5, 'Exactly 5 prerequisite connector lines must be drawn');
 
   const skinningLine = svg.querySelector('[data-source-node="research_skinning"][data-target-node="research_armorsmithing_bench"]') as MockDOMElement;
   assert.ok(skinningLine, 'Connector line from research_skinning to research_armorsmithing_bench must exist');

@@ -1,0 +1,189 @@
+﻿=== RUNNING MILESTONE 5: WOODWORKING, STONEMASON, BUILDING MATERIALS, FURNITURE & QUALITY TESTS ===
+-> Test 1: Expected-table guards
+Γ£ö Test 1 passed: All expected-table guards satisfied
+-> Test 2: Stone source (stone_outcrop gathering node & generation)
+Γ£ö Test 2 passed: Stone outcrop yields stone and appears in generated gathering rooms
+-> Test 3: Crafting through modal controls
+[GameState] Initialized from player.json boot seed with Hero & Valerie: {
+  hp: 50,
+  criticalHp: 25,
+  energy: 100,
+  knownSkillIds: [],
+  equippedSkillIds: [],
+  autocastMap: {},
+  skillCooldownsRemainingMs: {},
+  proficiencies: {
+    short_swords: { level: 0, currentExp: 0 },
+    construction: { level: 0, currentExp: 0 },
+    fist: { level: 0, currentExp: 0 },
+    daggers: { level: 0, currentExp: 0 },
+    shields: { level: 0, currentExp: 0 },
+    dual_wielding: { level: 0, currentExp: 0 },
+    woodworking: { level: 0, currentExp: 0 },
+    stonemason: { level: 0, currentExp: 0 },
+    alchemy: { level: 0, currentExp: 0 },
+    evasion: { level: 0, currentExp: 0 },
+    parry: { level: 0, currentExp: 0 },
+    block: { level: 0, currentExp: 0 },
+    counterattack: { level: 0, currentExp: 0 },
+    resilience: { level: 0, currentExp: 0 },
+    health_regen: { level: 0, currentExp: 0 },
+    mana_regen: { level: 0, currentExp: 0 },
+    energy_regen: { level: 0, currentExp: 0 },
+    staff: { level: 0, currentExp: 0 },
+    druid_staff: { level: 0, currentExp: 0 },
+    healing_magic: { level: 0, currentExp: 0 },
+    fire_magic: { level: 0, currentExp: 0 },
+    foraging: { level: 0, currentExp: 0 },
+    woodcutting: { level: 0, currentExp: 0 },
+    mining: { level: 0, currentExp: 0 },
+    mace: { level: 0, currentExp: 0 },
+    blacksmithing: { level: 0, currentExp: 0 },
+    armorsmithing: { level: 0, currentExp: 0 },
+    digging: { level: 0, currentExp: 0 },
+    perception: { level: 0, currentExp: 0 },
+    skinning: { level: 0, currentExp: 0 },
+    butchering: { level: 0, currentExp: 0 },
+    lockpicking: { level: 0, currentExp: 0 },
+    gardening: { level: 0, currentExp: 0 },
+    longswords: { level: 0, currentExp: 0 },
+    dark_magic: { level: 0, currentExp: 0 },
+    light_armor: { level: 0, currentExp: 0 },
+    medium_armor: { level: 0, currentExp: 0 },
+    heavy_armor: { level: 0, currentExp: 0 },
+    fishing: { level: 0, currentExp: 0 },
+    enchanting: { level: 0, currentExp: 0 },
+    water_magic: { level: 0, currentExp: 0 },
+    earth_magic: { level: 0, currentExp: 0 },
+    nature_magic: { level: 0, currentExp: 0 },
+    wind_magic: { level: 0, currentExp: 0 }
+  },
+  classLevels: {},
+  unlockedClasses: [],
+  resources: { wood: 100, ore: 0 },
+  placedBuildables: [],
+  hunger: 100,
+  mood: 50,
+  currentGameDay: 1,
+  foodItems: [],
+  equippedWeaponId: 'short_swords',
+  offhandWeaponId: null,
+  dungeonFloorCount: 0,
+  encounteredEnemies: [],
+  discoveredProficiencies: [ 'short_swords' ],
+  discoveredStatusEffects: [],
+  discoveredGatheringNodes: [],
+  defeatedAreaBosses: [],
+  quickSlots: [ 'revive_potion', 'bandage', 'energy_potion', 'antidote' ],
+  worldFlags: {},
+  grovePityCounter: 0,
+  party: [
+    {
+      id: 'player',
+      name: 'Guild Hero',
+      avatarKey: 'player-avatar',
+      hp: 50,
+      criticalHp: 25,
+      energy: 100,
+      equippedWeaponId: 'short_swords',
+      offhandWeaponId: null,
+      inventory: [Object],
+      knownSkillIds: [],
+      equippedSkillIds: [],
+      autocastMap: {},
+      skillCooldownsRemainingMs: {},
+      proficiencies: [Object],
+      classLevels: {},
+      classStats: {},
+      unlockedClasses: [],
+      activeClass: null,
+      bookLearnedSkills: [],
+      hunger: 100,
+      mood: 50,
+      state: 'idle'
+    },
+    {
+      id: 'companion_1',
+      name: 'Valerie',
+      avatarKey: 'companion-avatar',
+      avatarTextureKey: 'companion-avatar',
+      hp: 50,
+      criticalHp: 25,
+      energy: 100,
+      equippedWeaponId: 'bows',
+      offhandWeaponId: 'daggers',
+      inventory: [Object],
+      knownSkillIds: [Array],
+      equippedSkillIds: [Array],
+      autocastMap: [Object],
+      skillCooldownsRemainingMs: {},
+      proficiencies: [Object],
+      classLevels: [Object],
+      classStats: [Object],
+      unlockedClasses: [Array],
+      activeClass: 'scout',
+      bookLearnedSkills: [],
+      hunger: 100,
+      mood: 50,
+      state: 'idle'
+    }
+  ]
+}
+[Progression] +1000 EXP for 'woodworking' (Guild Hero). Current: Level 13 (38/102 EXP)
+[Progression] Recorded tx 'woodworking': +1000 EXP for Guild Hero, resulting total: Level 13 (38/102 EXP)
+[Progression] LEVEL UP! 'woodworking' is now Level 13! (Gained 13 level(s))
+[Progression] Class Unlocked: Apprentice Carpenter (apprentice_carpenter) for Guild Hero!
+[Progression] Γ£¿ SKILL DISCOVERED: 'woodworking' reached Level 13 by Guild Hero! Γ£¿
+[Progression] +10 EXP for 'woodworking' (Guild Hero). Current: Level 13 (48/102 EXP)
+[Progression] Recorded tx 'woodworking': +10 EXP for Guild Hero, resulting total: Level 13 (48/102 EXP)
+[Progression] +10 Class EXP for 'apprentice_carpenter' (Guild Hero). Current: Level 1 (10/54 EXP)
+[Progression] +1000 EXP for 'stonemason' (Guild Hero). Current: Level 13 (38/102 EXP)
+[Progression] Recorded tx 'stonemason': +1000 EXP for Guild Hero, resulting total: Level 13 (38/102 EXP)
+[Progression] LEVEL UP! 'stonemason' is now Level 13! (Gained 13 level(s))
+[Progression] Class Unlocked: Apprentice Stonemason (apprentice_stonemason) for Guild Hero!
+[Progression] Γ£¿ SKILL DISCOVERED: 'stonemason' reached Level 13 by Guild Hero! Γ£¿
+[Progression] +10 EXP for 'stonemason' (Guild Hero). Current: Level 13 (48/102 EXP)
+[Progression] Recorded tx 'stonemason': +10 EXP for Guild Hero, resulting total: Level 13 (48/102 EXP)
+[Progression] +10 Class EXP for 'apprentice_stonemason' (Guild Hero). Current: Level 1 (10/54 EXP)
+[Progression] +20 EXP for 'woodworking' (Guild Hero). Current: Level 13 (68/102 EXP)
+[Progression] Recorded tx 'woodworking': +20 EXP for Guild Hero, resulting total: Level 13 (68/102 EXP)
+[Progression] +20 Class EXP for 'apprentice_carpenter' (Guild Hero). Current: Level 1 (30/54 EXP)
+[Progression] +10000 EXP for 'blacksmithing' (Guild Hero). Current: Level 59 (206/286 EXP)
+[Progression] Recorded tx 'blacksmithing': +10000 EXP for Guild Hero, resulting total: Level 59 (206/286 EXP)
+[Progression] LEVEL UP! 'blacksmithing' is now Level 59! (Gained 59 level(s))
+[Progression] Class Unlocked: Apprentice Smith (apprentice_smith) for Guild Hero!
+[Progression] Γ£¿ SKILL DISCOVERED: 'blacksmithing' reached Level 59 by Guild Hero! Γ£¿
+[Progression] +25 EXP for 'blacksmithing' (Guild Hero). Current: Level 59 (231/286 EXP)
+[Progression] Recorded tx 'blacksmithing': +25 EXP for Guild Hero, resulting total: Level 59 (231/286 EXP)
+[Progression] +25 Class EXP for 'apprentice_smith' (Guild Hero). Current: Level 1 (25/54 EXP)
+[Progression] +25 EXP for 'blacksmithing' (Guild Hero). Current: Level 59 (256/286 EXP)
+[Progression] Recorded tx 'blacksmithing': +25 EXP for Guild Hero, resulting total: Level 59 (256/286 EXP)
+[Progression] +25 Class EXP for 'apprentice_smith' (Guild Hero). Current: Level 1 (50/54 EXP)
+[Progression] +50000 EXP for 'enchanting' (Guild Hero). Current: Level 146 (360/634 EXP)
+[Progression] Recorded tx 'enchanting': +50000 EXP for Guild Hero, resulting total: Level 146 (360/634 EXP)
+[Progression] LEVEL UP! 'enchanting' is now Level 146! (Gained 146 level(s))
+[Progression] Class Unlocked: Apprentice Enchanter (apprentice_enchanter) for Guild Hero!
+[Progression] Γ£¿ SKILL DISCOVERED: 'enchanting' reached Level 146 by Guild Hero! Γ£¿
+[Progression] +50 EXP for 'enchanting' (Guild Hero). Current: Level 146 (410/634 EXP)
+[Progression] Recorded tx 'enchanting': +50 EXP for Guild Hero, resulting total: Level 146 (410/634 EXP)
+[Progression] +50 Class EXP for 'apprentice_enchanter' (Guild Hero). Current: Level 1 (50/54 EXP)
+[Progression] +50 EXP for 'enchanting' (Guild Hero). Current: Level 146 (460/634 EXP)
+[Progression] Recorded tx 'enchanting': +50 EXP for Guild Hero, resulting total: Level 146 (460/634 EXP)
+[Progression] +50 Class EXP for 'apprentice_enchanter' (Guild Hero). Current: Level 2 (46/58 EXP)
+[Progression] CLASS LEVEL UP! 'apprentice_enchanter' is now Level 2!
+Γ£ö Test 3 passed: All recipes craft with level gates, resource deduction, and EXP
+-> Test 4: Generic costs & Construction multiplier
+Γ£ö Test 4 passed: Generic costs scale with Construction tier and refund using floor rounding
+-> Test 5: Furniture placement & refunds & Free Hands exemption
+Γ£ö Test 5 passed: Furniture consumes 1, disallows at 0, refunds 1 in full, and never procs Free Hands
+-> Test 6: Room Quality & Classification with hand-computed arithmetic
+Γ£ö Test 6 passed: Stone wall + plank door + chair + table classifies with exact hand-calculated Cozy (13)
+-> Test 7: Mood Link (safe zone outpost rest recovery with moodEnabled)
+Γ£ö Test 7 passed: Mood link stays off with moodEnabled: false; formulas and caps verified
+-> Test 8: Builder ranks, Free Hands simulation & Salvage Expert
+[Progression] Set class 'apprentice_builder' to Level 1 (0 EXP) on Guild Hero
+[Progression] +10 Class EXP for 'apprentice_builder' (Guild Hero). Current: Level 1 (10/54 EXP)
+  Free Hands 5,000 rolls: 733 procs (14.66%)
+Γ£ö Test 8 passed: Builder ranks unlock, Free Hands procs within bounds, Salvage Expert caps at 100%
+
+=== ALL MILESTONE 5 WOODWORKING & STONEMASON TESTS PASSED SUCCESSFULLY! ===

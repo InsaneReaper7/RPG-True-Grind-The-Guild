@@ -334,6 +334,139 @@
       "icon": "🪨"
     },
     {
+      "id": "planks",
+      "name": "Planks",
+      "weight": 0.3,
+      "category": "materials",
+      "icon": "🪵"
+    },
+    {
+      "id": "bricks",
+      "name": "Bricks",
+      "weight": 0.5,
+      "category": "materials",
+      "icon": "🧱"
+    },
+    {
+      "id": "reinforced_plank",
+      "name": "Reinforced Plank",
+      "weight": 0.7,
+      "category": "materials",
+      "icon": "🪵"
+    },
+    {
+      "id": "reinforced_brick",
+      "name": "Reinforced Brick",
+      "weight": 0.7,
+      "category": "materials",
+      "icon": "🧱"
+    },
+    {
+      "id": "runic_plank",
+      "name": "Runic Plank",
+      "weight": 0.7,
+      "category": "materials",
+      "icon": "✨"
+    },
+    {
+      "id": "runic_brick",
+      "name": "Runic Brick",
+      "weight": 0.7,
+      "category": "materials",
+      "icon": "✨"
+    },
+    {
+      "id": "wooden_chair",
+      "name": "Wooden Chair",
+      "weight": 2,
+      "category": "furniture",
+      "icon": "🪑"
+    },
+    {
+      "id": "wooden_table",
+      "name": "Wooden Table",
+      "weight": 4,
+      "category": "furniture",
+      "icon": "🪑"
+    },
+    {
+      "id": "wall_shelf",
+      "name": "Wall Shelf",
+      "weight": 5,
+      "category": "furniture",
+      "icon": "📦"
+    },
+    {
+      "id": "wardrobe",
+      "name": "Wardrobe",
+      "weight": 5,
+      "category": "furniture",
+      "icon": "🚪"
+    },
+    {
+      "id": "bookshelf",
+      "name": "Bookshelf",
+      "weight": 5,
+      "category": "furniture",
+      "icon": "📚"
+    },
+    {
+      "id": "carved_cabinet",
+      "name": "Carved Cabinet",
+      "weight": 5,
+      "category": "furniture",
+      "icon": "🗄️"
+    },
+    {
+      "id": "masterwork_throne",
+      "name": "Masterwork Throne",
+      "weight": 5,
+      "category": "furniture",
+      "icon": "👑"
+    },
+    {
+      "id": "stone_bench",
+      "name": "Stone Bench",
+      "weight": 5,
+      "category": "furniture",
+      "icon": "🪑"
+    },
+    {
+      "id": "stone_brazier",
+      "name": "Stone Brazier",
+      "weight": 5,
+      "category": "furniture",
+      "icon": "🔥"
+    },
+    {
+      "id": "stone_planter",
+      "name": "Stone Planter",
+      "weight": 5,
+      "category": "furniture",
+      "icon": "🪴"
+    },
+    {
+      "id": "stone_fountain",
+      "name": "Stone Fountain",
+      "weight": 5,
+      "category": "furniture",
+      "icon": "⛲"
+    },
+    {
+      "id": "marble_statue",
+      "name": "Marble Statue",
+      "weight": 5,
+      "category": "furniture",
+      "icon": "🗿"
+    },
+    {
+      "id": "grand_hearth",
+      "name": "Grand Hearth",
+      "weight": 5,
+      "category": "furniture",
+      "icon": "🔥"
+    },
+    {
       "id": "slime_jelly",
       "name": "Slime Jelly",
       "weight": 0.2,

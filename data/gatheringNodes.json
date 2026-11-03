@@ -51,6 +51,22 @@
       "color": "#94a3b8",
       "actionVerb": "Mining"
     },
+    "stone_outcrop": {
+      "id": "stone_outcrop",
+      "name": "Stone Outcrop",
+      "skillId": "mining",
+      "resourceId": "stone",
+      "yieldCount": 2,
+      "expGranted": 15,
+      "channelDurationMs": 2500,
+      "respawnTimeMs": 15000,
+      "textureKey": "stone-outcrop",
+      "textureDepletedKey": "stone-outcrop-depleted",
+      "label": "Stone Outcrop",
+      "depletedLabel": "Quarried",
+      "color": "#9ca3af",
+      "actionVerb": "Quarrying"
+    },
     "dig_spot": {
       "id": "dig_spot",
       "name": "Dig Spot",

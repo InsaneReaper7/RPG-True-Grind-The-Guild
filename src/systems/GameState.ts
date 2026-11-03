@@ -1487,6 +1487,23 @@ export class GameState {
     return [...this.placedBuildables];
   }
 
+  private bestRoomQualities: Record<string, number> = {};
+
+  public getBestRoomQuality(ruleId: string): number {
+    return this.bestRoomQualities[ruleId] ?? 0;
+  }
+
+  public setBestRoomQuality(ruleId: string, quality: number): void {
+    const cur = this.bestRoomQualities[ruleId] ?? 0;
+    if (quality > cur) {
+      this.bestRoomQualities[ruleId] = quality;
+    }
+  }
+
+  public clearBestRoomQualities(): void {
+    this.bestRoomQualities = {};
+  }
+
   public hasPlacedBuildable(buildableId: string): boolean {
     return this.placedBuildables.some((b) => b.id === buildableId);
   }

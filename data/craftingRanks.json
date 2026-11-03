@@ -1,5 +1,6 @@
 {
   "perkCap": 15,
+  "builderExpPerPlacement": 10,
   "ranks": {
     "apprentice": {
       "levelCap": 10,
@@ -55,6 +56,24 @@
       "journeyman": "journeyman_enchanter",
       "master": "master_enchanter",
       "grandmaster": "runeweaver"
+    },
+    "woodworking": {
+      "apprentice": "apprentice_carpenter",
+      "journeyman": "journeyman_carpenter",
+      "master": "master_carpenter",
+      "grandmaster": "grandmaster_carpenter"
+    },
+    "stonemason": {
+      "apprentice": "apprentice_stonemason",
+      "journeyman": "journeyman_stonemason",
+      "master": "master_stonemason",
+      "grandmaster": "grandmaster_stonemason"
+    },
+    "construction": {
+      "apprentice": "apprentice_builder",
+      "journeyman": "journeyman_builder",
+      "master": "master_builder",
+      "grandmaster": "grandmaster_builder"
     }
   }
 }

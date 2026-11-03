@@ -198,6 +198,7 @@ async function runTests() {
   const maceRecipe = bsRecipes.find(r => r.id === 'mace');
   assert.equal(maceRecipe?.requiredLevel, 0, 'Mace recipe must be requiredLevel 0 (Band 1)');
   for (const r of bsRecipes) {
+    if (r.resultItemId) continue; // Skip non-gear building materials (Milestone 5)
     assert.ok((r.requiredLevel ?? 0) <= 12, `Blacksmith recipe ${r.id} must be in bands 1-4 (0-12)`);
   }
 

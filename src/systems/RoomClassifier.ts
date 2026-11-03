@@ -5,6 +5,9 @@ export interface ClassifiedRoom {
   ruleId?: string;
   matchedTags: string[];
   enclosedTiles: GridPos[];
+  quality?: number;
+  qualityLabel?: string;
+  displayName?: string;
 }
 
 export class RoomClassifier {

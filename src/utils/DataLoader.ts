@@ -36,6 +36,10 @@ import type {
   CampConfig,
   BowyerRecipeDef,
   BowyerRecipesData,
+  WoodworkingRecipeDef,
+  WoodworkingRecipesData,
+  StonemasonRecipeDef,
+  StonemasonRecipesData,
   FoodDef,
   FoodsData,
   MoodTierDef,
@@ -96,6 +100,8 @@ export class DataLoader {
   private campConfigData?: CampConfig;
   private craftingRanksData?: CraftingRanksData;
   private luckConfigData?: LuckConfig;
+  private woodworkingRecipesData?: WoodworkingRecipesData;
+  private stonemasonRecipesData?: StonemasonRecipesData;
 
   private constructor() {}
 
@@ -107,7 +113,7 @@ export class DataLoader {
   }
 
   public async loadAll(): Promise<void> {
-    const [player, weapons, classes, enemies, skills, statusEffects, buildables, rooms, hiddenSkills, skillBooks, researchTree, alchemyRecipes, cookingRecipes, blacksmithRecipes, bowyerRecipes, armors, armorsmithRecipes, foods, moodEffects, dungeon, gathering, items, recruits, craftingConfig, introNarrative, enchantingRecipes, statGains, crops, cookingConfig, campConfig, craftingRanks, luckConfig] = await Promise.all([
+    const [player, weapons, classes, enemies, skills, statusEffects, buildables, rooms, hiddenSkills, skillBooks, researchTree, alchemyRecipes, cookingRecipes, blacksmithRecipes, bowyerRecipes, armors, armorsmithRecipes, foods, moodEffects, dungeon, gathering, items, recruits, craftingConfig, introNarrative, enchantingRecipes, statGains, crops, cookingConfig, campConfig, craftingRanks, luckConfig, woodworkingRecipes, stonemasonRecipes] = await Promise.all([
       fetch('/data/player.json').then((res) => res.json()),
       fetch('/data/weapons.json').then((res) => res.json()),
       fetch('/data/classes.json').then((res) => res.json()),
@@ -139,7 +145,9 @@ export class DataLoader {
       fetch('/data/cookingConfig.json').then((res) => res.json()).catch(() => null),
       fetch('/data/campConfig.json').then((res) => res.json()).catch(() => null),
       fetch('/data/craftingRanks.json').then((res) => res.json()).catch(() => null),
-      fetch('/data/luckConfig.json').then((res) => res.json()).catch(() => null)
+      fetch('/data/luckConfig.json').then((res) => res.json()).catch(() => null),
+      fetch('/data/woodworkingRecipes.json').then((res) => res.json()).catch(() => null),
+      fetch('/data/stonemasonRecipes.json').then((res) => res.json()).catch(() => null)
     ]);
 
     this.playerData = player as PlayerData;
@@ -198,6 +206,12 @@ export class DataLoader {
     }
     if (enchantingRecipes) {
       this.enchantingRecipesData = enchantingRecipes as EnchantingRecipesData;
+    }
+    if (woodworkingRecipes) {
+      this.woodworkingRecipesData = woodworkingRecipes as WoodworkingRecipesData;
+    }
+    if (stonemasonRecipes) {
+      this.stonemasonRecipesData = stonemasonRecipes as StonemasonRecipesData;
     }
     if (dungeon) {
       this.dungeonConfig = dungeon as DungeonConfig;
@@ -1046,6 +1060,58 @@ export class DataLoader {
 
   public getBowyerRecipe(id: string): BowyerRecipeDef | undefined {
     return this.bowyerRecipesData?.recipes.find((r) => r.id === id);
+  }
+
+  public getWoodworkingRecipesData(): WoodworkingRecipesData | undefined {
+    if (!this.woodworkingRecipesData) {
+      try {
+        if (typeof process !== 'undefined' && process.versions?.node) {
+          const fsModule = (globalThis as any).fs || (typeof require !== 'undefined' ? require('node:fs') : undefined);
+          if (fsModule && fsModule.existsSync('data/woodworkingRecipes.json')) {
+            this.woodworkingRecipesData = JSON.parse(fsModule.readFileSync('data/woodworkingRecipes.json', 'utf8'));
+          }
+        }
+      } catch { /* fallback */ }
+    }
+    return this.woodworkingRecipesData;
+  }
+
+  public getWoodworkingRecipes(): WoodworkingRecipeDef[] {
+    return this.getWoodworkingRecipesData()?.recipes ?? [];
+  }
+
+  public getWoodworkingRecipe(id: string): WoodworkingRecipeDef | undefined {
+    return this.getWoodworkingRecipes().find((r) => r.id === id);
+  }
+
+  public getStonemasonRecipesData(): StonemasonRecipesData | undefined {
+    if (!this.stonemasonRecipesData) {
+      try {
+        if (typeof process !== 'undefined' && process.versions?.node) {
+          const fsModule = (globalThis as any).fs || (typeof require !== 'undefined' ? require('node:fs') : undefined);
+          if (fsModule && fsModule.existsSync('data/stonemasonRecipes.json')) {
+            this.stonemasonRecipesData = JSON.parse(fsModule.readFileSync('data/stonemasonRecipes.json', 'utf8'));
+          }
+        }
+      } catch { /* fallback */ }
+    }
+    return this.stonemasonRecipesData;
+  }
+
+  public getStonemasonRecipes(): StonemasonRecipeDef[] {
+    return this.getStonemasonRecipesData()?.recipes ?? [];
+  }
+
+  public getStonemasonRecipe(id: string): StonemasonRecipeDef | undefined {
+    return this.getStonemasonRecipes().find((r) => r.id === id);
+  }
+
+  public getRoomQualityConfig(): { wallTierWeight: number; thresholds: Record<string, number> | Array<{ id: string; label: string; minQuality: number }> } | undefined {
+    return this.roomsData?.roomQuality;
+  }
+
+  public getRoomQualityMoodConfig(): { bedroomMoodPerSecPerPoint: number; bedroomMoodCapPerSec: number; diningMoodPerSecPerPoint: number; diningMoodCapPerSec: number } | undefined {
+    return this.moodEffectsData?.roomQuality;
   }
 
   public getArmorsData(): ArmorsData {

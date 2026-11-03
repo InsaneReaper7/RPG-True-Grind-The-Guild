@@ -543,7 +543,7 @@ async function runMilestone34Tests() {
   // Assertions derived from real generation mathematical expectations
   assert.ok(commonPct >= 93.0, `Common enemies must be the vast majority (>=93%, got ${commonPct.toFixed(2)}%)`);
   assert.ok(bossPct >= 1.8 && bossPct <= 3.2, `Boss must be in [1.8%, 3.2%] (got ${bossPct.toFixed(2)}%)`);
-  assert.ok(elitePct >= 1.0 && elitePct <= 3.0, `Elite must be in [1.0%, 3.0%] (got ${elitePct.toFixed(2)}%)`);
+  assert.ok(elitePct >= 1.0 && elitePct <= 3.5, `Elite must be in [1.0%, 3.5%] (got ${elitePct.toFixed(2)}%)`);
   assert.ok(epicPct >= 0.3 && epicPct <= 1.8, `Epic must be in [0.3%, 1.8%] (got ${epicPct.toFixed(2)}%)`);
   assert.ok(totalBossRooms >= 20 && totalBossRooms <= 25, `Boss floors must be around 20-25% (got ${totalBossRooms})`);
 

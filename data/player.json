@@ -34,6 +34,14 @@
       "level": 0,
       "currentExp": 0
     },
+    "woodworking": {
+      "level": 0,
+      "currentExp": 0
+    },
+    "stonemason": {
+      "level": 0,
+      "currentExp": 0
+    },
     "alchemy": {
       "level": 0,
       "currentExp": 0

@@ -2679,6 +2679,218 @@ export class TextureGenerator {
       g.generateTexture('campfire-depleted', tileSize, tileSize);
       g.destroy();
     }
+
+    // --- Milestone 5 Textures: Stations, Tier Blocks, Furniture, Gathering Node ---
+    const makeWallFamily = (prefix: string, mainColor: number, strokeColor: number, detailColor: number) => {
+      if (!scene.textures.exists(`${prefix}-single`)) {
+        const g = scene.make.graphics({ x: 0, y: 0 });
+        g.fillStyle(mainColor, 1);
+        g.fillRect(4, 4, tileSize - 8, tileSize - 8);
+        g.lineStyle(2, strokeColor, 1);
+        g.strokeRect(4, 4, tileSize - 8, tileSize - 8);
+        g.fillStyle(detailColor, 0.9);
+        g.fillCircle(tileSize / 2, tileSize / 2, 3);
+        g.generateTexture(`${prefix}-single`, tileSize, tileSize);
+        g.destroy();
+      }
+      if (!scene.textures.exists(`${prefix}-h`)) {
+        const g = scene.make.graphics({ x: 0, y: 0 });
+        g.fillStyle(mainColor, 1);
+        g.fillRect(0, 6, tileSize, tileSize - 12);
+        g.lineStyle(2, strokeColor, 1);
+        g.lineBetween(0, 6, tileSize, 6);
+        g.lineBetween(0, tileSize - 6, tileSize, tileSize - 6);
+        g.lineStyle(1, detailColor, 0.9);
+        g.lineBetween(0, tileSize / 2, tileSize, tileSize / 2);
+        g.generateTexture(`${prefix}-h`, tileSize, tileSize);
+        g.destroy();
+      }
+      if (!scene.textures.exists(`${prefix}-v`)) {
+        const g = scene.make.graphics({ x: 0, y: 0 });
+        g.fillStyle(mainColor, 1);
+        g.fillRect(6, 0, tileSize - 12, tileSize);
+        g.lineStyle(2, strokeColor, 1);
+        g.lineBetween(6, 0, 6, tileSize);
+        g.lineBetween(tileSize - 6, 0, tileSize - 6, tileSize);
+        g.lineStyle(1, detailColor, 0.9);
+        g.lineBetween(tileSize / 2, 0, tileSize / 2, tileSize);
+        g.generateTexture(`${prefix}-v`, tileSize, tileSize);
+        g.destroy();
+      }
+      if (!scene.textures.exists(`${prefix}-corner-nw`)) {
+        const g = scene.make.graphics({ x: 0, y: 0 });
+        g.fillStyle(mainColor, 1);
+        g.fillRect(6, 6, tileSize - 6, tileSize - 12);
+        g.fillRect(6, 6, tileSize - 12, tileSize - 6);
+        g.lineStyle(2, strokeColor, 1);
+        g.strokeRect(6, 6, tileSize - 12, tileSize - 12);
+        g.generateTexture(`${prefix}-corner-nw`, tileSize, tileSize);
+        g.destroy();
+      }
+      if (!scene.textures.exists(`${prefix}-corner-ne`)) {
+        const g = scene.make.graphics({ x: 0, y: 0 });
+        g.fillStyle(mainColor, 1);
+        g.fillRect(0, 6, tileSize - 6, tileSize - 12);
+        g.fillRect(6, 6, tileSize - 12, tileSize - 6);
+        g.lineStyle(2, strokeColor, 1);
+        g.strokeRect(6, 6, tileSize - 12, tileSize - 12);
+        g.generateTexture(`${prefix}-corner-ne`, tileSize, tileSize);
+        g.destroy();
+      }
+      if (!scene.textures.exists(`${prefix}-corner-sw`)) {
+        const g = scene.make.graphics({ x: 0, y: 0 });
+        g.fillStyle(mainColor, 1);
+        g.fillRect(6, 6, tileSize - 6, tileSize - 12);
+        g.fillRect(6, 0, tileSize - 12, tileSize - 6);
+        g.lineStyle(2, strokeColor, 1);
+        g.strokeRect(6, 6, tileSize - 12, tileSize - 12);
+        g.generateTexture(`${prefix}-corner-sw`, tileSize, tileSize);
+        g.destroy();
+      }
+      if (!scene.textures.exists(`${prefix}-corner-se`)) {
+        const g = scene.make.graphics({ x: 0, y: 0 });
+        g.fillStyle(mainColor, 1);
+        g.fillRect(0, 6, tileSize - 6, tileSize - 12);
+        g.fillRect(6, 0, tileSize - 12, tileSize - 6);
+        g.lineStyle(2, strokeColor, 1);
+        g.strokeRect(6, 6, tileSize - 12, tileSize - 12);
+        g.generateTexture(`${prefix}-corner-se`, tileSize, tileSize);
+        g.destroy();
+      }
+      if (!scene.textures.exists(`${prefix}-junction`)) {
+        const g = scene.make.graphics({ x: 0, y: 0 });
+        g.fillStyle(mainColor, 1);
+        g.fillRect(0, 6, tileSize, tileSize - 12);
+        g.fillRect(6, 0, tileSize - 12, tileSize);
+        g.lineStyle(2, strokeColor, 1);
+        g.strokeRect(6, 6, tileSize - 12, tileSize - 12);
+        g.generateTexture(`${prefix}-junction`, tileSize, tileSize);
+        g.destroy();
+      }
+    };
+
+    const makeDoorFamily = (prefix: string, frameColor: number, panelColor: number) => {
+      if (!scene.textures.exists(`${prefix}-h`)) {
+        const g = scene.make.graphics({ x: 0, y: 0 });
+        g.fillStyle(frameColor, 1);
+        g.fillRect(0, 6, tileSize, tileSize - 12);
+        g.fillStyle(panelColor, 1);
+        g.fillRect(4, 8, tileSize - 8, tileSize - 16);
+        g.generateTexture(`${prefix}-h`, tileSize, tileSize);
+        g.destroy();
+      }
+      if (!scene.textures.exists(`${prefix}-v`)) {
+        const g = scene.make.graphics({ x: 0, y: 0 });
+        g.fillStyle(frameColor, 1);
+        g.fillRect(6, 0, tileSize - 12, tileSize);
+        g.fillStyle(panelColor, 1);
+        g.fillRect(8, 4, tileSize - 16, tileSize - 8);
+        g.generateTexture(`${prefix}-v`, tileSize, tileSize);
+        g.destroy();
+      }
+    };
+
+    const makeFloor = (key: string, baseColor: number, lineColor: number) => {
+      if (!scene.textures.exists(key)) {
+        const g = scene.make.graphics({ x: 0, y: 0 });
+        g.fillStyle(baseColor, 1);
+        g.fillRect(0, 0, tileSize, tileSize);
+        g.lineStyle(1, lineColor, 0.8);
+        g.strokeRect(0, 0, tileSize, tileSize);
+        g.generateTexture(key, tileSize, tileSize);
+        g.destroy();
+      }
+    };
+
+    // Tier walls
+    makeWallFamily('buildable-plank-wall', 0x5c3a1e, 0xa0522d, 0xd7ccc8);
+    makeWallFamily('buildable-stone-wall', 0x334155, 0x64748b, 0x94a3b8);
+    makeWallFamily('buildable-brick-wall', 0x7c2d12, 0xc2410c, 0xf97316);
+    makeWallFamily('buildable-reinforced-wall', 0x1e293b, 0x94a3b8, 0x38bdf8);
+    makeWallFamily('buildable-runic-wall', 0x2e1065, 0xa855f7, 0xc084fc);
+
+    // Tier doors
+    makeDoorFamily('buildable-plank-door', 0x5c3a1e, 0x8b5a2b);
+    makeDoorFamily('buildable-reinforced-door', 0x0f172a, 0x475569);
+    makeDoorFamily('buildable-runic-door', 0x3b0764, 0x9333ea);
+
+    // Tier floors
+    makeFloor('buildable-plank', 0x8b5a2b, 0x5c3a1e);
+    makeFloor('buildable-stone', 0x64748b, 0x475569);
+    makeFloor('buildable-brick', 0x9a3412, 0x7c2d12);
+
+    // Stone Outcrop
+    if (!scene.textures.exists('stone-outcrop')) {
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      g.fillStyle(0x0f172a, 0.6);
+      g.fillEllipse(tileSize / 2, tileSize - 4, 15, 6);
+      g.fillStyle(0x64748b, 1);
+      g.fillCircle(tileSize / 2, tileSize / 2 + 2, 10);
+      g.fillCircle(tileSize / 2 - 4, tileSize / 2, 8);
+      g.fillCircle(tileSize / 2 + 4, tileSize / 2 + 1, 8);
+      g.fillStyle(0x94a3b8, 1);
+      g.fillCircle(tileSize / 2 - 2, tileSize / 2 - 2, 6);
+      g.fillCircle(tileSize / 2 + 3, tileSize / 2 - 2, 5);
+      g.generateTexture('stone-outcrop', tileSize, tileSize);
+      g.destroy();
+    }
+    if (!scene.textures.exists('stone-outcrop-depleted')) {
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      g.fillStyle(0x1e293b, 0.4);
+      g.fillEllipse(tileSize / 2, tileSize - 4, 11, 4);
+      g.fillStyle(0x475569, 0.9);
+      g.fillCircle(tileSize / 2 - 4, tileSize / 2 + 5, 4);
+      g.fillCircle(tileSize / 2 + 3, tileSize / 2 + 6, 3.5);
+      g.generateTexture('stone-outcrop-depleted', tileSize, tileSize);
+      g.destroy();
+    }
+
+    // Stations
+    const makeStation = (key: string, baseColor: number, accentColor: number) => {
+      if (!scene.textures.exists(key)) {
+        const g = scene.make.graphics({ x: 0, y: 0 });
+        g.fillStyle(baseColor, 1);
+        g.fillRect(3, 3, tileSize - 6, tileSize - 6);
+        g.lineStyle(2, accentColor, 1);
+        g.strokeRect(3, 3, tileSize - 6, tileSize - 6);
+        g.fillStyle(accentColor, 1);
+        g.fillCircle(tileSize / 2, tileSize / 2, 4);
+        g.generateTexture(key, tileSize, tileSize);
+        g.destroy();
+      }
+    };
+    makeStation('buildable-woodworking-bench', 0x78350f, 0xd97706);
+    makeStation('buildable-stonemason-yard', 0x475569, 0x94a3b8);
+
+    // Furniture textures
+    const furnitureDefs: [string, number, number][] = [
+      ['buildable-wooden-chair', 0x854d0e, 0xa16207],
+      ['buildable-wooden-table', 0x713f12, 0xa16207],
+      ['buildable-wall-shelf', 0x78350f, 0xb45309],
+      ['buildable-wardrobe', 0x451a03, 0x9a3412],
+      ['buildable-bookshelf', 0x78350f, 0x38bdf8],
+      ['buildable-carved-cabinet', 0x3b1a0e, 0xd97706],
+      ['buildable-masterwork-throne', 0x4c1d95, 0xfacc15],
+      ['buildable-stone-bench', 0x475569, 0x64748b],
+      ['buildable-stone-brazier', 0x334155, 0xf97316],
+      ['buildable-stone-planter', 0x475569, 0x22c55e],
+      ['buildable-stone-fountain', 0x334155, 0x38bdf8],
+      ['buildable-marble-statue', 0xe2e8f0, 0x94a3b8],
+      ['buildable-grand-hearth', 0x1e293b, 0xef4444]
+    ];
+    for (const [key, bColor, aColor] of furnitureDefs) {
+      if (!scene.textures.exists(key)) {
+        const g = scene.make.graphics({ x: 0, y: 0 });
+        g.fillStyle(bColor, 1);
+        g.fillRect(4, 4, tileSize - 8, tileSize - 8);
+        g.lineStyle(1, aColor, 1);
+        g.strokeRect(4, 4, tileSize - 8, tileSize - 8);
+        g.fillStyle(aColor, 0.9);
+        g.fillCircle(tileSize / 2, tileSize / 2, 3);
+        g.generateTexture(key, tileSize, tileSize);
+        g.destroy();
+      }
+    }
   }
 }
 

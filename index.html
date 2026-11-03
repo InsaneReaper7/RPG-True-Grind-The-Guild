@@ -3262,6 +3262,93 @@
 
         <div id="magical-weapon-status-msg" style="font-size: 12px; color: #c084fc; font-style: italic; min-height: 18px; margin-top: 8px;"></div>
       </div>
+      <!-- Woodworking Bench Modal (Milestone 5) -->
+      <div id="woodworking-modal" class="custom-modal" style="width: 640px; max-height: 85vh; overflow-y: auto;">
+        <div class="modal-header">
+          <div>
+            <div class="modal-title" style="color: #fbbf24;">🪵 Guild Woodworking Bench</div>
+            <div class="modal-subtitle">Cut fine planks, carve joinery, and craft guild furniture.</div>
+          </div>
+          <button id="close-woodworking-btn" class="modal-close-btn" type="button">✕</button>
+        </div>
+
+        <!-- 1. Proficiency & Stockpile Materials Bar -->
+        <div style="display: grid; grid-template-columns: 1.2fr 1fr 1fr 1fr; gap: 8px; background: rgba(31, 41, 55, 0.7); padding: 8px 12px; border-radius: 6px; margin-bottom: 12px; border: 1px solid rgba(255,255,255,0.1); font-size: 11px;">
+          <div>
+            <span style="color: #9ca3af;">Woodworking:</span>
+            <div id="woodworking-modal-prof" style="color: #fbbf24; font-weight: bold;">Untrained (Lv 0)</div>
+          </div>
+          <div>
+            <span style="color: #9ca3af;">🪵 Wood:</span>
+            <div id="woodworking-stockpile-wood" style="color: #cbd5e1; font-weight: bold;">0</div>
+          </div>
+          <div>
+            <span style="color: #9ca3af;">🪵 Planks:</span>
+            <div id="woodworking-stockpile-planks" style="color: #38bdf8; font-weight: bold;">0</div>
+          </div>
+          <div>
+            <span style="color: #9ca3af;">🔩 Ref / Runic Planks:</span>
+            <div id="woodworking-stockpile-advanced" style="color: #cbd5e1; font-weight: bold;">0 / 0</div>
+          </div>
+        </div>
+
+        <!-- 2. Recipes List (Tier-Unlocked) -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <div class="loadout-section-title" style="margin-bottom: 0;">🪵 Craft Woodwork & Furniture</div>
+          <button id="woodworking-toggle-filter-btn" class="stockpile-toggle-btn crafting-toggle-btn" type="button" title="Toggle between showing unlocked recipes vs all recipes" style="border-color: #fbbf24; background: rgba(245, 158, 11, 0.3); color: #fbbf24;">
+            <span id="woodworking-toggle-filter-indicator">✓</span> <span id="woodworking-toggle-filter-label">Showing: Unlocked Only</span>
+          </button>
+        </div>
+        <div id="woodworking-recipes-container" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px;">
+          <!-- Dynamically populated with woodworking recipes -->
+        </div>
+
+        <div id="woodworking-status-msg" style="font-size: 12px; color: #fbbf24; font-style: italic; min-height: 18px; margin-top: 8px;"></div>
+      </div>
+
+      <!-- Stonemason's Yard Modal (Milestone 5) -->
+      <div id="stonemason-modal" class="custom-modal" style="width: 640px; max-height: 85vh; overflow-y: auto;">
+        <div class="modal-header">
+          <div>
+            <div class="modal-title" style="color: #94a3b8;">⛏️ Guild Stonemason's Yard</div>
+            <div class="modal-subtitle">Chisel stone blocks, bake bricks, and sculpt guild masonry.</div>
+          </div>
+          <button id="close-stonemason-btn" class="modal-close-btn" type="button">✕</button>
+        </div>
+
+        <!-- 1. Proficiency & Stockpile Materials Bar -->
+        <div style="display: grid; grid-template-columns: 1.2fr 1fr 1fr 1fr; gap: 8px; background: rgba(31, 41, 55, 0.7); padding: 8px 12px; border-radius: 6px; margin-bottom: 12px; border: 1px solid rgba(255,255,255,0.1); font-size: 11px;">
+          <div>
+            <span style="color: #9ca3af;">Stonemason:</span>
+            <div id="stonemason-modal-prof" style="color: #94a3b8; font-weight: bold;">Untrained (Lv 0)</div>
+          </div>
+          <div>
+            <span style="color: #9ca3af;">🪨 Stone:</span>
+            <div id="stonemason-stockpile-stone" style="color: #cbd5e1; font-weight: bold;">0</div>
+          </div>
+          <div>
+            <span style="color: #9ca3af;">🧱 Bricks:</span>
+            <div id="stonemason-stockpile-bricks" style="color: #38bdf8; font-weight: bold;">0</div>
+          </div>
+          <div>
+            <span style="color: #9ca3af;">🏺 Clay / Dirt:</span>
+            <div id="stonemason-stockpile-clay-dirt" style="color: #cbd5e1; font-weight: bold;">0 / 0</div>
+          </div>
+        </div>
+
+        <!-- 2. Recipes List (Tier-Unlocked) -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <div class="loadout-section-title" style="margin-bottom: 0;">⛏️ Craft Masonry & Stone Décor</div>
+          <button id="stonemason-toggle-filter-btn" class="stockpile-toggle-btn crafting-toggle-btn" type="button" title="Toggle between showing unlocked recipes vs all recipes" style="border-color: #94a3b8; background: rgba(148, 163, 184, 0.3); color: #94a3b8;">
+            <span id="stonemason-toggle-filter-indicator">✓</span> <span id="stonemason-toggle-filter-label">Showing: Unlocked Only</span>
+          </button>
+        </div>
+        <div id="stonemason-recipes-container" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px;">
+          <!-- Dynamically populated with stonemason recipes -->
+        </div>
+
+        <div id="stonemason-status-msg" style="font-size: 12px; color: #94a3b8; font-style: italic; min-height: 18px; margin-top: 8px;"></div>
+      </div>
       <!-- Party Overview Modal (Milestone 8 & Milestone 35) -->
       <div id="party-overview-modal">
         <div class="modal-header">

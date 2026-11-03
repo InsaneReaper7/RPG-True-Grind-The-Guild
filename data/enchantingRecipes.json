@@ -319,6 +319,36 @@
       "profession": "enchanting",
       "school": "wind",
       "description": "Binds a Wind Magical Crystal into a hardwood staff, casting swift gale bolts that pierce through up to 3 lined-up enemies."
+    },
+    {
+      "id": "runic_plank",
+      "name": "Runic Plank",
+      "station": "magical_weapon_station",
+      "requiredLevel": 60,
+      "ingredients": {
+        "reinforced_plank": 2,
+        "arcane_crystal": 1
+      },
+      "resultItemId": "runic_plank",
+      "resultCount": 1,
+      "expGranted": 50,
+      "profession": "enchanting",
+      "description": "A reinforced timber plank infused with shimmering arcane runes."
+    },
+    {
+      "id": "runic_brick",
+      "name": "Runic Brick",
+      "station": "magical_weapon_station",
+      "requiredLevel": 60,
+      "ingredients": {
+        "reinforced_brick": 2,
+        "arcane_crystal": 1
+      },
+      "resultItemId": "runic_brick",
+      "resultCount": 1,
+      "expGranted": 50,
+      "profession": "enchanting",
+      "description": "A reinforced masonry brick inscribed with enduring protective runes."
     }
   ]
 }
