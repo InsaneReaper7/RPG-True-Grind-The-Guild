@@ -123,6 +123,10 @@ export class CraftingSystem {
     detectionBonusChance?: number;
     detectionRadius?: number;
     cacheBonusRollChance?: number;
+    keenSearchBonus?: number;
+    keenSearchBonusChance?: number;
+    pickmasterBonus?: number;
+    treasureSenseChance?: number;
   } {
     const progression: ProgressionSystem | undefined =
       crafter instanceof ProgressionSystem
