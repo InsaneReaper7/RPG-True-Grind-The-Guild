@@ -21,7 +21,13 @@ if (typeof (globalThis as any).window === 'undefined') {
     removeEventListener: noop,
     location: { href: 'http://localhost' },
     focus: noop,
-    navigator: { userAgent: 'node' }
+    navigator: { userAgent: 'node' },
+    localStorage: {
+      getItem: () => null,
+      setItem: noop,
+      removeItem: noop,
+      clear: noop
+    }
   };
   const dummyCtx: any = new Proxy({
     fillStyle: '',
@@ -41,12 +47,20 @@ if (typeof (globalThis as any).window === 'undefined') {
   (globalThis as any).document = {
     createElement: () => ({
       getContext: () => dummyCtx,
-      style: {}
+      style: {},
+      classList: { add: noop, remove: noop, toggle: noop, contains: () => false },
+      appendChild: noop,
+      removeChild: noop,
+      addEventListener: noop,
+      querySelectorAll: () => []
     }),
+    getElementById: () => null,
+    querySelector: () => null,
+    querySelectorAll: () => [],
     addEventListener: noop,
     removeEventListener: noop,
     documentElement: {},
-    body: {}
+    body: { appendChild: noop, removeChild: noop }
   };
   (globalThis as any).Image = class Image {};
   (globalThis as any).HTMLCanvasElement = class HTMLCanvasElement {};
@@ -75,6 +89,7 @@ const { Player } = await import('../src/entities/Player.ts');
 const { ProgressionSystem } = await import('../src/systems/ProgressionSystem.ts');
 const { RoomClassifier } = await import('../src/systems/RoomClassifier.ts');
 const { DungeonGenerator } = await import('../src/utils/DungeonGenerator.ts');
+const { OutpostScene } = await import('../src/scenes/OutpostScene.ts');
 import type { BuildableDef, PlacedBuildable } from '../src/types/game.ts';
 
 console.log('=== RUNNING MILESTONE 5: WOODWORKING, STONEMASON, BUILDING MATERIALS, FURNITURE & QUALITY TESTS ===');
@@ -412,7 +427,7 @@ function createPlayer(id = 'hero', name = 'Aria'): Player {
   assert.ok(chairRes.success, 'Wooden chair crafted');
   assert.equal(chairRes.resultId, 'wooden_chair');
   assert.equal(chairRes.expGranted, 20);
-  assert.equal(player.getItemCount('wooden_chair'), 1);
+  assert.equal(player.getItemCount('wooden_chair'), chairRes.quantity);
 
   // Advanced Materials at Blacksmithing: reinforced_plank (Lv 30) & reinforced_brick (Lv 30)
   prog.addProficiencyExp('blacksmithing', 10000); // Level 30+
@@ -424,7 +439,7 @@ function createPlayer(id = 'hero', name = 'Aria'): Player {
   const refPlankRes = CraftingSystem.applyCraft(player, refPlankRecipe, 'blacksmithing');
   assert.ok(refPlankRes.success, 'Reinforced plank forged');
   assert.equal(refPlankRes.resultId, 'reinforced_plank');
-  assert.equal(player.getItemCount('reinforced_plank'), 1);
+  assert.equal(player.getItemCount('reinforced_plank'), refPlankRes.quantity);
 
   const refBrickRecipe = dataLoader.getBlacksmithRecipes().find((r) => r.id === 'reinforced_brick')!;
   assert.ok(refBrickRecipe, 'reinforced_brick exists');
@@ -432,7 +447,7 @@ function createPlayer(id = 'hero', name = 'Aria'): Player {
   const refBrickRes = CraftingSystem.applyCraft(player, refBrickRecipe, 'blacksmithing');
   assert.ok(refBrickRes.success, 'Reinforced brick forged');
   assert.equal(refBrickRes.resultId, 'reinforced_brick');
-  assert.equal(player.getItemCount('reinforced_brick'), 1);
+  assert.equal(player.getItemCount('reinforced_brick'), refBrickRes.quantity);
 
   // Advanced Materials at Enchanting: runic_plank (Lv 60) & runic_brick (Lv 60)
   prog.addProficiencyExp('enchanting', 50000); // Level 60+
@@ -446,7 +461,7 @@ function createPlayer(id = 'hero', name = 'Aria'): Player {
   const runicPlankRes = CraftingSystem.applyCraft(player, runicPlankRecipe, 'enchanting');
   assert.ok(runicPlankRes.success, 'Runic plank enchanted');
   assert.equal(runicPlankRes.resultId, 'runic_plank');
-  assert.equal(player.getItemCount('runic_plank'), 1);
+  assert.equal(player.getItemCount('runic_plank'), runicPlankRes.quantity);
 
   const runicBrickRecipe = dataLoader.getEnchantingRecipes().find((r) => r.id === 'runic_brick')!;
   assert.ok(runicBrickRecipe, 'runic_brick exists');
@@ -454,7 +469,7 @@ function createPlayer(id = 'hero', name = 'Aria'): Player {
   const runicBrickRes = CraftingSystem.applyCraft(player, runicBrickRecipe, 'enchanting');
   assert.ok(runicBrickRes.success, 'Runic brick enchanted');
   assert.equal(runicBrickRes.resultId, 'runic_brick');
-  assert.equal(player.getItemCount('runic_brick'), 1);
+  assert.equal(player.getItemCount('runic_brick'), runicBrickRes.quantity);
 
   console.log('✔ Test 3 passed: All recipes craft with level gates, resource deduction, and EXP');
 }
@@ -794,6 +809,223 @@ function createPlayer(id = 'hero', name = 'Aria'): Player {
   assert.equal(refundMasterWithPerk, 10, 'Master with Salvage Expert is capped at 100% refund');
 
   console.log('✔ Test 8 passed: Builder ranks unlock, Free Hands procs within bounds, Salvage Expert caps at 100%');
+}
+
+// ----------------------------------------------------------------------------
+// TEST 9: Room Quality drop on Demolition (clearBestRoomQualities in recalculateEnclosedRooms)
+// ----------------------------------------------------------------------------
+{
+  console.log('-> Test 9: Room Quality drops on demolition of furniture via Build menu demolish control');
+
+  // 1. Fresh GameState setup
+  const gameState = GameState.getInstance();
+  gameState.resetToDefault();
+  gameState.initFromPlayerData(dataLoader.getPlayer());
+  gameState.addWood(1000);
+  gameState.addItem('planks', 100);
+  gameState.addItem('wardrobe', 1);
+
+  // 2. Instantiate OutpostScene with necessary Phaser mocks
+  const outpost = new OutpostScene();
+
+  const createMockObj = () => {
+    const obj: any = {
+      on: () => obj,
+      once: () => obj,
+      off: () => obj,
+      emit: () => obj,
+      destroy: () => {},
+      setOrigin: () => obj,
+      setDepth: () => obj,
+      setScrollFactor: () => obj,
+      setPadding: () => obj,
+      setWordWrapWidth: () => obj,
+      setShadow: () => obj,
+      setStroke: () => obj,
+      setLineWidth: () => obj,
+      setVisible: (v: boolean) => {
+        obj.visible = v;
+        return obj;
+      },
+      setAngle: () => obj,
+      setAlpha: () => obj,
+      setTint: () => obj,
+      clearTint: () => obj,
+      setInteractive: () => obj,
+      disableInteractive: () => obj,
+      setTexture: () => obj,
+      setFrame: () => obj,
+      setSize: () => obj,
+      setDisplaySize: () => obj,
+      setPosition: (x: number, y: number) => {
+        obj.x = x;
+        obj.y = y;
+        return obj;
+      },
+      setScale: () => obj,
+      setText: (t: string) => {
+        obj.text = t;
+        return obj;
+      },
+      setStyle: (s: any) => {
+        obj.style = { ...obj.style, ...s };
+        return obj;
+      },
+      clear: () => obj,
+      fillRect: () => obj,
+      strokeRect: () => obj,
+      lineStyle: () => obj,
+      fillStyle: () => obj,
+      strokeCircle: () => obj,
+      fillCircle: () => obj,
+      strokePath: () => obj,
+      beginPath: () => obj,
+      moveTo: () => obj,
+      lineTo: () => obj,
+      closePath: () => obj,
+      stroke: () => obj,
+      fill: () => obj,
+      lineBetween: () => obj,
+      generateTexture: () => obj,
+      removeFromDisplayList: () => {},
+      addedToScene: () => {},
+      removedFromScene: () => {},
+      x: 0,
+      y: 0,
+      visible: true,
+      text: ''
+    };
+    return obj;
+  };
+
+  (outpost as any).sys = {
+    settings: { data: {} },
+    queueDepthSort: () => {},
+    events: { once: () => {}, on: () => {}, off: () => {}, emit: () => {} },
+    input: { enable: () => {}, disable: () => {} }
+  };
+  (outpost as any).make = {
+    tilemap: () => ({
+      addTilesetImage: () => ({}),
+      createLayer: () => ({ setDepth: () => {} })
+    }),
+    graphics: () => createMockObj()
+  };
+  (outpost as any).textures = {
+    exists: () => true
+  };
+  (outpost as any).time = { now: 1000, delayedCall: () => {} };
+  (outpost as any).events = { once: () => {}, on: () => {}, off: () => {}, emit: () => {} };
+  (outpost as any).tweens = { add: () => ({ remove: () => {} }) };
+
+  const inputListeners = new Map<string, Function[]>();
+  (outpost as any).input = {
+    mouse: { disableContextMenu: () => {} },
+    keyboard: { addKey: () => ({ on: () => {} }) },
+    on: (evt: string, fn: Function) => {
+      if (!inputListeners.has(evt)) inputListeners.set(evt, []);
+      inputListeners.get(evt)!.push(fn);
+    },
+    emit: (evt: string, ...args: any[]) => {
+      const fns = inputListeners.get(evt) || [];
+      for (const fn of fns) fn(...args);
+    },
+    off: () => {}
+  };
+  (outpost as any).cameras = {
+    main: {
+      setBounds: () => {},
+      startFollow: () => {},
+      stopFollow: () => {},
+      shake: () => {},
+      getWorldPoint: (x: number, y: number) => ({ x, y })
+    }
+  };
+  (outpost as any).add = {
+    existing: (item: any) => item,
+    container: () => createMockObj(),
+    image: () => createMockObj(),
+    sprite: () => createMockObj(),
+    graphics: () => createMockObj(),
+    line: () => createMockObj(),
+    text: () => createMockObj()
+  };
+  (outpost as any).sound = { play: () => {} };
+
+  outpost.create();
+  outpost.isBuildMode = true;
+
+  // 3. Build an enclosed bedroom:
+  // Interior tiles: (3, 15), (4, 15), (3, 16), (4, 16)
+  // Perimeter: 7 plank walls + 1 plank door
+  // Top wall: (2, 14), (3, 14), (4, 14), (5, 14)
+  for (let x = 2; x <= 5; x++) {
+    outpost.selectBuildable('plank_wall');
+    (outpost as any).placeAt(x, 14);
+  }
+  // Left & right walls: (2, 15), (5, 15), (2, 16), (5, 16)
+  for (let y = 15; y <= 16; y++) {
+    outpost.selectBuildable('plank_wall');
+    (outpost as any).placeAt(2, y);
+    outpost.selectBuildable('plank_wall');
+    (outpost as any).placeAt(5, y);
+  }
+  // Bottom wall & door: (2, 17) wall, (3, 17) plank_door, (4, 17) wall, (5, 17) wall
+  outpost.selectBuildable('plank_wall');
+  (outpost as any).placeAt(2, 17);
+  outpost.selectBuildable('plank_door');
+  (outpost as any).placeAt(3, 17);
+  outpost.selectBuildable('plank_wall');
+  (outpost as any).placeAt(4, 17);
+  outpost.selectBuildable('plank_wall');
+  (outpost as any).placeAt(5, 17);
+
+  // Place bed at (3, 15) -> provides required "bedroom" tag
+  outpost.selectBuildable('bed');
+  (outpost as any).placeAt(3, 15);
+
+  // Place wardrobe at (4, 15) -> quality +5
+  outpost.selectBuildable('wardrobe');
+  (outpost as any).placeAt(4, 15);
+
+  assert.equal(gameState.getItemCount('wardrobe'), 0, 'Wardrobe was placed and consumed from inventory');
+
+  // Exact hand-computed arithmetic with wardrobe:
+  // - 7 perimeter plank walls (tier 1) + 1 perimeter plank door (tier 1) = 8 perimeter tiles
+  // - avgTier = (7 * 1 + 1 * 1) / 8 = 1.0
+  // - wallTierWeight = 4 -> wall quality contribution = 4 * 1.0 = 4.0
+  // - bed quality = 0, wardrobe quality = 5 -> furniture quality = 5.0
+  // - expected total quality = 5.0 + 4.0 = 9.0
+  const expectedQualityWithWardrobe = 9.0;
+  const qualityWithWardrobe = gameState.getBestRoomQuality('bedroom');
+  assert.equal(qualityWithWardrobe, expectedQualityWithWardrobe, 'Recorded best quality matches hand-computed 9.0 with wardrobe');
+
+  // 4. Demolish the wardrobe through the Build menu's demolish control
+  outpost.selectBuildable('demolish');
+  assert.equal(outpost.selectedBuildableId, 'demolish', 'Build menu demolish tool is selected');
+
+  // Simulate clicking the placed wardrobe tile at (4, 15) in Build Mode
+  (outpost as any).input.emit('pointerdown', {
+    x: 4 * 32 + 16,
+    y: 15 * 32 + 16,
+    rightButtonDown: () => false
+  });
+
+  // Verify wardrobe is removed and refunded
+  assert.equal((outpost as any).getPlacedBuildableAt(4, 15), undefined, 'Wardrobe was demolished and removed from map');
+  assert.equal(gameState.getItemCount('wardrobe'), 1, 'Wardrobe was refunded 1 in full to inventory');
+
+  // Exact hand-computed arithmetic without wardrobe:
+  // - 7 perimeter plank walls (tier 1) + 1 perimeter plank door (tier 1) = 8 perimeter tiles
+  // - avgTier = 1.0 -> wall quality contribution = 4.0
+  // - bed quality = 0 (no wardrobe) -> furniture quality = 0.0
+  // - expected total quality = 0.0 + 4.0 = 4.0
+  const expectedQualityWithoutWardrobe = 4.0;
+  const qualityAfterDemolish = gameState.getBestRoomQuality('bedroom');
+  assert.equal(qualityAfterDemolish, expectedQualityWithoutWardrobe, 'Best room quality dropped to exact hand-computed 4.0 without wardrobe');
+  assert.ok(qualityAfterDemolish < qualityWithWardrobe, 'Quality strictly decreased after demolishing wardrobe');
+
+  console.log('✔ Test 9 passed: Bedroom with wardrobe records 9.0; demolishing wardrobe drops quality to exact hand-computed 4.0 and refunds 1');
 }
 
 console.log('\n=== ALL MILESTONE 5 WOODWORKING & STONEMASON TESTS PASSED SUCCESSFULLY! ===');

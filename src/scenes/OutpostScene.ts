@@ -2267,6 +2267,7 @@ export class OutpostScene extends Phaser.Scene {
    */
   private recalculateEnclosedRooms(): void {
     this.cachedRoomMap.clear();
+    GameState.getInstance().clearBestRoomQualities();
     const dataLoader = DataLoader.getInstance();
     const processedTiles = new Set<string>();
 

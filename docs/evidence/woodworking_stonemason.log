@@ -185,5 +185,195 @@
 [Progression] +10 Class EXP for 'apprentice_builder' (Guild Hero). Current: Level 1 (10/54 EXP)
   Free Hands 5,000 rolls: 733 procs (14.66%)
 Γ£ö Test 8 passed: Builder ranks unlock, Free Hands procs within bounds, Salvage Expert caps at 100%
+-> Test 9: Room Quality drops on demolition of furniture via Build menu demolish control
+[GameState] Initialized from player.json boot seed with Hero & Valerie: {
+  hp: 50,
+  criticalHp: 25,
+  energy: 100,
+  knownSkillIds: [],
+  equippedSkillIds: [],
+  autocastMap: {},
+  skillCooldownsRemainingMs: {},
+  proficiencies: {
+    short_swords: { level: 0, currentExp: 0 },
+    construction: { level: 0, currentExp: 0 },
+    fist: { level: 0, currentExp: 0 },
+    daggers: { level: 0, currentExp: 0 },
+    shields: { level: 0, currentExp: 0 },
+    dual_wielding: { level: 0, currentExp: 0 },
+    woodworking: { level: 0, currentExp: 0 },
+    stonemason: { level: 0, currentExp: 0 },
+    alchemy: { level: 0, currentExp: 0 },
+    evasion: { level: 0, currentExp: 0 },
+    parry: { level: 0, currentExp: 0 },
+    block: { level: 0, currentExp: 0 },
+    counterattack: { level: 0, currentExp: 0 },
+    resilience: { level: 0, currentExp: 0 },
+    health_regen: { level: 0, currentExp: 0 },
+    mana_regen: { level: 0, currentExp: 0 },
+    energy_regen: { level: 0, currentExp: 0 },
+    staff: { level: 0, currentExp: 0 },
+    druid_staff: { level: 0, currentExp: 0 },
+    healing_magic: { level: 0, currentExp: 0 },
+    fire_magic: { level: 0, currentExp: 0 },
+    foraging: { level: 0, currentExp: 0 },
+    woodcutting: { level: 0, currentExp: 0 },
+    mining: { level: 0, currentExp: 0 },
+    mace: { level: 0, currentExp: 0 },
+    blacksmithing: { level: 0, currentExp: 0 },
+    armorsmithing: { level: 0, currentExp: 0 },
+    digging: { level: 0, currentExp: 0 },
+    perception: { level: 0, currentExp: 0 },
+    skinning: { level: 0, currentExp: 0 },
+    butchering: { level: 0, currentExp: 0 },
+    lockpicking: { level: 0, currentExp: 0 },
+    gardening: { level: 0, currentExp: 0 },
+    longswords: { level: 0, currentExp: 0 },
+    dark_magic: { level: 0, currentExp: 0 },
+    light_armor: { level: 0, currentExp: 0 },
+    medium_armor: { level: 0, currentExp: 0 },
+    heavy_armor: { level: 0, currentExp: 0 },
+    fishing: { level: 0, currentExp: 0 },
+    enchanting: { level: 0, currentExp: 0 },
+    water_magic: { level: 0, currentExp: 0 },
+    earth_magic: { level: 0, currentExp: 0 },
+    nature_magic: { level: 0, currentExp: 0 },
+    wind_magic: { level: 0, currentExp: 0 }
+  },
+  classLevels: {},
+  unlockedClasses: [],
+  resources: { wood: 100, ore: 0 },
+  placedBuildables: [],
+  hunger: 100,
+  mood: 50,
+  currentGameDay: 1,
+  foodItems: [],
+  equippedWeaponId: 'short_swords',
+  offhandWeaponId: null,
+  dungeonFloorCount: 0,
+  encounteredEnemies: [],
+  discoveredProficiencies: [ 'short_swords' ],
+  discoveredStatusEffects: [],
+  discoveredGatheringNodes: [],
+  defeatedAreaBosses: [],
+  quickSlots: [ 'revive_potion', 'bandage', 'energy_potion', 'antidote' ],
+  worldFlags: {},
+  grovePityCounter: 0,
+  party: [
+    {
+      id: 'player',
+      name: 'Guild Hero',
+      avatarKey: 'player-avatar',
+      hp: 50,
+      criticalHp: 25,
+      energy: 100,
+      equippedWeaponId: 'short_swords',
+      offhandWeaponId: null,
+      inventory: [Object],
+      knownSkillIds: [],
+      equippedSkillIds: [],
+      autocastMap: {},
+      skillCooldownsRemainingMs: {},
+      proficiencies: [Object],
+      classLevels: {},
+      classStats: {},
+      unlockedClasses: [],
+      activeClass: null,
+      bookLearnedSkills: [],
+      hunger: 100,
+      mood: 50,
+      state: 'idle'
+    },
+    {
+      id: 'companion_1',
+      name: 'Valerie',
+      avatarKey: 'companion-avatar',
+      avatarTextureKey: 'companion-avatar',
+      hp: 50,
+      criticalHp: 25,
+      energy: 100,
+      equippedWeaponId: 'bows',
+      offhandWeaponId: 'daggers',
+      inventory: [Object],
+      knownSkillIds: [Array],
+      equippedSkillIds: [Array],
+      autocastMap: [Object],
+      skillCooldownsRemainingMs: {},
+      proficiencies: [Object],
+      classLevels: [Object],
+      classStats: [Object],
+      unlockedClasses: [Array],
+      activeClass: 'scout',
+      bookLearnedSkills: [],
+      hunger: 100,
+      mood: 50,
+      state: 'idle'
+    }
+  ]
+}
+[OutpostScene] Outpost created. Safe zone active. Build Mode enabled.
+[BuildMode:Place] Tile: (2, 14) | Result: PLACED Plank Wall (-4 Planks)
+[GameState] ≡ƒÆ╛ Checkpoint persisted to storage (Day 1, 2 members, 6136 bytes)
+[Progression] +1 EXP for 'construction' (Guild Hero). Current: Level 0 (1/50 EXP)
+[Progression] Recorded tx 'construction': +1 EXP for Guild Hero, resulting total: Level 0 (1/50 EXP)
+[BuildMode:Place] Tile: (3, 14) | Result: PLACED Plank Wall (-4 Planks)
+[GameState] ≡ƒÆ╛ Checkpoint persisted to storage (Day 1, 2 members, 6207 bytes)
+[Progression] +1 EXP for 'construction' (Guild Hero). Current: Level 0 (2/50 EXP)
+[Progression] Recorded tx 'construction': +1 EXP for Guild Hero, resulting total: Level 0 (2/50 EXP)
+[BuildMode:Place] Tile: (4, 14) | Result: PLACED Plank Wall (-4 Planks)
+[GameState] ≡ƒÆ╛ Checkpoint persisted to storage (Day 1, 2 members, 6278 bytes)
+[Progression] +1 EXP for 'construction' (Guild Hero). Current: Level 0 (3/50 EXP)
+[Progression] Recorded tx 'construction': +1 EXP for Guild Hero, resulting total: Level 0 (3/50 EXP)
+[BuildMode:Place] Tile: (5, 14) | Result: PLACED Plank Wall (-4 Planks)
+[GameState] ≡ƒÆ╛ Checkpoint persisted to storage (Day 1, 2 members, 6349 bytes)
+[Progression] +1 EXP for 'construction' (Guild Hero). Current: Level 0 (4/50 EXP)
+[Progression] Recorded tx 'construction': +1 EXP for Guild Hero, resulting total: Level 0 (4/50 EXP)
+[BuildMode:Place] Tile: (2, 15) | Result: PLACED Plank Wall (-4 Planks)
+[GameState] ≡ƒÆ╛ Checkpoint persisted to storage (Day 1, 2 members, 6420 bytes)
+[Progression] +1 EXP for 'construction' (Guild Hero). Current: Level 0 (5/50 EXP)
+[Progression] Recorded tx 'construction': +1 EXP for Guild Hero, resulting total: Level 0 (5/50 EXP)
+[BuildMode:Place] Tile: (5, 15) | Result: PLACED Plank Wall (-4 Planks)
+[GameState] ≡ƒÆ╛ Checkpoint persisted to storage (Day 1, 2 members, 6491 bytes)
+[Progression] +1 EXP for 'construction' (Guild Hero). Current: Level 0 (6/50 EXP)
+[Progression] Recorded tx 'construction': +1 EXP for Guild Hero, resulting total: Level 0 (6/50 EXP)
+[BuildMode:Place] Tile: (2, 16) | Result: PLACED Plank Wall (-4 Planks)
+[GameState] ≡ƒÆ╛ Checkpoint persisted to storage (Day 1, 2 members, 6562 bytes)
+[Progression] +1 EXP for 'construction' (Guild Hero). Current: Level 0 (7/50 EXP)
+[Progression] Recorded tx 'construction': +1 EXP for Guild Hero, resulting total: Level 0 (7/50 EXP)
+[BuildMode:Place] Tile: (5, 16) | Result: PLACED Plank Wall (-4 Planks)
+[GameState] ≡ƒÆ╛ Checkpoint persisted to storage (Day 1, 2 members, 6633 bytes)
+[Progression] +1 EXP for 'construction' (Guild Hero). Current: Level 0 (8/50 EXP)
+[Progression] Recorded tx 'construction': +1 EXP for Guild Hero, resulting total: Level 0 (8/50 EXP)
+[BuildMode:Place] Tile: (2, 17) | Result: PLACED Plank Wall (-4 Planks)
+[GameState] ≡ƒÆ╛ Checkpoint persisted to storage (Day 1, 2 members, 6704 bytes)
+[Progression] +1 EXP for 'construction' (Guild Hero). Current: Level 0 (9/50 EXP)
+[Progression] Recorded tx 'construction': +1 EXP for Guild Hero, resulting total: Level 0 (9/50 EXP)
+[BuildMode:Place] Tile: (3, 17) | Result: PLACED Plank Door (-5 Planks)
+[GameState] ≡ƒÆ╛ Checkpoint persisted to storage (Day 1, 2 members, 6775 bytes)
+[Progression] +1 EXP for 'construction' (Guild Hero). Current: Level 0 (10/50 EXP)
+[Progression] Recorded tx 'construction': +1 EXP for Guild Hero, resulting total: Level 0 (10/50 EXP)
+[BuildMode:Place] Tile: (4, 17) | Result: PLACED Plank Wall (-4 Planks)
+[GameState] ≡ƒÆ╛ Checkpoint persisted to storage (Day 1, 2 members, 6846 bytes)
+[Progression] +1 EXP for 'construction' (Guild Hero). Current: Level 0 (11/50 EXP)
+[Progression] Recorded tx 'construction': +1 EXP for Guild Hero, resulting total: Level 0 (11/50 EXP)
+[BuildMode:Place] Tile: (5, 17) | Result: PLACED Plank Wall (-4 Planks)
+[GameState] ≡ƒÆ╛ Checkpoint persisted to storage (Day 1, 2 members, 6917 bytes)
+[Progression] +1 EXP for 'construction' (Guild Hero). Current: Level 0 (12/50 EXP)
+[Progression] Recorded tx 'construction': +1 EXP for Guild Hero, resulting total: Level 0 (12/50 EXP)
+[BuildMode:Place] Tile: (3, 15) | Result: PLACED Bed (-15 Wood)
+[GameState] ≡ƒÆ╛ Checkpoint persisted to storage (Day 1, 2 members, 6985 bytes)
+[Progression] +1 EXP for 'construction' (Guild Hero). Current: Level 0 (13/50 EXP)
+[Progression] Recorded tx 'construction': +1 EXP for Guild Hero, resulting total: Level 0 (13/50 EXP)
+[BuildMode:Place] Tile: (4, 15) | Result: PLACED Wardrobe (-1 Wardrobe)
+[GameState] ≡ƒÆ╛ Checkpoint persisted to storage (Day 1, 2 members, 7043 bytes)
+[Progression] +1 EXP for 'construction' (Guild Hero). Current: Level 0 (14/50 EXP)
+[Progression] Recorded tx 'construction': +1 EXP for Guild Hero, resulting total: Level 0 (14/50 EXP)
+[BuildMode:Click] Tile: (4, 15) | InBounds: true | ExistingBuildable: wardrobe | Tool: Demolish
+[GameState] ≡ƒÆ╛ Checkpoint persisted to storage (Day 1, 2 members, 6972 bytes)
+[Progression] +1 EXP for 'construction' (Guild Hero). Current: Level 0 (15/50 EXP)
+[Progression] Recorded tx 'construction': +1 EXP for Guild Hero, resulting total: Level 0 (15/50 EXP)
+[BuildMode:Demolish] Tile: (4, 15) | Result: DEMOLISHED wardrobe (+1 Wardrobe refunded)
+[BuildMode:Hover] Tile: (4, 15) | InBounds: true | ExistingBuildable: none | Path: invalid-highlight-with-reason (Nothing to demolish)
+Γ£ö Test 9 passed: Bedroom with wardrobe records 9.0; demolishing wardrobe drops quality to exact hand-computed 4.0 and refunds 1
 
 === ALL MILESTONE 5 WOODWORKING & STONEMASON TESTS PASSED SUCCESSFULLY! ===

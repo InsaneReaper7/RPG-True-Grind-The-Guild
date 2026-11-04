@@ -2278,13 +2278,12 @@ export class HUD {
     ];
     for (const el of overlays) {
       if (!el) continue;
+      el.classList.toggle('hud-drag-through', dragging);
       if (dragging) {
         el.style.transition = 'opacity 0.15s ease';
         el.style.opacity = '0.1';
-        el.style.pointerEvents = 'none';
       } else {
         el.style.opacity = '';
-        el.style.pointerEvents = '';
       }
     }
   }
