@@ -3236,8 +3236,10 @@ export class HUD {
         this.playerStatusEl.innerText = 'Disarmed (-50% Dmg, No Skills)';
         this.playerStatusEl.style.color = '#fb923c';
       } else if (player.coating && player.coating.hitsRemaining > 0) {
-        const coatingName = player.coating.statusId.charAt(0).toUpperCase() + player.coating.statusId.slice(1);
-        this.playerStatusEl.innerText = `🧪 ${coatingName} (${player.coating.hitsRemaining} hits)`;
+        const coatingItem = DataLoader.getInstance().getItem(player.coating.itemId);
+        const maxHits = DataLoader.getInstance().getAlchemyConfig().coatings.maxHits;
+        const coatingName = coatingItem?.name || (player.coating.statusId.charAt(0).toUpperCase() + player.coating.statusId.slice(1));
+        this.playerStatusEl.innerText = `🧪 ${coatingName} ${player.coating.hitsRemaining}/${maxHits}`;
         this.playerStatusEl.style.color = '#a855f7';
       } else {
         this.playerStatusEl.innerText = 'Normal';
@@ -3963,6 +3965,21 @@ export class HUD {
         this.setElementTextIfChanged(armorValEl, `R ${effectiveR.toFixed(1)} · −${redPct}% damage taken`);
       }
 
+      // 5a2. Weapon Coating
+      const coatingRowEl = this.partyOverviewRosterEl.querySelector<HTMLElement>(`[data-party-coating="${i}"]`);
+      const coatingValEl = this.partyOverviewRosterEl.querySelector<HTMLElement>(`[data-party-coating-val="${i}"]`);
+      if (member.coating && member.coating.hitsRemaining > 0) {
+        if (coatingRowEl) coatingRowEl.style.display = 'flex';
+        if (coatingValEl) {
+          const coatingItem = DataLoader.getInstance().getItem(member.coating.itemId);
+          const maxHits = DataLoader.getInstance().getAlchemyConfig().coatings.maxHits;
+          const coatingName = coatingItem?.name || (member.coating.statusId.charAt(0).toUpperCase() + member.coating.statusId.slice(1));
+          this.setElementTextIfChanged(coatingValEl, `🧪 ${coatingName} ${member.coating.hitsRemaining}/${maxHits}`);
+        }
+      } else if (coatingRowEl) {
+        coatingRowEl.style.display = 'none';
+      }
+
       // 5b. Carry Weight & Encumbrance (Milestone 51)
       const totalWeight = member.getTotalWeight();
       const carryCap = member.getEffectiveCarryCapacity();
@@ -4548,12 +4565,17 @@ export class HUD {
                 </div>
               `;
             })()}
-            ${member.coating && member.coating.hitsRemaining > 0 ? `
+            ${member.coating && member.coating.hitsRemaining > 0 ? (() => {
+              const coatingItem = DataLoader.getInstance().getItem(member.coating.itemId);
+              const maxHits = DataLoader.getInstance().getAlchemyConfig().coatings.maxHits;
+              const coatingName = coatingItem?.name || (member.coating.statusId.charAt(0).toUpperCase() + member.coating.statusId.slice(1));
+              return `
               <div class="party-stat-row party-coating-row" data-party-coating="${i}" style="font-size: 10px; color: #c084fc; margin-top: 1px;">
                 <span>Coating:</span>
-                <span class="party-stat-val" data-party-coating-val="${i}">🧪 ${member.coating.statusId.charAt(0).toUpperCase() + member.coating.statusId.slice(1)} ${member.coating.hitsRemaining}/${DataLoader.getInstance().getAlchemyConfig().coatings.maxHits}</span>
+                <span class="party-stat-val" data-party-coating-val="${i}">🧪 ${coatingName} ${member.coating.hitsRemaining}/${maxHits}</span>
               </div>
-            ` : ''}
+              `;
+            })() : ''}
             <div class="party-stat-row">
               <span>Hunger:</span>
               <span class="party-stat-val" data-party-hunger="${i}" style="color: ${DataLoader.getInstance().isHungerEnabled() ? '#fb923c' : '#9ca3af'};">${Math.floor(member.hunger)} / ${member.maxHunger}${DataLoader.getInstance().isHungerEnabled() ? '' : ' (paused)'}</span>

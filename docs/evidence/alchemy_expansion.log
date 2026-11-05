@@ -23,6 +23,17 @@
 
 --- GROUP 5: Coatings Through Quick-Bar Control ---
   Coating Proc Rate: 24.58% (1229/5000, expected 25% ± 2%)
+[Progression] +2 EXP for 'short_swords' (undefined). Current: Level 0 (2/50 EXP)
+[Progression] Recorded tx 'short_swords': +2 EXP for Guild Hero, resulting total: Level 0 (2/50 EXP)
+[StatusEffect] Applied Bleed to Goblin!
+[Progression] +2 EXP for 'short_swords' (undefined). Current: Level 0 (4/50 EXP)
+[Progression] Recorded tx 'short_swords': +2 EXP for Guild Hero, resulting total: Level 0 (4/50 EXP)
+[Combat:AreaChain] ⚡ Chain hop 1 arcs to Goblin for 4.9 damage!
+[Combat:AreaChain] ⚡ Chain hop 2 arcs to Goblin for 3.4 damage!
+[StatusEffect] Applied Bleed to Goblin!
+[Progression] +2 EXP for 'short_swords' (undefined). Current: Level 0 (6/50 EXP)
+[Progression] Recorded tx 'short_swords': +2 EXP for Guild Hero, resulting total: Level 0 (6/50 EXP)
+[Combat:AreaLine] Line pierce hits Goblin for 7.5 damage!
 ✔ Group 5 Passed: Weapon coatings through quick-bar control verified.
 
 --- GROUP 6: Thrown Consumables Through Quick-Bar Control ---

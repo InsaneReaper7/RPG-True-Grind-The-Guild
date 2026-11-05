@@ -624,6 +624,74 @@ async function runMilestone6ExpansionTests() {
     restoredHero.restoreFromSnapshot(snap, 1000);
     assert.deepEqual(restoredHero.coating, { itemId: 'searing_coating', statusId: 'burn', chance: 0.2, hitsRemaining: 30 }, 'Coating survives save/load snapshot');
 
+    // -------------------------------------------------------------------------
+    // Follow-up: Display string format, spell splash, chain, and line hits
+    // -------------------------------------------------------------------------
+    // 1. Display string: "🧪 Venom Coating 42/120"
+    hero.coating = { itemId: 'venom_coating', statusId: 'poison', chance: 0.25, hitsRemaining: 42 };
+    (hud as any).playerStatusEl = { innerText: '', style: {} };
+    hud.update(hero, prog, 1000);
+    assert.equal((hud as any).playerStatusEl.innerText, '🧪 Venom Coating 42/120', 'Status line must read 🧪 Venom Coating 42/120');
+
+    hero.entityName = 'Hero';
+    hud.currentParty = [hero];
+    hud.renderPartyOverviewModal(true);
+    assert.ok(
+      (hud as any).partyOverviewRosterEl.innerHTML.includes('🧪 Venom Coating 42/120'),
+      'Party Overview card must render item name and hits/cap format'
+    );
+
+    // 2. flame_wave with coating on: splash targets take damage, hitsRemaining doesn't change
+    const flameWave = dataLoader.getSkill('flame_wave')!;
+    const skillSys = new SkillSystem(combat);
+    const enemyDef = dataLoader.getEnemy('goblin')!;
+    const e1 = new Enemy(scene as any, 5, 6, enemyDef, 16);
+    const e2 = new Enemy(scene as any, 5, 7, enemyDef, 16);
+    e1.hp = 100;
+    e1.maxHp = 100;
+    e2.hp = 100;
+    e2.maxHp = 100;
+    combat.setParty([hero]);
+    combat.setEnemies([e1, e2]);
+
+    hero.coating = { itemId: 'venom_coating', statusId: 'poison', chance: 0.25, hitsRemaining: 30 };
+    hero.energy = 100;
+    hero.gridPos = { x: 5, y: 5 };
+    hero.x = 5 * 16;
+    hero.y = 5 * 16;
+    const fwCast = skillSys.execute(hero, flameWave as any, e1);
+    assert.equal(fwCast, true, 'flame_wave cast must succeed');
+    assert.ok(e2.hp < 100, 'flame_wave splash target e2 must take damage');
+    assert.equal(hero.coating.hitsRemaining, 30, 'flame_wave must not spend coating charges on splash');
+
+    // 3. chain_shot landing on 3 enemies spends exactly 3 charges
+    const chainShot = dataLoader.getSkill('chain_shot')!;
+    const e3 = new Enemy(scene as any, 5, 8, enemyDef, 16);
+    e1.hp = 100; e2.hp = 100; e3.hp = 100;
+    combat.setEnemies([e1, e2, e3]);
+    hero.coating = { itemId: 'venom_coating', statusId: 'poison', chance: 0.25, hitsRemaining: 30 };
+    hero.energy = 100;
+    const origMathRandom = Math.random;
+    Math.random = () => 0.01;
+    const csCast = skillSys.execute(hero, chainShot as any, e1);
+    Math.random = origMathRandom;
+    assert.equal(csCast, true, 'chain_shot cast must succeed');
+    assert.equal(hero.coating.hitsRemaining, 27, 'chain_shot hitting 3 enemies must spend exactly 3 charges (30 -> 27)');
+
+    // 4. weapon line skill (piercing_bolt) hitting 2 enemies spends exactly 2 charges
+    const piercingBolt = dataLoader.getSkill('piercing_bolt')!;
+    e1.hp = 100; e2.hp = 100;
+    e1.gridPos = { x: 5, y: 6 }; e1.x = 5 * 16; e1.y = 6 * 16;
+    e2.gridPos = { x: 5, y: 7 }; e2.x = 5 * 16; e2.y = 7 * 16;
+    combat.setEnemies([e1, e2]);
+    hero.coating = { itemId: 'venom_coating', statusId: 'poison', chance: 0.25, hitsRemaining: 30 };
+    hero.energy = 100;
+    Math.random = () => 0.01;
+    const pbCast = skillSys.execute(hero, piercingBolt as any, e1);
+    Math.random = origMathRandom;
+    assert.equal(pbCast, true, 'piercing_bolt cast must succeed');
+    assert.equal(hero.coating.hitsRemaining, 28, 'piercing_bolt hitting 2 enemies must spend exactly 2 charges (30 -> 28)');
+
     console.log('✔ Group 5 Passed: Weapon coatings through quick-bar control verified.');
   }
 

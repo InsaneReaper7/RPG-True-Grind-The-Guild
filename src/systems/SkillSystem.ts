@@ -943,6 +943,7 @@ export class SkillSystem {
     _time: number,
     skillDef?: SkillDef
   ): void {
+    const isSpell = skillDef ? (skillDef.effects?.some((e: any) => e.scaling === 'spell') ?? false) : false;
     const getTile = (u: any) => {
       if (u.gridPos && typeof u.gridPos.x === 'number') {
         return { x: u.gridPos.x, y: u.gridPos.y };
@@ -966,7 +967,7 @@ export class SkillSystem {
           enemy.isAggroed = true;
           const downed = enemy.takeDamage(cleaveDmg);
           if (cleaveDmg > 0 && caster.coating && caster.coating.hitsRemaining > 0) {
-            this.combatSystem.checkAndApplyWeaponCoating(caster, enemy, false);
+            this.combatSystem.checkAndApplyWeaponCoating(caster, enemy, isSpell);
           }
           if (downed) this.combatSystem.handleTargetDefeated(caster, enemy, weaponId);
           hitCount++;
@@ -989,7 +990,6 @@ export class SkillSystem {
           enemy.isAggroed = true;
           const downed = enemy.takeDamage(splashDmg);
           if (splashDmg > 0 && caster.coating && caster.coating.hitsRemaining > 0) {
-            const isSpell = skillDef ? (skillDef.effects?.some((e: any) => e.scaling === 'spell') ?? false) : false;
             this.combatSystem.checkAndApplyWeaponCoating(caster, enemy, isSpell);
           }
           if (downed) this.combatSystem.handleTargetDefeated(caster, enemy, weaponId);
@@ -1043,6 +1043,9 @@ export class SkillSystem {
         this.combatSystem.createFloatingText(enemy.x, enemy.y - 10, `-${secondaryDmg.toFixed(1)} (Pierce)`, '#a7f3d0');
         enemy.isAggroed = true;
         const downed = enemy.takeDamage(secondaryDmg);
+        if (secondaryDmg > 0 && caster.coating && caster.coating.hitsRemaining > 0) {
+          this.combatSystem.checkAndApplyWeaponCoating(caster, enemy, isSpell);
+        }
         if (downed) {
           this.combatSystem.handleTargetDefeated(caster, enemy, weaponId);
         }
@@ -1086,6 +1089,9 @@ export class SkillSystem {
         this.combatSystem.createFloatingText(closestEnemy.x, closestEnemy.y - 10, `-${currentDmg.toFixed(1)} (Chain)`, '#38bdf8');
         closestEnemy.isAggroed = true;
         const chainDowned = closestEnemy.takeDamage(currentDmg);
+        if (currentDmg > 0 && caster.coating && caster.coating.hitsRemaining > 0) {
+          this.combatSystem.checkAndApplyWeaponCoating(caster, closestEnemy, isSpell);
+        }
         if (chainDowned) {
           this.combatSystem.handleTargetDefeated(caster, closestEnemy, weaponId);
         }
