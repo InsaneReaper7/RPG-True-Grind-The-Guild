@@ -1,0 +1,5 @@
+{
+  "throwDamagePerLevel": 0.01,
+  "throwExpPerHit": 3,
+  "throwCooldownMs": 1500
+}

@@ -1,0 +1,39 @@
+================================================================
+🧪 RUNNING MILESTONE 6: ALCHEMY EXPANSION UNIT TESTS
+================================================================
+
+--- GROUP 1: Expected-Table Guards ---
+✔ Group 1 Passed: Expected-table guards validated completely.
+
+--- GROUP 2: Status Effects on Real Player & Enemy (Seeded RNG) ---
+[KnowledgeBase] 🧪 Status effect discovered: 'paralysis'! (+1 RP)
+  Paralysis Fail Rate: 30.15% (603/2000, expected 30% ± 2%)
+[KnowledgeBase] 🧪 Status effect discovered: 'confused'! (+1 RP)
+  Confused Wasted Rate: 34.55% (691/2000, expected 35% ± 2%)
+[KnowledgeBase] 🧪 Status effect discovered: 'disarmed'! (+1 RP)
+✔ Group 2 Passed: Status effects on real player and enemy verified.
+
+--- GROUP 3: Enemy onHitStatuses (Orc Warrior Disarm) ---
+  Orc Warrior Disarm Proc Rate: 9.96% (498/5000, expected 10% ± 1.5%)
+✔ Group 3 Passed: Enemy onHitStatuses verified.
+
+--- GROUP 4: Cures Through Quick-Bar Control ---
+[KnowledgeBase] 🧪 Status effect discovered: 'burn'! (+1 RP)
+✔ Group 4 Passed: Cures through quick-bar control verified.
+
+--- GROUP 5: Coatings Through Quick-Bar Control ---
+  Coating Proc Rate: 24.58% (1229/5000, expected 25% ± 2%)
+✔ Group 5 Passed: Weapon coatings through quick-bar control verified.
+
+--- GROUP 6: Thrown Consumables Through Quick-Bar Control ---
+[Progression] +3 EXP for 'throwing_weapons' (undefined). Current: Level 0 (3/50 EXP)
+[Progression] Recorded tx 'throwing_weapons': +3 EXP for Guild Hero, resulting total: Level 0 (3/50 EXP)
+✔ Group 6 Passed: Thrown consumables through quick-bar control verified.
+
+--- GROUP 7: Crafting Recipes & Level Gates ---
+✔ Group 7 Passed: Crafting level gates verified.
+
+================================================================
+🎉 ALL MILESTONE 6: ALCHEMY EXPANSION TESTS PASSED SUCCESSFULLY!
+================================================================
+

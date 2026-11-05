@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { Entity } from './Entity.ts';
-import type { PlayerData, WeaponDef, CharacterSnapshot, ArmorDef, ArmorSlot, ArmorWeightClass, FoodQuality, FoodItemInstance, StatusEffectDef, StatGainsResult } from '../types/game.ts';
+import type { PlayerData, WeaponDef, CharacterSnapshot, ArmorDef, ArmorSlot, ArmorWeightClass, FoodQuality, FoodItemInstance, StatusEffectDef, StatGainsResult, PlayerCoating } from '../types/game.ts';
 import type { ClassifiedRoom } from '../systems/RoomClassifier.ts';
 import { getArmorHpSplit, getArmorProficiencyId } from '../types/game.ts';
 import { GameState } from '../systems/GameState.ts';
@@ -83,6 +83,8 @@ export class Player extends Entity {
   private reviveIconTween?: Phaser.Tweens.Tween;
 
   // Attributes (STR, DEX, INT)
+  public coating: PlayerCoating | null = null;
+  public lastThrowTimeMs: number = 0;
   public strength: number = 1.0;
   public dexterity: number = 1.0;
   public intelligence: number = 1.0;
@@ -1424,7 +1426,8 @@ export class Player extends Entity {
       bookLearnedSkills: Array.from(this.bookLearnedSkills),
       hunger: (!dataLoader.isHungerEnabled() && this.savedHunger !== undefined) ? this.savedHunger : this.hunger,
       mood: (!dataLoader.isMoodEnabled() && this.savedMood !== undefined) ? this.savedMood : this.mood,
-      state: currentState
+      state: currentState,
+      coating: this.coating ? { ...this.coating } : null
     };
   }
 
@@ -1574,6 +1577,10 @@ export class Player extends Entity {
       for (const [k, v] of Object.entries(snapshot.inventory)) {
         if (v > 0) this.inventory.set(k, v);
       }
+    }
+
+    if (snapshot.coating !== undefined) {
+      this.coating = snapshot.coating ? { ...snapshot.coating } : null;
     }
 
     // Save migration: food in existing saves stored as plain bag counts becomes instances

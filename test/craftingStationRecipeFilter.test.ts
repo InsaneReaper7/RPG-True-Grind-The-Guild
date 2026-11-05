@@ -662,7 +662,7 @@ async function runTests() {
   assert.ok(alContainer.innerHTML.includes('Revive Potion'), 'Revive Potion must be shown at Lv 0');
   assert.ok(alContainer.innerHTML.includes('Health Potion'), 'Health Potion must be shown');
   const alCountFiltered = alContainer.children.length;
-  assert.strictEqual(alCountFiltered, 8, 'All 8 Alchemy recipes must be unlocked and shown at Lv 0');
+  assert.strictEqual(alCountFiltered, 8, 'All 8 starter Alchemy recipes must be unlocked and shown at Lv 0');
 
   // Toggle to Show All
   alBtn.onclick?.();
@@ -670,7 +670,7 @@ async function runTests() {
   assert.strictEqual(alIndicator.innerText, '👁️');
   assert.strictEqual(alLabel.innerText, 'Showing: All Recipes');
   const alCountAll = alContainer.children.length;
-  assert.strictEqual(alCountAll, 8, 'All 8 Alchemy recipes must be shown in Show All');
+  assert.strictEqual(alCountAll, 22, 'All 22 Alchemy recipes must be shown in Show All');
   console.log(`  Per-Station Count: Alchemy -> Unlocked Only = ${alCountFiltered}, Show All = ${alCountAll}`);
 
   // Toggle back

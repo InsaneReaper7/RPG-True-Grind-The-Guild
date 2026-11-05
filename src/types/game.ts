@@ -216,6 +216,7 @@ export interface EnemyDef {
   slowChance?: number;
   blindChance?: number;
   frostbiteChance?: number;
+  onHitStatuses?: Array<{ statusId: string; chance: number }>;
   description?: string;
   researchPoints?: number | { min: number; max: number };
 }
@@ -321,6 +322,13 @@ export interface PlayerData {
   };
 }
 
+export interface PlayerCoating {
+  itemId: string;
+  statusId: string;
+  chance: number;
+  hitsRemaining: number;
+}
+
 export interface CharacterSnapshot {
   id: string;
   name: string;
@@ -356,6 +364,7 @@ export interface CharacterSnapshot {
   hunger?: number;
   mood?: number;
   state?: EntityState;
+  coating?: PlayerCoating | null;
 }
 
 export interface PlayerSnapshot {
@@ -966,6 +975,10 @@ export interface StatusEffectDef {
   };
   parryBonus?: number;
   persistent?: boolean;
+  actionFailChance?: number;
+  misdirectChance?: number;
+  outgoingDamageMultiplier?: number;
+  disablesSkills?: boolean;
 }
 
 export interface StatusEffectsData {
@@ -1087,6 +1100,27 @@ export interface ItemDef {
   cookingTags?: string[];
   ingredientTier?: number;
   premium?: boolean;
+  cures?: string[];
+  coatingStatusId?: string;
+  coatingChance?: number;
+  throwDamage?: number;
+  throwRangeTiles?: number;
+  aoeRadiusTiles?: number;
+  statusId?: string;
+  statusChance?: number;
+}
+
+export interface AlchemyConfig {
+  coatings: {
+    hitsPerApplication: number;
+    maxHits: number;
+  };
+}
+
+export interface ThrowingConfig {
+  throwDamagePerLevel: number;
+  throwExpPerHit: number;
+  throwCooldownMs: number;
 }
 
 export interface ItemsData {

@@ -59,7 +59,9 @@ import type {
   EnchantingRecipesData,
   StatGainsData,
   CraftingRanksData,
-  LuckConfig
+  LuckConfig,
+  AlchemyConfig,
+  ThrowingConfig
 } from '../types/game.ts';
 import { HiddenSkillSystem } from '../systems/HiddenSkillSystem.ts';
 import { resolveGearStats, getBaseItemId, isCraftingClass, resolvePartyGearSource, getPartyGearOwnership, canEquipBowDaggerSidearm } from './gearResolver.ts';
@@ -102,6 +104,8 @@ export class DataLoader {
   private luckConfigData?: LuckConfig;
   private woodworkingRecipesData?: WoodworkingRecipesData;
   private stonemasonRecipesData?: StonemasonRecipesData;
+  private alchemyConfigData?: AlchemyConfig;
+  private throwingConfigData?: ThrowingConfig;
 
   private constructor() {}
 
@@ -113,7 +117,7 @@ export class DataLoader {
   }
 
   public async loadAll(): Promise<void> {
-    const [player, weapons, classes, enemies, skills, statusEffects, buildables, rooms, hiddenSkills, skillBooks, researchTree, alchemyRecipes, cookingRecipes, blacksmithRecipes, bowyerRecipes, armors, armorsmithRecipes, foods, moodEffects, dungeon, gathering, items, recruits, craftingConfig, introNarrative, enchantingRecipes, statGains, crops, cookingConfig, campConfig, craftingRanks, luckConfig, woodworkingRecipes, stonemasonRecipes] = await Promise.all([
+    const [player, weapons, classes, enemies, skills, statusEffects, buildables, rooms, hiddenSkills, skillBooks, researchTree, alchemyRecipes, cookingRecipes, blacksmithRecipes, bowyerRecipes, armors, armorsmithRecipes, foods, moodEffects, dungeon, gathering, items, recruits, craftingConfig, introNarrative, enchantingRecipes, statGains, crops, cookingConfig, campConfig, craftingRanks, luckConfig, woodworkingRecipes, stonemasonRecipes, alchemyConfig, throwingConfig] = await Promise.all([
       fetch('/data/player.json').then((res) => res.json()),
       fetch('/data/weapons.json').then((res) => res.json()),
       fetch('/data/classes.json').then((res) => res.json()),
@@ -147,7 +151,9 @@ export class DataLoader {
       fetch('/data/craftingRanks.json').then((res) => res.json()).catch(() => null),
       fetch('/data/luckConfig.json').then((res) => res.json()).catch(() => null),
       fetch('/data/woodworkingRecipes.json').then((res) => res.json()).catch(() => null),
-      fetch('/data/stonemasonRecipes.json').then((res) => res.json()).catch(() => null)
+      fetch('/data/stonemasonRecipes.json').then((res) => res.json()).catch(() => null),
+      fetch('/data/alchemyConfig.json').then((res) => res.json()).catch(() => null),
+      fetch('/data/throwingConfig.json').then((res) => res.json()).catch(() => null)
     ]);
 
     this.playerData = player as PlayerData;
@@ -197,6 +203,12 @@ export class DataLoader {
     }
     if (luckConfig) {
       this.luckConfigData = luckConfig as LuckConfig;
+    }
+    if (alchemyConfig) {
+      this.alchemyConfigData = alchemyConfig as AlchemyConfig;
+    }
+    if (throwingConfig) {
+      this.throwingConfigData = throwingConfig as ThrowingConfig;
     }
     if (craftingConfig) {
       this.craftingConfigData = craftingConfig as CraftingConfigData;
@@ -975,6 +987,47 @@ export class DataLoader {
       herbRollChance: 0.08,
       saffronRollChance: 0.01,
       cinnamonRollChance: 0.05
+    };
+  }
+
+  public getAlchemyConfig(): AlchemyConfig {
+    if (this.alchemyConfigData) {
+      return this.alchemyConfigData;
+    }
+    try {
+      if (typeof process !== 'undefined' && process.versions?.node) {
+        const fsModule = (globalThis as any).fs || (typeof require !== 'undefined' ? require('node:fs') : undefined);
+        if (fsModule && fsModule.existsSync('data/alchemyConfig.json')) {
+          this.alchemyConfigData = JSON.parse(fsModule.readFileSync('data/alchemyConfig.json', 'utf8'));
+          return this.alchemyConfigData!;
+        }
+      }
+    } catch { /* fallback */ }
+    return this.alchemyConfigData || {
+      coatings: {
+        hitsPerApplication: 30,
+        maxHits: 120
+      }
+    };
+  }
+
+  public getThrowingConfig(): ThrowingConfig {
+    if (this.throwingConfigData) {
+      return this.throwingConfigData;
+    }
+    try {
+      if (typeof process !== 'undefined' && process.versions?.node) {
+        const fsModule = (globalThis as any).fs || (typeof require !== 'undefined' ? require('node:fs') : undefined);
+        if (fsModule && fsModule.existsSync('data/throwingConfig.json')) {
+          this.throwingConfigData = JSON.parse(fsModule.readFileSync('data/throwingConfig.json', 'utf8'));
+          return this.throwingConfigData!;
+        }
+      }
+    } catch { /* fallback */ }
+    return this.throwingConfigData || {
+      throwDamagePerLevel: 0.01,
+      throwExpPerHit: 3,
+      throwCooldownMs: 1500
     };
   }
 

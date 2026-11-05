@@ -369,6 +369,12 @@
       "aggroRadius": 6,
       "attackIntervalMs": 1300,
       "moveSpeed": 90,
+      "onHitStatuses": [
+        {
+          "statusId": "disarmed",
+          "chance": 0.1
+        }
+      ],
       "researchPoints": {
         "min": 3,
         "max": 6
@@ -734,6 +740,12 @@
       "attackIntervalMs": 1300,
       "moveSpeed": 80,
       "dropChance": 1,
+      "onHitStatuses": [
+        {
+          "statusId": "confused",
+          "chance": 0.15
+        }
+      ],
       "description": "An entity of writhing abyssal shadow that curses attackers with enfeebling darkness.",
       "harvest": [
         {
@@ -773,6 +785,12 @@
       "attackIntervalMs": 1300,
       "moveSpeed": 80,
       "dropChance": 1,
+      "onHitStatuses": [
+        {
+          "statusId": "confused",
+          "chance": 0.1
+        }
+      ],
       "description": "A surging vortex of pure prismatic mana coalesced into violent magical form.",
       "harvest": [
         {
@@ -918,6 +936,12 @@
       "attackIntervalMs": 1300,
       "moveSpeed": 80,
       "dropChance": 1,
+      "onHitStatuses": [
+        {
+          "statusId": "paralysis",
+          "chance": 0.15
+        }
+      ],
       "description": "A crackling storm core discharging high-voltage static that shocks and stuns upon impact.",
       "harvest": [
         {
@@ -1735,6 +1759,12 @@
       "moveSpeed": 85,
       "attackRangeTiles": 1,
       "slowChance": 0.2,
+      "onHitStatuses": [
+        {
+          "statusId": "disarmed",
+          "chance": 0.1
+        }
+      ],
       "researchPoints": {
         "min": 4,
         "max": 7

@@ -3226,6 +3226,19 @@ export class HUD {
       } else if (player.activeStatusEffects.has('poison')) {
         this.playerStatusEl.innerText = 'Poisoned (Persistent DoT)';
         this.playerStatusEl.style.color = '#16a34a';
+      } else if (player.activeStatusEffects.has('paralysis')) {
+        this.playerStatusEl.innerText = 'Paralyzed (30% Fail)';
+        this.playerStatusEl.style.color = '#facc15';
+      } else if (player.activeStatusEffects.has('confused')) {
+        this.playerStatusEl.innerText = 'Confused (35% Wasted)';
+        this.playerStatusEl.style.color = '#c084fc';
+      } else if (player.activeStatusEffects.has('disarmed')) {
+        this.playerStatusEl.innerText = 'Disarmed (-50% Dmg, No Skills)';
+        this.playerStatusEl.style.color = '#fb923c';
+      } else if (player.coating && player.coating.hitsRemaining > 0) {
+        const coatingName = player.coating.statusId.charAt(0).toUpperCase() + player.coating.statusId.slice(1);
+        this.playerStatusEl.innerText = `🧪 ${coatingName} (${player.coating.hitsRemaining} hits)`;
+        this.playerStatusEl.style.color = '#a855f7';
       } else {
         this.playerStatusEl.innerText = 'Normal';
         this.playerStatusEl.style.color = '#9ca3af';
@@ -3755,7 +3768,8 @@ export class HUD {
       const cdRemainingMs = consumableSystem.getCooldownRemainingMs(itemId);
       if (cdEl) {
         if (cdRemainingMs > 0) {
-          const totalCdMs = 10000;
+          const isThrow = (itemDef as any)?.throwDamage !== undefined;
+          const totalCdMs = isThrow ? (dataLoader.getThrowingConfig().throwCooldownMs ?? 1500) : 10000;
           const pct = Math.min(100, Math.max(0, Math.ceil((cdRemainingMs / totalCdMs) * 100)));
           cdEl.style.height = `${pct}%`;
         } else {
@@ -4534,6 +4548,12 @@ export class HUD {
                 </div>
               `;
             })()}
+            ${member.coating && member.coating.hitsRemaining > 0 ? `
+              <div class="party-stat-row party-coating-row" data-party-coating="${i}" style="font-size: 10px; color: #c084fc; margin-top: 1px;">
+                <span>Coating:</span>
+                <span class="party-stat-val" data-party-coating-val="${i}">🧪 ${member.coating.statusId.charAt(0).toUpperCase() + member.coating.statusId.slice(1)} ${member.coating.hitsRemaining}/${DataLoader.getInstance().getAlchemyConfig().coatings.maxHits}</span>
+              </div>
+            ` : ''}
             <div class="party-stat-row">
               <span>Hunger:</span>
               <span class="party-stat-val" data-party-hunger="${i}" style="color: ${DataLoader.getInstance().isHungerEnabled() ? '#fb923c' : '#9ca3af'};">${Math.floor(member.hunger)} / ${member.maxHunger}${DataLoader.getInstance().isHungerEnabled() ? '' : ' (paused)'}</span>

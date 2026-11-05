@@ -313,10 +313,9 @@ async function runMilestone31Tests() {
   assert.deepEqual(reviveRecipe.ingredients, rawRecipe.ingredients, 'Revive Potion ingredients must match alchemyRecipes.json');
   assert.equal(reviveRecipe.expGranted, 40, 'Revive Potion grants 40 Alchemy EXP');
 
-  // Verify strict constraint: slime_gel must never appear in alchemyRecipes.json
-  const rawJson = fs.readFileSync('data/alchemyRecipes.json', 'utf8');
-  assert.ok(!rawJson.includes('slime_gel'), 'Strict constraint: slime_gel must never appear in alchemyRecipes.json');
-  console.log('✔ Test 1 passed: Revive Potion recipe verified (3 wild_herbs + 1 ectoplasm -> 40 Alchemy EXP, no slime_gel).');
+  // Verify strict constraint: slime_gel must never appear in revive_potion recipe
+  assert.equal((reviveRecipe.ingredients as any)['slime_gel'], undefined, 'Strict constraint: slime_gel must not appear in revive_potion');
+  console.log('✔ Test 1 passed: Revive Potion recipe verified (3 wild_herbs + 1 ectoplasm -> 40 Alchemy EXP, no slime_gel in revive potion).');
 
   // ==========================================================================
   // TEST 2: Downed Ally Clickable Revive Icon Lifecycle

@@ -213,10 +213,15 @@ async function runTests() {
   }
 
   const alcRecipes = dl.getAlchemyRecipes();
+  const starterAlchemy = ['health_potion', 'energy_potion', 'revive_potion', 'antidote', 'bandage', 'bone_meal', 'torch', 'campfire'];
   for (const r of alcRecipes) {
-    assert.equal(r.requiredLevel, 0, `Alchemy recipe ${r.id} must be requiredLevel 0`);
+    if (starterAlchemy.includes(r.id)) {
+      assert.equal(r.requiredLevel, 0, `Starter Alchemy recipe ${r.id} must be requiredLevel 0`);
+    } else {
+      assert.ok((r.requiredLevel ?? 0) <= 40, `Expanded Alchemy recipe ${r.id} must be <= Lv 40`);
+    }
   }
-  console.log('✔ Recipe levels adhere strictly to bands 1-4 (0-12) and Alchemy at 0.');
+  console.log('✔ Recipe levels adhere strictly to bands 1-4 (0-12) and Alchemy starter band at 0.');
 
   // ------------------------------------------------------------------------
   // Test 2: Decoupled Crafting Classes & Proficiency 10 Unlock

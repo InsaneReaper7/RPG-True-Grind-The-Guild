@@ -631,6 +631,31 @@
       },
       "expGranted": 25,
       "description": "A masonry brick infused with hardened iron reinforcement."
+    },
+    {
+      "id": "throwing_knife",
+      "name": "Throwing Knife",
+      "resultItemId": "throwing_knife",
+      "resultCount": 5,
+      "requiredLevel": 10,
+      "ingredients": {
+        "ore": 1
+      },
+      "expGranted": 25,
+      "description": "Forged iron throwing daggers, balanced for distance and precision."
+    },
+    {
+      "id": "throwing_javelin",
+      "name": "Throwing Javelin",
+      "resultItemId": "throwing_javelin",
+      "resultCount": 3,
+      "requiredLevel": 25,
+      "ingredients": {
+        "ore": 1,
+        "wood": 1
+      },
+      "expGranted": 50,
+      "description": "Solid iron-tipped javelins shaped for piercing ranged power."
     }
   ]
 }

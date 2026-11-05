@@ -28,6 +28,10 @@ export class SkillSystem {
     const dataLoader = DataLoader.getInstance();
 
     // 1. Cost & cooldown validation
+    if (typeof caster.hasStatusEffect === 'function' && caster.hasStatusEffect('disarmed') && caster.activeStatusEffects?.get('disarmed')?.def?.disablesSkills) {
+      this.combatSystem.createFloatingText(caster.x, caster.y - 20, 'DISARMED!', '#f87171');
+      return false;
+    }
     if (caster.energy < skillDef.energyCost) {
       console.warn(`[SkillSystem] Not enough energy for ${skillDef.name} (${caster.energy}/${skillDef.energyCost})`);
       return false;
@@ -93,6 +97,25 @@ export class SkillSystem {
     caster.lastSkillUseTimes.set(skillDef.id, time);
     caster.lastAttackTime = time;
     caster.state = 'attacking';
+
+    if (typeof caster.hasStatusEffect === 'function' && caster.hasStatusEffect('paralysis')) {
+      const para = caster.activeStatusEffects?.get('paralysis');
+      const sRng = this.combatSystem.getStatusRng();
+      if (para && sRng() < (para.def?.actionFailChance ?? 0.30)) {
+        this.combatSystem.createFloatingText(caster.x, caster.y - 20, 'PARALYZED!', '#eab308');
+        return false;
+      }
+    }
+
+    if (typeof caster.hasStatusEffect === 'function' && caster.hasStatusEffect('confused')) {
+      const conf = caster.activeStatusEffects?.get('confused');
+      const sRng = this.combatSystem.getStatusRng();
+      if (conf && sRng() < (conf.def?.misdirectChance ?? 0.35)) {
+        this.combatSystem.createFloatingText(caster.x, caster.y - 20, 'CONFUSED!', '#c084fc');
+        this.combatSystem.stumbleActor(caster);
+        return false;
+      }
+    }
 
     // 5. Consume reactive windows if active
     for (const effect of skillDef.effects || []) {
@@ -942,6 +965,9 @@ export class SkillSystem {
           this.combatSystem.createFloatingText(enemy.x, enemy.y - 10, `-${cleaveDmg.toFixed(1)} (Cleave)`, '#f97316');
           enemy.isAggroed = true;
           const downed = enemy.takeDamage(cleaveDmg);
+          if (cleaveDmg > 0 && caster.coating && caster.coating.hitsRemaining > 0) {
+            this.combatSystem.checkAndApplyWeaponCoating(caster, enemy, false);
+          }
           if (downed) this.combatSystem.handleTargetDefeated(caster, enemy, weaponId);
           hitCount++;
           if (hitCount >= maxTargets) break;
@@ -962,6 +988,10 @@ export class SkillSystem {
           this.combatSystem.createFloatingText(enemy.x, enemy.y - 10, floatText, floatColor);
           enemy.isAggroed = true;
           const downed = enemy.takeDamage(splashDmg);
+          if (splashDmg > 0 && caster.coating && caster.coating.hitsRemaining > 0) {
+            const isSpell = skillDef ? (skillDef.effects?.some((e: any) => e.scaling === 'spell') ?? false) : false;
+            this.combatSystem.checkAndApplyWeaponCoating(caster, enemy, isSpell);
+          }
           if (downed) this.combatSystem.handleTargetDefeated(caster, enemy, weaponId);
         }
       }
@@ -1097,6 +1127,9 @@ export class SkillSystem {
     targetEnemy?: Enemy | null,
     distanceTiles?: number
   ): { skillDef: SkillDef; target: Entity | Player } | null {
+    if (typeof member.hasStatusEffect === 'function' && member.hasStatusEffect('disarmed') && member.activeStatusEffects?.get('disarmed')?.def?.disablesSkills) {
+      return null;
+    }
     const dataLoader = DataLoader.getInstance();
     const candidates: { skillDef: SkillDef; target: Entity | Player; priority: number }[] = [];
 

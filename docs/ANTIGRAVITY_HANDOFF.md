@@ -1889,6 +1889,7 @@ The following three intentional behavioural changes were reviewed and accepted b
 | `CombatSystem.ts` L2347 `member.takeDamage(reflectDamage)` | Frost Thorns reflect | Exempt |
 | `Entity.ts` L650 `this.takeDamage(damage)` | Frostbite DoT tick (3 dmg / 1.5s) / generic DoT tick | Exempt |
 | `SkillSystem.ts` L793 `caster.hp -= cost` | Skill `hpCost` (self) | Exempt |
+| `CombatSystem.ts` L1246 `onHitStatuses` | Enemy on-hit status proc site (triggered when `actualDamage > 0`) | Status roll via `statusRng` |
 | `CombatSystem.ts` L1374, L1796, L2340 | Party hitting enemies | n/a |
 
 - **8. Verification & Committed Evidence Logs**:

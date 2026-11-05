@@ -103,6 +103,189 @@
       "expGranted": 20,
       "description": "[PLACEHOLDER COST - Alpha Balancing Required] A resonating dimensional stone. Teleports the entire party back to the Outpost when out of combat, ending the dungeon run safely with all loot preserved.",
       "_comment": "PLACEHOLDER COST - Alpha Balancing Required: During active development, cost is kept at 1 wood for test convenience. Real alpha balancing will require expensive ingredients (e.g. rare dungeon essence/ingot) so as not to undermine one-way portal risk."
+    },
+    {
+      "id": "burn_salve",
+      "name": "Burn Salve",
+      "resultItemId": "burn_salve",
+      "cures": ["burn"],
+      "requiredLevel": 5,
+      "ingredients": {
+        "wild_herbs": 2,
+        "slime_gel": 1
+      },
+      "expGranted": 25,
+      "description": "Herbal salve that immediately soothes and cures burn status."
+    },
+    {
+      "id": "eyewash",
+      "name": "Eyewash",
+      "resultItemId": "eyewash",
+      "cures": ["blind"],
+      "requiredLevel": 5,
+      "ingredients": {
+        "wild_herbs": 3
+      },
+      "expGranted": 25,
+      "description": "Purifying rinse that restores sight and cures blind status."
+    },
+    {
+      "id": "swiftness_draught",
+      "name": "Swiftness Draught",
+      "resultItemId": "swiftness_draught",
+      "cures": ["slow"],
+      "requiredLevel": 10,
+      "ingredients": {
+        "wild_herbs": 2,
+        "feather": 1
+      },
+      "expGranted": 30,
+      "description": "Light, effervescent draught that relieves sluggishness and cures slow status."
+    },
+    {
+      "id": "warming_draught",
+      "name": "Warming Draught",
+      "resultItemId": "warming_draught",
+      "cures": ["frostbite"],
+      "requiredLevel": 10,
+      "ingredients": {
+        "wild_herbs": 2,
+        "fire_crystal": 1
+      },
+      "expGranted": 30,
+      "description": "Spicy, warming potion that thaws the blood and cures frostbite status."
+    },
+    {
+      "id": "clarity_draught",
+      "name": "Clarity Draught",
+      "resultItemId": "clarity_draught",
+      "cures": ["confused"],
+      "requiredLevel": 15,
+      "ingredients": {
+        "wild_herbs": 2,
+        "arcane_crystal": 1
+      },
+      "expGranted": 35,
+      "description": "A crystalline tonic that clears cognitive fog and cures confusion."
+    },
+    {
+      "id": "paralysis_cure",
+      "name": "Paralysis Cure",
+      "resultItemId": "paralysis_cure",
+      "cures": ["paralysis"],
+      "requiredLevel": 15,
+      "ingredients": {
+        "wild_herbs": 2,
+        "lightning_crystal": 1
+      },
+      "expGranted": 35,
+      "description": "An energizing antidote that jump-starts paralyzed nerves and cures paralysis."
+    },
+    {
+      "id": "venom_coating",
+      "name": "Venom Coating",
+      "resultItemId": "venom_coating",
+      "resultCount": 2,
+      "requiredLevel": 20,
+      "ingredients": {
+        "spider_venom": 1,
+        "goblin_ear": 1
+      },
+      "expGranted": 40,
+      "description": "Distilled toxic venom that coats weapons, granting a 25% chance to inflict poison on hit."
+    },
+    {
+      "id": "searing_coating",
+      "name": "Searing Coating",
+      "resultItemId": "searing_coating",
+      "resultCount": 2,
+      "requiredLevel": 25,
+      "ingredients": {
+        "slime_gel": 1,
+        "fire_crystal": 1
+      },
+      "expGranted": 40,
+      "description": "Blazing alchemical oil that coats weapons, granting a 20% chance to inflict burn on hit."
+    },
+    {
+      "id": "paralytic_coating",
+      "name": "Paralytic Coating",
+      "resultItemId": "paralytic_coating",
+      "resultCount": 2,
+      "requiredLevel": 25,
+      "ingredients": {
+        "spider_venom": 1,
+        "lightning_crystal": 1
+      },
+      "expGranted": 40,
+      "description": "Electrified neurotoxin coating that grants a 15% chance to inflict paralysis on hit."
+    },
+    {
+      "id": "sand_pouch",
+      "name": "Sand Pouch",
+      "resultItemId": "sand_pouch",
+      "resultCount": 3,
+      "requiredLevel": 10,
+      "ingredients": {
+        "dirt": 2
+      },
+      "expGranted": 20,
+      "description": "A pocket of coarse grit thrown at enemies to blind all foes in a 1-tile area."
+    },
+    {
+      "id": "fire_bomb",
+      "name": "Fire Bomb",
+      "resultItemId": "fire_bomb",
+      "resultCount": 2,
+      "requiredLevel": 20,
+      "ingredients": {
+        "fire_crystal": 1,
+        "bone_meal": 1,
+        "slime_gel": 1
+      },
+      "expGranted": 35,
+      "description": "Incendiary bomb dealing 18 damage and 100% burn across a 1.5-tile radius."
+    },
+    {
+      "id": "frost_bomb",
+      "name": "Frost Bomb",
+      "resultItemId": "frost_bomb",
+      "resultCount": 2,
+      "requiredLevel": 30,
+      "ingredients": {
+        "ice_crystal": 1,
+        "bone_meal": 1,
+        "slime_gel": 1
+      },
+      "expGranted": 45,
+      "description": "Cryogenic bomb dealing 14 damage and 100% slow across a 1.5-tile radius."
+    },
+    {
+      "id": "thunder_bomb",
+      "name": "Thunder Bomb",
+      "resultItemId": "thunder_bomb",
+      "resultCount": 2,
+      "requiredLevel": 35,
+      "ingredients": {
+        "lightning_crystal": 1,
+        "bone_meal": 1,
+        "slime_gel": 1
+      },
+      "expGranted": 50,
+      "description": "Electrified bomb dealing 14 damage and 50% paralysis across a 1.5-tile radius."
+    },
+    {
+      "id": "bewildering_powder",
+      "name": "Bewildering Powder",
+      "resultItemId": "bewildering_powder",
+      "resultCount": 2,
+      "requiredLevel": 40,
+      "ingredients": {
+        "arcane_crystal": 1,
+        "ectoplasm": 1
+      },
+      "expGranted": 55,
+      "description": "Enchanted dust cloud that confuses all enemies within a 1.5-tile radius (60% chance)."
     }
   ]
 }

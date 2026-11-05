@@ -42,6 +42,7 @@ export class CombatSystem {
   }
   private luckRng: () => number = CombatSystem.createPassiveRng(0x7f4a7c15);
   private combatPassiveRng: () => number = CombatSystem.createPassiveRng(0x9e3779b9);
+  private statusRng: () => number = CombatSystem.createPassiveRng(0x85ebca6b);
   private enableCookingDrops: boolean = true;
   private combatStartTimeMs: number = 0;
   private damageDealtByMember: Map<string, number> = new Map();
@@ -95,6 +96,14 @@ export class CombatSystem {
 
   public getCombatPassiveRng(): () => number {
     return this.combatPassiveRng;
+  }
+
+  public setStatusRng(rng: (() => number) | undefined): void {
+    this.statusRng = rng ?? CombatSystem.createPassiveRng(0x85ebca6b);
+  }
+
+  public getStatusRng(): () => number {
+    return this.statusRng;
   }
 
   public setEnableCookingDrops(enabled: boolean): void {
@@ -762,6 +771,25 @@ export class CombatSystem {
                 this.lastCombatTimeMs = time;
                 this.recordBestiaryEncounter(enemy);
 
+                if (enemy.hasStatusEffect('paralysis')) {
+                  const para = enemy.activeStatusEffects.get('paralysis');
+                  const sRng = this.getStatusRng();
+                  if (para && sRng() < (para.def?.actionFailChance ?? 0.30)) {
+                    this.createFloatingText(enemy.x, enemy.y - 20, 'PARALYZED!', '#eab308');
+                    continue;
+                  }
+                }
+
+                if (enemy.hasStatusEffect('confused')) {
+                  const conf = enemy.activeStatusEffects.get('confused');
+                  const sRng = this.getStatusRng();
+                  if (conf && sRng() < (conf.def?.misdirectChance ?? 0.35)) {
+                    this.createFloatingText(enemy.x, enemy.y - 20, 'CONFUSED!', '#c084fc');
+                    this.stumbleActor(enemy);
+                    continue;
+                  }
+                }
+
                 // Milestone 48: Blind status effect reduced accuracy / miss chance
                 if (enemy.hasStatusEffect('blind')) {
                   const blindEffect = enemy.activeStatusEffects.get('blind');
@@ -780,6 +808,12 @@ export class CombatSystem {
                     const reduction = activeEffect.def.damageReductionPercent;
                     baseEnemyDamage = Math.max(1, Math.round(baseEnemyDamage * (1 - reduction)));
                     console.log(`[Combat] 💀 ${enemy.entityName}'s attack enfeebled by ${activeEffect.def.name} (-${(reduction * 100).toFixed(0)}% damage -> ${baseEnemyDamage})!`);
+                  }
+                }
+                if (baseEnemyDamage > 0) {
+                  const outMult = this.getOutgoingDamageMultiplier(enemy);
+                  if (outMult !== 1.0) {
+                    baseEnemyDamage = Math.max(1, Math.round(baseEnemyDamage * outMult));
                   }
                 }
                 const rawDamage = baseEnemyDamage;
@@ -1034,7 +1068,7 @@ export class CombatSystem {
                   }
 
                   // Milestone 34: Abyssal Colossus Unique Mechanic — Earthshaker Tremor (15% stun chance on hit, tuned down from 30%)
-                  if (enemy.enemyData.id === 'abyssal_colossus' && actualDamage > 0 && !targetDowned) {
+                  if (enemy.enemyData.id === 'abyssal_colossus' && actualDamage > 0 && !targetDowned && !this.isSkillsDisabled(enemy)) {
                     if (Math.random() < 0.15) {
                       const stunEffect = {
                         id: 'stun',
@@ -1054,7 +1088,7 @@ export class CombatSystem {
                   }
 
                   // Milestone — Second Boss Enemy: Glacial Sovereign Signature Mechanics
-                  if (enemy.enemyData.id === 'glacial_sovereign' && rawDamage > 0) {
+                  if (enemy.enemyData.id === 'glacial_sovereign' && rawDamage > 0 && !this.isSkillsDisabled(enemy)) {
                     // Signature Mechanic 1: Glacial Spike Nova / Permafrost Shards
                     // Projectile shards shatter outward from the impact, hitting all other party members within 3 tiles of the target
                     const rawShard = Math.max(1, Math.round(rawDamage * 0.4));
@@ -1204,8 +1238,24 @@ export class CombatSystem {
                   }
 
                   // Milestone: Magical Crafting - Elemental Enemy Status Effect Proc
-                  if ((enemy.enemyData.tier === 'elemental' || enemy.enemyData.school) && actualDamage > 0 && !targetDowned) {
+                  if ((enemy.enemyData.tier === 'elemental' || enemy.enemyData.school) && actualDamage > 0 && !targetDowned && !this.isSkillsDisabled(enemy)) {
                     this.applyElementalAttackStatus(enemy, target);
+                  }
+
+                  // Milestone 6: Alchemy Expansion - Generic Enemy onHitStatuses
+                  if (enemy.enemyData.onHitStatuses && actualDamage > 0 && !targetDowned) {
+                    const sRng = this.getStatusRng();
+                    for (const entry of enemy.enemyData.onHitStatuses) {
+                      if (sRng() < entry.chance) {
+                        const def = DataLoader.getInstance().getStatusEffect(entry.statusId);
+                        if (def) {
+                          target.applyStatusEffect(def);
+                          const floatText = def.id === 'paralysis' ? 'PARALYZED!' : def.id === 'confused' ? 'CONFUSED!' : def.id === 'disarmed' ? 'DISARMED!' : `${def.name.toUpperCase()}!`;
+                          this.createFloatingText(target.x, target.y - 28, floatText, def.color || '#eab308');
+                          console.log(`[Combat] ⚡ ${enemy.entityName} inflicts ${def.name} on ${target.entityName}!`);
+                        }
+                      }
+                    }
                   }
 
                   if (targetDowned) {
@@ -1419,7 +1469,7 @@ export class CombatSystem {
               member.offhandWeapon && (member.offhandWeapon.proficiencyId === 'throwing_weapons' || member.offhandWeapon.id === 'throwing_weapons' || member.offhandWeapon.proficiencyId === 'daggers' || member.offhandWeapon.id === 'daggers');
             const isAllowedSidearm = isScoutSidearm || isJavelinSidearm || isThrowerSidearm;
 
-            const canOffhandStrike = member.offhandWeapon && (
+            const canOffhandStrike = !(member as any)._attackAborted && member.offhandWeapon && (
               isDW || (isAllowedSidearm && distanceTiles <= (member.offhandWeapon.attackRangeTiles ?? 1))
             );
 
@@ -1464,10 +1514,18 @@ export class CombatSystem {
                 if (passiveImbuement?.bonusDamagePercent) {
                   offDmg *= (1 + passiveImbuement.bonusDamagePercent);
                 }
+                const offOutMult = this.getOutgoingDamageMultiplier(member);
+                if (offOutMult !== 1.0) {
+                  offDmg *= offOutMult;
+                }
                 console.log(
                   `[${strikeTag}] ⚔️ ${member.entityName} offhand strike with ${offWpn.name} hits ${target.entityName} for ${offDmg.toFixed(1)} damage! (${isDW ? `DW Penalty: -${(dwPenalty * 100).toFixed(0)}%, ` : ''}Hit Chance: ${(offEffectiveAccuracy * 100).toFixed(1)}%)`
                 );
                 this.createFloatingText(target.x, target.y - 22, `-${offDmg.toFixed(1)} (${strikeTag})`, '#c084fc');
+
+                if (offDmg > 0 && member.coating && member.coating.hitsRemaining > 0) {
+                  this.checkAndApplyWeaponCoating(member, target, false);
+                }
 
                 member.progression.addProficiencyExp(offProfId, 2);
                 if (this.isLegitimatelyDualWielding(member)) {
@@ -1658,6 +1716,211 @@ export class CombatSystem {
     if (enemyDowned) {
       this.handleTargetDefeated(counterAttacker, enemy, weapon.id);
     }
+  }
+
+  public getOutgoingDamageMultiplier(actor: Entity | Player): number {
+    if (!actor || !actor.activeStatusEffects) return 1.0;
+    for (const active of actor.activeStatusEffects.values()) {
+      if (active.def?.outgoingDamageMultiplier !== undefined) {
+        return active.def.outgoingDamageMultiplier;
+      }
+    }
+    return 1.0;
+  }
+
+  public isSkillsDisabled(actor: Entity | Player): boolean {
+    if (!actor || !actor.activeStatusEffects) return false;
+    for (const active of actor.activeStatusEffects.values()) {
+      if (active.def?.disablesSkills) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  public stumbleActor(actor: Entity | Player): boolean {
+    const cx = actor.gridPos.x;
+    const cy = actor.gridPos.y;
+    const neighbors: Array<{ x: number; y: number }> = [
+      { x: cx + 1, y: cy },
+      { x: cx - 1, y: cy },
+      { x: cx, y: cy + 1 },
+      { x: cx, y: cy - 1 },
+      { x: cx + 1, y: cy + 1 },
+      { x: cx - 1, y: cy + 1 },
+      { x: cx + 1, y: cy - 1 },
+      { x: cx - 1, y: cy - 1 }
+    ];
+
+    const freeNeighbors = neighbors.filter((n) => {
+      if (this.pathfinder && (this.pathfinder.isObstacle(n.x, n.y) || !this.pathfinder.isWalkable(n.x, n.y))) {
+        return false;
+      }
+      if (this.isTileClaimedOrOccupiedByOther(n.x, n.y, actor as any)) {
+        return false;
+      }
+      return true;
+    });
+
+    if (freeNeighbors.length === 0) {
+      return false;
+    }
+
+    const sRng = this.getStatusRng();
+    const chosenIndex = Math.floor(sRng() * freeNeighbors.length);
+    const chosen = freeNeighbors[chosenIndex];
+
+    actor.gridPos.x = chosen.x;
+    actor.gridPos.y = chosen.y;
+    actor.x = chosen.x * actor.tileSize + actor.tileSize / 2;
+    actor.y = chosen.y * actor.tileSize + actor.tileSize / 2;
+    if (typeof (actor as any).stopMovement === 'function') {
+      (actor as any).stopMovement();
+    }
+    return true;
+  }
+
+  public checkAndApplyWeaponCoating(attacker: Player, target: Entity, isSpell: boolean): void {
+    if (isSpell) return;
+    if (!attacker || !attacker.coating || attacker.coating.hitsRemaining <= 0) return;
+
+    attacker.coating.hitsRemaining--;
+    const sRng = this.getStatusRng();
+    if (sRng() < attacker.coating.chance) {
+      const def = DataLoader.getInstance().getStatusEffect(attacker.coating.statusId);
+      if (def) {
+        target.applyStatusEffect(def);
+        const text = def.id === 'paralysis' ? 'PARALYZED!' : def.id === 'burn' ? 'BURN!' : def.id === 'poison' ? 'POISON!' : `${def.name.toUpperCase()}!`;
+        this.createFloatingText(target.x, target.y - 25, text, def.color || '#22c55e');
+      }
+    }
+
+    if (attacker.coating.hitsRemaining <= 0) {
+      const coatingItem = DataLoader.getInstance().getItem(attacker.coating.itemId);
+      attacker.coating = null;
+      const hud = (this.scene as any)?.hud;
+      if (hud && typeof hud.showToast === 'function') {
+        hud.showToast(`${coatingItem?.name ?? 'Weapon coating'} wore off`, 'info');
+      }
+    }
+  }
+
+  public executeThrowAttack(
+    thrower: Player,
+    primaryTarget: Entity,
+    itemDef: any,
+    time: number
+  ): boolean {
+    const dataLoader = DataLoader.getInstance();
+    const throwingLevel = thrower.progression ? thrower.progression.getProficiencyLevel('throwing_weapons') : 0;
+    const baseAccuracy = 0.65;
+    const accBonusPerLevel = 0.004;
+    const moodTier = dataLoader.getMoodTier ? dataLoader.getMoodTier(thrower.mood) : { combatDamageMultiplier: 1.0, combatAccuracyBonus: 0 };
+    const blindPenalty = (typeof thrower.hasStatusEffect === 'function' && thrower.hasStatusEffect('blind'))
+      ? (thrower.activeStatusEffects.get('blind')?.def?.accuracyReduction ?? 0.35)
+      : 0;
+    const effectiveAccuracy = baseAccuracy + throwingLevel * accBonusPerLevel + (moodTier?.combatAccuracyBonus ?? 0) - blindPenalty;
+
+    thrower.lastAttackTime = time;
+    thrower.state = 'attacking';
+    this.lastCombatTimeMs = time;
+
+    // Roll accuracy once against primary target using statusRng
+    const sRng = this.getStatusRng();
+    const hitRoll = sRng();
+    const isHit = hitRoll < effectiveAccuracy;
+
+    if (!isHit) {
+      this.createFloatingText(primaryTarget.x, primaryTarget.y - 10, 'MISSED', '#9ca3af');
+      return false;
+    }
+
+    this.createAttackEffect(thrower.x, thrower.y, primaryTarget.x, primaryTarget.y, 0xf59e0b);
+
+    const throwCfg = dataLoader.getThrowingConfig();
+    const rawBaseDamage = (itemDef.throwDamage ?? 0) * (1 + throwCfg.throwDamagePerLevel * throwingLevel);
+    let damage = rawBaseDamage * (moodTier?.combatDamageMultiplier ?? 1.0);
+
+    // Attribute damage multiplier (DEX for ranged/throwing)
+    const dexMult = (thrower.dexMultiplier ?? (1 + 0.02 * ((thrower.dexterity ?? 1.0) - 1)));
+    damage *= dexMult;
+
+    // Critical strike roll & proc
+    const pRng = this.getCombatPassiveRng();
+    const hiddenSystem = HiddenSkillSystem.getInstance();
+    if (thrower.progression) {
+      const critDef = hiddenSystem.getSkillDef('critical_strike');
+      if (critDef) {
+        hiddenSystem.rollProc(critDef, { inCombat: true }, thrower.progression, pRng);
+      }
+      const critLvl = thrower.progression.getProficiencyLevel('critical_strike');
+      if (critLvl >= 1 && damage > 0) {
+        const luckCfg = dataLoader.getLuckConfig();
+        const critChance = (luckCfg.critChanceBase ?? 0.01) + (luckCfg.critChancePerLevel ?? 0.002) * critLvl;
+        if (pRng() < critChance) {
+          const critMult = (luckCfg.critDamageBaseMultiplier ?? 1.5) + (luckCfg.critDamagePerLevelMultiplier ?? 0.005) * critLvl;
+          damage *= critMult;
+          this.createFloatingText(primaryTarget.x, primaryTarget.y - 30, 'CRIT!', '#facc15');
+        }
+      }
+    }
+
+    const outMult = this.getOutgoingDamageMultiplier(thrower);
+    if (outMult !== 1.0) {
+      damage *= outMult;
+    }
+
+    // Determine targets: AoE radius or single target
+    const aoeRadius = itemDef.aoeRadiusTiles ?? 0;
+    const hitTargets: Entity[] = [];
+    if (aoeRadius > 0) {
+      for (const enemy of this.enemies) {
+        if (enemy.state === 'dead' || enemy.state === 'downed') continue;
+        const dist = Math.hypot(enemy.gridPos.x - primaryTarget.gridPos.x, enemy.gridPos.y - primaryTarget.gridPos.y);
+        if (dist <= aoeRadius) {
+          hitTargets.push(enemy);
+        }
+      }
+    } else {
+      if (primaryTarget.state !== 'dead' && primaryTarget.state !== 'downed') {
+        hitTargets.push(primaryTarget);
+      }
+    }
+
+    for (const enemy of hitTargets) {
+      (enemy as any).isAggroed = true;
+      if (damage > 0) {
+        this.createFloatingText(enemy.x, enemy.y - 10, `-${damage.toFixed(1)}`, '#f59e0b');
+      }
+
+      // Roll status independently for each hit enemy
+      if (itemDef.statusId && itemDef.statusChance) {
+        if (sRng() < itemDef.statusChance) {
+          const statusDef = dataLoader.getStatusEffect(itemDef.statusId);
+          if (statusDef) {
+            enemy.applyStatusEffect(statusDef);
+            const text = statusDef.id === 'paralysis' ? 'PARALYZED!' : statusDef.id === 'burn' ? 'BURNING!' : statusDef.id === 'blind' ? 'BLINDED!' : statusDef.id === 'slow' ? 'SLOWED!' : statusDef.id === 'confused' ? 'CONFUSED!' : statusDef.id === 'bleed' ? 'BLEEDING!' : `${statusDef.name.toUpperCase()}!`;
+            this.createFloatingText(enemy.x, enemy.y - 25, text, statusDef.color || '#eab308');
+          }
+        }
+      }
+
+      const downed = enemy.takeDamage(damage);
+      if (downed) {
+        this.handleTargetDefeated(thrower, enemy, 'throwing_weapons');
+      }
+    }
+
+    // Award +3 Throwing Weapons EXP to thrower if hit at least one target
+    if (hitTargets.length > 0 && thrower.progression) {
+      const expRes = thrower.progression.addProficiencyExp('throwing_weapons', throwCfg.throwExpPerHit);
+      if (expRes && expRes.leveledUp) {
+        const newLvl = thrower.progression.getProficiencyLevel('throwing_weapons');
+        this.createFloatingText(thrower.x, thrower.y - 20, `THROWING WEAPONS Level ${newLvl}!`, '#22c55e');
+      }
+    }
+
+    return true;
   }
 
   private checkAndApplyBleed(attacker: Player, target: Entity, weaponOverride?: WeaponDef): void {
@@ -1919,12 +2182,19 @@ export class CombatSystem {
       (target as any).isAggroed = true;
     }
 
+    const outMult = this.getOutgoingDamageMultiplier(caster);
+    if (outMult !== 1.0) {
+      skillDamage *= outMult;
+    }
     const damagePerHit = hits > 1 ? skillDamage / hits : skillDamage;
     for (let h = 0; h < hits; h++) {
       if (target.state === 'dead' || target.state === 'downed') break;
       const floatColor = skillDef.floatColor || '#f59e0b';
       this.createFloatingText(target.x, target.y - 10 - (h * 6), `${skillDef.name.toUpperCase()}! -${damagePerHit.toFixed(1)}`, floatColor);
       const downed = target.takeDamage(damagePerHit);
+      if (damagePerHit > 0 && caster.coating && caster.coating.hitsRemaining > 0) {
+        this.checkAndApplyWeaponCoating(caster, target, false);
+      }
       if (downed) {
         this.handleTargetDefeated(caster, target, weaponId);
         break;
@@ -2221,6 +2491,28 @@ export class CombatSystem {
       this.recordBestiaryEncounter(target);
     }
 
+    if (typeof member.hasStatusEffect === 'function' && member.hasStatusEffect('paralysis')) {
+      const effect = member.activeStatusEffects?.get('paralysis');
+      const failChance = effect?.def?.actionFailChance ?? 0.30;
+      if (this.getStatusRng()() < failChance) {
+        this.createFloatingText(member.x, member.y - 20, 'PARALYZED!', '#facc15');
+        (member as any)._attackAborted = true;
+        return false;
+      }
+    }
+
+    if (typeof member.hasStatusEffect === 'function' && member.hasStatusEffect('confused')) {
+      const effect = member.activeStatusEffects?.get('confused');
+      const misdirectChance = effect?.def?.misdirectChance ?? 0.35;
+      if (this.getStatusRng()() < misdirectChance) {
+        this.createFloatingText(member.x, member.y - 20, 'CONFUSED!', '#c084fc');
+        this.stumbleActor(member);
+        (member as any)._attackAborted = true;
+        return false;
+      }
+    }
+    (member as any)._attackAborted = false;
+
     console.log(
       `[DIAG:Combat] ⚔️ ${member.entityName} attacks ${target.entityName} with ${effectiveWeapon.name}! inCombat: ${member.inCombat}, Pre-EN: ${((member.energy ?? 0) + paramEnergyCost).toFixed(1)}, Post-EN: ${(member.energy ?? 0).toFixed(1)}, Range: ${member.attackRangeTiles}, Dist: ${distanceTiles}`
     );
@@ -2319,6 +2611,10 @@ export class CombatSystem {
         ? (member.dexMultiplier ?? (1 + 0.02 * ((member.dexterity ?? 1.0) - 1)))
         : (member.strMultiplier ?? (1 + 0.02 * ((member.strength ?? 1.0) - 1)));
     damage *= attrMult;
+    const outMult = this.getOutgoingDamageMultiplier(member);
+    if (outMult !== 1.0) {
+      damage *= outMult;
+    }
 
     // Critical Strike & Life Steal
     const pRng = this.getCombatPassiveRng();
@@ -2383,6 +2679,10 @@ export class CombatSystem {
     const dmgColor = isFire ? '#f97316' : isLightning ? '#38bdf8' : isIce ? '#67e8f9' : isHoly ? '#facc15' : isDark ? '#a855f7' : isArcane ? '#c084fc' : isWater ? '#0284c7' : isEarth ? '#b45309' : isNature ? '#16a34a' : isWind ? '#a7f3d0' : isRangedBow ? '#f59e0b' : isFist ? '#f97316' : '#38bdf8';
     const hitText = isFist ? `PUNCH! -${damage.toFixed(1)}` : `-${damage.toFixed(1)}`;
     this.createFloatingText(target.x, target.y - 10, hitText, dmgColor);
+
+    if (damage > 0 && member.coating && member.coating.hitsRemaining > 0) {
+      this.checkAndApplyWeaponCoating(member, target, isSpell);
+    }
 
     this.checkAndApplyBleed(member, target, effectiveWeapon);
     this.checkAndApplyBurn(member, target, effectiveWeapon);
@@ -2472,6 +2772,9 @@ export class CombatSystem {
           this.checkAndApplyBurn(member, enemy, effectiveWeapon);
           this.lastCombatTimeMs = time;
           enemy.isAggroed = true;
+          if (splashDmg > 0 && member.coating && member.coating.hitsRemaining > 0) {
+            this.checkAndApplyWeaponCoating(member, enemy, isSpell);
+          }
           const splashDowned = enemy.takeDamage(splashDmg);
           if (splashDowned) {
             this.handleTargetDefeated(member, enemy, weaponId);

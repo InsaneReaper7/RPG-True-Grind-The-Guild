@@ -9,12 +9,14 @@ export interface UseConsumableOptions {
   fromMember?: Player;
   fromStockpile?: boolean;
   scene?: any;
+  combatSystem?: any;
 }
 
 export interface CanUseResult {
   canUse: boolean;
   reason?: string;
   target?: Player;
+  enemyTarget?: any;
 }
 
 export interface UseResult {
@@ -119,7 +121,7 @@ export class ConsumableSystem {
     ]);
     if (knownConsumables.has(itemId)) return true;
     const itemDef = DataLoader.getInstance().getItem(itemId);
-    return itemDef?.category === 'consumables';
+    return itemDef?.category === 'consumables' || !!itemDef?.cures || !!itemDef?.coatingStatusId || itemDef?.throwDamage !== undefined;
   }
 
   public getPartyCarriedCount(itemId: string, options?: UseConsumableOptions): number {
@@ -383,6 +385,91 @@ export class ConsumableSystem {
 
 
       default: {
+        const itemDef = DataLoader.getInstance().getItem(normalizedId);
+        if (itemDef?.cures && itemDef.cures.length > 0) {
+          if (options?.preferredTarget && itemDef.cures.some((st) => options.preferredTarget!.activeStatusEffects.has(st))) {
+            return { canUse: true, target: options.preferredTarget };
+          }
+          const selectedAfflicted = selectedMembers.find((m) => itemDef.cures!.some((st) => m.activeStatusEffects.has(st)));
+          if (selectedAfflicted) {
+            return { canUse: true, target: selectedAfflicted };
+          }
+          const anyAfflicted = party.find((m) => itemDef.cures!.some((st) => m.activeStatusEffects.has(st)));
+          if (anyAfflicted) {
+            return { canUse: true, target: anyAfflicted };
+          }
+          return { canUse: false, reason: 'No afflicted allies' };
+        }
+
+        if (itemDef?.coatingStatusId) {
+          let target: Player | undefined;
+          if (options?.preferredTarget) {
+            target = options.preferredTarget;
+          } else if (selectedMembers.length === 1) {
+            target = selectedMembers[0];
+          } else {
+            target = leader;
+          }
+          if (!target) return { canUse: false, reason: 'No valid target' };
+          if (target.state === 'downed' || target.state === 'dead') {
+            return { canUse: false, reason: 'Target is downed' };
+          }
+          const isUnarmed = !target.equippedWeapon || target.equippedWeapon.id === 'fist' || target.equippedWeapon.category === 'unarmed';
+          const isStaff = !!target.equippedWeapon && (target.equippedWeapon.category === 'magic' || target.equippedWeapon.category === 'staff' || target.equippedWeapon.id.includes('staff') || !!target.equippedWeapon.spellWeaponId);
+          if (isUnarmed || isStaff) {
+            return { canUse: false, reason: 'Cannot coat magical staff or unarmed' };
+          }
+          const maxHits = DataLoader.getInstance().getAlchemyConfig().coatings.maxHits;
+          if (target.coating && target.coating.itemId === normalizedId && target.coating.hitsRemaining >= maxHits) {
+            return { canUse: false, reason: 'Weapon coating is at maximum charges' };
+          }
+          return { canUse: true, target };
+        }
+
+        if (itemDef && itemDef.throwDamage !== undefined) {
+          let thrower: Player | undefined;
+          if (options?.preferredTarget) {
+            thrower = options.preferredTarget;
+          } else if (selectedMembers.length === 1) {
+            thrower = selectedMembers[0];
+          } else {
+            thrower = leader;
+          }
+          if (!thrower) return { canUse: false, reason: 'No valid thrower' };
+          if (thrower.state === 'downed' || thrower.state === 'dead') {
+            return { canUse: false, reason: 'Thrower is downed' };
+          }
+          const throwCfg = DataLoader.getInstance().getThrowingConfig();
+          const now = options?.scene?.time?.now ?? Date.now();
+          if (now - (thrower.lastThrowTimeMs ?? 0) < throwCfg.throwCooldownMs) {
+            return { canUse: false, reason: 'Throw on cooldown' };
+          }
+          const maxRange = itemDef.throwRangeTiles ?? 5;
+          const enemies = options?.combatSystem?.enemies || options?.scene?.combatSystem?.enemies || (options?.preferredTarget as any)?.scene?.combatSystem?.enemies || (globalThis as any).window?.game?.scene?.getScene('MainScene')?.combatSystem?.enemies || [];
+          let enemyTarget: any = null;
+          if (thrower.targetEntity && thrower.targetEntity.state !== 'dead' && thrower.targetEntity.state !== 'downed') {
+            const dist = Math.hypot(thrower.gridPos.x - thrower.targetEntity.gridPos.x, thrower.gridPos.y - thrower.targetEntity.gridPos.y);
+            if (dist <= maxRange) {
+              enemyTarget = thrower.targetEntity;
+            }
+          }
+          if (!enemyTarget) {
+            let closestDist = Infinity;
+            for (const enemy of enemies) {
+              if (enemy.state === 'dead' || enemy.state === 'downed') continue;
+              const dist = Math.hypot(thrower.gridPos.x - enemy.gridPos.x, thrower.gridPos.y - enemy.gridPos.y);
+              if (dist <= maxRange && dist < closestDist) {
+                closestDist = dist;
+                enemyTarget = enemy;
+              }
+            }
+          }
+          if (!enemyTarget) {
+            return { canUse: false, reason: 'No enemy in range' };
+          }
+          return { canUse: true, target: thrower, enemyTarget };
+        }
+
         if (isFood) {
           // Food: The selected member, or the leader.
           let target: Player | undefined;
@@ -665,6 +752,109 @@ export class ConsumableSystem {
       }
 
       default: {
+        const itemDef = DataLoader.getInstance().getItem(normalizedId);
+        if (itemDef?.cures && itemDef.cures.length > 0) {
+          const hasAny = itemDef.cures.some((st) => target.activeStatusEffects.has(st));
+          if (!hasAny) {
+            const msg = 'No afflicted allies';
+            this.showToast(msg, 'warn');
+            return { success: false, message: msg };
+          }
+          const consumed = this.consumeItemFromParty(normalizedId, target, party, options?.fromMember);
+          if (!consumed) {
+            const msg = `No ${itemDef.name} carried by party!`;
+            this.showToast(msg, 'warn');
+            return { success: false, message: msg };
+          }
+          const curedNames: string[] = [];
+          for (const st of itemDef.cures) {
+            if (target.activeStatusEffects.has(st)) {
+              const def = DataLoader.getInstance().getStatusEffect(st);
+              curedNames.push(def?.name ?? st);
+              if (typeof target.removeStatusEffect === 'function') {
+                target.removeStatusEffect(st);
+              } else if (target.activeStatusEffects?.delete) {
+                target.activeStatusEffects.delete(st);
+              }
+            }
+          }
+          const curedText = curedNames.join(', ');
+          target.createFloatingText?.(`Cured ${curedText}!`, '#22c55e');
+          const msg = `Applied ${itemDef.name} to ${target.entityName}! Cured ${curedText}.`;
+          this.showToast(msg, 'success');
+          return { success: true, message: msg };
+        }
+
+        if (itemDef?.coatingStatusId) {
+          if (target.state === 'downed' || target.state === 'dead') {
+            const msg = 'Target is downed';
+            this.showToast(msg, 'warn');
+            return { success: false, message: msg };
+          }
+          const isUnarmed = !target.equippedWeapon || target.equippedWeapon.id === 'fist' || target.equippedWeapon.category === 'unarmed';
+          const isStaff = !!target.equippedWeapon && (target.equippedWeapon.category === 'magic' || target.equippedWeapon.category === 'staff' || target.equippedWeapon.id.includes('staff') || !!target.equippedWeapon.spellWeaponId);
+          if (isUnarmed || isStaff) {
+            const msg = 'Cannot coat magical staff or unarmed';
+            this.showToast(msg, 'warn');
+            return { success: false, message: msg };
+          }
+          const maxHits = DataLoader.getInstance().getAlchemyConfig().coatings.maxHits;
+          if (target.coating && target.coating.itemId === normalizedId && target.coating.hitsRemaining >= maxHits) {
+            const msg = 'Weapon coating is at maximum charges';
+            this.showToast(msg, 'warn');
+            return { success: false, message: msg };
+          }
+          const consumed = this.consumeItemFromParty(normalizedId, target, party, options?.fromMember);
+          if (!consumed) {
+            const msg = `No ${itemDef.name} carried by party!`;
+            this.showToast(msg, 'warn');
+            return { success: false, message: msg };
+          }
+          const hitsPerApp = DataLoader.getInstance().getAlchemyConfig().coatings.hitsPerApplication;
+          if (target.coating && target.coating.itemId === normalizedId) {
+            target.coating.hitsRemaining = Math.min(maxHits, target.coating.hitsRemaining + hitsPerApp);
+          } else {
+            target.coating = {
+              itemId: normalizedId,
+              statusId: itemDef.coatingStatusId,
+              chance: itemDef.coatingChance ?? 0.25,
+              hitsRemaining: hitsPerApp
+            };
+          }
+          const msg = `Applied ${itemDef.name} to ${target.entityName}! (${target.coating.hitsRemaining}/${maxHits} hits)`;
+          this.showToast(msg, 'success');
+          return { success: true, message: msg };
+        }
+
+        if (itemDef && itemDef.throwDamage !== undefined) {
+          const check = this.canUseConsumable(normalizedId, options);
+          if (!check.canUse) {
+            const msg = check.reason || 'Cannot throw';
+            this.showToast(msg, 'warn');
+            return { success: false, message: msg };
+          }
+          const thrower = check.target!;
+          const enemyTarget = (check as any).enemyTarget;
+          const consumed = this.consumeItemFromParty(normalizedId, thrower, party, options?.fromMember);
+          if (!consumed) {
+            const msg = `No ${itemDef.name} carried by party!`;
+            this.showToast(msg, 'warn');
+            return { success: false, message: msg };
+          }
+          const scene = options?.scene || thrower.scene || (globalThis as any).window?.game?.scene?.getScene('MainScene');
+          const combatSystem = options?.combatSystem || scene?.combatSystem || (globalThis as any).window?.game?.scene?.getScene('MainScene')?.combatSystem;
+          const now = scene?.time?.now ?? Date.now();
+          thrower.lastThrowTimeMs = now;
+          const throwCfg = DataLoader.getInstance().getThrowingConfig();
+          this.setCooldown(normalizedId, throwCfg.throwCooldownMs, thrower);
+          if (combatSystem && typeof combatSystem.executeThrowAttack === 'function') {
+            combatSystem.executeThrowAttack(thrower, enemyTarget, itemDef, now);
+          }
+          const msg = `Threw ${itemDef.name}!`;
+          this.showToast(msg, 'success');
+          return { success: true, message: msg };
+        }
+
         if (this.isFoodItem(normalizedId)) {
           const hungerEnabled = DataLoader.getInstance().isHungerEnabled();
           const hasWellFed = (target.wellFedRemainingMs ?? 0) > 0 || (target.activeStatusEffects?.has('well_fed') ?? false);

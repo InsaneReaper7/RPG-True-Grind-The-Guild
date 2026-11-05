@@ -538,6 +538,37 @@
       "evasionBonus": 0.2,
       "isHarmful": false,
       "color": "#7c3aed"
+    },
+    {
+      "id": "paralysis",
+      "name": "Paralysis",
+      "durationMs": 4000,
+      "tickIntervalMs": 1000,
+      "damagePerTick": 0,
+      "actionFailChance": 0.3,
+      "isHarmful": true,
+      "color": "#eab308"
+    },
+    {
+      "id": "confused",
+      "name": "Confused",
+      "durationMs": 4000,
+      "tickIntervalMs": 1000,
+      "damagePerTick": 0,
+      "misdirectChance": 0.35,
+      "isHarmful": true,
+      "color": "#c084fc"
+    },
+    {
+      "id": "disarmed",
+      "name": "Disarmed",
+      "durationMs": 5000,
+      "tickIntervalMs": 1000,
+      "damagePerTick": 0,
+      "outgoingDamageMultiplier": 0.5,
+      "disablesSkills": true,
+      "isHarmful": true,
+      "color": "#f87171"
     }
   ]
 }

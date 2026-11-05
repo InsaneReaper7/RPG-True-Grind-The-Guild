@@ -1256,6 +1256,177 @@
       "category": "gathering",
       "icon": "🌱",
       "description": "A varied blend of common vegetable seeds ready for soil."
+    },
+    {
+      "id": "burn_salve",
+      "name": "Burn Salve",
+      "weight": 0.2,
+      "category": "consumables",
+      "icon": "🍯",
+      "cures": ["burn"],
+      "description": "A soothing herbal salve that neutralizes burn and fire afflictions."
+    },
+    {
+      "id": "eyewash",
+      "name": "Eyewash",
+      "weight": 0.2,
+      "category": "consumables",
+      "icon": "💧",
+      "cures": ["blind"],
+      "description": "A clarifying herbal wash that dispels blindness and clears obscured vision."
+    },
+    {
+      "id": "swiftness_draught",
+      "name": "Swiftness Draught",
+      "weight": 0.2,
+      "category": "consumables",
+      "icon": "🧪",
+      "cures": ["slow"],
+      "description": "An invigorating tonic that cleanses lethargy and cures movement slow."
+    },
+    {
+      "id": "warming_draught",
+      "name": "Warming Draught",
+      "weight": 0.2,
+      "category": "consumables",
+      "icon": "🔥",
+      "cures": ["frostbite"],
+      "description": "A fiery infusion that dispels chilling frostbite and restores body warmth."
+    },
+    {
+      "id": "clarity_draught",
+      "name": "Clarity Draught",
+      "weight": 0.2,
+      "category": "consumables",
+      "icon": "✨",
+      "cures": ["confused"],
+      "description": "A mind-focusing elixir that clears mental confusion and disorientation."
+    },
+    {
+      "id": "paralysis_cure",
+      "name": "Paralysis Cure",
+      "weight": 0.2,
+      "category": "consumables",
+      "icon": "⚡",
+      "cures": ["paralysis"],
+      "description": "A stimulating concoction that restores muscle control and cures paralysis."
+    },
+    {
+      "id": "venom_coating",
+      "name": "Venom Coating",
+      "weight": 0.2,
+      "category": "consumables",
+      "icon": "🧪",
+      "coatingStatusId": "poison",
+      "coatingChance": 0.25,
+      "description": "A virulent weapon coating that adds 25% poison chance to weapon strikes."
+    },
+    {
+      "id": "searing_coating",
+      "name": "Searing Coating",
+      "weight": 0.2,
+      "category": "consumables",
+      "icon": "🔥",
+      "coatingStatusId": "burn",
+      "coatingChance": 0.2,
+      "description": "An incendiary coating that adds 20% burn chance to weapon strikes."
+    },
+    {
+      "id": "paralytic_coating",
+      "name": "Paralytic Coating",
+      "weight": 0.2,
+      "category": "consumables",
+      "icon": "⚡",
+      "coatingStatusId": "paralysis",
+      "coatingChance": 0.15,
+      "description": "A numbing weapon coating that adds 15% paralysis chance to weapon strikes."
+    },
+    {
+      "id": "throwing_knife",
+      "name": "Throwing Knife",
+      "weight": 0.2,
+      "category": "consumables",
+      "icon": "🗡️",
+      "throwDamage": 12,
+      "throwRangeTiles": 5,
+      "statusId": "bleed",
+      "statusChance": 0.2,
+      "description": "A balanced throwing blade dealing 12 damage with a 20% chance to cause bleeding."
+    },
+    {
+      "id": "throwing_javelin",
+      "name": "Throwing Javelin",
+      "weight": 1.0,
+      "category": "consumables",
+      "icon": "🔱",
+      "throwDamage": 20,
+      "throwRangeTiles": 5,
+      "description": "A heavy thrown spear delivering 20 direct damage at range."
+    },
+    {
+      "id": "sand_pouch",
+      "name": "Sand Pouch",
+      "weight": 0.4,
+      "category": "consumables",
+      "icon": "⏳",
+      "throwDamage": 0,
+      "throwRangeTiles": 5,
+      "aoeRadiusTiles": 1.0,
+      "statusId": "blind",
+      "statusChance": 1.0,
+      "description": "A pouch of abrasive grit that bursts in a 1-tile radius, blinding targets."
+    },
+    {
+      "id": "fire_bomb",
+      "name": "Fire Bomb",
+      "weight": 0.4,
+      "category": "consumables",
+      "icon": "💣",
+      "throwDamage": 18,
+      "throwRangeTiles": 5,
+      "aoeRadiusTiles": 1.5,
+      "statusId": "burn",
+      "statusChance": 1.0,
+      "description": "An explosive flask dealing 18 damage and burning all foes in a 1.5-tile radius."
+    },
+    {
+      "id": "frost_bomb",
+      "name": "Frost Bomb",
+      "weight": 0.4,
+      "category": "consumables",
+      "icon": "❄️",
+      "throwDamage": 14,
+      "throwRangeTiles": 5,
+      "aoeRadiusTiles": 1.5,
+      "statusId": "slow",
+      "statusChance": 1.0,
+      "description": "A freezing chemical flask dealing 14 damage and slowing foes in a 1.5-tile radius."
+    },
+    {
+      "id": "thunder_bomb",
+      "name": "Thunder Bomb",
+      "weight": 0.4,
+      "category": "consumables",
+      "icon": "⚡",
+      "throwDamage": 14,
+      "throwRangeTiles": 5,
+      "aoeRadiusTiles": 1.5,
+      "statusId": "paralysis",
+      "statusChance": 0.5,
+      "description": "A volatile storm jar dealing 14 damage with a 50% chance to paralyze foes in a 1.5-tile radius."
+    },
+    {
+      "id": "bewildering_powder",
+      "name": "Bewildering Powder",
+      "weight": 0.4,
+      "category": "consumables",
+      "icon": "🌀",
+      "throwDamage": 0,
+      "throwRangeTiles": 5,
+      "aoeRadiusTiles": 1.5,
+      "statusId": "confused",
+      "statusChance": 0.6,
+      "description": "A strange hallucinogenic powder that confuses foes in a 1.5-tile radius (60% chance)."
     }
   ]
 }

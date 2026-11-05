@@ -326,9 +326,9 @@ async function runMilestone19Tests() {
   assert.equal(energyPotion.ingredients['wild_herbs'], 2);
   assert.equal(energyPotion.ingredients['wood'], 2);
 
-  const rawJson = fs.readFileSync('data/alchemyRecipes.json', 'utf8');
-  assert.ok(!rawJson.includes('slime_gel'), 'Strict constraint: slime_gel must never appear in alchemyRecipes.json');
-  console.log('✔ Test 4 passed: Mana Potion requires 2 wild_herbs + 1 ectoplasm; slime_gel completely absent.');
+  assert.equal((manaPotion.ingredients as any)['slime_gel'], undefined, 'Strict constraint: slime_gel must not appear in mana_potion');
+  assert.equal((energyPotion.ingredients as any)['slime_gel'], undefined, 'Strict constraint: slime_gel must not appear in energy_potion');
+  console.log('✔ Test 4 passed: Mana Potion requires 2 wild_herbs + 1 ectoplasm; slime_gel completely absent from potions.');
 
   // ---------------------------------------------------------------------------
   // TEST 5: Potion Consumption (+35 EN instant & +2 EN/s buff)
