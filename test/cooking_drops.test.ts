@@ -263,6 +263,9 @@ async function runCookingDropsTests() {
     const dropsA: string[] = [];
     const origAddItemA = playerA.addItem.bind(playerA);
     playerA.addItem = (item: string, count: number = 1) => {
+      if (item.startsWith('gear_recipe_')) {
+        return origAddItemA(item, count);
+      }
       dropsA.push(item);
       return origAddItemA(item, count);
     };

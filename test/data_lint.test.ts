@@ -313,5 +313,61 @@ for (const enemy of enemiesData.enemies) {
 }
 console.log('✓ PASS: All Food & Cooking data integrity rules verified.\n');
 
+// 11. Gear Rarity & Drop-Only Gear integrity (Milestone 7)
+console.log('11. Checking Gear Rarity & Drop-Only Gear integrity...');
+const gearRarityData = JSON.parse(fs.readFileSync(path.join(rootDir, 'data/gearRarity.json'), 'utf8'));
+const armorsData = JSON.parse(fs.readFileSync(path.join(rootDir, 'data/armors.json'), 'utf8'));
+const bsData = JSON.parse(fs.readFileSync(path.join(rootDir, 'data/blacksmithRecipes.json'), 'utf8'));
+const asData = JSON.parse(fs.readFileSync(path.join(rootDir, 'data/armorsmithRecipes.json'), 'utf8'));
+const byData = JSON.parse(fs.readFileSync(path.join(rootDir, 'data/bowyerRecipes.json'), 'utf8'));
+
+const expectedTiers = ['common', 'uncommon', 'rare', 'very_rare', 'mythical', 'legendary'];
+assert.strictEqual(gearRarityData.rarities.length, 6, 'Must define exactly 6 rarity tiers');
+for (const tierId of expectedTiers) {
+  const t = gearRarityData.rarities.find((r: any) => r.id === tierId);
+  assert.ok(t, `Tier "${tierId}" must exist in gearRarity.json`);
+  assert.ok(t.colour && t.colour.startsWith('#'), `Tier "${tierId}" must have hex colour`);
+}
+
+const expectedPieces = [
+  'gravewardens_blade', 'boneguard_cap', 'cryptstalker_bow', 'ossuary_plate',
+  'wardens_cleaver', 'spidersilk_vestment', 'deepwater_katana', 'orcbreaker_mace',
+  'delvers_crossbow', 'colossus_halberd', 'ember_fangs', 'cinderguard_helm',
+  'ashen_lance', 'magmaheart_pendant', 'tyrants_greatblade', 'rimewalker_hood',
+  'glacier_chakrams', 'yetihide_armor', 'frostfang_longbow', 'sovereigns_pike',
+  'worldsplitter', 'everwinter_plate', 'dawnbreaker', 'heart_of_winter'
+];
+assert.strictEqual(expectedPieces.length, 24, 'Must verify all 24 drop-only rarity pieces');
+
+const allWeaponsList = weaponsData.weapons;
+const allArmorsList = armorsData.armors;
+const allRecipesList = [...bsData.recipes, ...asData.recipes, ...byData.recipes];
+
+for (const pId of expectedPieces) {
+  const weapon = allWeaponsList.find((w: any) => w.id === pId);
+  const armor = allArmorsList.find((a: any) => a.id === pId);
+  const piece = weapon || armor;
+  assert.ok(piece, `Piece "${pId}" must exist in weapons.json or armors.json`);
+  assert.ok(piece.rarity && expectedTiers.includes(piece.rarity), `Piece "${pId}" must have valid rarity`);
+  assert.ok(piece.description && piece.description.length > 5, `Piece "${pId}" must have an evocative description`);
+
+  const recipe = allRecipesList.find((r: any) => r.id === pId);
+  assert.ok(recipe, `Recipe "${pId}" must exist in blacksmithing, armorsmithing, or bowyer recipes`);
+  assert.strictEqual(recipe.requiresScroll, true, `Recipe "${pId}" must have requiresScroll: true`);
+  assert.strictEqual(recipe.rarity, piece.rarity, `Recipe "${pId}" rarity must match piece rarity`);
+
+  const scrollId = 'gear_recipe_' + pId;
+  const scroll = itemMap.get(scrollId);
+  assert.ok(scroll, `Scroll "${scrollId}" must exist in items.json`);
+  assert.strictEqual(scroll.category, 'recipes', `Scroll "${scrollId}" category must be "recipes"`);
+  assert.strictEqual(scroll.teachesRecipeId, pId, `Scroll "${scrollId}" teachesRecipeId must be "${pId}"`);
+  assert.strictEqual(scroll.rarity, piece.rarity, `Scroll "${scrollId}" rarity must match piece rarity`);
+  assert.strictEqual(scroll.weight, 0.1, `Scroll "${scrollId}" weight must be 0.1`);
+}
+
+assert.ok(gearRarityData.bandByRegion, 'Must define bandByRegion in gearRarity.json');
+assert.ok(gearRarityData.drops, 'Must define drops block in gearRarity.json');
+console.log('✓ PASS: All 24 rarity gear pieces, station recipes, scrolls, and rarity tiers verified.\n');
+
 console.log('🎉 ALL DATA LINT CHECKS PASSED PERFECTLY!');
 

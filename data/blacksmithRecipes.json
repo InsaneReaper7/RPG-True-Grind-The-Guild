@@ -656,6 +656,201 @@
       },
       "expGranted": 50,
       "description": "Solid iron-tipped javelins shaped for piercing ranged power."
+    },
+    {
+      "id": "gravewardens_blade",
+      "name": "Gravewarden's Blade",
+      "requiredLevel": 2,
+      "ingredients": {
+        "ore": 5,
+        "wood": 2
+      },
+      "expGranted": 30,
+      "description": "An etched ceremonial blade recovered from crypt sentinels, balancing swift strikes with razor lethality.",
+      "requiresScroll": true,
+      "rarity": "uncommon",
+      "resultWeaponId": "gravewardens_blade"
+    },
+    {
+      "id": "wardens_cleaver",
+      "name": "Warden's Cleaver",
+      "requiredLevel": 8,
+      "ingredients": {
+        "ore": 18,
+        "wood": 8
+      },
+      "expGranted": 88,
+      "description": "A colossal executioner blade forged to crush through tomb trespassers.",
+      "requiresScroll": true,
+      "rarity": "very_rare",
+      "resultWeaponId": "wardens_cleaver"
+    },
+    {
+      "id": "deepwater_katana",
+      "name": "Deepwater Katana",
+      "requiredLevel": 7,
+      "ingredients": {
+        "ore": 9,
+        "wood": 3,
+        "steel_scrap": 3
+      },
+      "expGranted": 75,
+      "description": "A curved steel blade folded in saline subterranean depths, swift as underwater currents.",
+      "requiresScroll": true,
+      "rarity": "uncommon",
+      "resultWeaponId": "deepwater_katana"
+    },
+    {
+      "id": "orcbreaker_mace",
+      "name": "Orcbreaker Mace",
+      "requiredLevel": 9,
+      "ingredients": {
+        "ore": 12,
+        "steel_scrap": 6,
+        "orc_heavy_hide": 2
+      },
+      "expGranted": 100,
+      "description": "Flanged war mace engineered to shatter heavy hide and orcish vanguard defenses.",
+      "requiresScroll": true,
+      "rarity": "rare",
+      "resultWeaponId": "orcbreaker_mace"
+    },
+    {
+      "id": "delvers_crossbow",
+      "name": "Delver's Crossbow",
+      "requiredLevel": 9,
+      "ingredients": {
+        "ore": 14,
+        "wood": 6,
+        "steel_scrap": 4
+      },
+      "expGranted": 100,
+      "description": "A reinforced steel winch crossbow crafted for subterranean tunnel clearers.",
+      "requiresScroll": true,
+      "rarity": "rare",
+      "resultWeaponId": "delvers_crossbow"
+    },
+    {
+      "id": "colossus_halberd",
+      "name": "Colossus Halberd",
+      "requiredLevel": 11,
+      "ingredients": {
+        "ore": 20,
+        "wood": 10,
+        "steel_scrap": 8
+      },
+      "expGranted": 150,
+      "description": "A massive polearm bearing the crushing momentum of the abyssal colossus.",
+      "requiresScroll": true,
+      "rarity": "very_rare",
+      "resultWeaponId": "colossus_halberd"
+    },
+    {
+      "id": "ember_fangs",
+      "name": "Ember Fangs",
+      "requiredLevel": 10,
+      "ingredients": {
+        "ore": 9,
+        "steel_scrap": 2,
+        "void_plate": 2
+      },
+      "expGranted": 113,
+      "description": "Twin curved daggers radiating heat from the caldera smoldering magma veins.",
+      "requiresScroll": true,
+      "rarity": "uncommon",
+      "resultWeaponId": "ember_fangs"
+    },
+    {
+      "id": "ashen_lance",
+      "name": "Ashen Lance",
+      "requiredLevel": 12,
+      "ingredients": {
+        "ore": 16,
+        "wood": 4,
+        "steel_scrap": 4,
+        "void_plate": 2
+      },
+      "expGranted": 160,
+      "description": "A spear tipped with volcanic void alloy that leaves charred trails with every thrust.",
+      "requiresScroll": true,
+      "rarity": "rare",
+      "resultWeaponId": "ashen_lance"
+    },
+    {
+      "id": "tyrants_greatblade",
+      "name": "Tyrant's Greatblade",
+      "requiredLevel": 14,
+      "ingredients": {
+        "ore": 25,
+        "steel_scrap": 8,
+        "void_plate": 3
+      },
+      "expGranted": 225,
+      "description": "A terrible two-handed blade drenched in the smoldering wrath of the Magma Tyrant.",
+      "requiresScroll": true,
+      "rarity": "very_rare",
+      "resultWeaponId": "tyrants_greatblade"
+    },
+    {
+      "id": "glacier_chakrams",
+      "name": "Glacier Chakrams",
+      "requiredLevel": 14,
+      "ingredients": {
+        "ore": 9,
+        "steel_scrap": 3,
+        "glacial_essence": 2
+      },
+      "expGranted": 165,
+      "description": "Crystalline throwing rings carved from sub-zero ice sheets, slicing through freezing air.",
+      "requiresScroll": true,
+      "rarity": "uncommon",
+      "resultWeaponId": "glacier_chakrams"
+    },
+    {
+      "id": "sovereigns_pike",
+      "name": "Sovereign's Pike",
+      "requiredLevel": 18,
+      "ingredients": {
+        "ore": 20,
+        "wood": 5,
+        "steel_scrap": 8,
+        "glacial_essence": 3
+      },
+      "expGranted": 275,
+      "description": "A royal frost spear wielded by the crystalline guard of the sovereign deep.",
+      "requiresScroll": true,
+      "rarity": "very_rare",
+      "resultWeaponId": "sovereigns_pike"
+    },
+    {
+      "id": "worldsplitter",
+      "name": "Worldsplitter",
+      "requiredLevel": 22,
+      "ingredients": {
+        "ore": 30,
+        "steel_scrap": 12,
+        "glacial_essence": 6
+      },
+      "expGranted": 330,
+      "description": "A mythic colossus sword capable of rending tectonic glaciers with a single swing.",
+      "requiresScroll": true,
+      "rarity": "mythical",
+      "resultWeaponId": "worldsplitter"
+    },
+    {
+      "id": "dawnbreaker",
+      "name": "Dawnbreaker",
+      "requiredLevel": 26,
+      "ingredients": {
+        "ore": 28,
+        "steel_scrap": 11,
+        "glacial_essence": 4
+      },
+      "expGranted": 385,
+      "description": "A legendary longsword heralding the first rays of dawn through eternal winter.",
+      "requiresScroll": true,
+      "rarity": "legendary",
+      "resultWeaponId": "dawnbreaker"
     }
   ]
 }

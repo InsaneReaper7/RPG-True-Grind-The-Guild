@@ -129,3 +129,57 @@ Introduced in GDD §8.1 to complete the caster equipment loop and provide condui
 ### Salvage
 - All 7 magical staves can be dismantled at the Magical Weapon Station via `CraftingSystem.applySalvage(..., 'enchanting')`.
 - Returns 50% of ingredients (Plain Staff rolled at 50%, Magical Crystal rolled at 50%) and awards 50% recipe EXP (60 Enchanting EXP + 60 Apprentice Enchanter EXP if unlocked). Plain staves remain salvageable at the Bowyer Station.
+
+---
+
+## 7. Drop-Only Rarity Gear & Recipe Scrolls (Milestone 7)
+
+Introduced per GDD §11.4 ("Recipe drop tiers: Common, Uncommon, Rare, Very Rare, Mythical, Legendary, sourced from monster kills, boss kills, chest loot"). Existing gear recipes count as **Common** and remain untouched. Higher rarity tiers represent new, named, drop-only gear discovered exclusively via recipe scrolls (`gear_recipe_<id>`). Higher rarity awards bigger stats only (no affixes).
+
+### Rarity Tiers Overview (`data/gearRarity.json`)
+
+| Rarity ID | Name | Display Colour | Stat Multiplier | Ingredient Multiplier | Level Offset | Source / Drops |
+| :--- | :--- | :--- | :---: | :---: | :---: | :--- |
+| `common` | Common | `#e5e7eb` | 1.00× | 1.0× | — | Existing standard craftable gear recipes |
+| `uncommon` | Uncommon | `#22c55e` | 1.10× | 1.5× | +2 | Common monster kills (0.5%), Locked Boxes (8%) |
+| `rare` | Rare | `#3b82f6` | 1.20× | 2.0× | +4 | Elite / Epic kills (5%), Locked Boxes (3%) |
+| `very_rare` | Very Rare | `#a855f7` | 1.30× | 2.5× | +6 | Boss kills (15%) |
+| `mythical` | Mythical | `#f97316` | 1.45× | 3.0× | +10 | Magma Tyrant (3%), Glacial Sovereign (5%) |
+| `legendary` | Legendary | `#facc15` | 1.60× | 3.5× | +14 | Glacial Sovereign (1%) |
+
+*Note: Multipliers are reference formulas; exact final stats, ingredients, and required levels are authored directly in data and never re-derived at runtime.*
+
+### The 24 Named Drop-Only Pieces
+
+| Band | Rarity | Piece ID | Display Name | Type / Slot | Base Item | Upgraded Stats | Station & Req Level | Recipe Ingredients |
+| :---: | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| 1 | Uncommon | `gravewardens_blade` | Gravewarden's Blade | 1H Sword | `short_swords` | Base Dmg: 5 → **5.5** | Blacksmithing Lv 2 | 5 ore, 2 wood |
+| 1 | Uncommon | `boneguard_cap` | Boneguard Cap | Helmet | `leather_cap` | HP: 15 → **16**, AR: 3 → **3** | Armorsmithing Lv 2 | 3 wolf_pelt |
+| 1 | Rare | `cryptstalker_bow` | Cryptstalker Bow | Bow | `bows` | Base Dmg: 6 → **7.2** | Bowyer Lv 4 | 8 wood, 2 bowstring |
+| 1 | Rare | `ossuary_plate` | Ossuary Plate | Body Armor | `iron_plate_armor` | HP: 25 → **30**, AR: 16 → **19** | Armorsmithing Lv 4 | 12 ore, 4 wood, 4 bone |
+| 1 | Very Rare | `wardens_cleaver` | Warden's Cleaver | 2H Sword | `longsword_2h` | Base Dmg: 12 → **15.6** | Blacksmithing Lv 8 | 18 ore, 8 wood |
+| 2 | Uncommon | `spidersilk_vestment` | Spidersilk Vestment | Body Armor | `silk_robe` | HP: 50 → **55**, AR: 7 → **8** | Armorsmithing Lv 8 | 8 spider_silk, 3 wolf_pelt |
+| 2 | Uncommon | `deepwater_katana` | Deepwater Katana | Katana | `steel_katana` | Base Dmg: 8 → **8.8** | Blacksmithing Lv 7 | 9 ore, 3 wood, 3 steel_scrap |
+| 2 | Rare | `orcbreaker_mace` | Orcbreaker Mace | Mace | `heavy_mace` | Base Dmg: 10 → **12.0** | Blacksmithing Lv 9 | 12 ore, 6 steel_scrap, 2 orc_heavy_hide |
+| 2 | Rare | `delvers_crossbow` | Delver's Crossbow | Crossbow | `heavy_crossbow` | Base Dmg: 12 → **14.4** | Blacksmithing Lv 9 | 14 ore, 6 wood, 4 steel_scrap |
+| 2 | Very Rare | `colossus_halberd` | Colossus Halberd | 2H Halberd | `steel_halberd` | Base Dmg: 15 → **19.5** | Blacksmithing Lv 11 | 20 ore, 10 wood, 8 steel_scrap |
+| 3 | Uncommon | `ember_fangs` | Ember Fangs | Daggers | `void_daggers` | Base Dmg: 5 → **5.5** | Blacksmithing Lv 10 | 9 ore, 2 steel_scrap, 2 void_plate |
+| 3 | Uncommon | `cinderguard_helm` | Cinderguard Helm | Helmet | `void_greathelm` | HP: 60 → **66**, AR: 14 → **15** | Armorsmithing Lv 10 | 2 void_plate, 3 steel_scrap, 6 ore |
+| 3 | Rare | `ashen_lance` | Ashen Lance | 1H Spear | `void_spear` | Base Dmg: 12 → **14.4** | Blacksmithing Lv 12 | 16 ore, 4 wood, 4 steel_scrap, 2 void_plate |
+| 3 | Rare | `magmaheart_pendant` | Magmaheart Pendant | Necklace | `void_pendant` | HP: 40 → **48** | Armorsmithing Lv 12 | 2 void_essence, 4 bone, 2 bowstring |
+| 3 | Very Rare | `tyrants_greatblade` | Tyrant's Greatblade | 2H Sword | `void_greatsword` | Base Dmg: 20 → **26.0** | Blacksmithing Lv 14 | 25 ore, 8 steel_scrap, 3 void_plate |
+| 4 | Uncommon | `rimewalker_hood` | Rimewalker Hood | Helmet | `frost_hood` | HP: 90 → **99**, AR: 6 → **7** | Armorsmithing Lv 14 | 3 wolf_pelt, 3 ectoplasm, 2 glacial_essence |
+| 4 | Uncommon | `glacier_chakrams` | Glacier Chakrams | Throwing | `frost_throwing_weapons` | Base Dmg: 7 → **7.7** | Blacksmithing Lv 14 | 9 ore, 3 steel_scrap, 2 glacial_essence |
+| 4 | Rare | `yetihide_armor` | Yetihide Armor | Body Armor | `frost_leather_armor` | HP: 150 → **180**, AR: 17 → **20** | Armorsmithing Lv 16 | 8 wolf_pelt, 4 orc_heavy_hide, 4 glacial_essence |
+| 4 | Rare | `frostfang_longbow` | Frostfang Longbow | Bow | `frost_bow` | Base Dmg: 16 → **19.2** | Bowyer Lv 16 | 16 wood, 4 wolf_claw, 4 bone, 2 glacial_essence |
+| 4 | Very Rare | `sovereigns_pike` | Sovereign's Pike | 1H Spear | `frost_spear` | Base Dmg: 15 → **19.5** | Blacksmithing Lv 18 | 20 ore, 5 wood, 8 steel_scrap, 3 glacial_essence |
+| 4 | Mythical | `worldsplitter` | Worldsplitter | 2H Sword | `frost_greatsword` | Base Dmg: 25 → **36.2** | Blacksmithing Lv 22 | 30 ore, 12 steel_scrap, 6 glacial_essence |
+| 4 | Mythical | `everwinter_plate` | Everwinter Plate | Body Armor | `frost_plate_armor` | HP: 150 → **218**, AR: 30 → **44** | Armorsmithing Lv 22 | 21 ore, 12 steel_scrap, 6 glacial_essence, 3 rime_carapace |
+| 4 | Legendary | `dawnbreaker` | Dawnbreaker | 1H Sword | `frost_longsword` | Base Dmg: 15 → **24.0** | Blacksmithing Lv 26 | 28 ore, 11 steel_scrap, 4 glacial_essence |
+| 4 | Legendary | `heart_of_winter` | Heart of Winter | Ring | `sovereign_signet` | HP: 60 → **96** | Armorsmithing Lv 26 | 4 eye_of_the_sovereign, 7 glacial_essence |
+
+### Recipe Learning & Duplicate Rules
+- **Learning:** Players consume a recipe scroll (`gear_recipe_<pieceId>`) directly via the visible **Learn** button in the Personal Inventory row (`.party-item-learn-btn`) or the Stockpile modal (`.stockpile-learn-btn`).
+- **Station Visibility:** Station recipes requiring scrolls (`requiresScroll: true`) are completely hidden until learned — even when "Show All" toggle is enabled. Once learned, the recipe appears in its rarity tier colour with normal level gating.
+- **Duplicate Scrolls:** Learning an already-known recipe consumes the scroll and grants **+50 EXP** to the relevant station crafting profession (Blacksmithing, Armorsmithing, or Bowyer), notifying the player with an informative toast in the recipe's rarity colour.
+

@@ -61,12 +61,14 @@ import type {
   CraftingRanksData,
   LuckConfig,
   AlchemyConfig,
-  ThrowingConfig
+  ThrowingConfig,
+  GearRarityData,
+  GearRarityTierDef
 } from '../types/game.ts';
 import { HiddenSkillSystem } from '../systems/HiddenSkillSystem.ts';
-import { resolveGearStats, getBaseItemId, isCraftingClass, resolvePartyGearSource, getPartyGearOwnership, canEquipBowDaggerSidearm } from './gearResolver.ts';
+import { resolveGearStats, getBaseItemId, isCraftingClass, resolvePartyGearSource, getPartyGearOwnership, canEquipBowDaggerSidearm, getRarityDisplay } from './gearResolver.ts';
 
-export { resolveGearStats, getBaseItemId, isCraftingClass, resolvePartyGearSource, getPartyGearOwnership, canEquipBowDaggerSidearm };
+export { resolveGearStats, getBaseItemId, isCraftingClass, resolvePartyGearSource, getPartyGearOwnership, canEquipBowDaggerSidearm, getRarityDisplay };
 
 export class DataLoader {
   private static instance: DataLoader;
@@ -106,6 +108,7 @@ export class DataLoader {
   private stonemasonRecipesData?: StonemasonRecipesData;
   private alchemyConfigData?: AlchemyConfig;
   private throwingConfigData?: ThrowingConfig;
+  private gearRarityData?: GearRarityData;
 
   private constructor() {}
 
@@ -117,7 +120,7 @@ export class DataLoader {
   }
 
   public async loadAll(): Promise<void> {
-    const [player, weapons, classes, enemies, skills, statusEffects, buildables, rooms, hiddenSkills, skillBooks, researchTree, alchemyRecipes, cookingRecipes, blacksmithRecipes, bowyerRecipes, armors, armorsmithRecipes, foods, moodEffects, dungeon, gathering, items, recruits, craftingConfig, introNarrative, enchantingRecipes, statGains, crops, cookingConfig, campConfig, craftingRanks, luckConfig, woodworkingRecipes, stonemasonRecipes, alchemyConfig, throwingConfig] = await Promise.all([
+    const [player, weapons, classes, enemies, skills, statusEffects, buildables, rooms, hiddenSkills, skillBooks, researchTree, alchemyRecipes, cookingRecipes, blacksmithRecipes, bowyerRecipes, armors, armorsmithRecipes, foods, moodEffects, dungeon, gathering, items, recruits, craftingConfig, introNarrative, enchantingRecipes, statGains, crops, cookingConfig, campConfig, craftingRanks, luckConfig, woodworkingRecipes, stonemasonRecipes, alchemyConfig, throwingConfig, gearRarity] = await Promise.all([
       fetch('/data/player.json').then((res) => res.json()),
       fetch('/data/weapons.json').then((res) => res.json()),
       fetch('/data/classes.json').then((res) => res.json()),
@@ -153,7 +156,8 @@ export class DataLoader {
       fetch('/data/woodworkingRecipes.json').then((res) => res.json()).catch(() => null),
       fetch('/data/stonemasonRecipes.json').then((res) => res.json()).catch(() => null),
       fetch('/data/alchemyConfig.json').then((res) => res.json()).catch(() => null),
-      fetch('/data/throwingConfig.json').then((res) => res.json()).catch(() => null)
+      fetch('/data/throwingConfig.json').then((res) => res.json()).catch(() => null),
+      fetch('/data/gearRarity.json').then((res) => res.json()).catch(() => null)
     ]);
 
     this.playerData = player as PlayerData;
@@ -209,6 +213,9 @@ export class DataLoader {
     }
     if (throwingConfig) {
       this.throwingConfigData = throwingConfig as ThrowingConfig;
+    }
+    if (gearRarity) {
+      this.gearRarityData = gearRarity as GearRarityData;
     }
     if (craftingConfig) {
       this.craftingConfigData = craftingConfig as CraftingConfigData;
@@ -389,6 +396,76 @@ export class DataLoader {
       depthScalingOffset: 10
     }
   ];
+
+  public static readonly DEFAULT_GEAR_RARITY: GearRarityData = {
+    duplicateScrollExp: 50,
+    rarities: [
+      { id: 'common', name: 'Common', colour: '#e5e7eb', statMultiplier: 1.0, ingredientMultiplier: 1.0, levelOffset: 0 },
+      { id: 'uncommon', name: 'Uncommon', colour: '#22c55e', statMultiplier: 1.10, ingredientMultiplier: 1.5, levelOffset: 2 },
+      { id: 'rare', name: 'Rare', colour: '#3b82f6', statMultiplier: 1.20, ingredientMultiplier: 2.0, levelOffset: 4 },
+      { id: 'very_rare', name: 'Very Rare', colour: '#a855f7', statMultiplier: 1.30, ingredientMultiplier: 2.5, levelOffset: 6 },
+      { id: 'mythical', name: 'Mythical', colour: '#f97316', statMultiplier: 1.45, ingredientMultiplier: 3.0, levelOffset: 10 },
+      { id: 'legendary', name: 'Legendary', colour: '#facc15', statMultiplier: 1.60, ingredientMultiplier: 3.5, levelOffset: 14 }
+    ],
+    bandByRegion: {
+      ancient_crypts: 1,
+      abyssal_depths: 2,
+      infernal_caldera: 3,
+      glacial_caverns: 4
+    },
+    drops: {
+      commonKill: { rarity: 'uncommon', chance: 0.005 },
+      eliteEpicKill: { rarity: 'rare', chance: 0.05 },
+      bossKill: { rarity: 'very_rare', chance: 0.15 },
+      lockedBox: [
+        { rarity: 'uncommon', chance: 0.08 },
+        { rarity: 'rare', chance: 0.03 }
+      ],
+      enemySpecific: [
+        { enemyId: 'magma_tyrant', rarity: 'mythical', chance: 0.03 },
+        { enemyId: 'glacial_sovereign', rarity: 'mythical', chance: 0.05 },
+        { enemyId: 'glacial_sovereign', rarity: 'legendary', chance: 0.01 }
+      ]
+    }
+  };
+
+  public getGearRarityData(): GearRarityData {
+    return this.gearRarityData || DataLoader.DEFAULT_GEAR_RARITY;
+  }
+
+  public setGearRarityData(data: GearRarityData): void {
+    this.gearRarityData = data;
+  }
+
+  public getGearRarity(id?: string): GearRarityTierDef | undefined {
+    const data = this.getGearRarityData();
+    const targetId = id || 'common';
+    return data.rarities.find((r) => r.id === targetId);
+  }
+
+  public getAllGearRarities(): GearRarityTierDef[] {
+    return this.getGearRarityData().rarities;
+  }
+
+  public getBandForRegion(regionId: string): number {
+    const data = this.getGearRarityData();
+    return data.bandByRegion[regionId] ?? 1;
+  }
+
+  public getBandForFloor(floorNumber: number): number {
+    const region = this.getRegionForFloor(floorNumber);
+    return this.getBandForRegion(region.id);
+  }
+
+  public getGearPiecesForRarity(rarity: string, band?: number): (WeaponDef | ArmorDef)[] {
+    const weapons = this.getAllWeapons();
+    const armors = this.getAllArmors();
+    const allGear: (WeaponDef | ArmorDef)[] = [...weapons, ...armors];
+    if (rarity === 'mythical' || rarity === 'legendary') {
+      return allGear.filter((g) => g.rarity === rarity);
+    }
+    return allGear.filter((g) => g.rarity === rarity && g.band === band);
+  }
 
   public getRegionForFloor(floorNumber: number): DungeonRegionDef {
     const config = this.getDungeonConfig();

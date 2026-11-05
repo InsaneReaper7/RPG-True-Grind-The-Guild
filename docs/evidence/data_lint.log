@@ -28,4 +28,7 @@
 10. Checking Food & Cooking data integrity...
 ✓ PASS: All Food & Cooking data integrity rules verified.
 
+11. Checking Gear Rarity & Drop-Only Gear integrity...
+✓ PASS: All 24 rarity gear pieces, station recipes, scrolls, and rarity tiers verified.
+
 🎉 ALL DATA LINT CHECKS PASSED PERFECTLY!

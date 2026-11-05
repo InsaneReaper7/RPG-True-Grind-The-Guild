@@ -27,6 +27,29 @@ export function getBaseItemId(idOrInstanceId: string): string {
   return idOrInstanceId;
 }
 
+export function getRarityDisplay(itemDefOrRarity: any): { name: string; colour: string } {
+  let rarityId: string | undefined;
+  if (!itemDefOrRarity) {
+    rarityId = 'common';
+  } else if (typeof itemDefOrRarity === 'string') {
+    const dataLoader = DataLoader.getInstance();
+    const asRarity = dataLoader.getGearRarity(itemDefOrRarity);
+    if (asRarity) {
+      rarityId = itemDefOrRarity;
+    } else {
+      const itemDef = dataLoader.getItem(itemDefOrRarity) || dataLoader.getWeapon(itemDefOrRarity) || dataLoader.getArmor(itemDefOrRarity);
+      rarityId = itemDef?.rarity || 'common';
+    }
+  } else if (typeof itemDefOrRarity === 'object') {
+    rarityId = itemDefOrRarity.rarity;
+  }
+  const rarityDef = DataLoader.getInstance().getGearRarity(rarityId || 'common');
+  return {
+    name: rarityDef?.name ?? 'Common',
+    colour: rarityDef?.colour ?? '#e5e7eb'
+  };
+}
+
 export function resolveGearStats(idOrInstanceId: string): {
   weapon?: WeaponDef;
   armor?: ArmorDef;

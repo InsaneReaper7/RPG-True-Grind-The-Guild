@@ -5,12 +5,13 @@ import { Enemy } from '../entities/Enemy.ts';
 import { Pathfinder } from '../utils/Pathfinder.ts';
 import { ProgressionSystem } from './ProgressionSystem.ts';
 import { DataLoader } from '../utils/DataLoader.ts';
-import type { GridPos, WeaponDef, PassiveImbuementDef, PassiveImbuementProcDef, EnemyDef, SkillDef } from '../types/game.ts';
+import type { GridPos, WeaponDef, ArmorDef, PassiveImbuementDef, PassiveImbuementProcDef, EnemyDef, SkillDef } from '../types/game.ts';
 import { HiddenSkillSystem, type CombatContext, type CounterattackResult } from './HiddenSkillSystem.ts';
 import { GameState } from './GameState.ts';
 import { SkillSystem } from './SkillSystem.ts';
 import { EventLog } from './EventLog.ts';
 import { CookingSystem } from './CookingSystem.ts';
+import { createPassiveRng } from '../utils/rng.ts';
 
 export class CombatSystem {
   public static readonly DEBUG_AI: boolean = false;
@@ -30,19 +31,11 @@ export class CombatSystem {
   private wasInCombat: boolean = false;
   private materialLootRng?: () => number;
   private cookingLootRng?: () => number;
-  private static createPassiveRng(seed: number): () => number {
-    let s = seed >>> 0;
-    return () => {
-      s |= 0;
-      s = (s + 0x6d2b79f5) | 0;
-      let t = Math.imul(s ^ (s >>> 15), 1 | s);
-      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-    };
-  }
+  public static createPassiveRng = createPassiveRng;
   private luckRng: () => number = CombatSystem.createPassiveRng(0x7f4a7c15);
   private combatPassiveRng: () => number = CombatSystem.createPassiveRng(0x9e3779b9);
   private statusRng: () => number = CombatSystem.createPassiveRng(0x85ebca6b);
+  private recipeDropRng: () => number = CombatSystem.createPassiveRng(0x517cc1b7);
   private enableCookingDrops: boolean = true;
   private combatStartTimeMs: number = 0;
   private damageDealtByMember: Map<string, number> = new Map();
@@ -104,6 +97,14 @@ export class CombatSystem {
 
   public getStatusRng(): () => number {
     return this.statusRng;
+  }
+
+  public setRecipeDropRng(rng: (() => number) | undefined): void {
+    this.recipeDropRng = rng ?? CombatSystem.createPassiveRng(0x517cc1b7);
+  }
+
+  public getRecipeDropRng(): () => number {
+    return this.recipeDropRng;
   }
 
   public setEnableCookingDrops(enabled: boolean): void {
@@ -3562,6 +3563,81 @@ export class CombatSystem {
             const scrollDef = DataLoader.getInstance().getItem(chosenScroll);
             const scrollName = scrollDef?.name || chosenScroll.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
             this.createFloatingText(target.x, target.y - 75, `📜 ${scrollName}!`, '#a855f7');
+          }
+        }
+      }
+
+      // Milestone 7: Drop-only rarity gear recipe scrolls (Uncommon -> Legendary)
+      const dataLoader = DataLoader.getInstance();
+      const rarityData = dataLoader.getGearRarityData();
+      if (rarityData && rarityData.drops) {
+        const rRng = this.recipeDropRng;
+        const currentFloor = GameState.getInstance().getDungeonFloorCount() || 1;
+        const currentRegion = dataLoader.getRegionForFloor(currentFloor);
+        const band = dataLoader.getBandForRegion(currentRegion.id);
+        const dropsCfg = rarityData.drops;
+        const enemyTier = target.enemyData.tier;
+        const enemyIsBoss = enemyTier === 'boss';
+
+        const dispenseScroll = (piece: WeaponDef | ArmorDef) => {
+          const scrollId = 'gear_recipe_' + piece.id;
+          if (recipient) {
+            recipient.addItem(scrollId, 1);
+          } else {
+            gameState.addItem(scrollId, 1);
+          }
+          const pieceRarity = piece.rarity || 'uncommon';
+          const rDef = dataLoader.getGearRarity(pieceRarity);
+          const rName = rDef?.name || 'Uncommon';
+          const rColour = rDef?.colour || '#22c55e';
+          const msg = `📜 ${rName} recipe: ${piece.name}!`;
+          this.createFloatingText(target.x, target.y - 75, msg, rColour);
+          const hud = (this.scene as any)?.hud || (globalThis as any).activeHUD;
+          if (hud && typeof hud.showToast === 'function') {
+            hud.showToast(msg, 'success', 3500, rColour);
+          }
+        };
+
+        if (enemyIsBoss) {
+          // Boss kill roll
+          if (rRng() < dropsCfg.bossKill.chance) {
+            const pool = dataLoader.getGearPiecesForRarity(dropsCfg.bossKill.rarity, band);
+            if (pool.length > 0) {
+              const picked = pool[Math.floor(rRng() * pool.length)];
+              dispenseScroll(picked);
+            }
+          }
+          // Boss enemy-specific rolls (e.g. magma_tyrant, glacial_sovereign)
+          if (dropsCfg.enemySpecific && dropsCfg.enemySpecific.length > 0) {
+            for (const spec of dropsCfg.enemySpecific) {
+              if (spec.enemyId === target.enemyData.id) {
+                if (rRng() < spec.chance) {
+                  const pool = dataLoader.getGearPiecesForRarity(spec.rarity);
+                  if (pool.length > 0) {
+                    const picked = pool[Math.floor(rRng() * pool.length)];
+                    dispenseScroll(picked);
+                  }
+                }
+              }
+            }
+          }
+        } else if (enemyTier === 'elite' || enemyTier === 'epic') {
+          // Elite / Epic roll
+          if (rRng() < dropsCfg.eliteEpicKill.chance) {
+            const pool = dataLoader.getGearPiecesForRarity(dropsCfg.eliteEpicKill.rarity, band);
+            if (pool.length > 0) {
+              const picked = pool[Math.floor(rRng() * pool.length)];
+              dispenseScroll(picked);
+            }
+          }
+        } else {
+          // Common kill roll: Anything that isn't elite, epic, or boss, including elemental
+          if (rRng() < dropsCfg.commonKill.chance) {
+            const pool = dataLoader.getGearPiecesForRarity(dropsCfg.commonKill.rarity, band);
+            if (pool.length > 0) {
+              const picked = pool[Math.floor(rRng() * pool.length)];
+              dispenseScroll(picked);
+            }
           }
         }
       }

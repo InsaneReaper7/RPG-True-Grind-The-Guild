@@ -1,0 +1,100 @@
+{
+  "duplicateScrollExp": 50,
+  "rarities": [
+    {
+      "id": "common",
+      "name": "Common",
+      "colour": "#e5e7eb",
+      "statMultiplier": 1.0,
+      "ingredientMultiplier": 1.0,
+      "levelOffset": 0
+    },
+    {
+      "id": "uncommon",
+      "name": "Uncommon",
+      "colour": "#22c55e",
+      "statMultiplier": 1.10,
+      "ingredientMultiplier": 1.5,
+      "levelOffset": 2
+    },
+    {
+      "id": "rare",
+      "name": "Rare",
+      "colour": "#3b82f6",
+      "statMultiplier": 1.20,
+      "ingredientMultiplier": 2.0,
+      "levelOffset": 4
+    },
+    {
+      "id": "very_rare",
+      "name": "Very Rare",
+      "colour": "#a855f7",
+      "statMultiplier": 1.30,
+      "ingredientMultiplier": 2.5,
+      "levelOffset": 6
+    },
+    {
+      "id": "mythical",
+      "name": "Mythical",
+      "colour": "#f97316",
+      "statMultiplier": 1.45,
+      "ingredientMultiplier": 3.0,
+      "levelOffset": 10
+    },
+    {
+      "id": "legendary",
+      "name": "Legendary",
+      "colour": "#facc15",
+      "statMultiplier": 1.60,
+      "ingredientMultiplier": 3.5,
+      "levelOffset": 14
+    }
+  ],
+  "bandByRegion": {
+    "ancient_crypts": 1,
+    "abyssal_depths": 2,
+    "infernal_caldera": 3,
+    "glacial_caverns": 4
+  },
+  "drops": {
+    "commonKill": {
+      "rarity": "uncommon",
+      "chance": 0.005
+    },
+    "eliteEpicKill": {
+      "rarity": "rare",
+      "chance": 0.05
+    },
+    "bossKill": {
+      "rarity": "very_rare",
+      "chance": 0.15
+    },
+    "lockedBox": [
+      {
+        "rarity": "uncommon",
+        "chance": 0.08
+      },
+      {
+        "rarity": "rare",
+        "chance": 0.03
+      }
+    ],
+    "enemySpecific": [
+      {
+        "enemyId": "magma_tyrant",
+        "rarity": "mythical",
+        "chance": 0.03
+      },
+      {
+        "enemyId": "glacial_sovereign",
+        "rarity": "mythical",
+        "chance": 0.05
+      },
+      {
+        "enemyId": "glacial_sovereign",
+        "rarity": "legendary",
+        "chance": 0.01
+      }
+    ]
+  }
+}

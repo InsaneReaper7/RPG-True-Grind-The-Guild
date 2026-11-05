@@ -46,6 +46,7 @@ export class GameState {
   private discoveredCookingRecipes: Set<string> = new Set();
   private triedCookingSignatures: Set<string> = new Set();
   private discoveredAlchemyRecipes: Set<string> = new Set(['bandage', 'antidote', 'energy_potion', 'escape_stone']);
+  private knownGearRecipes: Set<string> = new Set();
   private encounteredEnemies: Set<string> = new Set();
   private discoveredProficiencies: Set<string> = new Set();
   private discoveredStatusEffects: Set<string> = new Set();
@@ -64,6 +65,7 @@ export class GameState {
   private lastSaveError: string | null = null;
   private dungeonFloorCount: number = 0;
   private lifetimeDungeonFloorCount: number = 0;
+  private lastDungeonFloorVisited: number = 0;
 
   // Milestone: Tutorial & Onboarding
   private tutorialStep: number = 0;
@@ -957,6 +959,39 @@ export class GameState {
     return Array.from(this.discoveredAlchemyRecipes);
   }
 
+  // --- Gear Recipe Discovery (Milestone 7: Drop-Only Rarity Gear) ---
+  public learnGearRecipe(recipeId: string): boolean {
+    if (!this.knownGearRecipes.has(recipeId)) {
+      this.knownGearRecipes.add(recipeId);
+      if (this.snapshot) {
+        this.snapshot.knownGearRecipes = Array.from(this.knownGearRecipes);
+      }
+      this.addResearchPoints(GameState.DISCOVERY_RP_BONUS);
+      console.log(`[Gear] 📜 Gear recipe learned: '${recipeId}'! (+${GameState.DISCOVERY_RP_BONUS} RP)`);
+      return true;
+    }
+    return false;
+  }
+
+  public isGearRecipeKnown(recipeId: string): boolean {
+    return this.knownGearRecipes.has(recipeId);
+  }
+
+  public getKnownGearRecipes(): string[] {
+    return Array.from(this.knownGearRecipes);
+  }
+
+  public getLastDungeonFloorVisited(): number {
+    return this.lastDungeonFloorVisited;
+  }
+
+  public setLastDungeonFloorVisited(count: number): void {
+    this.lastDungeonFloorVisited = Math.max(0, count);
+    if (this.snapshot) {
+      this.snapshot.lastDungeonFloorVisited = this.lastDungeonFloorVisited;
+    }
+  }
+
   // --- Knowledge Base Discoveries (Milestone 50) ---
   public recordEnemyEncountered(enemyId: string): boolean {
     if (!this.encounteredEnemies.has(enemyId)) {
@@ -1606,6 +1641,8 @@ export class GameState {
         party: [...this.partySnapshots],
         discoveredCookingRecipes: Array.from(this.discoveredCookingRecipes),
         discoveredAlchemyRecipes: Array.from(this.discoveredAlchemyRecipes),
+        knownGearRecipes: Array.from(this.knownGearRecipes),
+        lastDungeonFloorVisited: this.lastDungeonFloorVisited,
         dungeonFloorCount: this.dungeonFloorCount,
         lifetimeDungeonFloorCount: this.lifetimeDungeonFloorCount,
         encounteredEnemies: Array.from(this.encounteredEnemies),
@@ -1697,6 +1734,8 @@ export class GameState {
       party: [...this.partySnapshots],
       discoveredCookingRecipes: Array.from(this.discoveredCookingRecipes),
       discoveredAlchemyRecipes: Array.from(this.discoveredAlchemyRecipes),
+      knownGearRecipes: Array.from(this.knownGearRecipes),
+      lastDungeonFloorVisited: this.lastDungeonFloorVisited,
       dungeonFloorCount: this.dungeonFloorCount,
       lifetimeDungeonFloorCount: this.lifetimeDungeonFloorCount,
       encounteredEnemies: Array.from(this.encounteredEnemies),
@@ -1802,6 +1841,12 @@ export class GameState {
     }
     if (snap.discoveredAlchemyRecipes) {
       this.discoveredAlchemyRecipes = new Set(snap.discoveredAlchemyRecipes);
+    }
+    if (snap.knownGearRecipes) {
+      this.knownGearRecipes = new Set(snap.knownGearRecipes);
+    }
+    if (snap.lastDungeonFloorVisited !== undefined) {
+      this.lastDungeonFloorVisited = snap.lastDungeonFloorVisited;
     }
     if (snap.encounteredEnemies) {
       this.encounteredEnemies = new Set(snap.encounteredEnemies);
@@ -1981,6 +2026,12 @@ export class GameState {
   }
 
   public resetDungeonFloorCount(): void {
+    if (this.dungeonFloorCount > 0) {
+      this.lastDungeonFloorVisited = this.dungeonFloorCount;
+      if (this.snapshot) {
+        this.snapshot.lastDungeonFloorVisited = this.lastDungeonFloorVisited;
+      }
+    }
     this.dungeonFloorCount = 0;
     if (this.snapshot) {
       this.snapshot.dungeonFloorCount = 0;
@@ -1989,6 +2040,12 @@ export class GameState {
 
   public setDungeonFloorCount(count: number): void {
     this.dungeonFloorCount = count;
+    if (count > 0) {
+      this.lastDungeonFloorVisited = count;
+      if (this.snapshot) {
+        this.snapshot.lastDungeonFloorVisited = this.lastDungeonFloorVisited;
+      }
+    }
     if (count > this.lifetimeDungeonFloorCount) {
       this.lifetimeDungeonFloorCount = count;
     }
@@ -2007,9 +2064,13 @@ export class GameState {
   public incrementDungeonFloorCount(): number {
     this.dungeonFloorCount++;
     this.lifetimeDungeonFloorCount++;
+    if (this.dungeonFloorCount > 0) {
+      this.lastDungeonFloorVisited = this.dungeonFloorCount;
+    }
     if (this.snapshot) {
       this.snapshot.dungeonFloorCount = this.dungeonFloorCount;
       this.snapshot.lifetimeDungeonFloorCount = this.lifetimeDungeonFloorCount;
+      this.snapshot.lastDungeonFloorVisited = this.lastDungeonFloorVisited;
     }
     return this.dungeonFloorCount;
   }
@@ -2210,6 +2271,8 @@ export class GameState {
       this.snapshot.party = [...this.partySnapshots];
       this.snapshot.discoveredCookingRecipes = Array.from(this.discoveredCookingRecipes);
       this.snapshot.discoveredAlchemyRecipes = Array.from(this.discoveredAlchemyRecipes);
+      this.snapshot.knownGearRecipes = Array.from(this.knownGearRecipes);
+      this.snapshot.lastDungeonFloorVisited = this.lastDungeonFloorVisited;
       this.snapshot.dungeonFloorCount = this.dungeonFloorCount;
       this.snapshot.lifetimeDungeonFloorCount = this.lifetimeDungeonFloorCount;
       this.snapshot.encounteredEnemies = Array.from(this.encounteredEnemies);
@@ -2506,6 +2569,8 @@ export class GameState {
     this.bookLearnedSkills = new Set(snap.bookLearnedSkills ?? []);
     this.discoveredCookingRecipes = new Set(snap.discoveredCookingRecipes ?? []);
     this.discoveredAlchemyRecipes = new Set(snap.discoveredAlchemyRecipes ?? ['bandage', 'antidote', 'energy_potion', 'escape_stone']);
+    this.knownGearRecipes = new Set(snap.knownGearRecipes ?? []);
+    this.lastDungeonFloorVisited = snap.lastDungeonFloorVisited ?? 0;
     this.encounteredEnemies = new Set(snap.encounteredEnemies ?? []);
     this.discoveredProficiencies = new Set(snap.discoveredProficiencies ?? []);
     this.discoveredStatusEffects = new Set(snap.discoveredStatusEffects ?? []);
@@ -2586,6 +2651,8 @@ export class GameState {
     this.bookLearnedSkills = new Set();
     this.discoveredCookingRecipes = new Set();
     this.discoveredAlchemyRecipes = new Set(['bandage', 'antidote', 'energy_potion', 'escape_stone']);
+    this.knownGearRecipes = new Set();
+    this.lastDungeonFloorVisited = 0;
     this.encounteredEnemies = new Set();
     this.discoveredProficiencies = new Set();
     this.discoveredStatusEffects = new Set();

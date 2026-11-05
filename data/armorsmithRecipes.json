@@ -387,6 +387,138 @@
       },
       "expGranted": 120,
       "description": "Set the legendary Eye of the Sovereign into an ornate signet ring of extraordinary durability."
+    },
+    {
+      "id": "boneguard_cap",
+      "name": "Boneguard Cap",
+      "requiredLevel": 2,
+      "ingredients": {
+        "wolf_pelt": 3
+      },
+      "expGranted": 38,
+      "description": "Reinforced with splints of hardened crypt bone for resilient head protection.",
+      "requiresScroll": true,
+      "rarity": "uncommon",
+      "resultArmorId": "boneguard_cap"
+    },
+    {
+      "id": "ossuary_plate",
+      "name": "Ossuary Plate",
+      "requiredLevel": 4,
+      "ingredients": {
+        "ore": 12,
+        "wood": 4,
+        "bone": 4
+      },
+      "expGranted": 80,
+      "description": "Heavy iron cuirass reinforced with interlocking skeletal plates from the deep ossuary.",
+      "requiresScroll": true,
+      "rarity": "rare",
+      "resultArmorId": "ossuary_plate"
+    },
+    {
+      "id": "spidersilk_vestment",
+      "name": "Spidersilk Vestment",
+      "requiredLevel": 8,
+      "ingredients": {
+        "spider_silk": 8,
+        "wolf_pelt": 3
+      },
+      "expGranted": 113,
+      "description": "A dense weave of abyssal spider silk that absorbs crushing deep-sea impacts.",
+      "requiresScroll": true,
+      "rarity": "uncommon",
+      "resultArmorId": "spidersilk_vestment"
+    },
+    {
+      "id": "cinderguard_helm",
+      "name": "Cinderguard Helm",
+      "requiredLevel": 10,
+      "ingredients": {
+        "void_plate": 2,
+        "steel_scrap": 3,
+        "ore": 6
+      },
+      "expGranted": 120,
+      "description": "Heavy void-plate helm tempered in volcanic ash to withstand searing blasts.",
+      "requiresScroll": true,
+      "rarity": "uncommon",
+      "resultArmorId": "cinderguard_helm"
+    },
+    {
+      "id": "magmaheart_pendant",
+      "name": "Magmaheart Pendant",
+      "requiredLevel": 12,
+      "ingredients": {
+        "void_essence": 2,
+        "bone": 4,
+        "bowstring": 2
+      },
+      "expGranted": 160,
+      "description": "A glowing volcanic talisman thrumming with the geothermal pulse of the caldera.",
+      "requiresScroll": true,
+      "rarity": "rare",
+      "resultArmorId": "magmaheart_pendant"
+    },
+    {
+      "id": "rimewalker_hood",
+      "name": "Rimewalker Hood",
+      "requiredLevel": 14,
+      "ingredients": {
+        "wolf_pelt": 3,
+        "ectoplasm": 3,
+        "glacial_essence": 2
+      },
+      "expGranted": 165,
+      "description": "A cowl woven with glacial essence to protect against bone-chilling cavern winds.",
+      "requiresScroll": true,
+      "rarity": "uncommon",
+      "resultArmorId": "rimewalker_hood"
+    },
+    {
+      "id": "yetihide_armor",
+      "name": "Yetihide Armor",
+      "requiredLevel": 16,
+      "ingredients": {
+        "wolf_pelt": 8,
+        "orc_heavy_hide": 4,
+        "glacial_essence": 4
+      },
+      "expGranted": 220,
+      "description": "Rugged leather cuirass lined with thick frost-beast hides for extreme protection.",
+      "requiresScroll": true,
+      "rarity": "rare",
+      "resultArmorId": "yetihide_armor"
+    },
+    {
+      "id": "everwinter_plate",
+      "name": "Everwinter Plate",
+      "requiredLevel": 22,
+      "ingredients": {
+        "ore": 21,
+        "steel_scrap": 12,
+        "glacial_essence": 6,
+        "rime_carapace": 3
+      },
+      "expGranted": 360,
+      "description": "Impenetrable plate armor bound with rime carapaces and eternal permafrost.",
+      "requiresScroll": true,
+      "rarity": "mythical",
+      "resultArmorId": "everwinter_plate"
+    },
+    {
+      "id": "heart_of_winter",
+      "name": "Heart of Winter",
+      "requiredLevel": 26,
+      "ingredients": {
+        "eye_of_the_sovereign": 4,
+        "glacial_essence": 7
+      },
+      "expGranted": 420,
+      "description": "The legendary crystalline signet enclosing the living eye and sovereign heart of winter.",
+      "requiresScroll": true,
+      "rarity": "legendary",
+      "resultArmorId": "heart_of_winter"
     }
   ]
 }

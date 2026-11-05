@@ -80,6 +80,8 @@ export interface WeaponDef {
   crafterName?: string;
   bonusPercent?: number;
   baseItemId?: string;
+  rarity?: string;
+  band?: number;
 }
 
 export interface StartingKitDef {
@@ -426,6 +428,8 @@ export interface PlayerSnapshot {
   quickSlots?: (string | null)[];
   worldFlags?: Record<string, boolean>;
   grovePityCounter?: number;
+  knownGearRecipes?: string[];
+  lastDungeonFloorVisited?: number;
 }
 
 export interface SaveMetadata {
@@ -570,6 +574,8 @@ export interface BlacksmithRecipeDef {
   ingredients: Record<string, number>;
   expGranted: number;
   description: string;
+  requiresScroll?: boolean;
+  rarity?: string;
 }
 
 export interface ElementalSchoolConfig {
@@ -623,6 +629,8 @@ export interface BowyerRecipeDef {
   ingredients: Record<string, number>;
   expGranted: number;
   description: string;
+  requiresScroll?: boolean;
+  rarity?: string;
 }
 
 export interface BowyerRecipesData {
@@ -640,6 +648,8 @@ export interface WoodworkingRecipeDef {
   ingredients: Record<string, number>;
   expGranted: number;
   description: string;
+  requiresScroll?: boolean;
+  rarity?: string;
 }
 
 export interface WoodworkingRecipesData {
@@ -655,6 +665,8 @@ export interface StonemasonRecipeDef {
   ingredients: Record<string, number>;
   expGranted: number;
   description: string;
+  requiresScroll?: boolean;
+  rarity?: string;
 }
 
 export interface StonemasonRecipesData {
@@ -687,6 +699,8 @@ export interface ArmorDef {
   crafterName?: string;
   bonusPercent?: number;
   baseItemId?: string;
+  rarity?: string;
+  band?: number;
 }
 
 export function getArmorHpSplit(armor: ArmorDef): { mainHpBonus: number; criticalHpBonus: number } {
@@ -723,6 +737,8 @@ export interface ArmorsmithRecipeDef {
   ingredients: Record<string, number>;
   expGranted: number;
   description: string;
+  requiresScroll?: boolean;
+  rarity?: string;
 }
 
 export interface ArmorsmithRecipesData {
@@ -1108,6 +1124,43 @@ export interface ItemDef {
   aoeRadiusTiles?: number;
   statusId?: string;
   statusChance?: number;
+  teachesRecipeId?: string;
+  rarity?: string;
+}
+
+export interface GearRarityTierDef {
+  id: string;
+  name: string;
+  colour: string;
+  statMultiplier: number;
+  ingredientMultiplier: number;
+  levelOffset: number;
+}
+
+export interface GearRarityDropEntry {
+  rarity: string;
+  chance: number;
+}
+
+export interface GearRarityEnemySpecificDropEntry {
+  enemyId: string;
+  rarity: string;
+  chance: number;
+}
+
+export interface GearRarityDropsDef {
+  commonKill: GearRarityDropEntry;
+  eliteEpicKill: GearRarityDropEntry;
+  bossKill: GearRarityDropEntry;
+  lockedBox: GearRarityDropEntry[];
+  enemySpecific: GearRarityEnemySpecificDropEntry[];
+}
+
+export interface GearRarityData {
+  duplicateScrollExp: number;
+  rarities: GearRarityTierDef[];
+  bandByRegion: Record<string, number>;
+  drops: GearRarityDropsDef;
 }
 
 export interface AlchemyConfig {

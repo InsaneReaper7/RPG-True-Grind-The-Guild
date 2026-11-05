@@ -102,6 +102,36 @@
       },
       "expGranted": 110,
       "description": "A recurve war bow braced with wolf claws and glacial essence. Shoots freezing arrows over long distances."
+    },
+    {
+      "id": "cryptstalker_bow",
+      "name": "Cryptstalker Bow",
+      "requiredLevel": 4,
+      "ingredients": {
+        "wood": 8,
+        "bowstring": 2
+      },
+      "expGranted": 50,
+      "description": "A silent yew longbow favored by crypt stalkers for piercing ancient horrors.",
+      "requiresScroll": true,
+      "rarity": "rare",
+      "resultWeaponId": "cryptstalker_bow"
+    },
+    {
+      "id": "frostfang_longbow",
+      "name": "Frostfang Longbow",
+      "requiredLevel": 16,
+      "ingredients": {
+        "wood": 16,
+        "wolf_claw": 4,
+        "bone": 4,
+        "glacial_essence": 2
+      },
+      "expGranted": 220,
+      "description": "A mastercrafted composite bow strung with chilled beast sinew, launching arrows with glacial force.",
+      "requiresScroll": true,
+      "rarity": "rare",
+      "resultWeaponId": "frostfang_longbow"
     }
   ]
 }

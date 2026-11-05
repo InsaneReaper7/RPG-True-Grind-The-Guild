@@ -198,17 +198,19 @@ async function runTests() {
   const maceRecipe = bsRecipes.find(r => r.id === 'mace');
   assert.equal(maceRecipe?.requiredLevel, 0, 'Mace recipe must be requiredLevel 0 (Band 1)');
   for (const r of bsRecipes) {
-    if (r.resultItemId) continue; // Skip non-gear building materials (Milestone 5)
+    if (r.resultItemId || r.requiresScroll) continue; // Skip non-gear building materials & drop-only scroll recipes
     assert.ok((r.requiredLevel ?? 0) <= 12, `Blacksmith recipe ${r.id} must be in bands 1-4 (0-12)`);
   }
 
   const armRecipes = dl.getArmorsmithRecipes();
   for (const r of armRecipes) {
+    if (r.requiresScroll) continue; // Skip drop-only scroll recipes
     assert.ok((r.requiredLevel ?? 0) <= 12, `Armorsmith recipe ${r.id} must be in bands 1-4 (0-12)`);
   }
 
   const bowRecipes = dl.getBowyerRecipes();
   for (const r of bowRecipes) {
+    if (r.requiresScroll) continue; // Skip drop-only scroll recipes
     assert.ok((r.requiredLevel ?? 0) <= 12, `Bowyer recipe ${r.id} must be in bands 1-4 (0-12)`);
   }
 

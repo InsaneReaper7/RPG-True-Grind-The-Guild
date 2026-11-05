@@ -12,7 +12,7 @@ import { TutorialSystem, type TutorialStepDef } from '../systems/TutorialSystem.
 import { CraftingSystem } from '../systems/CraftingSystem.ts';
 import { ConsumableSystem } from '../systems/ConsumableSystem.ts';
 import { StatGainsSystem } from '../systems/StatGainsSystem.ts';
-import { isCraftingClass, getBaseItemId, canEquipBowDaggerSidearm, resolvePartyGearSource, getPartyGearOwnership } from '../utils/gearResolver.ts';
+import { isCraftingClass, getBaseItemId, canEquipBowDaggerSidearm, resolvePartyGearSource, getPartyGearOwnership, getRarityDisplay } from '../utils/gearResolver.ts';
 import { isTypingInTextField, disableGameKeyboard, enableGameKeyboard, initKeyboardGuards } from '../utils/inputGuard.ts';
 import { formatRequirement } from '../utils/formatRequirement.ts';
 import { EventLog } from '../systems/EventLog.ts';
@@ -948,6 +948,19 @@ export class HUD {
           if (memberIdx >= 0 && memberIdx < this.currentParty.length && itemId) {
             const member = this.currentParty[memberIdx];
             const res = ConsumableSystem.getInstance().useConsumable(itemId, { preferredTarget: member, fromMember: member, scene: (this as any).scene });
+            if (res.success) {
+              this.showToast(res.message, 'success');
+              this.renderStockpileModal(true);
+              this.renderQuickBar();
+            } else {
+              this.showToast(res.message, 'warn');
+            }
+          }
+        } else if (target.classList.contains('stockpile-learn-btn') || target.closest('.stockpile-learn-btn')) {
+          const btn = (target.classList.contains('stockpile-learn-btn') ? target : target.closest('.stockpile-learn-btn')) as HTMLButtonElement;
+          const scrollId = btn.dataset.scrollId;
+          if (scrollId) {
+            const res = ConsumableSystem.getInstance().useConsumable(scrollId, { fromStockpile: true, scene: (this as any).scene });
             if (res.success) {
               this.showToast(res.message, 'success');
               this.renderStockpileModal(true);
@@ -4918,12 +4931,14 @@ export class HUD {
         </div>
         `;
       } else {
+        const itemRarityDisplay = getRarityDisplay(item.id);
+        const cardTitleColor = itemRarityDisplay.colour !== '#e5e7eb' ? itemRarityDisplay.colour : '#f3f4f6';
         html += `
         <div class="inventory-item-card" draggable="${canDrag ? 'true' : 'false'}" data-item-id="${item.id}" data-item-type="${item.type}" data-item-slot="${item.slot}" style="${!canDrag ? 'opacity: 0.55; cursor: not-allowed;' : ''}">
           <div style="display: flex; align-items: center; gap: 6px;">
             <span style="font-size: 14px;">${item.icon}</span>
             <div>
-              <div style="font-size: 11px; font-weight: 600; color: #f3f4f6;">${item.name}</div>
+              <div style="font-size: 11px; font-weight: 600; color: ${cardTitleColor};">${item.name}</div>
               <div style="font-size: 9px; color: #9ca3af;">${item.displaySlot} · <span style="color: #86efac;">${item.statText}</span></div>
             </div>
           </div>
@@ -7598,6 +7613,9 @@ export class HUD {
       let visibleCount = 0;
 
       for (const recipe of recipes) {
+        if (recipe.requiresScroll && !gameState.isGearRecipeKnown(recipe.id)) {
+          continue;
+        }
         const isLevelUnlocked = bsStat.level >= (recipe.requiredLevel ?? 0);
         if (isCraftableOnly && !isLevelUnlocked) {
           continue;
@@ -7643,10 +7661,13 @@ export class HUD {
           actionBtnHtml = `<button type="button" class="btn-action" style="background: #334155; border-color: #64748b; font-size: 11px; padding: 6px 14px; font-weight: bold; color: #f8fafc;" data-forge-recipe="${recipe.id}">${btnLabel}</button>`;
         }
 
+        const recipeRarityDisplay = recipe.rarity ? dataLoader.getGearRarity(recipe.rarity) : undefined;
+        const recipeTitleColor = recipeRarityDisplay ? recipeRarityDisplay.colour : (isLevelUnlocked ? '#f8fafc' : '#9ca3af');
+
         card.innerHTML = `
           <div style="flex: 1; padding-right: 12px;">
             <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 2px;">
-              <span style="font-weight: bold; color: ${isLevelUnlocked ? '#f8fafc' : '#9ca3af'}; font-size: 13px;">${recipe.name}</span>
+              <span style="font-weight: bold; color: ${recipeTitleColor}; font-size: 13px;">${recipe.name}</span>
               <span style="font-size: 10px; color: #cbd5e1; background: rgba(148, 163, 184, 0.2); padding: 2px 6px; border-radius: 4px;">+${recipe.expGranted} EXP</span>
               <span style="font-size: 10px; color: #94a3b8;">${weaponStats}</span>
             </div>
@@ -7759,6 +7780,9 @@ export class HUD {
       let visibleCount = 0;
 
       for (const recipe of recipes) {
+        if (recipe.requiresScroll && !gameState.isGearRecipeKnown(recipe.id)) {
+          continue;
+        }
         const isLevelUnlocked = asStat.level >= (recipe.requiredLevel ?? 0);
         if (isCraftableOnly && !isLevelUnlocked) {
           continue;
@@ -7801,10 +7825,13 @@ export class HUD {
           actionBtnHtml = `<button type="button" class="btn-action" style="background: #365314; border-color: #65a30d; font-size: 11px; padding: 6px 14px; font-weight: bold; color: #f7fee7;" data-armor-recipe="${recipe.id}">🛡️ Craft Armor</button>`;
         }
 
+        const recipeRarityDisplay = recipe.rarity ? dataLoader.getGearRarity(recipe.rarity) : undefined;
+        const recipeTitleColor = recipeRarityDisplay ? recipeRarityDisplay.colour : (isLevelUnlocked ? '#f8fafc' : '#9ca3af');
+
         card.innerHTML = `
           <div style="flex: 1; padding-right: 12px;">
             <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 2px;">
-              <span style="font-weight: bold; color: ${isLevelUnlocked ? '#f8fafc' : '#9ca3af'}; font-size: 13px;">${recipe.name}</span>
+              <span style="font-weight: bold; color: ${recipeTitleColor}; font-size: 13px;">${recipe.name}</span>
               <span style="font-size: 10px; color: #bef264; background: rgba(163, 230, 53, 0.2); padding: 2px 6px; border-radius: 4px;">+${recipe.expGranted} EXP</span>
               <span style="font-size: 10px; color: #86efac;">${armorStats}</span>
             </div>
@@ -7917,6 +7944,9 @@ export class HUD {
       let visibleCount = 0;
 
       for (const recipe of recipes) {
+        if (recipe.requiresScroll && !gameState.isGearRecipeKnown(recipe.id)) {
+          continue;
+        }
         const isLevelUnlocked = byStat.level >= (recipe.requiredLevel ?? 0);
         if (isCraftableOnly && !isLevelUnlocked) {
           continue;
@@ -7950,10 +7980,13 @@ export class HUD {
           actionBtnHtml = `<button type="button" class="btn-action" style="background: #78350f; border-color: #b45309; font-size: 11px; padding: 6px 14px; font-weight: bold; color: #fef3c7;" data-bow-recipe="${recipe.id}">🏹 Craft Bow</button>`;
         }
 
+        const recipeRarityDisplay = recipe.rarity ? dataLoader.getGearRarity(recipe.rarity) : undefined;
+        const recipeTitleColor = recipeRarityDisplay ? recipeRarityDisplay.colour : (isLevelUnlocked ? '#f8fafc' : '#9ca3af');
+
         card.innerHTML = `
           <div style="flex: 1; padding-right: 12px;">
             <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 2px;">
-              <span style="font-weight: bold; color: ${isLevelUnlocked ? '#f8fafc' : '#9ca3af'}; font-size: 13px;">${recipe.name}</span>
+              <span style="font-weight: bold; color: ${recipeTitleColor}; font-size: 13px;">${recipe.name}</span>
               <span style="font-size: 10px; color: #fde68a; background: rgba(245, 158, 11, 0.2); padding: 2px 6px; border-radius: 4px;">+${recipe.expGranted} EXP</span>
               <span style="font-size: 10px; color: #fbbf24;">${weaponStats}</span>
             </div>
@@ -9172,20 +9205,35 @@ export class HUD {
           eatBtnHtml = `<button class="stockpile-eat-btn btn-action" ${disabledAttr} data-food-id="${item.id}" type="button" title="${btnTitle}" style="${btnStyle}">Eat</button>`;
         }
 
+        const isScroll = item.id.startsWith('gear_recipe_') || Boolean((item as any).teachesRecipeId);
+        let learnBtnHtml = '';
+        if (isScroll && isHeld) {
+          const check = ConsumableSystem.getInstance().canUseConsumable(item.id, { fromStockpile: true });
+          const disabledAttr = check.canUse ? '' : 'disabled';
+          const btnTitle = check.canUse ? 'Learn recipe scroll' : (check.reason || 'Cannot learn');
+          const btnStyle = check.canUse
+            ? 'pointer-events: auto; cursor: pointer; padding: 2px 6px; font-size: 9px; background: #0284c7; border: 1px solid #38bdf8; color: #fff; border-radius: 3px;'
+            : 'pointer-events: auto; padding: 2px 6px; font-size: 9px; background: rgba(75, 85, 99, 0.3); border: 1px solid rgba(75, 85, 99, 0.5); color: #9ca3af; border-radius: 3px; cursor: not-allowed; opacity: 0.6;';
+          learnBtnHtml = `<button class="stockpile-learn-btn btn-action" ${disabledAttr} data-scroll-id="${item.id}" type="button" title="${btnTitle}" style="${btnStyle}">Learn</button>`;
+        }
+
         const isConsumable = catDef.id === 'consumables' || ConsumableSystem.getInstance().isConsumable(item.id);
         const cardTitle = isConsumable ? this.formatConsumableTooltip(item.id) : item.name;
+        const rarityDisplay = getRarityDisplay(item.id);
+        const nameColor = rarityDisplay.colour !== '#e5e7eb' ? `color: ${rarityDisplay.colour};` : '';
 
         html += `
           <div class="stockpile-card ${isHeld ? 'card-held' : 'card-empty'}" data-stockpile-card="${item.id}" title="${cardTitle}">
             <div class="stockpile-card-left">
               <span class="stockpile-card-icon">${item.icon}</span>
               <div class="stockpile-card-info">
-                <span class="stockpile-card-name" title="${cardTitle}">${item.name}</span>
+                <span class="stockpile-card-name" title="${cardTitle}" style="${nameColor}">${item.name}</span>
                 <span class="stockpile-card-cat">${item.id}</span>
               </div>
             </div>
             <div style="display: flex; align-items: center; gap: 6px;">
               ${eatBtnHtml}
+              ${learnBtnHtml}
               <span class="stockpile-card-count ${isHeld ? 'count-positive' : 'count-zero'}" data-stockpile-count-id="${item.id}">
                 ${countStr}
               </span>

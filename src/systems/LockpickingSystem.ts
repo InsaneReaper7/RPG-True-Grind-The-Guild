@@ -4,10 +4,12 @@ import { ProgressionSystem } from './ProgressionSystem.ts';
 import { DataLoader } from '../utils/DataLoader.ts';
 import { ResearchSystem } from './ResearchSystem.ts';
 import { CraftingSystem } from './CraftingSystem.ts';
+import { createPassiveRng } from '../utils/rng.ts';
 import type { LockedBoxReward, LockpickAttemptResult } from '../types/game.ts';
 
 export class LockpickingSystem {
   private static instance: LockpickingSystem;
+  private recipeDropRng: () => number = createPassiveRng(0x517cc1b7);
 
   public static readonly BASE_SUCCESS_RATE = 0.25; // 25% at Level 0
   public static readonly SUCCESS_RATE_PER_LEVEL = 0.0075; // +0.75% per Level (100% at Level 100)
@@ -23,6 +25,14 @@ export class LockpickingSystem {
       LockpickingSystem.instance = new LockpickingSystem();
     }
     return LockpickingSystem.instance;
+  }
+
+  public setRecipeDropRng(rng: (() => number) | undefined): void {
+    this.recipeDropRng = rng ?? createPassiveRng(0x517cc1b7);
+  }
+
+  public getRecipeDropRng(): () => number {
+    return this.recipeDropRng;
   }
 
   /**
@@ -196,7 +206,8 @@ export class LockpickingSystem {
     memberName: string = 'Guild Hero',
     rng: () => number = Math.random,
     playerEntity?: any,
-    luckRng?: () => number
+    luckRng?: () => number,
+    recipeDropRng?: () => number
   ): LockpickAttemptResult {
     const gameState = GameState.getInstance();
 
@@ -372,6 +383,44 @@ export class LockpickingSystem {
               }
             } else {
               gameState.addItem(reward.id, reward.count);
+            }
+          }
+        }
+
+        // Milestone 7: Drop-only rarity gear recipe scrolls from Locked Boxes
+        const rarityData = dataLoader.getGearRarityData();
+        if (rarityData && rarityData.drops && rarityData.drops.lockedBox) {
+          const rRng = recipeDropRng ?? this.recipeDropRng;
+          let effectiveFloor = gameState.getDungeonFloorCount();
+          if (effectiveFloor <= 0 || atOutpost) {
+            effectiveFloor = gameState.getLastDungeonFloorVisited() || 1;
+          }
+          const region = dataLoader.getRegionForFloor(effectiveFloor);
+          const band = dataLoader.getBandForRegion(region.id);
+
+          for (const boxDrop of rarityData.drops.lockedBox) {
+            if (rRng() < boxDrop.chance) {
+              const pool = dataLoader.getGearPiecesForRarity(boxDrop.rarity, band);
+              if (pool.length > 0) {
+                const picked = pool[Math.floor(rRng() * pool.length)];
+                const scrollId = 'gear_recipe_' + picked.id;
+                if (recipient) {
+                  recipient.addItem(scrollId, 1);
+                } else {
+                  gameState.addItem(scrollId, 1);
+                }
+                const rDef = dataLoader.getGearRarity(boxDrop.rarity);
+                const rName = rDef?.name || 'Uncommon';
+                const rColour = rDef?.colour || '#22c55e';
+                const dropMsg = `📜 ${rName} recipe: ${picked.name}!`;
+                if (playerEntity && typeof playerEntity.scene?.createFloatingText === 'function') {
+                  playerEntity.scene.createFloatingText(playerEntity.x, playerEntity.y - 75, dropMsg, rColour);
+                }
+                const hud = (playerEntity?.scene as any)?.hud || (globalThis as any).activeHUD;
+                if (hud && typeof hud.showToast === 'function') {
+                  hud.showToast(dropMsg, 'success', 3500, rColour);
+                }
+              }
             }
           }
         }

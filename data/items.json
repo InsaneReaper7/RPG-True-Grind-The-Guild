@@ -1263,7 +1263,9 @@
       "weight": 0.2,
       "category": "consumables",
       "icon": "🍯",
-      "cures": ["burn"],
+      "cures": [
+        "burn"
+      ],
       "description": "A soothing herbal salve that neutralizes burn and fire afflictions."
     },
     {
@@ -1272,7 +1274,9 @@
       "weight": 0.2,
       "category": "consumables",
       "icon": "💧",
-      "cures": ["blind"],
+      "cures": [
+        "blind"
+      ],
       "description": "A clarifying herbal wash that dispels blindness and clears obscured vision."
     },
     {
@@ -1281,7 +1285,9 @@
       "weight": 0.2,
       "category": "consumables",
       "icon": "🧪",
-      "cures": ["slow"],
+      "cures": [
+        "slow"
+      ],
       "description": "An invigorating tonic that cleanses lethargy and cures movement slow."
     },
     {
@@ -1290,7 +1296,9 @@
       "weight": 0.2,
       "category": "consumables",
       "icon": "🔥",
-      "cures": ["frostbite"],
+      "cures": [
+        "frostbite"
+      ],
       "description": "A fiery infusion that dispels chilling frostbite and restores body warmth."
     },
     {
@@ -1299,7 +1307,9 @@
       "weight": 0.2,
       "category": "consumables",
       "icon": "✨",
-      "cures": ["confused"],
+      "cures": [
+        "confused"
+      ],
       "description": "A mind-focusing elixir that clears mental confusion and disorientation."
     },
     {
@@ -1308,7 +1318,9 @@
       "weight": 0.2,
       "category": "consumables",
       "icon": "⚡",
-      "cures": ["paralysis"],
+      "cures": [
+        "paralysis"
+      ],
       "description": "A stimulating concoction that restores muscle control and cures paralysis."
     },
     {
@@ -1356,7 +1368,7 @@
     {
       "id": "throwing_javelin",
       "name": "Throwing Javelin",
-      "weight": 1.0,
+      "weight": 1,
       "category": "consumables",
       "icon": "🔱",
       "throwDamage": 20,
@@ -1371,9 +1383,9 @@
       "icon": "⏳",
       "throwDamage": 0,
       "throwRangeTiles": 5,
-      "aoeRadiusTiles": 1.0,
+      "aoeRadiusTiles": 1,
       "statusId": "blind",
-      "statusChance": 1.0,
+      "statusChance": 1,
       "description": "A pouch of abrasive grit that bursts in a 1-tile radius, blinding targets."
     },
     {
@@ -1386,7 +1398,7 @@
       "throwRangeTiles": 5,
       "aoeRadiusTiles": 1.5,
       "statusId": "burn",
-      "statusChance": 1.0,
+      "statusChance": 1,
       "description": "An explosive flask dealing 18 damage and burning all foes in a 1.5-tile radius."
     },
     {
@@ -1399,7 +1411,7 @@
       "throwRangeTiles": 5,
       "aoeRadiusTiles": 1.5,
       "statusId": "slow",
-      "statusChance": 1.0,
+      "statusChance": 1,
       "description": "A freezing chemical flask dealing 14 damage and slowing foes in a 1.5-tile radius."
     },
     {
@@ -1427,6 +1439,246 @@
       "statusId": "confused",
       "statusChance": 0.6,
       "description": "A strange hallucinogenic powder that confuses foes in a 1.5-tile radius (60% chance)."
+    },
+    {
+      "id": "gear_recipe_gravewardens_blade",
+      "name": "Recipe: Gravewarden's Blade",
+      "weight": 0.1,
+      "category": "recipes",
+      "teachesRecipeId": "gravewardens_blade",
+      "rarity": "uncommon",
+      "icon": "📜",
+      "description": "A rare crafting scroll detailing the construction of Gravewarden's Blade."
+    },
+    {
+      "id": "gear_recipe_boneguard_cap",
+      "name": "Recipe: Boneguard Cap",
+      "weight": 0.1,
+      "category": "recipes",
+      "teachesRecipeId": "boneguard_cap",
+      "rarity": "uncommon",
+      "icon": "📜",
+      "description": "A rare crafting scroll detailing the construction of Boneguard Cap."
+    },
+    {
+      "id": "gear_recipe_cryptstalker_bow",
+      "name": "Recipe: Cryptstalker Bow",
+      "weight": 0.1,
+      "category": "recipes",
+      "teachesRecipeId": "cryptstalker_bow",
+      "rarity": "rare",
+      "icon": "📜",
+      "description": "A rare crafting scroll detailing the construction of Cryptstalker Bow."
+    },
+    {
+      "id": "gear_recipe_ossuary_plate",
+      "name": "Recipe: Ossuary Plate",
+      "weight": 0.1,
+      "category": "recipes",
+      "teachesRecipeId": "ossuary_plate",
+      "rarity": "rare",
+      "icon": "📜",
+      "description": "A rare crafting scroll detailing the construction of Ossuary Plate."
+    },
+    {
+      "id": "gear_recipe_wardens_cleaver",
+      "name": "Recipe: Warden's Cleaver",
+      "weight": 0.1,
+      "category": "recipes",
+      "teachesRecipeId": "wardens_cleaver",
+      "rarity": "very_rare",
+      "icon": "📜",
+      "description": "A rare crafting scroll detailing the construction of Warden's Cleaver."
+    },
+    {
+      "id": "gear_recipe_spidersilk_vestment",
+      "name": "Recipe: Spidersilk Vestment",
+      "weight": 0.1,
+      "category": "recipes",
+      "teachesRecipeId": "spidersilk_vestment",
+      "rarity": "uncommon",
+      "icon": "📜",
+      "description": "A rare crafting scroll detailing the construction of Spidersilk Vestment."
+    },
+    {
+      "id": "gear_recipe_deepwater_katana",
+      "name": "Recipe: Deepwater Katana",
+      "weight": 0.1,
+      "category": "recipes",
+      "teachesRecipeId": "deepwater_katana",
+      "rarity": "uncommon",
+      "icon": "📜",
+      "description": "A rare crafting scroll detailing the construction of Deepwater Katana."
+    },
+    {
+      "id": "gear_recipe_orcbreaker_mace",
+      "name": "Recipe: Orcbreaker Mace",
+      "weight": 0.1,
+      "category": "recipes",
+      "teachesRecipeId": "orcbreaker_mace",
+      "rarity": "rare",
+      "icon": "📜",
+      "description": "A rare crafting scroll detailing the construction of Orcbreaker Mace."
+    },
+    {
+      "id": "gear_recipe_delvers_crossbow",
+      "name": "Recipe: Delver's Crossbow",
+      "weight": 0.1,
+      "category": "recipes",
+      "teachesRecipeId": "delvers_crossbow",
+      "rarity": "rare",
+      "icon": "📜",
+      "description": "A rare crafting scroll detailing the construction of Delver's Crossbow."
+    },
+    {
+      "id": "gear_recipe_colossus_halberd",
+      "name": "Recipe: Colossus Halberd",
+      "weight": 0.1,
+      "category": "recipes",
+      "teachesRecipeId": "colossus_halberd",
+      "rarity": "very_rare",
+      "icon": "📜",
+      "description": "A rare crafting scroll detailing the construction of Colossus Halberd."
+    },
+    {
+      "id": "gear_recipe_ember_fangs",
+      "name": "Recipe: Ember Fangs",
+      "weight": 0.1,
+      "category": "recipes",
+      "teachesRecipeId": "ember_fangs",
+      "rarity": "uncommon",
+      "icon": "📜",
+      "description": "A rare crafting scroll detailing the construction of Ember Fangs."
+    },
+    {
+      "id": "gear_recipe_cinderguard_helm",
+      "name": "Recipe: Cinderguard Helm",
+      "weight": 0.1,
+      "category": "recipes",
+      "teachesRecipeId": "cinderguard_helm",
+      "rarity": "uncommon",
+      "icon": "📜",
+      "description": "A rare crafting scroll detailing the construction of Cinderguard Helm."
+    },
+    {
+      "id": "gear_recipe_ashen_lance",
+      "name": "Recipe: Ashen Lance",
+      "weight": 0.1,
+      "category": "recipes",
+      "teachesRecipeId": "ashen_lance",
+      "rarity": "rare",
+      "icon": "📜",
+      "description": "A rare crafting scroll detailing the construction of Ashen Lance."
+    },
+    {
+      "id": "gear_recipe_magmaheart_pendant",
+      "name": "Recipe: Magmaheart Pendant",
+      "weight": 0.1,
+      "category": "recipes",
+      "teachesRecipeId": "magmaheart_pendant",
+      "rarity": "rare",
+      "icon": "📜",
+      "description": "A rare crafting scroll detailing the construction of Magmaheart Pendant."
+    },
+    {
+      "id": "gear_recipe_tyrants_greatblade",
+      "name": "Recipe: Tyrant's Greatblade",
+      "weight": 0.1,
+      "category": "recipes",
+      "teachesRecipeId": "tyrants_greatblade",
+      "rarity": "very_rare",
+      "icon": "📜",
+      "description": "A rare crafting scroll detailing the construction of Tyrant's Greatblade."
+    },
+    {
+      "id": "gear_recipe_rimewalker_hood",
+      "name": "Recipe: Rimewalker Hood",
+      "weight": 0.1,
+      "category": "recipes",
+      "teachesRecipeId": "rimewalker_hood",
+      "rarity": "uncommon",
+      "icon": "📜",
+      "description": "A rare crafting scroll detailing the construction of Rimewalker Hood."
+    },
+    {
+      "id": "gear_recipe_glacier_chakrams",
+      "name": "Recipe: Glacier Chakrams",
+      "weight": 0.1,
+      "category": "recipes",
+      "teachesRecipeId": "glacier_chakrams",
+      "rarity": "uncommon",
+      "icon": "📜",
+      "description": "A rare crafting scroll detailing the construction of Glacier Chakrams."
+    },
+    {
+      "id": "gear_recipe_yetihide_armor",
+      "name": "Recipe: Yetihide Armor",
+      "weight": 0.1,
+      "category": "recipes",
+      "teachesRecipeId": "yetihide_armor",
+      "rarity": "rare",
+      "icon": "📜",
+      "description": "A rare crafting scroll detailing the construction of Yetihide Armor."
+    },
+    {
+      "id": "gear_recipe_frostfang_longbow",
+      "name": "Recipe: Frostfang Longbow",
+      "weight": 0.1,
+      "category": "recipes",
+      "teachesRecipeId": "frostfang_longbow",
+      "rarity": "rare",
+      "icon": "📜",
+      "description": "A rare crafting scroll detailing the construction of Frostfang Longbow."
+    },
+    {
+      "id": "gear_recipe_sovereigns_pike",
+      "name": "Recipe: Sovereign's Pike",
+      "weight": 0.1,
+      "category": "recipes",
+      "teachesRecipeId": "sovereigns_pike",
+      "rarity": "very_rare",
+      "icon": "📜",
+      "description": "A rare crafting scroll detailing the construction of Sovereign's Pike."
+    },
+    {
+      "id": "gear_recipe_worldsplitter",
+      "name": "Recipe: Worldsplitter",
+      "weight": 0.1,
+      "category": "recipes",
+      "teachesRecipeId": "worldsplitter",
+      "rarity": "mythical",
+      "icon": "📜",
+      "description": "A rare crafting scroll detailing the construction of Worldsplitter."
+    },
+    {
+      "id": "gear_recipe_everwinter_plate",
+      "name": "Recipe: Everwinter Plate",
+      "weight": 0.1,
+      "category": "recipes",
+      "teachesRecipeId": "everwinter_plate",
+      "rarity": "mythical",
+      "icon": "📜",
+      "description": "A rare crafting scroll detailing the construction of Everwinter Plate."
+    },
+    {
+      "id": "gear_recipe_dawnbreaker",
+      "name": "Recipe: Dawnbreaker",
+      "weight": 0.1,
+      "category": "recipes",
+      "teachesRecipeId": "dawnbreaker",
+      "rarity": "legendary",
+      "icon": "📜",
+      "description": "A rare crafting scroll detailing the construction of Dawnbreaker."
+    },
+    {
+      "id": "gear_recipe_heart_of_winter",
+      "name": "Recipe: Heart of Winter",
+      "weight": 0.1,
+      "category": "recipes",
+      "teachesRecipeId": "heart_of_winter",
+      "rarity": "legendary",
+      "icon": "📜",
+      "description": "A rare crafting scroll detailing the construction of Heart of Winter."
     }
   ]
 }

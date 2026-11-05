@@ -108,6 +108,7 @@ export class ConsumableSystem {
 
   public isConsumable(itemId: string): boolean {
     if (itemId.startsWith('lost_recipe_')) return true;
+    if (itemId.startsWith('gear_recipe_')) return true;
     if (this.isFoodItem(itemId)) return true;
     const knownConsumables = new Set([
       'bandage',
@@ -187,10 +188,10 @@ export class ConsumableSystem {
     return [];
   }
 
-  private showToast(message: string, type: 'info' | 'warn' | 'error' | 'success' = 'warn', duration: number = 2500): void {
-    const hud = (globalThis as any).window?.activeHUD;
+  private showToast(message: string, type: 'info' | 'warn' | 'error' | 'success' = 'warn', duration: number = 2500, customColor?: string): void {
+    const hud = (globalThis as any).window?.activeHUD || (globalThis as any).activeHUD;
     if (hud && typeof hud.showToast === 'function') {
-      hud.showToast(message, type, duration);
+      hud.showToast(message, type, duration, customColor);
     } else {
       console.log(`[ConsumableSystem] [Toast ${type}] ${message}`);
     }
@@ -235,18 +236,20 @@ export class ConsumableSystem {
 
     const stockpileCount = gameState.getItemCount(normalizedId);
 
+    const isScroll = normalizedId.startsWith('gear_recipe_');
+
     if (options?.fromStockpile) {
-      if (!isFood) {
+      if (!isFood && !isScroll) {
         return { canUse: false, reason: 'Stockpile items cannot be used (carried-only)' };
       }
-      if (!isAtOutpost) {
+      if (isFood && !isAtOutpost) {
         return { canUse: false, reason: 'Stockpile food can only be eaten at the Outpost' };
       }
       if (stockpileCount <= 0) {
-        return { canUse: false, reason: 'No food in stockpile' };
+        return { canUse: false, reason: isFood ? 'No food in stockpile' : 'None in stockpile' };
       }
     } else if (totalCarried <= 0) {
-      if (isFood && isAtOutpost && stockpileCount > 0) {
+      if ((isFood || isScroll) && isAtOutpost && stockpileCount > 0) {
         // Can draw from stockpile at Outpost
       } else {
         return { canUse: false, reason: 'None carried' };
@@ -254,6 +257,8 @@ export class ConsumableSystem {
     }
 
     switch (normalizedId) {
+      case normalizedId.startsWith('gear_recipe_') ? normalizedId : '___never___':
+      case normalizedId.startsWith('gear_recipe_') ? normalizedId : '___never___':
       case normalizedId.startsWith('lost_recipe_') ? normalizedId : '___never___': {
         return { canUse: true, target: leader };
       }
@@ -362,6 +367,7 @@ export class ConsumableSystem {
         return { canUse: true, target };
       }
 
+      case normalizedId.startsWith('gear_recipe_') ? normalizedId : '___never___':
       case normalizedId.startsWith('lost_recipe_') ? normalizedId : '___never___': {
         return { canUse: true, target: leader };
       }
@@ -572,6 +578,63 @@ export class ConsumableSystem {
     const target = check.target || leader;
 
     switch (normalizedId) {
+      case normalizedId.startsWith('gear_recipe_') ? normalizedId : '___never___': {
+        const gameState = GameState.getInstance();
+        const isAtOutpost = leader && typeof leader.isAtOutpost === 'function' ? leader.isAtOutpost() : false;
+        let consumed = false;
+        if (options?.fromStockpile) {
+          consumed = gameState.consumeItem(normalizedId, 1);
+        } else {
+          consumed = this.consumeItemFromParty(normalizedId, target, party, options?.fromMember);
+          if (!consumed && isAtOutpost && gameState.getItemCount(normalizedId) > 0) {
+            consumed = gameState.consumeItem(normalizedId, 1);
+          }
+        }
+        if (!consumed) {
+          const msg = options?.fromStockpile ? 'No scroll in stockpile!' : 'No scroll carried by party!';
+          this.showToast(msg, 'warn');
+          return { success: false, message: msg };
+        }
+
+        const dataLoader = DataLoader.getInstance();
+        const pieceId = normalizedId.replace(/^gear_recipe_/, '');
+        const pieceDef = dataLoader.getWeapon(pieceId) || dataLoader.getArmor(pieceId);
+        const bsRecipe = dataLoader.getBlacksmithRecipe(pieceId);
+        const asRecipe = dataLoader.getArmorsmithRecipe(pieceId);
+        const byRecipe = dataLoader.getBowyerRecipe(pieceId);
+        const recipe = bsRecipe || asRecipe || byRecipe;
+
+        const pieceName = pieceDef?.name || recipe?.name || pieceId.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+        const rarityId = pieceDef?.rarity || recipe?.rarity || 'uncommon';
+        const rarityDef = dataLoader.getGearRarity(rarityId);
+        const rarityName = rarityDef?.name || 'Uncommon';
+        const rarityColour = rarityDef?.colour || '#22c55e';
+
+        const isAlreadyKnown = gameState.isGearRecipeKnown(pieceId);
+
+        if (isAlreadyKnown) {
+          const dupExp = dataLoader.getGearRarityData().duplicateScrollExp || 50;
+          let stationProf = 'blacksmithing';
+          let stationDisplayName = 'Blacksmithing';
+          if (byRecipe) {
+            stationProf = 'bowyer';
+            stationDisplayName = 'Bowyer';
+          } else if (asRecipe) {
+            stationProf = 'armorsmithing';
+            stationDisplayName = 'Armorsmithing';
+          }
+          target.progression?.addProficiencyExp(stationProf, dupExp);
+          const msg = `📜 Duplicate recipe understood: ${pieceName}! (+${dupExp} ${stationDisplayName} EXP)`;
+          this.showToast(msg, 'info', 3500, rarityColour);
+          return { success: true, message: msg };
+        }
+
+        gameState.learnGearRecipe(pieceId);
+        const msg = `📜 Learned ${rarityName} recipe: ${pieceName}`;
+        this.showToast(msg, 'success', 3500, rarityColour);
+        return { success: true, message: msg };
+      }
+
       case normalizedId.startsWith('lost_recipe_') ? normalizedId : '___never___': {
         const consumed = this.consumeItemFromParty(normalizedId, target, party, options?.fromMember);
         if (!consumed) {
