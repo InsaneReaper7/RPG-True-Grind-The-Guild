@@ -4468,15 +4468,20 @@ export class HUD {
         let useBtnHtml = '';
         let quickSlotAssignHtml = '';
         if (isConsumable) {
+          const isGearRecipe = itemId.startsWith('gear_recipe_');
           const check = ConsumableSystem.getInstance().canUseConsumable(itemId, { preferredTarget: member, fromMember: member });
           const disabledAttr = check.canUse ? '' : 'disabled';
-          const btnTitle = check.canUse ? `Use ${itemName}` : (check.reason || 'Cannot use');
+          const btnLabel = isGearRecipe ? 'Learn' : 'Use';
+          const btnTitle = isGearRecipe
+            ? 'Learn recipe scroll'
+            : (check.canUse ? `Use ${itemName}` : (check.reason || 'Cannot use'));
           const btnStyle = check.canUse
             ? 'padding: 1px 6px; font-size: 9px; background: rgba(59, 130, 246, 0.4); border: 1px solid #3b82f6; color: #ffffff; border-radius: 3px; cursor: pointer;'
             : 'padding: 1px 6px; font-size: 9px; background: rgba(75, 85, 99, 0.3); border: 1px solid rgba(75, 85, 99, 0.5); color: #9ca3af; border-radius: 3px; cursor: not-allowed; opacity: 0.6;';
-          useBtnHtml = `<button class="party-item-use-btn btn-action" ${disabledAttr} data-member-idx="${i}" data-item-id="${itemId}" type="button" title="${btnTitle}" style="${btnStyle}">Use</button>`;
+          useBtnHtml = `<button class="party-item-use-btn btn-action" ${disabledAttr} data-member-idx="${i}" data-item-id="${itemId}" type="button" title="${btnTitle}" style="${btnStyle}">${btnLabel}</button>`;
 
-          quickSlotAssignHtml = `
+          if (!isGearRecipe) {
+            quickSlotAssignHtml = `
             <select class="quickslot-assign-select" data-item-id="${itemId}" title="Assign to Quick Bar slot 1–4" style="background: rgba(30, 41, 59, 0.8); color: #e2e8f0; border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 3px; font-size: 9px; padding: 1px 2px; max-width: 65px;">
               <option value="" disabled selected>Slot ➡️</option>
               <option value="0">Slot 1</option>
@@ -4485,6 +4490,7 @@ export class HUD {
               <option value="3">Slot 4</option>
             </select>
           `;
+          }
         }
 
         const rowTitle = isConsumable ? this.formatConsumableTooltip(itemId) : itemTitle;
@@ -9145,7 +9151,11 @@ export class HUD {
                 const name = itemDef?.name || cId;
                 const check = ConsumableSystem.getInstance().canUseConsumable(cId, { preferredTarget: member, fromMember: member });
                 const disabledAttr = check.canUse ? '' : 'disabled';
-                const btnTitle = check.canUse ? `Use ${name}` : (check.reason || 'Cannot use');
+                const isGearRecipe = cId.startsWith('gear_recipe_');
+                const btnLabel = isGearRecipe ? 'Learn' : 'Use';
+                const btnTitle = isGearRecipe
+                  ? 'Learn recipe scroll'
+                  : (check.canUse ? `Use ${name}` : (check.reason || 'Cannot use'));
                 const btnStyle = check.canUse
                   ? 'padding: 2px 6px; font-size: 9px; background: rgba(59, 130, 246, 0.4); border: 1px solid #3b82f6; color: #ffffff; border-radius: 3px; cursor: pointer;'
                   : 'padding: 2px 6px; font-size: 9px; background: rgba(75, 85, 99, 0.3); border: 1px solid rgba(75, 85, 99, 0.5); color: #9ca3af; border-radius: 3px; cursor: not-allowed; opacity: 0.6;';
@@ -9158,7 +9168,7 @@ export class HUD {
                       <span style="color: #f3f4f6;" title="${carriedTooltip}">${name}</span>
                       <span style="color: #a78bfa; font-weight: bold;">x${qty}</span>
                     </div>
-                    <button class="party-item-use-btn btn-action" ${disabledAttr} data-member-idx="${mIdx}" data-item-id="${cId}" type="button" title="${btnTitle}" style="${btnStyle}">Use</button>
+                    <button class="party-item-use-btn btn-action" ${disabledAttr} data-member-idx="${mIdx}" data-item-id="${cId}" type="button" title="${btnTitle}" style="${btnStyle}">${btnLabel}</button>
                   </div>
                 `;
               }

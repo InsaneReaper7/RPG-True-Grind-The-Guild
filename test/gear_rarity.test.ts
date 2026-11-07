@@ -4,6 +4,89 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 // Mock window and DOM for tests running outside browser
+class MockElement {
+  public tagName: string;
+  public id: string = '';
+  public className: string = '';
+  public dataset: Record<string, string> = {};
+  public style: Record<string, any> = {};
+  public classList = {
+    _classes: new Set<string>(),
+    add: (...classes: string[]) => classes.forEach(c => this.classList._classes.add(c)),
+    remove: (...classes: string[]) => classes.forEach(c => this.classList._classes.delete(c)),
+    contains: (c: string) => this.classList._classes.has(c)
+  };
+  public children: MockElement[] = [];
+  public parentElement: MockElement | null = null;
+  public onclick: any = null;
+  public onchange: any = null;
+  public disabled: boolean = false;
+  private _textContent: string = '';
+  private _innerHTML: string = '';
+
+  constructor(tagName: string = 'div') {
+    this.tagName = tagName.toUpperCase();
+  }
+
+  get textContent(): string { return this._textContent; }
+  set textContent(val: string) { this._textContent = String(val); }
+  get innerText(): string { return this._textContent; }
+  set innerText(val: string) { this._textContent = String(val); }
+  get innerHTML(): string { return this._innerHTML; }
+  set innerHTML(val: string) { this._innerHTML = String(val); }
+
+  public appendChild(child: MockElement): MockElement {
+    child.parentElement = this;
+    this.children.push(child);
+    return child;
+  }
+  public removeChild(child: MockElement): MockElement {
+    const idx = this.children.indexOf(child);
+    if (idx !== -1) {
+      this.children.splice(idx, 1);
+      child.parentElement = null;
+    }
+    return child;
+  }
+  public querySelector<T = MockElement>(selector: string): T | null {
+    const all = this.querySelectorAll(selector);
+    return (all.length > 0 ? all[0] : null) as any;
+  }
+  public querySelectorAll(selector: string): MockElement[] {
+    const results: MockElement[] = [];
+    for (const child of this.children) {
+      if (selector.startsWith('.') && child.classList.contains(selector.slice(1))) results.push(child);
+      if (selector.startsWith('#') && child.id === selector.slice(1)) results.push(child);
+      results.push(...child.querySelectorAll(selector));
+    }
+    return results;
+  }
+  public closest(selector: string): MockElement | null {
+    let curr: MockElement | null = this;
+    while (curr) {
+      if (selector.startsWith('.') && curr.classList.contains(selector.slice(1))) return curr;
+      if (selector.startsWith('#') && curr.id === selector.slice(1)) return curr;
+      curr = curr.parentElement;
+    }
+    return null;
+  }
+  public click() {
+    if (this.onclick) {
+      this.onclick({ target: this });
+    }
+  }
+}
+
+const elementRegistry = new Map<string, MockElement>();
+function getOrCreateElement(id: string, tagName: string = 'div'): MockElement {
+  if (!elementRegistry.has(id)) {
+    const el = new MockElement(tagName);
+    el.id = id;
+    elementRegistry.set(id, el);
+  }
+  return elementRegistry.get(id)!;
+}
+
 if (typeof (global as any).window === 'undefined') {
   (global as any).window = {
     addEventListener: () => {},
@@ -14,6 +97,20 @@ if (typeof (global as any).window === 'undefined') {
 if (typeof (globalThis as any).window === 'undefined') {
   (globalThis as any).window = (global as any).window;
 }
+
+(globalThis as any).document = {
+  createElement: (tagName: string) => new MockElement(tagName),
+  getElementById: (id: string) => getOrCreateElement(id),
+  querySelector: (sel: string) => {
+    if (sel.startsWith('#')) return getOrCreateElement(sel.slice(1));
+    return null;
+  },
+  querySelectorAll: () => [],
+  addEventListener: () => {},
+  removeEventListener: () => {},
+  documentElement: new MockElement('html'),
+  body: new MockElement('body')
+};
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -45,6 +142,7 @@ import { ProgressionSystem } from '../src/systems/ProgressionSystem.ts';
 import { LockpickingSystem } from '../src/systems/LockpickingSystem.ts';
 import { createPassiveRng } from '../src/utils/rng.ts';
 import { getRarityDisplay } from '../src/utils/gearResolver.ts';
+import { HUD } from '../src/ui/HUD.ts';
 
 await DataLoader.getInstance().loadAll();
 
@@ -171,52 +269,109 @@ for (const spec of table24) {
 }
 console.log('✓ PASS: All 24 pieces, station recipes, and scrolls match Director specifications exactly.');
 
-// 2. RECIPE LEARNING & DUPLICATE SCROLL PROGRESSION
-console.log('\n2. Testing Recipe Learning & Duplicate Mechanics...');
+// 2. RECIPE LEARNING & DUPLICATE SCROLL PROGRESSION VIA VISIBLE CONTROLS
+console.log('\n2. Testing Recipe Learning & Duplicate Mechanics via Visible Controls...');
 const gameState = GameState.getInstance();
-const consumableSys = ConsumableSystem.getInstance();
+const hud = new HUD();
 
-// Reset state
-gameState.resetToDefault();
-assert.strictEqual(gameState.isGearRecipeKnown('gravewardens_blade'), false);
-
-// Add scroll to stockpile and learn from stockpile
-gameState.addItem('gear_recipe_gravewardens_blade', 2);
-assert.strictEqual(gameState.getItemCount('gear_recipe_gravewardens_blade'), 2);
-
-// First learn: unlocks recipe
-const learnRes1 = consumableSys.useConsumable('gear_recipe_gravewardens_blade', { fromStockpile: true });
-assert.strictEqual(learnRes1.success, true);
-assert.strictEqual(gameState.isGearRecipeKnown('gravewardens_blade'), true);
-assert.strictEqual(gameState.getItemCount('gear_recipe_gravewardens_blade'), 1);
-
-// Second learn: duplicate scroll! Should grant +50 profession EXP
 const mockPlayer: any = {
   entityName: 'TestHero',
   inventory: new Map(),
   addItem: (id: string, qty: number) => {
     mockPlayer.inventory.set(id, (mockPlayer.inventory.get(id) || 0) + qty);
   },
+  removeItem: (id: string, qty: number = 1) => {
+    const cur = mockPlayer.inventory.get(id) || 0;
+    if (cur >= qty) {
+      mockPlayer.inventory.set(id, cur - qty);
+      return true;
+    }
+    return false;
+  },
   getItemCount: (id: string) => mockPlayer.inventory.get(id) || 0,
   isAtOutpost: () => true,
+  knownSkillIds: [],
+  equippedSkillIds: [],
+  getTotalWeight: () => 1.0,
+  getEffectiveCarryCapacity: () => 20.0,
+  isEncumbered: false,
+  getInventoryWeight: () => 1.0,
+  getInventoryMap: () => mockPlayer.inventory,
   progression: new ProgressionSystem(undefined, 'TestHero')
 };
-// Set starting EXP so it doesn't level up
-const stat = mockPlayer.progression.getProficiencyStat('blacksmithing');
-stat.level = 5;
-stat.currentExp = 10;
-const bsBefore = stat.currentExp;
+(hud as any).currentParty = [mockPlayer];
+(hud as any).currentPlayer = mockPlayer;
 
-const learnRes2 = consumableSys.useConsumable('gear_recipe_gravewardens_blade', {
-  fromStockpile: true,
-  preferredTarget: mockPlayer
-});
-assert.strictEqual(learnRes2.success, true);
-assert.ok(learnRes2.message.includes('Duplicate recipe understood'));
-assert.strictEqual(gameState.getItemCount('gear_recipe_gravewardens_blade'), 0);
-const bsAfter = stat.currentExp;
-assert.strictEqual(bsAfter - bsBefore, 50, 'Duplicate scroll must grant +50 station EXP');
-console.log('✓ PASS: Recipe learning and duplicate +50 EXP grant verified.');
+// --- PATH 1: Stockpile Learn button (`stockpile-learn-btn`, via HUD click handler at ~L959) ---
+gameState.resetToDefault();
+assert.strictEqual(gameState.isGearRecipeKnown('gravewardens_blade'), false);
+
+// Add 2 scrolls to Stockpile
+gameState.addItem('gear_recipe_gravewardens_blade', 2);
+assert.strictEqual(gameState.getItemCount('gear_recipe_gravewardens_blade'), 2);
+
+// First learn via Stockpile Learn button control
+const stockpileBtn = new MockElement('button');
+stockpileBtn.classList.add('stockpile-learn-btn');
+stockpileBtn.dataset.scrollId = 'gear_recipe_gravewardens_blade';
+(hud as any).stockpileItemsContainerEl.onclick({ target: stockpileBtn });
+
+assert.strictEqual(gameState.isGearRecipeKnown('gravewardens_blade'), true, 'Recipe must be learned via stockpile-learn-btn');
+assert.strictEqual(gameState.getItemCount('gear_recipe_gravewardens_blade'), 1, 'Stockpile scroll count must drop by 1');
+
+// Duplicate learn via Stockpile Learn button: gives exactly +50 station EXP (Blacksmithing)
+const bsStat = mockPlayer.progression.getProficiencyStat('blacksmithing');
+bsStat.level = 5;
+bsStat.currentExp = 10;
+const bsBefore = bsStat.currentExp;
+
+(hud as any).stockpileItemsContainerEl.onclick({ target: stockpileBtn });
+
+assert.strictEqual(gameState.getItemCount('gear_recipe_gravewardens_blade'), 0, 'Stockpile scroll count must drop to 0');
+const bsAfter = bsStat.currentExp;
+assert.strictEqual(bsAfter - bsBefore, 50, 'Duplicate scroll via stockpile-learn-btn must give exactly +50 EXP');
+console.log('✓ PASS: Stockpile Learn button (stockpile-learn-btn via L959) verified: unlock, scroll-1, duplicate +50 EXP.');
+
+// --- PATH 2: Party Overview Learn button (`party-item-use-btn` on carried scroll, via HUD click handler at ~L944) ---
+assert.strictEqual(gameState.isGearRecipeKnown('cryptstalker_bow'), false);
+
+// Add 2 scrolls to member's carried inventory
+mockPlayer.addItem('gear_recipe_cryptstalker_bow', 2);
+assert.strictEqual(mockPlayer.getItemCount('gear_recipe_cryptstalker_bow'), 2);
+
+// First learn via Party Overview Learn button control
+const partyLearnBtn = new MockElement('button');
+partyLearnBtn.classList.add('party-item-use-btn');
+partyLearnBtn.dataset.memberIdx = '0';
+partyLearnBtn.dataset.itemId = 'gear_recipe_cryptstalker_bow';
+(hud as any).stockpileItemsContainerEl.onclick({ target: partyLearnBtn });
+
+assert.strictEqual(gameState.isGearRecipeKnown('cryptstalker_bow'), true, 'Recipe must be learned via carried party-item-use-btn');
+assert.strictEqual(mockPlayer.getItemCount('gear_recipe_cryptstalker_bow'), 1, 'Carried scroll count must drop by 1');
+
+// Duplicate learn via Party Overview Learn button: gives exactly +50 station EXP (Bowyer)
+const bowStat = mockPlayer.progression.getProficiencyStat('bowyer');
+bowStat.level = 5;
+bowStat.currentExp = 10;
+const bowBefore = bowStat.currentExp;
+
+(hud as any).stockpileItemsContainerEl.onclick({ target: partyLearnBtn });
+
+assert.strictEqual(mockPlayer.getItemCount('gear_recipe_cryptstalker_bow'), 0, 'Carried scroll count must drop to 0');
+const bowAfter = bowStat.currentExp;
+assert.strictEqual(bowAfter - bowBefore, 50, 'Duplicate carried scroll via party-item-use-btn must give exactly +50 EXP');
+console.log('✓ PASS: Party Overview Learn button (party-item-use-btn via L944) verified: unlock, scroll-1, duplicate +50 EXP.');
+
+// --- Rendered Button Label and Title Verification ---
+// Add a scroll to carried inventory and render the Party Overview modal
+mockPlayer.addItem('gear_recipe_ossuary_plate', 1);
+(hud as any).renderPartyOverviewModal(false);
+const partyHtml = (hud as any).partyOverviewRosterEl.innerHTML;
+assert.ok(partyHtml.includes('party-item-use-btn'), 'Party Overview modal must render party-item-use-btn');
+assert.ok(partyHtml.includes('title="Learn recipe scroll"'), 'Party Overview modal must title scroll button "Learn recipe scroll"');
+assert.ok(partyHtml.includes('>Learn</button>'), 'Party Overview modal must label scroll button "Learn"');
+mockPlayer.removeItem('gear_recipe_ossuary_plate', 1);
+console.log('✓ PASS: Party Overview modal renders button labelled "Learn" with title "Learn recipe scroll".');
 
 // 3. SNAPSHOT PERSISTENCE
 console.log('\n3. Testing Snapshot Persistence for knownGearRecipes and lastDungeonFloorVisited...');

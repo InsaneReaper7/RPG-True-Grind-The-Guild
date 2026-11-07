@@ -4,7 +4,7 @@
 ✓ PASS: All 6 rarity tiers verified.
 ✓ PASS: All 24 pieces, station recipes, and scrolls match Director specifications exactly.
 
-2. Testing Recipe Learning & Duplicate Mechanics...
+2. Testing Recipe Learning & Duplicate Mechanics via Visible Controls...
 [GameState] Initialized from player.json boot seed with Hero & Valerie: {
   hp: 50,
   criticalHp: 25,
@@ -131,11 +131,14 @@
   ]
 }
 [Gear] 📜 Gear recipe learned: 'gravewardens_blade'! (+1 RP)
-[ConsumableSystem] [Toast success] 📜 Learned Uncommon recipe: Gravewarden's Blade
 [Progression] +50 EXP for 'blacksmithing' (TestHero). Current: Level 5 (60/70 EXP)
 [Progression] Recorded tx 'blacksmithing': +50 EXP for TestHero, resulting total: Level 5 (60/70 EXP)
-[ConsumableSystem] [Toast info] 📜 Duplicate recipe understood: Gravewarden's Blade! (+50 Blacksmithing EXP)
-✓ PASS: Recipe learning and duplicate +50 EXP grant verified.
+✓ PASS: Stockpile Learn button (stockpile-learn-btn via L959) verified: unlock, scroll-1, duplicate +50 EXP.
+[Gear] 📜 Gear recipe learned: 'cryptstalker_bow'! (+1 RP)
+[Progression] +50 EXP for 'bowyer' (TestHero). Current: Level 5 (60/70 EXP)
+[Progression] Recorded tx 'bowyer': +50 EXP for TestHero, resulting total: Level 5 (60/70 EXP)
+✓ PASS: Party Overview Learn button (party-item-use-btn via L944) verified: unlock, scroll-1, duplicate +50 EXP.
+✓ PASS: Party Overview modal renders button labelled "Learn" with title "Learn recipe scroll".
 
 3. Testing Snapshot Persistence for knownGearRecipes and lastDungeonFloorVisited...
 [GameState] Initialized from player.json boot seed with Hero & Valerie: {
