@@ -101,6 +101,9 @@ export class HUD {
   private buildRotationBadgeEl: HTMLElement | null;
   private exitBuildBtn: HTMLElement | null;
   private buildPaletteContainerEl: HTMLElement | null;
+  private buildCategoryTabsEl: HTMLElement | null = null;
+  private buildCategory: 'structure' | 'stations' | 'furniture' = 'structure';
+  private lastBuildOverlayArgs: { wood: number; rotation: number; selectedId: string; constructionLevel: number } | null = null;
   private buildFeedbackToastEl: HTMLElement | null;
   private toastTimer: any = null;
   private static isHudCardVisible: boolean = true;
@@ -489,6 +492,7 @@ export class HUD {
     this.buildRotationBadgeEl = document.getElementById('build-rotation-badge');
     this.exitBuildBtn = document.getElementById('exit-build-btn');
     this.buildPaletteContainerEl = document.getElementById('build-palette-container');
+    this.buildCategoryTabsEl = document.getElementById('build-category-tabs');
     this.buildFeedbackToastEl = document.getElementById('build-feedback-toast');
     this.debugSkillsPanelEl = document.getElementById('debug-skills-panel');
     this.debugSkillsListEl = document.getElementById('debug-skills-list');
@@ -1317,7 +1321,29 @@ export class HUD {
       };
     }
 
+    if (this.buildCategoryTabsEl) {
+      this.buildCategoryTabsEl.onclick = (e) => {
+        const target = e.target as HTMLElement;
+        const btn = target.closest<HTMLElement>('.build-tab-btn');
+        const category = btn?.dataset.buildCategory;
+        if (category === 'structure' || category === 'stations' || category === 'furniture') {
+          HUD.activeInstance?.setBuildCategory(category);
+        }
+      };
+    }
+
     if (this.buildPaletteContainerEl) {
+      // Mouse wheel scrolls the palette sideways instead of zooming the camera (TG-E11KKA).
+      if (typeof this.buildPaletteContainerEl.addEventListener === 'function') {
+        this.buildPaletteContainerEl.addEventListener('wheel', (e: WheelEvent) => {
+          const el = e.currentTarget as HTMLElement;
+          const delta = Math.abs(e.deltaY) >= Math.abs(e.deltaX) ? e.deltaY : e.deltaX;
+          if (delta === 0) return;
+          el.scrollLeft += delta;
+          e.preventDefault();
+          e.stopPropagation();
+        }, { passive: false });
+      }
       this.buildPaletteContainerEl.onclick = (e) => {
         const target = e.target as HTMLElement;
         const item = target.closest<HTMLElement>('.palette-item');
@@ -2316,6 +2342,9 @@ export class HUD {
   public setBuildOverlayVisible(visible: boolean): void {
     if (this.buildOverlayEl) {
       if (visible) {
+        if (!this.buildOverlayEl.classList.contains('active')) {
+          this.setBuildCategory('structure');
+        }
         this.buildOverlayEl.classList.add('active');
       } else {
         this.buildOverlayEl.classList.remove('active');
@@ -2323,7 +2352,30 @@ export class HUD {
     }
   }
 
+  public getBuildCategory(): 'structure' | 'stations' | 'furniture' {
+    return this.buildCategory;
+  }
+
+  /** Switches the Build Mode palette tab and re-renders it from the last known overlay state. */
+  public setBuildCategory(category: 'structure' | 'stations' | 'furniture'): void {
+    const changed = this.buildCategory !== category;
+    this.buildCategory = category;
+    if (this.buildCategoryTabsEl && typeof (this.buildCategoryTabsEl as any).querySelectorAll === 'function') {
+      for (const tab of Array.from(this.buildCategoryTabsEl.querySelectorAll<HTMLElement>('.build-tab-btn'))) {
+        tab.classList.toggle('active', tab.dataset.buildCategory === category);
+      }
+    }
+    if (changed && this.buildPaletteContainerEl) {
+      this.buildPaletteContainerEl.scrollLeft = 0;
+    }
+    if (this.lastBuildOverlayArgs) {
+      const a = this.lastBuildOverlayArgs;
+      this.updateBuildOverlay(a.wood, a.rotation, a.selectedId, a.constructionLevel);
+    }
+  }
+
   public updateBuildOverlay(wood: number, rotation: number, selectedId: string, constructionLevel: number = 0): void {
+    this.lastBuildOverlayArgs = { wood, rotation, selectedId, constructionLevel };
     if (this.buildOverlayWoodEl) {
       this.buildOverlayWoodEl.innerText = `🪵 Wood: ${wood}`;
     }
@@ -2346,11 +2398,25 @@ export class HUD {
       const buildables = dataLoader.getBuildables();
       const gameState = GameState.getInstance();
 
-      let html = '';
+      // Demolish is always reachable: rendered first and pinned (sticky) on every tab (TG-E11KKA).
+      const isDemolishActive = selectedId === 'demolish';
+      let html = `
+        <div class="palette-item palette-demolish ${isDemolishActive ? 'active' : ''}" data-buildable-id="demolish" style="border-color: #ef4444;">
+          <span class="palette-name" style="color: #f87171;">Demolish</span>
+          <span class="palette-cost" style="color: #9ca3af;">Refund</span>
+        </div>
+      `;
+      const category = this.buildCategory;
       if (buildables) {
         for (const b of buildables) {
           if (b.lockedByDefault && !gameState.isBuildableUnlocked(b.id)) {
             continue; // Gated behind Research Tree!
+          }
+          if (BuildingSystem.getBuildCategory(b) !== category) {
+            continue; // Shown under its own palette tab
+          }
+          if (BuildingSystem.isFurniture(b) && gameState.getItemCount(b.id) <= 0) {
+            continue; // Furniture only appears once the guild owns one to place
           }
           if (b.requiredProficiency) {
             const currentLevel = this.currentProgression ? this.currentProgression.getProficiencyLevel(b.requiredProficiency.proficiency) : 0;
@@ -2394,15 +2460,18 @@ export class HUD {
         }
       }
 
-      const isDemolishActive = selectedId === 'demolish';
-      html += `
-        <div class="palette-item ${isDemolishActive ? 'active' : ''}" data-buildable-id="demolish" style="border-color: #ef4444;">
-          <span class="palette-name" style="color: #f87171;">Demolish</span>
-          <span class="palette-cost" style="color: #9ca3af;">Refund</span>
-        </div>
-      `;
+      if (category === 'furniture' && (html.match(/data-buildable-id="/g) || []).length === 1) {
+        html += `
+          <div class="palette-item palette-empty-hint disabled" style="cursor: default; opacity: 0.7;">
+            <span class="palette-name">No furniture yet</span>
+            <span class="palette-cost" style="color: #9ca3af;">Craft at the Woodworking Bench or Stonemason's Yard</span>
+          </div>
+        `;
+      }
 
+      const previousScroll = this.buildPaletteContainerEl.scrollLeft || 0;
       this.buildPaletteContainerEl.innerHTML = html;
+      this.buildPaletteContainerEl.scrollLeft = previousScroll;
     }
   }
 

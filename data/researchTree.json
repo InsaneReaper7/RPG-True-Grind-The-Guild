@@ -109,6 +109,74 @@
         "research_woodworking_bench"
       ],
       "description": "Unlocks the Stonemason's Yard for the Guild Outpost, enabling stone cutting, brick masonry, and grand architectural works."
+    },
+    {
+      "id": "research_plank_construction",
+      "name": "Plank Construction",
+      "cost": 5,
+      "prerequisites": [
+        "research_woodworking_bench"
+      ],
+      "unlocksBuildables": [
+        "plank_floor",
+        "plank_wall",
+        "plank_door"
+      ],
+      "description": "Unlocks plank floors, walls and doors in Build Mode. Planks are milled from wood at the Woodworking Bench."
+    },
+    {
+      "id": "research_stone_construction",
+      "name": "Stone Construction",
+      "cost": 8,
+      "prerequisites": [
+        "research_stonemason_yard"
+      ],
+      "unlocksBuildables": [
+        "stone_floor",
+        "stone_wall"
+      ],
+      "description": "Unlocks stone floors and walls in Build Mode, built from quarried stone."
+    },
+    {
+      "id": "research_brick_construction",
+      "name": "Brick Construction",
+      "cost": 12,
+      "prerequisites": [
+        "research_stone_construction"
+      ],
+      "unlocksBuildables": [
+        "brick_floor",
+        "brick_wall"
+      ],
+      "description": "Unlocks brick floors and walls in Build Mode. Bricks are fired from stone and clay at the Stonemason's Yard."
+    },
+    {
+      "id": "research_reinforced_construction",
+      "name": "Reinforced Construction",
+      "cost": 18,
+      "prerequisites": [
+        "research_brick_construction",
+        "research_blacksmithing_station"
+      ],
+      "unlocksBuildables": [
+        "reinforced_wall",
+        "reinforced_door"
+      ],
+      "description": "Unlocks iron-braced reinforced walls and doors in Build Mode. Reinforced planks and bricks are forged at the Blacksmithing Station."
+    },
+    {
+      "id": "research_runic_construction",
+      "name": "Runic Construction",
+      "cost": 25,
+      "prerequisites": [
+        "research_reinforced_construction",
+        "research_magical_crafting"
+      ],
+      "unlocksBuildables": [
+        "runic_wall",
+        "runic_door"
+      ],
+      "description": "Unlocks rune-etched walls and doors in Build Mode. Runic planks and bricks are enchanted at the Magical Weapon Station."
     }
   ]
 }

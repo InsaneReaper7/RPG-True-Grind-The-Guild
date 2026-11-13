@@ -1,0 +1,22 @@
+# Bug fix TG-E11KKA evidence (UTF-8)
+# Run: node test/bugfix_TG-E11KKA.test.ts (transpiled), 2026-11-13T00:33Z
+
+================================================================
+🧪 BUG FIX TG-E11KKA: BUILD PALETTE, TIER RESEARCH, COMBAT LOG
+================================================================
+
+✔ 1. Data guards: 11 tier pieces locked, 5 construction nodes exact.
+✔ 2. Palette tabs, Demolish pinned, furniture hidden at 0, wheel scroll verified.
+✔ 3. Construction research unlocks tiers in order; placed pieces kept.
+✔ 4. Combat summary records exact damage dealt and taken with sources.
+✔ 5. markDead logs one death per kill.
+✔ 6. Shared tile distance; out-of-range warning throttled to 1/s.
+
+=== ALL TG-E11KKA BUG FIX TESTS PASSED ===
+
+# Full suite in the Director's cloud workspace (npm registry blocked; deps from GitHub sources, tsx replaced by tsc-transpile):
+#   baseline 0f3ffb7: PASS 141 FAIL 20 (the same 20 suites fail on unmodified 0f3ffb7 in this harness, so they are harness-related, not caused by this change; Antigravity's Windows run had 161/161)
+#   this change:      PASS 140 FAIL 22 before test updates; final run: PASS 141 FAIL 21 (+1 = downedLeaderSoftlockFix, intermittent: passes 6/6 on rerun with this change)
+#   researchTreeUI and woodworking_stonemason updated for the new nodes/locks and pass.
+# Type check: tsc --noEmit -p . -> 0 errors (excluding Node-typings errors, as @types/node could not be installed here).
+# Balance sim: docs/balance/class_sim.csv byte-identical after re-run.

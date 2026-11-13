@@ -76,6 +76,17 @@ export class BuildingSystem {
     return def.itemCosts[def.id] !== undefined;
   }
 
+  /**
+   * Build Mode palette tab for a buildable: floors/walls/doors are Structure, crafted furniture is
+   * Furniture, everything else (beds, research and crafting stations, plots) is Stations.
+   */
+  public static getBuildCategory(def?: BuildableDef | null): 'structure' | 'stations' | 'furniture' {
+    if (!def) return 'stations';
+    if (BuildingSystem.isFurniture(def)) return 'furniture';
+    if (BuildingSystem.isWall(def) || BuildingSystem.isDoor(def) || BuildingSystem.isFloor(def)) return 'structure';
+    return 'stations';
+  }
+
   public static getBlueprintCosts(
     blueprint: BuildableDef,
     level: number = 0

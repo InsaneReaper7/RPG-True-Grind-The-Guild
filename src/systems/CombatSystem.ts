@@ -51,6 +51,11 @@ export class CombatSystem {
     onEnemyDeath?: (enemy: Enemy) => void
   ) {
     CombatSystem.activeInstance = this;
+    // Per-fight damage summary (bug TG-E11KKA): every HP loss is reported here with its source.
+    Entity.damageListener = (victim, amountLost, source) => {
+      if (CombatSystem.activeInstance !== this) return;
+      this.recordDamageEvent(victim, amountLost, source);
+    };
     this.scene = scene;
     this.party = Array.isArray(playerOrParty) ? playerOrParty : (playerOrParty ? [playerOrParty] : []);
     this.enemies = enemies || [];
@@ -513,6 +518,23 @@ export class CombatSystem {
       return false;
     }
     return this.currentInCombat || this.party.some((m) => m.inCombat);
+  }
+
+  /**
+   * Routes one HP loss into the combat summary: party victims count as damage taken (with the
+   * attacker or status name as source); enemy victims count as damage dealt by the party member
+   * who caused it. DoT ticks on enemies carry a status name, not a member, so they are not
+   * attributed to anyone's dealt total.
+   */
+  public recordDamageEvent(victim: Entity, amountLost: number, source?: Entity | string): void {
+    if (amountLost <= 0) return;
+    const sourceIsMember = source instanceof Entity && this.party.includes(source as Player);
+    if (this.party.includes(victim as Player)) {
+      const sourceName = typeof source === 'string' ? source : (source?.entityName ?? 'Unknown');
+      this.recordDamageTaken(victim.entityName, amountLost, sourceName);
+    } else if (sourceIsMember) {
+      this.recordDamageDealt((source as Entity).entityName, amountLost);
+    }
   }
 
   public recordDamageDealt(memberName: string, amount: number): void {
@@ -1002,7 +1024,7 @@ export class CombatSystem {
                             target.removeStatusEffect(effId);
                           }
                           const reflected = Math.max(1, Math.round(absorbed * reflectRate));
-                          enemy.takeDamage(reflected);
+                          enemy.takeDamage(reflected, target);
                           this.createFloatingText(target.x, target.y - 32, `ABSORBED ${absorbed}!`, effAny.def.color || '#e11d48');
                           this.createFloatingText(enemy.x, enemy.y - 12, `REFLECT! -${reflected}`, effAny.def.color || '#e11d48');
                         }
@@ -1023,7 +1045,7 @@ export class CombatSystem {
                   }
 
                   const wasUnengaged = target.targetEntity === null;
-                  const targetDowned = target.takeDamage(actualDamage);
+                  const targetDowned = target.takeDamage(actualDamage, enemy);
                   if (actualDamage > 0 && this.scene) {
                     if (typeof (this.scene as any).interruptGatherChannel === 'function') {
                       (this.scene as any).interruptGatherChannel(target, enemy);
@@ -1046,7 +1068,7 @@ export class CombatSystem {
                           if (typeof (member as any).applyArmorMitigation === 'function') {
                             splashDamage = (member as any).applyArmorMitigation(rawSplash).finalDamage;
                           }
-                          const memDowned = member.takeDamage(splashDamage);
+                          const memDowned = member.takeDamage(splashDamage, enemy);
                           member?.awardArmorWearExp?.('hit');
                           this.createAttackEffect(enemy.x, enemy.y, member.x, member.y, 0xdc2626);
                           this.createFloatingText(member.x, member.y - 18, `-${splashDamage} (CLEAVE!)`, '#f87171');
@@ -1101,7 +1123,7 @@ export class CombatSystem {
                           if (typeof (member as any).applyArmorMitigation === 'function') {
                             shardDamage = (member as any).applyArmorMitigation(rawShard).finalDamage;
                           }
-                          const memDowned = member.takeDamage(shardDamage);
+                          const memDowned = member.takeDamage(shardDamage, enemy);
                           member?.awardArmorWearExp?.('hit');
                           this.createAttackEffect(target.x, target.y, member.x, member.y, 0x06b6d4);
                           this.createFloatingText(member.x, member.y - 18, `-${shardDamage} (GLACIAL SHARD!)`, '#38bdf8');
@@ -1353,9 +1375,7 @@ export class CombatSystem {
       this.updateStaffDynamicRange(member);
 
       const target = member.targetEntity;
-      const dx = Math.abs(member.gridPos.x - target.gridPos.x);
-      const dy = Math.abs(member.gridPos.y - target.gridPos.y);
-      const distanceTiles = Math.max(dx, dy);
+      const distanceTiles = SkillSystem.getTileDistance(member, target);
 
       // Data-driven approach gap-closer and ranged autocast (when outside melee range up to skill range)
       if (distanceTiles > member.attackRangeTiles && member.targetEntity) {
@@ -1545,7 +1565,7 @@ export class CombatSystem {
 
                 this.lastCombatTimeMs = time;
                 if ((target.state as string) !== 'dead' && (target.state as string) !== 'downed') (target as any).isAggroed = true;
-                const offTargetDowned = target.takeDamage(offDmg);
+                const offTargetDowned = target.takeDamage(offDmg, member);
                 if (offTargetDowned) {
                   this.handleTargetDefeated(member, target, offProfId);
                 }
@@ -1713,7 +1733,7 @@ export class CombatSystem {
       '#f59e0b'
     );
 
-    const enemyDowned = enemy.takeDamage(counterDmg);
+    const enemyDowned = enemy.takeDamage(counterDmg, counterAttacker);
     if (enemyDowned) {
       this.handleTargetDefeated(counterAttacker, enemy, weapon.id);
     }
@@ -1906,7 +1926,7 @@ export class CombatSystem {
         }
       }
 
-      const downed = enemy.takeDamage(damage);
+      const downed = enemy.takeDamage(damage, thrower);
       if (downed) {
         this.handleTargetDefeated(thrower, enemy, 'throwing_weapons');
       }
@@ -2192,7 +2212,7 @@ export class CombatSystem {
       if (target.state === 'dead' || target.state === 'downed') break;
       const floatColor = skillDef.floatColor || '#f59e0b';
       this.createFloatingText(target.x, target.y - 10 - (h * 6), `${skillDef.name.toUpperCase()}! -${damagePerHit.toFixed(1)}`, floatColor);
-      const downed = target.takeDamage(damagePerHit);
+      const downed = target.takeDamage(damagePerHit, caster);
       if (damagePerHit > 0 && caster.coating && caster.coating.hitsRemaining > 0) {
         this.checkAndApplyWeaponCoating(caster, target, false);
       }
@@ -2750,7 +2770,7 @@ export class CombatSystem {
         this.checkAndApplyShock(member, closestEnemy, effectiveWeapon);
         this.lastCombatTimeMs = time;
         closestEnemy.isAggroed = true;
-        const chainDowned = closestEnemy.takeDamage(currentDmg);
+        const chainDowned = closestEnemy.takeDamage(currentDmg, member);
         if (chainDowned) {
           this.handleTargetDefeated(member, closestEnemy, weaponId);
         }
@@ -2776,7 +2796,7 @@ export class CombatSystem {
           if (splashDmg > 0 && member.coating && member.coating.hitsRemaining > 0) {
             this.checkAndApplyWeaponCoating(member, enemy, isSpell);
           }
-          const splashDowned = enemy.takeDamage(splashDmg);
+          const splashDowned = enemy.takeDamage(splashDmg, member);
           if (splashDowned) {
             this.handleTargetDefeated(member, enemy, weaponId);
           }
@@ -2825,14 +2845,14 @@ export class CombatSystem {
 
     this.lastCombatTimeMs = time;
     if (target.state !== 'dead' && target.state !== 'downed') (target as any).isAggroed = true;
-    const targetDowned = target.takeDamage(damage);
+    const targetDowned = target.takeDamage(damage, member);
 
     // Glacial Sovereign: Frost Thorns reflection against melee attackers while Glaciated
     if (target instanceof Enemy && (target as any).isGlaciated && (target as any).enemyData?.id === 'glacial_sovereign' && !targetDowned) {
       const dist = Math.hypot(member.gridPos.x - target.gridPos.x, member.gridPos.y - target.gridPos.y);
       if (dist <= 1.5) {
         const reflectDamage = Math.max(1, Math.round(damage * 0.15));
-        const memDowned = member.takeDamage(reflectDamage);
+        const memDowned = member.takeDamage(reflectDamage, target);
         this.createFloatingText(member.x, member.y - 14, `-${reflectDamage} (FROST THORNS!)`, '#67e8f9');
         console.log(`[Combat:FrostThorns] ❄️ ${target.entityName}'s Frost Thorns reflect ${reflectDamage} frost damage to ${member.entityName}!`);
         if (memDowned) {
@@ -3097,7 +3117,7 @@ export class CombatSystem {
       this.createAttackEffect(primaryTarget.x, primaryTarget.y, enemy.x, enemy.y, 0xa7f3d0);
       this.createFloatingText(enemy.x, enemy.y - 10, `-${damage.toFixed(1)} (Pierce)`, '#a7f3d0');
       enemy.isAggroed = true;
-      const downed = enemy.takeDamage(damage);
+      const downed = enemy.takeDamage(damage, caster);
       if (downed) {
         this.handleTargetDefeated(caster, enemy, weaponId);
       }

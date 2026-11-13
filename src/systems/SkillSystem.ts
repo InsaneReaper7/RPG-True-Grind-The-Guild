@@ -9,9 +9,32 @@ import type { CombatSystem } from './CombatSystem.ts';
 
 export class SkillSystem {
   private combatSystem: CombatSystem;
+  private lastOutOfRangeWarnMs: Map<string, number> = new Map();
 
   constructor(combatSystem: CombatSystem) {
     this.combatSystem = combatSystem;
+  }
+
+  /**
+   * Single tile-distance rule (Chebyshev over grid tiles) shared by skill selection and execution,
+   * so the AI never picks a skill that execute() then rejects as out of range (bug TG-E11KKA).
+   * Uses the entity's logical gridPos when it has one, otherwise its floored pixel position.
+   */
+  public static getTileDistance(a: { x: number; y: number; tileSize?: number; gridPos?: { x: number; y: number } }, b: { x: number; y: number; tileSize?: number; gridPos?: { x: number; y: number } }): number {
+    const tileOf = (e: { x: number; y: number; tileSize?: number; gridPos?: { x: number; y: number } }, fallbackSize: number) =>
+      e.gridPos ? { x: e.gridPos.x, y: e.gridPos.y } : { x: Math.floor(e.x / (e.tileSize || fallbackSize)), y: Math.floor(e.y / (e.tileSize || fallbackSize)) };
+    const size = a.tileSize || b.tileSize || 32;
+    const ta = tileOf(a, size);
+    const tb = tileOf(b, size);
+    return Math.max(Math.abs(ta.x - tb.x), Math.abs(ta.y - tb.y));
+  }
+
+  /** Logs an out-of-range rejection at most once per skill per second. */
+  private warnOutOfRangeThrottled(skillId: string, message: string, time: number): void {
+    const last = this.lastOutOfRangeWarnMs.get(skillId);
+    if (last !== undefined && time - last < 1000) return;
+    this.lastOutOfRangeWarnMs.set(skillId, time);
+    console.warn(message);
   }
 
   /**
@@ -83,11 +106,9 @@ export class SkillSystem {
     // 3. Range check if applicable
     const range = skillDef.rangeTiles;
     if (range && target && target !== caster) {
-      const cTile = { x: Math.floor(caster.x / caster.tileSize), y: Math.floor(caster.y / caster.tileSize) };
-      const tTile = { x: Math.floor(target.x / target.tileSize), y: Math.floor(target.y / target.tileSize) };
-      const dist = Math.max(Math.abs(cTile.x - tTile.x), Math.abs(cTile.y - tTile.y));
+      const dist = SkillSystem.getTileDistance(caster, target);
       if (dist > range) {
-        console.warn(`[SkillSystem] Target out of range for ${skillDef.name} (${dist} > ${range})`);
+        this.warnOutOfRangeThrottled(skillDef.id, `[SkillSystem] Target out of range for ${skillDef.name} (${dist} > ${range})`, time);
         return false;
       }
     }
@@ -559,7 +580,7 @@ export class SkillSystem {
           for (let h = 0; h < hits; h++) {
             if (enemyTarget.isDowned?.() || enemyTarget.state === 'dead' || enemyTarget.state === 'downed') break;
             this.combatSystem.createFloatingText(enemyTarget.x, enemyTarget.y - 10 - (h * 6), `${skillDef.name.toUpperCase()}! -${damagePerHit.toFixed(1)}`, floatColor);
-            const downed = enemyTarget.takeDamage(damagePerHit);
+            const downed = enemyTarget.takeDamage(damagePerHit, caster);
             if (downed) {
               this.combatSystem.handleTargetDefeated(caster, enemyTarget, weaponId);
               break;
@@ -965,7 +986,7 @@ export class SkillSystem {
           const cleaveDmg = baseDamage * (1 - (area.falloff ?? 0));
           this.combatSystem.createFloatingText(enemy.x, enemy.y - 10, `-${cleaveDmg.toFixed(1)} (Cleave)`, '#f97316');
           enemy.isAggroed = true;
-          const downed = enemy.takeDamage(cleaveDmg);
+          const downed = enemy.takeDamage(cleaveDmg, caster);
           if (cleaveDmg > 0 && caster.coating && caster.coating.hitsRemaining > 0) {
             this.combatSystem.checkAndApplyWeaponCoating(caster, enemy, isSpell);
           }
@@ -988,7 +1009,7 @@ export class SkillSystem {
           const floatColor = skillDef?.floatColor || '#f97316';
           this.combatSystem.createFloatingText(enemy.x, enemy.y - 10, floatText, floatColor);
           enemy.isAggroed = true;
-          const downed = enemy.takeDamage(splashDmg);
+          const downed = enemy.takeDamage(splashDmg, caster);
           if (splashDmg > 0 && caster.coating && caster.coating.hitsRemaining > 0) {
             this.combatSystem.checkAndApplyWeaponCoating(caster, enemy, isSpell);
           }
@@ -1042,7 +1063,7 @@ export class SkillSystem {
         this.combatSystem.createAttackEffect(primaryTarget.x, primaryTarget.y, enemy.x, enemy.y, 0xa7f3d0);
         this.combatSystem.createFloatingText(enemy.x, enemy.y - 10, `-${secondaryDmg.toFixed(1)} (Pierce)`, '#a7f3d0');
         enemy.isAggroed = true;
-        const downed = enemy.takeDamage(secondaryDmg);
+        const downed = enemy.takeDamage(secondaryDmg, caster);
         if (secondaryDmg > 0 && caster.coating && caster.coating.hitsRemaining > 0) {
           this.combatSystem.checkAndApplyWeaponCoating(caster, enemy, isSpell);
         }
@@ -1088,7 +1109,7 @@ export class SkillSystem {
         this.combatSystem.createLightningChainEffect(currentSource.x, currentSource.y, closestEnemy.x, closestEnemy.y);
         this.combatSystem.createFloatingText(closestEnemy.x, closestEnemy.y - 10, `-${currentDmg.toFixed(1)} (Chain)`, '#38bdf8');
         closestEnemy.isAggroed = true;
-        const chainDowned = closestEnemy.takeDamage(currentDmg);
+        const chainDowned = closestEnemy.takeDamage(currentDmg, caster);
         if (currentDmg > 0 && caster.coating && caster.coating.hitsRemaining > 0) {
           this.combatSystem.checkAndApplyWeaponCoating(caster, closestEnemy, isSpell);
         }
@@ -1285,11 +1306,7 @@ export class SkillSystem {
         if (!targetEnemy || targetEnemy.state === 'dead' || targetEnemy.state === 'downed') continue;
 
         // Range check: skip skills whose rangeTiles is less than distanceTiles
-        const dist = distanceTiles !== undefined ? distanceTiles : (() => {
-          const cTile = { x: Math.floor(member.x / member.tileSize), y: Math.floor(member.y / member.tileSize) };
-          const tTile = { x: Math.floor(targetEnemy.x / (targetEnemy.tileSize || member.tileSize)), y: Math.floor(targetEnemy.y / (targetEnemy.tileSize || member.tileSize)) };
-          return Math.max(Math.abs(cTile.x - tTile.x), Math.abs(cTile.y - tTile.y));
-        })();
+        const dist = distanceTiles !== undefined ? distanceTiles : SkillSystem.getTileDistance(member, targetEnemy);
         if (skillDef.rangeTiles !== undefined && dist > skillDef.rangeTiles) {
           continue;
         }
