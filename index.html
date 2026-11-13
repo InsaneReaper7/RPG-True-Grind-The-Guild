@@ -592,7 +592,9 @@
       display: none;
       flex-direction: column;
       pointer-events: auto;
-      z-index: 100;
+      /* TG-SI1QHR: above the party portraits (110) so a modal's bottom rows stay clickable,
+         below the confirm dialogs (120) that open on top of crafting modals */
+      z-index: 115;
     }
     .custom-modal.active {
       display: flex;
@@ -895,6 +897,15 @@
     #alchemy-modal {
       border-color: #10b981;
       box-shadow: 0 0 25px rgba(16, 185, 129, 0.3);
+      /* TG-SI1QHR: 22+ recipes overflowed the window; cap the modal and scroll the recipe list */
+      width: 640px;
+      max-height: 85vh;
+    }
+    #alchemy-modal #alchemy-recipes-container {
+      flex: 1 1 auto;
+      min-height: 120px;
+      overflow-y: auto;
+      padding-right: 4px;
     }
     #party-overview-modal {
       position: absolute;
