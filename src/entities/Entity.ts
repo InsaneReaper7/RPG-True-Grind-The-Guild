@@ -247,7 +247,27 @@ export class Entity extends Phaser.GameObjects.Container {
    * Both HP bars reaching 0 triggers Downed state.
    * Generic damage absorption shields (shieldHp) absorb damage before HP is reduced.
    */
-  public takeDamage(amount: number): boolean {
+  /**
+   * Optional global listener notified with the HP actually lost on every damage application.
+   * CombatSystem uses it for the per-fight damage dealt / taken summary (bug TG-E11KKA).
+   */
+  public static damageListener: ((victim: Entity, amountLost: number, source?: Entity | string) => void) | null = null;
+
+  public takeDamage(amount: number, source?: Entity | string): boolean {
+    const hpBefore = this.hp + this.criticalHp;
+    const downed = this.takeDamageCore(amount);
+    const lost = hpBefore - (this.hp + this.criticalHp);
+    if (lost > 0 && Entity.damageListener) {
+      try {
+        Entity.damageListener(this, lost, source);
+      } catch (err) {
+        console.warn('[Entity] damageListener failed', err);
+      }
+    }
+    return downed;
+  }
+
+  protected takeDamageCore(amount: number): boolean {
     if (this.state === 'downed' || this.state === 'dead') return false;
 
     let damageRemaining = amount;
@@ -660,7 +680,7 @@ export class Entity extends Phaser.GameObjects.Container {
           const colorHex = activeEffect.def.color || '#ef4444';
           const colorNum = parseInt(colorHex.replace('#', ''), 16) || 0xef4444;
           this.createFloatingDamageText(damage, colorNum);
-          this.takeDamage(damage);
+          this.takeDamage(damage, activeEffect.def.name);
         }
         activeEffect.nextTickMs += activeEffect.def.tickIntervalMs;
       }

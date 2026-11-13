@@ -110,6 +110,9 @@ export class ResearchSystem {
     if (node.targetBuildableId) {
       gameState.unlockBuildable(node.targetBuildableId);
     }
+    for (const buildableId of node.unlocksBuildables ?? []) {
+      gameState.unlockBuildable(buildableId);
+    }
     if (node.id === 'research_blacksmithing_station' || node.targetBuildableId === 'blacksmithing_station') {
       TutorialSystem.getInstance().completeStepId('research_station');
     }

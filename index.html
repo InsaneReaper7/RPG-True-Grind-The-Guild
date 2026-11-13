@@ -1952,6 +1952,8 @@
     }
     #build-mode-overlay.active {
       display: flex;
+      /* TG-E11KKA: sit above the party portraits (z 110) so the tabs and header stay clickable */
+      z-index: 120;
     }
     .build-header-row {
       display: flex;
@@ -1964,8 +1966,45 @@
     }
     .palette-container {
       display: flex;
+      flex-wrap: nowrap;
       gap: 10px;
       margin-bottom: 8px;
+      /* TG-E11KKA: the palette outgrew the screen; keep it inside the overlay and scroll sideways */
+      max-width: 100%;
+      overflow-x: auto;
+      overflow-y: hidden;
+      padding-bottom: 4px;
+      scrollbar-width: thin;
+    }
+    .palette-container .palette-item {
+      flex: 0 0 auto;
+    }
+    .palette-container .palette-item.palette-demolish {
+      position: sticky;
+      left: 0;
+      z-index: 1;
+      background: rgba(31, 22, 22, 0.98);
+    }
+    .build-category-tabs {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+    .build-category-tabs .build-tab-btn {
+      background: rgba(31, 41, 55, 0.9);
+      color: #d1d5db;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 6px;
+      padding: 3px 12px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      pointer-events: auto;
+    }
+    .build-category-tabs .build-tab-btn.active {
+      border-color: #34d399;
+      color: #34d399;
+      background: rgba(5, 150, 105, 0.25);
     }
     .palette-item {
       background: rgba(31, 41, 55, 0.9);
@@ -2661,6 +2700,11 @@
           <span style="color: #f59e0b; font-size: 11px;" id="build-tier-badge">Tier: Untrained</span>
           <span style="color: #93c5fd; font-size: 11px;" id="build-rotation-badge">Rotation: 0° [R]</span>
           <button id="exit-build-btn" type="button" style="background: #374151; color: #d1d5db; border: none; border-radius: 4px; padding: 2px 8px; font-size: 11px; cursor: pointer;">✕ Exit [B]</button>
+        </div>
+        <div class="build-category-tabs" id="build-category-tabs">
+          <button type="button" class="build-tab-btn active" data-build-category="structure">Structure</button>
+          <button type="button" class="build-tab-btn" data-build-category="stations">Stations</button>
+          <button type="button" class="build-tab-btn" data-build-category="furniture">Furniture</button>
         </div>
         <div class="palette-container" id="build-palette-container">
           <div class="palette-item active" data-buildable-id="floor">

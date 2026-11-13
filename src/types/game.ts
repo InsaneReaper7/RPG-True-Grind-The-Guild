@@ -507,6 +507,8 @@ export interface ResearchNodeDef {
   id: string;
   name: string;
   targetBuildableId?: string;
+  /** Additional buildables unlocked together when this node completes (e.g. a material tier's floor, wall and door). */
+  unlocksBuildables?: string[];
   cost: number;
   prerequisites: string[];
   description: string;

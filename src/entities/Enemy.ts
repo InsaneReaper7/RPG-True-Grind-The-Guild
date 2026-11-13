@@ -179,7 +179,7 @@ export class Enemy extends Entity {
     this.drawHpBar();
   }
 
-  public override takeDamage(amount: number): boolean {
+  public override takeDamage(amount: number, source?: Entity | string): boolean {
     // Immediate aggro on taking damage regardless of attacker distance
     if (!this.isAggroed) {
       this.isAggroed = true;
@@ -191,7 +191,7 @@ export class Enemy extends Entity {
 
     // If disabled (stunned, shocked, etc.), maintain disable state and do not resume pursuit until cleared
     if (this.isDisabled()) {
-      return super.takeDamage(amount);
+      return super.takeDamage(amount, source);
     }
 
     // Reset state out of 'attacking', 'idle', or 'returning' into 'chasing' so pursuit can resume
@@ -219,7 +219,7 @@ export class Enemy extends Entity {
       }
     }
 
-    const isDowned = super.takeDamage(effectiveDamage);
+    const isDowned = super.takeDamage(effectiveDamage, source);
 
     // Boss Tier Critical HP Phase Trigger (<= 50% HP)
     if (this.enemyData.tier === 'boss' && this.state !== 'dead' && this.state !== 'downed') {
@@ -330,6 +330,8 @@ export class Enemy extends Entity {
    * Transitions enemy to a dead state, disabling clickability and clearing HP bars.
    */
   public markDead(): void {
+    // onDowned() and MainScene's death handler both call this; only the first call counts (bug TG-E11KKA).
+    if (this.state === 'dead') return;
     EventLog.getInstance().add('combat', `${this.enemyData.name} died`);
     this.state = 'dead';
     this.path = [];

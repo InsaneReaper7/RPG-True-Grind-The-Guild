@@ -236,6 +236,7 @@
     {
       "id": "plank_floor",
       "name": "Plank Floor",
+      "lockedByDefault": true,
       "structure": "floor",
       "materialTier": 1,
       "woodCost": 0,
@@ -255,6 +256,7 @@
     {
       "id": "plank_wall",
       "name": "Plank Wall",
+      "lockedByDefault": true,
       "structure": "wall",
       "materialTier": 1,
       "woodCost": 0,
@@ -274,6 +276,7 @@
     {
       "id": "plank_door",
       "name": "Plank Door",
+      "lockedByDefault": true,
       "structure": "door",
       "materialTier": 1,
       "woodCost": 0,
@@ -293,6 +296,7 @@
     {
       "id": "stone_floor",
       "name": "Stone Floor",
+      "lockedByDefault": true,
       "structure": "floor",
       "materialTier": 2,
       "woodCost": 0,
@@ -312,6 +316,7 @@
     {
       "id": "stone_wall",
       "name": "Stone Wall",
+      "lockedByDefault": true,
       "structure": "wall",
       "materialTier": 2,
       "woodCost": 0,
@@ -331,6 +336,7 @@
     {
       "id": "brick_floor",
       "name": "Brick Floor",
+      "lockedByDefault": true,
       "structure": "floor",
       "materialTier": 3,
       "woodCost": 0,
@@ -350,6 +356,7 @@
     {
       "id": "brick_wall",
       "name": "Brick Wall",
+      "lockedByDefault": true,
       "structure": "wall",
       "materialTier": 3,
       "woodCost": 0,
@@ -369,6 +376,7 @@
     {
       "id": "reinforced_wall",
       "name": "Reinforced Wall",
+      "lockedByDefault": true,
       "structure": "wall",
       "materialTier": 4,
       "woodCost": 0,
@@ -388,6 +396,7 @@
     {
       "id": "reinforced_door",
       "name": "Reinforced Door",
+      "lockedByDefault": true,
       "structure": "door",
       "materialTier": 4,
       "woodCost": 0,
@@ -407,6 +416,7 @@
     {
       "id": "runic_wall",
       "name": "Runic Wall",
+      "lockedByDefault": true,
       "structure": "wall",
       "materialTier": 5,
       "woodCost": 0,
@@ -426,6 +436,7 @@
     {
       "id": "runic_door",
       "name": "Runic Door",
+      "lockedByDefault": true,
       "structure": "door",
       "materialTier": 5,
       "woodCost": 0,

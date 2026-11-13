@@ -955,6 +955,12 @@ function createPlayer(id = 'hero', name = 'Aria'): Player {
   outpost.create();
   outpost.isBuildMode = true;
 
+  // Plank tier pieces are research-locked since bug fix TG-E11KKA; this test builds with them,
+  // so complete their research unlock first (as a player would via Plank Construction).
+  for (const id of ['plank_floor', 'plank_wall', 'plank_door']) {
+    GameState.getInstance().unlockBuildable(id);
+  }
+
   // 3. Build an enclosed bedroom:
   // Interior tiles: (3, 15), (4, 15), (3, 16), (4, 16)
   // Perimeter: 7 plank walls + 1 plank door
