@@ -2350,6 +2350,9 @@ export class HUD {
         this.buildOverlayEl.classList.remove('active');
       }
     }
+    // The consumable quick bar sits where the build palette goes; hide it while building (owner, 2026-11-12).
+    const quickBar = this.quickBarHudEl || document.getElementById('quick-bar-hud');
+    quickBar?.classList.toggle('hidden-in-build-mode', visible);
   }
 
   public getBuildCategory(): 'structure' | 'stations' | 'furniture' {

@@ -357,7 +357,22 @@ async function runBugfixTests() {
     hud.setBuildOverlayVisible(false);
     hud.setBuildOverlayVisible(true);
     assert.equal(hud.getBuildCategory(), 'structure', 'Re-opening Build Mode returns to the Structure tab');
-    console.log('✔ 2. Palette tabs, Demolish pinned, furniture hidden at 0, wheel scroll verified.');
+    // Owner follow-up: the quick bar hides while Build Mode is open and returns afterwards.
+    const quickBarEl = mockDocument.getElementById('quick-bar-hud');
+    const qbClasses = new Set<string>();
+    quickBarEl.classList = {
+      add: (c: string) => qbClasses.add(c),
+      remove: (c: string) => qbClasses.delete(c),
+      contains: (c: string) => qbClasses.has(c),
+      toggle: (c: string, force?: boolean) => { const on = force ?? !qbClasses.has(c); if (on) qbClasses.add(c); else qbClasses.delete(c); return on; }
+    };
+    (hud as any).quickBarHudEl = quickBarEl;
+    hud.setBuildOverlayVisible(true);
+    assert.ok(qbClasses.has('hidden-in-build-mode'), 'Quick bar is hidden while Build Mode is open');
+    hud.setBuildOverlayVisible(false);
+    assert.ok(!qbClasses.has('hidden-in-build-mode'), 'Quick bar comes back when Build Mode closes');
+    hud.setBuildOverlayVisible(true);
+    console.log('✔ 2. Palette tabs, Demolish pinned, furniture hidden at 0, wheel scroll, quick bar hidden in Build Mode verified.');
   }
 
   // ---------------------------------------------------------------------------

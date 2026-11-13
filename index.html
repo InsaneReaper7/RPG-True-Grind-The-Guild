@@ -1950,6 +1950,10 @@
       min-width: 520px;
       max-width: calc(100% - 24px);
     }
+    /* Owner 2026-11-12: the quick bar is in the way of the build palette, so hide it in Build Mode */
+    #quick-bar-hud.hidden-in-build-mode {
+      display: none !important;
+    }
     #build-mode-overlay.active {
       display: flex;
       /* TG-E11KKA: sit above the party portraits (z 110) so the tabs and header stay clickable */
