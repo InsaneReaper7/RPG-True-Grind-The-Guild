@@ -2086,7 +2086,7 @@ export class HUD {
 
     if (!HUD.hasGlobalListeners) {
       HUD.hasGlobalListeners = true;
-      // Key listeners: Tab (toggle HUD panel), L (toggle Loadout modal), B (toggle Build mode), H (apply bandage), E (drink energy potion), P (drink mana potion), O (toggle Party modal), Escape (close modals)
+      // Key listeners: Tab (toggle HUD panel), L (toggle Loadout modal), B (toggle Build mode), N (toggle Research Tree), H (apply bandage), E (drink energy potion), P (drink mana potion), O (toggle Party modal), Escape (close modals)
       window.addEventListener('keydown', (e) => {
         if (isTypingInTextField(e)) {
           return;
@@ -2136,6 +2136,12 @@ export class HUD {
           const targetTag = (e.target as HTMLElement)?.tagName?.toLowerCase();
           if (targetTag !== 'input' && targetTag !== 'textarea' && targetTag !== 'select') {
             active.toggleStockpileModal();
+          }
+        } else if (e.key === 'n' || e.key === 'N' || e.code === 'KeyN') {
+          // Research Tree hotkey, as labelled on the "Research Tree [N]" button (bug TG-YUIBLP).
+          const targetTag = (e.target as HTMLElement)?.tagName?.toLowerCase();
+          if (targetTag !== 'input' && targetTag !== 'textarea' && targetTag !== 'select' && active.isOutpost) {
+            active.toggleResearchTreeModal();
           }
         } else if (e.key === 'k' || e.key === 'K' || e.code === 'KeyK') {
           const targetTag = (e.target as HTMLElement)?.tagName?.toLowerCase();
@@ -5821,6 +5827,14 @@ export class HUD {
     }
   }
 
+  public toggleResearchTreeModal(): void {
+    if (this.isResearchTreeModalOpen()) {
+      this.closeResearchTreeModal();
+    } else {
+      this.openResearchTreeModal();
+    }
+  }
+
   public closeResearchTreeModal(): void {
     if (this.researchTreeModalEl) {
       this.researchTreeModalEl.classList.remove('active');
@@ -6442,6 +6456,8 @@ export class HUD {
 
     // 3. Recipes list
     if (this.alchemyRecipesContainerEl) {
+      // Keep the player's place in the (now scrollable) list across re-renders after each craft (TG-SI1QHR).
+      const previousRecipeScroll = this.alchemyRecipesContainerEl.scrollTop || 0;
       this.alchemyRecipesContainerEl.innerHTML = '';
       let visibleCount = 0;
       for (const recipe of alchemyRecipes) {
@@ -6533,6 +6549,7 @@ export class HUD {
           </div>
         `;
       }
+      this.alchemyRecipesContainerEl.scrollTop = previousRecipeScroll;
     }
 
     // 4. Patient treatment section
