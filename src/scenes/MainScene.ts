@@ -59,6 +59,18 @@ export interface ActiveReviveChannel {
   labelText: Phaser.GameObjects.Text;
 }
 
+// Milestone 8: Taming Channel
+export interface ActiveTameChannel {
+  character: Player;
+  targetEnemy: Enemy;
+  durationMs: number;
+  elapsedMs: number;
+  barContainer: Phaser.GameObjects.Container;
+  barBg: Phaser.GameObjects.Graphics;
+  barFill: Phaser.GameObjects.Graphics;
+  labelText: Phaser.GameObjects.Text;
+}
+
 export interface ActiveMoveHighlight {
   dest: GridPos;
   unit?: Player;
@@ -103,6 +115,8 @@ export class MainScene extends Phaser.Scene {
   }
   private activeGatherChannels: Map<Player, ActiveGatherChannel> = new Map();
   private activeReviveChannels: Map<Player, ActiveReviveChannel> = new Map();
+  public activeTameChannels: Map<Player, ActiveTameChannel> = new Map();
+  private qKey?: Phaser.Input.Keyboard.Key;
 
   private portalSprite!: Phaser.GameObjects.Sprite;
   private portalPos: GridPos = { x: 2, y: 2 };
@@ -210,6 +224,12 @@ export class MainScene extends Phaser.Scene {
       channel.barContainer?.destroy();
     }
     this.activeReviveChannels.clear();
+    if (this.activeTameChannels) {
+      for (const channel of this.activeTameChannels.values()) {
+        channel.barContainer?.destroy();
+      }
+      this.activeTameChannels.clear();
+    }
     for (const timer of this.gatheringArrivalTimers.values()) {
       timer.remove();
     }
@@ -307,6 +327,10 @@ export class MainScene extends Phaser.Scene {
         channel.barContainer.destroy();
       }
       this.activeReviveChannels.clear();
+      for (const channel of this.activeTameChannels.values()) {
+        channel.barContainer.destroy();
+      }
+      this.activeTameChannels.clear();
       for (const node of this.gatheringNodes) {
         if (node.respawnTimer) {
           node.respawnTimer.remove();
@@ -710,6 +734,11 @@ export class MainScene extends Phaser.Scene {
         if (isTypingInTextField(event)) return;
         this.hud.applyBandage();
       });
+      this.qKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.Q);
+      this.qKey.on('down', (_key?: any, event?: any) => {
+        if (isTypingInTextField(event)) return;
+        this.tryTameTarget();
+      });
       this.gKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.G);
       this.fKeys = [
         this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.F1),
@@ -1104,6 +1133,7 @@ export class MainScene extends Phaser.Scene {
           for (const m of activeSelected) {
             this.cancelGatherChannel(m);
             this.cancelReviveChannel(m);
+            this.cancelTameChannel(m);
           }
           this.engageEnemy(clickedEnemy, activeSelected);
         }
@@ -1119,6 +1149,7 @@ export class MainScene extends Phaser.Scene {
         for (const member of activeSelected) {
           this.cancelGatherChannel(member);
           this.cancelReviveChannel(member);
+          this.cancelTameChannel(member);
           member.clearTarget();
         }
 
@@ -2859,6 +2890,40 @@ export class MainScene extends Phaser.Scene {
 
       if (channel.elapsedMs >= channel.durationMs) {
         this.completeReviveChannel(character, channel);
+      }
+    }
+
+    // Milestone 8: Update Active Tame Channels
+    for (const [character, channel] of Array.from(this.activeTameChannels.entries())) {
+      if (
+        character.state !== 'channeling' ||
+        character.hp <= 0 ||
+        (character.state as any) === 'downed' ||
+        (character.state as any) === 'dead' ||
+        channel.targetEnemy.state === 'dead' ||
+        !channel.targetEnemy.active
+      ) {
+        this.cancelTameChannel(character);
+        continue;
+      }
+
+      channel.elapsedMs += delta;
+      const pct = Math.min(1, channel.elapsedMs / channel.durationMs);
+
+      // Keep progress bar aligned above character
+      channel.barContainer.setPosition(character.x, character.y - 28);
+
+      // Redraw fill in emerald green
+      channel.barFill.clear();
+      channel.barFill.fillStyle(0x10b981, 1);
+      const fillW = Math.max(0, Math.floor(34 * pct));
+      if (fillW > 0) {
+        channel.barFill.fillRect(-17, -2, fillW, 4);
+      }
+      channel.labelText.setText(`🐾 Taming... ${Math.floor(pct * 100)}%`);
+
+      if (channel.elapsedMs >= channel.durationMs) {
+        this.completeTameChannel(character, channel);
       }
     }
 
@@ -4629,6 +4694,239 @@ export class MainScene extends Phaser.Scene {
       return true;
     }
     return false;
+  }
+
+  // =========================================================================
+  // Milestone 8: Taming System Methods
+  // =========================================================================
+
+  public canTameCreature(character: Player, enemy: Enemy): { allowed: boolean; reason?: string; speciesDef?: any } {
+    const gs = GameState.getInstance();
+    if (!gs.isTamingUnlocked()) {
+      return { allowed: false, reason: 'Taming not researched' };
+    }
+    if (enemy.state === 'dead' || (enemy.state as any) === 'downed') {
+      return { allowed: false, reason: 'Creature is dead' };
+    }
+    const tamingConfig = DataLoader.getInstance().getTamingConfig();
+    const speciesDef = tamingConfig.species.find((s) => s.enemyId === enemy.enemyData.id);
+    if (!speciesDef) {
+      return { allowed: false, reason: 'Creature is not tameable' };
+    }
+    const dist = Math.hypot(character.gridPos.x - enemy.gridPos.x, character.gridPos.y - enemy.gridPos.y);
+    if (dist > 2.05) {
+      return { allowed: false, reason: 'Too far away (must be within 2 tiles)', speciesDef };
+    }
+    if (speciesDef.hpThreshold !== undefined && speciesDef.hpThreshold < 1) {
+      const hpPct = enemy.hp / enemy.maxHp;
+      if (hpPct > speciesDef.hpThreshold + 0.0001) {
+        return { allowed: false, reason: `Enemy HP must be at or below ${Math.round(speciesDef.hpThreshold * 100)}%`, speciesDef };
+      }
+    }
+    const hasItem = gs.getItemCount(speciesDef.tameItem) > 0 || this.party.some((m) => m.getItemCount(speciesDef.tameItem) > 0);
+    if (!hasItem) {
+      const itemDef = DataLoader.getInstance().getItem(speciesDef.tameItem);
+      return { allowed: false, reason: `Requires 1x ${itemDef?.name || speciesDef.tameItem}`, speciesDef };
+    }
+    if (gs.tamedAnimals.length >= (tamingConfig.rosterCap ?? 12)) {
+      return { allowed: false, reason: 'Roster full', speciesDef };
+    }
+    return { allowed: true, speciesDef };
+  }
+
+  public tryTameTarget(actor?: Player): boolean {
+    const selectedMembers = this.getSelectedMembers ? this.getSelectedMembers().filter(m => m.state !== 'downed' && m.state !== 'dead') : [];
+    const member = actor || (selectedMembers.length > 0 ? selectedMembers[0] : this.player);
+    if (!member || member.state === 'downed' || member.state === 'dead') {
+      return false;
+    }
+
+    let targetEnemy: Enemy | null = null;
+    if (member.targetEntity instanceof Enemy) {
+      targetEnemy = member.targetEntity;
+    } else {
+      for (const m of this.party) {
+        if (m.targetEntity instanceof Enemy) {
+          targetEnemy = m.targetEntity;
+          break;
+        }
+      }
+    }
+
+    if (!targetEnemy) {
+      this.hud?.showToast('⚠️ No tameable creature targeted!', 'info', 2000);
+      return false;
+    }
+
+    const check = this.canTameCreature(member, targetEnemy);
+    if (!check.allowed) {
+      if (check.reason) {
+        this.hud?.showToast(`⚠️ ${check.reason}`, 'warn', 2500);
+      }
+      return false;
+    }
+
+    return this.startTameChannel(member, targetEnemy);
+  }
+
+  public startTameChannel(character: Player, targetEnemy: Enemy): boolean {
+    const check = this.canTameCreature(character, targetEnemy);
+    if (!check.allowed || !check.speciesDef) {
+      return false;
+    }
+
+    const speciesDef = check.speciesDef;
+    const gs = GameState.getInstance();
+
+    // Consume 1 tame item immediately (from character or party stockpile)
+    if (character.getItemCount(speciesDef.tameItem) > 0) {
+      character.removeItem(speciesDef.tameItem, 1);
+    } else if (gs.getItemCount(speciesDef.tameItem) > 0) {
+      gs.consumeItem(speciesDef.tameItem, 1);
+    } else {
+      const memberWithItem = this.party.find(m => m.getItemCount(speciesDef.tameItem) > 0);
+      if (memberWithItem) {
+        memberWithItem.removeItem(speciesDef.tameItem, 1);
+      } else {
+        return false;
+      }
+    }
+
+    this.cancelGatherChannel(character);
+    this.cancelReviveChannel(character);
+    this.cancelTameChannel(character);
+
+    character.state = 'channeling';
+    character.claimedDestination = null;
+    character.clearTarget();
+    character.stopMovement();
+
+    const durationMs = 3000;
+
+    const posX = character.x;
+    const posY = character.y - 28;
+    const barContainer = this.add.container(posX, posY).setDepth(10001);
+
+    const barBg = this.add.graphics();
+    barBg.fillStyle(0x111827, 0.85);
+    barBg.fillRect(-18, -3, 36, 6);
+    barBg.lineStyle(1, 0x374151, 1);
+    barBg.strokeRect(-18, -3, 36, 6);
+
+    const barFill = this.add.graphics();
+
+    const labelText = this.add.text(0, -12, '🐾 Taming... 0%', {
+      fontSize: '9px',
+      fontStyle: 'bold',
+      color: '#10b981',
+      backgroundColor: 'rgba(0,0,0,0.7)',
+      padding: { x: 3, y: 1 }
+    }).setOrigin(0.5);
+
+    barContainer.add([barBg, barFill, labelText]);
+
+    const channel: ActiveTameChannel = {
+      character,
+      targetEnemy,
+      durationMs,
+      elapsedMs: 0,
+      barContainer,
+      barBg,
+      barFill,
+      labelText
+    };
+
+    this.activeTameChannels.set(character, channel);
+    console.log(`[Taming] 🐾 ${character.entityName} started taming ${targetEnemy.entityName} (3000ms)...`);
+    this.hud?.showToast(`🐾 Taming ${targetEnemy.entityName}... (3s)`, 'info', 2000);
+    return true;
+  }
+
+  public completeTameChannel(character: Player, channel: ActiveTameChannel): void {
+    channel.barContainer.destroy();
+    this.activeTameChannels.delete(character);
+
+    if (character.state === 'channeling') {
+      character.state = 'idle';
+    }
+
+    const tamingConfig = DataLoader.getInstance().getTamingConfig();
+    const speciesDef = tamingConfig.species.find((s) => s.enemyId === channel.targetEnemy.enemyData.id);
+    if (!speciesDef) return;
+
+    // Attempt EXP (+5)
+    character.progression.addProficiencyExp('taming', tamingConfig.expPerAttempt ?? 5);
+
+    // Roll success
+    const tamingLv = character.progression.getProficiencyLevel('taming');
+    const chance = Math.min(
+      tamingConfig.maxChance ?? 0.95,
+      speciesDef.baseChance + (tamingConfig.chancePerTamingLevel ?? 0.005) * tamingLv
+    );
+
+    const success = GameState.getInstance().rollTaming(chance);
+    const creatureName = DataLoader.getInstance().getEnemy(speciesDef.enemyId)?.name ?? speciesDef.enemyId;
+
+    if (success) {
+      // Success EXP (+40)
+      character.progression.addProficiencyExp('taming', tamingConfig.expPerSuccess ?? 40);
+
+      const gs = GameState.getInstance();
+      const existingCount = gs.tamedAnimals.filter((a) => a.speciesId === speciesDef.enemyId).length;
+      const defaultName = `${creatureName} #${existingCount + 1}`;
+      gs.addTamedAnimal(speciesDef.enemyId, defaultName);
+
+      this.hud?.showToast(`🐾 Tamed a ${creatureName}!`, 'success', 3500);
+      this.removeTamedCreature(channel.targetEnemy);
+    } else {
+      this.hud?.showToast(`The ${creatureName} resists!`, 'warn', 2500);
+    }
+  }
+
+  public cancelTameChannelOnDamage(victim: Player): boolean {
+    const channel = this.activeTameChannels.get(victim);
+    if (channel) {
+      channel.barContainer.destroy();
+      this.activeTameChannels.delete(victim);
+      if (victim.state === 'channeling') {
+        victim.state = 'idle';
+      }
+      this.hud?.showToast('⚠️ Taming interrupted by damage!', 'warn', 2000);
+      return true;
+    }
+    return false;
+  }
+
+  public cancelTameChannel(character: Player): boolean {
+    const channel = this.activeTameChannels.get(character);
+    if (channel) {
+      channel.barContainer.destroy();
+      this.activeTameChannels.delete(character);
+      if (character.state === 'channeling') {
+        character.state = 'idle';
+      }
+      return true;
+    }
+    return false;
+  }
+
+  public removeTamedCreature(targetEnemy: Enemy): void {
+    if (this.targetReticle) {
+      this.targetReticle.setVisible(false);
+    }
+    if (this.combatSystem) {
+      this.combatSystem.cleanupRemovedEnemy(targetEnemy);
+    }
+    for (const m of this.party) {
+      if (m.targetEntity === targetEnemy) {
+        m.clearTarget();
+      }
+    }
+    const idx = this.enemies.indexOf(targetEnemy);
+    if (idx !== -1) {
+      this.enemies.splice(idx, 1);
+    }
+    targetEnemy.destroy();
   }
 
   public clearGatheringQueue(cancelActiveChannels: boolean = true): void {

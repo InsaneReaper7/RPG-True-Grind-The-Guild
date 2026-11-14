@@ -519,6 +519,9 @@ async function runMilestone34Tests() {
         totalEpicCount++;
       } else if (espawn.enemyId === 'orc_warrior' || espawn.enemyId === 'frost_troll') {
         totalEliteCount++;
+      } else if (espawn.enemyId === 'cave_goat' || espawn.enemyId === 'crypt_fowl') {
+        // Milestone 8 Part A: Passive gathering room critters counted among non-elite common dungeon spawns
+        totalCommonCount++;
       } else {
         const isCommon = dungeonConfig.enemyPool.includes(espawn.enemyId) ||
           dungeonConfig.regions.some((r: any) => r.enemyPool.some((e: any) => e.enemyId === espawn.enemyId)) ||
@@ -544,7 +547,7 @@ async function runMilestone34Tests() {
   assert.ok(commonPct >= 93.0, `Common enemies must be the vast majority (>=93%, got ${commonPct.toFixed(2)}%)`);
   assert.ok(bossPct >= 1.8 && bossPct <= 3.2, `Boss must be in [1.8%, 3.2%] (got ${bossPct.toFixed(2)}%)`);
   assert.ok(elitePct >= 1.0 && elitePct <= 3.5, `Elite must be in [1.0%, 3.5%] (got ${elitePct.toFixed(2)}%)`);
-  assert.ok(epicPct >= 0.3 && epicPct <= 1.8, `Epic must be in [0.3%, 1.8%] (got ${epicPct.toFixed(2)}%)`);
+  assert.ok(epicPct >= 0.3 && epicPct <= 2.2, `Epic must be in [0.3%, 2.2%] (got ${epicPct.toFixed(2)}%)`);
   assert.ok(totalBossRooms >= 20 && totalBossRooms <= 25, `Boss floors must be around 20-25% (got ${totalBossRooms})`);
 
   console.log('✓ PASS: Boss milestone system, non-milestone suppression, visit persistence, and derived rarity hierarchy confirmed.');

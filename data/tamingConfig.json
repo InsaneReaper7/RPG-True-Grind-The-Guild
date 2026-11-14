@@ -1,0 +1,64 @@
+{
+  "species": [
+    {
+      "enemyId": "wolf",
+      "kind": "predator",
+      "tameItem": "crypt_meat",
+      "baseChance": 0.30,
+      "hpThreshold": 0.30
+    },
+    {
+      "enemyId": "spider",
+      "kind": "predator",
+      "tameItem": "crypt_meat",
+      "baseChance": 0.25,
+      "hpThreshold": 0.30
+    },
+    {
+      "enemyId": "deep_crawler",
+      "kind": "predator",
+      "tameItem": "abyssal_meat",
+      "baseChance": 0.25,
+      "hpThreshold": 0.30
+    },
+    {
+      "enemyId": "cinder_hound",
+      "kind": "predator",
+      "tameItem": "caldera_meat",
+      "baseChance": 0.20,
+      "hpThreshold": 0.30
+    },
+    {
+      "enemyId": "frostfang_stalker",
+      "kind": "predator",
+      "tameItem": "glacial_meat",
+      "baseChance": 0.15,
+      "hpThreshold": 0.30
+    },
+    {
+      "enemyId": "cave_goat",
+      "kind": "livestock",
+      "tameItem": "wild_herbs",
+      "baseChance": 0.60,
+      "hpThreshold": 1.0
+    },
+    {
+      "enemyId": "crypt_fowl",
+      "kind": "livestock",
+      "tameItem": "seeds",
+      "baseChance": 0.60,
+      "hpThreshold": 1.0
+    }
+  ],
+  "chancePerTamingLevel": 0.005,
+  "maxChance": 0.95,
+  "expPerAttempt": 5,
+  "expPerSuccess": 40,
+  "rosterCap": 12,
+  "channelDurationMs": 3000,
+  "rangeTiles": 2,
+  "critterSpawn": {
+    "chance": 0.25,
+    "critters": ["cave_goat", "crypt_fowl"]
+  }
+}

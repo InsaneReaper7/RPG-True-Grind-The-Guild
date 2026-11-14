@@ -282,7 +282,13 @@ async function runAudit() {
     const starter = gsSrc.match(/unlockedBuildables: Set<string> = new Set\(\[([^\]]*)\]\)/)![1].split(',').map((s) => s.trim().replace(/'/g, '')).sort();
     assert.deepEqual(starter, ['bed', 'door', 'floor', 'research_station', 'wall'], 'Starter unlocked set');
     // Feature nodes (no buildable) are enforced in game code.
-    for (const [node, fn] of [['research_digging', 'isDiggingUnlocked'], ['research_skinning', 'isSkinningUnlocked'], ['research_butchering', 'isButcheringUnlocked'], ['research_fishing', 'isFishingUnlocked']]) {
+    for (const [node, fn] of [
+      ['research_digging', 'isDiggingUnlocked'],
+      ['research_skinning', 'isSkinningUnlocked'],
+      ['research_butchering', 'isButcheringUnlocked'],
+      ['research_fishing', 'isFishingUnlocked'],
+      ['research_taming', 'isTamingUnlocked']
+    ]) {
       assert.ok(nodeIds.has(node), `${node} exists`);
       const callers = fs.readdirSync('src', { recursive: true } as any).filter((f: any) => String(f).endsWith('.ts'))
         .filter((f: any) => fs.readFileSync(path.join('src', String(f)), 'utf8').includes(`${fn}()`) && !String(f).endsWith('GameState.ts'));

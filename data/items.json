@@ -28,6 +28,28 @@
       ]
     },
     {
+      "id": "goat_milk",
+      "name": "Goat Milk",
+      "weight": 0.3,
+      "category": "gathering",
+      "icon": "🥛",
+      "ingredient": true,
+      "cookingTags": [
+        "dairy"
+      ]
+    },
+    {
+      "id": "fowl_egg",
+      "name": "Fowl Egg",
+      "weight": 0.3,
+      "category": "gathering",
+      "icon": "🥚",
+      "ingredient": true,
+      "cookingTags": [
+        "egg"
+      ]
+    },
+    {
       "id": "dirt",
       "name": "Dirt",
       "weight": 0.2,

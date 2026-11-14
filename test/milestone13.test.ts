@@ -53,10 +53,10 @@ const configRaw = JSON.parse(fs.readFileSync('data/dungeonConfig.json', 'utf8'))
   );
   assert.equal(dungeon.gridMatrix[dungeon.portalPos.y][dungeon.portalPos.x], 0, 'Portal tile must be walkable floor (0)');
 
-  // Verify Gathering rooms have bushes [2, 4] and ZERO enemies
+  // Verify Gathering rooms have bushes [2, 4] and ZERO aggressive combat enemies (only optional passive critters)
   for (const gr of gatheringRooms) {
-    const enemiesInGathering = dungeon.enemySpawns.filter((e) => e.roomIndex === gr.id);
-    assert.equal(enemiesInGathering.length, 0, `Gathering room ${gr.id} must have ZERO enemies`);
+    const enemiesInGathering = dungeon.enemySpawns.filter((e) => e.roomIndex === gr.id && e.enemyId !== 'cave_goat' && e.enemyId !== 'crypt_fowl');
+    assert.equal(enemiesInGathering.length, 0, `Gathering room ${gr.id} must have ZERO aggressive combat enemies`);
 
     const bushesInGathering = dungeon.bushSpawns.filter((b) => b.roomIndex === gr.id);
     assert.ok(
@@ -390,7 +390,8 @@ const configRaw = JSON.parse(fs.readFileSync('data/dungeonConfig.json', 'utf8'))
         assert.equal(bushes.length, 0, `Entrance room must have 0 bushes`);
         assert.equal(enemies.length, 0, `Entrance room must have 0 enemies`);
       } else if (room.type === 'gathering') {
-        assert.equal(enemies.length, 0, `Gathering room must have 0 enemies`);
+        const aggressiveEnemies = enemies.filter((e) => e.enemyId !== 'cave_goat' && e.enemyId !== 'crypt_fowl');
+        assert.equal(aggressiveEnemies.length, 0, `Gathering room must have 0 aggressive enemies`);
         assert.ok(bushes.length >= 2 && bushes.length <= 4, `Gathering bushes in [2, 4]`);
       } else if (room.type === 'light_combat') {
         assert.ok(bushes.length >= 1 && bushes.length <= 3, `Light combat bushes in [1, 3]`);

@@ -7,7 +7,7 @@
 ✓ PASS: All 96 combat classes have exactly 5 skills.
 
 3. Checking status effect references...
-✓ PASS: All status references exist in statusEffects.json (57 valid statuses).
+✓ PASS: All status references exist in statusEffects.json (58 valid statuses).
 
 4. Checking requirement targets (recursing into anyOf/oneOf)...
 ✓ PASS: Every requirement target exists across all classes and skills.
@@ -20,7 +20,7 @@
 ✓ PASS: All non-magic, non-offhand weapons have positive damagePerLevel.
 
 8. Checking stat gains proficiency assignment rule...
-✓ PASS: All 61 proficiencies in ProgressionSystem defaults are assigned exactly once in statGains.json.
+✓ PASS: All 64 proficiencies in ProgressionSystem defaults are assigned exactly once in statGains.json.
 
 9. Checking class spellDamageMultiplier values...
 ✓ PASS: All spellDamageMultiplier values are numbers > 0 and <= 2.

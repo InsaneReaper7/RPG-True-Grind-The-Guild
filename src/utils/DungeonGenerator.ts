@@ -979,6 +979,38 @@ export class DungeonGenerator {
       // 'entrance' room: 0 bushes, 0 enemies
     }
 
+    // Milestone 8 Part A: Gathering Room Critter Spawn (25% chance, 50/50 cave_goat / crypt_fowl)
+    const tamingConfig = DataLoader.getInstance().getTamingConfig();
+    const critterChance = tamingConfig.critterSpawn?.chance ?? 0.25;
+    const critters = tamingConfig.critterSpawn?.critters ?? ['cave_goat', 'crypt_fowl'];
+    for (let rIdx = 0; rIdx < rooms.length; rIdx++) {
+      const room = rooms[rIdx];
+      if (room.type === 'gathering' && rng() < critterChance) {
+        const occupied = new Set([
+          ...enemySpawns.filter(e => e.roomIndex === rIdx).map(e => `${e.x},${e.y}`),
+          ...bushSpawns.filter(b => b.roomIndex === rIdx).map(b => `${b.x},${b.y}`)
+        ]);
+        const available: { x: number; y: number }[] = [];
+        for (let y = room.y + 1; y < room.y + room.height - 1; y++) {
+          for (let x = room.x + 1; x < room.x + room.width - 1; x++) {
+            if (!occupied.has(`${x},${y}`) && gridMatrix[y]?.[x] === 0) {
+              available.push({ x, y });
+            }
+          }
+        }
+        if (available.length > 0) {
+          const critterId = critters[Math.floor(rng() * critters.length)];
+          const tile = available[Math.floor(rng() * available.length)];
+          enemySpawns.push({
+            enemyId: critterId,
+            x: tile.x,
+            y: tile.y,
+            roomIndex: rIdx
+          });
+        }
+      }
+    }
+
     // Milestone — Digging: Procedural Dig Spots Placed in Additive Post-Generation Pass
     const isDiggingUnlocked = options?.isDiggingUnlocked ?? (
       typeof GameState !== 'undefined' ? GameState.getInstance().isDiggingUnlocked() : false

@@ -248,9 +248,9 @@ export class SkillSystem {
       return caster.targetEntity;
     }
 
-    // 3. the nearest living enemy within rangeTiles
+    // 3. the nearest living enemy within rangeTiles (never auto-target critters)
     const livingEnemies = (this.combatSystem.enemies || []).filter(
-      (e: any) => isEnemy(e) && isLiving(e)
+      (e: any) => isEnemy(e) && isLiving(e) && e.enemyData?.tier !== 'critter'
     );
     let nearest: any = null;
     let minDist = Infinity;

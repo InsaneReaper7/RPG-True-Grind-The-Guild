@@ -306,6 +306,13 @@ export class HUD {
   private stonemasonRecipesContainerEl: HTMLElement | null;
   private stonemasonStatusMsgEl: HTMLElement | null;
 
+  // Milestone 8 Elements (Taming & Animal Husbandry)
+  public tameBtnEl: HTMLButtonElement | null = null;
+  private animalPenModalEl: HTMLElement | null = null;
+  private closeAnimalPenBtn: HTMLElement | null = null;
+  private animalPenContentEl: HTMLElement | null = null;
+  private currentAnimalPen: any = null;
+
   // Milestone 16 Elements (Floor Timer & Respawn Debug)
   private floorTimerBadgeEl: HTMLElement | null;
   private debugBtnFastForwardFloorTimer: HTMLElement | null;
@@ -510,6 +517,22 @@ export class HUD {
     this.campMakeBtnEl = document.getElementById('camp-make-btn') as HTMLButtonElement | null;
     this.campCookBtnEl = document.getElementById('camp-cook-btn') as HTMLButtonElement | null;
     this.campBreakBtnEl = document.getElementById('camp-break-btn') as HTMLButtonElement | null;
+
+    // Milestone 8: Taming HUD Button & Animal Pen Modal
+    this.tameBtnEl = document.getElementById('tame-btn') as HTMLButtonElement | null;
+    if (this.tameBtnEl && typeof this.tameBtnEl.addEventListener === 'function') {
+      this.tameBtnEl.addEventListener('click', () => {
+        this.triggerTameAction();
+      });
+    }
+    this.animalPenModalEl = document.getElementById('animal-pen-modal');
+    this.closeAnimalPenBtn = document.getElementById('close-animal-pen-btn');
+    this.animalPenContentEl = document.getElementById('animal-pen-content');
+    if (this.closeAnimalPenBtn && typeof this.closeAnimalPenBtn.addEventListener === 'function') {
+      this.closeAnimalPenBtn.addEventListener('click', () => {
+        this.closeAnimalPenModal();
+      });
+    }
 
     this.portraitCardEls = [];
     this.portraitNameEls = [];
@@ -2181,6 +2204,11 @@ export class HUD {
             const slotIdx = parseInt(e.key, 10) - 1;
             active.triggerQuickSlot(slotIdx);
           }
+        } else if (e.key === 'q' || e.key === 'Q' || e.code === 'KeyQ') {
+          const targetTag = (e.target as HTMLElement)?.tagName?.toLowerCase();
+          if (targetTag !== 'input' && targetTag !== 'textarea' && targetTag !== 'select') {
+            active.triggerTameAction();
+          }
         } else if (e.key === 't' || e.key === 'T' || e.code === 'KeyT') {
           const targetTag = (e.target as HTMLElement)?.tagName?.toLowerCase();
           if (targetTag !== 'input' && targetTag !== 'textarea' && targetTag !== 'select') {
@@ -2204,6 +2232,7 @@ export class HUD {
           active.closeMagicalWeaponModal?.();
           active.closeWoodworkingModal?.();
           active.closeStonemasonModal?.();
+          active.closeAnimalPenModal?.();
           active.closePartyOverviewModal();
           if (active.isBuildOverlayVisible()) {
             active.onBuildModeToggleCallback?.();
@@ -2229,6 +2258,7 @@ export class HUD {
       if (this.campMakeBtnEl) this.campMakeBtnEl.style.display = 'none';
       if (this.campCookBtnEl) this.campCookBtnEl.style.display = 'none';
       if (this.campBreakBtnEl) this.campBreakBtnEl.style.display = 'none';
+      if (this.tameBtnEl) this.tameBtnEl.style.display = 'none';
       return;
     }
 
@@ -2287,6 +2317,8 @@ export class HUD {
         this.campBreakBtnEl.style.display = display;
       }
     }
+
+    this.updateTameButton(scene);
   }
 
   /** Campfire cooking is gated by the same research as the outpost Cooking Station. */
@@ -8590,6 +8622,290 @@ export class HUD {
         `;
       }
     }
+  }
+
+  // =========================================================================
+  // Milestone 8: Taming & Animal Husbandry UI
+  // =========================================================================
+
+  public updateTameButton(sceneOverride?: any): void {
+    if (!this.tameBtnEl) return;
+    const scene = sceneOverride || this.getScene();
+    if (!scene || this.isOutpost || !scene.dungeon) {
+      this.tameBtnEl.style.display = 'none';
+      return;
+    }
+
+    const gs = GameState.getInstance();
+    if (!gs.isTamingUnlocked()) {
+      this.tameBtnEl.style.display = 'none';
+      return;
+    }
+
+    // Get selected member or leader
+    const activeSelected = scene.getSelectedMembers ? scene.getSelectedMembers().filter((m: any) => m.state !== 'downed' && m.state !== 'dead') : [];
+    const member = activeSelected.length > 0 ? activeSelected[0] : (scene.player || this.currentPlayer);
+
+    if (!member) {
+      this.tameBtnEl.style.display = 'none';
+      return;
+    }
+
+    // Target enemy
+    const targetEnemy = member.targetEntity && member.targetEntity.enemyData ? member.targetEntity : null;
+    if (!targetEnemy || targetEnemy.state === 'dead' || (targetEnemy.state as any) === 'downed') {
+      this.tameBtnEl.style.display = 'none';
+      return;
+    }
+
+    const tamingConfig = DataLoader.getInstance().getTamingConfig();
+    const speciesDef = tamingConfig.species.find((s: any) => s.enemyId === targetEnemy.enemyData?.id);
+    if (!speciesDef) {
+      this.tameBtnEl.style.display = 'none';
+      return;
+    }
+
+    const dist = Math.hypot(member.gridPos.x - targetEnemy.gridPos.x, member.gridPos.y - targetEnemy.gridPos.y);
+    if (dist > 2.05) {
+      this.tameBtnEl.style.display = 'none';
+      return;
+    }
+
+    if (speciesDef.hpThreshold !== undefined && speciesDef.hpThreshold < 1) {
+      const hpPct = targetEnemy.hp / targetEnemy.maxHp;
+      if (hpPct > speciesDef.hpThreshold + 0.0001) {
+        this.tameBtnEl.style.display = 'none';
+        return;
+      }
+    }
+
+    const hasItem = gs.getItemCount(speciesDef.tameItem) > 0 || (scene.party && scene.party.some((m: any) => m.getItemCount(speciesDef.tameItem) > 0));
+    if (!hasItem) {
+      this.tameBtnEl.style.display = 'none';
+      return;
+    }
+
+    // Creature meets all conditions, show button!
+    this.tameBtnEl.style.display = 'inline-block';
+    if (gs.tamedAnimals.length >= (tamingConfig.rosterCap ?? 12)) {
+      this.tameBtnEl.disabled = true;
+      this.tameBtnEl.textContent = '🐾 Roster full';
+      this.tameBtnEl.title = 'Roster full';
+      this.tameBtnEl.style.opacity = '0.6';
+      this.tameBtnEl.style.cursor = 'not-allowed';
+    } else {
+      this.tameBtnEl.disabled = false;
+      this.tameBtnEl.textContent = '🐾 Tame [Q]';
+      this.tameBtnEl.title = 'Tame Target (Hotkey: Q)';
+      this.tameBtnEl.style.opacity = '1';
+      this.tameBtnEl.style.cursor = 'pointer';
+    }
+  }
+
+  public triggerTameAction(): void {
+    const scene = this.getScene();
+    if (scene && typeof scene.tryTameTarget === 'function') {
+      scene.tryTameTarget();
+    }
+  }
+
+  public openAnimalPenModal(penBuildable: any): void {
+    this.currentAnimalPen = penBuildable;
+    if (this.animalPenModalEl) {
+      this.animalPenModalEl.classList.add('active');
+      this.renderAnimalPenModal(penBuildable);
+    }
+  }
+
+  public closeAnimalPenModal(): void {
+    if (this.animalPenModalEl) {
+      this.animalPenModalEl.classList.remove('active');
+    }
+    this.currentAnimalPen = null;
+  }
+
+  public isAnimalPenModalOpen(): boolean {
+    return this.animalPenModalEl?.classList.contains('active') ?? false;
+  }
+
+  public getCurrentAnimalPen(): any {
+    return this.currentAnimalPen;
+  }
+
+  public renderAnimalPenModal(penBuildable: any): void {
+    if (!this.animalPenContentEl) return;
+    const gs = GameState.getInstance();
+    const dataLoader = DataLoader.getInstance();
+    const husbandryCfg = dataLoader.getHusbandryConfig();
+    const tamingCfg = dataLoader.getTamingConfig();
+
+    if (!penBuildable.penData) {
+      penBuildable.penData = { animals: [] };
+    }
+    const penData = penBuildable.penData;
+    const capacity = penBuildable.capacity ?? husbandryCfg.penCapacity ?? 2;
+    const assigned = penData.animals || [];
+
+    // Highest Husbandry level
+    let highestHusbandryLv = 0;
+    for (const snap of gs.getPartySnapshots()) {
+      const lv = snap.proficiencies?.animal_husbandry?.level ?? 0;
+      if (lv > highestHusbandryLv) highestHusbandryLv = lv;
+    }
+
+    let html = '';
+
+    // Status Bar
+    html += `
+      <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(31, 41, 55, 0.7); padding: 8px 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); font-size: 12px;">
+        <div>Pen Occupancy: <strong style="color: ${assigned.length >= capacity ? '#ef4444' : '#10b981'};">${assigned.length} / ${capacity}</strong></div>
+        <div>Guild Animal Husbandry: <strong style="color: #10b981;">Lv ${highestHusbandryLv}</strong></div>
+      </div>
+    `;
+
+    // Section 1: Assigned Animals
+    html += `
+      <div style="background: rgba(15, 23, 42, 0.6); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);">
+        <div style="font-size: 13px; font-weight: 700; color: #38bdf8; margin-bottom: 8px;">🏡 Assigned Livestock</div>
+    `;
+
+    if (assigned.length === 0) {
+      html += `<div style="font-size: 12px; color: #94a3b8; font-style: italic; padding: 6px 0;">No animals currently sheltered in this pen. Assign livestock from the roster below!</div>`;
+    } else {
+      html += `<div style="display: flex; flex-direction: column; gap: 8px;">`;
+      for (const record of assigned) {
+        const animal = gs.tamedAnimals.find((a: any) => a.uid === record.uid);
+        const animalDef = dataLoader.getEnemy(animal?.speciesId ?? '');
+        const prodDef = husbandryCfg.production[animal?.speciesId ?? ''];
+        const feedItemDef = prodDef ? dataLoader.getItem(prodDef.feedItem) : null;
+        const feedItemName = feedItemDef?.name || prodDef?.feedItem || 'Feed';
+        const partyHasFeed = (gs.getItemCount(prodDef?.feedItem ?? '') > 0) || (this.currentPlayer?.getItemCount(prodDef?.feedItem ?? '') ?? 0) > 0;
+
+        const storedEntries = Object.entries(record.storedProducts || {}).filter(([_, c]) => (c as number) > 0);
+        const storedStr = storedEntries.length > 0
+          ? storedEntries.map(([item, count]) => `${count}x ${dataLoader.getItem(item)?.name || item}`).join(', ')
+          : 'None';
+        const totalStored = storedEntries.reduce((sum, [_, c]) => sum + (c as number), 0);
+
+        html += `
+          <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(30, 41, 59, 0.7); padding: 10px 12px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.06);">
+            <div>
+              <div style="font-weight: 600; color: #f1f5f9; font-size: 13px;">${animal?.name || 'Animal'} <span style="font-size: 11px; color: #94a3b8; font-weight: normal;">(${animalDef?.name || 'Livestock'})</span></div>
+              <div style="font-size: 11px; color: #cbd5e1; margin-top: 3px;">
+                Fed Today: ${record.fedToday ? '<span style="color: #22c55e;">✅ Yes</span>' : '<span style="color: #f59e0b;">❌ No</span>'}
+                &nbsp;|&nbsp;
+                Stored Goods: <span style="color: #38bdf8;">${storedStr}</span>
+              </div>
+            </div>
+            <div style="display: flex; gap: 6px;">
+              <button class="pen-feed-btn" data-uid="${record.uid}" type="button" ${record.fedToday || !partyHasFeed ? 'disabled' : ''} style="background: #059669; color: white; border: 1px solid #10b981; padding: 4px 10px; border-radius: 4px; font-size: 11px; cursor: ${record.fedToday || !partyHasFeed ? 'not-allowed' : 'pointer'}; opacity: ${record.fedToday || !partyHasFeed ? '0.5' : '1'};">
+                🌾 Feed (${feedItemName})
+              </button>
+              <button class="pen-collect-btn" data-uid="${record.uid}" type="button" ${totalStored === 0 ? 'disabled' : ''} style="background: #0284c7; color: white; border: 1px solid #38bdf8; padding: 4px 10px; border-radius: 4px; font-size: 11px; cursor: ${totalStored === 0 ? 'not-allowed' : 'pointer'}; opacity: ${totalStored === 0 ? '0.5' : '1'};">
+                📦 Collect
+              </button>
+              <button class="pen-remove-btn" data-uid="${record.uid}" type="button" style="background: #b91c1c; color: white; border: 1px solid #ef4444; padding: 4px 8px; border-radius: 4px; font-size: 11px; cursor: pointer;">
+                ✕ Remove
+              </button>
+            </div>
+          </div>
+        `;
+      }
+      html += `</div>`;
+    }
+    html += `</div>`;
+
+    // Section 2: Unassigned Livestock Roster
+    const assignedUids = new Set(gs.getPlacedBuildables().filter((b: any) => b.id === 'animal_pen').flatMap((b: any) => b.penData?.animals?.map((a: any) => a.uid) || []));
+    const unassignedLivestock = gs.tamedAnimals.filter((a: any) => {
+      const sp = tamingCfg.species.find((s: any) => s.enemyId === a.speciesId);
+      return sp?.kind === 'livestock' && !assignedUids.has(a.uid);
+    });
+
+    html += `
+      <div style="background: rgba(15, 23, 42, 0.6); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);">
+        <div style="font-size: 13px; font-weight: 700; color: #a78bfa; margin-bottom: 8px;">📋 Unassigned Livestock Roster</div>
+    `;
+
+    if (unassignedLivestock.length === 0) {
+      html += `<div style="font-size: 12px; color: #94a3b8; font-style: italic; padding: 6px 0;">No unassigned livestock in the guild roster. Tame wild Cave Goats or Crypt Fowls in the dungeon to bring them here!</div>`;
+    } else {
+      html += `<div style="display: flex; flex-direction: column; gap: 6px;">`;
+      for (const a of unassignedLivestock) {
+        const sp = tamingCfg.species.find((s: any) => s.enemyId === a.speciesId);
+        const spEnemyDef = dataLoader.getEnemy(sp?.enemyId ?? a.speciesId);
+        const isFull = assigned.length >= capacity;
+        html += `
+          <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(30, 41, 59, 0.7); padding: 8px 12px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.06);">
+            <div>
+              <span style="font-weight: 600; color: #f1f5f9; font-size: 13px;">${a.name}</span>
+              <span style="font-size: 11px; color: #94a3b8; margin-left: 6px;">(${spEnemyDef?.name || 'Livestock'})</span>
+            </div>
+            <button class="pen-assign-btn" data-uid="${a.uid}" type="button" ${isFull ? 'disabled' : ''} style="background: #4f46e5; color: white; border: 1px solid #6366f1; padding: 4px 10px; border-radius: 4px; font-size: 11px; cursor: ${isFull ? 'not-allowed' : 'pointer'}; opacity: ${isFull ? '0.5' : '1'};">
+              ${isFull ? 'Pen Full' : '📥 Assign to Pen'}
+            </button>
+          </div>
+        `;
+      }
+      html += `</div>`;
+    }
+    html += `</div>`;
+
+    this.animalPenContentEl.innerHTML = html;
+
+    // Attach button listeners
+    this.animalPenContentEl.querySelectorAll('.pen-feed-btn').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        const uid = (e.currentTarget as HTMLElement).getAttribute('data-uid');
+        if (!uid) return;
+        const actor = this.currentPlayer || this.getScene()?.player;
+        const res = gs.feedPenAnimal(penBuildable, uid, actor);
+        if (res.success) {
+          this.showToast('🌾 Fed livestock! (+10 Husbandry EXP)', 'success', 2000);
+        } else {
+          this.showToast(`⚠️ ${res.reason || 'Cannot feed'}`, 'warn', 2000);
+        }
+        this.renderAnimalPenModal(penBuildable);
+      });
+    });
+
+    this.animalPenContentEl.querySelectorAll('.pen-collect-btn').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        const uid = (e.currentTarget as HTMLElement).getAttribute('data-uid');
+        if (!uid) return;
+        const actor = this.currentPlayer || this.getScene()?.player;
+        const res = gs.collectPenProducts(penBuildable, uid, actor);
+        if (res.totalCount > 0) {
+          const itemsStr = Object.entries(res.collected).map(([it, cnt]) => `${cnt}x ${dataLoader.getItem(it)?.name || it}`).join(', ');
+          this.showToast(`✨ Collected ${itemsStr}! (+15 Husbandry EXP)`, 'success', 2500);
+        }
+        this.renderAnimalPenModal(penBuildable);
+      });
+    });
+
+    this.animalPenContentEl.querySelectorAll('.pen-remove-btn').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        const uid = (e.currentTarget as HTMLElement).getAttribute('data-uid');
+        if (!uid) return;
+        gs.removeAnimalFromPen(penBuildable, uid);
+        this.showToast('Animal removed from pen.', 'info', 1500);
+        this.renderAnimalPenModal(penBuildable);
+      });
+    });
+
+    this.animalPenContentEl.querySelectorAll('.pen-assign-btn').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        const uid = (e.currentTarget as HTMLElement).getAttribute('data-uid');
+        if (!uid) return;
+        const res = gs.assignAnimalToPen(penBuildable, uid);
+        if (res.success) {
+          this.showToast('Animal assigned to pen!', 'success', 1500);
+        } else {
+          this.showToast(`⚠️ ${res.reason || 'Cannot assign'}`, 'warn', 2000);
+        }
+        this.renderAnimalPenModal(penBuildable);
+      });
+    });
   }
 
   // --- GEAR SALVAGE UI (Milestone: Gear Salvage) ---

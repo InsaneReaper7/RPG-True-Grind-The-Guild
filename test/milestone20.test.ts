@@ -301,7 +301,9 @@ async function runMilestone20Tests() {
     ...dungeonConfig.enemyPool,
     dungeonConfig.eliteEnemyId,
     dungeonConfig.epicEnemyId,
-    dungeonConfig.bossEnemyId
+    dungeonConfig.bossEnemyId,
+    'cave_goat',
+    'crypt_fowl'
   ].filter(Boolean));
 
   for (const s of generatedDungeon.enemySpawns) {

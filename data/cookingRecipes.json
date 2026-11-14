@@ -157,6 +157,51 @@
       "expGranted": 20
     },
     {
+      "id": "fluffy_omelette",
+      "name": "Fluffy Omelette",
+      "slots": [
+        {
+          "item": "fowl_egg"
+        },
+        {
+          "tag": "herb"
+        }
+      ],
+      "buffs": [
+        "H"
+      ],
+      "description": "Fluffy beaten eggs gently cooked with aromatic dungeon herbs.",
+      "ingredients": {
+        "fowl_egg": 1,
+        "wild_herbs": 1
+      },
+      "resultFoodId": "fluffy_omelette",
+      "expGranted": 20
+    },
+    {
+      "id": "milk_porridge",
+      "name": "Milk Porridge",
+      "slots": [
+        {
+          "item": "goat_milk"
+        },
+        {
+          "item": "potato"
+        }
+      ],
+      "buffs": [
+        "E"
+      ],
+      "durationMultiplier": 1.25,
+      "description": "Hearty potato mash simmered in rich cave goat milk.",
+      "ingredients": {
+        "goat_milk": 1,
+        "potato": 1
+      },
+      "resultFoodId": "milk_porridge",
+      "expGranted": 20
+    },
+    {
       "id": "garlic_mushrooms",
       "name": "Garlic Mushrooms",
       "slots": [

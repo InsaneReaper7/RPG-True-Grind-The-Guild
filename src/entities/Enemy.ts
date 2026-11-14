@@ -180,10 +180,15 @@ export class Enemy extends Entity {
   }
 
   public override takeDamage(amount: number, source?: Entity | string): boolean {
-    // Immediate aggro on taking damage regardless of attacker distance
-    if (!this.isAggroed) {
-      this.isAggroed = true;
-      console.log(`[Combat] ${this.entityName} aggroed immediately due to damage!`);
+    // Immediate aggro on taking damage regardless of attacker distance (critters never aggro)
+    if (this.enemyData.tier !== 'critter') {
+      if (!this.isAggroed) {
+        this.isAggroed = true;
+        console.log(`[Combat] ${this.entityName} aggroed immediately due to damage!`);
+      }
+      if (source && typeof source !== 'string' && !this.tauntSource && (!this.targetEntity || this.targetEntity.state === 'dead' || this.targetEntity.state === 'downed')) {
+        this.targetEntity = source;
+      }
     }
 
     // Fresh hit resets out-of-aggro timer
@@ -194,8 +199,8 @@ export class Enemy extends Entity {
       return super.takeDamage(amount, source);
     }
 
-    // Reset state out of 'attacking', 'idle', or 'returning' into 'chasing' so pursuit can resume
-    if (this.state !== 'downed' && this.state !== 'dead') {
+    // Reset state out of 'attacking', 'idle', or 'returning' into 'chasing' so pursuit can resume (critters stay passive)
+    if (this.enemyData.tier !== 'critter' && this.state !== 'downed' && this.state !== 'dead') {
       if (this.state === 'attacking' || this.state === 'idle' || this.state === 'returning') {
         this.state = 'chasing';
       }

@@ -150,6 +150,12 @@
     "alchemy": {
       "int": 0.02
     },
+    "taming": {
+      "dex": 0.02
+    },
+    "animal_husbandry": {
+      "str": 0.02
+    },
     "light_armor": {
       "dex": 0.05
     },
@@ -206,6 +212,9 @@
     "gardening": "profession",
     "fishing": "profession",
     "enchanting": "profession",
+    "taming": "profession",
+    "animal_husbandry": "profession",
+    "stealth": "excluded",
     "evasion": "excluded",
     "parry": "excluded",
     "block": "excluded",

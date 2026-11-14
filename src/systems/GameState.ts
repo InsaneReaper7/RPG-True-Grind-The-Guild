@@ -11,6 +11,7 @@ import type {
   LockpickAttemptResult,
   PlantingPlotData,
   SeedMakerData,
+  TamedAnimal,
   SaveMetadata,
   GameSaveFile,
   GearItemInstance,
@@ -20,6 +21,7 @@ import { DataLoader } from '../utils/DataLoader.ts';
 import { LockpickingSystem } from './LockpickingSystem.ts';
 import { EventLog } from './EventLog.ts';
 import { isCraftingClass, getBaseItemId } from '../utils/gearResolver.ts';
+import { createPassiveRng } from '../utils/rng.ts';
 
 export function validateCharacterName(name: string | null | undefined, defaultName: string): string {
   if (typeof name !== 'string') return defaultName;
@@ -66,6 +68,11 @@ export class GameState {
   private dungeonFloorCount: number = 0;
   private lifetimeDungeonFloorCount: number = 0;
   private lastDungeonFloorVisited: number = 0;
+
+  // Milestone 8 Part A: Taming & Husbandry
+  public tamedAnimals: TamedAnimal[] = [];
+  private tamingRng: () => number = createPassiveRng(0x2a91b4c3);
+  private husbandryRng: () => number = createPassiveRng(0x4b7291a5);
 
   // Milestone: Tutorial & Onboarding
   private tutorialStep: number = 0;
@@ -602,6 +609,10 @@ export class GameState {
     return this.isResearchCompleted('research_fishing');
   }
 
+  public isTamingUnlocked(): boolean {
+    return this.isResearchCompleted('research_taming');
+  }
+
   // --- Clock & Game Day System (Milestone 7 & 39) ---
   public getCurrentGameDay(): number {
     return this.currentGameDay;
@@ -659,10 +670,12 @@ export class GameState {
     this.currentGameDay += days;
     console.log(`%c[Clock] 🌅 Game Day advanced by +${days} -> Day ${this.currentGameDay}`, 'color: #f59e0b; font-weight: bold;');
     this.updateGardeningPlots();
+    this.updateAnimalPens(days);
     const spoiled = this.checkFoodSpoilage();
     if (this.snapshot) {
       this.snapshot.currentGameDay = this.currentGameDay;
       this.snapshot.foodItems = [...this.foodItems];
+      this.snapshot.tamedAnimals = [...this.tamedAnimals];
     }
     return spoiled;
   }
@@ -799,6 +812,209 @@ export class GameState {
         }
       }
     }
+  }
+
+  // --- Milestone 8 Part A: Taming & Animal Husbandry ---
+  public setTamingRng(rng: (() => number) | undefined): void {
+    this.tamingRng = rng ?? createPassiveRng(0x2a91b4c3);
+  }
+
+  public getTamingRng(): () => number {
+    return this.tamingRng;
+  }
+
+  public setHusbandryRng(rng: (() => number) | undefined): void {
+    this.husbandryRng = rng ?? createPassiveRng(0x4b7291a5);
+  }
+
+  public getHusbandryRng(): () => number {
+    return this.husbandryRng;
+  }
+
+  public rollTaming(chance: number): boolean {
+    return this.tamingRng() < chance;
+  }
+
+  public getTamedAnimals(): TamedAnimal[] {
+    return [...this.tamedAnimals];
+  }
+
+  public addTamedAnimal(speciesId: string, customName?: string): TamedAnimal | null {
+    const tamingConfig = DataLoader.getInstance().getTamingConfig();
+    const cap = tamingConfig.rosterCap ?? 12;
+    if (this.tamedAnimals.length >= cap) {
+      return null;
+    }
+    const count = this.tamedAnimals.filter(a => a.speciesId === speciesId).length + 1;
+    const enemyDef = DataLoader.getInstance().getEnemy(speciesId);
+    const baseName = enemyDef?.name || speciesId.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    const name = customName || `${baseName} #${count}`;
+    const animal: TamedAnimal = {
+      uid: 'tame_' + Date.now() + '_' + Math.floor(Math.random() * 100000),
+      speciesId,
+      name
+    };
+    this.tamedAnimals.push(animal);
+    return animal;
+  }
+
+  public updateAnimalPens(days: number = 1): void {
+    const husbandryConfig = DataLoader.getInstance().getHusbandryConfig();
+    const storageCap = husbandryConfig.storageCapPerAnimal ?? 5;
+    const extraPerLv = husbandryConfig.extraProductPerLevel ?? 0.005;
+    const maxExtra = husbandryConfig.maxExtraProductChance ?? 0.5;
+
+    // Highest Husbandry level among guild members
+    let highestHusbandryLv = 0;
+    for (const snap of this.partySnapshots) {
+      const lv = snap.proficiencies?.animal_husbandry?.level ?? 0;
+      if (lv > highestHusbandryLv) highestHusbandryLv = lv;
+    }
+    const extraProductChance = Math.min(maxExtra, highestHusbandryLv * extraPerLv);
+
+    const pens = this.placedBuildables.filter(b => b.id === 'animal_pen');
+    for (let d = 0; d < days; d++) {
+      for (const pen of pens) {
+        if (!pen.penData) pen.penData = { animals: [] };
+        for (const record of pen.penData.animals) {
+          if (record.fedToday) {
+            const animal = this.tamedAnimals.find(a => a.uid === record.uid);
+            if (animal) {
+              const prodDef = husbandryConfig.production[animal.speciesId];
+              if (prodDef) {
+                if (!record.storedProducts) record.storedProducts = {};
+
+                let currentTotal = Object.values(record.storedProducts).reduce((sum, v) => sum + v, 0);
+
+                // 1. Base product
+                if (currentTotal < storageCap) {
+                  const addCount = Math.min(storageCap - currentTotal, prodDef.dailyAmount ?? 1);
+                  record.storedProducts[prodDef.dailyProduct] = (record.storedProducts[prodDef.dailyProduct] ?? 0) + addCount;
+                  currentTotal += addCount;
+                }
+
+                // 2. Bonus product (e.g. crypt_fowl 50% chance of +1 feather)
+                if (prodDef.bonus && currentTotal < storageCap) {
+                  if (this.husbandryRng() < prodDef.bonus.chance) {
+                    const addBonus = Math.min(storageCap - currentTotal, prodDef.bonus.amount ?? 1);
+                    record.storedProducts[prodDef.bonus.item] = (record.storedProducts[prodDef.bonus.item] ?? 0) + addBonus;
+                    currentTotal += addBonus;
+                  }
+                }
+
+                // 3. Husbandry perk: extra-product chance 0.005 * Husbandry Lv
+                if (extraProductChance > 0 && currentTotal < storageCap) {
+                  if (this.husbandryRng() < extraProductChance) {
+                    record.storedProducts[prodDef.dailyProduct] = (record.storedProducts[prodDef.dailyProduct] ?? 0) + 1;
+                    currentTotal += 1;
+                  }
+                }
+              }
+            }
+            record.fedToday = false;
+          }
+        }
+      }
+    }
+  }
+
+  public feedPenAnimal(pen: PlacedBuildable, animalUid: string, feeder?: Player): { success: boolean; reason?: string } {
+    if (!pen.penData) pen.penData = { animals: [] };
+    const record = pen.penData.animals.find(a => a.uid === animalUid);
+    if (!record) return { success: false, reason: 'Animal not in this pen' };
+    if (record.fedToday) return { success: false, reason: 'Already fed today' };
+
+    const animal = this.tamedAnimals.find(a => a.uid === animalUid);
+    if (!animal) return { success: false, reason: 'Animal not found' };
+
+    const husbandryConfig = DataLoader.getInstance().getHusbandryConfig();
+    const prodDef = husbandryConfig.production[animal.speciesId];
+    if (!prodDef) return { success: false, reason: 'No feed requirement defined' };
+
+    const feedItem = prodDef.feedItem;
+    let consumed = false;
+    if (feeder && feeder.getItemCount(feedItem) > 0) {
+      feeder.removeItem(feedItem, 1);
+      consumed = true;
+    } else if (this.getItemCount(feedItem) > 0) {
+      this.consumeItem(feedItem, 1);
+      consumed = true;
+    }
+
+    if (!consumed) {
+      const itemDef = DataLoader.getInstance().getItem(feedItem);
+      return { success: false, reason: `Requires 1x ${itemDef?.name || feedItem}` };
+    }
+
+    record.fedToday = true;
+    const exp = husbandryConfig.expPerFeed ?? 10;
+    if (feeder && feeder.progression) {
+      feeder.progression.addProficiencyExp('animal_husbandry', exp);
+    }
+    return { success: true };
+  }
+
+  public collectPenProducts(pen: PlacedBuildable, animalUid: string, collector?: Player): { collected: Record<string, number>; totalCount: number } {
+    if (!pen.penData) pen.penData = { animals: [] };
+    const record = pen.penData.animals.find(a => a.uid === animalUid);
+    if (!record || !record.storedProducts) return { collected: {}, totalCount: 0 };
+
+    const collected: Record<string, number> = {};
+    let totalCount = 0;
+    for (const [itemId, count] of Object.entries(record.storedProducts)) {
+      if (count > 0) {
+        this.addItem(itemId, count);
+        collected[itemId] = count;
+        totalCount += count;
+      }
+    }
+    record.storedProducts = {};
+
+    if (totalCount > 0 && collector && collector.progression) {
+      const expPerCollect = DataLoader.getInstance().getHusbandryConfig().expPerCollect ?? 15;
+      collector.progression.addProficiencyExp('animal_husbandry', expPerCollect);
+    }
+    return { collected, totalCount };
+  }
+
+  public assignAnimalToPen(pen: PlacedBuildable, animalUid: string): { success: boolean; reason?: string } {
+    if (!pen.penData) pen.penData = { animals: [] };
+    const capacity = (pen as any).capacity ?? DataLoader.getInstance().getBuildable(pen.id)?.capacity ?? DataLoader.getInstance().getHusbandryConfig().penCapacity ?? 2;
+    if (pen.penData.animals.length >= capacity) {
+      return { success: false, reason: 'Pen is full' };
+    }
+
+    const animal = this.tamedAnimals.find(a => a.uid === animalUid);
+    if (!animal) return { success: false, reason: 'Animal not found' };
+
+    for (const otherPen of this.placedBuildables.filter(b => b.id === 'animal_pen')) {
+      if (otherPen.penData?.animals.some(a => a.uid === animalUid)) {
+        return { success: false, reason: 'Animal is already assigned to a pen' };
+      }
+    }
+
+    const tamingConfig = DataLoader.getInstance().getTamingConfig();
+    const speciesDef = tamingConfig.species.find(s => s.enemyId === animal.speciesId);
+    if (!speciesDef || speciesDef.kind !== 'livestock') {
+      return { success: false, reason: 'Predators cannot be assigned to pens' };
+    }
+
+    pen.penData.animals.push({
+      uid: animalUid,
+      fedToday: false,
+      storedProducts: {}
+    });
+    return { success: true };
+  }
+
+  public removeAnimalFromPen(pen: PlacedBuildable, animalUid: string): boolean {
+    if (!pen.penData) return false;
+    const idx = pen.penData.animals.findIndex(a => a.uid === animalUid);
+    if (idx !== -1) {
+      pen.penData.animals.splice(idx, 1);
+      return true;
+    }
+    return false;
   }
 
   // --- Food & Spoilage System (Milestone 7) ---
@@ -1745,7 +1961,8 @@ export class GameState {
       defeatedAreaBosses: Array.from(this.defeatedAreaBosses),
       gearInstances: Object.fromEntries(this.gearInstances),
       worldFlags: { ...this.worldFlags },
-      grovePityCounter: this.grovePityCounter
+      grovePityCounter: this.grovePityCounter,
+      tamedAnimals: [...this.tamedAnimals]
     };
 
     console.log(
@@ -1865,6 +2082,11 @@ export class GameState {
     }
     if (snap.lifetimeDungeonFloorCount !== undefined) {
       this.lifetimeDungeonFloorCount = snap.lifetimeDungeonFloorCount;
+    }
+    if (snap.tamedAnimals) {
+      this.tamedAnimals = [...snap.tamedAnimals];
+    } else {
+      this.tamedAnimals = [];
     }
 
     player.autocastMap.clear();
@@ -2615,6 +2837,7 @@ export class GameState {
 
     this.worldFlags = snap.worldFlags ? { ...snap.worldFlags } : {};
     this.grovePityCounter = typeof snap.grovePityCounter === 'number' ? Math.max(0, Math.floor(snap.grovePityCounter)) : 0;
+    this.tamedAnimals = snap.tamedAnimals ? [...snap.tamedAnimals] : [];
     snap.worldFlags = { ...this.worldFlags };
     snap.grovePityCounter = this.grovePityCounter;
 

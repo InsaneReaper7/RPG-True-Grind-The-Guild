@@ -456,6 +456,39 @@
           "lifeStealPercent": 0.1
         }
       ]
+    },
+    {
+      "id": "stealth",
+      "name": "Stealth",
+      "triggerType": "proximity",
+      "eligibility": {
+        "gear": "none"
+      },
+      "baseProcChance": 0.05,
+      "procChancePerLevel": 0.005,
+      "expPerProc": 1,
+      "aggroReductionPerLevel": 0.004,
+      "minAggroMultiplier": 0.6,
+      "growthBandMultiplier": 1.5,
+      "growthCheckIntervalMs": 1000,
+      "description": "Moving undetected near foes. Reduces proximity aggro radius and aids in evasion.",
+      "tierEffects": [
+        {
+          "level": 1,
+          "description": "-0.4% proximity aggro radius",
+          "aggroReduction": 0.004
+        },
+        {
+          "level": 50,
+          "description": "-20.0% proximity aggro radius",
+          "aggroReduction": 0.2
+        },
+        {
+          "level": 100,
+          "description": "-40.0% proximity aggro radius",
+          "aggroReduction": 0.4
+        }
+      ]
     }
   ]
 }

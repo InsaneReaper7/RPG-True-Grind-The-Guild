@@ -7995,6 +7995,12 @@
           "value": 0.5,
           "durationMs": 3000,
           "target": "self"
+        },
+        {
+          "type": "applyStatus",
+          "status": "hidden",
+          "chance": 1.0,
+          "target": "self"
         }
       ]
     },
@@ -14579,6 +14585,12 @@
           "type": "buff",
           "stat": "evasionBonus",
           "value": 0.3,
+          "target": "self"
+        },
+        {
+          "type": "applyStatus",
+          "status": "hidden",
+          "chance": 1.0,
           "target": "self"
         }
       ]

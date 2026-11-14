@@ -269,10 +269,27 @@ export interface BuildableDef {
   roomTags?: string[];
   description: string;
   lockedByDefault?: boolean;
+  capacity?: number;
 }
 
 export interface BuildablesData {
   buildables: BuildableDef[];
+}
+
+export interface PenAnimalRecord {
+  uid: string;
+  fedToday: boolean;
+  storedProducts: Record<string, number>;
+}
+
+export interface AnimalPenData {
+  animals: PenAnimalRecord[];
+}
+
+export interface TamedAnimal {
+  uid: string;
+  speciesId: string;
+  name: string;
 }
 
 export interface PlacedBuildable {
@@ -284,6 +301,7 @@ export interface PlacedBuildable {
   itemsPaid?: Record<string, number>;
   gardeningData?: PlantingPlotData;
   seedMakerData?: SeedMakerData;
+  penData?: AnimalPenData;
 }
 
 export interface RoomRuleDef {
@@ -430,6 +448,7 @@ export interface PlayerSnapshot {
   grovePityCounter?: number;
   knownGearRecipes?: string[];
   lastDungeonFloorVisited?: number;
+  tamedAnimals?: TamedAnimal[];
 }
 
 export interface SaveMetadata {
@@ -997,6 +1016,8 @@ export interface StatusEffectDef {
   misdirectChance?: number;
   outgoingDamageMultiplier?: number;
   disablesSkills?: boolean;
+  undetectable?: boolean;
+  breaksOnDamageDealt?: boolean;
 }
 
 export interface StatusEffectsData {
@@ -1061,6 +1082,54 @@ export interface HiddenSkillDef {
   expPerProc: number;
   description: string;
   tierEffects: HiddenSkillTierEffect[];
+  aggroReductionPerLevel?: number;
+  minAggroMultiplier?: number;
+  growthBandMultiplier?: number;
+  growthCheckIntervalMs?: number;
+}
+
+export interface TameableSpeciesDef {
+  enemyId: string;
+  kind: 'predator' | 'livestock';
+  tameItem: string;
+  baseChance: number;
+  hpThreshold: number;
+}
+
+export interface TamingConfig {
+  species: TameableSpeciesDef[];
+  chancePerTamingLevel: number;
+  maxChance: number;
+  expPerAttempt: number;
+  expPerSuccess: number;
+  rosterCap: number;
+  channelDurationMs: number;
+  rangeTiles: number;
+  critterSpawn: {
+    chance: number;
+    critters: string[];
+  };
+}
+
+export interface HusbandryProductionDef {
+  feedItem: string;
+  dailyProduct: string;
+  dailyAmount: number;
+  bonus?: {
+    item: string;
+    chance: number;
+    amount: number;
+  };
+}
+
+export interface HusbandryConfig {
+  storageCapPerAnimal: number;
+  extraProductPerLevel: number;
+  maxExtraProductChance: number;
+  expPerFeed: number;
+  expPerCollect: number;
+  penCapacity: number;
+  production: Record<string, HusbandryProductionDef>;
 }
 
 export interface HiddenSkillsData {

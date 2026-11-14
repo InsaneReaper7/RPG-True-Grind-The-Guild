@@ -442,6 +442,37 @@ export class TextureGenerator {
       g.destroy();
     }
 
+    // Cave Goat Avatar Texture (Milestone 8)
+    if (!scene.textures.exists('cave_goat-avatar')) {
+      const size = 28;
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      g.fillStyle(0xd1d5db, 1);
+      g.fillCircle(size / 2, size / 2, size / 2 - 4);
+      g.lineStyle(2, 0x9ca3af, 1);
+      g.strokeCircle(size / 2, size / 2, size / 2 - 4);
+      g.lineStyle(2, 0x78350f, 1);
+      g.lineBetween(size / 2 - 4, size / 2 - 4, size / 2 - 8, size / 2 - 10);
+      g.lineBetween(size / 2 + 4, size / 2 - 4, size / 2 + 8, size / 2 - 10);
+      g.generateTexture('cave_goat-avatar', size, size);
+      g.destroy();
+    }
+
+    // Crypt Fowl Avatar Texture (Milestone 8)
+    if (!scene.textures.exists('crypt_fowl-avatar')) {
+      const size = 28;
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      g.fillStyle(0xb45309, 1);
+      g.fillCircle(size / 2, size / 2, size / 2 - 5);
+      g.lineStyle(2, 0xd97706, 1);
+      g.strokeCircle(size / 2, size / 2, size / 2 - 5);
+      g.fillStyle(0xef4444, 1);
+      g.fillCircle(size / 2, size / 2 - 8, 2.5);
+      g.fillStyle(0xf59e0b, 1);
+      g.fillTriangle(size / 2 + 5, size / 2 - 2, size / 2 + 5, size / 2 + 2, size / 2 + 9, size / 2);
+      g.generateTexture('crypt_fowl-avatar', size, size);
+      g.destroy();
+    }
+
     // 4b. Goblin Avatar Texture (Green Diamond with pointed ear accents)
     if (!scene.textures.exists('goblin-avatar')) {
       const size = 28;
@@ -2861,6 +2892,7 @@ export class TextureGenerator {
     };
     makeStation('buildable-woodworking-bench', 0x78350f, 0xd97706);
     makeStation('buildable-stonemason-yard', 0x475569, 0x94a3b8);
+    makeStation('buildable-animal-pen', 0x78350f, 0x10b981);
 
     // Furniture textures
     const furnitureDefs: [string, number, number][] = [

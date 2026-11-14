@@ -384,16 +384,16 @@ async function runTests() {
   console.log('✔ Step 3 passed: salted_jerky successfully discovered via experiment.');
 
   // ==========================================
-  // Step 4: Recipe Journal shows 1 / 32
+  // Step 4: Recipe Journal shows 1 / 34 (32 base + 2 husbandry recipes)
   // ==========================================
-  console.log('\n--- Step 4: Recipe Journal 1 / 32 Progress ---');
+  console.log('\n--- Step 4: Recipe Journal 1 / 34 Progress ---');
   hud.switchCookingTab('journal');
   const journalProgressEl = getOrCreateElement('cooking-journal-progress');
-  assert.equal(journalProgressEl.innerText, '1 / 32 Discovered', `Journal progress must be 1 / 32 Discovered, got: ${journalProgressEl.innerText}`);
+  assert.equal(journalProgressEl.innerText, '1 / 34 Discovered', `Journal progress must be 1 / 34 Discovered, got: ${journalProgressEl.innerText}`);
 
   const journalContainer = getOrCreateElement('cooking-journal-container');
-  assert.equal(journalContainer.children.length, 32, 'Journal renders all 32 discoverable recipes');
-  console.log('✔ Step 4 passed: Recipe journal displays exactly 1 / 32 Discovered.');
+  assert.equal(journalContainer.children.length, 34, 'Journal renders all 34 discoverable recipes');
+  console.log('✔ Step 4 passed: Recipe journal displays exactly 1 / 34 Discovered.');
 
   // ==========================================
   // Step 5: Lost Recipes tab lists 10 entries

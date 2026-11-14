@@ -1,0 +1,25 @@
+{
+  "storageCapPerAnimal": 5,
+  "extraProductPerLevel": 0.005,
+  "maxExtraProductChance": 0.5,
+  "expPerFeed": 10,
+  "expPerCollect": 15,
+  "penCapacity": 2,
+  "production": {
+    "cave_goat": {
+      "feedItem": "wild_herbs",
+      "dailyProduct": "goat_milk",
+      "dailyAmount": 1
+    },
+    "crypt_fowl": {
+      "feedItem": "seeds",
+      "dailyProduct": "fowl_egg",
+      "dailyAmount": 1,
+      "bonus": {
+        "item": "feather",
+        "chance": 0.50,
+        "amount": 1
+      }
+    }
+  }
+}

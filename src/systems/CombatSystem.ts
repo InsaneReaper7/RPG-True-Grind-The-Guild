@@ -36,6 +36,8 @@ export class CombatSystem {
   private combatPassiveRng: () => number = CombatSystem.createPassiveRng(0x9e3779b9);
   private statusRng: () => number = CombatSystem.createPassiveRng(0x85ebca6b);
   private recipeDropRng: () => number = CombatSystem.createPassiveRng(0x517cc1b7);
+  private stealthRng: () => number = CombatSystem.createPassiveRng(0x3c6ef372);
+  private stealthGrowthTimerMs: number = 0;
   private enableCookingDrops: boolean = true;
   private combatStartTimeMs: number = 0;
   private damageDealtByMember: Map<string, number> = new Map();
@@ -62,6 +64,44 @@ export class CombatSystem {
     this.pathfinder = pathfinder ?? (scene as any)?.pathfinder;
     this.onEnemyDeathCallback = onEnemyDeath;
     this.skillSystem = new SkillSystem(this);
+    this.initDamageListeners();
+  }
+
+  public initDamageListeners(): void {
+    Entity.damageListener = (victim: Entity, amountLost: number, source?: Entity | string) => {
+      // 1. source is a party member -> remove statuses with breaksOnDamageDealt (ends Hidden)
+      if (source && typeof source !== 'string' && (source instanceof Player || (source as any).isPartyMember)) {
+        for (const [id, activeEffect] of Array.from(source.activeStatusEffects.entries())) {
+          if (activeEffect.def?.breaksOnDamageDealt) {
+            source.removeStatusEffect(id);
+          }
+        }
+        if (source.entityName) {
+          this.recordDamageDealt(source.entityName, amountLost);
+        }
+      }
+
+      // 2. victim is a party member -> cancel tame channel if channelling, record damage taken
+      if (victim && (victim instanceof Player || (victim as any).isPartyMember)) {
+        const srcName = typeof source === 'string' ? source : (source?.entityName || 'Unknown');
+        if (victim.entityName) {
+          this.recordDamageTaken(victim.entityName, amountLost, srcName);
+        }
+        const sc = (this.scene as any) || (victim as any).scene;
+        if (sc && typeof sc.cancelTameChannelOnDamage === 'function') {
+          sc.cancelTameChannelOnDamage(victim);
+        }
+      }
+    };
+  }
+
+  public cleanupRemovedEnemy(enemy: Enemy): void {
+    this.enemyTargets.delete(enemy);
+    for (const member of this.party) {
+      if (member.targetEntity === enemy) {
+        member.clearTarget();
+      }
+    }
   }
 
   public get player(): Player {
@@ -112,6 +152,14 @@ export class CombatSystem {
     return this.recipeDropRng;
   }
 
+  public setStealthRng(rng: (() => number) | undefined): void {
+    this.stealthRng = rng ?? CombatSystem.createPassiveRng(0x3c6ef372);
+  }
+
+  public getStealthRng(): () => number {
+    return this.stealthRng;
+  }
+
   public setEnableCookingDrops(enabled: boolean): void {
     this.enableCookingDrops = enabled;
   }
@@ -150,14 +198,24 @@ export class CombatSystem {
 
     const validCandidates: { member: Player; dist: number }[] = [];
 
+    const stealthDef = HiddenSkillSystem.getInstance().getSkillDef('stealth');
+    const aggroRedPerLv = stealthDef?.aggroReductionPerLevel ?? 0.004;
+    const minAggroMult = stealthDef?.minAggroMultiplier ?? 0.6;
+
     for (const member of this.party) {
       if (member.state === 'downed' || member.state === 'dead') continue;
+      if (typeof member.hasStatusEffect === 'function' && member.hasStatusEffect('hidden')) continue; // Hidden members cannot be proximity aggroed
       const memberTile = {
         x: Math.floor(member.x / member.tileSize),
         y: Math.floor(member.y / member.tileSize)
       };
       const dist = Math.max(Math.abs(enemyTile.x - memberTile.x), Math.abs(enemyTile.y - memberTile.y));
-      if (dist <= enemy.enemyData.aggroRadius) {
+
+      const stealthLevel = member.progression ? member.progression.getProficiencyLevel('stealth') : 0;
+      const aggroMult = stealthLevel >= 1 ? Math.max(minAggroMult, 1 - aggroRedPerLv * stealthLevel) : 1.0;
+      const effectiveAggroRadius = enemy.enemyData.aggroRadius * aggroMult;
+
+      if (dist <= effectiveAggroRadius) {
         if (this.pathfinder.hasLineOfSight(enemyTile, memberTile)) {
           validCandidates.push({ member, dist });
         }
@@ -503,11 +561,11 @@ export class CombatSystem {
   private currentInCombat: boolean = false;
 
   public isInCombat(currentTime?: number): boolean {
-    const anyAggroed = this.enemies.some((e) => e.isAggroed && e.state !== 'dead' && e.state !== 'downed');
+    const anyAggroed = this.enemies.some((e) => e.isAggroed && e.state !== 'dead' && e.state !== 'downed' && e.enemyData?.tier !== 'critter');
     if (anyAggroed) return true;
-    const anyEngaged = this.party.some((m) => m.state !== 'dead' && m.state !== 'downed' && m.targetEntity !== null && m.targetEntity.state !== 'dead' && m.targetEntity.state !== 'downed');
+    const anyEngaged = this.party.some((m) => m.state !== 'dead' && m.state !== 'downed' && m.targetEntity !== null && m.targetEntity.state !== 'dead' && m.targetEntity.state !== 'downed' && ((m.targetEntity as any).enemyData?.tier !== 'critter'));
     if (anyEngaged) return true;
-    const anyEnemyTargetingParty = this.enemies.some((e) => e.state !== 'dead' && e.state !== 'downed' && e.targetEntity !== null && e.targetEntity.state !== 'dead' && e.targetEntity.state !== 'downed');
+    const anyEnemyTargetingParty = this.enemies.some((e) => e.state !== 'dead' && e.state !== 'downed' && e.targetEntity !== null && e.targetEntity.state !== 'dead' && e.targetEntity.state !== 'downed' && e.enemyData?.tier !== 'critter');
     if (anyEnemyTargetingParty) return true;
 
     const now = currentTime ?? (this.scene ? this.scene.time?.now ?? 0 : 0);
@@ -553,9 +611,9 @@ export class CombatSystem {
   }
 
   public update(time: number, delta: number): void {
-    const anyEnemyAggroed = this.enemies.some((e) => e.isAggroed && e.state !== 'dead' && e.state !== 'downed');
-    const anyPartyEngaged = this.party.some((m) => m.state !== 'dead' && m.state !== 'downed' && m.targetEntity && m.targetEntity.state !== 'dead' && m.targetEntity.state !== 'downed');
-    const anyEnemyTargetingParty = this.enemies.some((e) => e.state !== 'dead' && e.state !== 'downed' && e.targetEntity && e.targetEntity.state !== 'dead' && e.targetEntity.state !== 'downed');
+    const anyEnemyAggroed = this.enemies.some((e) => e.isAggroed && e.state !== 'dead' && e.state !== 'downed' && e.enemyData?.tier !== 'critter');
+    const anyPartyEngaged = this.party.some((m) => m.state !== 'dead' && m.state !== 'downed' && m.targetEntity && m.targetEntity.state !== 'dead' && m.targetEntity.state !== 'downed' && ((m.targetEntity as any).enemyData?.tier !== 'critter'));
+    const anyEnemyTargetingParty = this.enemies.some((e) => e.state !== 'dead' && e.state !== 'downed' && e.targetEntity && e.targetEntity.state !== 'dead' && e.targetEntity.state !== 'downed' && e.enemyData?.tier !== 'critter');
     const activeThreat = anyEnemyAggroed || anyPartyEngaged || anyEnemyTargetingParty;
     if (activeThreat) {
       this.lastCombatTimeMs = time;
@@ -591,6 +649,37 @@ export class CombatSystem {
     for (const member of this.party) {
       if (member.state === 'downed' || member.state === 'dead') {
         member.clearTarget();
+      }
+    }
+
+    // Stealth Passive Growth Check (once per second, within 1.5x aggroRadius of unengaged living enemies)
+    const stealthDef = HiddenSkillSystem.getInstance().getSkillDef('stealth');
+    const stealthInterval = stealthDef?.growthCheckIntervalMs ?? 1000;
+    this.stealthGrowthTimerMs += delta;
+    if (this.stealthGrowthTimerMs >= stealthInterval) {
+      this.stealthGrowthTimerMs = 0;
+      const bandMult = stealthDef?.growthBandMultiplier ?? 1.5;
+      for (const member of this.party) {
+        if (member.state === 'downed' || member.state === 'dead') continue;
+        const memberTile = {
+          x: Math.floor(member.x / member.tileSize),
+          y: Math.floor(member.y / member.tileSize)
+        };
+        for (const enemy of this.enemies) {
+          if (enemy.state === 'downed' || enemy.state === 'dead' || enemy.enemyData?.tier === 'critter') continue;
+          if (enemy.isAggroed || enemy.targetEntity !== null) continue;
+          const enemyTile = {
+            x: Math.floor(enemy.x / enemy.tileSize),
+            y: Math.floor(enemy.y / enemy.tileSize)
+          };
+          const dist = Math.max(Math.abs(enemyTile.x - memberTile.x), Math.abs(enemyTile.y - memberTile.y));
+          if (dist <= enemy.enemyData.aggroRadius * bandMult) {
+            if (stealthDef) {
+              HiddenSkillSystem.getInstance().rollProc(stealthDef, { inCombat: false }, member.progression, this.stealthRng);
+            }
+            break; // Evaluate at most once per member per interval
+          }
+        }
       }
     }
 
@@ -680,6 +769,7 @@ export class CombatSystem {
           : 999;
 
         const isTargetDowned = !target || target.state === 'downed' || target.state === 'dead';
+        const isTargetHidden = !!target && target.hasStatusEffect('hidden');
         const exceededLeash = distFromSpawn > enemy.maxLeashDistance;
 
         if (distanceTiles > enemy.enemyData.aggroRadius) {
@@ -690,8 +780,8 @@ export class CombatSystem {
         const timedOut = enemy.outOfAggroTimerMs >= enemy.leashTimeoutMs;
         const hasLOS = target ? this.pathfinder.hasLineOfSight(enemyTile, targetTile) : false;
 
-        let isTargetInvalid = isTargetDowned || exceededLeash || timedOut || !hasLOS;
-        if (isTaunted && !isTargetDowned && !exceededLeash) {
+        let isTargetInvalid = isTargetDowned || isTargetHidden || exceededLeash || timedOut || !hasLOS;
+        if (isTaunted && !isTargetDowned && !exceededLeash && !isTargetHidden) {
           isTargetInvalid = false;
         }
 
@@ -2843,8 +2933,11 @@ export class CombatSystem {
       member?.awardArmorWearExp?.('attack');
     }
 
-    this.lastCombatTimeMs = time;
-    if (target.state !== 'dead' && target.state !== 'downed') (target as any).isAggroed = true;
+    const isCritter = target instanceof Enemy && target.enemyData?.tier === 'critter';
+    if (!isCritter) {
+      this.lastCombatTimeMs = time;
+      if (target.state !== 'dead' && target.state !== 'downed') (target as any).isAggroed = true;
+    }
     const targetDowned = target.takeDamage(damage, member);
 
     // Glacial Sovereign: Frost Thorns reflection against melee attackers while Glaciated
@@ -3150,18 +3243,20 @@ export class CombatSystem {
 
     killer?.awardArmorWearExp?.('kill');
 
-    // Milestone 14 & 34: Class EXP kill hook (scaled by enemy tier: Common +25, Elite +50, Epic +100, Boss +250)
+    // Milestone 14 & 34: Class EXP kill hook (scaled by enemy tier: Critter 0, Common +25, Elite +50, Epic +100, Boss +250)
     if (killer.activeClass) {
       const tier = (target instanceof Enemy) ? target.enemyData.tier : 'common';
-      const classExpAmount = tier === 'boss' ? 250 : tier === 'epic' ? 100 : tier === 'elite' ? 50 : 25;
-      const classResult = killer.progression.addClassExp(killer.activeClass, classExpAmount);
-      const activeName = killer.activeClass.toUpperCase();
-      const expColor = tier === 'boss' ? '#ef4444' : tier === 'epic' ? '#c084fc' : '#f59e0b';
-      this.createFloatingText(killer.x, killer.y - 12, `+${classExpAmount} ${activeName} EXP`, expColor);
-      if (classResult.leveledUp) {
-        const newClassLvl = killer.progression.getClassLevel(killer.activeClass);
-        this.createFloatingText(killer.x, killer.y - 30, `Class Level Up! ${activeName} Lv ${newClassLvl}!`, expColor);
-        killer.checkSkillUnlocks();
+      const classExpAmount = tier === 'critter' ? 0 : tier === 'boss' ? 250 : tier === 'epic' ? 100 : tier === 'elite' ? 50 : 25;
+      if (classExpAmount > 0) {
+        const classResult = killer.progression.addClassExp(killer.activeClass, classExpAmount);
+        const activeName = killer.activeClass.toUpperCase();
+        const expColor = tier === 'boss' ? '#ef4444' : tier === 'epic' ? '#c084fc' : '#f59e0b';
+        this.createFloatingText(killer.x, killer.y - 12, `+${classExpAmount} ${activeName} EXP`, expColor);
+        if (classResult.leveledUp) {
+          const newClassLvl = killer.progression.getClassLevel(killer.activeClass);
+          this.createFloatingText(killer.x, killer.y - 30, `Class Level Up! ${activeName} Lv ${newClassLvl}!`, expColor);
+          killer.checkSkillUnlocks();
+        }
       }
     }
 
@@ -3180,10 +3275,10 @@ export class CombatSystem {
       const gameState = GameState.getInstance();
       const isBoss = target.enemyData.tier === 'boss';
 
-      // Luck Proc & Fortune Trigger on kill
+      // Luck Proc & Fortune Trigger on kill (critters never roll Luck)
       let fortuneTriggerProcced = false;
       const lRng = this.getLuckRng();
-      if (killer && killer.progression) {
+      if (target.enemyData.tier !== 'critter' && killer && killer.progression) {
         const luckDef = HiddenSkillSystem.getInstance().getSkillDef('luck');
         if (luckDef) {
           const res = HiddenSkillSystem.getInstance().rollProc(luckDef, { inCombat: true }, killer.progression, lRng);
@@ -3571,7 +3666,7 @@ export class CombatSystem {
 
         // 3. Lost-recipe scroll roll by tier
         if (target.enemyData.lostRecipeScrolls && target.enemyData.lostRecipeScrolls.length > 0) {
-          const scrollChance = cookingConfig.lostRecipeChanceByTier[target.enemyData.tier] ?? 0;
+          const scrollChance = (cookingConfig.lostRecipeChanceByTier as any)?.[target.enemyData.tier] ?? 0;
           if (cookRng() < scrollChance) {
             const scrolls = target.enemyData.lostRecipeScrolls;
             const chosenScroll = scrolls[Math.floor(cookRng() * scrolls.length)];
@@ -3650,8 +3745,8 @@ export class CombatSystem {
               dispenseScroll(picked);
             }
           }
-        } else {
-          // Common kill roll: Anything that isn't elite, epic, or boss, including elemental
+        } else if (enemyTier !== 'critter') {
+          // Common kill roll: Anything that isn't elite, epic, boss, or critter, including elemental
           if (rRng() < dropsCfg.commonKill.chance) {
             const pool = dataLoader.getGearPiecesForRarity(dropsCfg.commonKill.rarity, band);
             if (pool.length > 0) {

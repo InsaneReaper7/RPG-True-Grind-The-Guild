@@ -33,7 +33,8 @@ export class ProgressionSystem {
     'poison_resistance',
     'luck',
     'critical_strike',
-    'life_steal'
+    'life_steal',
+    'stealth'
   ];
 
   public static readonly ARMOR_PROFICIENCY_IDS: readonly string[] = [
@@ -151,6 +152,8 @@ export class ProgressionSystem {
     this.proficiencies.set('heavy_armor', { level: 0, currentExp: 0 });
     this.proficiencies.set('fishing', { level: 0, currentExp: 0 });
     this.proficiencies.set('enchanting', { level: 0, currentExp: 0 });
+    this.proficiencies.set('taming', { level: 0, currentExp: 0 });
+    this.proficiencies.set('animal_husbandry', { level: 0, currentExp: 0 });
     for (const hiddenId of ProgressionSystem.HIDDEN_SKILL_IDS) {
       this.proficiencies.set(hiddenId, { level: 0, currentExp: 0 });
     }

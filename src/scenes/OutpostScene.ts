@@ -716,6 +716,12 @@ export class OutpostScene extends Phaser.Scene {
         return;
       }
 
+      // Check if clicking a placed Animal Pen (Milestone 8)
+      if (clickedPlacedItem?.id === 'animal_pen') {
+        this.interactAnimalPen(clickedPlacedItem);
+        return;
+      }
+
       // Check if clicking a placed Research Station
       if (this.isPlacedStation(clickedTileX, clickedTileY)) {
         this.hud.openResearchTreeModal();
@@ -2214,6 +2220,12 @@ export class OutpostScene extends Phaser.Scene {
         this.createFloatingText(sm.x * this.tileSize + this.tileSize / 2, sm.y * this.tileSize - 10, `+${res.count} Seeds`, '#22c55e');
         this.hud?.showToast(`✨ Collected ${res.count}x Seeds from the Seed Maker!`, 'success', 2500);
       }
+    }
+  }
+
+  public interactAnimalPen(pen: PlacedBuildable): void {
+    if (this.hud) {
+      this.hud.openAnimalPenModal(pen);
     }
   }
 

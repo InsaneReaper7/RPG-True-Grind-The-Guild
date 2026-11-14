@@ -569,6 +569,17 @@
       "disablesSkills": true,
       "isHarmful": true,
       "color": "#f87171"
+    },
+    {
+      "id": "hidden",
+      "name": "Hidden",
+      "durationMs": 4000,
+      "tickIntervalMs": 1000,
+      "damagePerTick": 0,
+      "isHarmful": false,
+      "undetectable": true,
+      "breaksOnDamageDealt": true,
+      "color": "#94a3b8"
     }
   ]
 }

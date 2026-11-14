@@ -177,6 +177,26 @@
         "runic_door"
       ],
       "description": "Unlocks rune-etched walls and doors in Build Mode. Runic planks and bricks are enchanted at the Magical Weapon Station."
+    },
+    {
+      "id": "research_taming",
+      "name": "Taming",
+      "cost": 4,
+      "prerequisites": [
+        "research_skinning"
+      ],
+      "description": "Unlocks the ability to pacify and tame wild creatures in dungeons."
+    },
+    {
+      "id": "research_animal_husbandry",
+      "name": "Animal Husbandry",
+      "targetBuildableId": "animal_pen",
+      "cost": 6,
+      "prerequisites": [
+        "research_taming",
+        "research_woodworking_bench"
+      ],
+      "description": "Unlocks construction of Animal Pens at the outpost to shelter and tend livestock for daily goods."
     }
   ]
 }

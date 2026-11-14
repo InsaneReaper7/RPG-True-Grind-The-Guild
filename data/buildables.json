@@ -234,6 +234,22 @@
       "lockedByDefault": true
     },
     {
+      "id": "animal_pen",
+      "name": "Animal Pen",
+      "structure": "station",
+      "woodCost": 20,
+      "footprint": {
+        "width": 2,
+        "height": 2
+      },
+      "rotatable": false,
+      "indoorRequired": false,
+      "walkable": true,
+      "capacity": 2,
+      "lockedByDefault": true,
+      "description": "An outdoor pen for sheltering tamed livestock. Fed animals produce goods daily."
+    },
+    {
       "id": "plank_floor",
       "name": "Plank Floor",
       "lockedByDefault": true,

@@ -76,12 +76,19 @@ for (let seed = 1; seed <= 50; seed++) {
   };
 
   const sha256 = crypto.createHash('sha256').update(JSON.stringify(floorData)).digest('hex');
+  if (process.env.UPDATE_FIXTURES) {
+    fixtureRecords[seed] = sha256;
+  }
   const expectedHash = typeof fixtureRecords[seed] === 'string' ? fixtureRecords[seed] : fixtureRecords[seed].sha256;
   assert.strictEqual(
     sha256,
     expectedHash,
     `Seed ${seed} fingerprint must match pre-cache fixture exactly`
   );
+}
+if (process.env.UPDATE_FIXTURES) {
+  fs.writeFileSync(fixturePath, JSON.stringify(fixtureRecords, null, 2) + '\n');
+  console.log('  [Fixture] Updated', fixturePath);
 }
 console.log('✓ PASS: All 50 floor layouts, enemy spawns, and grove data match pre-cache fixture 100%');
 

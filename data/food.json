@@ -131,6 +131,35 @@
       "icon": "🥔"
     },
     {
+      "id": "fluffy_omelette",
+      "name": "Fluffy Omelette",
+      "weight": 0.5,
+      "hungerRestored": 25,
+      "spoilageDays": 7,
+      "recipeId": "fluffy_omelette",
+      "rarity": "common",
+      "buffs": [
+        "H"
+      ],
+      "description": "Fluffy beaten eggs gently cooked with aromatic dungeon herbs.",
+      "icon": "🍳"
+    },
+    {
+      "id": "milk_porridge",
+      "name": "Milk Porridge",
+      "weight": 0.5,
+      "hungerRestored": 25,
+      "spoilageDays": 7,
+      "recipeId": "milk_porridge",
+      "rarity": "common",
+      "buffs": [
+        "E"
+      ],
+      "durationMultiplier": 1.25,
+      "description": "Hearty potato mash simmered in rich cave goat milk.",
+      "icon": "🥣"
+    },
+    {
       "id": "garlic_mushrooms",
       "name": "Garlic Mushrooms",
       "weight": 0.5,

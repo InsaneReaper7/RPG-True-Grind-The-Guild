@@ -63,7 +63,9 @@ import type {
   AlchemyConfig,
   ThrowingConfig,
   GearRarityData,
-  GearRarityTierDef
+  GearRarityTierDef,
+  TamingConfig,
+  HusbandryConfig
 } from '../types/game.ts';
 import { HiddenSkillSystem } from '../systems/HiddenSkillSystem.ts';
 import { resolveGearStats, getBaseItemId, isCraftingClass, resolvePartyGearSource, getPartyGearOwnership, canEquipBowDaggerSidearm, getRarityDisplay } from './gearResolver.ts';
@@ -109,6 +111,8 @@ export class DataLoader {
   private alchemyConfigData?: AlchemyConfig;
   private throwingConfigData?: ThrowingConfig;
   private gearRarityData?: GearRarityData;
+  private tamingConfigData?: TamingConfig;
+  private husbandryConfigData?: HusbandryConfig;
 
   private constructor() {}
 
@@ -120,7 +124,7 @@ export class DataLoader {
   }
 
   public async loadAll(): Promise<void> {
-    const [player, weapons, classes, enemies, skills, statusEffects, buildables, rooms, hiddenSkills, skillBooks, researchTree, alchemyRecipes, cookingRecipes, blacksmithRecipes, bowyerRecipes, armors, armorsmithRecipes, foods, moodEffects, dungeon, gathering, items, recruits, craftingConfig, introNarrative, enchantingRecipes, statGains, crops, cookingConfig, campConfig, craftingRanks, luckConfig, woodworkingRecipes, stonemasonRecipes, alchemyConfig, throwingConfig, gearRarity] = await Promise.all([
+    const [player, weapons, classes, enemies, skills, statusEffects, buildables, rooms, hiddenSkills, skillBooks, researchTree, alchemyRecipes, cookingRecipes, blacksmithRecipes, bowyerRecipes, armors, armorsmithRecipes, foods, moodEffects, dungeon, gathering, items, recruits, craftingConfig, introNarrative, enchantingRecipes, statGains, crops, cookingConfig, campConfig, craftingRanks, luckConfig, woodworkingRecipes, stonemasonRecipes, alchemyConfig, throwingConfig, gearRarity, tamingConfig, husbandryConfig] = await Promise.all([
       fetch('/data/player.json').then((res) => res.json()),
       fetch('/data/weapons.json').then((res) => res.json()),
       fetch('/data/classes.json').then((res) => res.json()),
@@ -157,7 +161,9 @@ export class DataLoader {
       fetch('/data/stonemasonRecipes.json').then((res) => res.json()).catch(() => null),
       fetch('/data/alchemyConfig.json').then((res) => res.json()).catch(() => null),
       fetch('/data/throwingConfig.json').then((res) => res.json()).catch(() => null),
-      fetch('/data/gearRarity.json').then((res) => res.json()).catch(() => null)
+      fetch('/data/gearRarity.json').then((res) => res.json()).catch(() => null),
+      fetch('/data/tamingConfig.json').then((res) => res.json()).catch(() => null),
+      fetch('/data/husbandryConfig.json').then((res) => res.json()).catch(() => null)
     ]);
 
     this.playerData = player as PlayerData;
@@ -216,6 +222,12 @@ export class DataLoader {
     }
     if (gearRarity) {
       this.gearRarityData = gearRarity as GearRarityData;
+    }
+    if (tamingConfig) {
+      this.tamingConfigData = tamingConfig as TamingConfig;
+    }
+    if (husbandryConfig) {
+      this.husbandryConfigData = husbandryConfig as HusbandryConfig;
     }
     if (craftingConfig) {
       this.craftingConfigData = craftingConfig as CraftingConfigData;
@@ -1105,6 +1117,56 @@ export class DataLoader {
       throwDamagePerLevel: 0.01,
       throwExpPerHit: 3,
       throwCooldownMs: 1500
+    };
+  }
+
+  public getTamingConfig(): TamingConfig {
+    if (this.tamingConfigData) {
+      return this.tamingConfigData;
+    }
+    try {
+      if (typeof process !== 'undefined' && process.versions?.node) {
+        const fsModule = (globalThis as any).fs || (typeof require !== 'undefined' ? require('node:fs') : undefined);
+        if (fsModule && fsModule.existsSync('data/tamingConfig.json')) {
+          this.tamingConfigData = JSON.parse(fsModule.readFileSync('data/tamingConfig.json', 'utf8'));
+          return this.tamingConfigData!;
+        }
+      }
+    } catch { /* fallback */ }
+    return this.tamingConfigData || {
+      species: [],
+      chancePerTamingLevel: 0.005,
+      maxChance: 0.95,
+      expPerAttempt: 5,
+      expPerSuccess: 40,
+      rosterCap: 12,
+      channelDurationMs: 3000,
+      rangeTiles: 2,
+      critterSpawn: { chance: 0.25, critters: ['cave_goat', 'crypt_fowl'] }
+    };
+  }
+
+  public getHusbandryConfig(): HusbandryConfig {
+    if (this.husbandryConfigData) {
+      return this.husbandryConfigData;
+    }
+    try {
+      if (typeof process !== 'undefined' && process.versions?.node) {
+        const fsModule = (globalThis as any).fs || (typeof require !== 'undefined' ? require('node:fs') : undefined);
+        if (fsModule && fsModule.existsSync('data/husbandryConfig.json')) {
+          this.husbandryConfigData = JSON.parse(fsModule.readFileSync('data/husbandryConfig.json', 'utf8'));
+          return this.husbandryConfigData!;
+        }
+      }
+    } catch { /* fallback */ }
+    return this.husbandryConfigData || {
+      storageCapPerAnimal: 5,
+      extraProductPerLevel: 0.005,
+      maxExtraProductChance: 0.5,
+      expPerFeed: 10,
+      expPerCollect: 15,
+      penCapacity: 2,
+      production: {}
     };
   }
 
