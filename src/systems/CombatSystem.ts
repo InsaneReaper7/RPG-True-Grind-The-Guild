@@ -53,10 +53,27 @@ export class CombatSystem {
     onEnemyDeath?: (enemy: Enemy) => void
   ) {
     CombatSystem.activeInstance = this;
-    // Per-fight damage summary (bug TG-E11KKA): every HP loss is reported here with its source.
-    Entity.damageListener = (victim, amountLost, source) => {
+    // Consolidated damage listener (Fix #8): active instance check, damage summary, Hidden break, tame cancel
+    Entity.damageListener = (victim: Entity, amountLost: number, source?: Entity | string) => {
       if (CombatSystem.activeInstance !== this) return;
       this.recordDamageEvent(victim, amountLost, source);
+
+      // Hidden break: source is a party member -> remove statuses with breaksOnDamageDealt
+      if (source && typeof source !== 'string' && (this.party.includes(source as Player) || (source as any).isPartyMember)) {
+        for (const [id, activeEffect] of Array.from(source.activeStatusEffects.entries())) {
+          if (activeEffect.def?.breaksOnDamageDealt) {
+            source.removeStatusEffect(id);
+          }
+        }
+      }
+
+      // Tame cancel: victim is a party member -> cancel tame channel if channelling
+      if (victim && (this.party.includes(victim as Player) || (victim as any).isPartyMember)) {
+        const sc = (this.scene as any) || (victim as any).scene;
+        if (sc && typeof sc.cancelTameChannelOnDamage === 'function') {
+          sc.cancelTameChannelOnDamage(victim);
+        }
+      }
     };
     this.scene = scene;
     this.party = Array.isArray(playerOrParty) ? playerOrParty : (playerOrParty ? [playerOrParty] : []);
@@ -64,35 +81,6 @@ export class CombatSystem {
     this.pathfinder = pathfinder ?? (scene as any)?.pathfinder;
     this.onEnemyDeathCallback = onEnemyDeath;
     this.skillSystem = new SkillSystem(this);
-    this.initDamageListeners();
-  }
-
-  public initDamageListeners(): void {
-    Entity.damageListener = (victim: Entity, amountLost: number, source?: Entity | string) => {
-      // 1. source is a party member -> remove statuses with breaksOnDamageDealt (ends Hidden)
-      if (source && typeof source !== 'string' && (source instanceof Player || (source as any).isPartyMember)) {
-        for (const [id, activeEffect] of Array.from(source.activeStatusEffects.entries())) {
-          if (activeEffect.def?.breaksOnDamageDealt) {
-            source.removeStatusEffect(id);
-          }
-        }
-        if (source.entityName) {
-          this.recordDamageDealt(source.entityName, amountLost);
-        }
-      }
-
-      // 2. victim is a party member -> cancel tame channel if channelling, record damage taken
-      if (victim && (victim instanceof Player || (victim as any).isPartyMember)) {
-        const srcName = typeof source === 'string' ? source : (source?.entityName || 'Unknown');
-        if (victim.entityName) {
-          this.recordDamageTaken(victim.entityName, amountLost, srcName);
-        }
-        const sc = (this.scene as any) || (victim as any).scene;
-        if (sc && typeof sc.cancelTameChannelOnDamage === 'function') {
-          sc.cancelTameChannelOnDamage(victim);
-        }
-      }
-    };
   }
 
   public cleanupRemovedEnemy(enemy: Enemy): void {
@@ -618,7 +606,7 @@ export class CombatSystem {
     if (activeThreat) {
       this.lastCombatTimeMs = time;
     }
-    const inCombat = activeThreat || (time - this.lastCombatTimeMs < 4000);
+    const inCombat = activeThreat || (this.lastCombatTimeMs > 0 && (time - this.lastCombatTimeMs < 4000));
     this.currentInCombat = inCombat;
 
     if (!this.wasInCombat && inCombat) {
@@ -686,7 +674,8 @@ export class CombatSystem {
     // 1. Enemy AI: Aggro detection, Leashing, Retargeting Machine, Pursuit & Auto-Attack
     for (let i = this.enemies.length - 1; i >= 0; i--) {
       const enemy = this.enemies[i];
-      if (enemy.state === 'downed' || enemy.state === 'dead') continue;
+      // Critters are passive and skipped by the enemy-AI loop entirely (Fix #3)
+      if (enemy.state === 'downed' || enemy.state === 'dead' || enemy.enemyData?.tier === 'critter') continue;
 
       // Disable check: disabled enemy (stunned, shocked, etc.) halts movement and cannot act
       if (typeof enemy.isDisabled === 'function' ? enemy.isDisabled() : (enemy.hasStatusEffect('stun') || enemy.hasStatusEffect('shock'))) {
@@ -1999,7 +1988,9 @@ export class CombatSystem {
     }
 
     for (const enemy of hitTargets) {
-      (enemy as any).isAggroed = true;
+      if ((enemy as any).enemyData?.tier !== 'critter') {
+        (enemy as any).isAggroed = true;
+      }
       if (damage > 0) {
         this.createFloatingText(enemy.x, enemy.y - 10, `-${damage.toFixed(1)}`, '#f59e0b');
       }
@@ -2881,8 +2872,10 @@ export class CombatSystem {
           console.log(`[Combat:AoE] ${enemy.entityName} caught in fire splash for ${splashDmg.toFixed(1)} damage!`);
           this.createFloatingText(enemy.x, enemy.y - 10, `-${splashDmg.toFixed(1)} (Splash)`, '#f97316');
           this.checkAndApplyBurn(member, enemy, effectiveWeapon);
-          this.lastCombatTimeMs = time;
-          enemy.isAggroed = true;
+          if (enemy.enemyData?.tier !== 'critter') {
+            this.lastCombatTimeMs = time;
+            enemy.isAggroed = true;
+          }
           if (splashDmg > 0 && member.coating && member.coating.hitsRemaining > 0) {
             this.checkAndApplyWeaponCoating(member, enemy, isSpell);
           }
@@ -3209,7 +3202,9 @@ export class CombatSystem {
       console.log(`[Combat:Wind] 💨 Piercing wind slices through ${enemy.entityName} for ${damage.toFixed(1)} damage!`);
       this.createAttackEffect(primaryTarget.x, primaryTarget.y, enemy.x, enemy.y, 0xa7f3d0);
       this.createFloatingText(enemy.x, enemy.y - 10, `-${damage.toFixed(1)} (Pierce)`, '#a7f3d0');
-      enemy.isAggroed = true;
+      if (enemy.enemyData?.tier !== 'critter') {
+        enemy.isAggroed = true;
+      }
       const downed = enemy.takeDamage(damage, caster);
       if (downed) {
         this.handleTargetDefeated(caster, enemy, weaponId);
@@ -4342,17 +4337,20 @@ export class CombatSystem {
     if (livingMembers.length === 0) return;
 
     const now = (this.scene as any)?.time?.now ?? Date.now();
-    this.lastCombatTimeMs = Math.max(this.lastCombatTimeMs, now);
-    enemy.isAggroed = true;
-    if (!enemy.targetEntity || enemy.targetEntity.state === 'downed' || enemy.targetEntity.state === 'dead') {
-      enemy.targetEntity = livingMembers[0];
-      this.enemyTargets.set(enemy, livingMembers[0]);
-      const curDist = Math.max(
-        Math.abs(enemy.gridPos.x - livingMembers[0].gridPos.x),
-        Math.abs(enemy.gridPos.y - livingMembers[0].gridPos.y)
-      );
-      if (curDist > (enemy.enemyData.attackRangeTiles ?? 1)) {
-        enemy.state = 'chasing';
+    const isCritter = enemy.enemyData?.tier === 'critter';
+    if (!isCritter) {
+      this.lastCombatTimeMs = Math.max(this.lastCombatTimeMs, now);
+      enemy.isAggroed = true;
+      if (!enemy.targetEntity || enemy.targetEntity.state === 'downed' || enemy.targetEntity.state === 'dead') {
+        enemy.targetEntity = livingMembers[0];
+        this.enemyTargets.set(enemy, livingMembers[0]);
+        const curDist = Math.max(
+          Math.abs(enemy.gridPos.x - livingMembers[0].gridPos.x),
+          Math.abs(enemy.gridPos.y - livingMembers[0].gridPos.y)
+        );
+        if (curDist > (enemy.enemyData.attackRangeTiles ?? 1)) {
+          enemy.state = 'chasing';
+        }
       }
     }
 

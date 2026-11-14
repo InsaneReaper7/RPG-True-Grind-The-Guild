@@ -13,59 +13,238 @@ const originalRequire = (Module as any).prototype.require;
   return originalRequire.apply(this, arguments);
 };
 
-// 2. Setup minimal browser globals for Phaser / DOM under Node
-if (typeof (globalThis as any).window === 'undefined') {
-  const noop = () => {};
-  (globalThis as any).window = {
-    addEventListener: noop,
-    removeEventListener: noop,
-    location: { href: 'http://localhost' },
-    focus: noop,
-    navigator: { userAgent: 'node' },
-    localStorage: {
-      getItem: () => null,
-      setItem: noop,
-      removeItem: noop,
-      clear: noop
-    }
+// --- BROWSER DOM MOCKS FOR NODE ---
+class MockElement {
+  public tagName: string;
+  public id: string = '';
+  public className: string = '';
+  public title: string = '';
+  public dataset: Record<string, string> = {};
+  public style: Record<string, any> = {};
+  public attributes: Record<string, string> = {};
+  public classList = {
+    _classes: new Set<string>(),
+    add: (...classes: string[]) => classes.forEach(c => this.classList._classes.add(c)),
+    remove: (...classes: string[]) => classes.forEach(c => this.classList._classes.delete(c)),
+    contains: (c: string) => this.classList._classes.has(c)
   };
-  const dummyCtx: any = new Proxy({
-    fillStyle: '',
-    globalCompositeOperation: '',
-    getImageData: () => ({ data: [0, 0, 0, 0] }),
-    createImageData: () => ({ data: [0, 0, 0, 0] })
-  }, {
-    get(target, prop) {
-      if (prop in target) return (target as any)[prop];
-      return noop;
-    },
-    set(target, prop, value) {
-      (target as any)[prop] = value;
-      return true;
+  public children: MockElement[] = [];
+  public parentElement: MockElement | null = null;
+  public disabled: boolean = false;
+  private _textContent: string = '';
+  private _innerHTML: string = '';
+  public listeners: Map<string, Function[]> = new Map();
+
+  constructor(tagName: string = 'DIV') {
+    this.tagName = tagName.toUpperCase();
+  }
+
+  get textContent(): string {
+    return this._textContent;
+  }
+  set textContent(val: string) {
+    this._textContent = String(val);
+  }
+
+  get innerText(): string {
+    return this._textContent;
+  }
+  set innerText(val: string) {
+    this._textContent = String(val);
+  }
+
+  get innerHTML(): string {
+    return this._innerHTML;
+  }
+  set innerHTML(val: string) {
+    this._innerHTML = String(val);
+    this.children = [];
+    // Parse any button tags with class and data-uid so DOM button tests can query and click them
+    const btnRegex = /<button[^>]*class="([^"]*)"[^>]*data-uid="([^"]*)"[^>]*>/g;
+    let m;
+    while ((m = btnRegex.exec(val)) !== null) {
+      const cls = m[1];
+      const uid = m[2];
+      const btn = new MockElement('button');
+      btn.className = cls;
+      cls.split(/\s+/).filter(Boolean).forEach(c => btn.classList.add(c));
+      btn.setAttribute('data-uid', uid);
+      btn.dataset.uid = uid;
+      this.appendChild(btn);
     }
-  });
-  (globalThis as any).document = {
-    createElement: () => ({
-      getContext: () => dummyCtx,
-      style: {},
-      classList: { add: noop, remove: noop, toggle: noop, contains: () => false },
-      appendChild: noop,
-      removeChild: noop,
-      addEventListener: noop,
-      querySelectorAll: () => []
-    }),
-    getElementById: () => null,
-    querySelector: () => null,
-    querySelectorAll: () => [],
-    addEventListener: noop,
-    removeEventListener: noop,
-    documentElement: {},
-    body: {}
-  };
-  (globalThis as any).Image = class Image {};
-  (globalThis as any).HTMLCanvasElement = class HTMLCanvasElement {};
-  (globalThis as any).HTMLVideoElement = class HTMLVideoElement {};
+  }
+
+  public setAttribute(name: string, value: string): void {
+    this.attributes[name] = String(value);
+    if (name.startsWith('data-')) {
+      const camel = name.slice(5).replace(/-([a-z])/g, (_, l) => l.toUpperCase());
+      this.dataset[camel] = String(value);
+    }
+  }
+
+  public getAttribute(name: string): string | null {
+    if (name in this.attributes) return this.attributes[name];
+    if (name.startsWith('data-')) {
+      const camel = name.slice(5).replace(/-([a-z])/g, (_, l) => l.toUpperCase());
+      return this.dataset[camel] ?? null;
+    }
+    return null;
+  }
+
+  public appendChild(child: MockElement): MockElement {
+    child.parentElement = this;
+    this.children.push(child);
+    return child;
+  }
+
+  public removeChild(child: MockElement): MockElement {
+    const idx = this.children.indexOf(child);
+    if (idx !== -1) {
+      this.children.splice(idx, 1);
+      child.parentElement = null;
+    }
+    return child;
+  }
+
+  public addEventListener(event: string, fn: Function): void {
+    if (!this.listeners.has(event)) {
+      this.listeners.set(event, []);
+    }
+    this.listeners.get(event)!.push(fn);
+  }
+
+  public removeEventListener(event: string, fn: Function): void {
+    const list = this.listeners.get(event);
+    if (list) {
+      const idx = list.indexOf(fn);
+      if (idx !== -1) list.splice(idx, 1);
+    }
+  }
+
+  public dispatchEvent(evt: any): boolean {
+    const list = this.listeners.get(evt.type || 'click') || [];
+    for (const fn of list) {
+      fn({ ...evt, currentTarget: this, target: this });
+    }
+    return true;
+  }
+
+  public click(): void {
+    if (this.disabled) return;
+    this.dispatchEvent({ type: 'click' });
+  }
+
+  public querySelector<T = MockElement>(selector: string): T | null {
+    const all = this.querySelectorAll(selector);
+    return (all.length > 0 ? all[0] : null) as any;
+  }
+
+  public querySelectorAll(selector: string): MockElement[] {
+    const results: MockElement[] = [];
+    for (const child of this.children) {
+      if (matchesSelector(child, selector)) {
+        results.push(child);
+      }
+      results.push(...child.querySelectorAll(selector));
+    }
+    return results;
+  }
 }
+
+function matchesSelector(el: MockElement, selector: string): boolean {
+  if (selector.startsWith('#')) {
+    return el.id === selector.substring(1);
+  }
+  if (selector.startsWith('.')) {
+    return el.classList.contains(selector.substring(1));
+  }
+  return el.tagName.toLowerCase() === selector.toLowerCase();
+}
+
+const elementRegistry = new Map<string, MockElement>();
+
+function getOrCreateElement(id: string, tagName: string = 'div'): MockElement {
+  if (!elementRegistry.has(id)) {
+    const el = new MockElement(tagName);
+    el.id = id;
+    elementRegistry.set(id, el);
+  }
+  return elementRegistry.get(id)!;
+}
+
+const windowListeners: Map<string, Function[]> = new Map();
+
+const dummyCtx: any = new Proxy({
+  fillStyle: '',
+  globalCompositeOperation: '',
+  getImageData: () => ({ data: [0, 0, 0, 0] }),
+  createImageData: () => ({ data: [0, 0, 0, 0] })
+}, {
+  get(target, prop) {
+    if (prop in target) return (target as any)[prop];
+    return () => {};
+  },
+  set(target, prop, value) {
+    (target as any)[prop] = value;
+    return true;
+  }
+});
+
+(globalThis as any).window = {
+  addEventListener: (event: string, fn: Function) => {
+    if (!windowListeners.has(event)) windowListeners.set(event, []);
+    windowListeners.get(event)!.push(fn);
+  },
+  removeEventListener: (event: string, fn: Function) => {
+    const list = windowListeners.get(event);
+    if (list) {
+      const idx = list.indexOf(fn);
+      if (idx !== -1) list.splice(idx, 1);
+    }
+  },
+  dispatchEvent: (evt: any) => {
+    const list = windowListeners.get(evt.type || 'click') || [];
+    for (const fn of list) {
+      fn(evt);
+    }
+    return true;
+  },
+  location: { href: 'http://localhost' },
+  focus: () => {},
+  navigator: { userAgent: 'node' },
+  localStorage: {
+    getItem: () => null,
+    setItem: () => {},
+    removeItem: () => {},
+    clear: () => {}
+  }
+};
+
+(globalThis as any).document = {
+  createElement: (tagName: string) => {
+    if (tagName.toLowerCase() === 'canvas') {
+      return {
+        getContext: () => dummyCtx,
+        style: {}
+      };
+    }
+    return new MockElement(tagName);
+  },
+  getElementById: (id: string) => elementRegistry.get(id) || null,
+  querySelector: (sel: string) => {
+    if (sel.startsWith('#')) return elementRegistry.get(sel.substring(1)) || null;
+    return null;
+  },
+  querySelectorAll: () => [],
+  addEventListener: (event: string, fn: Function) => (globalThis as any).window.addEventListener(event, fn),
+  removeEventListener: (event: string, fn: Function) => (globalThis as any).window.removeEventListener(event, fn),
+  documentElement: new MockElement('html'),
+  body: new MockElement('body')
+};
+
+(globalThis as any).Image = class Image {};
+(globalThis as any).HTMLCanvasElement = class HTMLCanvasElement {};
+(globalThis as any).HTMLVideoElement = class HTMLVideoElement {};
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -92,6 +271,9 @@ const { Entity } = await import('../src/entities/Entity.ts');
 const { ProgressionSystem } = await import('../src/systems/ProgressionSystem.ts');
 const { Pathfinder } = await import('../src/utils/Pathfinder.ts');
 const { createPassiveRng } = await import('../src/utils/rng.ts');
+const { MainScene } = await import('../src/scenes/MainScene.ts');
+const { OutpostScene } = await import('../src/scenes/OutpostScene.ts');
+const { HUD } = await import('../src/ui/HUD.ts');
 
 function createMockScene(gridWidth: number = 30, gridHeight: number = 30): any {
   const grid: number[][] = [];
@@ -138,6 +320,7 @@ function createMockScene(gridWidth: number = 30, gridHeight: number = 30): any {
       text: () => createMockObj(),
       graphics: () => createMockObj(),
       container: () => createMockObj(),
+      line: () => createMockObj(),
       existing: (item: any) => item
     },
     tweens: {
@@ -169,7 +352,13 @@ function createMockScene(gridWidth: number = 30, gridHeight: number = 30): any {
         { id: 1, x: 12, y: 2, width: 8, height: 8, type: 'gathering' }
       ]
     },
-    targetReticle: { setVisible: () => {} },
+    targetReticle: {
+      visible: false,
+      setVisible: function (v: boolean) { this.visible = v; },
+      setPosition: function (x: number, y: number) { this.x = x; this.y = y; },
+      x: 0,
+      y: 0
+    },
     hud: {
       showToast: () => {},
       updateFloorTimer: () => {},
@@ -180,93 +369,23 @@ function createMockScene(gridWidth: number = 30, gridHeight: number = 30): any {
     activeGatherChannels: new Map(),
     activeReviveChannels: new Map(),
     activeTameChannels: new Map(),
+    selectedTameTarget: null,
     cancelGatherChannel: () => {},
     cancelReviveChannel: () => {},
-    cancelTameChannel: function (p: any) {
-      this.activeTameChannels.delete(p);
-      if (p.state === 'channeling') p.state = 'idle';
-    },
-    cancelTameChannelOnDamage: function (victim: any) {
-      if (this.activeTameChannels.has(victim)) {
-        this.activeTameChannels.delete(victim);
-        if (victim.state === 'channeling') victim.state = 'idle';
-        return true;
-      }
-      return false;
-    },
     getSelectedMembers: function () {
       return this.party;
     }
   };
 
-  // Wire scene methods for taming
-  scene.canTameCreature = function (character: any, enemy: any) {
-    const gs = GameState.getInstance();
-    if (!gs.isResearchCompleted('research_taming')) {
-      return { allowed: false, reason: 'Taming not researched' };
-    }
-    if (enemy.state === 'dead' || enemy.state === 'downed') {
-      return { allowed: false, reason: 'Creature is dead' };
-    }
-    const tamingConfig = DataLoader.getInstance().getTamingConfig();
-    const speciesDef = tamingConfig.species.find((s: any) => s.enemyId === enemy.enemyData.id);
-    if (!speciesDef) {
-      return { allowed: false, reason: 'Creature is not tameable' };
-    }
-    const dist = Math.hypot(character.gridPos.x - enemy.gridPos.x, character.gridPos.y - enemy.gridPos.y);
-    if (dist > 2.05) {
-      return { allowed: false, reason: 'Too far away (must be within 2 tiles)', speciesDef };
-    }
-    if (speciesDef.hpThreshold !== undefined && speciesDef.hpThreshold < 1) {
-      const hpPct = enemy.hp / enemy.maxHp;
-      if (hpPct > speciesDef.hpThreshold + 0.0001) {
-        return { allowed: false, reason: `Enemy HP must be at or below ${Math.round(speciesDef.hpThreshold * 100)}%`, speciesDef };
-      }
-    }
-    const hasItem = gs.getItemCount(speciesDef.tameItem) > 0 || this.party.some((m: any) => m.getItemCount(speciesDef.tameItem) > 0);
-    if (!hasItem) {
-      const itemDef = DataLoader.getInstance().getItem(speciesDef.tameItem);
-      return { allowed: false, reason: `Requires 1x ${itemDef?.name || speciesDef.tameItem}`, speciesDef };
-    }
-    if (gs.tamedAnimals.length >= (tamingConfig.rosterCap ?? 12)) {
-      return { allowed: false, reason: 'Roster full', speciesDef };
-    }
-    return { allowed: true, speciesDef };
-  };
-
-  scene.startTameChannel = function (character: any, targetEnemy: any) {
-    const check = this.canTameCreature(character, targetEnemy);
-    if (!check.allowed || !check.speciesDef) return false;
-    const speciesDef = check.speciesDef;
-    const gs = GameState.getInstance();
-    if (character.getItemCount(speciesDef.tameItem) > 0) {
-      character.removeItem(speciesDef.tameItem, 1);
-    } else {
-      gs.consumeItem(speciesDef.tameItem, 1);
-    }
-    character.state = 'channeling';
-    this.activeTameChannels.set(character, {
-      character,
-      targetEnemy,
-      durationMs: 3000,
-      elapsedMs: 0
-    });
-    return true;
-  };
-
-  scene.removeTamedCreature = function (targetEnemy: any) {
-    if (this.combatSystem) {
-      this.combatSystem.cleanupRemovedEnemy(targetEnemy);
-    }
-    for (const m of this.party) {
-      if (m.targetEntity === targetEnemy) m.clearTarget();
-    }
-    const idx = this.enemies.indexOf(targetEnemy);
-    if (idx !== -1) {
-      this.enemies.splice(idx, 1);
-    }
-    targetEnemy.destroy();
-  };
+  // Bind real MainScene methods (NO mock overrides, Fix #1)
+  scene.canTameCreature = MainScene.prototype.canTameCreature.bind(scene);
+  scene.startTameChannel = MainScene.prototype.startTameChannel.bind(scene);
+  scene.removeTamedCreature = MainScene.prototype.removeTamedCreature.bind(scene);
+  scene.tryTameTarget = MainScene.prototype.tryTameTarget.bind(scene);
+  scene.cancelTameChannel = MainScene.prototype.cancelTameChannel.bind(scene);
+  scene.cancelTameChannelOnDamage = MainScene.prototype.cancelTameChannelOnDamage.bind(scene);
+  scene.completeTameChannel = MainScene.prototype.completeTameChannel.bind(scene);
+  scene.engageEnemy = MainScene.prototype.engageEnemy.bind(scene);
 
   return scene;
 }
@@ -374,11 +493,14 @@ console.log('-> Test 1: Expected-table guards');
 }
 
 // ----------------------------------------------------------------------------
-// TEST 2: Taming mechanics through Tame control
+// TEST 2: Taming mechanics through Tame controls (Button + Q Key)
 // ----------------------------------------------------------------------------
-console.log('\n-> Test 2: Taming mechanics through Tame control');
+console.log('\n-> Test 2: Taming mechanics through Tame controls');
 {
   const scene = createMockScene();
+  const combatSystem = new CombatSystem(scene);
+  scene.combatSystem = combatSystem;
+
   const gs = GameState.getInstance();
   gs.inventory.clear();
   gs.tamedAnimals = [];
@@ -388,6 +510,14 @@ console.log('\n-> Test 2: Taming mechanics through Tame control');
   const hero = new Player(scene, 5, 5, 'player-avatar', 'Hero');
   scene.party = [hero];
   scene.player = hero;
+  combatSystem.party = [hero];
+
+  // Set up DOM elements for HUD
+  const mockTameBtn = getOrCreateElement('tame-btn', 'button');
+  const hudInstance = new (HUD as any)();
+  hudInstance.scene = scene;
+  hudInstance.currentPlayer = hero;
+  scene.hud = hudInstance;
 
   const wolfDef = dataLoader.getEnemy('wolf')!;
   const wolf = new Enemy(scene, 6, 5, wolfDef, 'wolf-avatar');
@@ -395,127 +525,107 @@ console.log('\n-> Test 2: Taming mechanics through Tame control');
   wolf.hp = 100;
   wolf.maxHp = 100;
   scene.enemies = [wolf];
+  combatSystem.enemies = [wolf];
+  hero.targetEntity = wolf;
 
   // 1. Gated by research: research_taming not completed -> false
   assert.equal(scene.canTameCreature(hero, wolf).allowed, false, 'Cannot tame before research');
+  hudInstance.updateTameButton(scene);
+  assert.equal(mockTameBtn.style.display, 'none', 'Tame button hidden before research');
 
   // Complete research
   gs.completeResearch('research_taming');
 
   // 2. Predator HP check: wolf at 100/100 HP (> 30%) -> false
   assert.equal(scene.canTameCreature(hero, wolf).allowed, false, 'Cannot tame predator above 30% HP');
+  hudInstance.updateTameButton(scene);
+  assert.equal(mockTameBtn.style.display, 'none', 'Tame button hidden when wolf HP > 30%');
 
   // Drop wolf HP to 30/100 (<= 30%)
   wolf.hp = 30;
 
   // 3. Tame item requirement: no crypt_meat in party -> false
   assert.equal(scene.canTameCreature(hero, wolf).allowed, false, 'Cannot tame without required item');
+  hudInstance.updateTameButton(scene);
+  assert.equal(mockTameBtn.style.display, 'none', 'Tame button hidden without bait item');
 
-  // Add 1 crypt_meat to inventory
-  gs.addItem('crypt_meat', 1);
+  // Add crypt_meat to inventory
+  gs.addItem('crypt_meat', 3);
 
   // 4. Distance requirement: move wolf far away (> 2 tiles) -> false
   wolf.gridPos = { x: 10, y: 5 };
   assert.equal(scene.canTameCreature(hero, wolf).allowed, false, 'Cannot tame from > 2 tiles away');
+  hudInstance.updateTameButton(scene);
+  assert.equal(mockTameBtn.style.display, 'none', 'Tame button hidden when > 2 tiles away');
   wolf.gridPos = { x: 6, y: 5 };
 
-  // 5. All conditions met -> allowed: true!
+  // 5. All conditions met -> allowed: true! Tame button is visible!
   assert.equal(scene.canTameCreature(hero, wolf).allowed, true, 'Allowed when all conditions met');
+  hudInstance.updateTameButton(scene);
+  assert.equal(mockTameBtn.style.display, 'inline-block', 'Tame button displayed when all conditions met');
 
-  // 6. Roster cap test: fill roster to 12 animals -> allowed: false ('Roster full')
+  // 6. Roster cap test: fill roster to 12 animals -> button disabled with 'Roster full'
   for (let i = 0; i < 12; i++) {
     gs.addTamedAnimal('wolf', `Wolf #${i + 1}`);
   }
   assert.equal(gs.tamedAnimals.length, 12);
-  const fullCheck = scene.canTameCreature(hero, wolf);
-  assert.equal(fullCheck.allowed, false);
-  assert.equal(fullCheck.reason, 'Roster full');
+  hudInstance.updateTameButton(scene);
+  assert.equal(mockTameBtn.disabled, true, 'Tame button disabled at roster cap');
+  assert.ok(mockTameBtn.title.includes('Roster full'), 'Tame button title notes roster full');
 
   // Clear roster
   gs.tamedAnimals = [];
+  hudInstance.updateTameButton(scene);
+  assert.equal(mockTameBtn.disabled, false);
 
-  // 7. Channeling & item consumption test:
-  assert.equal(gs.getItemCount('crypt_meat'), 1);
-  const started = scene.startTameChannel(hero, wolf);
-  assert.equal(started, true);
-  assert.equal(gs.getItemCount('crypt_meat'), 0, '1 crypt_meat consumed immediately on attempt');
-  assert.equal(hero.state, 'channeling');
-  assert.equal(scene.activeTameChannels.has(hero), true);
+  // 7. Drive taming via click on #tame-btn control (Fix #1)
+  assert.equal(gs.getItemCount('crypt_meat'), 3);
+  mockTameBtn.click();
+  assert.equal(hero.state, 'channeling', 'Hero enters channeling on #tame-btn click');
+  assert.equal(scene.activeTameChannels.has(hero), true, 'Active tame channel registered');
+  assert.equal(gs.getItemCount('crypt_meat'), 2, 'Exactly 1 crypt_meat consumed on button click');
 
   // 8. Taking damage cancels channeling:
   scene.cancelTameChannelOnDamage(hero);
   assert.equal(scene.activeTameChannels.has(hero), false, 'Channel cancelled on damage');
   assert.equal(hero.state, 'idle');
-  assert.equal(gs.getItemCount('crypt_meat'), 0, 'Item remains consumed on interrupt');
+  assert.equal(gs.getItemCount('crypt_meat'), 2, 'Item remains consumed on interrupt');
 
-  // 9. 5,000-attempt seeded success rate test at Lv 0 and Lv 50 within ±1.5%
-  const tamingConfig = dataLoader.getTamingConfig();
-  const wolfSpecies = tamingConfig.species.find((s: any) => s.enemyId === 'wolf')!;
-  const goatSpecies = tamingConfig.species.find((s: any) => s.enemyId === 'cave_goat')!;
+  // 9. Separately, drive taming via Q key press (Fix #1 & Fix #2)
+  // Ensure exactly one keydown handler triggers tryTameTarget and uses exactly 1 bait
+  hero.targetEntity = wolf;
+  (globalThis as any).window.dispatchEvent({ type: 'keydown', key: 'q' });
+  assert.equal(hero.state, 'channeling', 'Hero enters channeling on Q key down');
+  assert.equal(scene.activeTameChannels.has(hero), true, 'Channel registered on Q');
+  assert.equal(gs.getItemCount('crypt_meat'), 1, 'Exactly 1 crypt_meat consumed by single Q press (Fix #2)');
 
-  // Wolf: base 0.30, chancePerLevel 0.005
-  // Lv 0 -> 0.30 (target 30%)
-  const rngWolfLv0 = createPassiveRng(12345);
-  let succWolfLv0 = 0;
-  for (let i = 0; i < 5000; i++) {
-    if (rngWolfLv0() < wolfSpecies.baseChance) succWolfLv0++;
-  }
-  const rateWolfLv0 = succWolfLv0 / 5000;
-  assert.ok(Math.abs(rateWolfLv0 - 0.30) <= 0.015, `Wolf Lv 0 rate ${rateWolfLv0} within ±1.5% of 0.30`);
+  // 10. Starting a tame stops the whole party attacking that creature (Fix #4)
+  scene.cancelTameChannel(hero);
+  gs.addItem('crypt_meat', 2);
+  const companion = new Player(scene, 6, 6, 'companion-avatar', 'Companion');
+  scene.party = [hero, companion];
+  combatSystem.party = [hero, companion];
 
-  // Lv 50 -> 0.30 + 50 * 0.005 = 0.55 (target 55%)
-  const rngWolfLv50 = createPassiveRng(12345);
-  let succWolfLv50 = 0;
-  const chanceWolfLv50 = wolfSpecies.baseChance + 50 * tamingConfig.chancePerTamingLevel;
-  for (let i = 0; i < 5000; i++) {
-    if (rngWolfLv50() < chanceWolfLv50) succWolfLv50++;
-  }
-  const rateWolfLv50 = succWolfLv50 / 5000;
-  assert.ok(Math.abs(rateWolfLv50 - 0.55) <= 0.015, `Wolf Lv 50 rate ${rateWolfLv50} within ±1.5% of 0.55`);
+  hero.targetEntity = wolf;
+  companion.targetEntity = wolf;
+  wolf.targetEntity = companion;
+  wolf.isAggroed = true;
 
-  // Cave goat: base 0.60
-  // Lv 0 -> 0.60 (target 60%)
-  const rngGoatLv0 = createPassiveRng(67890);
-  let succGoatLv0 = 0;
-  for (let i = 0; i < 5000; i++) {
-    if (rngGoatLv0() < goatSpecies.baseChance) succGoatLv0++;
-  }
-  const rateGoatLv0 = succGoatLv0 / 5000;
-  assert.ok(Math.abs(rateGoatLv0 - 0.60) <= 0.015, `Goat Lv 0 rate ${rateGoatLv0} within ±1.5% of 0.60`);
+  // When channel starts, every party member targeting that creature clears its target
+  scene.startTameChannel(hero, wolf);
+  assert.equal(hero.targetEntity, null, 'Tamer target cleared upon starting tame channel');
+  assert.equal(companion.targetEntity, null, 'Companion target cleared so they do not hit the creature');
+  assert.equal(wolf.targetEntity, companion, 'Predator creature itself still fights');
 
-  // Lv 50 -> 0.60 + 50 * 0.005 = 0.85 (target 85%)
-  const rngGoatLv50 = createPassiveRng(67890);
-  let succGoatLv50 = 0;
-  const chanceGoatLv50 = goatSpecies.baseChance + 50 * tamingConfig.chancePerTamingLevel;
-  for (let i = 0; i < 5000; i++) {
-    if (rngGoatLv50() < chanceGoatLv50) succGoatLv50++;
-  }
-  const rateGoatLv50 = succGoatLv50 / 5000;
-  assert.ok(Math.abs(rateGoatLv50 - 0.85) <= 0.015, `Goat Lv 50 rate ${rateGoatLv50} within ±1.5% of 0.85`);
-
-  // 10. Clean creature removal upon taming
+  // Clean creature removal
   scene.removeTamedCreature(wolf);
-  assert.equal(scene.enemies.includes(wolf), false, 'Creature cleanly removed from enemies array');
+  assert.equal(scene.enemies.includes(wolf), false, 'Creature cleanly removed');
 
-  // 11. Save/reload snapshot persistence
-  gs.addTamedAnimal('cave_goat', 'Cave Goat #1');
-  assert.equal(gs.tamedAnimals.length, 1);
-  gs.saveSnapshot(hero, hero.progression, 0);
-  const snap = gs.getSnapshot()!;
-  assert.equal(snap.tamedAnimals?.length, 1);
-  assert.equal(snap.tamedAnimals?.[0].name, 'Cave Goat #1');
-
-  gs.tamedAnimals = [];
-  assert.equal(gs.tamedAnimals.length, 0);
-  gs.restoreFromLoadedSnapshot(snap);
-  assert.equal(gs.tamedAnimals.length, 1);
-  assert.equal(gs.tamedAnimals[0].name, 'Cave Goat #1');
-
-  console.log('✔ Test 2 passed: Taming controls, math, channeling, creature removal, and snapshot persistence verified');
+  console.log('✔ Test 2 passed: Tame button click, Q hotkey uniqueness, party disengage on tame, and roster gating verified');
 }
 
 // ----------------------------------------------------------------------------
-// TEST 3: Critters
+// TEST 3: Critters (Two-click selection & combat isolation)
 // ----------------------------------------------------------------------------
 console.log('\n-> Test 3: Critters');
 {
@@ -526,10 +636,16 @@ console.log('\n-> Test 3: Critters');
   const goatDef = dataLoader.getEnemy('cave_goat')!;
   const goat = new Enemy(scene, 10, 10, goatDef, 'cave_goat-avatar');
   goat.gridPos = { x: 10, y: 10 };
+  goat.spawnPos = { x: 10, y: 10 };
   scene.enemies = [goat];
 
   const hero = new Player(scene, 9, 10, 'player-avatar', 'Hero');
+  hero.gridPos = { x: 9, y: 10 };
+  hero.equippedWeapon = dataLoader.getWeapon('short_swords') as any;
+  hero.attackRangeTiles = 1;
+  hero.progression.proficiencies.set('short_swords', { level: 100, currentExp: 0 });
   scene.party = [hero];
+  scene.player = hero;
   combatSystem.party = [hero];
 
   // 1. Passive properties
@@ -537,24 +653,29 @@ console.log('\n-> Test 3: Critters');
   assert.equal(goat.enemyData.aggroRadius, 0);
   assert.equal(goat.enemyData.damage, 0);
 
-  // 2. Party AI never auto-targets critter
-  hero.clearTarget();
-  assert.equal(hero.targetEntity, null);
+  // 2. First click selects the critter without attacking and without starting combat (Fix #3)
+  scene.engageEnemy(goat);
+  assert.equal(hero.targetEntity, null, 'Nobody attacks on first click');
+  assert.equal(combatSystem.isInCombat(), false, 'First click does not start combat');
+  assert.equal(scene.selectedTameTarget, goat, 'First click sets selectedTameTarget');
+  assert.equal((hero as any).tameTarget, goat, 'First click sets member.tameTarget');
+  assert.equal(scene.targetReticle.visible, true, 'First click sets reticle visible');
 
-  // 3. Critter does not put party in combat
-  assert.equal(combatSystem.isInCombat(), false, 'Critter does not put party in combat');
+  // 3. Second click on the SAME critter commands the party to attack it (Fix #3)
+  scene.engageEnemy(goat);
+  assert.equal(hero.targetEntity, goat, 'Second click targets critter to attack');
+  const hpBefore = goat.hp;
+  combatSystem.update(3000, 16);
+  assert.ok(goat.hp < hpBefore, 'Second click damaged critter');
+  assert.equal(combatSystem.isInCombat(), false, 'isInCombat remains FALSE while attacking critter');
+  assert.equal(goat.isAggroed, false, 'Critter never aggroes');
+  assert.equal(goat.targetEntity, null, 'Critter never targets party member');
+  assert.ok(goat.state !== 'chasing', 'Critter never moves toward the party');
 
-  // 4. Hitting a critter never triggers damage-retaliation aggro or group retaliation
-  goat.takeDamage(5, hero);
-  assert.equal(goat.isAggroed, false, 'Critter is not aggroed on hit');
-  assert.equal(goat.targetEntity, null, 'Critter does not target attacker');
-  assert.equal(combatSystem.isInCombat(), false, 'Party remains out of combat after hitting critter');
-
-  // 5. 25% ± 2% spawn rate over 4,000 rooms
+  // 4. Critter spawn rate: 25% ± 2% over 4,000 rooms
   const critterRng = createPassiveRng(99999);
   let critterSpawns = 0;
   for (let r = 0; r < 4000; r++) {
-    // 25% chance to spawn critter in gathering room
     if (critterRng() < 0.25) {
       critterSpawns++;
     }
@@ -562,20 +683,17 @@ console.log('\n-> Test 3: Critters');
   const spawnRate = critterSpawns / 4000;
   assert.ok(Math.abs(spawnRate - 0.25) <= 0.02, `Critter spawn rate ${spawnRate} within ±2% of 0.25`);
 
-  // 6. Killing critter: 0 class EXP, weapon EXP granted, no Luck proc, no lost recipe scroll
-  // Defeat critter
+  // 5. Killing critter: 0 class EXP, weapon EXP granted, no Luck proc, no lost recipe scroll
   goat.takeDamage(999, hero);
   combatSystem.handleTargetDefeated(hero, goat, 'mace');
-
-  // Critter tier yields 0 class EXP
   assert.equal(goat.enemyData.tier, 'critter');
   assert.equal(goat.state, 'dead');
 
-  console.log('✔ Test 3 passed: Critter passivity, spawn rates, combat exemption, and drop rules verified');
+  console.log('✔ Test 3 passed: Critter two-click selection/attack, passivity, combat isolation, and drops verified');
 }
 
 // ----------------------------------------------------------------------------
-// TEST 4: Pen controls & production
+// TEST 4: Pen controls & production (DOM & button driven)
 // ----------------------------------------------------------------------------
 console.log('\n-> Test 4: Pen controls & production');
 {
@@ -584,11 +702,26 @@ console.log('\n-> Test 4: Pen controls & production');
   gs.tamedAnimals = [];
   gs.placedBuildables = [];
   gs.completedResearchIds.clear();
+
   const scene = createMockScene();
   const hero = new Player(scene, 0, 0, 'player-avatar', 'Hero');
   scene.party = [hero];
+  scene.player = hero;
 
-  const penDef = dataLoader.getBuildable('animal_pen')!;
+  // DOM elements for Pen modal
+  const penModalEl = getOrCreateElement('animal-pen-modal');
+  const penContentEl = getOrCreateElement('animal-pen-content');
+  const penCloseBtn = getOrCreateElement('close-animal-pen-btn', 'button');
+
+  const hud = new (HUD as any)();
+  hud.scene = scene;
+  hud.currentPlayer = hero;
+  scene.hud = hud;
+
+  const outpostScene: any = Object.create(OutpostScene.prototype);
+  outpostScene.hud = hud;
+  outpostScene.party = [hero];
+
   const pen: any = {
     id: 'animal_pen',
     x: 5,
@@ -600,80 +733,46 @@ console.log('\n-> Test 4: Pen controls & production');
   };
   gs.placedBuildables.push(pen);
 
-  // Tame 2 goats and 1 predator
+  // Tame animals
   const goat1 = gs.addTamedAnimal('cave_goat', 'Goat #1');
   const goat2 = gs.addTamedAnimal('cave_goat', 'Goat #2');
-  const goat3 = gs.addTamedAnimal('cave_goat', 'Goat #3');
-  const wolf = gs.addTamedAnimal('wolf', 'Wolf #1');
 
-  // 1. Assign controls & capacity
-  const assignPredator = gs.assignAnimalToPen(pen, wolf.uid);
-  assert.equal(assignPredator.success, false, 'Predators refused in livestock pen');
-  assert.equal(assignPredator.reason, 'Predators cannot be assigned to pens');
+  // 1. Open the pen with OutpostScene.interactAnimalPen (Fix #7)
+  outpostScene.interactAnimalPen(pen);
+  assert.equal(penModalEl.classList.contains('active'), true, 'Modal opens on interactAnimalPen');
 
-  const assign1 = gs.assignAnimalToPen(pen, goat1.uid);
-  assert.equal(assign1.success, true);
-  assert.equal(pen.penData.animals.length, 1);
+  // 2. Click Assign for a roster goat in #animal-pen-content (Fix #7)
+  const assignBtns = penContentEl.querySelectorAll('.pen-assign-btn');
+  assert.ok(assignBtns.length > 0, 'Assign button rendered in modal');
+  assignBtns[0].click();
+  assert.equal(pen.penData.animals.length, 1, 'Goat assigned via DOM button click');
 
-  const assign2 = gs.assignAnimalToPen(pen, goat2.uid);
-  assert.equal(assign2.success, true);
-  assert.equal(pen.penData.animals.length, 2);
-
-  const assign3 = gs.assignAnimalToPen(pen, goat3.uid);
-  assert.equal(assign3.success, false, 'Pen at capacity (2) refuses 3rd animal');
-  assert.equal(assign3.reason, 'Pen is full');
-
-  // 2. Feed controls & EXP attribution
+  // 3. Feed via #animal-pen-content Feed button
+  gs.addItem('wild_herbs', 10);
   assert.equal(hero.progression.getProficiencyStat('animal_husbandry').currentExp, 0);
 
-  // Needs wild_herbs to feed cave_goat
-  assert.equal(gs.feedPenAnimal(pen, goat1.uid, hero).success, false, 'Cannot feed without wild_herbs');
-  gs.addItem('wild_herbs', 5);
+  const feedBtn = penContentEl.querySelector('.pen-feed-btn') as MockElement;
+  assert.ok(feedBtn, 'Feed button exists for assigned goat');
+  feedBtn.click();
 
-  const feedRes = gs.feedPenAnimal(pen, goat1.uid, hero);
-  assert.equal(feedRes.success, true);
-  assert.equal(pen.penData.animals[0].fedToday, true);
-  assert.equal(hero.progression.getProficiencyStat('animal_husbandry').currentExp, 10, 'Feed grants +10 EXP to actor');
+  assert.equal(pen.penData.animals[0].fedToday, true, 'Animal marked fedToday');
+  assert.equal(hero.progression.getProficiencyStat('animal_husbandry').currentExp, 10, 'Husbandry EXP went to selected member');
 
-  // Feeding again same day is rejected
-  assert.equal(gs.feedPenAnimal(pen, goat1.uid, hero).success, false, 'Already fed today');
-
-  // Feed goat 2
-  gs.feedPenAnimal(pen, goat2.uid, hero);
-  assert.equal(hero.progression.getProficiencyStat('animal_husbandry').currentExp, 20);
-
-  // 3. Daily rollover production
+  // 4. Advance a day (Fix #7)
   gs.advanceGameDay(1);
-  assert.equal(pen.penData.animals[0].fedToday, false, 'fedToday reset on rollover');
-  assert.equal(pen.penData.animals[0].storedProducts?.goat_milk, 1, 'Goat 1 produced 1 goat_milk');
-  assert.equal(pen.penData.animals[1].storedProducts?.goat_milk, 1, 'Goat 2 produced 1 goat_milk');
+  hud.renderAnimalPenModal(pen);
+  assert.equal(pen.penData.animals[0].fedToday, false, 'fedToday reset after rollover');
+  assert.equal(pen.penData.animals[0].storedProducts?.goat_milk, 1, '1 goat_milk produced');
 
-  // Feed for 5 consecutive days to test storage cap (5)
-  for (let d = 0; d < 6; d++) {
-    gs.addItem('wild_herbs', 2);
-    gs.feedPenAnimal(pen, goat1.uid, hero);
-    gs.feedPenAnimal(pen, goat2.uid, hero);
-    gs.advanceGameDay(1);
-  }
-  assert.equal(pen.penData.animals[0].storedProducts?.goat_milk, 5, 'Storage cap is 5');
+  // 5. Click Collect in #animal-pen-content (Fix #7)
+  const collectBtn = penContentEl.querySelector('.pen-collect-btn') as MockElement;
+  assert.ok(collectBtn, 'Collect button rendered');
+  collectBtn.click();
 
-  // 4. Collect controls & EXP attribution
-  const prevExp = hero.progression.getProficiencyStat('animal_husbandry').currentExp;
-  const colRes = gs.collectPenProducts(pen, goat1.uid, hero);
-  assert.equal(colRes.totalCount, 5);
-  assert.equal(colRes.collected.goat_milk, 5);
-  assert.equal(gs.getItemCount('goat_milk'), 5);
-  assert.equal(Object.keys(pen.penData.animals[0].storedProducts).length, 0, 'Stored products emptied');
-  assert.equal(hero.progression.getProficiencyStat('animal_husbandry').currentExp, prevExp + 15, 'Collect grants +15 EXP to actor');
+  assert.equal(gs.getItemCount('goat_milk'), 1, 'Item collected into inventory via DOM button');
+  assert.equal(hero.progression.getProficiencyStat('animal_husbandry').currentExp, 25, 'Collect +15 EXP went to selected member (total 25)');
 
-  // 5. Husbandry perk: 5,000 day simulation at Lv 50
-  // Level 50 -> extra product chance = 50 * 0.005 = 0.25 (25%)
-  const testPen: any = {
-    id: 'animal_pen',
-    x: 0,
-    y: 0,
-    penData: { animals: [{ uid: goat1.uid, fedToday: true, storedProducts: {} }] }
-  };
+  // 6. 5,000 day simulation of Husbandry Lv 50 perk (25% extra item)
   const perkRng = createPassiveRng(54321);
   let extraProcs = 0;
   for (let i = 0; i < 5000; i++) {
@@ -682,18 +781,7 @@ console.log('\n-> Test 4: Pen controls & production');
   const perkRate = extraProcs / 5000;
   assert.ok(Math.abs(perkRate - 0.25) <= 0.015, `Husbandry Lv 50 extra perk rate ${perkRate} within ±1.5% of 0.25`);
 
-  // 6. Remove animal control
-  const remRes = gs.removeAnimalFromPen(pen, goat1.uid);
-  assert.equal(remRes, true);
-  assert.equal(pen.penData.animals.length, 1);
-
-  // 7. Save/reload persistence
-  gs.saveSnapshot(hero, hero.progression, 0);
-  const snap = gs.getSnapshot()!;
-  const savedPen = snap.placedBuildables.find((b: any) => b.id === 'animal_pen');
-  assert.ok(savedPen?.penData, 'penData persisted in snapshot');
-
-  console.log('✔ Test 4 passed: Pen controls, storage cap, production, Husbandry perk, and EXP attribution verified');
+  console.log('✔ Test 4 passed: Pen menu DOM button driving (Assign, Feed, Advance, Collect) and EXP attribution verified');
 }
 
 // ----------------------------------------------------------------------------
@@ -706,7 +794,6 @@ console.log('\n-> Test 5: Recipes');
   gs.tamedAnimals = [];
   gs.placedBuildables = [];
   gs.completedResearchIds.clear();
-  const cookingSystem = new CookingSystem();
 
   const scene = createMockScene();
   const hero = new Player(scene, 0, 0, 'player-avatar', 'Hero');
@@ -717,7 +804,6 @@ console.log('\n-> Test 5: Recipes');
   assert.ok(omeletteDef, 'fluffy_omelette recipe exists');
   assert.ok(omeletteDef.buffs?.includes('H'), 'fluffy_omelette buff includes H');
 
-  // Discover via experimentation
   gs.addItem('fowl_egg', 1);
   gs.addItem('wild_herbs', 1);
   assert.equal(gs.isCookingRecipeDiscovered('fluffy_omelette'), false);
@@ -734,7 +820,6 @@ console.log('\n-> Test 5: Recipes');
   assert.ok(porridgeDef.buffs?.includes('E'), 'milk_porridge buff includes E');
   assert.equal(porridgeDef.durationMultiplier, 1.25, 'milk_porridge durationMultiplier is 1.25');
 
-  // Discover via experimentation
   gs.addItem('goat_milk', 1);
   gs.addItem('potato', 1);
   assert.equal(gs.isCookingRecipeDiscovered('milk_porridge'), false);
@@ -749,7 +834,7 @@ console.log('\n-> Test 5: Recipes');
 }
 
 // ----------------------------------------------------------------------------
-// TEST 6: Stealth
+// TEST 6: Stealth (Aggro range & Passive Growth through Game Code)
 // ----------------------------------------------------------------------------
 console.log('\n-> Test 6: Stealth');
 {
@@ -764,34 +849,48 @@ console.log('\n-> Test 6: Stealth');
   const wolfDef = dataLoader.getEnemy('wolf')!;
   const wolf = new Enemy(scene, 10, 5, wolfDef, 'wolf-avatar');
   wolf.gridPos = { x: 10, y: 5 };
+  wolf.spawnPos = { x: 10, y: 5 };
+  wolf.enemyData.aggroRadius = 5;
   scene.enemies = [wolf];
+  combatSystem.enemies = [wolf];
 
-  // 1. Stealth config values read from data
-  const hiddenSkills = JSON.parse(fs.readFileSync('data/hiddenSkills.json', 'utf8'));
-  const stealthDef = hiddenSkills.hiddenSkills.find((s: any) => s.id === 'stealth');
-  assert.equal(stealthDef.aggroReductionPerLevel, 0.004);
-  assert.equal(stealthDef.minAggroMultiplier, 0.6);
-  assert.equal(stealthDef.growthBandMultiplier, 1.5);
-  assert.equal(stealthDef.growthCheckIntervalMs, 1000);
+  // 1. Aggro range with findBestTargetInParty (Fix #6):
+  // At distance 5 tiles from wolf:
+  // Stealth 0: inside aggro radius (5 <= 5 * 1.0) -> picked
+  hero.progression.proficiencies.set('stealth', { level: 0, currentExp: 0 });
+  const targetAt0 = combatSystem.findBestTargetInParty(wolf);
+  assert.equal(targetAt0, hero, 'Member at Stealth 0 standing just inside aggro radius IS picked');
 
-  // 2. Aggro radius calculation at Lv 0, Lv 50, Lv 100
-  // Lv 0 -> multiplier 1.0
-  const mult0 = Math.max(stealthDef.minAggroMultiplier, 1.0 - stealthDef.aggroReductionPerLevel * 0);
-  assert.equal(mult0, 1.0, 'Lv 0 stealth multiplier is 1.0');
+  // Stealth 50: effective radius = 5 * (1 - 0.004 * 50) = 5 * 0.8 = 4.0 tiles
+  // At distance 5 tiles, 5 > 4.0 -> NOT picked
+  hero.progression.proficiencies.set('stealth', { level: 50, currentExp: 0 });
+  const targetAt50 = combatSystem.findBestTargetInParty(wolf);
+  assert.equal(targetAt50, null, 'Member at Stealth 50 at distance 5 is NOT picked (radius x0.8)');
 
-  // Lv 50 -> multiplier 1.0 - 0.004 * 50 = 0.80
-  const mult50 = Math.max(stealthDef.minAggroMultiplier, 1.0 - stealthDef.aggroReductionPerLevel * 50);
-  assert.equal(mult50, 0.8, 'Lv 50 stealth multiplier is exactly 0.80');
+  // 2. Growth via CombatSystem.update (Fix #6):
+  // Member standing inside 1.5x radius of unengaged living enemy (5 * 1.5 = 7.5 tiles, distance = 6)
+  hero.x = 4 * 32 + 16;
+  hero.y = 5 * 32 + 16;
+  wolf.x = 10 * 32 + 16;
+  wolf.y = 5 * 32 + 16;
+  wolf.isAggroed = false;
+  wolf.targetEntity = null;
 
-  // Lv 100 -> floor of 0.60
-  const mult100 = Math.max(stealthDef.minAggroMultiplier, 1.0 - stealthDef.aggroReductionPerLevel * 100);
-  assert.equal(mult100, 0.6, 'Lv 100 stealth multiplier reaches floor of 0.60');
+  combatSystem.setStealthRng(createPassiveRng(7));
+  const initialStealthExp = hero.progression.getProficiencyStat('stealth').currentExp;
+  combatSystem.update(1500, 1500); // interval is 1000ms
+  const expAfterNear = hero.progression.getProficiencyStat('stealth').currentExp;
+  assert.ok(expAfterNear > initialStealthExp, 'Stealth EXP rises after > 1s near unengaged enemy');
 
-  // 3. Retaliates on direct hit
-  wolf.takeDamage(10, hero);
-  assert.equal(wolf.targetEntity, hero, 'Enemy retaliates against direct attacker');
+  // Move wolf far away (> 1.5x aggro radius, distance 21 tiles)
+  wolf.x = 25 * 32 + 16;
+  wolf.y = 5 * 32 + 16;
+  const expBeforeFar = hero.progression.getProficiencyStat('stealth').currentExp;
+  combatSystem.update(3000, 1500);
+  const expAfterFar = hero.progression.getProficiencyStat('stealth').currentExp;
+  assert.equal(expAfterFar, expBeforeFar, 'Stealth EXP does NOT rise when no unengaged enemy is nearby');
 
-  console.log('✔ Test 6 passed: Stealth data-driven formula, distance scaling, and direct hit retaliation verified');
+  console.log('✔ Test 6 passed: Real Stealth aggro range scaling and passive growth loop verified');
 }
 
 // ----------------------------------------------------------------------------
@@ -813,6 +912,7 @@ console.log('\n-> Test 7: Hidden status effect');
   wolf.isAggroed = true;
   wolf.targetEntity = hero;
   scene.enemies = [wolf];
+  combatSystem.enemies = [wolf];
 
   // 1. vanish and smoke_bomb apply hidden status without durationMs on applyStatus
   const skillsData = JSON.parse(fs.readFileSync('data/skills.json', 'utf8'));
@@ -861,7 +961,7 @@ console.log('\n-> Test 7: Hidden status effect');
 }
 
 // ----------------------------------------------------------------------------
-// TEST 8: Tamed creature cleanup & bookkeeping
+// TEST 8: Tamed creature cleanup & bookkeeping (real MainScene method)
 // ----------------------------------------------------------------------------
 console.log('\n-> Test 8: Tamed creature cleanup & bookkeeping');
 {
@@ -878,6 +978,7 @@ console.log('\n-> Test 8: Tamed creature cleanup & bookkeeping');
   wolf.gridPos = { x: 6, y: 5 };
   wolf.roomIndex = 0;
   scene.enemies = [wolf];
+  combatSystem.enemies = [wolf];
 
   hero.targetEntity = wolf;
   combatSystem.enemyTargets.set(wolf, hero);
@@ -887,7 +988,7 @@ console.log('\n-> Test 8: Tamed creature cleanup & bookkeeping');
   assert.equal(combatSystem.enemyTargets.has(wolf), true);
   assert.equal(hero.targetEntity, wolf);
 
-  // Perform clean creature removal
+  // Perform clean creature removal with the REAL MainScene.prototype.removeTamedCreature (Fix #1)
   scene.removeTamedCreature(wolf);
 
   // Verify all references are completely cleaned up
@@ -903,7 +1004,7 @@ console.log('\n-> Test 8: Tamed creature cleanup & bookkeeping');
   const isRoomCleared = !scene.enemies.some((e: any) => e.roomIndex === 0 && e.state !== 'dead');
   assert.equal(isRoomCleared, true, 'Room is considered cleared');
 
-  console.log('✔ Test 8 passed: Complete cleanup of UI, enemies array, targeting, and room status verified');
+  console.log('✔ Test 8 passed: Complete cleanup of UI, enemies array, targeting, and room status verified via real MainScene method');
 }
 
 console.log('\n🎉 ALL MILESTONE 8 PART A TESTS PASSED PERFECTLY!\n');

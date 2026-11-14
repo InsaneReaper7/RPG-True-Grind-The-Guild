@@ -8651,8 +8651,14 @@ export class HUD {
       return;
     }
 
-    // Target enemy
-    const targetEnemy = member.targetEntity && member.targetEntity.enemyData ? member.targetEntity : null;
+    // Target enemy: check member.targetEntity, member.tameTarget, or scene.selectedTameTarget
+    const targetEnemy = (member.targetEntity && member.targetEntity.enemyData)
+      ? member.targetEntity
+      : ((member as any).tameTarget && (member as any).tameTarget.enemyData && (member as any).tameTarget.state !== 'dead')
+        ? (member as any).tameTarget
+        : (scene.selectedTameTarget && scene.selectedTameTarget.enemyData && scene.selectedTameTarget.state !== 'dead')
+          ? scene.selectedTameTarget
+          : null;
     if (!targetEnemy || targetEnemy.state === 'dead' || (targetEnemy.state as any) === 'downed') {
       this.tameBtnEl.style.display = 'none';
       return;

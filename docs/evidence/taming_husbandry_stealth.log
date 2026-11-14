@@ -3,82 +3,37 @@
 -> Test 1: Expected-table guards
 ✔ Test 1 passed: All expected tables, configs, and definitions verified
 
--> Test 2: Taming mechanics through Tame control
-[SceneTransition Handoff-OUT] Saved state snapshot at sceneTime=0ms:
-  HP: 100.0 / 100
-  Critical HP: 25.0 / 25
-  Energy: 100.0 / 100
-  Equipped Skills: []
-  Autocast: {}
-  Remaining Cooldowns (ms): {}
-  Proficiencies: {"short_swords":{"level":0,"currentExp":0},"daggers":{"level":0,"currentExp":0},"shields":{"level":0,"currentExp":0},"mace":{"level":0,"currentExp":0},"staff":{"level":0,"currentExp":0},"druid_staff":{"level":0,"currentExp":0},"healing_magic":{"level":0,"currentExp":0},"fire_magic":{"level":0,"currentExp":0},"lightning_magic":{"level":0,"currentExp":0},"ice_magic":{"level":0,"currentExp":0},"holy_magic":{"level":0,"currentExp":0},"dark_magic":{"level":0,"currentExp":0},"arcane_magic":{"level":0,"currentExp":0},"water_magic":{"level":0,"currentExp":0},"earth_magic":{"level":0,"currentExp":0},"nature_magic":{"level":0,"currentExp":0},"wind_magic":{"level":0,"currentExp":0},"dual_wielding":{"level":0,"currentExp":0},"construction":{"level":0,"currentExp":0},"woodworking":{"level":0,"currentExp":0},"stonemason":{"level":0,"currentExp":0},"alchemy":{"level":0,"currentExp":0},"cooking":{"level":0,"currentExp":0},"blacksmithing":{"level":0,"currentExp":0},"foraging":{"level":0,"currentExp":0},"woodcutting":{"level":0,"currentExp":0},"mining":{"level":0,"currentExp":0},"armorsmithing":{"level":0,"currentExp":0},"digging":{"level":0,"currentExp":0},"perception":{"level":0,"currentExp":0},"skinning":{"level":0,"currentExp":0},"butchering":{"level":0,"currentExp":0},"bows":{"level":0,"currentExp":0},"crossbows":{"level":0,"currentExp":0},"bowyer":{"level":0,"currentExp":0},"lockpicking":{"level":0,"currentExp":0},"gardening":{"level":0,"currentExp":0},"fist":{"level":0,"currentExp":0},"longswords":{"level":0,"currentExp":0},"greatswords":{"level":0,"currentExp":0},"spears":{"level":0,"currentExp":0},"katana":{"level":0,"currentExp":0},"throwing_weapons":{"level":0,"currentExp":0},"light_armor":{"level":0,"currentExp":0},"medium_armor":{"level":0,"currentExp":0},"heavy_armor":{"level":0,"currentExp":0},"fishing":{"level":0,"currentExp":0},"enchanting":{"level":0,"currentExp":0},"taming":{"level":0,"currentExp":0},"animal_husbandry":{"level":0,"currentExp":0},"evasion":{"level":0,"currentExp":0},"parry":{"level":0,"currentExp":0},"block":{"level":0,"currentExp":0},"counterattack":{"level":0,"currentExp":0},"resilience":{"level":0,"currentExp":0},"health_regen":{"level":0,"currentExp":0},"mana_regen":{"level":0,"currentExp":0},"energy_regen":{"level":0,"currentExp":0},"iron_back":{"level":0,"currentExp":0},"poison_resistance":{"level":0,"currentExp":0},"luck":{"level":0,"currentExp":0},"critical_strike":{"level":0,"currentExp":0},"life_steal":{"level":0,"currentExp":0},"stealth":{"level":0,"currentExp":0}}
-  Unlocked Classes: []
-  Wood: 100
-  Placed Buildables: 0
-  Day: 1, Hunger: 100.0, Mood: 50.0, Rations: 0
-[GameState] 🍳 Save Migration applied: Food & Cooking V2.
-✔ Test 2 passed: Taming controls, math, channeling, creature removal, and snapshot persistence verified
+-> Test 2: Taming mechanics through Tame controls
+[Taming] 🐾 undefined started taming Wolf (3000ms)...
+[Taming] 🐾 undefined started taming Wolf (3000ms)...
+[Taming] 🐾 undefined started taming Wolf (3000ms)...
+✔ Test 2 passed: Tame button click, Q hotkey uniqueness, party disengage on tame, and roster gating verified
 
 -> Test 3: Critters
+[Input] Engaged Enemy: Cave Goat at (10, 10)
+[KnowledgeBase] 🐺 First encountered enemy: 'cave_goat'! (+1 RP)
+[Bestiary] 🐺 First encounter with Cave Goat! (+1 RP)
+[DIAG:Combat] ⚔️ undefined attacks Cave Goat with Short Swords! inCombat: false, Pre-EN: 100.0, Post-EN: 100.0, Range: 1, Dist: 1
+[Combat] undefined attacks Cave Goat with Short Swords for 55.0 damage! (Base: 5, Lv 100 Bonus: +50.0, Accuracy: 100.0%)
+[StatusEffect] Applied Bleed to Cave Goat!
+[KnowledgeBase] 🧪 Status effect discovered: 'bleed'! (+1 RP)
+[Progression] +2 EXP for 'short_swords' (undefined). Current: Level 100 (2/450 EXP)
+[Progression] Recorded tx 'short_swords': +2 EXP for Guild Hero, resulting total: Level 100 (2/450 EXP)
+[Combat] Cave Goat defeated/downed by undefined!
+[Progression] +4 EXP for 'short_swords' (undefined). Current: Level 100 (6/450 EXP)
+[Progression] Recorded tx 'short_swords': +4 EXP for Guild Hero, resulting total: Level 100 (6/450 EXP)
 [Combat] Cave Goat defeated/downed by undefined!
 [Progression] +4 EXP for 'mace' (undefined). Current: Level 0 (4/50 EXP)
 [Progression] Recorded tx 'mace': +4 EXP for Guild Hero, resulting total: Level 0 (4/50 EXP)
-✔ Test 3 passed: Critter passivity, spawn rates, combat exemption, and drop rules verified
+✔ Test 3 passed: Critter two-click selection/attack, passivity, combat isolation, and drops verified
 
 -> Test 4: Pen controls & production
 [Progression] +10 EXP for 'animal_husbandry' (undefined). Current: Level 0 (10/50 EXP)
 [Progression] Recorded tx 'animal_husbandry': +10 EXP for Guild Hero, resulting total: Level 0 (10/50 EXP)
-[Progression] +10 EXP for 'animal_husbandry' (undefined). Current: Level 0 (20/50 EXP)
-[Progression] Recorded tx 'animal_husbandry': +10 EXP for Guild Hero, resulting total: Level 0 (20/50 EXP)
 [Clock] 🌅 Game Day advanced by +1 -> Day 2
-[Progression] +10 EXP for 'animal_husbandry' (undefined). Current: Level 0 (30/50 EXP)
-[Progression] Recorded tx 'animal_husbandry': +10 EXP for Guild Hero, resulting total: Level 0 (30/50 EXP)
-[Progression] +10 EXP for 'animal_husbandry' (undefined). Current: Level 0 (40/50 EXP)
-[Progression] Recorded tx 'animal_husbandry': +10 EXP for Guild Hero, resulting total: Level 0 (40/50 EXP)
-[Clock] 🌅 Game Day advanced by +1 -> Day 3
-[Progression] +10 EXP for 'animal_husbandry' (undefined). Current: Level 1 (0/54 EXP)
-[Progression] Recorded tx 'animal_husbandry': +10 EXP for Guild Hero, resulting total: Level 1 (0/54 EXP)
-[Progression] LEVEL UP! 'animal_husbandry' is now Level 1! (Gained 1 level(s))
-[Progression] ✨ SKILL DISCOVERED: 'animal_husbandry' reached Level 1 by undefined! ✨
-[Progression] +10 EXP for 'animal_husbandry' (undefined). Current: Level 1 (10/54 EXP)
-[Progression] Recorded tx 'animal_husbandry': +10 EXP for Guild Hero, resulting total: Level 1 (10/54 EXP)
-[Clock] 🌅 Game Day advanced by +1 -> Day 4
-[Progression] +10 EXP for 'animal_husbandry' (undefined). Current: Level 1 (20/54 EXP)
-[Progression] Recorded tx 'animal_husbandry': +10 EXP for Guild Hero, resulting total: Level 1 (20/54 EXP)
-[Progression] +10 EXP for 'animal_husbandry' (undefined). Current: Level 1 (30/54 EXP)
-[Progression] Recorded tx 'animal_husbandry': +10 EXP for Guild Hero, resulting total: Level 1 (30/54 EXP)
-[Clock] 🌅 Game Day advanced by +1 -> Day 5
-[Progression] +10 EXP for 'animal_husbandry' (undefined). Current: Level 1 (40/54 EXP)
-[Progression] Recorded tx 'animal_husbandry': +10 EXP for Guild Hero, resulting total: Level 1 (40/54 EXP)
-[Progression] +10 EXP for 'animal_husbandry' (undefined). Current: Level 1 (50/54 EXP)
-[Progression] Recorded tx 'animal_husbandry': +10 EXP for Guild Hero, resulting total: Level 1 (50/54 EXP)
-[Clock] 🌅 Game Day advanced by +1 -> Day 6
-[Progression] +10 EXP for 'animal_husbandry' (undefined). Current: Level 2 (6/58 EXP)
-[Progression] Recorded tx 'animal_husbandry': +10 EXP for Guild Hero, resulting total: Level 2 (6/58 EXP)
-[Progression] LEVEL UP! 'animal_husbandry' is now Level 2! (Gained 1 level(s))
-[Progression] +10 EXP for 'animal_husbandry' (undefined). Current: Level 2 (16/58 EXP)
-[Progression] Recorded tx 'animal_husbandry': +10 EXP for Guild Hero, resulting total: Level 2 (16/58 EXP)
-[Clock] 🌅 Game Day advanced by +1 -> Day 7
-[Progression] +10 EXP for 'animal_husbandry' (undefined). Current: Level 2 (26/58 EXP)
-[Progression] Recorded tx 'animal_husbandry': +10 EXP for Guild Hero, resulting total: Level 2 (26/58 EXP)
-[Progression] +10 EXP for 'animal_husbandry' (undefined). Current: Level 2 (36/58 EXP)
-[Progression] Recorded tx 'animal_husbandry': +10 EXP for Guild Hero, resulting total: Level 2 (36/58 EXP)
-[Clock] 🌅 Game Day advanced by +1 -> Day 8
-[Progression] +15 EXP for 'animal_husbandry' (undefined). Current: Level 2 (51/58 EXP)
-[Progression] Recorded tx 'animal_husbandry': +15 EXP for Guild Hero, resulting total: Level 2 (51/58 EXP)
-[SceneTransition Handoff-OUT] Saved state snapshot at sceneTime=0ms:
-  HP: 100.2 / 100.2
-  Critical HP: 25.1 / 25.1
-  Energy: 100.2 / 100.2
-  Equipped Skills: []
-  Autocast: {}
-  Remaining Cooldowns (ms): {}
-  Proficiencies: {"short_swords":{"level":0,"currentExp":0},"daggers":{"level":0,"currentExp":0},"shields":{"level":0,"currentExp":0},"mace":{"level":0,"currentExp":0},"staff":{"level":0,"currentExp":0},"druid_staff":{"level":0,"currentExp":0},"healing_magic":{"level":0,"currentExp":0},"fire_magic":{"level":0,"currentExp":0},"lightning_magic":{"level":0,"currentExp":0},"ice_magic":{"level":0,"currentExp":0},"holy_magic":{"level":0,"currentExp":0},"dark_magic":{"level":0,"currentExp":0},"arcane_magic":{"level":0,"currentExp":0},"water_magic":{"level":0,"currentExp":0},"earth_magic":{"level":0,"currentExp":0},"nature_magic":{"level":0,"currentExp":0},"wind_magic":{"level":0,"currentExp":0},"dual_wielding":{"level":0,"currentExp":0},"construction":{"level":0,"currentExp":0},"woodworking":{"level":0,"currentExp":0},"stonemason":{"level":0,"currentExp":0},"alchemy":{"level":0,"currentExp":0},"cooking":{"level":0,"currentExp":0},"blacksmithing":{"level":0,"currentExp":0},"foraging":{"level":0,"currentExp":0},"woodcutting":{"level":0,"currentExp":0},"mining":{"level":0,"currentExp":0},"armorsmithing":{"level":0,"currentExp":0},"digging":{"level":0,"currentExp":0},"perception":{"level":0,"currentExp":0},"skinning":{"level":0,"currentExp":0},"butchering":{"level":0,"currentExp":0},"bows":{"level":0,"currentExp":0},"crossbows":{"level":0,"currentExp":0},"bowyer":{"level":0,"currentExp":0},"lockpicking":{"level":0,"currentExp":0},"gardening":{"level":0,"currentExp":0},"fist":{"level":0,"currentExp":0},"longswords":{"level":0,"currentExp":0},"greatswords":{"level":0,"currentExp":0},"spears":{"level":0,"currentExp":0},"katana":{"level":0,"currentExp":0},"throwing_weapons":{"level":0,"currentExp":0},"light_armor":{"level":0,"currentExp":0},"medium_armor":{"level":0,"currentExp":0},"heavy_armor":{"level":0,"currentExp":0},"fishing":{"level":0,"currentExp":0},"enchanting":{"level":0,"currentExp":0},"taming":{"level":0,"currentExp":0},"animal_husbandry":{"level":2,"currentExp":51},"evasion":{"level":0,"currentExp":0},"parry":{"level":0,"currentExp":0},"block":{"level":0,"currentExp":0},"counterattack":{"level":0,"currentExp":0},"resilience":{"level":0,"currentExp":0},"health_regen":{"level":0,"currentExp":0},"mana_regen":{"level":0,"currentExp":0},"energy_regen":{"level":0,"currentExp":0},"iron_back":{"level":0,"currentExp":0},"poison_resistance":{"level":0,"currentExp":0},"luck":{"level":0,"currentExp":0},"critical_strike":{"level":0,"currentExp":0},"life_steal":{"level":0,"currentExp":0},"stealth":{"level":0,"currentExp":0}}
-  Unlocked Classes: []
-  Wood: 100
-  Placed Buildables: 1
-  Day: 8, Hunger: 100.0, Mood: 50.0, Rations: 0
-✔ Test 4 passed: Pen controls, storage cap, production, Husbandry perk, and EXP attribution verified
+[Progression] +15 EXP for 'animal_husbandry' (undefined). Current: Level 0 (25/50 EXP)
+[Progression] Recorded tx 'animal_husbandry': +15 EXP for Guild Hero, resulting total: Level 0 (25/50 EXP)
+✔ Test 4 passed: Pen menu DOM button driving (Assign, Feed, Advance, Collect) and EXP attribution verified
 
 -> Test 5: Recipes
 [Cooking] ✨ Recipe permanently discovered: 'fluffy_omelette'! (+1 RP)
@@ -92,15 +47,16 @@
 ✔ Test 5 passed: New recipes discoverable and craftable with correct effects
 
 -> Test 6: Stealth
-[Combat] Wolf aggroed immediately due to damage!
-✔ Test 6 passed: Stealth data-driven formula, distance scaling, and direct hit retaliation verified
+[Progression] +1 EXP for 'stealth' (undefined). Current: Level 50 (1/250 EXP)
+[Progression] Recorded tx 'stealth': +1 EXP for Guild Hero, resulting total: Level 50 (1/250 EXP)
+✔ Test 6 passed: Real Stealth aggro range scaling and passive growth loop verified
 
 -> Test 7: Hidden status effect
 [KnowledgeBase] 🧪 Status effect discovered: 'hidden'! (+1 RP)
 ✔ Test 7 passed: Hidden applied by skills, ignored by aggro, preserved on damage taken, broken on damage dealt
 
 -> Test 8: Tamed creature cleanup & bookkeeping
-✔ Test 8 passed: Complete cleanup of UI, enemies array, targeting, and room status verified
+✔ Test 8 passed: Complete cleanup of UI, enemies array, targeting, and room status verified via real MainScene method
 
 🎉 ALL MILESTONE 8 PART A TESTS PASSED PERFECTLY!
 

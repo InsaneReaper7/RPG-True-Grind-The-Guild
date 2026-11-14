@@ -116,7 +116,7 @@ export class MainScene extends Phaser.Scene {
   private activeGatherChannels: Map<Player, ActiveGatherChannel> = new Map();
   private activeReviveChannels: Map<Player, ActiveReviveChannel> = new Map();
   public activeTameChannels: Map<Player, ActiveTameChannel> = new Map();
-  private qKey?: Phaser.Input.Keyboard.Key;
+  public selectedTameTarget: Enemy | null = null;
 
   private portalSprite!: Phaser.GameObjects.Sprite;
   private portalPos: GridPos = { x: 2, y: 2 };
@@ -734,11 +734,6 @@ export class MainScene extends Phaser.Scene {
         if (isTypingInTextField(event)) return;
         this.hud.applyBandage();
       });
-      this.qKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.Q);
-      this.qKey.on('down', (_key?: any, event?: any) => {
-        if (isTypingInTextField(event)) return;
-        this.tryTameTarget();
-      });
       this.gKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.G);
       this.fKeys = [
         this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.F1),
@@ -1151,10 +1146,15 @@ export class MainScene extends Phaser.Scene {
           this.cancelReviveChannel(member);
           this.cancelTameChannel(member);
           member.clearTarget();
+          (member as any).tameTarget = null;
         }
 
+        this.selectedTameTarget = null;
         if (!this.party.some(m => m.targetEntity !== null)) {
           this.targetReticle.setVisible(false);
+        }
+        if (this.hud) {
+          this.hud.updateTameButton(this);
         }
 
         const claimed = new Set<string>();
@@ -2613,6 +2613,38 @@ export class MainScene extends Phaser.Scene {
 
   public engageEnemy(enemy: Enemy, membersToEngage?: Player[]): void {
     if (enemy.state === 'dead' || enemy.state === 'downed') return;
+
+    // Critter Selection vs Attack (Milestone 8 Part A rule):
+    // First click on a critter selects it: it gets the reticle and becomes the tame target; nobody attacks.
+    // Second click on the same critter commands the party to attack it (without starting combat or aggroing it).
+    if (enemy.enemyData?.tier === 'critter') {
+      const allLivingMembers = this.party.filter(m => m.state !== 'downed' && m.state !== 'dead');
+      const selectedLiving = this.getSelectedMembers ? this.getSelectedMembers().filter(m => m.state !== 'downed' && m.state !== 'dead') : [];
+      const livingMembers = membersToEngage
+        ? membersToEngage.filter(m => m.state !== 'downed' && m.state !== 'dead')
+        : (selectedLiving.length > 0 ? selectedLiving : allLivingMembers);
+      const primaryMember = livingMembers[0] || this.player;
+
+      if (this.selectedTameTarget !== enemy) {
+        this.selectedTameTarget = enemy;
+        if (primaryMember) {
+          (primaryMember as any).tameTarget = enemy;
+        }
+        if (this.targetReticle) {
+          this.targetReticle.setPosition(
+            enemy.gridPos.x * this.tileSize + this.tileSize / 2,
+            enemy.gridPos.y * this.tileSize + this.tileSize / 2
+          );
+          this.targetReticle.setVisible(true);
+        }
+        if (this.hud) {
+          this.hud.updateTameButton(this);
+        }
+        return; // First click selects critter: nobody attacks, no combat started
+      }
+    } else {
+      this.selectedTameTarget = null;
+    }
 
     console.log(`[Input] Engaged Enemy: ${enemy.entityName} at (${enemy.gridPos.x}, ${enemy.gridPos.y})`);
 
@@ -4744,10 +4776,17 @@ export class MainScene extends Phaser.Scene {
     let targetEnemy: Enemy | null = null;
     if (member.targetEntity instanceof Enemy) {
       targetEnemy = member.targetEntity;
+    } else if ((member as any).tameTarget instanceof Enemy && (member as any).tameTarget.state !== 'dead') {
+      targetEnemy = (member as any).tameTarget;
+    } else if (this.selectedTameTarget instanceof Enemy && this.selectedTameTarget.state !== 'dead') {
+      targetEnemy = this.selectedTameTarget;
     } else {
       for (const m of this.party) {
         if (m.targetEntity instanceof Enemy) {
           targetEnemy = m.targetEntity;
+          break;
+        } else if ((m as any).tameTarget instanceof Enemy && (m as any).tameTarget.state !== 'dead') {
+          targetEnemy = (m as any).tameTarget;
           break;
         }
       }
@@ -4795,6 +4834,17 @@ export class MainScene extends Phaser.Scene {
     this.cancelGatherChannel(character);
     this.cancelReviveChannel(character);
     this.cancelTameChannel(character);
+
+    this.selectedTameTarget = null;
+    // Fix #4: Starting a tame stops the whole party attacking that creature
+    for (const m of this.party) {
+      if (m.targetEntity === targetEnemy) {
+        m.clearTarget();
+      }
+      if ((m as any).tameTarget === targetEnemy) {
+        (m as any).tameTarget = null;
+      }
+    }
 
     character.state = 'channeling';
     character.claimedDestination = null;
@@ -4911,6 +4961,9 @@ export class MainScene extends Phaser.Scene {
   }
 
   public removeTamedCreature(targetEnemy: Enemy): void {
+    if (this.selectedTameTarget === targetEnemy) {
+      this.selectedTameTarget = null;
+    }
     if (this.targetReticle) {
       this.targetReticle.setVisible(false);
     }
@@ -4921,12 +4974,18 @@ export class MainScene extends Phaser.Scene {
       if (m.targetEntity === targetEnemy) {
         m.clearTarget();
       }
+      if ((m as any).tameTarget === targetEnemy) {
+        (m as any).tameTarget = null;
+      }
     }
     const idx = this.enemies.indexOf(targetEnemy);
     if (idx !== -1) {
       this.enemies.splice(idx, 1);
     }
     targetEnemy.destroy();
+    if (this.hud) {
+      this.hud.updateTameButton(this);
+    }
   }
 
   public clearGatheringQueue(cancelActiveChannels: boolean = true): void {
