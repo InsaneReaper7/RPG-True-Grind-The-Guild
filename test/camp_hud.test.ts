@@ -633,6 +633,9 @@ async function runCampHudTests() {
   TutorialSystem.getInstance().completeTutorial();
   const gs = GameState.getInstance();
   gs.resetToDefault();
+  // Campfire cooking is gated by the Cooking research since the 2026-11-13 research audit;
+  // this suite exercises the Cook button, so complete that research first.
+  gs.completeResearch('research_cooking_station');
 
   const mockScene = createMockScene();
   const hud = new HUD();

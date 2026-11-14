@@ -59,6 +59,12 @@
       border-radius: 6px;
       padding: 12px 16px;
       max-width: 340px;
+      /* Menu overflow audit: on 768px-tall screens the left panel ran past the bottom of the window
+         (Report a Bug at y~980). Cap it and let it scroll; it needs pointer events to receive the wheel. */
+      max-height: calc(100vh - 40px);
+      overflow-y: auto;
+      scrollbar-width: thin;
+      pointer-events: auto;
     }
     .hud-card button {
       pointer-events: auto;
@@ -135,6 +141,9 @@
     }
     #unlock-modal {
       position: absolute;
+      /* Menu overflow audit: centred on 30%, so it must stay under 60vh tall to remain on screen */
+      max-height: 56vh;
+      overflow-y: auto;
       top: 30%;
       left: 50%;
       transform: translate(-50%, -50%) scale(0.9);
@@ -168,6 +177,9 @@
     }
     #skill-discovered-modal {
       position: absolute;
+      /* Menu overflow audit: centred on 30%, so it must stay under 60vh tall to remain on screen */
+      max-height: 56vh;
+      overflow-y: auto;
       top: 30%;
       left: 50%;
       transform: translate(-50%, -50%) scale(0.9);
@@ -592,6 +604,8 @@
       display: none;
       flex-direction: column;
       pointer-events: auto;
+      /* Menu overflow audit: any modal whose content outgrows the window scrolls instead of clipping */
+      overflow-y: auto;
       /* TG-SI1QHR: above the party portraits (110) so a modal's bottom rows stay clickable,
          below the confirm dialogs (120) that open on top of crafting modals */
       z-index: 115;
@@ -1851,13 +1865,17 @@
     /* Active Class Selection Shelf (Milestone 14) */
     .active-class-container {
       display: flex;
+      /* Menu overflow audit: one card per unlocked class squeezed into a single row; wrap and scroll instead */
+      flex-wrap: wrap;
+      max-height: 300px;
+      overflow-y: auto;
       gap: 10px;
       margin-bottom: 14px;
       padding-bottom: 12px;
       border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     }
     .active-class-card {
-      flex: 1;
+      flex: 1 1 200px;
       background: rgba(31, 41, 55, 0.8);
       border: 1px solid rgba(255, 255, 255, 0.15);
       border-radius: 8px;
@@ -2312,6 +2330,9 @@
       padding: 12px 14px;
       box-shadow: 0 4px 20px rgba(139, 92, 246, 0.3), 0 0 10px rgba(0, 0, 0, 0.6);
       pointer-events: auto;
+      /* Menu overflow audit: keep the guide on screen (max-height excludes its padding and border) */
+      max-height: calc(100vh - 64px);
+      overflow-y: auto;
       transition: all 0.25s ease-in-out;
       z-index: 900;
     }

@@ -1233,6 +1233,7 @@ export class HUD {
       this.campCookBtnEl.onclick = (e: MouseEvent) => {
         e.stopPropagation();
         if (this.campCookBtnEl?.disabled) return;
+        if (!HUD.isCookingResearched()) return;
         const scene = this.getScene();
         const leader = this.currentPlayer || scene?.player;
         const progression = this.currentProgression || scene?.progressionSystem;
@@ -2279,12 +2280,19 @@ export class HUD {
 
       const display = inRadius ? 'inline-block' : 'none';
       if (this.campCookBtnEl) {
-        this.campCookBtnEl.style.display = display;
+        // Research audit: campfire cooking is Cooking, so it stays hidden until the Cooking research is done.
+        this.campCookBtnEl.style.display = inRadius && HUD.isCookingResearched() ? 'inline-block' : 'none';
       }
       if (this.campBreakBtnEl) {
         this.campBreakBtnEl.style.display = display;
       }
     }
+  }
+
+  /** Campfire cooking is gated by the same research as the outpost Cooking Station. */
+  public static isCookingResearched(): boolean {
+    const gs = GameState.getInstance();
+    return gs.isResearchCompleted('research_cooking_station') || gs.isBuildableUnlocked('cooking_station');
   }
 
   public triggerGatheringModeToggle(forceState?: boolean): boolean {
@@ -2358,7 +2366,10 @@ export class HUD {
     }
     // The consumable quick bar sits where the build palette goes; hide it while building (owner, 2026-11-12).
     const quickBar = this.quickBarHudEl || document.getElementById('quick-bar-hud');
-    quickBar?.classList.toggle('hidden-in-build-mode', visible);
+    if (quickBar) {
+      if (visible) quickBar.classList.add('hidden-in-build-mode');
+      else quickBar.classList.remove('hidden-in-build-mode');
+    }
   }
 
   public getBuildCategory(): 'structure' | 'stations' | 'furniture' {
