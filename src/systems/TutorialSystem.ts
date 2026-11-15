@@ -320,6 +320,7 @@ export class TutorialSystem {
 
       this.notifyStepChange();
       this.syncToGameState();
+      GameState.getInstance().requestAutosave('tutorial');
       return true;
     } else {
       this.completeTutorial();
@@ -344,6 +345,7 @@ export class TutorialSystem {
     console.log('[TutorialSystem] 🎓 Guild Onboarding & Tutorial COMPLETED! Full loop verified.');
     this.notifyStepChange();
     this.syncToGameState();
+    GameState.getInstance().requestAutosave('tutorial');
   }
 
   public dismiss(): void {
