@@ -140,6 +140,8 @@ export interface PassiveImbuementDef {
 }
 
 export interface ClassDef {
+  /** Weapons that can use this class's skills although they are not in its requirements (e.g. Runeblade's blades). Read by SkillSystem.getSkillWeaponSet. */
+  extraSkillWeapons?: string[];
   id: string;
   name: string;
   tier: string;

@@ -255,7 +255,10 @@ async function runTests() {
   const heroProg = new ProgressionSystem(classesData);
   heroProg.getProficiencyStat('healing_magic').level = 30;
   heroProg.checkClassUnlocks(); // Unlocks Medic
-  const hero = createMockPlayer('hero', 'Guild Hero', 3, 3, shortSwords, heroProg);
+  // Checklist 10: skills need their weapon. Combat Medic requires Healing Magic, so the medic holds a
+  // Healing Staff (a healing-magic conduit) to cast First Aid.
+  const healingStaff = dataLoader.getWeapon('healing_staff')!;
+  const hero = createMockPlayer('hero', 'Guild Hero', 3, 3, healingStaff, heroProg);
   const companion = createMockPlayer('comp1', 'Companion One', 4, 3, shortSwords, new ProgressionSystem(classesData));
 
   let classUnlockedEvent: string | null = null;

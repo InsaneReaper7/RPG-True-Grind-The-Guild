@@ -494,9 +494,31 @@ async function runSuite() {
   p1.equippedWeapon = iceMagicWpn;
   assert.equal(SkillSystem.canUseSkillWithCurrentWeapons(p1, flameDef), true, 'Fire spell fires with ice magic weapon (cross-school magic exception)');
 
-  // Fire spell fails with fire_staff (a melee 2h staff, not category magic)
+  // Elemental staves are spell CONDUITS (DataLoader.getSpellForConduit): the crafted Fire Staff casts Fire Magic,
+  // and the *_magic spell weapons cannot be crafted, so staves are how players cast. They count as magic.
   p1.equippedWeapon = fireStaffWpn;
-  assert.equal(SkillSystem.canUseSkillWithCurrentWeapons(p1, flameDef), false, 'Fire spell fails while holding fire_staff (melee_2h staff)');
+  assert.equal(SkillSystem.canUseSkillWithCurrentWeapons(p1, flameDef), true, 'Fire spell fires with the Fire Staff conduit');
+  p1.equippedWeapon = dataLoader.getWeapon('ice_staff')!;
+  assert.equal(SkillSystem.canUseSkillWithCurrentWeapons(p1, flameDef), true, 'Fire spell fires with an Ice Staff conduit (cross-school)');
+  p1.equippedWeapon = dataLoader.getWeapon('healing_staff')!;
+  assert.equal(SkillSystem.canUseSkillWithCurrentWeapons(p1, flameDef), true, 'Healing Staff is a conduit too (cross-school)');
+  // A plain Staff / Quarterstaff has no spell, so it is NOT a magic weapon
+  p1.equippedWeapon = dataLoader.getWeapon('staff')!;
+  assert.equal(SkillSystem.canUseSkillWithCurrentWeapons(p1, flameDef), false, 'Plain Staff (no conduit spell) cannot cast fire spells');
+  p1.equippedWeapon = dataLoader.getWeapon('katana')!;
+  assert.equal(SkillSystem.canUseSkillWithCurrentWeapons(p1, flameDef), false, 'Katana cannot cast fire spells');
+
+  // Runeblade carves arcane magic into blades: extraSkillWeapons adds the blades to its arcane chain
+  const runeSet = SkillSystem.getSkillWeaponSet('rune_slash');
+  assert.ok(runeSet.has('arcane_magic') && runeSet.has('longswords') && runeSet.has('katana'), 'Runeblade set = arcane + blades');
+  p1.progression.setClassLevel('runeblade', 10);
+  p1.learnSkill('rune_slash');
+  p1.equippedWeapon = dataLoader.getWeapon('longsword_1h')!;
+  assert.equal(SkillSystem.canUseSkillWithCurrentWeapons(p1, dataLoader.getSkill('rune_slash')!), true, 'Rune Slash fires with a longsword');
+  p1.equippedWeapon = dataLoader.getWeapon('bows')!;
+  assert.equal(SkillSystem.canUseSkillWithCurrentWeapons(p1, dataLoader.getSkill('rune_slash')!), false, 'Rune Slash fails with a bow');
+  const spellswordSkill = dataLoader.getSkills().find((sk: any) => sk.requirements?.some((r: any) => r.target === 'spellsword'))!;
+  assert.ok(!SkillSystem.getSkillWeaponSet(spellswordSkill.id).has('katana'), 'extraSkillWeapons only affects the class that declares it');
 
   // Weaponmaster skill fires with katana or bow
   p1.progression.unlockClass('weaponmaster');
@@ -524,7 +546,7 @@ async function runSuite() {
   (p1 as any).equippedWeapon = null;
   assert.equal(SkillSystem.canUseSkillWithCurrentWeapons(p1, punchDef), true, 'Brawler skill works bare-handed (null weapon counts as fist)');
 
-  console.log('✔ Test 2 Passed: Katana, hybrid, cross-school magic, fire_staff melee rule, and bare-handed brawler verified.\n');
+  console.log('✔ Test 2 Passed: Katana, hybrid, cross-school magic, fire/ice/healing staff conduits, plain staff rejected, and bare-handed brawler verified.\n');
 
   // --------------------------------------------------------------------------
   // TEST 3: AI SELECTION & CONTEXT PASS INTEGRITY

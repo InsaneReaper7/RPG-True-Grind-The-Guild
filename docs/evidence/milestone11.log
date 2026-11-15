@@ -1,0 +1,26 @@
+--- RUNNING MILESTONE 11: COMBAT MEDIC & FULL-GROUP RETALIATION TESTS ---
+[Progression] Class Unlocked: Medic (medic) for Guild Hero!
+[Progression] Activity 'Ally Revived' count: 0 -> 1 (+1)
+[Progression] Activity 'Ally Revived' count: 1 -> 2 (+1)
+[Progression] Activity 'Ally Revived' count: 2 -> 3 (+1)
+[Progression] Activity 'Ally Revived' count: 3 -> 4 (+1)
+[Progression] Activity 'Ally Revived' count: 4 -> 5 (+1)
+[Progression] Class Unlocked: Combat Medic (combat_medic) for Guild Hero!
+✔ Test 1 passed: Combat Medic unlocks exactly on the 5th ally revive and persists in snapshot
+[Progression] +2 EXP for 'healing_magic' (Guild Hero). Current: Level 30 (2/170 EXP)
+[Progression] Recorded tx 'healing_magic': +2 EXP for Guild Hero, resulting total: Level 30 (2/170 EXP)
+[Skill] First Aid is on cooldown! (3.5s remaining)
+[Progression] +2 EXP for 'healing_magic' (Guild Hero). Current: Level 30 (4/170 EXP)
+[Progression] Recorded tx 'healing_magic': +2 EXP for Guild Hero, resulting total: Level 30 (4/170 EXP)
+[Skill] Not enough energy to cast First Aid! (24/25)
+✔ Test 2 passed: First Aid heals damaged ally, deducts energy, respects cooldown, and prevents low-energy casts
+[Combat Retaliation] ⚔️ Companion A was attacked by Wolf while unengaged! Commanding 3 idle party member(s) to retaliate!
+[KnowledgeBase] 🐺 First encountered enemy: 'undefined'! (+1 RP)
+[Bestiary] 🐺 First encounter with undefined! (+1 RP)
+✔ Test 3 passed: Full-group retaliation commands all idle members to engage with distinct, non-stacking tiles
+[Combat Retaliation] ⚔️ Idle 2 was attacked by Wolf B while unengaged! Commanding 2 idle party member(s) to retaliate!
+✔ Test 4 passed: Explicit non-interference verified — engaged fighter remains on Enemy A uninterrupted while idle members engage Enemy B without tile collisions
+✔ Test 5 passed: Dead attacker guard and already-engaged hit guard verified cleanly
+
+ALL MILESTONE 11 UNIT TESTS PASSED! 🎉
+

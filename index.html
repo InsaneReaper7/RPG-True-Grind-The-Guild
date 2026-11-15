@@ -582,7 +582,9 @@
       display: none;
       flex-direction: column;
       pointer-events: auto;
-      z-index: 100;
+      /* Above the party portraits (z 110) so the bottom slot's buttons stay clickable on short screens */
+      z-index: 115;
+      overflow-y: auto;
     }
     #skill-loadout-modal.active {
       display: flex;

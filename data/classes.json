@@ -3207,7 +3207,13 @@
       "fantasy": "Carves living magic into blades",
       "hiddenSkillBonuses": {
         "mana_regen": 0.05
-      }
+      },
+      "extraSkillWeapons": [
+        "longswords",
+        "short_swords",
+        "katana",
+        "greatswords"
+      ]
     },
     {
       "id": "alchemical_bomber",

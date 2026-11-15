@@ -18,7 +18,7 @@ import { formatRequirement } from '../utils/formatRequirement.ts';
 import { EventLog } from '../systems/EventLog.ts';
 import { BugReportModal } from './BugReportModal.ts';
 import { MerchantSystem } from '../systems/MerchantSystem.ts';
-import { SkillSystem } from '../systems/SkillSystem.ts';
+import { canUseSkillWithCurrentWeapons, getSkillWeaponNames } from '../utils/skillWeapons.ts';
 
 export interface AnnouncementItem {
   type: 'class' | 'skill';
@@ -3112,8 +3112,8 @@ export class HUD {
         const skillId = equipped[i];
         const skillDef = dataLoader.getSkill(skillId);
         const isAuto = player.isAutocastEnabled(skillId);
-        const canUse = skillDef ? SkillSystem.canUseSkillWithCurrentWeapons(player, skillDef) : true;
-        const weaponNames = skillDef ? SkillSystem.getSkillWeaponNames(skillId) : { short: '', full: '' };
+        const canUse = skillDef ? canUseSkillWithCurrentWeapons(player, skillDef) : true;
+        const weaponNames = skillDef ? getSkillWeaponNames(skillId) : { short: '', full: '' };
 
         if (!canUse) {
           slotEl.classList.add('unusable-weapon');
@@ -3531,8 +3531,8 @@ export class HUD {
 
         const isCompanionSkill = skillId === 'mend_beast' || skillId === 'bestial_fury' || skillId === 'guardian_howl';
         const hasLivingBeast = !!((this.scene as any)?.beastCompanions?.some((b: any) => b.owner === player && !b.isDowned && b.state !== 'dead'));
-        const canUseWeapon = SkillSystem.canUseSkillWithCurrentWeapons(player, skillDef);
-        const weaponNames = !canUseWeapon ? SkillSystem.getSkillWeaponNames(skillId) : null;
+        const canUseWeapon = canUseSkillWithCurrentWeapons(player, skillDef);
+        const weaponNames = !canUseWeapon ? getSkillWeaponNames(skillId) : null;
 
         let statusText = '';
         let statusColor = '#9ca3af';
@@ -4807,8 +4807,8 @@ export class HUD {
         const skillDef = dataLoader.getSkill(skillId);
         const skillName = skillDef?.name || skillId;
         const auto = member.isAutocastEnabled(skillId);
-        const canUse = skillDef ? SkillSystem.canUseSkillWithCurrentWeapons(member, skillDef) : true;
-        const weaponNames = !canUse ? SkillSystem.getSkillWeaponNames(skillId) : null;
+        const canUse = skillDef ? canUseSkillWithCurrentWeapons(member, skillDef) : true;
+        const weaponNames = !canUse ? getSkillWeaponNames(skillId) : null;
         const chipStyle = !canUse ? 'opacity: 0.65; border: 1px dashed #ef4444;' : '';
         const chipTitle = !canUse ? `title="Needs: ${weaponNames!.full}"` : '';
         equippedSkillsHtml += `

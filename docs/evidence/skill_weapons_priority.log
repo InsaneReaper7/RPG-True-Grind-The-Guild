@@ -1,0 +1,56 @@
+========================================================================
+⚔️ RUNNING MILESTONE 10: SKILLS NEED WEAPON & PLAYER PRIORITY SUITE 🛡️
+========================================================================
+
+--- TEST 1: Weapon sets spot-check 6 classes + data_lint counts ---
+✔ Test 1 Passed: 6 classes verified, all 485/485 skill weapon sets non-empty.
+
+--- TEST 2: Usability rules & execution rejection with throttled float ---
+[Progression] Set class 'swordsman' to Level 1 (0 EXP) on Hero1
+[Progression] Set class 'swordsman' to Level 5 (0 EXP) on Hero1
+[Player] Equipped skill: blade_strike. Current loadout: [blade_strike]
+[SkillSystem] Cannot use blade_strike: Needs Katana
+[Progression] Set class 'scout' to Level 1 (0 EXP) on Hero1
+[Progression] Set class 'scout' to Level 5 (0 EXP) on Hero1
+[Progression] Set class 'ember_adept' to Level 1 (0 EXP) on Hero1
+[Progression] Set class 'ember_adept' to Level 10 (0 EXP) on Hero1
+[Progression] Set class 'runeblade' to Level 10 (0 EXP) on Hero1
+[Progression] Set class 'weaponmaster' to Level 1 (0 EXP) on Hero1
+[Progression] Set class 'weaponmaster' to Level 5 (0 EXP) on Hero1
+[Progression] Set class 'riposte_master' to Level 1 (0 EXP) on Hero1
+[Progression] Set class 'riposte_master' to Level 5 (0 EXP) on Hero1
+[Progression] Set class 'brawler' to Level 1 (0 EXP) on Hero1
+[Progression] Set class 'brawler' to Level 5 (0 EXP) on Hero1
+✔ Test 2 Passed: Katana, hybrid, cross-school magic, fire/ice/healing staff conduits, plain staff rejected, and bare-handed brawler verified.
+
+--- TEST 3: AI never queues unusable skills; player order ranks within context passes ---
+[Progression] Set class 'swordsman' to Level 1 (0 EXP) on Companion
+[Progression] Set class 'swordsman' to Level 5 (0 EXP) on Companion
+[Player] Equipped skill: blade_strike. Current loadout: [blade_strike]
+[Progression] Set class 'scout' to Level 1 (0 EXP) on Companion
+[Progression] Set class 'scout' to Level 5 (0 EXP) on Companion
+[Player] Equipped skill: quickshot. Current loadout: [blade_strike, quickshot]
+[Progression] Set class 'medic' to Level 1 (0 EXP) on Companion
+[Progression] Set class 'medic' to Level 5 (0 EXP) on Companion
+[Progression] Set class 'scout' to Level 30 (0 EXP) on Companion
+✔ Test 3 Passed: Unusable skills never queued, heal waits for hurt ally, and custom slot priority verified within AI pass.
+
+--- TEST 4: Loadout reordering, arrows, reset button, and snapshot save/load ---
+[Player] Reset skill order to default. Current loadout: [skill_1, skill_2, skill_3]
+[Player] Equipped skill: skill_1. Current loadout: [skill_1]
+[Player] Equipped skill: skill_2. Current loadout: [skill_1, skill_2]
+[Player] Equipped skill: skill_3. Current loadout: [skill_1, skill_2, skill_3]
+✔ Test 4 Passed: Reorder sets flag, reset restores designer priority, and state persists across snapshot save/load.
+
+--- TEST 5: Loadout UI reorder controls, dungeon lock, and greyed state ---
+[Player] Equipped skill: skill_1. Current loadout: [skill_1]
+[Player] Equipped skill: skill_2. Current loadout: [skill_1, skill_2]
+[Player] Equipped skill: skill_3. Current loadout: [skill_1, skill_2, skill_3]
+[Player] Autocast for skill 'quickshot' set to ON
+[Player] Reset skill order to default. Current loadout: [quickshot, blade_strike]
+[Player] Autocast for skill 'quickshot' set to ON
+✔ Test 5 Passed: Outpost vs Dungeon UI rules, arrow controls, Reset button, and preserved autocast verified.
+
+========================================================================
+🎉 ALL MILESTONE 10 TESTS PASSED PERFECTLY!
+========================================================================
