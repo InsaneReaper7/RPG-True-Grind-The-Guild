@@ -216,6 +216,8 @@ export class HUD {
   private partyInventoryItemListEl: HTMLElement | null;
   private partyInventoryFilter: 'all' | 'weapons' | 'armor' | 'jewelry' | 'items' = 'all';
   public stashFilterOwnedOnly: boolean = true;
+  /** Equipment-screen worn filter (owner request 2026-11-15): any / equipped by someone / has an unequipped copy. */
+  public stashWornFilter: 'any' | 'worn' | 'unworn' = 'any';
   public activeDragPayload: { itemId: string; itemType: 'weapon' | 'armor'; itemSlot: string; sourceSlot?: string; sourceMemberIdx?: number } | null = null;
 
   // Milestone 8 Debug Buttons
@@ -5077,6 +5079,12 @@ export class HUD {
         this.toggleStashFilter();
       };
     }
+    const wornBtn = document.getElementById('stash-worn-filter-btn');
+    if (wornBtn) {
+      wornBtn.onclick = () => {
+        this.cycleStashWornFilter();
+      };
+    }
     this.updateStashFilterToggleUI();
   }
 
@@ -5096,6 +5104,29 @@ export class HUD {
     this.setStashFilterActive(!this.isStashFilterActive());
   }
 
+  public setStashWornFilter(mode: 'any' | 'worn' | 'unworn'): void {
+    this.stashWornFilter = mode;
+    this.updateStashFilterToggleUI();
+    this.renderPartyInventoryPanel();
+  }
+
+  /** Cycles Any -> Equipped -> Not Equipped -> Any. */
+  public cycleStashWornFilter(): void {
+    const next = this.stashWornFilter === 'any' ? 'worn' : this.stashWornFilter === 'worn' ? 'unworn' : 'any';
+    this.setStashWornFilter(next);
+  }
+
+  /**
+   * 'worn'   = at least one copy is equipped by a party member.
+   * 'unworn' = at least one owned copy is NOT equipped (count above worn count), i.e. a spare.
+   */
+  public passesStashWornFilter(item: { count: number; wornCount?: number }): boolean {
+    const worn = item.wornCount ?? 0;
+    if (this.stashWornFilter === 'worn') return worn > 0;
+    if (this.stashWornFilter === 'unworn') return item.count - worn > 0;
+    return true;
+  }
+
   public updateStashFilterToggleUI(): void {
     const isOwnedOnly = this.isStashFilterActive();
     const btn = document.getElementById('stash-toggle-filter-btn');
@@ -5107,6 +5138,17 @@ export class HUD {
     }
     if (indicator) {
       indicator.innerText = isOwnedOnly ? '✅' : '👁️';
+    }
+    const wornBtn = document.getElementById('stash-worn-filter-btn');
+    const wornLabel = document.getElementById('stash-worn-filter-label');
+    if (wornLabel) {
+      wornLabel.innerText = this.stashWornFilter === 'worn' ? 'Worn: Equipped' : this.stashWornFilter === 'unworn' ? 'Worn: Not Equipped' : 'Worn: Any';
+    }
+    if (wornBtn) {
+      const on = this.stashWornFilter !== 'any';
+      wornBtn.style.borderColor = on ? '#f59e0b' : 'rgba(148, 163, 184, 0.3)';
+      wornBtn.style.background = on ? 'rgba(180, 83, 9, 0.3)' : 'rgba(30, 41, 59, 0.8)';
+      wornBtn.style.color = on ? '#fbbf24' : '#e2e8f0';
     }
     if (btn) {
       if (isOwnedOnly) {
@@ -5288,14 +5330,20 @@ export class HUD {
 
     const debugBypass = typeof window !== 'undefined' && Boolean((window as any).__debugBypassEquipCheck);
     const isOwnedOnly = this.isStashFilterActive();
-    const filteredItems = isOwnedOnly
+    const filteredItems = (isOwnedOnly
       ? items.filter(item => item.count > 0 || debugBypass)
-      : items;
+      : items
+    ).filter(item => this.passesStashWornFilter(item));
 
     if (filteredItems.length === 0) {
+      const emptyText = this.stashWornFilter === 'worn'
+        ? 'Nothing here is equipped by the party.'
+        : this.stashWornFilter === 'unworn'
+          ? 'Every owned piece here is currently equipped.'
+          : 'No gear owned yet — craft some at the Outpost stations.';
       listEl.innerHTML = `
         <div class="empty-stash-notice party-inventory-empty" style="font-size: 11px; color: #9ca3af; font-style: italic; background: rgba(31, 41, 55, 0.4); padding: 16px; border-radius: 6px; text-align: center; margin-top: 10px;">
-          No gear owned yet — craft some at the Outpost stations.
+          ${emptyText}
         </div>
       `;
       return;

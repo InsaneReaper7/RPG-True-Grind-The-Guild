@@ -757,6 +757,56 @@ async function runSuite() {
   }
 
   // -------------------------------------------------------------
+  // Test 7c: Worn filter on the equipment screen (owner request 2026-11-15)
+  // -------------------------------------------------------------
+  console.log('\n--- Test 7c: Worn filter (Any / Equipped / Not Equipped), driven through its button ---');
+  {
+    const gameState = GameState.getInstance();
+    gameState.resetToDefault();
+    gameState.inventory.clear();
+    const hero = new Player(mockScene as any, 0, 0, { ...basePlayerData, name: 'Kaelen' } as any, dataLoader.getWeapon('katana')!, 32, 'hero', new ProgressionSystem());
+    hero.entityName = 'Kaelen';
+    const valerie = new Player(mockScene as any, 0, 0, { ...basePlayerData, name: 'Valerie' } as any, dataLoader.getWeapon('katana')!, 32, 'valerie', new ProgressionSystem());
+    valerie.entityName = 'Valerie';
+    // Katana: 2 worn + 1 spare in storage. Ingredient Bag: 1 in storage, worn by nobody.
+    gameState.addItem('katana', 1);
+    gameState.addItem('ingredient_bag', 1);
+
+    hud.update(hero, hero.progression, 0, [hero, valerie]);
+    hud.setStashFilterActive(true);
+    hud.stashWornFilter = 'any';
+    hud.initPartyInventoryFilterTabs();
+    const wornBtn = getOrCreateElement('stash-worn-filter-btn') as any;
+    const list = getOrCreateElement('party-inventory-item-list');
+    const label = getOrCreateElement('stash-worn-filter-label');
+    hud.renderPartyInventoryPanel();
+    assert.ok(list.innerHTML.includes('Katana') && list.innerHTML.includes('Ingredient Bag'), 'Any: both shown');
+    assert.strictEqual(label.innerText, 'Worn: Any');
+
+    assert.strictEqual(typeof wornBtn.onclick, 'function', 'Worn filter button is wired');
+    wornBtn.onclick();
+    assert.strictEqual(label.innerText, 'Worn: Equipped');
+    assert.ok(list.innerHTML.includes('Katana'), 'Equipped: Katana (worn by 2) shown');
+    assert.ok(!list.innerHTML.includes('Ingredient Bag'), 'Equipped: unworn Ingredient Bag hidden');
+
+    wornBtn.onclick();
+    assert.strictEqual(label.innerText, 'Worn: Not Equipped');
+    assert.ok(list.innerHTML.includes('Katana'), 'Not Equipped: Katana has 1 spare, so shown');
+    assert.ok(list.innerHTML.includes('Ingredient Bag'), 'Not Equipped: Ingredient Bag shown');
+
+    // Remove the spare katana: every katana is now worn, so it drops out of Not Equipped.
+    gameState.consumeItem('katana', 1);
+    hud.renderPartyInventoryPanel();
+    assert.ok(!list.innerHTML.includes('Katana'), 'Not Equipped: no spare katana left, so hidden');
+    assert.ok(list.innerHTML.includes('Ingredient Bag'), 'Not Equipped: Ingredient Bag still shown');
+
+    wornBtn.onclick();
+    assert.strictEqual(label.innerText, 'Worn: Any', 'Cycles back to Any');
+    assert.ok(list.innerHTML.includes('Katana'), 'Any: Katana shown again');
+    console.log('✓ Test 7c Passed: worn filter cycles Any -> Equipped -> Not Equipped -> Any.');
+  }
+
+  // -------------------------------------------------------------
   // Test 8: Rule Invariants (2H Clearing Offhand, Dual Wield Gating, Scout Dagger)
   // -------------------------------------------------------------
   console.log('\n--- Test 8: Preserved Rule Invariants (2H, DW Gating, Scout Sidearm) ---');
