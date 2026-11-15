@@ -536,7 +536,7 @@
       "hungerRestored": 60,
       "spoilageDays": 7,
       "recipeId": "warlords_roast",
-      "rarity": "very_rare",
+      "rarity": "epic",
       "buffs": [
         "H",
         "D",
@@ -552,7 +552,7 @@
       "hungerRestored": 60,
       "spoilageDays": 7,
       "recipeId": "treant_harvest",
-      "rarity": "very_rare",
+      "rarity": "epic",
       "buffs": [
         "H",
         "E",
@@ -568,7 +568,7 @@
       "hungerRestored": 60,
       "spoilageDays": 7,
       "recipeId": "abyssal_deep_stew",
-      "rarity": "very_rare",
+      "rarity": "epic",
       "buffs": [
         "H",
         "E",
@@ -584,7 +584,7 @@
       "hungerRestored": 60,
       "spoilageDays": 7,
       "recipeId": "golden_sashimi",
-      "rarity": "very_rare",
+      "rarity": "epic",
       "buffs": [
         "E",
         "D",
@@ -600,7 +600,7 @@
       "hungerRestored": 60,
       "spoilageDays": 7,
       "recipeId": "magma_glazed_ribs",
-      "rarity": "very_rare",
+      "rarity": "epic",
       "buffs": [
         "H",
         "D"
@@ -615,7 +615,7 @@
       "hungerRestored": 60,
       "spoilageDays": 7,
       "recipeId": "frostbite_broth",
-      "rarity": "very_rare",
+      "rarity": "epic",
       "buffs": [
         "E",
         "T"

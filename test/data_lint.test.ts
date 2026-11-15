@@ -413,7 +413,6 @@ const allStationRecipes = [
   ...asData.recipes,
   ...byData.recipes,
   ...(Array.isArray(alcData) ? alcData : alcData.recipes || []),
-  ...(Array.isArray(cookData) ? cookData : cookData.recipes || []),
   ...(Array.isArray(woodData) ? woodData : woodData.recipes || []),
   ...(Array.isArray(stoneData) ? stoneData : stoneData.recipes || [])
 ];
@@ -422,6 +421,18 @@ for (const r of allStationRecipes) {
     assert.ok(validRarityIds.includes(r.rarity), `Recipe "${r.id}" has invalid rarity "${r.rarity}"`);
   }
 }
+// Cooking lost recipes use their own rarity scale ('epic' / 'legendary'), read by CookingSystem and the
+// cooking modal. They are NOT gear rarities and must not be renamed to gear IDs.
+const cookingRarities = ['common', 'epic', 'legendary'];
+const foodData = JSON.parse(fs.readFileSync(path.join(rootDir, 'data/food.json'), 'utf8'));
+const foodList = Array.isArray(foodData) ? foodData : (foodData.foods || foodData.food || foodData.items || []);
+for (const r of [...(Array.isArray(cookData) ? cookData : cookData.recipes || []), ...foodList]) {
+  if (r.rarity) {
+    assert.ok(cookingRarities.includes(r.rarity), `Cooking recipe/food "${r.id}" has invalid cooking rarity "${r.rarity}" (expected common, epic or legendary)`);
+  }
+}
+const epicLost = (Array.isArray(cookData) ? cookData : cookData.recipes || []).filter((r: any) => r.rarity === 'epic').length;
+assert.ok(epicLost >= 6, `Expected at least 6 epic lost cooking recipes, found ${epicLost}`);
 console.log('✓ PASS: Merchant rarity multipliers and weapon/armor/recipe rarity integrity verified.\n');
 
 console.log('🎉 ALL DATA LINT CHECKS PASSED PERFECTLY!');

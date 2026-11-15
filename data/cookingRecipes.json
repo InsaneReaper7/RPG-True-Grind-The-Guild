@@ -932,7 +932,7 @@
     {
       "id": "warlords_roast",
       "name": "Warlord's Roast",
-      "rarity": "very_rare",
+      "rarity": "epic",
       "slots": [
         {
           "item": "prime_crypt_meat"
@@ -972,7 +972,7 @@
     {
       "id": "treant_harvest",
       "name": "Treant's Harvest",
-      "rarity": "very_rare",
+      "rarity": "epic",
       "slots": [
         {
           "item": "carrot"
@@ -1012,7 +1012,7 @@
     {
       "id": "abyssal_deep_stew",
       "name": "Deep Abyss Stew",
-      "rarity": "very_rare",
+      "rarity": "epic",
       "slots": [
         {
           "item": "prime_abyssal_meat"
@@ -1052,7 +1052,7 @@
     {
       "id": "golden_sashimi",
       "name": "Golden Carp Sashimi",
-      "rarity": "very_rare",
+      "rarity": "epic",
       "slots": [
         {
           "item": "golden_carp"
@@ -1093,7 +1093,7 @@
     {
       "id": "magma_glazed_ribs",
       "name": "Magma-Glazed Ribs",
-      "rarity": "very_rare",
+      "rarity": "epic",
       "slots": [
         {
           "item": "prime_caldera_meat"
@@ -1133,7 +1133,7 @@
     {
       "id": "frostbite_broth",
       "name": "Frostbite Broth",
-      "rarity": "very_rare",
+      "rarity": "epic",
       "slots": [
         {
           "item": "glacial_meat"
