@@ -93,6 +93,13 @@ export class Player extends Entity {
   public dexMultiplier: number = 1.0;
   public intMultiplier: number = 1.0;
   public classSpellDamageMultiplier: number = 1.0;
+  public spellDamagePercent: number = 0;
+
+  public getEffectiveSpellDamageMultiplier(): number {
+    const classMult = this.classSpellDamageMultiplier ?? 1.0;
+    const gearSpellBonus = (this.spellDamagePercent ?? 0) / 100;
+    return classMult * (1 + gearSpellBonus);
+  }
 
   constructor(
     scene: Phaser.Scene,
@@ -737,6 +744,9 @@ export class Player extends Entity {
 
     let bonusMainHp = 0;
     let bonusCritHp = 0;
+    let bonusMaxEnergy = 0;
+    let bonusEnergyRegen = 0;
+    let bonusSpellDamagePercent = 0;
 
     const pieces = [
       this.equippedHelmet,
@@ -751,6 +761,9 @@ export class Player extends Entity {
         const { mainHpBonus, criticalHpBonus } = getArmorHpSplit(p);
         bonusMainHp += mainHpBonus;
         bonusCritHp += criticalHpBonus;
+        if (p.maxEnergyBonus) bonusMaxEnergy += p.maxEnergyBonus;
+        if (p.energyRegenBonus) bonusEnergyRegen += p.energyRegenBonus;
+        if (p.spellDamagePercent) bonusSpellDamagePercent += p.spellDamagePercent;
       }
     }
 
@@ -771,8 +784,9 @@ export class Player extends Entity {
 
     this.maxHp = this.baseMaxHp + bonusMainHp + gains.hpGain;
     this.maxCriticalHp = this.baseMaxCriticalHp + bonusCritHp + gains.critHpGain;
-    this.maxEnergy = this.baseMaxEnergy + gains.energyGain;
-    this.energyRegenPerSecond = this.baseEnergyRegenPerSecond + gains.regenGain;
+    this.maxEnergy = this.baseMaxEnergy + gains.energyGain + bonusMaxEnergy;
+    this.energyRegenPerSecond = this.baseEnergyRegenPerSecond + gains.regenGain + bonusEnergyRegen;
+    this.spellDamagePercent = bonusSpellDamagePercent;
 
     this.strength = gains.strength ?? 1.0;
     this.dexterity = gains.dexterity ?? 1.0;

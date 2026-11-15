@@ -198,8 +198,8 @@ async function runMilestone28Tests() {
 
   const recipes = dataLoader.getArmorsmithRecipes();
   assert.ok(recipes.length >= 4, 'Must have at least 4 armorsmithing recipes');
-  const rCap = dataLoader.getArmorsmithRecipe('leather_cap');
-  const rRobe = dataLoader.getArmorsmithRecipe('silk_robe');
+  const rCap = dataLoader.getArmorsmithRecipe('leather_cap') || dataLoader.getTailoringRecipe('leather_cap');
+  const rRobe = dataLoader.getArmorsmithRecipe('silk_robe') || dataLoader.getTailoringRecipe('silk_robe');
   assert.ok(rCap && rCap.requiredLevel === 0 && rCap.ingredients.wolf_pelt === 2);
   assert.ok(rRobe && rRobe.requiredLevel === 6 && rRobe.ingredients.spider_silk === 5);
 
@@ -233,17 +233,17 @@ async function runMilestone28Tests() {
   const initialSilk = gameState.getItemCount('spider_silk');
 
   // Craft Leather Cap (Req Lv 0, 2 Wolf Pelts, +25 EXP)
-  const capRecipe = dataLoader.getArmorsmithRecipe('leather_cap')!;
+  const capRecipe = (dataLoader.getArmorsmithRecipe('leather_cap') || dataLoader.getTailoringRecipe('leather_cap'))!;
   for (const [item, qty] of Object.entries(capRecipe.ingredients)) {
     gameState.consumeItem(item, qty);
   }
   gameState.addItem(capRecipe.resultArmorId, 1);
-  heroProg.addProficiencyExp('armorsmithing', capRecipe.expGranted);
+  heroProg.addProficiencyExp('tailoring', capRecipe.expGranted);
 
   assert.equal(gameState.getItemCount('wolf_pelt'), initialPelts - 2);
   assert.equal(gameState.getItemCount('leather_cap'), 1);
-  assert.equal(heroProg.getProficiencyStat('armorsmithing').currentExp, 25);
-  console.log('✓ PASS: Wolf Pelt successfully consumed to craft Leather Cap with Armorsmithing EXP rewarded.\n');
+  assert.equal(heroProg.getProficiencyStat('tailoring').currentExp, 25);
+  console.log('✓ PASS: Wolf Pelt successfully consumed to craft Leather Cap with Tailoring EXP rewarded.\n');
 
   // --- TEST 3: Outpost Restriction & Equipping Armor Mechanical HP Effect ---
   console.log('--- TEST 3: Outpost Restriction & Equipping Armor Mechanical HP Effect ---');

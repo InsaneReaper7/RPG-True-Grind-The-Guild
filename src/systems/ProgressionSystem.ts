@@ -153,6 +153,8 @@ export class ProgressionSystem {
     this.proficiencies.set('heavy_armor', { level: 0, currentExp: 0 });
     this.proficiencies.set('fishing', { level: 0, currentExp: 0 });
     this.proficiencies.set('enchanting', { level: 0, currentExp: 0 });
+    this.proficiencies.set('tailoring', { level: 0, currentExp: 0 });
+    this.proficiencies.set('jewelcrafting', { level: 0, currentExp: 0 });
     this.proficiencies.set('taming', { level: 0, currentExp: 0 });
     this.proficiencies.set('animal_husbandry', { level: 0, currentExp: 0 });
     for (const hiddenId of ProgressionSystem.HIDDEN_SKILL_IDS) {

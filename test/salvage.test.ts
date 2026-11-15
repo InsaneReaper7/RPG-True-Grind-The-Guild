@@ -298,24 +298,21 @@ async function runSalvageTests() {
   const bsWoodRefund = gameState.getItemCount('wood') - bsPreWood;
   assert.ok(bsWoodRefund === 1 || bsWoodRefund === 2, 'Wood 3 -> 1 or 2 back (probabilistic 1.5)');
 
-  // Station 2: Armorsmithing - Silk Robe (resultArmorId: 'silk_robe')
-  // Recipe: { spider_silk: 5, wolf_pelt: 2 }, expGranted: 75
-  // Refund: 2.5 Spider Silk (probabilistic 2 or 3), 1 Wolf Pelt
-  // EXP: Math.ceil(75 * 0.5) = 38 Armorsmithing EXP
+  // Station 2: Armorsmithing - Leather Armor (resultArmorId: 'leather_armor')
+  // Recipe: { wolf_pelt: 4 }, expGranted: 35
+  // Refund: 2 Wolf Pelt
+  // EXP: Math.ceil(35 * 0.5) = 18 Armorsmithing EXP
   hero.progression.getProficiencyStat('armorsmithing').currentExp = 0;
   hero.progression.getProficiencyStat('armorsmithing').level = 0;
-  hero.addItem('silk_robe', 1);
-  const asPreSilk = gameState.getItemCount('spider_silk');
+  hero.addItem('leather_armor', 1);
   const asPrePelt = gameState.getItemCount('wolf_pelt');
 
-  const asSalvage = CraftingSystem.applySalvage(hero, 'silk_robe', { count: 1, source: hero });
-  assert.equal(asSalvage.success, true, 'Silk Robe salvage must succeed');
-  assert.equal(asSalvage.expGranted, 38, 'Silk Robe gives Math.ceil(75 * 0.5) = 38 Armorsmithing EXP');
-  assert.equal(hero.progression.getProficiencyStat('armorsmithing').currentExp, 38);
-  assert.equal(hero.getItemCount('silk_robe'), 0);
-  assert.equal(gameState.getItemCount('wolf_pelt') - asPrePelt, 1, 'Silk Robe refunds exactly 1 Wolf Pelt');
-  const asSilkRefund = gameState.getItemCount('spider_silk') - asPreSilk;
-  assert.ok(asSilkRefund === 2 || asSilkRefund === 3, 'Spider Silk 5 -> 2 or 3 back (probabilistic 2.5)');
+  const asSalvage = CraftingSystem.applySalvage(hero, 'leather_armor', { count: 1, source: hero });
+  assert.equal(asSalvage.success, true, 'Leather Armor salvage must succeed');
+  assert.equal(asSalvage.expGranted, 18, 'Leather Armor gives Math.ceil(35 * 0.5) = 18 Armorsmithing EXP');
+  assert.equal(hero.progression.getProficiencyStat('armorsmithing').currentExp, 18);
+  assert.equal(hero.getItemCount('leather_armor'), 0);
+  assert.equal(gameState.getItemCount('wolf_pelt') - asPrePelt, 2, 'Leather Armor refunds exactly 2 Wolf Pelts');
 
   // Station 3: Bowyer - War Bow (resultWeaponId: 'war_bow')
   // Recipe: { wood: 8, wolf_claw: 2, spider_silk: 4 }, expGranted: 80
@@ -347,10 +344,10 @@ async function runSalvageTests() {
 
   aria.progression.setClassLevel('apprentice_armorer', 1);
   const ariaArmorExp = aria.progression.getClassStat('apprentice_armorer').currentExp;
-  aria.addItem('silk_robe', 1);
-  const ariaArmorSalvage = CraftingSystem.applySalvage(aria, 'silk_robe', { count: 1, source: aria });
-  assert.equal(ariaArmorSalvage.classExpGranted, 38, 'Apprentice Armorer receives 38 Class EXP for Silk Robe');
-  assert.equal(aria.progression.getClassStat('apprentice_armorer').currentExp, ariaArmorExp + 38);
+  aria.addItem('leather_armor', 1);
+  const ariaArmorSalvage = CraftingSystem.applySalvage(aria, 'leather_armor', { count: 1, source: aria });
+  assert.equal(ariaArmorSalvage.classExpGranted, 18, 'Apprentice Armorer receives 18 Class EXP for Leather Armor');
+  assert.equal(aria.progression.getClassStat('apprentice_armorer').currentExp, ariaArmorExp + 18);
 
   aria.progression.setClassLevel('apprentice_bowyer', 1);
   const ariaBowExp = aria.progression.getClassStat('apprentice_bowyer').currentExp;

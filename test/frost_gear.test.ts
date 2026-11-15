@@ -350,8 +350,8 @@ async function runFrostGearTests() {
     }
 
     // Verify recipe
-    const r = dataLoader.getArmorsmithRecipe(exp.id);
-    assert.ok(r, `Armorsmith recipe for ${exp.id} must exist`);
+    const r = dataLoader.getArmorsmithRecipe(exp.id) || dataLoader.getTailoringRecipe(exp.id) || dataLoader.getJewelcraftingRecipe(exp.id);
+    assert.ok(r, `Recipe for ${exp.id} must exist`);
     assert.equal(r.requiredLevel, 12, `${exp.id} requiredLevel must be 12`);
     assert.equal(r.expGranted, exp.topPiece ? 120 : 110, `${exp.id} expGranted must be ${exp.topPiece ? 120 : 110}`);
     assert.deepStrictEqual(r.ingredients, exp.recipe, `${exp.id} recipe ingredients mismatch`);
@@ -540,17 +540,17 @@ async function runFrostGearTests() {
   assert.equal(heroCrafter.getItemCount('steel_scrap'), 0, 'Steel scrap consumed');
   assert.equal(heroCrafter.getItemCount('glacial_essence'), 0, 'Glacial essence consumed');
 
-  // 5B: Craft Armor - Frostweave Robe (req Lv 12 Armorsmithing, 110 exp)
-  heroCrafter.progression.getProficiencyStat('armorsmithing').level = 12;
-  heroCrafter.progression.getProficiencyStat('armorsmithing').currentExp = 0;
+  // 5B: Craft Armor - Frostweave Robe (req Lv 12 Tailoring, 110 exp)
+  heroCrafter.progression.getProficiencyStat('tailoring').level = 12;
+  heroCrafter.progression.getProficiencyStat('tailoring').currentExp = 0;
   heroCrafter.inventory.clear();
   heroCrafter.addItem('wolf_pelt', 3);
   heroCrafter.addItem('ectoplasm', 3);
   heroCrafter.addItem('glacial_essence', 2);
 
-  const armCraft = CraftingSystem.applyCraft(heroCrafter, dataLoader.getArmorsmithRecipe('frost_robe')!, 'armorsmithing');
-  assert.equal(armCraft.success, true, 'Frostweave Robe craft must succeed at Lv 12 Armorsmithing');
-  assert.equal(armCraft.expGranted, 110, 'Grants 110 Armorsmithing EXP');
+  const armCraft = CraftingSystem.applyCraft(heroCrafter, dataLoader.getTailoringRecipe('frost_robe')!, 'tailoring');
+  assert.equal(armCraft.success, true, 'Frostweave Robe craft must succeed at Lv 12 Tailoring');
+  assert.equal(armCraft.expGranted, 110, 'Grants 110 Tailoring EXP');
   assert.equal(heroCrafter.getItemCount('frost_robe'), 1, 'Crafts exactly 1 armor piece');
 
   // 5C: Craft Top Piece - Rimeforged Plate (req Lv 12 Armorsmithing, 120 exp)
@@ -619,7 +619,7 @@ async function runFrostGearTests() {
   // =========================================================================
   console.log('--- Test 7: Armor "Heavy Doesn\'t Dominate" Guard & HP Tier/Slot Progression ---');
 
-  const trueArmors = armorsData.armors.filter((a) => a.tier === 'frost' && (a.slot === 'helmet' || a.slot === 'body'));
+  const trueArmors = armorsData.armors.filter((a) => a.tier === 'frost' && (a.slot === 'helmet' || a.slot === 'body') && !a.merchantExclusive);
 
   for (const slot of ['helmet', 'body'] as ('helmet' | 'body')[]) {
     const pieces = trueArmors.filter((a) => a.slot === slot);

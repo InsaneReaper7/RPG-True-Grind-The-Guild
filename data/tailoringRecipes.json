@@ -1,0 +1,180 @@
+{
+  "_comment": "Tailor's Loom recipes. Tier-unlocked light mage armor, hoods, cowls, and bags crafted from spider silk and magical reagents.",
+  "recipes": [
+    {
+      "id": "leather_cap",
+      "name": "Leather Cap",
+      "resultArmorId": "leather_cap",
+      "requiredLevel": 0,
+      "ingredients": {
+        "wolf_pelt": 2
+      },
+      "expGranted": 25,
+      "description": "Craft a lightweight protective cap from cured wolf pelts."
+    },
+    {
+      "id": "silk_cowl",
+      "name": "Silk Cowl",
+      "resultArmorId": "silk_cowl",
+      "requiredLevel": 5,
+      "ingredients": {
+        "spider_silk": 3,
+        "wolf_pelt": 1
+      },
+      "expGranted": 55,
+      "description": "Weave lightweight spider silk into a protective cowl with leather trimming."
+    },
+    {
+      "id": "silk_robe",
+      "name": "Silk Robe",
+      "resultArmorId": "silk_robe",
+      "requiredLevel": 6,
+      "ingredients": {
+        "spider_silk": 5,
+        "wolf_pelt": 2
+      },
+      "expGranted": 75,
+      "description": "Weave a dense vestment of spider silk backed by supple wolf hide."
+    },
+    {
+      "id": "padded_tunic",
+      "name": "Padded Tunic",
+      "resultArmorId": "padded_tunic",
+      "requiredLevel": 0,
+      "ingredients": {
+        "wolf_pelt": 3,
+        "wood": 1
+      },
+      "expGranted": 25,
+      "description": "Craft a lightweight padded tunic from wolf pelts reinforced with wood battening."
+    },
+    {
+      "id": "ingredient_bag",
+      "name": "Ingredient Bag",
+      "resultArmorId": "ingredient_bag",
+      "requiredLevel": 1,
+      "ingredients": {
+        "wolf_pelt": 3,
+        "bowstring": 1
+      },
+      "expGranted": 25,
+      "description": "Craft an ingredient bag providing 15 kg of weight exemption for culinary ingredients."
+    },
+    {
+      "id": "frost_hood",
+      "name": "Frostweave Hood",
+      "resultArmorId": "frost_hood",
+      "requiredLevel": 12,
+      "ingredients": {
+        "wolf_pelt": 2,
+        "ectoplasm": 2,
+        "glacial_essence": 1
+      },
+      "expGranted": 110,
+      "description": "Weave arctic wolf pelts and spectral ectoplasm into an enchanted light hood."
+    },
+    {
+      "id": "frost_robe",
+      "name": "Frostweave Robe",
+      "resultArmorId": "frost_robe",
+      "requiredLevel": 12,
+      "ingredients": {
+        "wolf_pelt": 3,
+        "ectoplasm": 3,
+        "glacial_essence": 2
+      },
+      "expGranted": 110,
+      "description": "Tailor a light robe infused with ghostly ectoplasm and glacial essence."
+    },
+    {
+      "id": "boneguard_cap",
+      "name": "Boneguard Cap",
+      "requiredLevel": 2,
+      "ingredients": {
+        "wolf_pelt": 3
+      },
+      "expGranted": 38,
+      "description": "Reinforced with splints of hardened crypt bone for resilient head protection.",
+      "requiresScroll": true,
+      "rarity": "uncommon",
+      "resultArmorId": "boneguard_cap"
+    },
+    {
+      "id": "spidersilk_vestment",
+      "name": "Spidersilk Vestment",
+      "requiredLevel": 8,
+      "ingredients": {
+        "spider_silk": 8,
+        "wolf_pelt": 3
+      },
+      "expGranted": 113,
+      "description": "A dense weave of abyssal spider silk that absorbs crushing deep-sea impacts.",
+      "requiresScroll": true,
+      "rarity": "uncommon",
+      "resultArmorId": "spidersilk_vestment"
+    },
+    {
+      "id": "rimewalker_hood",
+      "name": "Rimewalker Hood",
+      "requiredLevel": 14,
+      "ingredients": {
+        "wolf_pelt": 3,
+        "ectoplasm": 3,
+        "glacial_essence": 2
+      },
+      "expGranted": 165,
+      "description": "A cowl woven with glacial essence to protect against bone-chilling cavern winds.",
+      "requiresScroll": true,
+      "rarity": "uncommon",
+      "resultArmorId": "rimewalker_hood"
+    },
+    {
+      "id": "apprentice_hood",
+      "name": "Apprentice's Hood",
+      "resultArmorId": "apprentice_hood",
+      "requiredLevel": 1,
+      "ingredients": {
+        "spider_silk": 2
+      },
+      "expGranted": 25,
+      "description": "Weave an apprentice's hood from spider silk to expand magical focus."
+    },
+    {
+      "id": "apprentice_robe",
+      "name": "Apprentice's Robe",
+      "resultArmorId": "apprentice_robe",
+      "requiredLevel": 1,
+      "ingredients": {
+        "spider_silk": 4
+      },
+      "expGranted": 25,
+      "description": "Weave a simple lightweight robe from spider silk to enhance mana and energy focus."
+    },
+    {
+      "id": "voidweave_hood",
+      "name": "Voidweave Hood",
+      "resultArmorId": "voidweave_hood",
+      "requiredLevel": 8,
+      "ingredients": {
+        "spider_silk": 3,
+        "wolf_pelt": 1,
+        "void_essence": 1
+      },
+      "expGranted": 55,
+      "description": "Infuse subterranean spider silk and pelt with planar void essence to shape a resilient cowl."
+    },
+    {
+      "id": "voidweave_robe",
+      "name": "Voidweave Robe",
+      "resultArmorId": "voidweave_robe",
+      "requiredLevel": 8,
+      "ingredients": {
+        "spider_silk": 5,
+        "wolf_pelt": 2,
+        "void_essence": 2
+      },
+      "expGranted": 75,
+      "description": "Weave a dense vestment of spider silk and void essence for superior spell power and energy flow."
+    }
+  ]
+}

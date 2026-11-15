@@ -765,6 +765,18 @@ export class OutpostScene extends Phaser.Scene {
         return;
       }
 
+      // Check if clicking a placed Tailor's Loom
+      if (this.isPlacedTailorsLoom(clickedTileX, clickedTileY)) {
+        this.hud.openTailoringModal(this.player, this.progressionSystem);
+        return;
+      }
+
+      // Check if clicking a placed Jewelcrafting Bench
+      if (this.isPlacedJewelcraftingBench(clickedTileX, clickedTileY)) {
+        this.hud.openJewelcraftingModal(this.player, this.progressionSystem);
+        return;
+      }
+
       // Check if clicking a placed Bowyer Station
       if (this.isPlacedBowyerStation(clickedTileX, clickedTileY)) {
         this.hud.openBowyerModal(this.player, this.progressionSystem);
@@ -2146,6 +2158,16 @@ export class OutpostScene extends Phaser.Scene {
   private isPlacedArmorsmithingBench(x: number, y: number): boolean {
     const placed = this.getPlacedBuildableAt(x, y);
     return placed?.id === 'armorsmithing_bench';
+  }
+
+  private isPlacedTailorsLoom(x: number, y: number): boolean {
+    const placed = this.getPlacedBuildableAt(x, y);
+    return placed?.id === 'tailors_loom';
+  }
+
+  private isPlacedJewelcraftingBench(x: number, y: number): boolean {
+    const placed = this.getPlacedBuildableAt(x, y);
+    return placed?.id === 'jewelcrafting_bench';
   }
 
   private isPlacedBowyerStation(x: number, y: number): boolean {

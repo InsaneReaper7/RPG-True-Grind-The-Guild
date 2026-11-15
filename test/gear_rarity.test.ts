@@ -133,6 +133,8 @@ const itemsData = JSON.parse(fs.readFileSync(path.join(rootDir, 'data/items.json
 const bsRecipesData = JSON.parse(fs.readFileSync(path.join(rootDir, 'data/blacksmithRecipes.json'), 'utf8'));
 const asRecipesData = JSON.parse(fs.readFileSync(path.join(rootDir, 'data/armorsmithRecipes.json'), 'utf8'));
 const byRecipesData = JSON.parse(fs.readFileSync(path.join(rootDir, 'data/bowyerRecipes.json'), 'utf8'));
+const tlRecipesData = JSON.parse(fs.readFileSync(path.join(rootDir, 'data/tailoringRecipes.json'), 'utf8'));
+const jcRecipesData = JSON.parse(fs.readFileSync(path.join(rootDir, 'data/jewelcraftingRecipes.json'), 'utf8'));
 
 import { DataLoader } from '../src/utils/DataLoader.ts';
 import { GameState } from '../src/systems/GameState.ts';
@@ -179,7 +181,7 @@ interface PieceSpec {
   baseId: string;
   type: 'weapon' | 'armor';
   statCheck: (item: any) => void;
-  station: 'blacksmithing' | 'armorsmithing' | 'bowyer';
+  station: 'blacksmithing' | 'armorsmithing' | 'tailoring' | 'jewelcrafting' | 'bowyer';
   level: number;
   ingredients: Record<string, number>;
   expGranted: number;
@@ -188,13 +190,13 @@ interface PieceSpec {
 const table24: PieceSpec[] = [
   // Band 1
   { band: 1, rarity: 'uncommon', id: 'gravewardens_blade', name: "Gravewarden's Blade", baseId: 'short_swords', type: 'weapon', statCheck: w => assert.strictEqual(w.baseDamage, 5.5), station: 'blacksmithing', level: 2, ingredients: { ore: 5, wood: 2 }, expGranted: 30 },
-  { band: 1, rarity: 'uncommon', id: 'boneguard_cap', name: 'Boneguard Cap', baseId: 'leather_cap', type: 'armor', statCheck: a => { assert.strictEqual(a.hpBonus, 16); }, station: 'armorsmithing', level: 2, ingredients: { wolf_pelt: 3 }, expGranted: 38 },
+  { band: 1, rarity: 'uncommon', id: 'boneguard_cap', name: 'Boneguard Cap', baseId: 'leather_cap', type: 'armor', statCheck: a => { assert.strictEqual(a.hpBonus, 16); }, station: 'tailoring', level: 2, ingredients: { wolf_pelt: 3 }, expGranted: 38 },
   { band: 1, rarity: 'rare', id: 'cryptstalker_bow', name: 'Cryptstalker Bow', baseId: 'bows', type: 'weapon', statCheck: w => assert.strictEqual(w.baseDamage, 7.2), station: 'bowyer', level: 4, ingredients: { wood: 8, bowstring: 2 }, expGranted: 50 },
   { band: 1, rarity: 'rare', id: 'ossuary_plate', name: 'Ossuary Plate', baseId: 'iron_plate_armor', type: 'armor', statCheck: a => { assert.strictEqual(a.hpBonus, 30); }, station: 'armorsmithing', level: 4, ingredients: { ore: 12, wood: 4, bone: 4 }, expGranted: 80 },
   { band: 1, rarity: 'very_rare', id: 'wardens_cleaver', name: "Warden's Cleaver", baseId: 'longsword_2h', type: 'weapon', statCheck: w => assert.strictEqual(w.baseDamage, 15.6), station: 'blacksmithing', level: 8, ingredients: { ore: 18, wood: 8 }, expGranted: 88 },
 
   // Band 2
-  { band: 2, rarity: 'uncommon', id: 'spidersilk_vestment', name: 'Spidersilk Vestment', baseId: 'silk_robe', type: 'armor', statCheck: a => { assert.strictEqual(a.hpBonus, 55); }, station: 'armorsmithing', level: 8, ingredients: { spider_silk: 8, wolf_pelt: 3 }, expGranted: 113 },
+  { band: 2, rarity: 'uncommon', id: 'spidersilk_vestment', name: 'Spidersilk Vestment', baseId: 'silk_robe', type: 'armor', statCheck: a => { assert.strictEqual(a.hpBonus, 55); }, station: 'tailoring', level: 8, ingredients: { spider_silk: 8, wolf_pelt: 3 }, expGranted: 113 },
   { band: 2, rarity: 'uncommon', id: 'deepwater_katana', name: 'Deepwater Katana', baseId: 'steel_katana', type: 'weapon', statCheck: w => assert.strictEqual(w.baseDamage, 8.8), station: 'blacksmithing', level: 7, ingredients: { ore: 9, wood: 3, steel_scrap: 3 }, expGranted: 75 },
   { band: 2, rarity: 'rare', id: 'orcbreaker_mace', name: 'Orcbreaker Mace', baseId: 'heavy_mace', type: 'weapon', statCheck: w => assert.strictEqual(w.baseDamage, 12.0), station: 'blacksmithing', level: 9, ingredients: { ore: 12, steel_scrap: 6, orc_heavy_hide: 2 }, expGranted: 100 },
   { band: 2, rarity: 'rare', id: 'delvers_crossbow', name: "Delver's Crossbow", baseId: 'heavy_crossbow', type: 'weapon', statCheck: w => assert.strictEqual(w.baseDamage, 14.4), station: 'blacksmithing', level: 9, ingredients: { ore: 14, wood: 6, steel_scrap: 4 }, expGranted: 100 },
@@ -204,11 +206,11 @@ const table24: PieceSpec[] = [
   { band: 3, rarity: 'uncommon', id: 'ember_fangs', name: 'Ember Fangs', baseId: 'void_daggers', type: 'weapon', statCheck: w => assert.strictEqual(w.baseDamage, 5.5), station: 'blacksmithing', level: 10, ingredients: { ore: 9, steel_scrap: 2, void_plate: 2 }, expGranted: 113 },
   { band: 3, rarity: 'uncommon', id: 'cinderguard_helm', name: 'Cinderguard Helm', baseId: 'void_greathelm', type: 'armor', statCheck: a => { assert.strictEqual(a.hpBonus, 66); }, station: 'armorsmithing', level: 10, ingredients: { void_plate: 2, steel_scrap: 3, ore: 6 }, expGranted: 120 },
   { band: 3, rarity: 'rare', id: 'ashen_lance', name: 'Ashen Lance', baseId: 'void_spear', type: 'weapon', statCheck: w => assert.strictEqual(w.baseDamage, 14.4), station: 'blacksmithing', level: 12, ingredients: { ore: 16, wood: 4, steel_scrap: 4, void_plate: 2 }, expGranted: 160 },
-  { band: 3, rarity: 'rare', id: 'magmaheart_pendant', name: 'Magmaheart Pendant', baseId: 'void_pendant', type: 'armor', statCheck: a => { assert.strictEqual(a.hpBonus, 48); }, station: 'armorsmithing', level: 12, ingredients: { void_essence: 2, bone: 4, bowstring: 2 }, expGranted: 160 },
+  { band: 3, rarity: 'rare', id: 'magmaheart_pendant', name: 'Magmaheart Pendant', baseId: 'void_pendant', type: 'armor', statCheck: a => { assert.strictEqual(a.hpBonus, 48); }, station: 'jewelcrafting', level: 12, ingredients: { void_essence: 2, bone: 4, bowstring: 2 }, expGranted: 160 },
   { band: 3, rarity: 'very_rare', id: 'tyrants_greatblade', name: "Tyrant's Greatblade", baseId: 'void_greatsword', type: 'weapon', statCheck: w => assert.strictEqual(w.baseDamage, 26.0), station: 'blacksmithing', level: 14, ingredients: { ore: 25, steel_scrap: 8, void_plate: 3 }, expGranted: 225 },
 
   // Band 4
-  { band: 4, rarity: 'uncommon', id: 'rimewalker_hood', name: 'Rimewalker Hood', baseId: 'frost_hood', type: 'armor', statCheck: a => { assert.strictEqual(a.hpBonus, 99); }, station: 'armorsmithing', level: 14, ingredients: { wolf_pelt: 3, ectoplasm: 3, glacial_essence: 2 }, expGranted: 165 },
+  { band: 4, rarity: 'uncommon', id: 'rimewalker_hood', name: 'Rimewalker Hood', baseId: 'frost_hood', type: 'armor', statCheck: a => { assert.strictEqual(a.hpBonus, 99); }, station: 'tailoring', level: 14, ingredients: { wolf_pelt: 3, ectoplasm: 3, glacial_essence: 2 }, expGranted: 165 },
   { band: 4, rarity: 'uncommon', id: 'glacier_chakrams', name: 'Glacier Chakrams', baseId: 'frost_throwing_weapons', type: 'weapon', statCheck: w => assert.strictEqual(w.baseDamage, 7.7), station: 'blacksmithing', level: 14, ingredients: { ore: 9, steel_scrap: 3, glacial_essence: 2 }, expGranted: 165 },
   { band: 4, rarity: 'rare', id: 'yetihide_armor', name: 'Yetihide Armor', baseId: 'frost_leather_armor', type: 'armor', statCheck: a => { assert.strictEqual(a.hpBonus, 180); }, station: 'armorsmithing', level: 16, ingredients: { wolf_pelt: 8, orc_heavy_hide: 4, glacial_essence: 4 }, expGranted: 220 },
   { band: 4, rarity: 'rare', id: 'frostfang_longbow', name: 'Frostfang Longbow', baseId: 'frost_bow', type: 'weapon', statCheck: w => assert.strictEqual(w.baseDamage, 19.2), station: 'bowyer', level: 16, ingredients: { wood: 16, wolf_claw: 4, bone: 4, glacial_essence: 2 }, expGranted: 220 },
@@ -216,10 +218,10 @@ const table24: PieceSpec[] = [
   { band: 4, rarity: 'mythical', id: 'worldsplitter', name: 'Worldsplitter', baseId: 'frost_greatsword', type: 'weapon', statCheck: w => assert.strictEqual(w.baseDamage, 36.2), station: 'blacksmithing', level: 22, ingredients: { ore: 30, steel_scrap: 12, glacial_essence: 6 }, expGranted: 330 },
   { band: 4, rarity: 'mythical', id: 'everwinter_plate', name: 'Everwinter Plate', baseId: 'frost_plate_armor', type: 'armor', statCheck: a => { assert.strictEqual(a.hpBonus, 218); }, station: 'armorsmithing', level: 22, ingredients: { ore: 21, steel_scrap: 12, glacial_essence: 6, rime_carapace: 3 }, expGranted: 360 },
   { band: 4, rarity: 'legendary', id: 'dawnbreaker', name: 'Dawnbreaker', baseId: 'frost_longsword', type: 'weapon', statCheck: w => assert.strictEqual(w.baseDamage, 24.0), station: 'blacksmithing', level: 26, ingredients: { ore: 28, steel_scrap: 11, glacial_essence: 4 }, expGranted: 385 },
-  { band: 4, rarity: 'legendary', id: 'heart_of_winter', name: 'Heart of Winter', baseId: 'sovereign_signet', type: 'armor', statCheck: a => { assert.strictEqual(a.hpBonus, 96); }, station: 'armorsmithing', level: 26, ingredients: { eye_of_the_sovereign: 4, glacial_essence: 7 }, expGranted: 420 }
+  { band: 4, rarity: 'legendary', id: 'heart_of_winter', name: 'Heart of Winter', baseId: 'sovereign_signet', type: 'armor', statCheck: a => { assert.strictEqual(a.hpBonus, 96); }, station: 'jewelcrafting', level: 26, ingredients: { eye_of_the_sovereign: 4, glacial_essence: 7 }, expGranted: 420 }
 ];
 
-const allRecipes = [...bsRecipesData.recipes, ...asRecipesData.recipes, ...byRecipesData.recipes];
+const allRecipes = [...bsRecipesData.recipes, ...asRecipesData.recipes, ...byRecipesData.recipes, ...tlRecipesData.recipes, ...jcRecipesData.recipes];
 
 for (const spec of table24) {
   // Check piece item definition

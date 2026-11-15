@@ -269,6 +269,8 @@ export class MerchantSystem {
       dl.getBlacksmithRecipes(),
       dl.getBowyerRecipes(),
       dl.getArmorsmithRecipes(),
+      dl.getTailoringRecipes(),
+      dl.getJewelcraftingRecipes(),
       dl.getWoodworkingRecipes(),
       dl.getStonemasonRecipes(),
       dl.getEnchantingRecipes()

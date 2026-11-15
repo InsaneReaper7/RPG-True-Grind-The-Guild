@@ -42,6 +42,10 @@ const combatClasses = classesData.classes.filter(
   (c: any) => c.category !== 'crafting' && c.tier !== 'crafting' && !c.isCrafting
 );
 assert.strictEqual(combatClasses.length, 97, 'There must be exactly 97 combat classes');
+const craftingClasses = classesData.classes.filter(
+  (c: any) => c.category === 'crafting' || c.tier === 'crafting' || c.isCrafting
+);
+assert.strictEqual(craftingClasses.length, 54, 'There must be exactly 54 crafting classes');
 
 const classSkillsMap = new Map<string, string[]>();
 for (const c of combatClasses) {
@@ -320,6 +324,8 @@ const armorsData = JSON.parse(fs.readFileSync(path.join(rootDir, 'data/armors.js
 const bsData = JSON.parse(fs.readFileSync(path.join(rootDir, 'data/blacksmithRecipes.json'), 'utf8'));
 const asData = JSON.parse(fs.readFileSync(path.join(rootDir, 'data/armorsmithRecipes.json'), 'utf8'));
 const byData = JSON.parse(fs.readFileSync(path.join(rootDir, 'data/bowyerRecipes.json'), 'utf8'));
+const tlData = JSON.parse(fs.readFileSync(path.join(rootDir, 'data/tailoringRecipes.json'), 'utf8'));
+const jcData = JSON.parse(fs.readFileSync(path.join(rootDir, 'data/jewelcraftingRecipes.json'), 'utf8'));
 
 const expectedTiers = ['common', 'uncommon', 'rare', 'very_rare', 'mythical', 'legendary'];
 assert.strictEqual(gearRarityData.rarities.length, 6, 'Must define exactly 6 rarity tiers');
@@ -341,7 +347,7 @@ assert.strictEqual(expectedPieces.length, 24, 'Must verify all 24 drop-only rari
 
 const allWeaponsList = weaponsData.weapons;
 const allArmorsList = armorsData.armors;
-const allRecipesList = [...bsData.recipes, ...asData.recipes, ...byData.recipes];
+const allRecipesList = [...bsData.recipes, ...asData.recipes, ...byData.recipes, ...tlData.recipes, ...jcData.recipes];
 
 for (const pId of expectedPieces) {
   const weapon = allWeaponsList.find((w: any) => w.id === pId);
@@ -352,7 +358,7 @@ for (const pId of expectedPieces) {
   assert.ok(piece.description && piece.description.length > 5, `Piece "${pId}" must have an evocative description`);
 
   const recipe = allRecipesList.find((r: any) => r.id === pId);
-  assert.ok(recipe, `Recipe "${pId}" must exist in blacksmithing, armorsmithing, or bowyer recipes`);
+  assert.ok(recipe, `Recipe "${pId}" must exist in blacksmithing, armorsmithing, bowyer, tailoring, or jewelcrafting recipes`);
   assert.strictEqual(recipe.requiresScroll, true, `Recipe "${pId}" must have requiresScroll: true`);
   assert.strictEqual(recipe.rarity, piece.rarity, `Recipe "${pId}" rarity must match piece rarity`);
 
@@ -412,6 +418,8 @@ const allStationRecipes = [
   ...bsData.recipes,
   ...asData.recipes,
   ...byData.recipes,
+  ...(Array.isArray(tlData) ? tlData : tlData.recipes || []),
+  ...(Array.isArray(jcData) ? jcData : jcData.recipes || []),
   ...(Array.isArray(alcData) ? alcData : alcData.recipes || []),
   ...(Array.isArray(woodData) ? woodData : woodData.recipes || []),
   ...(Array.isArray(stoneData) ? stoneData : stoneData.recipes || [])

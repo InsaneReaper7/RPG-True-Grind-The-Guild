@@ -1,6 +1,8 @@
 import type {
   BlacksmithRecipeDef,
   ArmorsmithRecipeDef,
+  TailoringRecipeDef,
+  JewelcraftingRecipeDef,
   BowyerRecipeDef,
   AlchemyRecipeDef,
   CookingRecipeDef,
@@ -18,6 +20,8 @@ import { EventLog } from './EventLog.ts';
 export type AnyRecipeDef =
   | BlacksmithRecipeDef
   | ArmorsmithRecipeDef
+  | TailoringRecipeDef
+  | JewelcraftingRecipeDef
   | BowyerRecipeDef
   | AlchemyRecipeDef
   | CookingRecipeDef
@@ -74,6 +78,8 @@ export class CraftingSystem {
   public static readonly PROFESSION_RANKS: Record<string, { apprentice: string; journeyman?: string; master?: string; grandmaster?: string }> = {
     blacksmithing: { apprentice: 'apprentice_smith', journeyman: 'journeyman_smith', master: 'master_smith', grandmaster: 'grandmaster_smith' },
     armorsmithing: { apprentice: 'apprentice_armorer', journeyman: 'journeyman_armorer', master: 'master_armorer', grandmaster: 'grandmaster_armorer' },
+    tailoring: { apprentice: 'apprentice_tailor', journeyman: 'journeyman_tailor', master: 'master_tailor', grandmaster: 'grandmaster_tailor' },
+    jewelcrafting: { apprentice: 'apprentice_jeweler', journeyman: 'journeyman_jeweler', master: 'master_jeweler', grandmaster: 'grandmaster_jeweler' },
     bowyer: { apprentice: 'apprentice_bowyer', journeyman: 'journeyman_bowyer', master: 'master_bowyer', grandmaster: 'grandmaster_bowyer' },
     alchemy: { apprentice: 'apprentice_alchemist', journeyman: 'journeyman_alchemist', master: 'master_alchemist', grandmaster: 'archalchemist' },
     enchanting: { apprentice: 'apprentice_enchanter', journeyman: 'journeyman_enchanter', master: 'master_enchanter', grandmaster: 'runeweaver' },
@@ -87,6 +93,10 @@ export class CraftingSystem {
         return 'apprentice_smith';
       case 'armorsmithing':
         return 'apprentice_armorer';
+      case 'tailoring':
+        return 'apprentice_tailor';
+      case 'jewelcrafting':
+        return 'apprentice_jeweler';
       case 'bowyer':
         return 'apprentice_bowyer';
       case 'alchemy':
@@ -705,6 +715,24 @@ export class CraftingSystem {
       }
     }
 
+    // 2b. Tailoring
+    const tlRecipes = dataLoader.getTailoringRecipes() || [];
+    for (const r of tlRecipes) {
+      const outputItemId = (r as any).resultArmorId || (r as any).resultWeaponId || (r as any).resultItemId;
+      if (outputItemId === baseId) {
+        return { recipe: r, station: 'tailoring' };
+      }
+    }
+
+    // 2c. Jewelcrafting
+    const jcRecipes = dataLoader.getJewelcraftingRecipes() || [];
+    for (const r of jcRecipes) {
+      const outputItemId = (r as any).resultArmorId || (r as any).resultWeaponId || (r as any).resultItemId;
+      if (outputItemId === baseId) {
+        return { recipe: r, station: 'jewelcrafting' };
+      }
+    }
+
     // 3. Bowyer
     const bwRecipes = dataLoader.getBowyerRecipes() || [];
     for (const r of bwRecipes) {
@@ -1084,7 +1112,7 @@ export class CraftingSystem {
 
     const stationLabel = station === 'blacksmithing'
       ? 'Blacksmithing'
-      : (station === 'armorsmithing' ? 'Armorsmithing' : (station === 'bowyer' ? 'Bowyer' : 'Enchanting'));
+      : (station === 'armorsmithing' ? 'Armorsmithing' : (station === 'tailoring' ? 'Tailoring' : (station === 'jewelcrafting' ? 'Jewelcrafting' : (station === 'bowyer' ? 'Bowyer' : 'Enchanting'))));
 
     const prefix = qtyToSalvage > 1 ? `${qtyToSalvage}x ` : '';
     const message = `Salvaged ${prefix}${displayName} → ${refundParts}, +${expGranted} ${stationLabel} EXP`;

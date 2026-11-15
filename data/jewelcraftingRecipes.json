@@ -1,0 +1,206 @@
+{
+  "_comment": "Jewelcrafting Bench recipes. Tier-unlocked rings, necklaces, pendants, and charms crafted from precious bones, claws, and essences.",
+  "recipes": [
+    {
+      "id": "bone_necklace",
+      "name": "Bone Necklace",
+      "resultArmorId": "bone_necklace",
+      "requiredLevel": 1,
+      "ingredients": {
+        "bone": 3,
+        "bowstring": 1
+      },
+      "expGranted": 35,
+      "description": "Strung monster bones threaded with a resilient bowstring into a protective talisman."
+    },
+    {
+      "id": "wolf_claw_ring",
+      "name": "Wolf Claw Ring",
+      "resultArmorId": "wolf_claw_ring",
+      "requiredLevel": 2,
+      "ingredients": {
+        "wolf_claw": 2,
+        "bone": 1
+      },
+      "expGranted": 45,
+      "description": "Carve and bind beast claws and bone into a ring of endurance."
+    },
+    {
+      "id": "venom_charm",
+      "name": "Venom Charm",
+      "resultArmorId": "venom_charm",
+      "requiredLevel": 5,
+      "ingredients": {
+        "spider_venom": 2,
+        "spider_silk": 2
+      },
+      "expGranted": 60,
+      "description": "Stabilize spider venom within an intricate silk weave to craft a protective ward."
+    },
+    {
+      "id": "void_pendant",
+      "name": "Voidforged Pendant",
+      "resultArmorId": "void_pendant",
+      "requiredLevel": 8,
+      "ingredients": {
+        "void_essence": 1,
+        "bone": 2,
+        "bowstring": 1
+      },
+      "expGranted": 80,
+      "description": "Suspend concentrated void essence within an intricate bone weave to project a defensive ward."
+    },
+    {
+      "id": "void_ring",
+      "name": "Voidforged Band",
+      "resultArmorId": "void_ring",
+      "requiredLevel": 8,
+      "ingredients": {
+        "void_essence": 1,
+        "wolf_claw": 2,
+        "steel_scrap": 1
+      },
+      "expGranted": 80,
+      "description": "Infuse a beast-claw and steel band with void essence to reinforce physical endurance."
+    },
+    {
+      "id": "void_relic",
+      "name": "Voidforged Relic",
+      "resultArmorId": "void_relic",
+      "requiredLevel": 8,
+      "ingredients": {
+        "void_core": 1,
+        "void_essence": 1,
+        "spider_silk": 2
+      },
+      "expGranted": 95,
+      "description": "Encase a legendary void core in woven subterranean silk, anchoring massive extra carry capacity and health."
+    },
+    {
+      "id": "frost_pendant",
+      "name": "Frost Pendant",
+      "resultArmorId": "frost_pendant",
+      "requiredLevel": 12,
+      "ingredients": {
+        "glacial_essence": 1,
+        "bone": 3
+      },
+      "expGranted": 110,
+      "description": "String a protective glacial crystal pendant onto carved bone beads."
+    },
+    {
+      "id": "frost_ring",
+      "name": "Frost Ring",
+      "resultArmorId": "frost_ring",
+      "requiredLevel": 12,
+      "ingredients": {
+        "glacial_essence": 1,
+        "wolf_claw": 2
+      },
+      "expGranted": 110,
+      "description": "Craft a gleaming finger band from polished wolf claws and glacial essence."
+    },
+    {
+      "id": "frost_relic",
+      "name": "Glacial Heart Relic",
+      "resultArmorId": "frost_relic",
+      "requiredLevel": 12,
+      "ingredients": {
+        "glacial_core": 1,
+        "glacial_essence": 2
+      },
+      "expGranted": 120,
+      "description": "Anchor the Sovereign's glacial core into a wondrous accessory granting massive health and carry capacity."
+    },
+    {
+      "id": "sovereign_signet",
+      "name": "Sovereign's Signet",
+      "resultArmorId": "sovereign_signet",
+      "requiredLevel": 12,
+      "ingredients": {
+        "eye_of_the_sovereign": 1,
+        "glacial_essence": 2
+      },
+      "expGranted": 120,
+      "description": "Set the legendary Eye of the Sovereign into an ornate signet ring of extraordinary durability."
+    },
+    {
+      "id": "magmaheart_pendant",
+      "name": "Magmaheart Pendant",
+      "requiredLevel": 12,
+      "ingredients": {
+        "void_essence": 2,
+        "bone": 4,
+        "bowstring": 2
+      },
+      "expGranted": 160,
+      "description": "A glowing volcanic talisman thrumming with the geothermal pulse of the caldera.",
+      "requiresScroll": true,
+      "rarity": "rare",
+      "resultArmorId": "magmaheart_pendant"
+    },
+    {
+      "id": "heart_of_winter",
+      "name": "Heart of Winter",
+      "requiredLevel": 26,
+      "ingredients": {
+        "eye_of_the_sovereign": 4,
+        "glacial_essence": 7
+      },
+      "expGranted": 420,
+      "description": "The legendary crystalline signet enclosing the living eye and sovereign heart of winter.",
+      "requiresScroll": true,
+      "rarity": "legendary",
+      "resultArmorId": "heart_of_winter"
+    },
+    {
+      "id": "apprentice_focus_ring",
+      "name": "Apprentice's Focus Ring",
+      "resultArmorId": "apprentice_focus_ring",
+      "requiredLevel": 2,
+      "ingredients": {
+        "wolf_claw": 2,
+        "bone": 1
+      },
+      "expGranted": 45,
+      "description": "Carve and bind beast claws and bone into a ring that channels fledgling spellcasting energy."
+    },
+    {
+      "id": "void_focus_pendant",
+      "name": "Void Focus Pendant",
+      "resultArmorId": "void_focus_pendant",
+      "requiredLevel": 8,
+      "ingredients": {
+        "void_essence": 1,
+        "bone": 2,
+        "bowstring": 1
+      },
+      "expGranted": 80,
+      "description": "Suspend planar void essence within an intricate bone weave to accelerate caster energy regeneration."
+    },
+    {
+      "id": "frost_focus_ring",
+      "name": "Frost Focus Ring",
+      "resultArmorId": "frost_focus_ring",
+      "requiredLevel": 12,
+      "ingredients": {
+        "glacial_essence": 1,
+        "wolf_claw": 2
+      },
+      "expGranted": 110,
+      "description": "Craft a gleaming finger band chilled with glacial essence to expand energy reserves."
+    },
+    {
+      "id": "frost_spellcharm",
+      "name": "Frost Spellcharm",
+      "resultArmorId": "frost_spellcharm",
+      "requiredLevel": 12,
+      "ingredients": {
+        "glacial_core": 1,
+        "glacial_essence": 2
+      },
+      "expGranted": 120,
+      "description": "Anchor the Sovereign's glacial core into a wondrous charm granting spell damage and rapid energy recovery."
+    }
+  ]
+}

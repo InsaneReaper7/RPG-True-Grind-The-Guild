@@ -314,9 +314,43 @@
           "value": 10
         }
       ],
-      "fantasy": "Shaping raw hide and silk into life-saving protection",
+      "fantasy": "Shaping raw hide and metal into life-saving protection",
       "hiddenSkillBonuses": {
         "resilience": 0.05
+      }
+    },
+    {
+      "id": "apprentice_tailor",
+      "name": "Apprentice Tailor",
+      "tier": "novice",
+      "category": "crafting",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "tailoring",
+          "value": 10
+        }
+      ],
+      "fantasy": "Spinning delicate silk and weaving energized garments for spellcasters",
+      "hiddenSkillBonuses": {
+        "energy_regen": 0.05
+      }
+    },
+    {
+      "id": "apprentice_jeweler",
+      "name": "Apprentice Jeweler",
+      "tier": "novice",
+      "category": "crafting",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "jewelcrafting",
+          "value": 10
+        }
+      ],
+      "fantasy": "Cutting gemstones and binding enchanted metal into wondrous jewelry",
+      "hiddenSkillBonuses": {
+        "haggling": 0.05
       }
     },
     {
@@ -2757,6 +2791,126 @@
         }
       ],
       "fantasy": "Weaving impenetrable bulwarks that defy mortal damage",
+      "perkDescription": "Exceptional: min(15, Lv)% chance for +25% bonus stats"
+    },
+    {
+      "id": "journeyman_tailor",
+      "name": "Journeyman Tailor",
+      "tier": "adept",
+      "category": "crafting",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "tailoring",
+          "value": 30
+        },
+        {
+          "type": "classLevel",
+          "target": "apprentice_tailor",
+          "value": 10
+        }
+      ],
+      "fantasy": "Weaving reinforced silks and insulating garments with economical precision",
+      "perkDescription": "Thrifty: min(15, Lv)% chance to refund 1 random ingredient unit"
+    },
+    {
+      "id": "master_tailor",
+      "name": "Master Tailor",
+      "tier": "expert",
+      "category": "crafting",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "tailoring",
+          "value": 60
+        },
+        {
+          "type": "classLevel",
+          "target": "journeyman_tailor",
+          "value": 15
+        }
+      ],
+      "fantasy": "Crafting robes and cowls of sublime arcane resonance",
+      "perkDescription": "Masterwork: extra +min(15, Lv)% gear stats"
+    },
+    {
+      "id": "grandmaster_tailor",
+      "name": "Grandmaster Tailor",
+      "tier": "master",
+      "category": "crafting",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "tailoring",
+          "value": 90
+        },
+        {
+          "type": "classLevel",
+          "target": "master_tailor",
+          "value": 25
+        }
+      ],
+      "fantasy": "Spinning ethereal vestments that channel untamed planar forces",
+      "perkDescription": "Exceptional: min(15, Lv)% chance for +25% bonus stats"
+    },
+    {
+      "id": "journeyman_jeweler",
+      "name": "Journeyman Jeweler",
+      "tier": "adept",
+      "category": "crafting",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "jewelcrafting",
+          "value": 30
+        },
+        {
+          "type": "classLevel",
+          "target": "apprentice_jeweler",
+          "value": 10
+        }
+      ],
+      "fantasy": "Setting gems and forging bands with economical precision",
+      "perkDescription": "Thrifty: min(15, Lv)% chance to refund 1 random ingredient unit"
+    },
+    {
+      "id": "master_jeweler",
+      "name": "Master Jeweler",
+      "tier": "expert",
+      "category": "crafting",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "jewelcrafting",
+          "value": 60
+        },
+        {
+          "type": "classLevel",
+          "target": "journeyman_jeweler",
+          "value": 15
+        }
+      ],
+      "fantasy": "Facetting flawless crystals and infusing talismans with concentrated power",
+      "perkDescription": "Masterwork: extra +min(15, Lv)% gear stats"
+    },
+    {
+      "id": "grandmaster_jeweler",
+      "name": "Grandmaster Jeweler",
+      "tier": "master",
+      "category": "crafting",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "jewelcrafting",
+          "value": 90
+        },
+        {
+          "type": "classLevel",
+          "target": "master_jeweler",
+          "value": 25
+        }
+      ],
+      "fantasy": "Forging wondrous regalia and legendary artifacts of unmatched beauty",
       "perkDescription": "Exceptional: min(15, Lv)% chance for +25% bonus stats"
     },
     {

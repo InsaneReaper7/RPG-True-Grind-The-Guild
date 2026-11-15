@@ -56,6 +56,24 @@
       "description": "Armorsmithing workshop with an armorsmithing bench."
     },
     {
+      "id": "tailor_workshop",
+      "name": "Tailor's Workshop",
+      "priority": 10,
+      "requiredTags": [
+        "tailoring"
+      ],
+      "description": "Tailoring workshop with a tailor's loom."
+    },
+    {
+      "id": "jeweler_workshop",
+      "name": "Jeweler's Workshop",
+      "priority": 10,
+      "requiredTags": [
+        "jewelcrafting"
+      ],
+      "description": "Jewelcrafting workshop with a jewelcrafting bench."
+    },
+    {
       "id": "bowyer_workshop",
       "name": "Bowyer Workshop",
       "priority": 10,

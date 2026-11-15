@@ -1,17 +1,6 @@
 {
-  "_comment": "Armorsmithing Bench recipes. Tier-unlocked recipes consuming Wolf Pelt, Spider Silk, and other crafting materials.",
+  "_comment": "Armorsmithing Bench recipes. Tier-unlocked medium and heavy armor crafted from cured pelts, iron, steel, and alloys.",
   "recipes": [
-    {
-      "id": "leather_cap",
-      "name": "Leather Cap",
-      "resultArmorId": "leather_cap",
-      "requiredLevel": 0,
-      "ingredients": {
-        "wolf_pelt": 2
-      },
-      "expGranted": 25,
-      "description": "Craft a lightweight protective cap from cured wolf pelts."
-    },
     {
       "id": "leather_armor",
       "name": "Leather Armor",
@@ -22,66 +11,6 @@
       },
       "expGranted": 35,
       "description": "Craft a sturdy chestpiece from stitched wolf pelts."
-    },
-    {
-      "id": "silk_cowl",
-      "name": "Silk Cowl",
-      "resultArmorId": "silk_cowl",
-      "requiredLevel": 5,
-      "ingredients": {
-        "spider_silk": 3,
-        "wolf_pelt": 1
-      },
-      "expGranted": 55,
-      "description": "Weave lightweight spider silk into a protective cowl with leather trimming."
-    },
-    {
-      "id": "silk_robe",
-      "name": "Silk Robe",
-      "resultArmorId": "silk_robe",
-      "requiredLevel": 6,
-      "ingredients": {
-        "spider_silk": 5,
-        "wolf_pelt": 2
-      },
-      "expGranted": 75,
-      "description": "Weave a dense vestment of spider silk backed by supple wolf hide."
-    },
-    {
-      "id": "bone_necklace",
-      "name": "Bone Necklace",
-      "resultArmorId": "bone_necklace",
-      "requiredLevel": 1,
-      "ingredients": {
-        "bone": 3,
-        "bowstring": 1
-      },
-      "expGranted": 35,
-      "description": "Strung monster bones threaded with a resilient bowstring into a protective talisman."
-    },
-    {
-      "id": "wolf_claw_ring",
-      "name": "Wolf Claw Ring",
-      "resultArmorId": "wolf_claw_ring",
-      "requiredLevel": 2,
-      "ingredients": {
-        "wolf_claw": 2,
-        "bone": 1
-      },
-      "expGranted": 45,
-      "description": "Carve and bind beast claws and bone into a ring of endurance."
-    },
-    {
-      "id": "venom_charm",
-      "name": "Venom Charm",
-      "resultArmorId": "venom_charm",
-      "requiredLevel": 5,
-      "ingredients": {
-        "spider_venom": 2,
-        "spider_silk": 2
-      },
-      "expGranted": 60,
-      "description": "Stabilize spider venom within an intricate silk weave to craft a protective ward."
     },
     {
       "id": "void_greathelm",
@@ -108,57 +37,6 @@
       },
       "expGranted": 90,
       "description": "Forge an impenetrable heavy void cuirass radiating otherworldly defensive power."
-    },
-    {
-      "id": "void_pendant",
-      "name": "Voidforged Pendant",
-      "resultArmorId": "void_pendant",
-      "requiredLevel": 8,
-      "ingredients": {
-        "void_essence": 1,
-        "bone": 2,
-        "bowstring": 1
-      },
-      "expGranted": 80,
-      "description": "Suspend concentrated void essence within an intricate bone weave to project a defensive ward."
-    },
-    {
-      "id": "void_ring",
-      "name": "Voidforged Band",
-      "resultArmorId": "void_ring",
-      "requiredLevel": 8,
-      "ingredients": {
-        "void_essence": 1,
-        "wolf_claw": 2,
-        "steel_scrap": 1
-      },
-      "expGranted": 80,
-      "description": "Infuse a beast-claw and steel band with void essence to reinforce physical endurance."
-    },
-    {
-      "id": "void_relic",
-      "name": "Voidforged Relic",
-      "resultArmorId": "void_relic",
-      "requiredLevel": 8,
-      "ingredients": {
-        "void_core": 1,
-        "void_essence": 1,
-        "spider_silk": 2
-      },
-      "expGranted": 95,
-      "description": "Encase a legendary void core in woven subterranean silk, anchoring massive extra carry capacity and health."
-    },
-    {
-      "id": "padded_tunic",
-      "name": "Padded Tunic",
-      "resultArmorId": "padded_tunic",
-      "requiredLevel": 0,
-      "ingredients": {
-        "wolf_pelt": 3,
-        "wood": 1
-      },
-      "expGranted": 25,
-      "description": "Craft a lightweight padded tunic from wolf pelts reinforced with wood battening."
     },
     {
       "id": "reinforced_leather_helm",
@@ -250,44 +128,6 @@
       "description": "Forge a masterwork suit of articulated steel plate backed by heavy orc hide."
     },
     {
-      "id": "ingredient_bag",
-      "name": "Ingredient Bag",
-      "resultArmorId": "ingredient_bag",
-      "requiredLevel": 1,
-      "ingredients": {
-        "wolf_pelt": 3,
-        "bowstring": 1
-      },
-      "expGranted": 25,
-      "description": "Craft an ingredient bag providing 15 kg of weight exemption for culinary ingredients."
-    },
-    {
-      "id": "frost_hood",
-      "name": "Frostweave Hood",
-      "resultArmorId": "frost_hood",
-      "requiredLevel": 12,
-      "ingredients": {
-        "wolf_pelt": 2,
-        "ectoplasm": 2,
-        "glacial_essence": 1
-      },
-      "expGranted": 110,
-      "description": "Weave arctic wolf pelts and spectral ectoplasm into an enchanted light hood."
-    },
-    {
-      "id": "frost_robe",
-      "name": "Frostweave Robe",
-      "resultArmorId": "frost_robe",
-      "requiredLevel": 12,
-      "ingredients": {
-        "wolf_pelt": 3,
-        "ectoplasm": 3,
-        "glacial_essence": 2
-      },
-      "expGranted": 110,
-      "description": "Tailor a light robe infused with ghostly ectoplasm and glacial essence."
-    },
-    {
       "id": "frost_leather_helm",
       "name": "Rimehide Helm",
       "resultArmorId": "frost_leather_helm",
@@ -341,67 +181,6 @@
       "description": "Forge a pinnacle suit of heavy armor mounted with the Sovereign's rime carapace."
     },
     {
-      "id": "frost_pendant",
-      "name": "Frost Pendant",
-      "resultArmorId": "frost_pendant",
-      "requiredLevel": 12,
-      "ingredients": {
-        "glacial_essence": 1,
-        "bone": 3
-      },
-      "expGranted": 110,
-      "description": "String a protective glacial crystal pendant onto carved bone beads."
-    },
-    {
-      "id": "frost_ring",
-      "name": "Frost Ring",
-      "resultArmorId": "frost_ring",
-      "requiredLevel": 12,
-      "ingredients": {
-        "glacial_essence": 1,
-        "wolf_claw": 2
-      },
-      "expGranted": 110,
-      "description": "Craft a gleaming finger band from polished wolf claws and glacial essence."
-    },
-    {
-      "id": "frost_relic",
-      "name": "Glacial Heart Relic",
-      "resultArmorId": "frost_relic",
-      "requiredLevel": 12,
-      "ingredients": {
-        "glacial_core": 1,
-        "glacial_essence": 2
-      },
-      "expGranted": 120,
-      "description": "Anchor the Sovereign's glacial core into a wondrous accessory granting massive health and carry capacity."
-    },
-    {
-      "id": "sovereign_signet",
-      "name": "Sovereign's Signet",
-      "resultArmorId": "sovereign_signet",
-      "requiredLevel": 12,
-      "ingredients": {
-        "eye_of_the_sovereign": 1,
-        "glacial_essence": 2
-      },
-      "expGranted": 120,
-      "description": "Set the legendary Eye of the Sovereign into an ornate signet ring of extraordinary durability."
-    },
-    {
-      "id": "boneguard_cap",
-      "name": "Boneguard Cap",
-      "requiredLevel": 2,
-      "ingredients": {
-        "wolf_pelt": 3
-      },
-      "expGranted": 38,
-      "description": "Reinforced with splints of hardened crypt bone for resilient head protection.",
-      "requiresScroll": true,
-      "rarity": "uncommon",
-      "resultArmorId": "boneguard_cap"
-    },
-    {
       "id": "ossuary_plate",
       "name": "Ossuary Plate",
       "requiredLevel": 4,
@@ -417,20 +196,6 @@
       "resultArmorId": "ossuary_plate"
     },
     {
-      "id": "spidersilk_vestment",
-      "name": "Spidersilk Vestment",
-      "requiredLevel": 8,
-      "ingredients": {
-        "spider_silk": 8,
-        "wolf_pelt": 3
-      },
-      "expGranted": 113,
-      "description": "A dense weave of abyssal spider silk that absorbs crushing deep-sea impacts.",
-      "requiresScroll": true,
-      "rarity": "uncommon",
-      "resultArmorId": "spidersilk_vestment"
-    },
-    {
       "id": "cinderguard_helm",
       "name": "Cinderguard Helm",
       "requiredLevel": 10,
@@ -444,36 +209,6 @@
       "requiresScroll": true,
       "rarity": "uncommon",
       "resultArmorId": "cinderguard_helm"
-    },
-    {
-      "id": "magmaheart_pendant",
-      "name": "Magmaheart Pendant",
-      "requiredLevel": 12,
-      "ingredients": {
-        "void_essence": 2,
-        "bone": 4,
-        "bowstring": 2
-      },
-      "expGranted": 160,
-      "description": "A glowing volcanic talisman thrumming with the geothermal pulse of the caldera.",
-      "requiresScroll": true,
-      "rarity": "rare",
-      "resultArmorId": "magmaheart_pendant"
-    },
-    {
-      "id": "rimewalker_hood",
-      "name": "Rimewalker Hood",
-      "requiredLevel": 14,
-      "ingredients": {
-        "wolf_pelt": 3,
-        "ectoplasm": 3,
-        "glacial_essence": 2
-      },
-      "expGranted": 165,
-      "description": "A cowl woven with glacial essence to protect against bone-chilling cavern winds.",
-      "requiresScroll": true,
-      "rarity": "uncommon",
-      "resultArmorId": "rimewalker_hood"
     },
     {
       "id": "yetihide_armor",
@@ -505,20 +240,6 @@
       "requiresScroll": true,
       "rarity": "mythical",
       "resultArmorId": "everwinter_plate"
-    },
-    {
-      "id": "heart_of_winter",
-      "name": "Heart of Winter",
-      "requiredLevel": 26,
-      "ingredients": {
-        "eye_of_the_sovereign": 4,
-        "glacial_essence": 7
-      },
-      "expGranted": 420,
-      "description": "The legendary crystalline signet enclosing the living eye and sovereign heart of winter.",
-      "requiresScroll": true,
-      "rarity": "legendary",
-      "resultArmorId": "heart_of_winter"
     },
     {
       "id": "nomads_coat",

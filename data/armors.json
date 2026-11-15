@@ -83,6 +83,8 @@
       "armorRating": 4,
       "hpBonus": 30,
       "splitRatio": "50/50",
+      "spellDamagePercent": 3,
+      "maxEnergyBonus": 5,
       "description": "A tightly woven cowl spun from subterranean spider silk. Increases Max HP by 15 and Critical HP by 15."
     },
     {
@@ -95,6 +97,8 @@
       "armorRating": 7,
       "hpBonus": 50,
       "splitRatio": "50/50",
+      "spellDamagePercent": 5,
+      "maxEnergyBonus": 10,
       "description": "An enchanted, resilient robe woven from pure spider silk. Increases Max HP by 25 and Critical HP by 25."
     },
     {
@@ -243,6 +247,9 @@
       "armorRating": 6,
       "hpBonus": 90,
       "splitRatio": "50/50",
+      "spellDamagePercent": 6,
+      "maxEnergyBonus": 10,
+      "energyRegenBonus": 0.1,
       "description": "An enchanted hood spun from arctic wolf pelt and ectoplasm. Increases Max HP by 45 and Critical HP by 45."
     },
     {
@@ -255,6 +262,9 @@
       "armorRating": 10,
       "hpBonus": 150,
       "splitRatio": "50/50",
+      "spellDamagePercent": 10,
+      "maxEnergyBonus": 20,
+      "energyRegenBonus": 0.2,
       "description": "A flowing robe woven from pelt and ghostly ectoplasm, infused with glacial essence. Increases Max HP by 75 and Critical HP by 75."
     },
     {
@@ -377,6 +387,8 @@
       "armorRating": 8,
       "hpBonus": 55,
       "splitRatio": "50/50",
+      "spellDamagePercent": 6,
+      "maxEnergyBonus": 10,
       "description": "A dense weave of abyssal spider silk that absorbs crushing deep-sea impacts.",
       "rarity": "uncommon",
       "band": 2
@@ -414,6 +426,9 @@
       "armorRating": 7,
       "hpBonus": 99,
       "splitRatio": "50/50",
+      "spellDamagePercent": 7,
+      "maxEnergyBonus": 12,
+      "energyRegenBonus": 0.1,
       "description": "A cowl woven with glacial essence to protect against bone-chilling cavern winds.",
       "rarity": "uncommon",
       "band": 4
@@ -478,6 +493,108 @@
       "rarity": "rare",
       "merchantExclusive": true,
       "description": "A glittering merchant talisman that brings fortune to negotiations and findings. Grants +0.5 flat Luck."
+    },
+    {
+      "id": "apprentice_hood",
+      "name": "Apprentice's Hood",
+      "slot": "helmet",
+      "tier": "starter",
+      "weightClass": "light",
+      "weight": 0.8,
+      "armorRating": 2,
+      "hpBonus": 12,
+      "splitRatio": "50/50",
+      "spellDamagePercent": 2,
+      "maxEnergyBonus": 5,
+      "description": "A lightweight hood woven from spider silk, focusing an apprentice's fledgling magical energy."
+    },
+    {
+      "id": "apprentice_robe",
+      "name": "Apprentice's Robe",
+      "slot": "body",
+      "tier": "starter",
+      "weightClass": "light",
+      "weight": 2,
+      "armorRating": 4,
+      "hpBonus": 20,
+      "splitRatio": "50/50",
+      "spellDamagePercent": 3,
+      "maxEnergyBonus": 8,
+      "description": "A simple woven robe imbued with basic magical focus and energy storage."
+    },
+    {
+      "id": "voidweave_hood",
+      "name": "Voidweave Hood",
+      "slot": "helmet",
+      "tier": "void",
+      "weightClass": "light",
+      "weight": 1.1,
+      "armorRating": 5,
+      "hpBonus": 55,
+      "splitRatio": "50/50",
+      "spellDamagePercent": 5,
+      "maxEnergyBonus": 8,
+      "energyRegenBonus": 0.05,
+      "description": "A hood woven from spider silk and planar void essence, shielding the mind and amplifying spell potency."
+    },
+    {
+      "id": "voidweave_robe",
+      "name": "Voidweave Robe",
+      "slot": "body",
+      "tier": "void",
+      "weightClass": "light",
+      "weight": 3.2,
+      "armorRating": 8,
+      "hpBonus": 95,
+      "splitRatio": "50/50",
+      "spellDamagePercent": 8,
+      "maxEnergyBonus": 15,
+      "energyRegenBonus": 0.1,
+      "description": "An ethereal robe spun from deep void essence and silk, accelerating energy recovery and empowering spells."
+    },
+    {
+      "id": "apprentice_focus_ring",
+      "name": "Apprentice's Focus Ring",
+      "slot": "ring",
+      "weight": 0.2,
+      "hpBonus": 8,
+      "splitRatio": "50/50",
+      "spellDamagePercent": 2,
+      "maxEnergyBonus": 5,
+      "description": "A carved bone ring shaped to focus magical intent and expand energy capacity."
+    },
+    {
+      "id": "void_focus_pendant",
+      "name": "Void Focus Pendant",
+      "slot": "necklace",
+      "weight": 0.5,
+      "hpBonus": 25,
+      "splitRatio": "50/50",
+      "spellDamagePercent": 4,
+      "energyRegenBonus": 0.1,
+      "description": "A planar crystal pendant pulsing with steady void resonance, hastening energy regeneration."
+    },
+    {
+      "id": "frost_focus_ring",
+      "name": "Frost Focus Ring",
+      "slot": "ring",
+      "weight": 0.2,
+      "hpBonus": 25,
+      "splitRatio": "50/50",
+      "spellDamagePercent": 5,
+      "maxEnergyBonus": 10,
+      "description": "A finger band chilled by glacial essence, expanding maximum energy and sharpening offensive spells."
+    },
+    {
+      "id": "frost_spellcharm",
+      "name": "Frost Spellcharm",
+      "slot": "accessory",
+      "weight": 0.5,
+      "hpBonus": 45,
+      "splitRatio": "50/50",
+      "spellDamagePercent": 6,
+      "energyRegenBonus": 0.15,
+      "description": "A talisman carved from the glacial core, infusing the bearer with cold focus and steady energy flow."
     }
   ]
 }

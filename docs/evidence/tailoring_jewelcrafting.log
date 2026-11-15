@@ -1,0 +1,95 @@
+================================================================
+🧪 RUNNING TAILORING & JEWELCRAFTING MILESTONE TEST SUITE
+================================================================
+
+--- Section 1: Research, Buildables & Rooms Integrity ---
+✔ Section 1 Passed: Research, buildables, rooms, and stat gains verified.
+
+--- Section 2: Crafting Ladders & Perks ---
+[Progression] Set class 'apprentice_tailor' to Level 10 (0 EXP) on Guild Hero
+[Progression] Set class 'journeyman_tailor' to Level 5 (0 EXP) on Guild Hero
+[Progression] Set class 'apprentice_jeweler' to Level 10 (0 EXP) on Guild Hero
+✔ Section 2 Passed: 4-tier ladders, classes, hidden bonuses, and perks verified.
+
+--- Section 3: 22 Moved Recipes Integrity & EXP Dispatch ---
+[Progression] +75 EXP for 'tailoring' (Guild Hero). Current: Level 1 (25/54 EXP)
+[Progression] Recorded tx 'tailoring': +75 EXP for Guild Hero, resulting total: Level 1 (25/54 EXP)
+[Progression] LEVEL UP! 'tailoring' is now Level 1! (Gained 1 level(s))
+[Progression] ✨ SKILL DISCOVERED: 'tailoring' reached Level 1 by Guild Hero! ✨
+[Progression] +75 Class EXP for 'apprentice_tailor' (Guild Hero). Current: Level 10 (75/90 EXP)
+[Progression] +75 Class EXP for 'journeyman_tailor' (Guild Hero). Current: Level 6 (5/74 EXP)
+[Progression] CLASS LEVEL UP! 'journeyman_tailor' is now Level 6!
+[Progression] +35 EXP for 'jewelcrafting' (Guild Hero). Current: Level 0 (35/50 EXP)
+[Progression] Recorded tx 'jewelcrafting': +35 EXP for Guild Hero, resulting total: Level 0 (35/50 EXP)
+[Progression] +35 Class EXP for 'apprentice_jeweler' (Guild Hero). Current: Level 10 (35/90 EXP)
+[Gear] 📜 Gear recipe learned: 'boneguard_cap'! (+1 RP)
+[ConsumableSystem] [Toast success] 📜 Learned Uncommon recipe: Boneguard Cap
+[Progression] +50 EXP for 'tailoring' (Guild Hero). Current: Level 2 (21/58 EXP)
+[Progression] Recorded tx 'tailoring': +50 EXP for Guild Hero, resulting total: Level 2 (21/58 EXP)
+[Progression] LEVEL UP! 'tailoring' is now Level 2! (Gained 1 level(s))
+[ConsumableSystem] [Toast info] 📜 Duplicate recipe understood: Boneguard Cap! (+50 Tailoring EXP)
+[Gear] 📜 Gear recipe learned: 'magmaheart_pendant'! (+1 RP)
+[ConsumableSystem] [Toast success] 📜 Learned Rare recipe: Magmaheart Pendant
+[Progression] +50 EXP for 'jewelcrafting' (Guild Hero). Current: Level 1 (35/54 EXP)
+[Progression] Recorded tx 'jewelcrafting': +50 EXP for Guild Hero, resulting total: Level 1 (35/54 EXP)
+[Progression] LEVEL UP! 'jewelcrafting' is now Level 1! (Gained 1 level(s))
+[Progression] ✨ SKILL DISCOVERED: 'jewelcrafting' reached Level 1 by Guild Hero! ✨
+[ConsumableSystem] [Toast info] 📜 Duplicate recipe understood: Magmaheart Pendant! (+50 Jewelcrafting EXP)
+✔ Section 3 Passed: 22 moved recipes and EXP dispatch verified.
+
+--- Section 4: 8 New Mage Pieces & Merchant Integration ---
+[Progression] +1 EXP for 'haggling' (Guild Hero). Current: Level 0 (1/50 EXP)
+[Progression] Recorded tx 'haggling': +1 EXP for Guild Hero, resulting total: Level 0 (1/50 EXP)
+✔ Section 4 Passed: 8 new mage pieces stats and merchant integration verified.
+
+--- Section 5: Mage Stats & Single-Read Spell Multiplier ---
+[Player:Guild Hero] Equipped body: Frostweave Robe (+150 HP). Current HP: 125/125, Crit HP: 100/100
+[Player:Guild Hero] Equipped helmet: Frostweave Hood (+90 HP). Current HP: 170/170, Crit HP: 145/145
+[Player:Guild Hero] Unequipped body. Current HP: 95/95, Crit HP: 70/70
+[Player:Guild Hero] Unequipped helmet. Current HP: 50/50, Crit HP: 25/25
+[Player:Guild Hero] Equipped body: Frostweave Robe (+150 HP). Current HP: 125/125, Crit HP: 100/100
+[Player:Guild Hero] Equipped helmet: Frostweave Hood (+90 HP). Current HP: 170/170, Crit HP: 145/145
+Testing primary and secondary spell hits with frost_robe + frost_hood (1.16x)...
+[Player:Guild Hero] Equipped body: Frostweave Robe (+150 HP). Current HP: 125/125, Crit HP: 100/100
+[Player:Guild Hero] Equipped helmet: Frostweave Hood (+90 HP). Current HP: 170/170, Crit HP: 145/145
+[Combat:AreaChain] ⚡ Chain hop 1 arcs to enemy2 for 4.2 damage!
+[Progression] +2 EXP for 'short_swords' (Guild Hero). Current: Level 0 (2/50 EXP)
+[Progression] Recorded tx 'short_swords': +2 EXP for Guild Hero, resulting total: Level 0 (2/50 EXP)
+[Combat:AreaChain] ⚡ Chain hop 1 arcs to enemy4 for 4.9 damage!
+[Progression] +2 EXP for 'short_swords' (Guild Hero). Current: Level 0 (2/50 EXP)
+[Progression] Recorded tx 'short_swords': +2 EXP for Guild Hero, resulting total: Level 0 (2/50 EXP)
+[DIAG:Combat] ⚔️ Guild Hero attacks b1 with Arcane Magic! inCombat: false, Pre-EN: 74.0, Post-EN: 74.0, Range: 1, Dist: 1
+[Combat] Guild Hero attacks b1 with Arcane Magic for 10.0 damage! (Base: 8, Lv 0 Bonus: +0.0, Accuracy: 100.0%)
+[Combat:Arcane] ✨ Mana Siphon siphoned 4 Energy from b1 to Guild Hero! (Restored: +4.0, EN: 78.0/100)
+[Progression] +2 EXP for 'arcane_magic' (Guild Hero). Current: Level 0 (2/50 EXP)
+[Progression] Recorded tx 'arcane_magic': +2 EXP for Guild Hero, resulting total: Level 0 (2/50 EXP)
+[DIAG:Combat] ⚔️ Guild Hero attacks b2 with Arcane Magic! inCombat: false, Pre-EN: 74.0, Post-EN: 74.0, Range: 1, Dist: 1
+[Combat] Guild Hero attacks b2 with Arcane Magic for 11.6 damage! (Base: 8, Lv 0 Bonus: +0.0, Accuracy: 100.0%)
+[Combat:Arcane] ✨ Mana Siphon siphoned 4 Energy from b2 to Guild Hero! (Restored: +4.0, EN: 78.0/130)
+[Progression] +2 EXP for 'arcane_magic' (Guild Hero). Current: Level 0 (2/50 EXP)
+[Progression] Recorded tx 'arcane_magic': +2 EXP for Guild Hero, resulting total: Level 0 (2/50 EXP)
+[Progression] +1 EXP for 'light_armor' (Guild Hero). Current: Level 0 (1/50 EXP)
+[Progression] Recorded tx 'light_armor': +1 EXP for Guild Hero, resulting total: Level 0 (1/50 EXP)
+[KnowledgeBase] ⚔️ Proficiency discovered: 'light_armor'! (+1 RP)
+[DIAG:Combat] ⚔️ Guild Hero attacks p1 with Short Swords! inCombat: false, Pre-EN: 78.0, Post-EN: 78.0, Range: 1, Dist: 1
+[Progression] +1 EXP for 'critical_strike' (Guild Hero). Current: Level 0 (1/50 EXP)
+[Progression] Recorded tx 'critical_strike': +1 EXP for Guild Hero, resulting total: Level 0 (1/50 EXP)
+[Combat] Guild Hero attacks p1 with Short Swords for 10.0 damage! (Base: 5, Lv 0 Bonus: +0.0, Accuracy: 100.0%)
+[StatusEffect] Applied Bleed to p1!
+[Progression] +2 EXP for 'short_swords' (Guild Hero). Current: Level 0 (4/50 EXP)
+[Progression] Recorded tx 'short_swords': +2 EXP for Guild Hero, resulting total: Level 0 (4/50 EXP)
+[DIAG:Combat] ⚔️ Guild Hero attacks p2 with Short Swords! inCombat: false, Pre-EN: 78.0, Post-EN: 78.0, Range: 1, Dist: 1
+[Combat] Guild Hero attacks p2 with Short Swords for 10.0 damage! (Base: 5, Lv 0 Bonus: +0.0, Accuracy: 100.0%)
+[StatusEffect] Applied Bleed to p2!
+[Progression] +2 EXP for 'short_swords' (Guild Hero). Current: Level 0 (4/50 EXP)
+[Progression] Recorded tx 'short_swords': +2 EXP for Guild Hero, resulting total: Level 0 (4/50 EXP)
+[Progression] +1 EXP for 'light_armor' (Guild Hero). Current: Level 0 (2/50 EXP)
+[Progression] Recorded tx 'light_armor': +1 EXP for Guild Hero, resulting total: Level 0 (2/50 EXP)
+✔ Section 5 Passed: Mage stats, single-read multiplier, and secondary hit scaling verified.
+
+--- Section 6: UI Director Click-Check (elementFromPoint) ---
+✔ Section 6 Passed: Director elementFromPoint click-checks verified.
+
+================================================================
+🎉 ALL TAILORING & JEWELCRAFTING MILESTONE TESTS PASSED PERFECTLY!
+================================================================

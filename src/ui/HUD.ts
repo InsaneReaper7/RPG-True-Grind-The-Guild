@@ -34,6 +34,9 @@ export function armorEffectText(a: any): string {
   if (!a) return '';
   const parts: string[] = [];
   if (a.hpBonus) parts.push(`+${a.hpBonus} HP`);
+  if (a.spellDamagePercent) parts.push(`+${a.spellDamagePercent}% Spell`);
+  if (a.maxEnergyBonus) parts.push(`+${a.maxEnergyBonus} EN`);
+  if (a.energyRegenBonus) parts.push(`+${a.energyRegenBonus}/s EN`);
   if (a.carryCapacityBonus) parts.push(`+${a.carryCapacityBonus} kg carry`);
   if (a.ingredientCapacityKg) parts.push(`${a.ingredientCapacityKg} kg ingredient space`);
   if (a.luckBonus) parts.push(`+${a.luckBonus} Luck`);
@@ -276,9 +279,30 @@ export class HUD {
   private armorsmithingModalProfEl: HTMLElement | null;
   private armorsmithingStockpileWolfPeltEl: HTMLElement | null;
   private armorsmithingStockpileSpiderSilkEl: HTMLElement | null;
+  private armorsmithingStockpileIronIngotEl: HTMLElement | null;
   private armorsmithingRecipesContainerEl: HTMLElement | null;
   private armorsmithingSalvageContainerEl: HTMLElement | null;
   private armorsmithingStatusMsgEl: HTMLElement | null;
+
+  // Tailoring Modal Elements (Tailor's Loom)
+  private tailoringModalEl: HTMLElement | null = null;
+  private closeTailoringBtn: HTMLElement | null = null;
+  private tailoringModalProfEl: HTMLElement | null = null;
+  private tailoringStockpileSpiderSilkEl: HTMLElement | null = null;
+  private tailoringStockpileWolfPeltEl: HTMLElement | null = null;
+  private tailoringRecipesContainerEl: HTMLElement | null = null;
+  private tailoringSalvageContainerEl: HTMLElement | null = null;
+  private tailoringStatusMsgEl: HTMLElement | null = null;
+
+  // Jewelcrafting Modal Elements (Jewelcrafting Bench)
+  private jewelcraftingModalEl: HTMLElement | null = null;
+  private closeJewelcraftingBtn: HTMLElement | null = null;
+  private jewelcraftingModalProfEl: HTMLElement | null = null;
+  private jewelcraftingStockpileWolfClawEl: HTMLElement | null = null;
+  private jewelcraftingStockpileBoneEl: HTMLElement | null = null;
+  private jewelcraftingRecipesContainerEl: HTMLElement | null = null;
+  private jewelcraftingSalvageContainerEl: HTMLElement | null = null;
+  private jewelcraftingStatusMsgEl: HTMLElement | null = null;
 
   // Milestone 36 Elements (Bowyer Station)
   private bowyerModalEl: HTMLElement | null;
@@ -361,6 +385,8 @@ export class HUD {
   public craftingStationFilterCraftableOnly: Record<string, boolean> = {
     blacksmithing: true,
     armorsmithing: true,
+    tailoring: true,
+    jewelcrafting: true,
     bowyer: true,
     alchemy: true,
     cooking: true,
@@ -368,6 +394,8 @@ export class HUD {
   };
   public blacksmithingToggleFilterBtn: HTMLElement | null = null;
   public armorsmithingToggleFilterBtn: HTMLElement | null = null;
+  public tailoringToggleFilterBtn: HTMLElement | null = null;
+  public jewelcraftingToggleFilterBtn: HTMLElement | null = null;
   public bowyerToggleFilterBtn: HTMLElement | null = null;
   public alchemyToggleFilterBtn: HTMLElement | null = null;
   public cookingToggleFilterBtn: HTMLElement | null = null;
@@ -854,6 +882,7 @@ export class HUD {
     this.armorsmithingModalProfEl = document.getElementById('armorsmithing-modal-prof');
     this.armorsmithingStockpileWolfPeltEl = document.getElementById('armorsmithing-stockpile-wolf-pelt');
     this.armorsmithingStockpileSpiderSilkEl = document.getElementById('armorsmithing-stockpile-spider-silk');
+    this.armorsmithingStockpileIronIngotEl = document.getElementById('armorsmithing-stockpile-iron-ingot');
     this.armorsmithingRecipesContainerEl = document.getElementById('armorsmithing-recipes-container');
     this.armorsmithingSalvageContainerEl = document.getElementById('armorsmithing-salvage-container');
     this.armorsmithingStatusMsgEl = document.getElementById('armorsmithing-status-msg');
@@ -861,6 +890,38 @@ export class HUD {
     if (this.closeArmorsmithingBtn) {
       this.closeArmorsmithingBtn.onclick = () => {
         HUD.activeInstance?.closeArmorsmithingModal();
+      };
+    }
+
+    // Tailoring Loom Elements
+    this.tailoringModalEl = document.getElementById('tailoring-modal');
+    this.closeTailoringBtn = document.getElementById('close-tailoring-btn');
+    this.tailoringModalProfEl = document.getElementById('tailoring-modal-prof');
+    this.tailoringStockpileSpiderSilkEl = document.getElementById('tailoring-stockpile-spider-silk');
+    this.tailoringStockpileWolfPeltEl = document.getElementById('tailoring-stockpile-wolf-pelt');
+    this.tailoringRecipesContainerEl = document.getElementById('tailoring-recipes-container');
+    this.tailoringSalvageContainerEl = document.getElementById('tailoring-salvage-container');
+    this.tailoringStatusMsgEl = document.getElementById('tailoring-status-msg');
+
+    if (this.closeTailoringBtn) {
+      this.closeTailoringBtn.onclick = () => {
+        HUD.activeInstance?.closeTailoringModal();
+      };
+    }
+
+    // Jewelcrafting Bench Elements
+    this.jewelcraftingModalEl = document.getElementById('jewelcrafting-modal');
+    this.closeJewelcraftingBtn = document.getElementById('close-jewelcrafting-btn');
+    this.jewelcraftingModalProfEl = document.getElementById('jewelcrafting-modal-prof');
+    this.jewelcraftingStockpileWolfClawEl = document.getElementById('jewelcrafting-stockpile-wolf-claw');
+    this.jewelcraftingStockpileBoneEl = document.getElementById('jewelcrafting-stockpile-bone');
+    this.jewelcraftingRecipesContainerEl = document.getElementById('jewelcrafting-recipes-container');
+    this.jewelcraftingSalvageContainerEl = document.getElementById('jewelcrafting-salvage-container');
+    this.jewelcraftingStatusMsgEl = document.getElementById('jewelcrafting-status-msg');
+
+    if (this.closeJewelcraftingBtn) {
+      this.closeJewelcraftingBtn.onclick = () => {
+        HUD.activeInstance?.closeJewelcraftingModal();
       };
     }
 
@@ -932,12 +993,14 @@ export class HUD {
     // Crafting Station Filter Toggle Buttons (Milestone: Crafting Station Recipe Filter)
     this.blacksmithingToggleFilterBtn = document.getElementById('blacksmithing-toggle-filter-btn');
     this.armorsmithingToggleFilterBtn = document.getElementById('armorsmithing-toggle-filter-btn');
+    this.tailoringToggleFilterBtn = document.getElementById('tailoring-toggle-filter-btn');
+    this.jewelcraftingToggleFilterBtn = document.getElementById('jewelcrafting-toggle-filter-btn');
     this.bowyerToggleFilterBtn = document.getElementById('bowyer-toggle-filter-btn');
     this.alchemyToggleFilterBtn = document.getElementById('alchemy-toggle-filter-btn');
     this.cookingToggleFilterBtn = document.getElementById('cooking-toggle-filter-btn');
     this.magicalWeaponToggleFilterBtn = document.getElementById('magical-weapon-toggle-filter-btn');
 
-    const craftingStations = ['blacksmithing', 'armorsmithing', 'bowyer', 'alchemy', 'cooking', 'magical-weapon', 'woodworking', 'stonemason'] as const;
+    const craftingStations = ['blacksmithing', 'armorsmithing', 'tailoring', 'jewelcrafting', 'bowyer', 'alchemy', 'cooking', 'magical-weapon', 'woodworking', 'stonemason'] as const;
     craftingStations.forEach((st) => {
       const btn = document.getElementById(`${st}-toggle-filter-btn`);
       if (btn) {
@@ -4426,6 +4489,23 @@ export class HUD {
         return '';
       };
 
+      const getArmorCasterStatsBadge = (armor: any): string => {
+        if (!armor) return '';
+        const parts: string[] = [];
+        if (armor.spellDamagePercent) parts.push(`+${armor.spellDamagePercent}% Spell`);
+        if (armor.maxEnergyBonus) parts.push(`+${armor.maxEnergyBonus} EN`);
+        if (armor.energyRegenBonus) parts.push(`+${armor.energyRegenBonus}/s EN`);
+        return parts.length > 0 ? ` · ${parts.join(' · ')}` : '';
+      };
+      const getArmorCasterStatsTitle = (armor: any): string => {
+        if (!armor) return '';
+        const parts: string[] = [];
+        if (armor.spellDamagePercent) parts.push(`+${armor.spellDamagePercent}% Spell Dmg`);
+        if (armor.maxEnergyBonus) parts.push(`+${armor.maxEnergyBonus} Max Energy`);
+        if (armor.energyRegenBonus) parts.push(`+${armor.energyRegenBonus}/s Energy Regen`);
+        return parts.length > 0 ? ` (${parts.join(', ')})` : '';
+      };
+
       // 1. Helmet
       const helmet = member.equippedHelmet;
       const helmetHtml = `
@@ -4437,8 +4517,8 @@ export class HUD {
           <div class="slot-item-info">
             <span class="slot-item-icon">🪖</span>
             <div>
-              <div class="slot-item-text" title="${helmet ? (helmet.name + (helmet.armorRating ? ` — Armor ${helmet.armorRating} (${helmet.weightClass})` : '') + getCraftText(helmet)) : 'Empty'}">${helmet ? helmet.name : '<span class="slot-empty-text">Empty Helmet</span>'}</div>
-              ${helmet ? `<div class="slot-item-stat">${armorEffectText(helmet)}${helmet.armorRating ? ` · Armor ${helmet.armorRating} (${helmet.weightClass})` : ''}${getBonusBadge(helmet)} · ${member.getEquippedArmorPieceWeight(helmet).toFixed(1)}kg</div>` : ''}
+              <div class="slot-item-text" title="${helmet ? (helmet.name + (helmet.armorRating ? ` — Armor ${helmet.armorRating} (${helmet.weightClass})` : '') + getArmorCasterStatsTitle(helmet) + getCraftText(helmet)) : 'Empty'}">${helmet ? helmet.name : '<span class="slot-empty-text">Empty Helmet</span>'}</div>
+              ${helmet ? `<div class="slot-item-stat">${armorEffectText(helmet)}${helmet.armorRating ? ` · Armor ${helmet.armorRating} (${helmet.weightClass})` : ''}${getArmorCasterStatsBadge(helmet)}${getBonusBadge(helmet)} · ${member.getEquippedArmorPieceWeight(helmet).toFixed(1)}kg</div>` : ''}
             </div>
           </div>
           ${helmet ? `<button class="slot-unequip-btn" data-slot="helmet" data-member-idx="${i}" type="button" title="Unequip Helmet">&times;</button>` : ''}
@@ -4478,8 +4558,8 @@ export class HUD {
           <div class="slot-item-info">
             <span class="slot-item-icon">📿</span>
             <div>
-              <div class="slot-item-text" title="${necklace ? (necklace.name + getCraftText(necklace)) : 'Empty'}">${necklace ? necklace.name : '<span class="slot-empty-text">Empty Necklace</span>'}</div>
-              ${necklace ? `<div class="slot-item-stat">${armorEffectText(necklace)}${getBonusBadge(necklace)} · ${necklace.weight ?? 0.3}kg</div>` : ''}
+              <div class="slot-item-text" title="${necklace ? (necklace.name + getArmorCasterStatsTitle(necklace) + getCraftText(necklace)) : 'Empty'}">${necklace ? necklace.name : '<span class="slot-empty-text">Empty Necklace</span>'}</div>
+              ${necklace ? `<div class="slot-item-stat">${armorEffectText(necklace)}${getArmorCasterStatsBadge(necklace)}${getBonusBadge(necklace)} · ${necklace.weight ?? 0.3}kg</div>` : ''}
             </div>
           </div>
           ${necklace ? `<button class="slot-unequip-btn" data-slot="necklace" data-member-idx="${i}" type="button" title="Unequip Necklace">&times;</button>` : ''}
@@ -4534,8 +4614,8 @@ export class HUD {
           <div class="slot-item-info">
             <span class="slot-item-icon">💍</span>
             <div>
-              <div class="slot-item-text" title="${ring ? (ring.name + getCraftText(ring)) : 'Empty'}">${ring ? ring.name : '<span class="slot-empty-text">Empty Ring</span>'}</div>
-              ${ring ? `<div class="slot-item-stat">${armorEffectText(ring)}${getBonusBadge(ring)} · ${ring.weight ?? 0.2}kg</div>` : ''}
+              <div class="slot-item-text" title="${ring ? (ring.name + getArmorCasterStatsTitle(ring) + getCraftText(ring)) : 'Empty'}">${ring ? ring.name : '<span class="slot-empty-text">Empty Ring</span>'}</div>
+              ${ring ? `<div class="slot-item-stat">${armorEffectText(ring)}${getArmorCasterStatsBadge(ring)}${getBonusBadge(ring)} · ${ring.weight ?? 0.2}kg</div>` : ''}
             </div>
           </div>
           ${ring ? `<button class="slot-unequip-btn" data-slot="ring" data-member-idx="${i}" type="button" title="Unequip Ring">&times;</button>` : ''}
@@ -4555,8 +4635,8 @@ export class HUD {
               <span class="slot-item-icon">🛡️</span>
             </span>
             <div>
-              <div class="slot-item-text" title="${bodyArmor ? (bodyArmor.name + (bodyArmor.armorRating ? ` — Armor ${bodyArmor.armorRating} (${bodyArmor.weightClass})` : '') + getCraftText(bodyArmor)) : 'Empty'}">${bodyArmor ? bodyArmor.name : '<span class="slot-empty-text">Empty Body</span>'}</div>
-              ${bodyArmor ? `<div class="slot-item-stat">${armorEffectText(bodyArmor)}${bodyArmor.armorRating ? ` · Armor ${bodyArmor.armorRating} (${bodyArmor.weightClass})` : ''}${getBonusBadge(bodyArmor)} · ${member.getEquippedArmorPieceWeight(bodyArmor).toFixed(1)}kg</div>` : ''}
+              <div class="slot-item-text" title="${bodyArmor ? (bodyArmor.name + (bodyArmor.armorRating ? ` — Armor ${bodyArmor.armorRating} (${bodyArmor.weightClass})` : '') + getArmorCasterStatsTitle(bodyArmor) + getCraftText(bodyArmor)) : 'Empty'}">${bodyArmor ? bodyArmor.name : '<span class="slot-empty-text">Empty Body</span>'}</div>
+              ${bodyArmor ? `<div class="slot-item-stat">${armorEffectText(bodyArmor)}${bodyArmor.armorRating ? ` · Armor ${bodyArmor.armorRating} (${bodyArmor.weightClass})` : ''}${getArmorCasterStatsBadge(bodyArmor)}${getBonusBadge(bodyArmor)} · ${member.getEquippedArmorPieceWeight(bodyArmor).toFixed(1)}kg</div>` : ''}
             </div>
           </div>
           ${bodyArmor ? `<button class="slot-unequip-btn" data-slot="body" data-member-idx="${i}" type="button" title="Unequip Body Armor">&times;</button>` : ''}
@@ -4574,8 +4654,8 @@ export class HUD {
           <div class="slot-item-info">
             <span class="slot-item-icon">🔮</span>
             <div>
-              <div class="slot-item-text" title="${accessory ? (accessory.name + getCraftText(accessory)) : 'Empty'}">${accessory ? accessory.name : '<span class="slot-empty-text">Empty Accessory</span>'}</div>
-              ${accessory ? `<div class="slot-item-stat">${armorEffectText(accessory)}${getBonusBadge(accessory)} · ${accessory.weight ?? 0.5}kg</div>` : ''}
+              <div class="slot-item-text" title="${accessory ? (accessory.name + getArmorCasterStatsTitle(accessory) + getCraftText(accessory)) : 'Empty'}">${accessory ? accessory.name : '<span class="slot-empty-text">Empty Accessory</span>'}</div>
+              ${accessory ? `<div class="slot-item-stat">${armorEffectText(accessory)}${getArmorCasterStatsBadge(accessory)}${getBonusBadge(accessory)} · ${accessory.weight ?? 0.5}kg</div>` : ''}
             </div>
           </div>
           ${accessory ? `<button class="slot-unequip-btn" data-slot="accessory" data-member-idx="${i}" type="button" title="Unequip Accessory">&times;</button>` : ''}
@@ -4895,6 +4975,12 @@ export class HUD {
                 </div>
               `;
             })()}
+            ${(member.spellDamagePercent ?? 0) > 0 ? `
+              <div class="party-stat-row party-spell-dmg-row" style="display: flex; font-size: 10px; color: #c084fc; margin-top: 1px;">
+                <span>Spell Damage:</span>
+                <span class="party-stat-val" style="color: #e9d5ff;">+${member.spellDamagePercent}% (×${member.getEffectiveSpellDamageMultiplier().toFixed(2)})</span>
+              </div>
+            ` : ''}
             ${member.coating && member.coating.hitsRemaining > 0 ? (() => {
               const coatingItem = DataLoader.getInstance().getItem(member.coating.itemId);
               const maxHits = DataLoader.getInstance().getAlchemyConfig().coatings.maxHits;
@@ -8114,6 +8200,9 @@ export class HUD {
     if (this.armorsmithingStockpileSpiderSilkEl) {
       this.setElementTextIfChanged(this.armorsmithingStockpileSpiderSilkEl, `${gameState.getItemCount('spider_silk')}`);
     }
+    if (this.armorsmithingStockpileIronIngotEl) {
+      this.setElementTextIfChanged(this.armorsmithingStockpileIronIngotEl, `${gameState.getItemCount('iron_ingot')}`);
+    }
 
     if (this.armorsmithingStatusMsgEl) {
       this.armorsmithingStatusMsgEl.innerText = '';
@@ -8226,6 +8315,339 @@ export class HUD {
     }
 
     this.renderSalvageSection('armorsmithing', player, progression, this.armorsmithingSalvageContainerEl);
+  }
+
+  // --- TAILOR'S LOOM & TAILORING CRAFTING ---
+
+  public openTailoringModal(player: Player, progression: ProgressionSystem): void {
+    this.currentPlayer = player;
+    this.currentProgression = progression;
+    if (this.tailoringModalEl) {
+      this.tailoringModalEl.classList.add('active');
+      this.renderTailoringModal(player, progression);
+    }
+  }
+
+  public closeTailoringModal(): void {
+    if (this.tailoringModalEl) {
+      this.tailoringModalEl.classList.remove('active');
+    }
+  }
+
+  public isTailoringModalOpen(): boolean {
+    return this.tailoringModalEl?.classList.contains('active') ?? false;
+  }
+
+  public renderTailoringModal(player: Player, progression: ProgressionSystem): void {
+    this.currentPlayer = player;
+    this.currentProgression = progression;
+    this.updateCraftingFilterToggleUI('tailoring');
+    const isCraftableOnly = this.isCraftingFilterActive('tailoring');
+
+    const gameState = GameState.getInstance();
+    const dataLoader = DataLoader.getInstance();
+
+    // 1. Proficiency Bar & Materials Stockpile
+    const profStat = progression.getProficiencyStat('tailoring');
+    if (this.tailoringModalProfEl) {
+      const nextExp = LevelingSystem.expForNextLevel(profStat.level);
+      const perks = CraftingSystem.getCrafterPerks(player, 'tailoring');
+      const perkText = perks.perkDescription ? ` — ${perks.perkDescription}` : '';
+      this.tailoringModalProfEl.innerText = `Level ${profStat.level} (${profStat.currentExp}/${nextExp} EXP)${perkText}`;
+    }
+
+    if (this.tailoringStockpileSpiderSilkEl) {
+      this.setElementTextIfChanged(this.tailoringStockpileSpiderSilkEl, `${gameState.getItemCount('spider_silk')}`);
+    }
+    if (this.tailoringStockpileWolfPeltEl) {
+      this.setElementTextIfChanged(this.tailoringStockpileWolfPeltEl, `${gameState.getItemCount('wolf_pelt')}`);
+    }
+
+    if (this.tailoringStatusMsgEl) {
+      this.tailoringStatusMsgEl.innerText = '';
+    }
+
+    // 2. Render Recipes
+    if (this.tailoringRecipesContainerEl) {
+      this.tailoringRecipesContainerEl.innerHTML = '';
+      const recipes = dataLoader.getTailoringRecipes();
+      let visibleCount = 0;
+
+      for (const recipe of recipes) {
+        if (recipe.requiresScroll && !gameState.isGearRecipeKnown(recipe.id)) {
+          continue;
+        }
+        const isLevelUnlocked = profStat.level >= (recipe.requiredLevel ?? 0);
+        if (isCraftableOnly && !isLevelUnlocked) {
+          continue;
+        }
+        visibleCount++;
+
+        const canAfford = CraftingSystem.canAfford(recipe, player);
+
+        const armorDef = dataLoader.getArmor(recipe.resultArmorId);
+        const card = document.createElement('div');
+        card.style.cssText = `background: rgba(31, 41, 55, ${isLevelUnlocked ? '0.75' : '0.4'}); border: 1px solid ${isLevelUnlocked ? (canAfford ? 'rgba(167, 139, 250, 0.4)' : 'rgba(107, 114, 128, 0.3)') : 'rgba(239, 68, 68, 0.3)'}; border-radius: 8px; padding: 12px; display: flex; justify-content: space-between; align-items: center;`;
+
+        // Ingredients formatting
+        const ingDetails = Object.entries(recipe.ingredients).map(([item, qty]) => {
+          const stockpileCount = item === 'wood' ? gameState.getWood() : gameState.getItemCount(item);
+          const carriedCount = (player && typeof player.getItemCount === 'function') ? player.getItemCount(item) : 0;
+          const have = stockpileCount + carriedCount;
+          const ok = have >= qty;
+          const label = item.replace(/_/g, ' ');
+          return `<span style="color: ${ok ? '#4ade80' : '#f87171'}; font-weight: ${ok ? '500' : 'bold'};">${qty}x ${label} (${have}/${qty})</span>`;
+        }).join(', ');
+
+        const slotNameMap: Record<string, string> = {
+          helmet: 'Helmet',
+          body: 'Robes / Tunic',
+          accessory: 'Accessory'
+        };
+        const slotName = armorDef ? (slotNameMap[armorDef.slot] || 'Garment') : 'Garment';
+        const split = armorDef ? getArmorHpSplit(armorDef) : { mainHpBonus: 0, criticalHpBonus: 0 };
+        let armorStats = armorDef ? `Slot: ${slotName} | +${armorDef.hpBonus ?? 0} HP (+${split.mainHpBonus} Main / +${split.criticalHpBonus} Crit)` : '';
+        if (armorDef) {
+          const casterParts: string[] = [];
+          if (armorDef.spellDamagePercent) casterParts.push(`+${armorDef.spellDamagePercent}% Spell Dmg`);
+          if (armorDef.maxEnergyBonus) casterParts.push(`+${armorDef.maxEnergyBonus} Max EN`);
+          if (armorDef.energyRegenBonus) casterParts.push(`+${armorDef.energyRegenBonus}/s EN`);
+          if (armorDef.ingredientCapacityKg) casterParts.push(`+${armorDef.ingredientCapacityKg}kg Food Exemption`);
+          if (casterParts.length > 0) {
+            armorStats += ` | ${casterParts.join(', ')}`;
+          }
+        }
+
+        let actionBtnHtml = '';
+        if (!isLevelUnlocked) {
+          actionBtnHtml = `<span style="font-size: 11px; color: #ef4444; font-weight: bold; padding: 6px 12px; background: rgba(239, 68, 68, 0.1); border-radius: 4px;">🔒 Req. Tailoring Lv ${recipe.requiredLevel}</span>`;
+        } else if (!canAfford) {
+          actionBtnHtml = `<button type="button" class="btn-action" style="background: #374151; border-color: #4b5563; color: #9ca3af; cursor: not-allowed; font-size: 11px; padding: 6px 14px;" disabled>Insufficient Mats</button>`;
+        } else {
+          actionBtnHtml = `<button type="button" class="btn-action" style="background: #581c87; border-color: #a855f7; font-size: 11px; padding: 6px 14px; font-weight: bold; color: #f3e8ff;" data-tailor-recipe="${recipe.id}">🧵 Weave Garment</button>`;
+        }
+
+        const recipeRarityDisplay = recipe.rarity ? dataLoader.getGearRarity(recipe.rarity) : undefined;
+        const recipeTitleColor = recipeRarityDisplay ? recipeRarityDisplay.colour : (isLevelUnlocked ? '#f8fafc' : '#9ca3af');
+
+        card.innerHTML = `
+          <div style="flex: 1; padding-right: 12px;">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 2px;">
+              <span style="font-weight: bold; color: ${recipeTitleColor}; font-size: 13px;">${recipe.name}</span>
+              <span style="font-size: 10px; color: #c084fc; background: rgba(168, 85, 247, 0.2); padding: 2px 6px; border-radius: 4px;">+${recipe.expGranted} EXP</span>
+              <span style="font-size: 10px; color: #e9d5ff;">${armorStats}</span>
+            </div>
+            <div style="font-size: 11px; color: #9ca3af; margin-bottom: 6px;">${recipe.description}</div>
+            <div style="font-size: 11px; color: #d1d5db;">Cost: ${ingDetails}</div>
+          </div>
+          <div>${actionBtnHtml}</div>
+        `;
+
+        const btn = card.querySelector<HTMLButtonElement>(`[data-tailor-recipe="${recipe.id}"]`);
+        if (btn) {
+          btn.onclick = () => {
+            const wasEnc = player.isEncumbered;
+            const craftRes = CraftingSystem.applyCraft(player, recipe, 'tailoring');
+            if (craftRes.success) {
+              if (!wasEnc && player.isEncumbered) {
+                this.showToast(`⚠️ ${player.entityName} is ENCUMBERED (-80% Movement Speed)!`, 'warn', 3000);
+              }
+              let toastMsg = `🧵 Crafted 1x ${recipe.name}! (+${recipe.expGranted} Tailoring EXP`;
+              if (craftRes.classExpGranted > 0) {
+                toastMsg += `, +${craftRes.classExpGranted} Class EXP`;
+              }
+              toastMsg += ')';
+              if (craftRes.bonusPercent > 0) {
+                toastMsg += ` (+${craftRes.bonusPercent}% Stats)`;
+              }
+              this.showToast(toastMsg, 'success', 2500);
+              this.renderTailoringModal(player, progression);
+              this.update(player, progression, 0);
+            } else {
+              this.showToast(craftRes.message, 'error');
+            }
+          };
+        }
+
+        this.tailoringRecipesContainerEl.appendChild(card);
+      }
+
+      if (visibleCount === 0) {
+        this.tailoringRecipesContainerEl.innerHTML = `
+          <div style="font-size: 11px; color: #9ca3af; font-style: italic; background: rgba(31, 41, 55, 0.4); padding: 12px; border-radius: 6px; text-align: center;">
+            No recipes unlocked at your current Tailoring level (Lv ${profStat.level}). Toggle "Show All" to view all recipes.
+          </div>
+        `;
+      }
+    }
+
+    this.renderSalvageSection('tailoring', player, progression, this.tailoringSalvageContainerEl);
+  }
+
+  // --- JEWELCRAFTING BENCH & JEWELRY CRAFTING ---
+
+  public openJewelcraftingModal(player: Player, progression: ProgressionSystem): void {
+    this.currentPlayer = player;
+    this.currentProgression = progression;
+    if (this.jewelcraftingModalEl) {
+      this.jewelcraftingModalEl.classList.add('active');
+      this.renderJewelcraftingModal(player, progression);
+    }
+  }
+
+  public closeJewelcraftingModal(): void {
+    if (this.jewelcraftingModalEl) {
+      this.jewelcraftingModalEl.classList.remove('active');
+    }
+  }
+
+  public isJewelcraftingModalOpen(): boolean {
+    return this.jewelcraftingModalEl?.classList.contains('active') ?? false;
+  }
+
+  public renderJewelcraftingModal(player: Player, progression: ProgressionSystem): void {
+    this.currentPlayer = player;
+    this.currentProgression = progression;
+    this.updateCraftingFilterToggleUI('jewelcrafting');
+    const isCraftableOnly = this.isCraftingFilterActive('jewelcrafting');
+
+    const gameState = GameState.getInstance();
+    const dataLoader = DataLoader.getInstance();
+
+    // 1. Proficiency Bar & Materials Stockpile
+    const profStat = progression.getProficiencyStat('jewelcrafting');
+    if (this.jewelcraftingModalProfEl) {
+      const nextExp = LevelingSystem.expForNextLevel(profStat.level);
+      const perks = CraftingSystem.getCrafterPerks(player, 'jewelcrafting');
+      const perkText = perks.perkDescription ? ` — ${perks.perkDescription}` : '';
+      this.jewelcraftingModalProfEl.innerText = `Level ${profStat.level} (${profStat.currentExp}/${nextExp} EXP)${perkText}`;
+    }
+
+    if (this.jewelcraftingStockpileWolfClawEl) {
+      this.setElementTextIfChanged(this.jewelcraftingStockpileWolfClawEl, `${gameState.getItemCount('wolf_claw')}`);
+    }
+    if (this.jewelcraftingStockpileBoneEl) {
+      this.setElementTextIfChanged(this.jewelcraftingStockpileBoneEl, `${gameState.getItemCount('bone')}`);
+    }
+
+    if (this.jewelcraftingStatusMsgEl) {
+      this.jewelcraftingStatusMsgEl.innerText = '';
+    }
+
+    // 2. Render Recipes
+    if (this.jewelcraftingRecipesContainerEl) {
+      this.jewelcraftingRecipesContainerEl.innerHTML = '';
+      const recipes = dataLoader.getJewelcraftingRecipes();
+      let visibleCount = 0;
+
+      for (const recipe of recipes) {
+        if (recipe.requiresScroll && !gameState.isGearRecipeKnown(recipe.id)) {
+          continue;
+        }
+        const isLevelUnlocked = profStat.level >= (recipe.requiredLevel ?? 0);
+        if (isCraftableOnly && !isLevelUnlocked) {
+          continue;
+        }
+        visibleCount++;
+
+        const canAfford = CraftingSystem.canAfford(recipe, player);
+
+        const armorDef = dataLoader.getArmor(recipe.resultArmorId);
+        const card = document.createElement('div');
+        card.style.cssText = `background: rgba(31, 41, 55, ${isLevelUnlocked ? '0.75' : '0.4'}); border: 1px solid ${isLevelUnlocked ? (canAfford ? 'rgba(56, 189, 248, 0.4)' : 'rgba(107, 114, 128, 0.3)') : 'rgba(239, 68, 68, 0.3)'}; border-radius: 8px; padding: 12px; display: flex; justify-content: space-between; align-items: center;`;
+
+        // Ingredients formatting
+        const ingDetails = Object.entries(recipe.ingredients).map(([item, qty]) => {
+          const stockpileCount = item === 'wood' ? gameState.getWood() : gameState.getItemCount(item);
+          const carriedCount = (player && typeof player.getItemCount === 'function') ? player.getItemCount(item) : 0;
+          const have = stockpileCount + carriedCount;
+          const ok = have >= qty;
+          const label = item.replace(/_/g, ' ');
+          return `<span style="color: ${ok ? '#4ade80' : '#f87171'}; font-weight: ${ok ? '500' : 'bold'};">${qty}x ${label} (${have}/${qty})</span>`;
+        }).join(', ');
+
+        const slotNameMap: Record<string, string> = {
+          necklace: 'Necklace',
+          ring: 'Ring',
+          accessory: 'Accessory'
+        };
+        const slotName = armorDef ? (slotNameMap[armorDef.slot] || 'Jewelry') : 'Jewelry';
+        const split = armorDef ? getArmorHpSplit(armorDef) : { mainHpBonus: 0, criticalHpBonus: 0 };
+        let armorStats = armorDef ? `Slot: ${slotName} | +${armorDef.hpBonus ?? 0} HP (+${split.mainHpBonus} Main / +${split.criticalHpBonus} Crit)` : '';
+        if (armorDef) {
+          const casterParts: string[] = [];
+          if (armorDef.spellDamagePercent) casterParts.push(`+${armorDef.spellDamagePercent}% Spell Dmg`);
+          if (armorDef.maxEnergyBonus) casterParts.push(`+${armorDef.maxEnergyBonus} Max EN`);
+          if (armorDef.energyRegenBonus) casterParts.push(`+${armorDef.energyRegenBonus}/s EN`);
+          if (casterParts.length > 0) {
+            armorStats += ` | ${casterParts.join(', ')}`;
+          }
+        }
+
+        let actionBtnHtml = '';
+        if (!isLevelUnlocked) {
+          actionBtnHtml = `<span style="font-size: 11px; color: #ef4444; font-weight: bold; padding: 6px 12px; background: rgba(239, 68, 68, 0.1); border-radius: 4px;">🔒 Req. Jewelcrafting Lv ${recipe.requiredLevel}</span>`;
+        } else if (!canAfford) {
+          actionBtnHtml = `<button type="button" class="btn-action" style="background: #374151; border-color: #4b5563; color: #9ca3af; cursor: not-allowed; font-size: 11px; padding: 6px 14px;" disabled>Insufficient Mats</button>`;
+        } else {
+          actionBtnHtml = `<button type="button" class="btn-action" style="background: #075985; border-color: #38bdf8; font-size: 11px; padding: 6px 14px; font-weight: bold; color: #e0f2fe;" data-jewel-recipe="${recipe.id}">💎 Craft Jewelry</button>`;
+        }
+
+        const recipeRarityDisplay = recipe.rarity ? dataLoader.getGearRarity(recipe.rarity) : undefined;
+        const recipeTitleColor = recipeRarityDisplay ? recipeRarityDisplay.colour : (isLevelUnlocked ? '#f8fafc' : '#9ca3af');
+
+        card.innerHTML = `
+          <div style="flex: 1; padding-right: 12px;">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 2px;">
+              <span style="font-weight: bold; color: ${recipeTitleColor}; font-size: 13px;">${recipe.name}</span>
+              <span style="font-size: 10px; color: #38bdf8; background: rgba(56, 189, 248, 0.2); padding: 2px 6px; border-radius: 4px;">+${recipe.expGranted} EXP</span>
+              <span style="font-size: 10px; color: #bae6fd;">${armorStats}</span>
+            </div>
+            <div style="font-size: 11px; color: #9ca3af; margin-bottom: 6px;">${recipe.description}</div>
+            <div style="font-size: 11px; color: #d1d5db;">Cost: ${ingDetails}</div>
+          </div>
+          <div>${actionBtnHtml}</div>
+        `;
+
+        const btn = card.querySelector<HTMLButtonElement>(`[data-jewel-recipe="${recipe.id}"]`);
+        if (btn) {
+          btn.onclick = () => {
+            const wasEnc = player.isEncumbered;
+            const craftRes = CraftingSystem.applyCraft(player, recipe, 'jewelcrafting');
+            if (craftRes.success) {
+              if (!wasEnc && player.isEncumbered) {
+                this.showToast(`⚠️ ${player.entityName} is ENCUMBERED (-80% Movement Speed)!`, 'warn', 3000);
+              }
+              let toastMsg = `💎 Crafted 1x ${recipe.name}! (+${recipe.expGranted} Jewelcrafting EXP`;
+              if (craftRes.classExpGranted > 0) {
+                toastMsg += `, +${craftRes.classExpGranted} Class EXP`;
+              }
+              toastMsg += ')';
+              if (craftRes.bonusPercent > 0) {
+                toastMsg += ` (+${craftRes.bonusPercent}% Stats)`;
+              }
+              this.showToast(toastMsg, 'success', 2500);
+              this.renderJewelcraftingModal(player, progression);
+              this.update(player, progression, 0);
+            } else {
+              this.showToast(craftRes.message, 'error');
+            }
+          };
+        }
+
+        this.jewelcraftingRecipesContainerEl.appendChild(card);
+      }
+
+      if (visibleCount === 0) {
+        this.jewelcraftingRecipesContainerEl.innerHTML = `
+          <div style="font-size: 11px; color: #9ca3af; font-style: italic; background: rgba(31, 41, 55, 0.4); padding: 12px; border-radius: 6px; text-align: center;">
+            No recipes unlocked at your current Jewelcrafting level (Lv ${profStat.level}). Toggle "Show All" to view all recipes.
+          </div>
+        `;
+      }
+    }
+
+    this.renderSalvageSection('jewelcrafting', player, progression, this.jewelcraftingSalvageContainerEl);
   }
 
   // --- BOWYER STATION & BOW CRAFTING (Milestone 36) ---
@@ -9324,7 +9746,7 @@ export class HUD {
   // --- GEAR SALVAGE UI (Milestone: Gear Salvage) ---
 
   public renderSalvageSection(
-    station: 'blacksmithing' | 'armorsmithing' | 'bowyer' | 'enchanting',
+    station: 'blacksmithing' | 'armorsmithing' | 'tailoring' | 'jewelcrafting' | 'bowyer' | 'enchanting',
     player: Player,
     progression: ProgressionSystem,
     containerEl: HTMLElement | null
@@ -9363,7 +9785,9 @@ export class HUD {
       const isBowOrStaff = baseId === 'bows' || baseId.endsWith('_bow') || baseId === 'staff' || baseId.endsWith('_staff');
       const rawWeapon = dataLoader.getRawWeapon?.(baseId) || dataLoader.getWeapon?.(baseId);
       const rawArmor = dataLoader.getRawArmor?.(baseId) || dataLoader.getArmor?.(baseId);
-      if (station === 'armorsmithing') return Boolean(rawArmor);
+      if (station === 'armorsmithing') return Boolean(rawArmor && (rawArmor.weightClass === 'medium' || rawArmor.weightClass === 'heavy'));
+      if (station === 'tailoring') return Boolean(rawArmor && (rawArmor.weightClass === 'light' || baseId === 'ingredient_bag'));
+      if (station === 'jewelcrafting') return Boolean(rawArmor && (rawArmor.slot === 'ring' || rawArmor.slot === 'necklace' || rawArmor.slot === 'accessory') && baseId !== 'ingredient_bag');
       if (station === 'enchanting') return Boolean(rawWeapon && baseId.endsWith('_staff'));
       if (station === 'bowyer') return Boolean(isBowOrStaff && !baseId.endsWith('_staff'));
       if (station === 'blacksmithing') return Boolean(rawWeapon && !isBowOrStaff);
@@ -9532,6 +9956,8 @@ export class HUD {
               this.showToast(result.message, 'success', 3000);
               if (station === 'blacksmithing') this.renderBlacksmithingModal(player, progression);
               else if (station === 'armorsmithing') this.renderArmorsmithingModal(player, progression);
+              else if (station === 'tailoring') this.renderTailoringModal(player, progression);
+              else if (station === 'jewelcrafting') this.renderJewelcraftingModal(player, progression);
               else if (station === 'bowyer') this.renderBowyerModal(player, progression);
               else if (station === 'enchanting') this.renderMagicalWeaponModal(player, progression);
               this.update(player, progression, 0);
@@ -9586,6 +10012,12 @@ export class HUD {
           break;
         case 'armorsmithing':
           this.renderArmorsmithingModal(this.currentPlayer, this.currentProgression);
+          break;
+        case 'tailoring':
+          this.renderTailoringModal(this.currentPlayer, this.currentProgression);
+          break;
+        case 'jewelcrafting':
+          this.renderJewelcraftingModal(this.currentPlayer, this.currentProgression);
           break;
         case 'bowyer':
           this.renderBowyerModal(this.currentPlayer, this.currentProgression);
@@ -9646,6 +10078,12 @@ export class HUD {
     }
     if (this.isArmorsmithingModalOpen()) {
       this.renderArmorsmithingModal(this.currentPlayer, this.currentProgression);
+    }
+    if (this.isTailoringModalOpen()) {
+      this.renderTailoringModal(this.currentPlayer, this.currentProgression);
+    }
+    if (this.isJewelcraftingModalOpen()) {
+      this.renderJewelcraftingModal(this.currentPlayer, this.currentProgression);
     }
     if (this.isBowyerModalOpen()) {
       this.renderBowyerModal(this.currentPlayer, this.currentProgression);
@@ -9817,7 +10255,9 @@ export class HUD {
       dataLoader.getCookingRecipes(),
       dataLoader.getBlacksmithRecipes(),
       dataLoader.getBowyerRecipes(),
-      dataLoader.getArmorsmithRecipes()
+      dataLoader.getArmorsmithRecipes(),
+      dataLoader.getTailoringRecipes(),
+      dataLoader.getJewelcraftingRecipes()
     ];
     for (const rList of recipesLists) {
       if (Array.isArray(rList)) {
@@ -10586,10 +11026,54 @@ export class HUD {
           id: `armor_${r.id}`,
           name: r.name,
           badge: 'ARMORSMITHING',
-          description: r.description || 'Protective gear tailored at an armorsmith workbench.',
+          description: r.description || 'Protective gear crafted at an armorsmith workbench.',
           stats: [
             { label: 'Station', value: 'Armorsmith Workbench' },
             { label: 'Required Armorsmithing', value: `Lv ${r.requiredLevel || 1}` },
+            { label: 'Ingredients', value: ingStr || 'None' }
+          ]
+        });
+      }
+    }
+
+    // Tailoring
+    const tailoringRecipes = dataLoader.getTailoringRecipes() || [];
+    const tailorLvl = getPartyMaxLevel('tailoring');
+    for (const r of tailoringRecipes) {
+      if (tailorLvl >= (r.requiredLevel || 1) || gameState.getItemCount(r.id) > 0) {
+        const ingStr = Object.entries(r.ingredients || {})
+          .map(([k, v]) => `${v}x ${k.replace('_', ' ')}`)
+          .join(', ');
+        discoveredCrafting.push({
+          id: `tailor_${r.id}`,
+          name: r.name,
+          badge: 'TAILORING',
+          description: r.description || 'Cloth robes and garments woven at a tailor\'s loom.',
+          stats: [
+            { label: 'Station', value: "Tailor's Loom" },
+            { label: 'Required Tailoring', value: `Lv ${r.requiredLevel || 1}` },
+            { label: 'Ingredients', value: ingStr || 'None' }
+          ]
+        });
+      }
+    }
+
+    // Jewelcrafting
+    const jewelcraftingRecipes = dataLoader.getJewelcraftingRecipes() || [];
+    const jewelLvl = getPartyMaxLevel('jewelcrafting');
+    for (const r of jewelcraftingRecipes) {
+      if (jewelLvl >= (r.requiredLevel || 1) || gameState.getItemCount(r.id) > 0) {
+        const ingStr = Object.entries(r.ingredients || {})
+          .map(([k, v]) => `${v}x ${k.replace('_', ' ')}`)
+          .join(', ');
+        discoveredCrafting.push({
+          id: `jewel_${r.id}`,
+          name: r.name,
+          badge: 'JEWELCRAFTING',
+          description: r.description || 'Rings, pendants, and enchanted trinkets cut at a jewelcrafting bench.',
+          stats: [
+            { label: 'Station', value: 'Jewelcrafting Bench' },
+            { label: 'Required Jewelcrafting', value: `Lv ${r.requiredLevel || 1}` },
             { label: 'Ingredients', value: ingStr || 'None' }
           ]
         });

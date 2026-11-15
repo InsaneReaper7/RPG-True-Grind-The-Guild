@@ -455,8 +455,8 @@ async function run() {
   ];
 
   for (const recipeId of newRecipeIds) {
-    const recipe = dl.getArmorsmithRecipe(recipeId);
-    assert.ok(recipe, `Recipe "${recipeId}" must exist in armorsmithRecipes.json`);
+    const recipe = dl.getArmorsmithRecipe(recipeId) || dl.getTailoringRecipe(recipeId);
+    assert.ok(recipe, `Recipe "${recipeId}" must exist in recipe data`);
 
     // Stockpile ingredients for recipe
     for (const [ingId, qty] of Object.entries(recipe.ingredients)) {
@@ -466,7 +466,8 @@ async function run() {
     assert.equal(CraftingSystem.canAfford(recipe, crafter), true, `Crafter should be able to afford recipe "${recipeId}"`);
 
     const initialInvCount = crafter.getItemCount(recipe.resultArmorId);
-    const craftResult = CraftingSystem.applyCraft(crafter, recipe, 'armorsmithing');
+    const station = dl.getArmorsmithRecipe(recipeId) ? 'armorsmithing' : 'tailoring';
+    const craftResult = CraftingSystem.applyCraft(crafter, recipe, station);
     assert.ok(craftResult && craftResult.success, `applyCraft for "${recipeId}" should succeed`);
 
     const newInvCount = crafter.getItemCount(recipe.resultArmorId);
@@ -482,7 +483,7 @@ async function run() {
     // Check salvage entry via getRecipeForGear
     const salvageInfo = CraftingSystem.getRecipeForGear(armorDef.id);
     assert.ok(salvageInfo, `Gear "${armorDef.id}" should have a valid salvage recipe entry`);
-    assert.equal(salvageInfo.station, 'armorsmithing', `Salvage station for "${armorDef.id}" should be armorsmithing`);
+    assert.equal(salvageInfo.station, station, `Salvage station for "${armorDef.id}" should be ${station}`);
     assert.equal((salvageInfo.recipe as any).resultArmorId, armorDef.id);
   }
   console.log('  PASS: All 8 new recipes craft cleanly via applyCraft, deduct ingredients, tag stats, and have salvage entries.\n');
@@ -505,7 +506,7 @@ async function run() {
   // --- Test 9: "Heavy doesn't dominate" guard ---
   console.log('Test 9: "Heavy doesn\'t dominate" data guard across all tiers and slots');
   const armors = dl.getArmorsData().armors;
-  const trueArmors = armors.filter((a) => (a.slot === 'helmet' || a.slot === 'body') && !a.merchantExclusive);
+  const trueArmors = armors.filter((a) => (a.slot === 'helmet' || a.slot === 'body') && !a.merchantExclusive && !a.spellDamagePercent);
 
   const tiers: ('starter' | 'mid' | 'void' | 'frost')[] = ['starter', 'mid', 'void', 'frost'];
   const slots: ('helmet' | 'body')[] = ['helmet', 'body'];

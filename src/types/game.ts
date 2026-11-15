@@ -732,6 +732,10 @@ export interface ArmorDef {
   rarity?: string;
   band?: number;
   luckBonus?: number;
+  spellDamagePercent?: number;
+  maxEnergyBonus?: number;
+  energyRegenBonus?: number;
+  ingredientCapacityKg?: number;
   merchantExclusive?: boolean;
 }
 
@@ -777,6 +781,42 @@ export interface ArmorsmithRecipesData {
   salvageRefundRate?: number;
   salvageExpRate?: number;
   recipes: ArmorsmithRecipeDef[];
+}
+
+export interface TailoringRecipeDef {
+  id: string;
+  name: string;
+  resultArmorId: string;
+  requiredLevel: number;
+  ingredients: Record<string, number>;
+  expGranted: number;
+  description: string;
+  requiresScroll?: boolean;
+  rarity?: string;
+}
+
+export interface TailoringRecipesData {
+  salvageRefundRate?: number;
+  salvageExpRate?: number;
+  recipes: TailoringRecipeDef[];
+}
+
+export interface JewelcraftingRecipeDef {
+  id: string;
+  name: string;
+  resultArmorId: string;
+  requiredLevel: number;
+  ingredients: Record<string, number>;
+  expGranted: number;
+  description: string;
+  requiresScroll?: boolean;
+  rarity?: string;
+}
+
+export interface JewelcraftingRecipesData {
+  salvageRefundRate?: number;
+  salvageExpRate?: number;
+  recipes: JewelcraftingRecipeDef[];
 }
 
 export type SkillRole = 'rotation' | 'opener' | 'gapCloser' | 'defensive' | 'support' | 'finisher';

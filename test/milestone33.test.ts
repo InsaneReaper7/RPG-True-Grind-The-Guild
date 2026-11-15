@@ -207,10 +207,10 @@ async function runMilestone33Tests() {
   assert.ok(wolfRing && wolfRing.slot === 'ring' && wolfRing.hpBonus === 14 && wolfRing.splitRatio === '50/50');
   assert.ok(venomCharm && venomCharm.slot === 'accessory' && venomCharm.hpBonus === 26 && venomCharm.splitRatio === '50/50');
 
-  // Verify Armorsmithing recipes consume dangling materials (bone, wolf_claw, spider_venom)
-  const neckRecipe = dataLoader.getArmorsmithRecipe('bone_necklace');
-  const ringRecipe = dataLoader.getArmorsmithRecipe('wolf_claw_ring');
-  const charmRecipe = dataLoader.getArmorsmithRecipe('venom_charm');
+  // Verify recipes consume dangling materials (bone, wolf_claw, spider_venom)
+  const neckRecipe = dataLoader.getArmorsmithRecipe('bone_necklace') || dataLoader.getJewelcraftingRecipe('bone_necklace');
+  const ringRecipe = dataLoader.getArmorsmithRecipe('wolf_claw_ring') || dataLoader.getJewelcraftingRecipe('wolf_claw_ring');
+  const charmRecipe = dataLoader.getArmorsmithRecipe('venom_charm') || dataLoader.getJewelcraftingRecipe('venom_charm');
 
   assert.ok(neckRecipe, 'Recipe for bone_necklace must exist');
   assert.equal(neckRecipe.ingredients.bone, 3, 'Bone necklace requires 3 bone');

@@ -149,10 +149,10 @@ async function runTests() {
   assert.equal(bagArmor.slot, 'accessory', 'ingredient_bag must be an accessory slot armor');
   assert.equal(bagArmor.weight, 0.5, 'Bag accessory weight is 0.5 kg');
 
-  const armorsmithRecipes = dl.getArmorsmithRecipesData().recipes;
-  const bagRecipe = armorsmithRecipes.find(r => r.resultArmorId === 'ingredient_bag');
-  assert.ok(bagRecipe, 'ingredient_bag must have a crafting recipe in armorsmithRecipes.json');
-  assert.equal(bagRecipe.requiredLevel, 1, 'Requires Armorsmithing Lv 1');
+  const tailoringRecipes = dl.getTailoringRecipesData().recipes;
+  const bagRecipe = tailoringRecipes.find(r => r.resultArmorId === 'ingredient_bag');
+  assert.ok(bagRecipe, 'ingredient_bag must have a crafting recipe in tailoringRecipes.json');
+  assert.equal(bagRecipe.requiredLevel, 1, 'Requires Tailoring Lv 1');
   assert.equal(bagRecipe.ingredients.wolf_pelt, 3, 'Recipe requires 3 wolf_pelt');
   assert.equal(bagRecipe.ingredients.bowstring, 1, 'Recipe requires 1 bowstring');
   console.log('✔ Test 1 passed: ingredient_bag definition and Lv 1 crafting recipe verified.');

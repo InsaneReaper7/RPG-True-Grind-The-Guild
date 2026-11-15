@@ -387,7 +387,13 @@ async function runTests() {
     const weaponsRaw = JSON.parse(fs.readFileSync('data/weapons.json', 'utf8')).weapons;
     const bsRecipes = JSON.parse(fs.readFileSync('data/blacksmithRecipes.json', 'utf8')).recipes;
     const bwRecipes = JSON.parse(fs.readFileSync('data/bowyerRecipes.json', 'utf8')).recipes;
-    const armRecipes = JSON.parse(fs.readFileSync('data/armorsmithRecipes.json', 'utf8')).recipes;
+    const tlRecipes = JSON.parse(fs.readFileSync('data/tailoringRecipes.json', 'utf8')).recipes;
+    const jcRecipes = JSON.parse(fs.readFileSync('data/jewelcraftingRecipes.json', 'utf8')).recipes;
+    const armRecipes = [
+      ...JSON.parse(fs.readFileSync('data/armorsmithRecipes.json', 'utf8')).recipes,
+      ...tlRecipes,
+      ...jcRecipes
+    ];
     const armorsRaw = JSON.parse(fs.readFileSync('data/armors.json', 'utf8')).armors;
 
     // Build weapon lookup
@@ -475,8 +481,8 @@ async function runTests() {
         }
       }
 
-      assert.ok(coveringRecipe, `Armor slot '${slot}' must have a covering recipe in data/armorsmithRecipes.json`);
-      console.log(`Slot:   ${slot.padEnd(20)} | Recipe ID: ${coveringRecipe.id.padEnd(18)} | File: data/armorsmithRecipes.json`);
+      assert.ok(coveringRecipe, `Armor slot '${slot}' must have a covering recipe across armor crafting stations`);
+      console.log(`Slot:   ${slot.padEnd(20)} | Recipe ID: ${coveringRecipe.id.padEnd(18)} | Covering Recipe verified`);
     }
 
     // Druid Staff Check

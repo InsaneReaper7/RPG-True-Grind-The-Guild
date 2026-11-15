@@ -455,24 +455,24 @@ async function runTests() {
   console.log('✔ Armorsmithing Band 3 (Voidforged Plate Armor) craft and salvage verified.');
 
   // 3.3 Voidforged Relic (Recipe: 1 void_core, 1 void_essence, 2 spider_silk | req Lvl 8, 95 exp)
-  hero.progression.getProficiencyStat('armorsmithing').currentExp = 0;
+  hero.progression.getProficiencyStat('jewelcrafting').currentExp = 0;
   hero.addItem('void_core', 1);
   hero.addItem('void_essence', 1);
   hero.addItem('spider_silk', 2);
 
-  const relicCraft = CraftingSystem.applyCraft(hero, dataLoader.getArmorsmithRecipe('void_relic')!, 'armorsmithing');
+  const relicCraft = CraftingSystem.applyCraft(hero, dataLoader.getJewelcraftingRecipe('void_relic')!, 'jewelcrafting');
   assert.equal(relicCraft.success, true, 'Voidforged Relic craft must succeed');
-  assert.equal(relicCraft.expGranted, 95, 'Grants 95 Armorsmithing EXP');
+  assert.equal(relicCraft.expGranted, 95, 'Grants 95 Jewelcrafting EXP');
   assert.equal(hero.getItemCount('void_relic'), 1);
 
   const asRelicPreSilk = gameState.getItemCount('spider_silk');
   const relicToSalvage = relicCraft.instanceId || 'void_relic';
   const relicSalvage = CraftingSystem.applySalvage(hero, relicToSalvage, { count: 1, source: hero });
   assert.equal(relicSalvage.success, true);
-  assert.equal(relicSalvage.expGranted, 48, 'Grants Math.ceil(95 * 0.5) = 48 Armorsmithing EXP');
+  assert.equal(relicSalvage.expGranted, 48, 'Grants Math.ceil(95 * 0.5) = 48 Jewelcrafting EXP');
   assert.equal(hero.getItemCount('void_relic'), 0);
   assert.equal(gameState.getItemCount('spider_silk') - asRelicPreSilk, 1, 'Refunds 1 spider silk (50% of 2)');
-  console.log('✔ Armorsmithing Band 3 (Voidforged Relic) craft and salvage verified.');
+  console.log('✔ Jewelcrafting Band 3 (Voidforged Relic) craft and salvage verified.');
 
   // =========================================================================
   // TEST GROUP 4: HEAVY ARMOR PROFICIENCY & STAT APPLICATION

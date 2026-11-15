@@ -212,6 +212,8 @@
     "gardening": "profession",
     "fishing": "profession",
     "enchanting": "profession",
+    "tailoring": "profession",
+    "jewelcrafting": "profession",
     "taming": "profession",
     "animal_husbandry": "profession",
     "stealth": "excluded",

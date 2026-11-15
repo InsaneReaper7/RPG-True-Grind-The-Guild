@@ -626,9 +626,11 @@ export class ConsumableSystem {
         const pieceDef = dataLoader.getWeapon(pieceId) || dataLoader.getArmor(pieceId) || dataLoader.getItem(pieceId);
         const bsRecipe = dataLoader.getBlacksmithRecipe(pieceId);
         const asRecipe = dataLoader.getArmorsmithRecipe(pieceId);
+        const tlRecipe = dataLoader.getTailoringRecipe(pieceId);
+        const jcRecipe = dataLoader.getJewelcraftingRecipe(pieceId);
         const byRecipe = dataLoader.getBowyerRecipe(pieceId);
         const alRecipe = dataLoader.getAlchemyRecipe(pieceId);
-        const recipe = bsRecipe || asRecipe || byRecipe || alRecipe;
+        const recipe = bsRecipe || asRecipe || tlRecipe || jcRecipe || byRecipe || alRecipe;
 
         const pieceName = pieceDef?.name || recipe?.name || pieceId.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
         const rarityId = pieceDef?.rarity || recipe?.rarity || 'uncommon';
@@ -648,6 +650,12 @@ export class ConsumableSystem {
           } else if (byRecipe) {
             stationProf = 'bowyer';
             stationDisplayName = 'Bowyer';
+          } else if (tlRecipe) {
+            stationProf = 'tailoring';
+            stationDisplayName = 'Tailoring';
+          } else if (jcRecipe) {
+            stationProf = 'jewelcrafting';
+            stationDisplayName = 'Jewelcrafting';
           } else if (asRecipe) {
             stationProf = 'armorsmithing';
             stationDisplayName = 'Armorsmithing';

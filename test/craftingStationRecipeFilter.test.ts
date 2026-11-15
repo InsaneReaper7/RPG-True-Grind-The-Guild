@@ -514,15 +514,14 @@ async function runTests() {
   const asLabel = getOrCreateElement('armorsmithing-toggle-filter-label');
   const asIndicator = getOrCreateElement('armorsmithing-toggle-filter-indicator');
 
-  // At Level 0: Only Leather Cap & Leather Armor (Lv 0) should be visible
+  // At Level 0: Leather Armor & Reinforced Leather Helm (Lv 0) should be visible
   assert.strictEqual(asIndicator.innerText, '✅');
   assert.strictEqual(asLabel.innerText, 'Showing: Unlocked Only');
-  assert.ok(asContainer.innerHTML.includes('Leather Cap'), 'Leather Cap (Lv 0) must be shown');
   assert.ok(asContainer.innerHTML.includes('Leather Armor'), 'Leather Armor (Lv 0) must be shown');
-  assert.ok(!asContainer.innerHTML.includes('Bone Necklace'), 'Bone Necklace (Lv 1) must be HIDDEN when filter is active');
-  assert.ok(!asContainer.innerHTML.includes('Wolf Claw Ring'), 'Wolf Claw Ring (Lv 2) must be HIDDEN when filter is active');
-  assert.ok(!asContainer.innerHTML.includes('Venom Charm'), 'Venom Charm (Lv 4) must be HIDDEN when filter is active');
-  assert.ok(!asContainer.innerHTML.includes('Silk Cowl'), 'Silk Cowl (Lv 5) must be HIDDEN when filter is active');
+  assert.ok(asContainer.innerHTML.includes('Reinforced Leather Helm'), 'Reinforced Leather Helm (Lv 0) must be shown');
+  assert.ok(!asContainer.innerHTML.includes('Studded Leather Helm'), 'Studded Leather Helm (Lv 2) must be HIDDEN when filter is active');
+  assert.ok(!asContainer.innerHTML.includes('Studded Leather Armor'), 'Studded Leather Armor (Lv 2) must be HIDDEN when filter is active');
+  assert.ok(!asContainer.innerHTML.includes('Voidforged Greathelm'), 'Voidforged Greathelm (Lv 8) must be HIDDEN when filter is active');
   const asCountFiltered = asContainer.children.length;
 
   // Toggle to "Show All"
@@ -530,17 +529,17 @@ async function runTests() {
   assert.strictEqual(hud.isCraftingFilterActive('armorsmithing'), false);
   assert.strictEqual(asIndicator.innerText, '👁️');
   assert.strictEqual(asLabel.innerText, 'Showing: All Recipes');
-  assert.ok(asContainer.innerHTML.includes('Bone Necklace'), 'Bone Necklace must be shown in Show All');
-  assert.ok(asContainer.innerHTML.includes('Silk Cowl'), 'Silk Cowl must be shown in Show All');
-  assert.ok(asContainer.innerHTML.includes('Req. Armorsmithing Lv 5'), 'Locked badge for Lv 5 must be present');
+  assert.ok(asContainer.innerHTML.includes('Studded Leather Helm'), 'Studded Leather Helm must be shown in Show All');
+  assert.ok(asContainer.innerHTML.includes('Voidforged Greathelm'), 'Voidforged Greathelm must be shown in Show All');
+  assert.ok(asContainer.innerHTML.includes('Req. Armorsmithing Lv 8') || asContainer.innerHTML.includes('Req. Armorsmithing Lv 2'), 'Locked badge must be present');
   const asCountAll = asContainer.children.length;
   console.log(`  Per-Station Count: Armorsmithing -> Unlocked Only = ${asCountFiltered}, Show All = ${asCountAll}`);
 
   // Toggle back
   asBtn.onclick?.();
   assert.strictEqual(hud.isCraftingFilterActive('armorsmithing'), true);
-  assert.ok(!asContainer.innerHTML.includes('Bone Necklace'), 'Bone Necklace hidden again');
-  assert.ok(!asContainer.innerHTML.includes('Silk Cowl'), 'Silk Cowl hidden again');
+  assert.ok(!asContainer.innerHTML.includes('Studded Leather Helm'), 'Studded Leather Helm hidden again');
+  assert.ok(!asContainer.innerHTML.includes('Voidforged Greathelm'), 'Voidforged Greathelm hidden again');
   console.log('✓ Test 4 Passed: Armorsmithing filter toggles cleanly between unlocked-only and show all.\n');
 
   // --- TEST 5: Bowyer Station Filtering ---

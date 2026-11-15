@@ -39,6 +39,18 @@
       "master": "master_armorer",
       "grandmaster": "grandmaster_armorer"
     },
+    "tailoring": {
+      "apprentice": "apprentice_tailor",
+      "journeyman": "journeyman_tailor",
+      "master": "master_tailor",
+      "grandmaster": "grandmaster_tailor"
+    },
+    "jewelcrafting": {
+      "apprentice": "apprentice_jeweler",
+      "journeyman": "journeyman_jeweler",
+      "master": "master_jeweler",
+      "grandmaster": "grandmaster_jeweler"
+    },
     "bowyer": {
       "apprentice": "apprentice_bowyer",
       "journeyman": "journeyman_bowyer",

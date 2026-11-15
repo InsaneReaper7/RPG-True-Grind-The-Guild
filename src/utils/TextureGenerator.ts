@@ -2909,6 +2909,8 @@ export class TextureGenerator {
     makeStation('buildable-stonemason-yard', 0x475569, 0x94a3b8);
     makeStation('buildable-animal-pen', 0x78350f, 0x10b981);
     makeStation('buildable-merchant-stall', 0x78350f, 0xfacc15);
+    makeStation('buildable-tailors-loom', 0x4c1d95, 0x38bdf8);
+    makeStation('buildable-jewelcrafting-bench', 0x0f172a, 0xfacc15);
 
     // Furniture textures
     const furnitureDefs: [string, number, number][] = [

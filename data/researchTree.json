@@ -34,7 +34,27 @@
       "prerequisites": [
         "research_skinning"
       ],
-      "description": "Unlocks the Armorsmithing Bench for the Guild Outpost, enabling hide tailoring and silk weaving into armor."
+      "description": "Unlocks the Armorsmithing Bench for the Guild Outpost, enabling the crafting of heavy and medium armor from hides and metal."
+    },
+    {
+      "id": "research_tailoring",
+      "name": "Tailoring",
+      "targetBuildableId": "tailors_loom",
+      "cost": 8,
+      "prerequisites": [
+        "research_skinning"
+      ],
+      "description": "Unlocks the Tailor's Loom for the Guild Outpost, enabling the tailoring of light mage robes and hoods."
+    },
+    {
+      "id": "research_jewelcrafting",
+      "name": "Jewelcrafting",
+      "targetBuildableId": "jewelcrafting_bench",
+      "cost": 8,
+      "prerequisites": [
+        "research_skinning"
+      ],
+      "description": "Unlocks the Jewelcrafting Bench for the Guild Outpost, enabling the crafting of rings, necklaces, and wondrous accessories."
     },
     {
       "id": "research_digging",

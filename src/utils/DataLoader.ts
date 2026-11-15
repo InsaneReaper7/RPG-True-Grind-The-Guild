@@ -33,6 +33,10 @@ import type {
   ArmorSlot,
   ArmorsmithRecipeDef,
   ArmorsmithRecipesData,
+  TailoringRecipeDef,
+  TailoringRecipesData,
+  JewelcraftingRecipeDef,
+  JewelcraftingRecipesData,
   CampConfig,
   BowyerRecipeDef,
   BowyerRecipesData,
@@ -120,6 +124,8 @@ export class DataLoader {
   private beastCompanionConfigData?: BeastCompanionConfig;
   private merchantConfigData?: MerchantConfig;
   private merchantStockData?: MerchantStockData;
+  private tailoringRecipesData?: TailoringRecipesData;
+  private jewelcraftingRecipesData?: JewelcraftingRecipesData;
 
   private constructor() {}
 
@@ -131,7 +137,7 @@ export class DataLoader {
   }
 
   public async loadAll(): Promise<void> {
-    const [player, weapons, classes, enemies, skills, statusEffects, buildables, rooms, hiddenSkills, skillBooks, researchTree, alchemyRecipes, cookingRecipes, blacksmithRecipes, bowyerRecipes, armors, armorsmithRecipes, foods, moodEffects, dungeon, gathering, items, recruits, craftingConfig, introNarrative, enchantingRecipes, statGains, crops, cookingConfig, campConfig, craftingRanks, luckConfig, woodworkingRecipes, stonemasonRecipes, alchemyConfig, throwingConfig, gearRarity, tamingConfig, husbandryConfig, beastCompanionConfig, merchantConfig, merchantStock] = await Promise.all([
+    const [player, weapons, classes, enemies, skills, statusEffects, buildables, rooms, hiddenSkills, skillBooks, researchTree, alchemyRecipes, cookingRecipes, blacksmithRecipes, bowyerRecipes, armors, armorsmithRecipes, foods, moodEffects, dungeon, gathering, items, recruits, craftingConfig, introNarrative, enchantingRecipes, statGains, crops, cookingConfig, campConfig, craftingRanks, luckConfig, woodworkingRecipes, stonemasonRecipes, alchemyConfig, throwingConfig, gearRarity, tamingConfig, husbandryConfig, beastCompanionConfig, merchantConfig, merchantStock, tailoringRecipes, jewelcraftingRecipes] = await Promise.all([
       fetch('/data/player.json').then((res) => res.json()),
       fetch('/data/weapons.json').then((res) => res.json()),
       fetch('/data/classes.json').then((res) => res.json()),
@@ -173,7 +179,9 @@ export class DataLoader {
       fetch('/data/husbandryConfig.json').then((res) => res.json()).catch(() => null),
       fetch('/data/beastCompanionConfig.json').then((res) => res.json()).catch(() => null),
       fetch('/data/merchantConfig.json').then((res) => res.json()).catch(() => null),
-      fetch('/data/merchantStock.json').then((res) => res.json()).catch(() => null)
+      fetch('/data/merchantStock.json').then((res) => res.json()).catch(() => null),
+      fetch('/data/tailoringRecipes.json').then((res) => res.json()).catch(() => null),
+      fetch('/data/jewelcraftingRecipes.json').then((res) => res.json()).catch(() => null)
     ]);
 
     this.playerData = player as PlayerData;
@@ -247,6 +255,12 @@ export class DataLoader {
     }
     if (merchantStock) {
       this.merchantStockData = merchantStock as MerchantStockData;
+    }
+    if (tailoringRecipes) {
+      this.tailoringRecipesData = tailoringRecipes as TailoringRecipesData;
+    }
+    if (jewelcraftingRecipes) {
+      this.jewelcraftingRecipesData = jewelcraftingRecipes as JewelcraftingRecipesData;
     }
     if (craftingConfig) {
       this.craftingConfigData = craftingConfig as CraftingConfigData;
@@ -860,7 +874,23 @@ export class DataLoader {
       return {
         id: 'armorsmithing',
         name: 'Armorsmithing',
-        description: 'Tailoring hides and weaving silk into protective armor at the armorsmithing bench.'
+        description: 'Crafting heavy and medium armor from hides and metal at the armorsmithing bench.'
+      };
+    }
+
+    if (id === 'tailoring') {
+      return {
+        id: 'tailoring',
+        name: 'Tailoring',
+        description: 'Weaving silk and crafting light robes and hoods at the tailor\'s loom.'
+      };
+    }
+
+    if (id === 'jewelcrafting') {
+      return {
+        id: 'jewelcrafting',
+        name: 'Jewelcrafting',
+        description: 'Cutting gems, setting rings, and crafting wondrous accessories at the jewelcrafting bench.'
       };
     }
 
@@ -1424,6 +1454,30 @@ export class DataLoader {
 
   public getArmorsmithRecipe(id: string): ArmorsmithRecipeDef | undefined {
     return this.armorsmithRecipesData?.recipes.find((r) => r.id === id);
+  }
+
+  public getTailoringRecipesData(): TailoringRecipesData | undefined {
+    return this.tailoringRecipesData;
+  }
+
+  public getTailoringRecipes(): TailoringRecipeDef[] {
+    return this.tailoringRecipesData?.recipes ?? [];
+  }
+
+  public getTailoringRecipe(id: string): TailoringRecipeDef | undefined {
+    return this.tailoringRecipesData?.recipes.find((r) => r.id === id);
+  }
+
+  public getJewelcraftingRecipesData(): JewelcraftingRecipesData | undefined {
+    return this.jewelcraftingRecipesData;
+  }
+
+  public getJewelcraftingRecipes(): JewelcraftingRecipeDef[] {
+    return this.jewelcraftingRecipesData?.recipes ?? [];
+  }
+
+  public getJewelcraftingRecipe(id: string): JewelcraftingRecipeDef | undefined {
+    return this.jewelcraftingRecipesData?.recipes.find((r) => r.id === id);
   }
 
   public getEnchantingRecipesData(): EnchantingRecipesData | undefined {

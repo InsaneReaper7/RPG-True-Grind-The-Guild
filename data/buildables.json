@@ -133,7 +133,37 @@
       "indoorRequired": true,
       "walkable": false,
       "roomTag": "armorsmithing",
-      "description": "Guild bench for tailoring hides and weaving silk into protective armor. Requires a fully enclosed indoor room.",
+      "description": "Guild bench for crafting heavy and medium armor from hides and metal. Requires a fully enclosed indoor room.",
+      "lockedByDefault": true
+    },
+    {
+      "id": "tailors_loom",
+      "name": "Tailor's Loom",
+      "woodCost": 25,
+      "footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "rotatable": true,
+      "indoorRequired": true,
+      "walkable": false,
+      "roomTag": "tailoring",
+      "description": "Guild loom for spinning silk and tailoring robes and hoods for spellcasters. Requires a fully enclosed indoor room.",
+      "lockedByDefault": true
+    },
+    {
+      "id": "jewelcrafting_bench",
+      "name": "Jewelcrafting Bench",
+      "woodCost": 25,
+      "footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "rotatable": true,
+      "indoorRequired": true,
+      "walkable": false,
+      "roomTag": "jewelcrafting",
+      "description": "Guild workbench for cutting gemstones and crafting intricate rings, pendants, and charms. Requires a fully enclosed indoor room.",
       "lockedByDefault": true
     },
     {
