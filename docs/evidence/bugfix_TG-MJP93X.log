@@ -1,0 +1,130 @@
+BUGFIX TG-MJP93X: butcher an animal corpse without Skinning researched
+[GameState] Initialized from player.json boot seed with Hero & Valerie: {
+  hp: undefined,
+  criticalHp: undefined,
+  energy: undefined,
+  knownSkillIds: [],
+  equippedSkillIds: [],
+  autocastMap: {},
+  skillCooldownsRemainingMs: {},
+  proficiencies: {
+    undefined: { level: 0, currentExp: 0 },
+    construction: { level: 0, currentExp: 0 },
+    fist: { level: 0, currentExp: 0 },
+    short_swords: { level: 0, currentExp: 0 },
+    daggers: { level: 0, currentExp: 0 },
+    shields: { level: 0, currentExp: 0 },
+    dual_wielding: { level: 0, currentExp: 0 },
+    alchemy: { level: 0, currentExp: 0 },
+    evasion: { level: 0, currentExp: 0 },
+    parry: { level: 0, currentExp: 0 },
+    block: { level: 0, currentExp: 0 },
+    counterattack: { level: 0, currentExp: 0 },
+    resilience: { level: 0, currentExp: 0 },
+    health_regen: { level: 0, currentExp: 0 },
+    mana_regen: { level: 0, currentExp: 0 },
+    energy_regen: { level: 0, currentExp: 0 },
+    staff: { level: 0, currentExp: 0 },
+    healing_magic: { level: 0, currentExp: 0 },
+    fire_magic: { level: 0, currentExp: 0 },
+    foraging: { level: 0, currentExp: 0 },
+    woodcutting: { level: 0, currentExp: 0 },
+    mining: { level: 0, currentExp: 0 },
+    mace: { level: 0, currentExp: 0 },
+    blacksmithing: { level: 0, currentExp: 0 },
+    armorsmithing: { level: 0, currentExp: 0 },
+    digging: { level: 0, currentExp: 0 },
+    skinning: { level: 0, currentExp: 0 },
+    butchering: { level: 0, currentExp: 0 }
+  },
+  classLevels: {},
+  unlockedClasses: [],
+  resources: { wood: 1000, ore: 0 },
+  placedBuildables: [],
+  hunger: 100,
+  mood: 50,
+  currentGameDay: 1,
+  foodItems: [],
+  equippedWeaponId: undefined,
+  offhandWeaponId: null,
+  dungeonFloorCount: 0,
+  encounteredEnemies: [],
+  discoveredProficiencies: [],
+  discoveredStatusEffects: [],
+  discoveredGatheringNodes: [],
+  defeatedAreaBosses: [],
+  quickSlots: [ 'revive_potion', 'bandage', 'energy_potion', 'antidote' ],
+  worldFlags: {},
+  grovePityCounter: 0,
+  party: [
+    {
+      id: 'hero',
+      name: 'Guild Hero',
+      avatarKey: 'player-avatar',
+      hp: undefined,
+      criticalHp: undefined,
+      energy: undefined,
+      equippedWeaponId: undefined,
+      offhandWeaponId: null,
+      inventory: [Object],
+      knownSkillIds: [],
+      equippedSkillIds: [],
+      autocastMap: {},
+      skillCooldownsRemainingMs: {},
+      proficiencies: [Object],
+      classLevels: {},
+      classStats: {},
+      unlockedClasses: [],
+      activeClass: null,
+      bookLearnedSkills: [],
+      hunger: 100,
+      mood: 50,
+      state: 'idle'
+    },
+    {
+      id: 'companion_1',
+      name: 'Valerie',
+      avatarKey: 'companion-avatar',
+      avatarTextureKey: 'companion-avatar',
+      hp: 50,
+      criticalHp: 25,
+      energy: 100,
+      equippedWeaponId: 'bows',
+      offhandWeaponId: 'daggers',
+      inventory: [Object],
+      knownSkillIds: [Array],
+      equippedSkillIds: [Array],
+      autocastMap: [Object],
+      skillCooldownsRemainingMs: {},
+      proficiencies: [Object],
+      classLevels: [Object],
+      classStats: [Object],
+      unlockedClasses: [Array],
+      activeClass: 'scout',
+      bookLearnedSkills: [],
+      hunger: 100,
+      mood: 50,
+      state: 'idle'
+    }
+  ]
+}
+[Corpse Gathering] Animal corpse (Wolf) not harvestable: Skinning research not unlocked.
+[ResearchSystem] ✨ Unlocked Harvest Enemy Meat (research_butchering) for 10 Research Points!
+[Corpse Gathering] Spawned Wolf Corpse (Butchering) at (10, 10).
+[Progression] +15 EXP for 'butchering' (undefined). Current: Level 0 (15/50 EXP)
+[Progression] Recorded tx 'butchering': +15 EXP for Guild Hero, resulting total: Level 0 (15/50 EXP)
+[KnowledgeBase] 🪵 Gathering node discovered: 'corpse_butchering_wolf_1794707307362_0.9385466464623964'! (+1 RP)
+[KnowledgeBase] ⚔️ Proficiency discovered: 'butchering'! (+1 RP)
+[Gathering] 🥩 Butchered 1x Wolf Corpse! (+15 Butchering EXP)
+[Corpse Gathering] Wolf butchered! Corpse fully spent.
+✔ Butchering-only: wolf butchered directly
+[ResearchSystem] ✨ Unlocked Harvest Enemy Skin (research_skinning) for 10 Research Points!
+[Corpse Gathering] Spawned Wolf Corpse (Skinning) at (10, 10).
+[Progression] +15 EXP for 'skinning' (undefined). Current: Level 0 (15/50 EXP)
+[Progression] Recorded tx 'skinning': +15 EXP for Guild Hero, resulting total: Level 0 (15/50 EXP)
+[KnowledgeBase] 🪵 Gathering node discovered: 'corpse_skinning_wolf_1794707307368_0.3869336028772854'! (+1 RP)
+[KnowledgeBase] ⚔️ Proficiency discovered: 'skinning'! (+1 RP)
+[Gathering] 🔪 Skinned 1x Wolf Corpse! (+15 Skinning EXP)
+[Corpse Gathering] Wolf skinned! Corpse transitioned to Butchering.
+✔ Both researched: skin then butcher (unchanged)
+ALL TG-MJP93X TESTS PASSED
