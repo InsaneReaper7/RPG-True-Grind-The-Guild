@@ -1430,6 +1430,7 @@
       padding-right: 6px;
     }
     .party-card {
+      min-width: 0;
       background: rgba(31, 41, 55, 0.9);
       border: 1px solid rgba(139, 92, 246, 0.35);
       border-radius: 8px;
@@ -1460,9 +1461,15 @@
     }
     .paperdoll-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
+      /* TG-N4TBZ0: minmax(0, 1fr) lets columns shrink below their content's min width,
+         so long stat lines wrap inside the card instead of overflowing into the next card. */
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 6px;
     }
+    .paperdoll-grid .equip-slot-box { min-width: 0; }
+    .paperdoll-grid .slot-item-info > div { min-width: 0; }
+    .paperdoll-grid .slot-item-text { max-width: 100%; }
+    .paperdoll-grid .slot-item-stat { overflow-wrap: anywhere; }
     .equip-slot-box {
       background: rgba(31, 41, 55, 0.85);
       border: 1px dashed rgba(156, 163, 175, 0.4);

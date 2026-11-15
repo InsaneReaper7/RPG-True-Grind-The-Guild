@@ -720,6 +720,43 @@ async function runSuite() {
   }
 
   // -------------------------------------------------------------
+  // Test 7b: TG-L5VXMA — the leader's worn gear counts too; TG-TDTUUP — no "undefined HP"
+  // -------------------------------------------------------------
+  console.log('\n--- Test 7b: Leader-worn gear is counted (TG-L5VXMA); stat text has no undefined (TG-TDTUUP) ---');
+  {
+    const gameState = GameState.getInstance();
+    gameState.resetToDefault();
+    gameState.inventory.clear();
+
+    const hero = new Player(mockScene as any, 0, 0, { ...basePlayerData, name: 'Kaelen' } as any, dataLoader.getWeapon('katana')!, 32, 'hero', new ProgressionSystem());
+    hero.entityName = 'Kaelen';
+    const valerie = new Player(mockScene as any, 0, 0, { ...basePlayerData, name: 'Valerie' } as any, dataLoader.getWeapon('katana')!, 32, 'valerie', new ProgressionSystem());
+    valerie.entityName = 'Valerie';
+
+    // Leader wears 1, Valerie wears 1, stockpile has 1 => 3 owned, 2 worn
+    gameState.addItem('katana', 1);
+    gameState.addItem('ingredient_bag', 1);
+
+    hud.update(hero, hero.progression, 0, [hero, valerie]);
+    hud.setStashFilterActive(true);
+    hud.renderPartyInventoryPanel();
+
+    const stashList = getOrCreateElement('party-inventory-item-list');
+    assert.ok(stashList.innerHTML.includes('x3 (2 worn)'), `Badge must count the leader's worn katana: expected 'x3 (2 worn)'`);
+    assert.ok(stashList.innerHTML.includes('15 kg ingredient space'), 'Ingredient Bag shows its real effect');
+    assert.ok(!stashList.innerHTML.includes('undefined'), 'No "undefined" anywhere in the stash list');
+    assert.ok(!stashList.innerHTML.includes('NaN'), 'No "NaN" anywhere in the stash list');
+
+    const { armorEffectText } = await import('../src/ui/HUD.ts');
+    for (const a of dataLoader.getAllArmors()) {
+      const t = armorEffectText(a);
+      assert.ok(!/undefined|NaN/.test(t), `armorEffectText(${a.id}) has no undefined/NaN: "${t}"`);
+    }
+    assert.strictEqual(armorEffectText(dataLoader.getArmor('ingredient_bag')), '15 kg ingredient space');
+    console.log('✓ Test 7b Passed: leader-worn gear counted; armor stat text never shows undefined.');
+  }
+
+  // -------------------------------------------------------------
   // Test 8: Rule Invariants (2H Clearing Offhand, Dual Wield Gating, Scout Dagger)
   // -------------------------------------------------------------
   console.log('\n--- Test 8: Preserved Rule Invariants (2H, DW Gating, Scout Sidearm) ---');
