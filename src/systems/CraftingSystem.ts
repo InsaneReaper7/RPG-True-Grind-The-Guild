@@ -659,6 +659,7 @@ export class CraftingSystem {
     }
 
     EventLog.getInstance().add('craft', `${crafter?.entityName || 'Hero'}: Crafted ${quantity}x ${recipe.name}`, { recipeId: recipe.id, quantity, isGear });
+    GameState.getInstance().requestAutosave('craft');
 
     return {
       success: true,

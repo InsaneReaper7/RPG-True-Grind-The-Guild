@@ -1,0 +1,170 @@
+=== Running Crafting Mastery Apprentice Tests ===
+
+[GameState] Initialized from player.json boot seed with Hero & Valerie: {
+  hp: 50,
+  criticalHp: 25,
+  energy: 100,
+  knownSkillIds: [],
+  equippedSkillIds: [],
+  autocastMap: {},
+  skillCooldownsRemainingMs: {},
+  proficiencies: {
+    short_swords: { level: 0, currentExp: 0 },
+    construction: { level: 0, currentExp: 0 },
+    fist: { level: 0, currentExp: 0 },
+    daggers: { level: 0, currentExp: 0 },
+    shields: { level: 0, currentExp: 0 },
+    dual_wielding: { level: 0, currentExp: 0 },
+    woodworking: { level: 0, currentExp: 0 },
+    stonemason: { level: 0, currentExp: 0 },
+    alchemy: { level: 0, currentExp: 0 },
+    tailoring: { level: 0, currentExp: 0 },
+    jewelcrafting: { level: 0, currentExp: 0 },
+    evasion: { level: 0, currentExp: 0 },
+    parry: { level: 0, currentExp: 0 },
+    block: { level: 0, currentExp: 0 },
+    counterattack: { level: 0, currentExp: 0 },
+    resilience: { level: 0, currentExp: 0 },
+    health_regen: { level: 0, currentExp: 0 },
+    mana_regen: { level: 0, currentExp: 0 },
+    energy_regen: { level: 0, currentExp: 0 },
+    staff: { level: 0, currentExp: 0 },
+    druid_staff: { level: 0, currentExp: 0 },
+    healing_magic: { level: 0, currentExp: 0 },
+    fire_magic: { level: 0, currentExp: 0 },
+    foraging: { level: 0, currentExp: 0 },
+    woodcutting: { level: 0, currentExp: 0 },
+    mining: { level: 0, currentExp: 0 },
+    mace: { level: 0, currentExp: 0 },
+    blacksmithing: { level: 0, currentExp: 0 },
+    armorsmithing: { level: 0, currentExp: 0 },
+    digging: { level: 0, currentExp: 0 },
+    perception: { level: 0, currentExp: 0 },
+    skinning: { level: 0, currentExp: 0 },
+    butchering: { level: 0, currentExp: 0 },
+    lockpicking: { level: 0, currentExp: 0 },
+    gardening: { level: 0, currentExp: 0 },
+    taming: { level: 0, currentExp: 0 },
+    animal_husbandry: { level: 0, currentExp: 0 },
+    longswords: { level: 0, currentExp: 0 },
+    dark_magic: { level: 0, currentExp: 0 },
+    light_armor: { level: 0, currentExp: 0 },
+    medium_armor: { level: 0, currentExp: 0 },
+    heavy_armor: { level: 0, currentExp: 0 },
+    fishing: { level: 0, currentExp: 0 },
+    enchanting: { level: 0, currentExp: 0 },
+    water_magic: { level: 0, currentExp: 0 },
+    earth_magic: { level: 0, currentExp: 0 },
+    nature_magic: { level: 0, currentExp: 0 },
+    wind_magic: { level: 0, currentExp: 0 }
+  },
+  classLevels: {},
+  unlockedClasses: [],
+  resources: { wood: 100, ore: 0 },
+  placedBuildables: [],
+  hunger: 100,
+  mood: 50,
+  currentGameDay: 1,
+  foodItems: [],
+  equippedWeaponId: 'short_swords',
+  offhandWeaponId: null,
+  dungeonFloorCount: 0,
+  encounteredEnemies: [],
+  discoveredProficiencies: [ 'short_swords' ],
+  discoveredStatusEffects: [],
+  discoveredGatheringNodes: [],
+  defeatedAreaBosses: [],
+  quickSlots: [ 'revive_potion', 'bandage', 'energy_potion', 'antidote' ],
+  worldFlags: {},
+  grovePityCounter: 0,
+  gold: 0,
+  merchantVisit: {
+    placed: false,
+    present: false,
+    nextArrivalDay: 1,
+    visitNumber: 0,
+    stock: []
+  },
+  party: [
+    {
+      id: 'player',
+      name: 'Guild Hero',
+      avatarKey: 'player-avatar',
+      hp: 50,
+      criticalHp: 25,
+      energy: 100,
+      equippedWeaponId: 'short_swords',
+      offhandWeaponId: null,
+      inventory: [Object],
+      knownSkillIds: [],
+      equippedSkillIds: [],
+      autocastMap: {},
+      skillCooldownsRemainingMs: {},
+      proficiencies: [Object],
+      classLevels: {},
+      classStats: {},
+      unlockedClasses: [],
+      activeClass: null,
+      bookLearnedSkills: [],
+      hunger: 100,
+      mood: 50,
+      state: 'idle'
+    },
+    {
+      id: 'companion_1',
+      name: 'Valerie',
+      avatarKey: 'companion-avatar',
+      avatarTextureKey: 'companion-avatar',
+      hp: 50,
+      criticalHp: 25,
+      energy: 100,
+      equippedWeaponId: 'bows',
+      offhandWeaponId: 'daggers',
+      inventory: [Object],
+      knownSkillIds: [Array],
+      equippedSkillIds: [Array],
+      autocastMap: [Object],
+      skillCooldownsRemainingMs: {},
+      proficiencies: [Object],
+      classLevels: [Object],
+      classStats: [Object],
+      unlockedClasses: [Array],
+      activeClass: 'scout',
+      bookLearnedSkills: [],
+      hunger: 100,
+      mood: 50,
+      state: 'idle'
+    }
+  ]
+}
+✔ DataLoader initialized.
+=== AUTOSAVE: craft / cook / build / tutorial (owner request 2026-11-15) ===
+[Progression] +25 EXP for 'blacksmithing' (Valerie). Current: Level 0 (25/50 EXP)
+[Progression] Recorded tx 'blacksmithing': +25 EXP for Valerie, resulting total: Level 0 (25/50 EXP)
+✔ Crafting autosaves
+[Progression] +25 EXP for 'blacksmithing' (Valerie). Current: Level 1 (0/54 EXP)
+[Progression] Recorded tx 'blacksmithing': +25 EXP for Valerie, resulting total: Level 1 (0/54 EXP)
+[Progression] LEVEL UP! 'blacksmithing' is now Level 1! (Gained 1 level(s))
+[Progression] ✨ SKILL DISCOVERED: 'blacksmithing' reached Level 1 by Valerie! ✨
+[Progression] +25 EXP for 'blacksmithing' (Valerie). Current: Level 1 (25/54 EXP)
+[Progression] Recorded tx 'blacksmithing': +25 EXP for Valerie, resulting total: Level 1 (25/54 EXP)
+[Progression] +25 EXP for 'blacksmithing' (Valerie). Current: Level 1 (50/54 EXP)
+[Progression] Recorded tx 'blacksmithing': +25 EXP for Valerie, resulting total: Level 1 (50/54 EXP)
+✔ Batch crafts are merged into one save (debounced)
+✔ Failed crafts do not save
+[Cooking] ✨ Recipe permanently discovered: 'herb_stew'! (+1 RP)
+[Progression] +40 EXP for 'cooking' (Valerie). Current: Level 0 (40/50 EXP)
+[Progression] Recorded tx 'cooking': +40 EXP for Valerie, resulting total: Level 0 (40/50 EXP)
+✔ Cooking autosaves
+✔ Building and demolishing autosave
+[TutorialSystem] 🧭 Tutorial reset to default beginning (Step 1: Guild Roster).
+[TutorialSystem] 🧭 Advanced to step 2/14: Movement & Formation
+[TutorialSystem] 🎓 Guild Onboarding & Tutorial COMPLETED! Full loop verified.
+✔ Tutorial steps autosave
+[Progression] +25 EXP for 'blacksmithing' (Valerie). Current: Level 2 (21/58 EXP)
+[Progression] Recorded tx 'blacksmithing': +25 EXP for Valerie, resulting total: Level 2 (21/58 EXP)
+[Progression] LEVEL UP! 'blacksmithing' is now Level 2! (Gained 1 level(s))
+✔ One save covers several actions
+✔ No mid-floor saves in the dungeon; safe-zone fallback unchanged
+
+ALL AUTOSAVE TESTS PASSED

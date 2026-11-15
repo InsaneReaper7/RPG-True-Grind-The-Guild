@@ -585,6 +585,22 @@ export class OutpostScene extends Phaser.Scene {
       GameState.getInstance().saveToDisk();
     }
 
+    // Autosave (owner request 2026-11-15): crafts, cooking, building/demolishing and tutorial steps
+    // request a save; here in the Outpost it is a full save (party bags, EXP, guild state).
+    GameState.getInstance().setAutosaveHandler((reasons) => {
+      if (HUD.isTitleScreenOpen || !this.player || !this.progressionSystem) return;
+      const gs = GameState.getInstance();
+      gs.savePartySnapshot(this.party, this.time.now);
+      gs.saveSnapshot(this.player, this.progressionSystem, this.time.now);
+      if (gs.saveToDisk()) {
+        EventLog.getInstance().add('save', `Autosaved (${reasons})`);
+      }
+    });
+    this.events?.once?.('shutdown', () => {
+      GameState.getInstance().flushAutosave();
+      GameState.getInstance().setAutosaveHandler(null);
+    });
+
     // Milestone: Tutorial & Onboarding — Sync tutorial state & mentor/return triggers
     const tut = TutorialSystem.getInstance();
     const tutState = GameState.getInstance().getTutorialState();

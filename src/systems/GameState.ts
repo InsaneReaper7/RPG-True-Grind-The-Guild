@@ -1860,9 +1860,7 @@ export class GameState {
     if (this.snapshot) {
       this.snapshot.placedBuildables = [...this.placedBuildables];
     }
-    if (this.isSafeZone && this.snapshot) {
-      this.saveToDisk();
-    }
+    this.requestAutosave('build');
   }
 
   public removePlacedBuildable(x: number, y: number): PlacedBuildable | undefined {
@@ -1872,9 +1870,7 @@ export class GameState {
       if (this.snapshot) {
         this.snapshot.placedBuildables = [...this.placedBuildables];
       }
-      if (this.isSafeZone && this.snapshot) {
-        this.saveToDisk();
-      }
+      this.requestAutosave('demolish');
       return removed;
     }
     return undefined;
@@ -2567,6 +2563,65 @@ export class GameState {
       state: 'idle'
     };
     return recruitSnapshot;
+  }
+
+  // --- AUTOSAVE (owner request 2026-11-15): save after every craft, structure placement/removal and tutorial step ---
+  /** Requests within this window are merged into one save (batch crafting, dragging walls). */
+  public static readonly AUTOSAVE_DEBOUNCE_MS = 400;
+  private autosaveHandler: ((reasons: string) => void) | null = null;
+  private autosaveTimer: ReturnType<typeof setTimeout> | null = null;
+  private pendingAutosaveReasons: Set<string> = new Set();
+
+  /**
+   * The active safe-zone scene registers a handler that refreshes the party snapshot and writes to disk.
+   * Pass null when the scene shuts down.
+   */
+  public setAutosaveHandler(handler: ((reasons: string) => void) | null): void {
+    this.autosaveHandler = handler;
+    if (!handler && this.autosaveTimer) {
+      clearTimeout(this.autosaveTimer);
+      this.autosaveTimer = null;
+    }
+  }
+
+  /**
+   * Ask for a save. In the Outpost (handler registered) a full save runs after AUTOSAVE_DEBOUNCE_MS.
+   * Without a handler, a safe zone saves guild state immediately (previous behaviour). In the dungeon nothing
+   * is written mid-floor; the next floor/outpost checkpoint save includes everything.
+   */
+  public requestAutosave(reason: string): void {
+    if (!this.snapshot) return;
+    if (!this.autosaveHandler) {
+      if (this.isSafeZone) {
+        try { this.saveToDisk(); } catch (_err) { /* non-browser environments */ }
+      }
+      return;
+    }
+    this.pendingAutosaveReasons.add(reason);
+    if (this.autosaveTimer) return;
+    this.autosaveTimer = setTimeout(() => this.flushAutosave(), GameState.AUTOSAVE_DEBOUNCE_MS);
+  }
+
+  /** Runs a pending autosave now. Returns true if a save was performed. */
+  public flushAutosave(): boolean {
+    if (this.autosaveTimer) {
+      clearTimeout(this.autosaveTimer);
+      this.autosaveTimer = null;
+    }
+    if (this.pendingAutosaveReasons.size === 0 || !this.autosaveHandler) return false;
+    const reasons = Array.from(this.pendingAutosaveReasons).join(', ');
+    this.pendingAutosaveReasons.clear();
+    try {
+      this.autosaveHandler(reasons);
+      return true;
+    } catch (err) {
+      console.warn('[GameState] Autosave failed:', err);
+      return false;
+    }
+  }
+
+  public hasPendingAutosave(): boolean {
+    return this.pendingAutosaveReasons.size > 0;
   }
 
   public saveToDisk(): boolean {

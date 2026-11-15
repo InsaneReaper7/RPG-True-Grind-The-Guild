@@ -306,6 +306,14 @@ export class CookingSystem {
   }
 
   public static experiment(cook: Player, itemIds: string[], options?: { bagOnly?: boolean; party?: Player[] }): CookingResult {
+    const result = CookingSystem.experimentInner(cook, itemIds, options);
+    if (result && result.success) {
+      GameState.getInstance().requestAutosave('cook');
+    }
+    return result;
+  }
+
+  private static experimentInner(cook: Player, itemIds: string[], options?: { bagOnly?: boolean; party?: Player[] }): CookingResult {
     const gameState = GameState.getInstance();
     const dataLoader = DataLoader.getInstance();
 
