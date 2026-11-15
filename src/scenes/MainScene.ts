@@ -3296,13 +3296,18 @@ export class MainScene extends Phaser.Scene {
     const skinningUnlocked = gameState.isSkinningUnlocked();
     const butcheringUnlocked = gameState.isButcheringUnlocked();
 
-    // Animal type corpses (Wolf, Spider): strictly requires Skinning unlocked
+    // Animal type corpses (Wolf, Spider): skin first when Skinning is researched.
+    // Bug TG-MJP93X: without Skinning, a corpse with meat can still be butchered directly.
     if (isAnimal) {
-      if (!skinningUnlocked) {
-        console.log(`[Corpse Gathering] Animal corpse (${deadEnemy.entityName}) not harvestable: Skinning research not unlocked.`);
-        return null;
+      if (skinningUnlocked) {
+        return this.spawnCorpseGatheringNode(deadEnemy, 'skinning');
       }
-      return this.spawnCorpseGatheringNode(deadEnemy, 'skinning');
+      const hasMeat = !!deadEnemy.enemyData.corpseHarvest?.butchering?.item;
+      if (isButcherEligible && hasMeat && butcheringUnlocked) {
+        return this.spawnCorpseGatheringNode(deadEnemy, 'butchering');
+      }
+      console.log(`[Corpse Gathering] Animal corpse (${deadEnemy.entityName}) not harvestable: Skinning research not unlocked.`);
+      return null;
     }
 
     // Non-animal butcher-eligible corpses (Goblin, Goblin Archer, etc.)
@@ -3423,8 +3428,8 @@ export class MainScene extends Phaser.Scene {
     if (this.isEnemyUndeadOrSkeleton(enemy.enemyData.id)) {
       return { canHarvest: false, reason: 'Cannot butcher undead or skeletal remains' };
     }
-    // Check ordering gate: if animal-type, skinning MUST be completed first!
-    if (this.isEnemyAnimalType(enemy.enemyData.id) && !enemy.isSkinned && (!enemy.corpseNode || !enemy.corpseNode.isSkinned)) {
+    // Ordering gate: an animal-type corpse must be skinned first, but only once Skinning is researched (TG-MJP93X).
+    if (GameState.getInstance().isSkinningUnlocked() && this.isEnemyAnimalType(enemy.enemyData.id) && !enemy.isSkinned && (!enemy.corpseNode || !enemy.corpseNode.isSkinned)) {
       return { canHarvest: false, reason: 'Must skin corpse before butchering' };
     }
     if (enemy.isButchered || (enemy.corpseNode && enemy.corpseNode.isButchered)) {
