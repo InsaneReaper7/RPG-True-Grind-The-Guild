@@ -179,15 +179,16 @@ async function runTests() {
   };
   const startingWeapon: WeaponDef = dataLoader.getWeapon('short_swords')!;
 
-  function createTestPlayer(scene: any, name: string, x: number = 0, y: number = 0, maxHp: number = 50, maxCrit: number = 25): any {
+  function createTestPlayer(scene: any, name: string, x: number = 0, y: number = 0, maxHp: number = 50, maxCrit: number = 25, weaponId: string = 'short_swords'): any {
     const pData: PlayerData = {
       ...basePlayerData,
       name,
       hpMax: maxHp,
       criticalHpMax: maxCrit
     };
+    const weapon = dataLoader.getWeapon(weaponId)!;
     const prog = new ProgressionSystem();
-    const p = new Player(scene, x, y, pData, startingWeapon, 32, 'hero', prog);
+    const p = new Player(scene, x, y, pData, weapon, 32, 'hero', prog);
     p.entityName = name;
     p.maxHp = maxHp;
     p.hp = maxHp;
@@ -331,7 +332,7 @@ async function runTests() {
   // ----------------------------------------------------------------
   console.log('--- TEST 5: First Aid (Combat Medic) ---');
   {
-    const medic = createTestPlayer(mockScene, 'Medic', 0, 0, 50, 25);
+    const medic = createTestPlayer(mockScene, 'Medic', 0, 0, 50, 25, 'healing_staff');
     const injuredAlly = createTestPlayer(mockScene, 'Injured Ally', 1, 0, 50, 25);
     medic.progression.setClassLevel('combat_medic', 5);
     medic.energy = 50;
@@ -359,7 +360,7 @@ async function runTests() {
   // ----------------------------------------------------------------
   console.log('--- TEST 6: Restoration Mage Heal & Regenerate ---');
   {
-    const mage = createTestPlayer(mockScene, 'Resto Mage', 0, 0, 50, 25);
+    const mage = createTestPlayer(mockScene, 'Resto Mage', 0, 0, 50, 25, 'healing_staff');
     const injuredAlly = createTestPlayer(mockScene, 'Injured Fighter', 1, 0, 60, 25);
     mage.progression.setClassLevel('restoration_mage', 10);
     mage.energy = 60;
@@ -401,7 +402,7 @@ async function runTests() {
   // ----------------------------------------------------------------
   console.log('--- TEST 7: Combat Medic Holy Nova ---');
   {
-    const medic = createTestPlayer(mockScene, 'Holy Medic', 2, 2, 50, 25);
+    const medic = createTestPlayer(mockScene, 'Holy Medic', 2, 2, 50, 25, 'healing_staff');
     const ally1 = createTestPlayer(mockScene, 'Crit Drained Ally', 2, 3, 50, 25);
     const ally2 = createTestPlayer(mockScene, 'Main Drained Ally', 3, 2, 50, 25);
     medic.progression.setClassLevel('combat_medic', 40);

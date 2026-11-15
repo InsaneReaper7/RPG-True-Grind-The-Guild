@@ -178,6 +178,7 @@ async function runGoldenMasterTests() {
   // Define a fixed test weapon with baseDamage: 10, baseAccuracy: 0.60, bleedChance: 0.50
   const fixedTestWeapon: WeaponDef = {
     id: 'test_fixed_sword',
+    proficiencyId: 'short_swords',
     name: 'Test Fixed Sword',
     type: 'melee',
     tier: 'common',
@@ -311,11 +312,12 @@ async function runGoldenMasterTests() {
 
     // 1f. Verify Ember Adept data-driven skills
     const emberSkills = ['scorch', 'firebolt', 'flame_wave', 'ignite', 'firestorm'];
+    const fireStaff = dataLoader.getWeapon('fire_staff')!;
     for (const skillId of emberSkills) {
       const def = dataLoader.getSkill(skillId);
       assert.ok(def, `${skillId} definition must exist`);
       assert.ok(def.effects && def.effects.length > 0, `${def.name} must have effects array`);
-      const tester = new Player(scene, 10, 10, playerData, fixedTestWeapon, 32);
+      const tester = new Player(scene, 10, 10, playerData, fireStaff, 32);
       tester.progression.setClassLevel('ember_adept', 40);
       tester.energy = 100;
       tester.hp = 100;
@@ -342,17 +344,17 @@ async function runGoldenMasterTests() {
   const fullKits = [
     { classId: 'swordsman', skills: ['blade_strike', 'quick_cut', 'severing_slice', 'cross_cut'], weapon: 'katana' },
     { classId: 'fencer', skills: ['fleche', 'thrust', 'riposte', 'power_strike', 'blade_dance'], weapon: 'short_swords' },
-    { classId: 'loader', skills: ['primed_shot', 'rapid_crank', 'arbalest_brace', 'pinning_bolt', 'kinetic_overdraw'], weapon: 'crossbow' },
+    { classId: 'loader', skills: ['primed_shot', 'rapid_crank', 'arbalest_brace', 'pinning_bolt', 'kinetic_overdraw'], weapon: 'crossbows' },
     { classId: 'arcane_initiate', skills: ['arcane_bolt', 'mana_shield', 'overcharge', 'blink', 'arcane_nova'], weapon: 'arcane_staff' },
     { classId: 'ronin', skills: ['iaido_quickdraw', 'crimson_slash', 'flowing_step', 'bloodseeker_riposte', 'dragons_flurry'], weapon: 'katana' },
     { classId: 'samurai', skills: ['overhead_cleave', 'sweeping_hilt', 'heavenly_decapitation', 'kenjutsu_deflection'], weapon: 'katana' },
     { classId: 'vanguard', skills: ['shield_bash', 'defensive_posture', 'iron_posture', 'unbreakable'], weapon: 'shields' },
-    { classId: 'spellsword', skills: ['arcane_strike', 'dimensional_lunge', 'blade_beam', 'vaulting_leap'], weapon: 'katana' },
-    { classId: 'thrower', skills: ['quick_toss', 'fan_of_knives', 'crippling_volley', 'blade_barrage'], weapon: 'throwing_knives' },
-    { classId: 'scout', skills: ['kill_shot', 'mark_target', 'quickshot', 'trap_snare'], weapon: 'hunting_bow' },
-    { classId: 'dark_knight', skills: ['rending_cut', 'dark_pact', 'soul_drain', 'oblivion_strike', 'umbral_step'], weapon: 'katana' },
-    { classId: 'combat_medic', skills: ['first_aid', 'cleanse', 'guardian_ward', 'regenerate', 'smite', 'holy_nova'], weapon: 'mace' },
-    { classId: 'restoration_mage', skills: ['heal', 'mass_revive', 'barrier', 'holy_nova'], weapon: 'staff' },
+    { classId: 'spellsword', skills: ['arcane_strike', 'dimensional_lunge', 'blade_beam', 'vaulting_leap'], weapon: 'longsword_1h' },
+    { classId: 'thrower', skills: ['quick_toss', 'fan_of_knives', 'crippling_volley', 'blade_barrage'], weapon: 'throwing_weapons' },
+    { classId: 'scout', skills: ['kill_shot', 'mark_target', 'quickshot', 'trap_snare'], weapon: 'bows' },
+    { classId: 'dark_knight', skills: ['rending_cut', 'dark_pact', 'soul_drain', 'oblivion_strike', 'umbral_step'], weapon: 'longsword_1h' },
+    { classId: 'combat_medic', skills: ['first_aid', 'cleanse', 'guardian_ward', 'regenerate', 'smite', 'holy_nova'], weapon: 'healing_staff' },
+    { classId: 'restoration_mage', skills: ['heal', 'mass_revive', 'barrier', 'holy_nova'], weapon: 'healing_staff' },
     { classId: 'javelin', skills: ['piercing_throw', 'impaling_thrust', 'pinning_spear', 'heartseeker_hurl'], weapon: 'spears' }
   ];
 
@@ -564,7 +566,8 @@ async function runGoldenMasterTests() {
     assert.strictEqual(noThreatCast, false, 'Self buffs must not cast when there is no active threat');
 
     // Arcane Nova: casts when enemies are in radius 4, not when enemies are outside
-    const mage = new Player(scene, 10, 10, playerData, fixedTestWeapon, 32);
+    const arcaneStaff = dataLoader.getWeapon('arcane_staff')!;
+    const mage = new Player(scene, 10, 10, playerData, arcaneStaff, 32);
     mage.progression.setClassLevel('arcane_initiate', 40);
     mage.equippedSkillIds = ['arcane_nova'];
     combat.party = [mage];

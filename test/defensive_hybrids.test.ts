@@ -468,6 +468,7 @@ async function run() {
     ];
 
     const bulwarkHero = createTestPlayer('bw_hero', 'BulwarkHero', 'bulwark', 'short_swords');
+    bulwarkHero.offhandWeapon = dl.getWeapon('shields')!;
     const riposteHero = createTestPlayer('rm_hero', 'RiposteHero', 'riposte_master', 'katana');
     const wardenHero = createTestPlayer('vw_hero', 'WardenHero', 'vitality_warden', 'healing_staff');
     combat.party = [bulwarkHero, riposteHero, wardenHero];
@@ -548,6 +549,7 @@ async function run() {
     const skillSystem = new SkillSystem(combat);
 
     const leader = createTestPlayer('leader', 'Leader', 'bulwark', 'short_swords');
+    leader.offhandWeapon = dl.getWeapon('shields')!;
     const consciousAlly = createTestPlayer('ally_conscious', 'ConsciousAlly', 'vitality_warden', 'healing_staff');
     const downedAlly = createTestPlayer('ally_downed', 'DownedAlly', 'vitality_warden', 'healing_staff');
     downedAlly.state = 'downed';

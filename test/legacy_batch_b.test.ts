@@ -72,6 +72,7 @@ const { CombatSystem } = await import('../src/systems/CombatSystem.ts');
 const { Player } = await import('../src/entities/Player.ts');
 const { Enemy } = await import('../src/entities/Enemy.ts');
 const { Pathfinder } = await import('../src/utils/Pathfinder.ts');
+const { getSkillWeaponSet } = await import('../src/utils/skillWeapons.ts');
 import type { EnemyDef, WeaponDef } from '../src/types/game.ts';
 
 function createMockScene(gridWidth: number = 30, gridHeight: number = 30): any {
@@ -212,7 +213,13 @@ async function runBatchBTests() {
   };
 
   const createTester = (skillId: string, weapon: WeaponDef = fixedTestWeapon, skipClasses: boolean = true) => {
-    const tester = new Player(scene, 10, 10, playerData, weapon, 32);
+    const weaponSet = getSkillWeaponSet(skillId);
+    const chosenProf = Array.from(weaponSet)[0];
+    const weaponForSkill: WeaponDef = {
+      ...weapon,
+      proficiencyId: weapon.proficiencyId ?? chosenProf ?? 'fist'
+    };
+    const tester = new Player(scene, 10, 10, playerData, weaponForSkill, 32);
     if (!skipClasses) {
       for (const c of [
         'fencer', 'combat_medic', 'vanguard', 'restoration_mage', 'brawler',

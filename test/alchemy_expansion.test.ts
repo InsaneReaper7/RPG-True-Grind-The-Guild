@@ -656,6 +656,7 @@ async function runMilestone6ExpansionTests() {
 
     hero.coating = { itemId: 'venom_coating', statusId: 'poison', chance: 0.25, hitsRemaining: 30 };
     hero.energy = 100;
+    hero.equippedWeapon = dataLoader.getWeapon('fire_staff')!;
     hero.gridPos = { x: 5, y: 5 };
     hero.x = 5 * 16;
     hero.y = 5 * 16;
@@ -671,6 +672,7 @@ async function runMilestone6ExpansionTests() {
     combat.setEnemies([e1, e2, e3]);
     hero.coating = { itemId: 'venom_coating', statusId: 'poison', chance: 0.25, hitsRemaining: 30 };
     hero.energy = 100;
+    hero.equippedWeapon = dataLoader.getWeapon('bows')!;
     const origMathRandom = Math.random;
     Math.random = () => 0.01;
     const csCast = skillSys.execute(hero, chainShot as any, e1);

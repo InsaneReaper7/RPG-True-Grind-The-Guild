@@ -484,6 +484,7 @@ async function runMilestone24Tests() {
   const medicProg = new ProgressionSystem();
   medicProg.setClassLevel('combat_medic', 15);
   const cmPlayer = createMockPlayer('p1', 'Medic', 5, 5, maceDef, medicProg);
+  cmPlayer.offhandWeapon = dataLoader.getWeapon('healing_magic')!;
   const enemySmite = createMockEnemy('e1', 'TargetGoblin', 8, 5, 80); // Distance = 3 tiles (range is 5)
 
   const bigGrid: number[][] = [];
@@ -590,6 +591,7 @@ async function runMilestone24Tests() {
   const rmProg = new ProgressionSystem();
   rmProg.setClassLevel('restoration_mage', 40);
   const rmPlayer = createMockPlayer('p4', 'RestoHealer', 5, 5, maceDef, rmProg);
+  rmPlayer.offhandWeapon = dataLoader.getWeapon('healing_magic')!;
   const barrierDef = dataLoader.getSkill('barrier')!;
   combat.castSkill(rmPlayer, 'barrier', shieldedPlayer);
   assert.equal(shieldedPlayer.getShieldHp(), 50, 'Barrier provides 50 shield HP');

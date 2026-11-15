@@ -153,10 +153,10 @@ export function canUseSkillWithCurrentWeapons(caster: SkillWeaponHolder, skillDe
   const conduitSpellOf = (w: WeaponDef): WeaponDef | null =>
     w.category === 'magic' ? null : dataLoader.getSpellForConduit(w);
 
-  // Rule 2: direct match on proficiencyId ?? id or id (a conduit also matches its spell's school)
+  // Rule 2: direct match on proficiencyId ?? baseItemId ?? id or id (a conduit also matches its spell's school)
   for (const w of equippedWeapons) {
-    const profId = w.proficiencyId ?? w.id;
-    if (weaponSet.has(profId) || weaponSet.has(w.id)) {
+    const profId = w.proficiencyId ?? (w as any).baseItemId ?? w.id;
+    if (weaponSet.has(profId) || weaponSet.has(w.id) || ((w as any).baseItemId && weaponSet.has((w as any).baseItemId))) {
       return true;
     }
     const spell = conduitSpellOf(w);

@@ -477,7 +477,12 @@ async function run() {
   const skillSystem = new SkillSystem(combat);
 
   for (const [classId, def] of Object.entries(expectedHybrids)) {
-    const testCaster = createTestPlayer('caster_' + classId, 'TestCaster', classId, 'short_swords');
+    const startingWeapon = classId === 'alchemical_bomber'
+      ? 'throwing_weapons'
+      : classId === 'herbwarden'
+      ? 'nature_staff'
+      : 'short_swords';
+    const testCaster = createTestPlayer('caster_' + classId, 'TestCaster', classId, startingWeapon);
     combat.party = [testCaster];
 
     for (const sInfo of def.skills) {

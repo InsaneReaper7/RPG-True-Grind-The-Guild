@@ -72,6 +72,7 @@ const { CombatSystem } = await import('../src/systems/CombatSystem.ts');
 const { Player } = await import('../src/entities/Player.ts');
 const { Enemy } = await import('../src/entities/Enemy.ts');
 const { Pathfinder } = await import('../src/utils/Pathfinder.ts');
+const { getSkillWeaponSet } = await import('../src/utils/skillWeapons.ts');
 import type { EnemyDef, WeaponDef } from '../src/types/game.ts';
 
 function createMockScene(gridWidth: number = 30, gridHeight: number = 30): any {
@@ -203,7 +204,13 @@ async function runBatchCTests() {
   };
 
   const createTester = (skillId: string, weapon: WeaponDef = fixedTestWeapon, x: number = 10, y: number = 10, skipClasses: boolean = true) => {
-    const tester = new Player(scene, x, y, playerData, weapon, 32);
+    const weaponSet = getSkillWeaponSet(skillId);
+    const chosenProf = Array.from(weaponSet)[0];
+    const weaponForSkill: WeaponDef = {
+      ...weapon,
+      proficiencyId: weapon.proficiencyId ?? chosenProf ?? 'fist'
+    };
+    const tester = new Player(scene, x, y, playerData, weaponForSkill, 32);
     if (!skipClasses) {
       for (const c of [
         'fencer', 'combat_medic', 'vanguard', 'restoration_mage', 'brawler',
@@ -468,6 +475,7 @@ async function runBatchCTests() {
       assert.strictEqual(tester.energy, 36, `Basic attack with siphon resulted in 36 EN: ${tester.energy}`);
 
       // Skill attack (blade_strike): cost 15 EN -> 36 - 15 = 21 + 4 siphon = 25 EN.
+      tester.offhandWeapon = dataLoader.getWeapon('katana')!;
       const okSkill = combat.castSkill(tester, 'blade_strike', enemy, 1000);
       assert.strictEqual(okSkill, true);
       assert.strictEqual(tester.energy, 25, `Skill attack with siphon resulted in 25 EN: ${tester.energy}`);

@@ -684,6 +684,7 @@ async function runTests() {
       prog.getProficiencyStat('life_steal').level = 60; // +6.0% lifesteal (0.06)
 
       const caster = new Player(mockScene, 10, 10, pData, meleeWpn, 16, 'player', prog);
+      caster.offhandWeapon = dl.getWeapon('dark_magic')!;
       caster.activeClass = 'vampire';
       caster.energy = 100;
       caster.hp = 10;

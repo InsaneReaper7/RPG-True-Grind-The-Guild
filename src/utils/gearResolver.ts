@@ -70,6 +70,7 @@ export function resolveGearStats(idOrInstanceId: string): {
     const bonusMult = 1 + (instance.bonusPercent / 100);
     const scaledWeapon: WeaponDef = {
       ...rawWeapon,
+      proficiencyId: rawWeapon.proficiencyId ?? rawWeapon.id,
       id: instance.instanceId,
       baseItemId: baseId,
       instanceId: instance.instanceId,

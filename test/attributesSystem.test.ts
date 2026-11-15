@@ -458,6 +458,7 @@ async function run() {
 
   combatSystem6.setEnemies([primaryTarget, cleaveTarget]);
   hero6.equippedWeapon = dl.getWeapon('greatswords')!;
+  hero6.offhandWeapon = dl.getWeapon('katana')!;
 
   const crescentStormDef = dl.getSkill('crescent_storm');
   assert.ok(crescentStormDef, 'crescent_storm skill should exist');

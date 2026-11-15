@@ -409,6 +409,7 @@ async function runReviveIconLifecycleTests() {
   const combatSystem = new CombatSystem(dungeonScene);
   combatSystem.setParty(dungeonScene.party);
   medicHero.progression.setClassLevel('combat_medic', 40);
+  medicHero.equippedWeapon = dataLoader.getWeapon('healing_staff')!;
   medicHero.knownSkillIds.push('mass_revive');
   medicHero.equippedSkillIds.push('mass_revive');
   medicHero.energy = 100;

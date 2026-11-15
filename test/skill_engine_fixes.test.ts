@@ -283,7 +283,8 @@ async function runTests() {
   // -------------------------------------------------------------------------------------------------
   console.log('\n--- TEST 5: Defensive Stances on Threat (Unbreakable / Guard Up trigger without HP gating) ---');
   {
-    const tank = new Player(scene, 10, 10, playerData, staff, 32);
+    const sword = dataLoader.getWeapon('short_swords')!;
+    const tank = new Player(scene, 10, 10, playerData, sword, 32);
     tank.progression.setClassLevel('vanguard', 40);
     tank.energy = 100;
     tank.maxHp = 100;
