@@ -1000,8 +1000,8 @@ export class SkillSystem {
             break;
           }
           case 'buff': {
-            const spd = (effect.attackSpeedPercent ?? 40) / 100;
-            const dmg = (effect.damagePercent ?? 20) / 100;
+            const spd = effect.attackSpeedPercent ?? 40;
+            const dmg = effect.damagePercent ?? 20;
             const dur = effect.durationMs ?? 8000;
             livingBeast.applyBestialFury(spd, dmg, dur);
             break;
@@ -1009,13 +1009,16 @@ export class SkillSystem {
           case 'taunt': {
             const radius = effect.radiusTiles ?? 3;
             const dur = effect.durationMs ?? 4000;
-            const tauntDef = DataLoader.getInstance().getStatusEffect('taunted') || {
-              id: 'taunted',
-              name: 'Taunted',
-              durationMs: dur,
-              tickIntervalMs: dur,
-              damagePerTick: 0,
-              color: '#f97316'
+            const baseTauntDef = DataLoader.getInstance().getStatusEffect('taunted');
+            const tauntDef = {
+              ...(baseTauntDef || {
+                id: 'taunted',
+                name: 'Taunted',
+                tickIntervalMs: dur,
+                damagePerTick: 0,
+                color: '#f97316'
+              }),
+              durationMs: dur
             };
             const bTile = { x: Math.floor(livingBeast.x / livingBeast.tileSize), y: Math.floor(livingBeast.y / livingBeast.tileSize) };
             for (const enemy of this.combatSystem.enemies) {

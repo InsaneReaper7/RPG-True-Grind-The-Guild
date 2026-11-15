@@ -714,26 +714,23 @@ export class MainScene extends Phaser.Scene {
           const species = dataLoader.getEnemy(animal.speciesId);
           if (species) {
             const spawnTile = this.findOpenAdjacentTile(member.gridPos, undefined, undefined, member);
-            const savedState = GameState.getInstance().getBeastHpState(animal.uid);
-            let currentHp: number | undefined = undefined;
-            if (savedState) {
-              const bmLevel = member.progression.getClassLevel('beastmaster');
-              const maxHp = species.hp * (1 + beastConfig.hpPerClassLevel * bmLevel);
-              if (savedState.isDowned) {
-                currentHp = maxHp * beastConfig.reviveHpFraction;
-              } else {
-                currentHp = Math.min(maxHp, savedState.currentHp);
-              }
-            }
             const beast = new BeastCompanion(
               this,
               spawnTile.x,
               spawnTile.y,
               member,
               animal,
-              this.tileSize,
-              currentHp
+              this.tileSize
             );
+            const savedState = GameState.getInstance().getBeastHpState(animal.uid);
+            if (savedState) {
+              if (savedState.isDowned) {
+                beast.hp = beast.maxHp * beastConfig.reviveHpFraction;
+              } else {
+                beast.hp = Math.min(beast.maxHp, savedState.currentHp);
+              }
+              beast.updateOverheadUI();
+            }
             this.beastCompanions.push(beast);
           }
         }

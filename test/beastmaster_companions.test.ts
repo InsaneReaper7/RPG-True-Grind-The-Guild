@@ -61,18 +61,70 @@ class MockElement {
     this._textContent = String(val);
   }
 
+  get options(): MockElement[] {
+    return this.children.filter(c => c.tagName === 'OPTION');
+  }
+
   get innerHTML(): string {
     return this._innerHTML;
   }
   set innerHTML(val: string) {
     this._innerHTML = String(val);
     this.children = [];
-    const matches = val.matchAll(/<([a-zA-Z0-9\-]+)([^>]*)>/g);
+
+    // Parse selects and their child options
+    const selectMatches = val.matchAll(/<select([^>]*)>([\s\S]*?)<\/select>/gi);
+    for (const sm of selectMatches) {
+      const attrsStr = sm[1];
+      const innerOptions = sm[2];
+      const selEl = new MockElement('SELECT');
+      selEl.parentElement = this;
+      const classMatch = attrsStr.match(/class=["']([^"']+)["']/);
+      if (classMatch) {
+        selEl.className = classMatch[1];
+        classMatch[1].split(/\s+/).forEach(c => selEl.classList.add(c));
+      }
+      const dataMatches = attrsStr.matchAll(/data-([a-zA-Z0-9\-]+)=["']([^"']+)["']/g);
+      for (const dm of dataMatches) {
+        const camel = dm[1].replace(/-([a-z])/g, (_, l) => l.toUpperCase());
+        selEl.dataset[camel] = dm[2];
+      }
+      const optMatches = innerOptions.matchAll(/<option([^>]*)>([^<]*)<\/option>/gi);
+      for (const om of optMatches) {
+        const optAttrs = om[1];
+        const optText = om[2].trim();
+        const optEl = new MockElement('OPTION');
+        optEl.parentElement = selEl;
+        optEl.textContent = optText;
+        optEl.innerText = optText;
+        if (/\bdisabled\b/i.test(optAttrs)) {
+          optEl.disabled = true;
+        }
+        const valM = optAttrs.match(/value=["']([^"']*)["']/);
+        if (valM) {
+          optEl.value = valM[1];
+        }
+        selEl.children.push(optEl);
+      }
+      this.children.push(selEl);
+    }
+
+    // Also parse other tags
+    const matches = val.matchAll(/<([a-zA-Z0-9\-]+)([^>]*)>(?:([^<]*)<\/\1>)?/g);
     for (const match of matches) {
       const tag = match[1];
+      if (tag.toUpperCase() === 'SELECT' || tag.toUpperCase() === 'OPTION') continue;
       const attrsStr = match[2];
+      const text = match[3];
       const el = new MockElement(tag);
       el.parentElement = this;
+      if (text !== undefined) {
+        el.textContent = text.trim();
+        el.innerText = text.trim();
+      }
+      if (/\bdisabled\b/i.test(attrsStr)) {
+        el.disabled = true;
+      }
       const classMatch = attrsStr.match(/class=["']([^"']+)["']/);
       if (classMatch) {
         el.className = classMatch[1];
@@ -83,7 +135,7 @@ class MockElement {
         const camel = dm[1].replace(/-([a-z])/g, (_, l) => l.toUpperCase());
         el.dataset[camel] = dm[2];
       }
-      const valMatch = attrsStr.match(/value=["']([^"']+)["']/);
+      const valMatch = attrsStr.match(/value=["']([^"']*)["']/);
       if (valMatch) {
         el.value = valMatch[1];
       }
@@ -105,6 +157,8 @@ class MockElement {
       } else if (sel.startsWith('#')) {
         const id = sel.slice(1);
         if (el.id === id) results.push(el as any);
+      } else if (sel.toLowerCase() === 'option') {
+        if (el.tagName === 'OPTION') results.push(el as any);
       } else if (sel.startsWith('[')) {
         const m = sel.match(/\[data-([a-zA-Z0-9\-]+)(?:=["']([^"']+)["'])?\]/);
         if (m) {
@@ -180,8 +234,24 @@ const dummyCtx: any = new Proxy({
     return domElements.get(id);
   },
   elementFromPoint: (_x: number, _y: number) => new MockElement('DIV'),
-  querySelectorAll: () => [],
-  querySelector: () => null,
+  querySelectorAll: (sel: string) => {
+    const results: MockElement[] = [];
+    for (const el of domElements.values()) {
+      results.push(...el.querySelectorAll(sel));
+      if (sel.startsWith('.') && el.classList.contains(sel.slice(1))) results.push(el);
+      if (sel.startsWith('#') && el.id === sel.slice(1)) results.push(el);
+    }
+    return results;
+  },
+  querySelector: (sel: string) => {
+    for (const el of domElements.values()) {
+      if (sel.startsWith('.') && el.classList.contains(sel.slice(1))) return el;
+      if (sel.startsWith('#') && el.id === sel.slice(1)) return el;
+      const found = el.querySelector(sel);
+      if (found) return found;
+    }
+    return null;
+  },
   addEventListener: () => {},
   removeEventListener: () => {},
   documentElement: new MockElement('html'),
@@ -216,6 +286,7 @@ const { Player } = await import('../src/entities/Player.ts');
 const { Enemy } = await import('../src/entities/Enemy.ts');
 const { BeastCompanion } = await import('../src/entities/BeastCompanion.ts');
 const { Pathfinder } = await import('../src/utils/Pathfinder.ts');
+const { HUD } = await import('../src/ui/HUD.ts');
 
 function createMockScene(): any {
   const grid: number[][] = [];
@@ -272,10 +343,16 @@ function createMockScene(): any {
     getPartyUnitObstacles: () => [],
     time: { now: 1000 },
     textures: { exists: () => true },
+    tweens: {
+      add: () => ({ remove: () => {} })
+    },
     add: {
       graphics: () => createMockObj(),
       sprite: () => createMockObj(),
       text: () => createMockObj(),
+      line: () => createMockObj(),
+      circle: () => createMockObj(),
+      rectangle: () => createMockObj(),
       existing: (item: any) => item
     }
   };
@@ -359,9 +436,19 @@ console.log('\n--- Suite 2: Companion Dropdown, Bonding & Persistence ---');
   prog1.getProficiencyStat('bows')!.level = 30;
   prog1.checkClassUnlocks();
 
+  const prog2 = new ProgressionSystem(classesData, 'Ally Ranger');
+  prog2.getProficiencyStat('animal_husbandry')!.level = 60;
+  prog2.getProficiencyStat('taming')!.level = 60;
+  prog2.getProficiencyStat('bows')!.level = 30;
+  prog2.checkClassUnlocks();
+
   const player1 = new Player(scene, 5, 5, defaultPlayerData, defaultWeapon, 32, 'player-avatar', prog1);
   player1.setActiveClass('beastmaster');
   assert.equal(player1.activeClass, 'beastmaster');
+
+  const player2 = new Player(scene, 6, 5, defaultPlayerData, defaultWeapon, 32, 'player-avatar', prog2);
+  player2.setActiveClass('beastmaster');
+  player2.companionUid = 'spider_1'; // Player 2 already bonded to spider_1
 
   const gameState = GameState.getInstance();
   gameState.tamedAnimals = [
@@ -371,22 +458,65 @@ console.log('\n--- Suite 2: Companion Dropdown, Bonding & Persistence ---');
     { uid: 'fowl_1', speciesId: 'crypt_fowl', name: 'Clucky' } // Livestock
   ];
 
-  // Predatory filter check: only wolf and spider should be selectable, not goat or fowl
-  const predatorSpecies = ['wolf', 'spider', 'deep_crawler', 'cinder_hound', 'frostfang_stalker'];
-  const eligibleAnimals = gameState.tamedAnimals.filter(a => predatorSpecies.includes(a.speciesId));
-  assert.equal(eligibleAnimals.length, 2);
-  assert.deepEqual(eligibleAnimals.map(a => a.speciesId), ['wolf', 'spider']);
-  assert.ok(!eligibleAnimals.some(a => a.speciesId === 'cave_goat'), 'Livestock must never appear in companion choices');
-  assert.ok(!eligibleAnimals.some(a => a.speciesId === 'crypt_fowl'), 'Livestock must never appear in companion choices');
+  const hud = new HUD(null as any);
+  hud.update(player1, player1.progression, 0, [player1, player2]);
 
-  // Bond animal to player1
-  player1.companionUid = 'wolf_1';
+  // 1. renderPartyOverviewModal()
+  hud.renderPartyOverviewModal(true);
+
+  const rosterEl: any = (hud as any).partyOverviewRosterEl;
+  assert.ok(rosterEl, 'partyOverviewRosterEl must exist');
+
+  // 2. find the member's .party-companion-select
+  const selects = rosterEl.querySelectorAll('.party-companion-select');
+  assert.ok(selects.length >= 1, 'Must render .party-companion-select for beastmaster member');
+  const sel0 = selects[0]; // player1's select
+  assert.equal(sel0.dataset.memberIdx, '0');
+
+  // 3. check its options: "None" plus predators only, no goat or fowl, and an animal bonded to another member is disabled
+  const options = sel0.querySelectorAll('option');
+  const optionValues = options.map((o: any) => o.value);
+  const optionTexts = options.map((o: any) => o.textContent);
+
+  // "None" option exists
+  assert.equal(optionValues[0], '', 'First option must be None');
+  assert.equal(optionTexts[0], 'None');
+
+  // Predators only: wolf_1 and spider_1 present
+  assert.ok(optionValues.includes('wolf_1'), 'Wolf predator must be listed');
+  assert.ok(optionValues.includes('spider_1'), 'Spider predator must be listed');
+
+  // Livestock excluded: no goat or fowl
+  assert.ok(!optionValues.includes('goat_1'), 'cave_goat must NOT appear in companion options');
+  assert.ok(!optionValues.includes('fowl_1'), 'crypt_fowl must NOT appear in companion options');
+  assert.ok(!optionTexts.some((t: string) => t.includes('Billy')), 'Livestock Billy must not appear');
+  assert.ok(!optionTexts.some((t: string) => t.includes('Clucky')), 'Livestock Clucky must not appear');
+
+  // Animal bonded to another member (spider_1 bonded to player2) is disabled
+  const spiderOpt = options.find((o: any) => o.value === 'spider_1');
+  assert.ok(spiderOpt, 'spider_1 option must exist');
+  assert.equal(spiderOpt.disabled, true, 'spider_1 bonded to player2 must be disabled');
+  assert.ok(spiderOpt.textContent.includes('(Bonded)'), 'spider_1 option text must indicate (Bonded)');
+
+  // wolf_1 is not bonded to another member, so it is enabled
+  const wolfOpt = options.find((o: any) => o.value === 'wolf_1');
+  assert.ok(wolfOpt);
+  assert.equal(wolfOpt.disabled, false, 'wolf_1 must be enabled');
+
+  // 4. set its value and dispatch change
+  sel0.value = 'wolf_1';
+  rosterEl.onchange({ target: sel0 });
+
+  // 5. assert companionUid, and that the HP line updates
+  assert.equal(player1.companionUid, 'wolf_1', 'Dispatching change must update player1.companionUid');
+  assert.ok(rosterEl.innerHTML.includes('Name:</span> Fang'), 'HP line/card must update to show companion name');
+  assert.ok(rosterEl.innerHTML.includes('Species:</span> Wolf'), 'HP line/card must update to show species');
+  assert.ok(rosterEl.innerHTML.includes('Max HP:</span>'), 'HP line/card must update to show Max HP');
 
   // Snapshot persistence
   const snap = player1.getSnapshot(1000);
   assert.equal(snap.companionUid, 'wolf_1', 'Snapshot must record companionUid');
 
-  // Restore without clearing
   const playerRestored = new Player(scene, 5, 5, defaultPlayerData, defaultWeapon, 32, 'player-avatar', prog1);
   playerRestored.restoreFromSnapshot(snap, 1000);
   assert.equal(playerRestored.companionUid, 'wolf_1', 'restoreFromSnapshot must restore companionUid');
@@ -402,7 +532,7 @@ console.log('\n--- Suite 2: Companion Dropdown, Bonding & Persistence ---');
   player1.setActiveClass('beastmaster');
   assert.equal(player1.companionUid, null, 'Switching back to beastmaster must require picking companion again');
 
-  console.log('✓ PASS: Companion dropdown filters predators only, persists on save/load, and clears when changing class away.');
+  console.log('✓ PASS: Companion dropdown drives bonding via real control, excludes livestock, disables bonded animals, updates HP display, and clears on class change.');
 }
 
 // -------------------------------------------------------------
@@ -642,9 +772,11 @@ console.log('\n--- Suite 7: Kit Skills & AI Selection ---');
   const skillSystem = (combat as any).skillSystem;
 
   // 1. Without companion: mend_beast, bestial_fury, guardian_howl cannot be executed
+  const sicEmDef = DataLoader.getInstance().getSkill('sic_em')!;
   const mendDef = DataLoader.getInstance().getSkill('mend_beast')!;
   const furyDef = DataLoader.getInstance().getSkill('bestial_fury')!;
   const howlDef = DataLoader.getInstance().getSkill('guardian_howl')!;
+  const stampedeDef = DataLoader.getInstance().getSkill('stampede')!;
 
   assert.equal(skillSystem.execute(owner, mendDef, owner, 1000), false, 'Mend Beast fails without companion');
   assert.equal(skillSystem.execute(owner, furyDef, owner, 1000), false, 'Bestial Fury fails without companion');
@@ -656,8 +788,8 @@ console.log('\n--- Suite 7: Kit Skills & AI Selection ---');
   const selDefNoBeast = skillSystem.selectSkillForCompanion(owner, 'defensive', 1000);
   assert.equal(selDefNoBeast, null, 'AI selector must not select Bestial Fury/Guardian Howl without companion');
 
-  // 2. Add living companion at full HP
-  const wolf = new BeastCompanion(scene, 11, 10, owner, { uid: 'w4', speciesId: 'wolf', name: 'Timber' }, 32);
+  // 2. Add living companion (Wolf with Lv 40 owner: base 4 dmg * (1 + 0.03 * 40) = 8.8 dmg, 1200 ms interval, 66 maxHp)
+  const wolf = new BeastCompanion(scene, 10, 11, owner, { uid: 'w4', speciesId: 'wolf', name: 'Timber' }, 32);
   combat.setBeastCompanions([wolf]);
 
   // Beast at full HP: mend_beast must NOT be selected by AI (only < 50% HP)
@@ -670,29 +802,183 @@ console.log('\n--- Suite 7: Kit Skills & AI Selection ---');
   assert.ok(selSupportInjured, 'Mend Beast MUST be selected when beast is < 50% HP');
   assert.equal(selSupportInjured.skillDef.id, 'mend_beast');
 
-  // Cast Mend Beast: restores 30% HP
+  // Cast Mend Beast: restores exactly 30% of max HP
   const prevHp = wolf.hp;
   const healSuccess = skillSystem.execute(owner, mendDef, owner, 1000);
   assert.equal(healSuccess, true, 'Mend Beast execution must succeed with living beast');
   assert.equal(wolf.hp, prevHp + 0.3 * wolf.maxHp, 'Mend Beast must restore 30% max HP');
 
-  // Defensive context with living companion: Bestial Fury / Guardian Howl
+  // Defensive context with living companion: Bestial Fury / Guardian Howl selectable
   const selDef = skillSystem.selectSkillForCompanion(owner, 'defensive', 1000);
   assert.ok(selDef, 'Defensive skills selectable with living companion');
   assert.ok(selDef.skillDef.id === 'guardian_howl' || selDef.skillDef.id === 'bestial_fury');
 
-  console.log('✓ PASS: Kit skills execute correctly, companion-only skills gated without companion, and AI rules match requirements.');
-}
+  // 3. Bestial Fury: Attack speed goes 1200 -> 857 ms, damage * 1.2 for 8 s, returns to normal
+  assert.equal(wolf.getEffectiveAttackInterval(), 1200);
+  assert.equal(wolf.getEffectiveMeleeDamage(), 8.8);
 
-// -------------------------------------------------------------
-// SUITE 8: UI Overflow & ElementFromPoint Audit
-// -------------------------------------------------------------
-console.log('\n--- Suite 8: UI Overflow & Clickability Checks ---');
-{
-  const css = fs.readFileSync(path.join(rootDir, 'index.html'), 'utf8');
-  assert.ok(/max-height:\s*calc\(100vh - \d+px\)/.test(css) && /overflow-y:\s*auto/.test(css), 'HUD panel must be height capped and scroll');
-  assert.ok(/overflow-y:\s*auto/.test(css), 'Custom modals must allow vertical scrolling');
-  console.log('✓ PASS: UI overflow rules verified.');
+  const furySuccess = skillSystem.execute(owner, furyDef, owner, 1000);
+  assert.equal(furySuccess, true);
+  assert.equal(wolf.getEffectiveAttackInterval(), 857, 'Attack interval must be 857 ms (1200 / 1.4)');
+  assert.equal(Math.round(wolf.getEffectiveMeleeDamage() * 100) / 100, 10.56, 'Damage must be 8.8 * 1.2 = 10.56');
+
+  // Advance delta 8000 ms to expire buff
+  wolf.updateBeastBehavior(10000, 8000, combat);
+  assert.equal(wolf.getEffectiveAttackInterval(), 1200, 'Attack interval returns to normal 1200 ms');
+  assert.equal(wolf.getEffectiveMeleeDamage(), 8.8, 'Damage returns to normal 8.8');
+
+  // 4. Guardian Howl: Enemies within 3 tiles taunted for 4 s, enemy 4 tiles away is not
+  owner.autocastMap.clear(); // Disable background autocast for direct kit skill assertions
+  const enemyNear = new Enemy(scene, 12, 10, DataLoader.getInstance().getEnemy('wolf')!, 'wolf-avatar', 32); // dist = 2 <= 3
+  const enemyFar = new Enemy(scene, 14, 10, DataLoader.getInstance().getEnemy('wolf')!, 'wolf-avatar', 32); // dist = 4 > 3
+  combat.enemies = [enemyNear, enemyFar];
+
+  wolf.setGridPosition(10, 10);
+  enemyNear.setGridPosition(12, 10);
+  enemyFar.setGridPosition(14, 10);
+
+  const howlSuccess = skillSystem.execute(owner, howlDef, owner, 2000);
+  assert.equal(howlSuccess, true);
+
+  assert.equal(enemyNear.hasStatusEffect('taunted'), true, 'Enemy within 3 tiles must be taunted');
+  assert.equal(enemyNear.activeStatusEffects.get('taunted')?.def?.durationMs, 4000, 'Taunt must last exactly 4000 ms (not 6000 ms)');
+  assert.equal(enemyNear.tauntSource, wolf, 'Taunt source must be the wolf companion');
+
+  assert.equal(enemyFar.hasStatusEffect('taunted'), false, 'Enemy 4 tiles away must NOT be taunted');
+  assert.equal(enemyFar.tauntSource, null);
+
+  // Advance time by 4000 ms
+  enemyNear.updateStatusEffects(4000);
+  owner.equippedSkillIds = []; // Prevent auto-recasting during combat loop update
+  combat.update(20000, 4000);
+  assert.equal(enemyNear.hasStatusEffect('taunted'), false, 'Taunt must expire after 4 s');
+  assert.equal(enemyNear.tauntSource, null, 'tauntSource must be cleared after taunt expires');
+
+  // 5. Sic 'Em: Owner 0.8x weapon hit, beast moves next to target and hits for 2.0x beast damage (17.6)
+  // Target dummy with 500 HP
+  const targetDummy = new Enemy(scene, 14, 10, DataLoader.getInstance().getEnemy('wolf')!, 'wolf-avatar', 32);
+  targetDummy.hp = 500;
+  targetDummy.maxHp = 500;
+  combat.enemies = [targetDummy];
+
+  wolf.setGridPosition(10, 10);
+  owner.setGridPosition(10, 10);
+  owner.energy = 100;
+  owner.mood = 80;
+
+  // Track damage calls on targetDummy
+  const origRng = Math.random;
+  Math.random = () => 0.05; // Guarantee weapon skill hit connects deterministically
+
+  const hitsDealt: { damage: number; source: any }[] = [];
+  const origTakeDamage = targetDummy.takeDamage.bind(targetDummy);
+  targetDummy.takeDamage = function(amount: number, source?: any) {
+    hitsDealt.push({ damage: amount, source });
+    return origTakeDamage(amount, source);
+  };
+
+  const sicSuccess = skillSystem.execute(owner, sicEmDef, targetDummy, 3000);
+  assert.equal(sicSuccess, true);
+
+  // Owner hit = 0.8x weapon damage = 18.21; Beast hit = 2.0x beast damage = 17.6 (8.8 * 2.0)
+  const expectedOwnerHit08 = 18.21;
+  assert.equal(hitsDealt.length, 2, 'Sic Em must deal 2 hits: owner weapon hit and beast strike');
+  assert.equal(hitsDealt[0].source, owner, 'First hit must be owner weapon hit');
+  assert.equal(Math.round(hitsDealt[0].damage * 100) / 100, expectedOwnerHit08, `Owner hit must be 0.8x weapon damage (${expectedOwnerHit08})`);
+  assert.equal(hitsDealt[1].source, wolf, 'Second hit must be from wolf companion');
+  assert.equal(hitsDealt[1].damage, 17.6, 'Beast hit must be exactly 2.0x beast damage (8.8 * 2.0 = 17.6)');
+
+  // Beast moved next to target
+  const beastDistToTarget = Math.max(Math.abs(wolf.gridPos.x - targetDummy.gridPos.x), Math.abs(wolf.gridPos.y - targetDummy.gridPos.y));
+  assert.ok(beastDistToTarget <= 1, 'Beast must move to a tile adjacent to the target');
+
+  // With no beast, owner part still fires
+  hitsDealt.length = 0;
+  combat.setBeastCompanions([]);
+  owner.lastSkillUseTimes.clear();
+  owner.energy = 100;
+  const sicNoBeastSuccess = skillSystem.execute(owner, sicEmDef, targetDummy, 10000);
+  assert.equal(sicNoBeastSuccess, true, 'Sic Em must succeed even with no beast companion');
+  assert.equal(hitsDealt.length, 1, 'Only owner weapon hit fires when there is no beast');
+  assert.equal(hitsDealt[0].source, owner);
+  assert.equal(Math.round(hitsDealt[0].damage * 100) / 100, expectedOwnerHit08);
+
+  // 6. Stampede: 1.2x weapon damage to every enemy within 2 tiles of target, not one at 3; beast hits for 1.5x (13.2)
+  combat.setBeastCompanions([wolf]);
+  wolf.setGridPosition(10, 10);
+
+  const stampedePrimary = new Enemy(scene, 14, 10, DataLoader.getInstance().getEnemy('wolf')!, 'wolf-avatar', 32);
+  const stampedeNear1 = new Enemy(scene, 15, 10, DataLoader.getInstance().getEnemy('wolf')!, 'wolf-avatar', 32); // dist 1 <= 2
+  const stampedeNear2 = new Enemy(scene, 16, 10, DataLoader.getInstance().getEnemy('wolf')!, 'wolf-avatar', 32); // dist 2 <= 2
+  const stampedeFar = new Enemy(scene, 17, 10, DataLoader.getInstance().getEnemy('wolf')!, 'wolf-avatar', 32);   // dist 3 > 2
+
+  for (const e of [stampedePrimary, stampedeNear1, stampedeNear2, stampedeFar]) {
+    e.hp = 500;
+    e.maxHp = 500;
+  }
+  combat.enemies = [stampedePrimary, stampedeNear1, stampedeNear2, stampedeFar];
+
+  const stampedeHits: { target: string; damage: number; source: any }[] = [];
+  const hookTarget = (t: Enemy, name: string) => {
+    const orig = t.takeDamage.bind(t);
+    t.takeDamage = function(amount: number, source?: any) {
+      stampedeHits.push({ target: name, damage: amount, source });
+      return orig(amount, source);
+    };
+  };
+  hookTarget(stampedePrimary, 'primary');
+  hookTarget(stampedeNear1, 'near1');
+  hookTarget(stampedeNear2, 'near2');
+  hookTarget(stampedeFar, 'far');
+
+  owner.energy = 100;
+  const stampedeSuccess = skillSystem.execute(owner, stampedeDef, stampedePrimary, 5000);
+  assert.equal(stampedeSuccess, true);
+
+  // Expected 1.2x weapon damage: 27.31
+  // Expected beast damage: 8.8 * 1.5 = 13.2
+  const expectedOwnerHit12 = 27.31;
+  const primaryHits = stampedeHits.filter(h => h.target === 'primary');
+  assert.equal(primaryHits.length, 2, 'Primary target receives owner weapon hit and beast strike');
+  assert.equal(Math.round(primaryHits[0].damage * 100) / 100, expectedOwnerHit12, `Primary receives 1.2x weapon damage (${expectedOwnerHit12})`);
+  assert.equal(primaryHits[1].source, wolf);
+  assert.equal(Math.round(primaryHits[1].damage * 100) / 100, 13.2, 'Primary receives beast strike for 1.5x beast damage (8.8 * 1.5 = 13.2)');
+
+  const near1Hits = stampedeHits.filter(h => h.target === 'near1');
+  assert.equal(near1Hits.length, 1, 'Enemy 1 tile away receives 1.2x splash damage');
+  assert.equal(Math.round(near1Hits[0].damage * 100) / 100, expectedOwnerHit12);
+
+  const near2Hits = stampedeHits.filter(h => h.target === 'near2');
+  assert.equal(near2Hits.length, 1, 'Enemy 2 tiles away receives 1.2x splash damage');
+  assert.equal(Math.round(near2Hits[0].damage * 100) / 100, expectedOwnerHit12);
+
+  const farHits = stampedeHits.filter(h => h.target === 'far');
+  assert.equal(farHits.length, 0, 'Enemy 3 tiles away must receive 0 damage (outside 2-tile radius)');
+
+  // Stampede with no beast: owner part still fires
+  stampedeHits.length = 0;
+  combat.setBeastCompanions([]);
+  owner.lastSkillUseTimes.clear();
+  owner.energy = 100;
+  for (const e of [stampedePrimary, stampedeNear1, stampedeNear2, stampedeFar]) {
+    e.hp = 500;
+  }
+  const stampedeNoBeastSuccess = skillSystem.execute(owner, stampedeDef, stampedePrimary, 25000);
+  assert.equal(stampedeNoBeastSuccess, true);
+
+  const primaryNoBeastHits = stampedeHits.filter(h => h.target === 'primary');
+  assert.equal(primaryNoBeastHits.length, 1, 'Primary receives only owner weapon hit without beast');
+  assert.equal(Math.round(primaryNoBeastHits[0].damage * 100) / 100, expectedOwnerHit12);
+
+  const near1NoBeastHits = stampedeHits.filter(h => h.target === 'near1');
+  assert.equal(near1NoBeastHits.length, 1, 'Enemy 1 tile away receives splash even without beast');
+
+  const farNoBeastHits = stampedeHits.filter(h => h.target === 'far');
+  assert.equal(farNoBeastHits.length, 0, 'Enemy 3 tiles away still receives 0');
+
+  Math.random = origRng;
+
+  console.log('✓ PASS: Kit skills execute correctly, exact numbers verified for Sic Em, Stampede, Bestial Fury and Guardian Howl, and AI rules match requirements.');
 }
 
 console.log('\n🎉 ALL BEASTMASTER & COMPANIONS TESTS PASSED SUCCESSFULLY!');

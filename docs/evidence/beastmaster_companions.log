@@ -10,14 +10,227 @@
 --- Suite 2: Companion Dropdown, Bonding & Persistence ---
 [Progression] Class Unlocked: Marksman (marksman) for Hero BM!
 [Progression] Class Unlocked: Beastmaster (beastmaster) for Hero BM!
+[Progression] Class Unlocked: Marksman (marksman) for Ally Ranger!
+[Progression] Class Unlocked: Beastmaster (beastmaster) for Ally Ranger!
 [Player] Equipped skill: aimed_shot. Current loadout: [aimed_shot]
 [Player] Equipped skill: sic_em. Current loadout: [aimed_shot, sic_em]
 [Player:Ranger Tester] Active class set to: beastmaster
+[Player] Equipped skill: aimed_shot. Current loadout: [aimed_shot]
+[Player] Equipped skill: sic_em. Current loadout: [aimed_shot, sic_em]
+[Player:Ranger Tester] Active class set to: beastmaster
+[SceneTransition Handoff-OUT] Saved party snapshot (2 members) at sceneTime=1794748309777ms: [
+  {
+    id: 'hero',
+    name: 'Ranger Tester',
+    avatarKey: 'player-avatar',
+    avatarTextureKey: 'player-avatar',
+    x: 5,
+    y: 5,
+    hp: 127,
+    criticalHp: 38.5,
+    energy: 112,
+    equippedWeaponId: 'bows',
+    offhandWeaponId: null,
+    equippedHelmetId: null,
+    equippedBodyArmorId: null,
+    equippedNecklaceId: null,
+    equippedRingId: null,
+    equippedAccessoryId: null,
+    baseCarryCapacity: 45,
+    inventory: {},
+    foodItems: [],
+    knownSkillIds: [ 'aimed_shot', 'sic_em' ],
+    equippedSkillIds: [ 'aimed_shot', 'sic_em' ],
+    autocastMap: { aimed_shot: true, sic_em: true },
+    skillCooldownsRemainingMs: {},
+    activeClass: 'beastmaster',
+    proficiencies: {
+      short_swords: [Object],
+      daggers: [Object],
+      shields: [Object],
+      mace: [Object],
+      staff: [Object],
+      druid_staff: [Object],
+      healing_magic: [Object],
+      fire_magic: [Object],
+      lightning_magic: [Object],
+      ice_magic: [Object],
+      holy_magic: [Object],
+      dark_magic: [Object],
+      arcane_magic: [Object],
+      water_magic: [Object],
+      earth_magic: [Object],
+      nature_magic: [Object],
+      wind_magic: [Object],
+      dual_wielding: [Object],
+      construction: [Object],
+      woodworking: [Object],
+      stonemason: [Object],
+      alchemy: [Object],
+      cooking: [Object],
+      blacksmithing: [Object],
+      foraging: [Object],
+      woodcutting: [Object],
+      mining: [Object],
+      armorsmithing: [Object],
+      digging: [Object],
+      perception: [Object],
+      skinning: [Object],
+      butchering: [Object],
+      bows: [Object],
+      crossbows: [Object],
+      bowyer: [Object],
+      lockpicking: [Object],
+      gardening: [Object],
+      fist: [Object],
+      longswords: [Object],
+      greatswords: [Object],
+      spears: [Object],
+      katana: [Object],
+      throwing_weapons: [Object],
+      light_armor: [Object],
+      medium_armor: [Object],
+      heavy_armor: [Object],
+      fishing: [Object],
+      enchanting: [Object],
+      taming: [Object],
+      animal_husbandry: [Object],
+      evasion: [Object],
+      parry: [Object],
+      block: [Object],
+      counterattack: [Object],
+      resilience: [Object],
+      health_regen: [Object],
+      mana_regen: [Object],
+      energy_regen: [Object],
+      iron_back: [Object],
+      poison_resistance: [Object],
+      luck: [Object],
+      critical_strike: [Object],
+      life_steal: [Object],
+      stealth: [Object]
+    },
+    classLevels: { marksman: 1, beastmaster: 1 },
+    classStats: { marksman: [Object], beastmaster: [Object] },
+    unlockedClasses: [ 'marksman', 'beastmaster' ],
+    activityCounts: {},
+    triggerCounts: {},
+    bookLearnedSkills: [],
+    hunger: 100,
+    mood: 50,
+    state: 'idle',
+    coating: null,
+    companionUid: 'wolf_1'
+  },
+  {
+    id: 'hero',
+    name: 'Ranger Tester',
+    avatarKey: 'player-avatar',
+    avatarTextureKey: 'player-avatar',
+    x: 6,
+    y: 5,
+    hp: 127,
+    criticalHp: 38.5,
+    energy: 112,
+    equippedWeaponId: 'bows',
+    offhandWeaponId: null,
+    equippedHelmetId: null,
+    equippedBodyArmorId: null,
+    equippedNecklaceId: null,
+    equippedRingId: null,
+    equippedAccessoryId: null,
+    baseCarryCapacity: 45,
+    inventory: {},
+    foodItems: [],
+    knownSkillIds: [ 'aimed_shot', 'sic_em' ],
+    equippedSkillIds: [ 'aimed_shot', 'sic_em' ],
+    autocastMap: { aimed_shot: true, sic_em: true },
+    skillCooldownsRemainingMs: {},
+    activeClass: 'beastmaster',
+    proficiencies: {
+      short_swords: [Object],
+      daggers: [Object],
+      shields: [Object],
+      mace: [Object],
+      staff: [Object],
+      druid_staff: [Object],
+      healing_magic: [Object],
+      fire_magic: [Object],
+      lightning_magic: [Object],
+      ice_magic: [Object],
+      holy_magic: [Object],
+      dark_magic: [Object],
+      arcane_magic: [Object],
+      water_magic: [Object],
+      earth_magic: [Object],
+      nature_magic: [Object],
+      wind_magic: [Object],
+      dual_wielding: [Object],
+      construction: [Object],
+      woodworking: [Object],
+      stonemason: [Object],
+      alchemy: [Object],
+      cooking: [Object],
+      blacksmithing: [Object],
+      foraging: [Object],
+      woodcutting: [Object],
+      mining: [Object],
+      armorsmithing: [Object],
+      digging: [Object],
+      perception: [Object],
+      skinning: [Object],
+      butchering: [Object],
+      bows: [Object],
+      crossbows: [Object],
+      bowyer: [Object],
+      lockpicking: [Object],
+      gardening: [Object],
+      fist: [Object],
+      longswords: [Object],
+      greatswords: [Object],
+      spears: [Object],
+      katana: [Object],
+      throwing_weapons: [Object],
+      light_armor: [Object],
+      medium_armor: [Object],
+      heavy_armor: [Object],
+      fishing: [Object],
+      enchanting: [Object],
+      taming: [Object],
+      animal_husbandry: [Object],
+      evasion: [Object],
+      parry: [Object],
+      block: [Object],
+      counterattack: [Object],
+      resilience: [Object],
+      health_regen: [Object],
+      mana_regen: [Object],
+      energy_regen: [Object],
+      iron_back: [Object],
+      poison_resistance: [Object],
+      luck: [Object],
+      critical_strike: [Object],
+      life_steal: [Object],
+      stealth: [Object]
+    },
+    classLevels: { marksman: 1, beastmaster: 1 },
+    classStats: { marksman: [Object], beastmaster: [Object] },
+    unlockedClasses: [ 'marksman', 'beastmaster' ],
+    activityCounts: {},
+    triggerCounts: {},
+    bookLearnedSkills: [],
+    hunger: 100,
+    mood: 50,
+    state: 'idle',
+    coating: null,
+    companionUid: 'spider_1'
+  }
+]
 [Player] Equipped skill: aimed_shot. Current loadout: [aimed_shot]
 [Player] Equipped skill: sic_em. Current loadout: [aimed_shot, sic_em]
 [Player:Ranger Tester] Active class set to: marksman
 [Player:Ranger Tester] Active class set to: beastmaster
-✓ PASS: Companion dropdown filters predators only, persists on save/load, and clears when changing class away.
+✓ PASS: Companion dropdown drives bonding via real control, excludes livestock, disables bonded animals, updates HP display, and clears on class change.
 
 --- Suite 3: Companion Stats Calculation & Spawning ---
 [Progression] Class Unlocked: Marksman (marksman) for Master Hunter!
@@ -74,14 +287,23 @@
 [Player] Equipped skill: bestial_fury. Current loadout: [aimed_shot, sic_em, mend_beast, bestial_fury]
 [Player] Equipped skill: guardian_howl. Current loadout: [aimed_shot, sic_em, mend_beast, bestial_fury, guardian_howl]
 [Player:Ranger Tester] Active class set to: beastmaster
-[SkillSystem] Cannot cast Mend Beast: No companion!
-[SkillSystem] Cannot cast Bestial Fury: No companion!
-[SkillSystem] Cannot cast Guardian Howl: No companion!
 [Progression] +2 EXP for 'bows' (Ranger Tester). Current: Level 30 (2/170 EXP)
 [Progression] Recorded tx 'bows': +2 EXP for Ranger Tester, resulting total: Level 30 (2/170 EXP)
-✓ PASS: Kit skills execute correctly, companion-only skills gated without companion, and AI rules match requirements.
-
---- Suite 8: UI Overflow & Clickability Checks ---
-✓ PASS: UI overflow rules verified.
+[Progression] +2 EXP for 'bows' (Ranger Tester). Current: Level 30 (4/170 EXP)
+[Progression] Recorded tx 'bows': +2 EXP for Ranger Tester, resulting total: Level 30 (4/170 EXP)
+[KnowledgeBase] 🧪 Status effect discovered: 'taunted'! (+1 RP)
+[Progression] +2 EXP for 'bows' (Ranger Tester). Current: Level 30 (6/170 EXP)
+[Progression] Recorded tx 'bows': +2 EXP for Ranger Tester, resulting total: Level 30 (6/170 EXP)
+[Combat] Wolf aggroed on Ranger Tester! (Distance: 4 tiles)
+[Combat] ⏰ Taunt on Wolf expired cleanly. Re-evaluating targeting from scratch.
+[Progression] +2 EXP for 'bows' (Ranger Tester). Current: Level 30 (8/170 EXP)
+[Progression] Recorded tx 'bows': +2 EXP for Ranger Tester, resulting total: Level 30 (8/170 EXP)
+[Progression] +2 EXP for 'bows' (Ranger Tester). Current: Level 30 (10/170 EXP)
+[Progression] Recorded tx 'bows': +2 EXP for Ranger Tester, resulting total: Level 30 (10/170 EXP)
+[Progression] +2 EXP for 'bows' (Ranger Tester). Current: Level 30 (12/170 EXP)
+[Progression] Recorded tx 'bows': +2 EXP for Ranger Tester, resulting total: Level 30 (12/170 EXP)
+[Progression] +2 EXP for 'bows' (Ranger Tester). Current: Level 30 (14/170 EXP)
+[Progression] Recorded tx 'bows': +2 EXP for Ranger Tester, resulting total: Level 30 (14/170 EXP)
+✓ PASS: Kit skills execute correctly, exact numbers verified for Sic Em, Stampede, Bestial Fury and Guardian Howl, and AI rules match requirements.
 
 🎉 ALL BEASTMASTER & COMPANIONS TESTS PASSED SUCCESSFULLY!

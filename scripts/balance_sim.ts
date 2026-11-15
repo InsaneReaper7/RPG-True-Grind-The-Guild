@@ -333,7 +333,7 @@ function runFightSimulation(
 
   companion.mood = 50;
   companion.activeClass = classDef.id;
-  if (classDef.id === 'beastmaster') {
+  if (classDef.id === 'beastmaster' && !process.env.NO_BEAST_SIM) {
     companion.companionUid = 'sim_wolf_1';
     const beast = new BeastCompanion(
       scene,
@@ -656,9 +656,11 @@ async function main() {
     )
   ];
 
-  const csvPath = path.join(outDir, 'class_sim.csv');
-  fs.writeFileSync(csvPath, csvLines.join('\n') + '\n', 'utf8');
-  console.log(`\nSaved ${rows.length} rows to ${path.relative(rootDir, csvPath)}.\n`);
+  if (!process.env.NO_CSV_WRITE) {
+    const csvPath = path.join(outDir, 'class_sim.csv');
+    fs.writeFileSync(csvPath, csvLines.join('\n') + '\n', 'utf8');
+    console.log(`\nSaved ${rows.length} rows to ${path.relative(rootDir, csvPath)}.\n`);
+  }
 
   // Section 2 Reporting
   console.log('========================================================================');

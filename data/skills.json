@@ -15906,7 +15906,11 @@
           "type": "damage",
           "scaling": "weapon",
           "multiplier": 1.2,
-          "aoeRadiusTiles": 2
+          "area": {
+            "shape": "radius",
+            "radius": 2,
+            "center": "target"
+          }
         },
         {
           "type": "beastCommand",
