@@ -389,6 +389,7 @@ export interface CharacterSnapshot {
   state?: EntityState;
   coating?: PlayerCoating | null;
   companionUid?: string | null;
+  useCustomSkillOrder?: boolean;
 }
 
 export interface PlayerSnapshot {
@@ -397,6 +398,7 @@ export interface PlayerSnapshot {
   energy: number;
   knownSkillIds: string[];
   equippedSkillIds: string[];
+  useCustomSkillOrder?: boolean;
   autocastMap: Record<string, boolean>;
   skillCooldownsRemainingMs: Record<string, number>;
   proficiencies: Record<string, TrainableStat>;

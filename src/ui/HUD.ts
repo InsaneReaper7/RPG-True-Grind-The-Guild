@@ -18,6 +18,7 @@ import { formatRequirement } from '../utils/formatRequirement.ts';
 import { EventLog } from '../systems/EventLog.ts';
 import { BugReportModal } from './BugReportModal.ts';
 import { MerchantSystem } from '../systems/MerchantSystem.ts';
+import { SkillSystem } from '../systems/SkillSystem.ts';
 
 export interface AnnouncementItem {
   type: 'class' | 'skill';
@@ -105,6 +106,7 @@ export class HUD {
   private equipSlotsContainerEl: HTMLElement | null;
   private knownSkillsContainerEl: HTMLElement | null;
   private slotsCountBadgeEl: HTMLElement | null;
+  private resetSkillOrderBtn: HTMLElement | null;
   private unlockModalEl: HTMLElement | null;
   private classNameEl: HTMLElement | null;
   private classFantasyEl: HTMLElement | null;
@@ -549,6 +551,7 @@ export class HUD {
     this.equipSlotsContainerEl = document.getElementById('equip-slots-container');
     this.knownSkillsContainerEl = document.getElementById('known-skills-container');
     this.slotsCountBadgeEl = document.getElementById('slots-count-badge');
+    this.resetSkillOrderBtn = document.getElementById('reset-skill-order-btn');
     this.unlockModalEl = document.getElementById('unlock-modal');
     this.classNameEl = document.getElementById('unlocked-class-name');
     this.classFantasyEl = document.getElementById('unlocked-class-fantasy');
@@ -1447,7 +1450,7 @@ export class HUD {
         const target = e.target as HTMLElement;
         const btn = target.closest<HTMLButtonElement>('[data-hud-skill]');
         const active = HUD.activeInstance;
-        if (btn) {
+        if (btn && !btn.disabled) {
           e.stopPropagation();
           const skillId = btn.getAttribute('data-hud-skill');
           if (!skillId || !active || !active.currentPlayer) return;
@@ -3066,34 +3069,70 @@ export class HUD {
     }
 
     // 1. Render 5 Equip Slots
+    if (this.resetSkillOrderBtn) {
+      if (this.isOutpost) {
+        this.resetSkillOrderBtn.style.display = 'inline-block';
+        this.resetSkillOrderBtn.onclick = () => {
+          player.resetSkillOrderToDefault();
+          this.renderLoadoutModal(player, progression);
+        };
+      } else {
+        this.resetSkillOrderBtn.style.display = 'none';
+        this.resetSkillOrderBtn.onclick = null;
+      }
+    }
+
     this.equipSlotsContainerEl.innerHTML = '';
     for (let i = 0; i < 5; i++) {
       const slotEl = document.createElement('div');
       slotEl.className = `equip-slot ${i < equipped.length ? 'filled' : ''}`;
       slotEl.dataset.slotIndex = i.toString();
 
-      // Drag & Drop event handlers for the slot
-      slotEl.ondragover = (e) => {
-        e.preventDefault();
-        slotEl.classList.add('drag-over');
-      };
-      slotEl.ondragleave = () => {
-        slotEl.classList.remove('drag-over');
-      };
-      slotEl.ondrop = (e) => {
-        e.preventDefault();
-        slotEl.classList.remove('drag-over');
-        const droppedSkillId = e.dataTransfer?.getData('text/plain');
-        if (droppedSkillId) {
-          player.equipSkill(droppedSkillId, i);
-          this.renderLoadoutModal(player, progression);
-        }
-      };
+      // Drag & Drop event handlers for the slot (Outpost only)
+      if (this.isOutpost) {
+        slotEl.ondragover = (e) => {
+          e.preventDefault();
+          slotEl.classList.add('drag-over');
+        };
+        slotEl.ondragleave = () => {
+          slotEl.classList.remove('drag-over');
+        };
+        slotEl.ondrop = (e) => {
+          e.preventDefault();
+          slotEl.classList.remove('drag-over');
+          const droppedSkillId = e.dataTransfer?.getData('text/plain');
+          if (droppedSkillId) {
+            player.equipSkill(droppedSkillId, i);
+            this.renderLoadoutModal(player, progression);
+          }
+        };
+      }
 
       if (i < equipped.length) {
         const skillId = equipped[i];
         const skillDef = dataLoader.getSkill(skillId);
         const isAuto = player.isAutocastEnabled(skillId);
+        const canUse = skillDef ? SkillSystem.canUseSkillWithCurrentWeapons(player, skillDef) : true;
+        const weaponNames = skillDef ? SkillSystem.getSkillWeaponNames(skillId) : { short: '', full: '' };
+
+        if (!canUse) {
+          slotEl.classList.add('unusable-weapon');
+          slotEl.style.opacity = '0.65';
+          slotEl.style.filter = 'grayscale(0.7)';
+          slotEl.style.border = '1px dashed #ef4444';
+          slotEl.title = `Needs: ${weaponNames.full}`;
+        } else {
+          slotEl.title = skillDef?.name ?? skillId;
+        }
+
+        if (this.isOutpost) {
+          slotEl.draggable = true;
+          slotEl.ondragstart = (e) => {
+            if (e.dataTransfer) {
+              e.dataTransfer.setData('text/plain', skillId);
+            }
+          };
+        }
 
         const skillName = skillDef ? skillDef.name : skillId;
         const details = skillDef
@@ -3110,13 +3149,26 @@ export class HUD {
             : `${skillDef.energyCost} EN | ${skillDef.cooldownMs / 1000}s CD`
           : '';
 
+        const reorderButtonsHtml = this.isOutpost ? `
+          <div class="slot-reorder-buttons" style="display: flex; flex-direction: column; gap: 2px;">
+            <button type="button" class="slot-arrow-btn slot-arrow-up" data-move-up="${skillId}" data-slot-index="${i}" title="Move Up" style="background: rgba(255,255,255,0.1); color: ${i > 0 ? '#60a5fa' : '#4b5563'}; border: 1px solid rgba(255,255,255,0.15); border-radius: 3px; font-size: 9px; padding: 1px 4px; line-height: 1; cursor: ${i > 0 ? 'pointer' : 'default'};" ${i === 0 ? 'disabled' : ''}>▲</button>
+            <button type="button" class="slot-arrow-btn slot-arrow-down" data-move-down="${skillId}" data-slot-index="${i}" title="Move Down" style="background: rgba(255,255,255,0.1); color: ${i < equipped.length - 1 ? '#60a5fa' : '#4b5563'}; border: 1px solid rgba(255,255,255,0.15); border-radius: 3px; font-size: 9px; padding: 1px 4px; line-height: 1; cursor: ${i < equipped.length - 1 ? 'pointer' : 'default'};" ${i >= equipped.length - 1 ? 'disabled' : ''}>▼</button>
+          </div>
+        ` : '';
+
+        const needsHtml = !canUse
+          ? `<div class="slot-needs-weapon" style="font-size: 11px; color: #ef4444; font-weight: bold;">Needs: ${weaponNames.short}</div>`
+          : '';
+
         slotEl.innerHTML = `
           <div style="display: flex; flex-direction: column; gap: 2px;">
             <div style="font-size: 11px; color: #9ca3af; text-transform: uppercase;">Slot ${i + 1}</div>
             <div style="font-weight: 700; color: #60a5fa; font-size: 13px;">${skillName}</div>
             <div style="font-size: 11px; color: #d1d5db;">${details}</div>
+            ${needsHtml}
           </div>
-          <div style="display: flex; align-items: center; gap: 8px;">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            ${reorderButtonsHtml}
             <button type="button" class="hud-autocast-btn ${isAuto ? 'autocast-on' : 'autocast-off'}" data-skill="${skillId}">
               ${isAuto ? 'AUTO: ON' : 'AUTO: OFF'}
             </button>
@@ -3125,6 +3177,26 @@ export class HUD {
             </button>
           </div>
         `;
+
+        if (this.isOutpost) {
+          const moveUpBtn = slotEl.querySelector(`[data-move-up="${skillId}"]`) as HTMLButtonElement;
+          if (moveUpBtn && i > 0) {
+            moveUpBtn.onclick = (e) => {
+              e.stopPropagation();
+              player.equipSkill(skillId, i - 1);
+              this.renderLoadoutModal(player, progression);
+            };
+          }
+
+          const moveDownBtn = slotEl.querySelector(`[data-move-down="${skillId}"]`) as HTMLButtonElement;
+          if (moveDownBtn && i < equipped.length - 1) {
+            moveDownBtn.onclick = (e) => {
+              e.stopPropagation();
+              player.equipSkill(skillId, i + 1);
+              this.renderLoadoutModal(player, progression);
+            };
+          }
+        }
 
         const autocastBtn = slotEl.querySelector(`[data-skill="${skillId}"]`) as HTMLElement;
         if (autocastBtn) {
@@ -3459,12 +3531,17 @@ export class HUD {
 
         const isCompanionSkill = skillId === 'mend_beast' || skillId === 'bestial_fury' || skillId === 'guardian_howl';
         const hasLivingBeast = !!((this.scene as any)?.beastCompanions?.some((b: any) => b.owner === player && !b.isDowned && b.state !== 'dead'));
+        const canUseWeapon = SkillSystem.canUseSkillWithCurrentWeapons(player, skillDef);
+        const weaponNames = !canUseWeapon ? SkillSystem.getSkillWeaponNames(skillId) : null;
 
         let statusText = '';
         let statusColor = '#9ca3af';
 
         if (isCompanionSkill && !hasLivingBeast) {
           statusText = 'No companion';
+          statusColor = '#ef4444';
+        } else if (!canUseWeapon) {
+          statusText = `Needs: ${weaponNames!.short}`;
           statusColor = '#ef4444';
         } else if (!isUnlocked) {
           statusText = 'Locked';
@@ -3485,18 +3562,29 @@ export class HUD {
         if (statusEl) {
           statusEl.innerText = `[${statusText}]`;
           statusEl.style.color = statusColor;
+          if (!canUseWeapon) {
+            statusEl.title = `Needs: ${weaponNames!.full}`;
+          } else {
+            statusEl.title = '';
+          }
         }
 
         const btn = this.hudSkillsListEl.querySelector(`[data-hud-skill="${skillId}"]`) as HTMLButtonElement;
         if (btn) {
-          if (isCompanionSkill && !hasLivingBeast) {
+          if ((isCompanionSkill && !hasLivingBeast) || !canUseWeapon) {
             btn.disabled = true;
             btn.style.opacity = '0.5';
             btn.style.cursor = 'not-allowed';
+            if (!canUseWeapon) {
+              btn.title = `Needs: ${weaponNames!.full}`;
+            } else {
+              btn.title = '';
+            }
           } else {
             btn.disabled = false;
             btn.style.opacity = '1';
             btn.style.cursor = 'pointer';
+            btn.title = '';
           }
           const expectedClass = `hud-autocast-btn ${isAuto ? 'autocast-on' : 'autocast-off'}`;
           if (btn.className !== expectedClass) {
@@ -4719,8 +4807,12 @@ export class HUD {
         const skillDef = dataLoader.getSkill(skillId);
         const skillName = skillDef?.name || skillId;
         const auto = member.isAutocastEnabled(skillId);
+        const canUse = skillDef ? SkillSystem.canUseSkillWithCurrentWeapons(member, skillDef) : true;
+        const weaponNames = !canUse ? SkillSystem.getSkillWeaponNames(skillId) : null;
+        const chipStyle = !canUse ? 'opacity: 0.65; border: 1px dashed #ef4444;' : '';
+        const chipTitle = !canUse ? `title="Needs: ${weaponNames!.full}"` : '';
         equippedSkillsHtml += `
-          <div class="party-skill-chip">
+          <div class="party-skill-chip" style="${chipStyle}" ${chipTitle}>
             <span>${skillName}</span>
             <button class="party-skill-auto-toggle" data-member-idx="${i}" data-skill-id="${skillId}" type="button" style="background: ${auto ? '#059669' : '#4b5563'}; color: white; border: none; border-radius: 3px; padding: 1px 4px; font-size: 9px; cursor: pointer;">
               ${auto ? 'AUTO' : 'MAN'}

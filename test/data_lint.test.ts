@@ -1,7 +1,66 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
+import Module from 'node:module';
 import { fileURLToPath } from 'node:url';
+
+// 1. Intercept phaser3spectorjs require if Phaser WebGL debug probes for it
+const originalRequire = (Module as any).prototype.require;
+(Module as any).prototype.require = function (id: string) {
+  if (id === 'phaser3spectorjs') {
+    return {};
+  }
+  return originalRequire.apply(this, arguments);
+};
+
+if (typeof (global as any).window === 'undefined') {
+  const noop = () => {};
+  (global as any).window = {
+    addEventListener: noop,
+    removeEventListener: noop,
+    location: { href: 'http://localhost' },
+    focus: noop,
+    navigator: { userAgent: 'node' }
+  };
+  (globalThis as any).window = (global as any).window;
+  const dummyCtx: any = new Proxy({
+    fillStyle: '',
+    globalCompositeOperation: '',
+    getImageData: () => ({ data: [0, 0, 0, 0] }),
+    createImageData: () => ({ data: [0, 0, 0, 0] })
+  }, {
+    get(target, prop) {
+      if (prop in target) return (target as any)[prop];
+      return noop;
+    },
+    set(target, prop, value) {
+      (target as any)[prop] = value;
+      return true;
+    }
+  });
+  (global as any).document = {
+    createElement: () => ({
+      getContext: () => dummyCtx,
+      style: {}
+    }),
+    addEventListener: noop,
+    removeEventListener: noop,
+    documentElement: {},
+    body: {}
+  };
+  (globalThis as any).document = (global as any).document;
+  (global as any).Image = class Image {};
+  (global as any).HTMLCanvasElement = class HTMLCanvasElement {};
+}
+
+// Setup node mock fetch to read actual project JSON files
+(global as any).fetch = async (url: string) => {
+  const cleanPath = url.startsWith('/') ? url.slice(1) : url;
+  const content = fs.readFileSync(path.join(rootDir, cleanPath), 'utf8');
+  return {
+    json: async () => JSON.parse(content)
+  };
+};
 
 import { ProgressionSystem } from '../src/systems/ProgressionSystem.ts';
 
@@ -442,6 +501,31 @@ for (const r of [...(Array.isArray(cookData) ? cookData : cookData.recipes || []
 const epicLost = (Array.isArray(cookData) ? cookData : cookData.recipes || []).filter((r: any) => r.rarity === 'epic').length;
 assert.ok(epicLost >= 6, `Expected at least 6 epic lost cooking recipes, found ${epicLost}`);
 console.log('✓ PASS: Merchant rarity multipliers and weapon/armor/recipe rarity integrity verified.\n');
+
+// 14. Skill Weapon Sets & Usability Integrity (Milestone: Skills Need Their Weapon)
+console.log('14. Checking skill weapon sets & usability integrity...');
+const { DataLoader } = await import('../src/utils/DataLoader.ts');
+const { SkillSystem } = await import('../src/systems/SkillSystem.ts');
+await DataLoader.getInstance().loadAll();
+const validWeaponAndProfIds = new Set<string>();
+for (const w of weaponsData.weapons) {
+  validWeaponAndProfIds.add(w.id);
+  if (w.proficiencyId) validWeaponAndProfIds.add(w.proficiencyId);
+}
+
+let nonEmpties = 0;
+for (const s of skillsData.skills) {
+  const wSet = SkillSystem.getSkillWeaponSet(s.id);
+  assert.ok(wSet.size > 0, `Skill "${s.id}" has an empty weapon set (must be non-empty)`);
+  for (const wId of wSet) {
+    assert.ok(
+      validWeaponAndProfIds.has(wId),
+      `Skill "${s.id}" weapon set references unknown weapon ID "${wId}"`
+    );
+  }
+  nonEmpties++;
+}
+console.log(`✓ PASS: All ${nonEmpties} skills have non-empty weapon sets and all resolved weapon IDs exist in weapons.json.\n`);
 
 console.log('🎉 ALL DATA LINT CHECKS PASSED PERFECTLY!');
 

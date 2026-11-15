@@ -4,12 +4,16 @@ import { Enemy } from '../entities/Enemy.ts';
 import { Entity } from '../entities/Entity.ts';
 import { DataLoader } from '../utils/DataLoader.ts';
 import { GameState } from './GameState.ts';
-import type { SkillDef, SkillRole, SkillEffect } from '../types/game.ts';
+import type { SkillDef, SkillRole, SkillEffect, WeaponDef } from '../types/game.ts';
 import type { CombatSystem } from './CombatSystem.ts';
 
 export class SkillSystem {
   private combatSystem: CombatSystem;
   private lastOutOfRangeWarnMs: Map<string, number> = new Map();
+  private lastNeedsWeaponWarnMs: Map<string, number> = new Map();
+
+  private static skillWeaponSets: Map<string, Set<string>> = new Map();
+  private static skillWeaponNames: Map<string, { short: string; full: string }> = new Map();
 
   constructor(combatSystem: CombatSystem) {
     this.combatSystem = combatSystem;
@@ -37,6 +41,156 @@ export class SkillSystem {
     console.warn(message);
   }
 
+  /** Logs an unusable weapon rejection at most once per skill per second and floats floating text. */
+  private warnNeedsWeaponThrottled(skillId: string, caster: Player, weaponShort: string, time: number): void {
+    const last = this.lastNeedsWeaponWarnMs.get(skillId);
+    if (last !== undefined && time - last < 1000) return;
+    this.lastNeedsWeaponWarnMs.set(skillId, time);
+    console.warn(`[SkillSystem] Cannot use ${skillId}: Needs ${weaponShort}`);
+    this.combatSystem?.createFloatingText?.(caster.x, caster.y - 20, `Needs: ${weaponShort}`, '#f87171');
+  }
+
+  /**
+   * Resolves the set of weapon proficiency IDs that can use the skill.
+   * Walks the skill's class requirement and prerequisite classes recursively,
+   * including anyOf/oneOf requirement groups.
+   */
+  public static getSkillWeaponSet(skillId: string): Set<string> {
+    if (SkillSystem.skillWeaponSets.has(skillId)) {
+      return SkillSystem.skillWeaponSets.get(skillId)!;
+    }
+
+    const dataLoader = DataLoader.getInstance();
+    const skillDef = dataLoader.getSkill(skillId);
+    const result = new Set<string>();
+
+    if (!skillDef || !skillDef.requirements) {
+      SkillSystem.skillWeaponSets.set(skillId, result);
+      return result;
+    }
+
+    const weapons = dataLoader.getWeaponsData()?.weapons ?? [];
+    const validWeaponIds = new Set<string>();
+    for (const w of weapons) {
+      validWeaponIds.add(w.id);
+      if (w.proficiencyId) validWeaponIds.add(w.proficiencyId);
+    }
+
+    const visitedClasses = new Set<string>();
+
+    const walkRequirements = (reqList: any[]) => {
+      if (!reqList) return;
+      for (const r of reqList) {
+        if (r.type === 'proficiency') {
+          if (validWeaponIds.has(r.target)) {
+            result.add(r.target);
+          }
+        } else if (r.type === 'classLevel' || r.type === 'class') {
+          if (r.target) walkClass(r.target);
+        } else if ((r.type === 'anyOf' || r.type === 'oneOf') && Array.isArray(r.of)) {
+          walkRequirements(r.of);
+        }
+      }
+    };
+
+    const walkClass = (classId: string) => {
+      if (visitedClasses.has(classId)) return;
+      visitedClasses.add(classId);
+      const cls = dataLoader.getClass(classId);
+      if (!cls || !cls.requirements) return;
+      walkRequirements(cls.requirements);
+    };
+
+    const classReq = skillDef.requirements.find(
+      (r: any) => (r.type === 'classLevel' || r.type === 'class') && r.target && dataLoader.getClass(r.target)
+    );
+    if (classReq?.target && dataLoader.getClass(classReq.target)) {
+      walkClass(classReq.target);
+    }
+
+    SkillSystem.skillWeaponSets.set(skillId, result);
+    return result;
+  }
+
+  /**
+   * Returns human-readable short and full weapon requirement labels for tooltips and warnings.
+   * For long sets (>3 weapons), short format returns first 3 weapons + "+N more".
+   */
+  public static getSkillWeaponNames(skillId: string): { short: string; full: string } {
+    if (SkillSystem.skillWeaponNames.has(skillId)) {
+      return SkillSystem.skillWeaponNames.get(skillId)!;
+    }
+    const weaponSet = SkillSystem.getSkillWeaponSet(skillId);
+    if (weaponSet.size === 0) {
+      const res = { short: 'Any Weapon', full: 'Any Weapon' };
+      SkillSystem.skillWeaponNames.set(skillId, res);
+      return res;
+    }
+    const dataLoader = DataLoader.getInstance();
+    const names: string[] = [];
+    for (const id of weaponSet) {
+      const w = dataLoader.getWeapon(id);
+      let name = w?.name;
+      if (!name) {
+        name = id.split('_').map((s) => s.charAt(0).toUpperCase() + s.slice(1)).join(' ');
+      }
+      if (!names.includes(name)) {
+        names.push(name);
+      }
+    }
+    const full = names.join(', ');
+    let short = full;
+    if (names.length > 3) {
+      const first3 = names.slice(0, 3).join(', ');
+      const remaining = names.length - 3;
+      short = `${first3} +${remaining} more`;
+    }
+    const res = { short, full };
+    SkillSystem.skillWeaponNames.set(skillId, res);
+    return res;
+  }
+
+  /**
+   * Checks whether the caster can use the skill given currently equipped weapons.
+   * 1. Empty set = usable with any weapon.
+   * 2. Main hand (or fist if empty) or off hand matches skill's weapon set.
+   * 3. Magic exception: Set contains >=1 category: "magic" weapon AND caster has any category: "magic" weapon equipped.
+   */
+  public static canUseSkillWithCurrentWeapons(caster: Player, skillDef: SkillDef): boolean {
+    const weaponSet = SkillSystem.getSkillWeaponSet(skillDef.id);
+    if (weaponSet.size === 0) {
+      return true;
+    }
+
+    const dataLoader = DataLoader.getInstance();
+    const mainWeapon = caster.equippedWeapon ?? dataLoader.getWeapon('fist');
+    const offWeapon = caster.offhandWeapon;
+    const equippedWeapons = [mainWeapon, offWeapon].filter(Boolean) as WeaponDef[];
+
+    // Rule 2: direct match on proficiencyId ?? id or id
+    for (const w of equippedWeapons) {
+      const profId = w.proficiencyId ?? w.id;
+      if (weaponSet.has(profId) || weaponSet.has(w.id)) {
+        return true;
+      }
+    }
+
+    // Rule 3: Magic exception
+    const setHasMagicWeapon = Array.from(weaponSet).some((id) => {
+      const w = dataLoader.getWeapon(id);
+      return w?.category === 'magic';
+    });
+
+    if (setHasMagicWeapon) {
+      const casterHasMagicWeapon = equippedWeapons.some((w) => w.category === 'magic');
+      if (casterHasMagicWeapon) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
   /**
    * Generic skill execution engine.
    * Processes all primitive effects defined in skillDef.effects.
@@ -53,6 +207,12 @@ export class SkillSystem {
     // 1. Cost & cooldown validation
     if (typeof caster.hasStatusEffect === 'function' && caster.hasStatusEffect('disarmed') && caster.activeStatusEffects?.get('disarmed')?.def?.disablesSkills) {
       this.combatSystem.createFloatingText(caster.x, caster.y - 20, 'DISARMED!', '#f87171');
+      return false;
+    }
+    // 1b. Weapon requirement validation
+    if (!SkillSystem.canUseSkillWithCurrentWeapons(caster, skillDef)) {
+      const weaponNames = SkillSystem.getSkillWeaponNames(skillDef.id);
+      this.warnNeedsWeaponThrottled(skillDef.id, caster, weaponNames.short, time);
       return false;
     }
     if (caster.energy < skillDef.energyCost) {
@@ -1246,12 +1406,15 @@ export class SkillSystem {
       return null;
     }
     const dataLoader = DataLoader.getInstance();
-    const candidates: { skillDef: SkillDef; target: Entity | Player; priority: number }[] = [];
+    const candidates: { skillDef: SkillDef; target: Entity | Player; priority: number; slotIndex: number }[] = [];
 
-    for (const skillId of member.equippedSkillIds) {
+    for (let slotIdx = 0; slotIdx < member.equippedSkillIds.length; slotIdx++) {
+      const skillId = member.equippedSkillIds[slotIdx];
+      const slotIndex = slotIdx;
       if (!member.isAutocastEnabled(skillId)) continue;
       const skillDef = dataLoader.getSkill(skillId);
       if (!skillDef || !member.progression.isSkillUnlocked(skillDef, member)) continue;
+      if (!SkillSystem.canUseSkillWithCurrentWeapons(member, skillDef)) continue;
 
       const isOffCooldown = !member.lastSkillUseTimes.has(skillId) || (time - member.lastSkillUseTimes.get(skillId)! >= skillDef.cooldownMs);
       const isAffordable = member.energy >= skillDef.energyCost;
@@ -1269,7 +1432,7 @@ export class SkillSystem {
             (b) => b.owner === member && !b.isDowned && b.state !== 'dead'
           );
           if (livingBeast && (livingBeast.hp / livingBeast.maxHp) < 0.50) {
-            candidates.push({ skillDef, target: member, priority });
+            candidates.push({ skillDef, target: member, priority, slotIndex });
           }
         }
         continue;
@@ -1282,10 +1445,10 @@ export class SkillSystem {
           if (livingBeast) {
             if (skillDef.id === 'bestial_fury') {
               if ((livingBeast as any).buffRemainingMs <= 0) {
-                candidates.push({ skillDef, target: member, priority });
+                candidates.push({ skillDef, target: member, priority, slotIndex });
               }
             } else {
-              candidates.push({ skillDef, target: member, priority });
+              candidates.push({ skillDef, target: member, priority, slotIndex });
             }
           }
         }
@@ -1306,7 +1469,7 @@ export class SkillSystem {
             return Math.max(Math.abs(cTile.x - mTile.x), Math.abs(cTile.y - mTile.y)) <= radius;
           });
           if (hasDowned) {
-            candidates.push({ skillDef, target: member, priority });
+            candidates.push({ skillDef, target: member, priority, slotIndex });
           }
           continue;
         }
@@ -1321,7 +1484,7 @@ export class SkillSystem {
               Array.from(m.activeStatusEffects.values()).some((e) => e.def?.isHarmful === true)
           );
           if (debuffed) {
-            candidates.push({ skillDef, target: debuffed, priority });
+            candidates.push({ skillDef, target: debuffed, priority, slotIndex });
           }
           continue;
         }
@@ -1338,7 +1501,7 @@ export class SkillSystem {
               if (aInCombat !== bInCombat) return bInCombat - aInCombat;
               return (a.hp / a.maxHp) - (b.hp / b.maxHp);
             });
-            candidates.push({ skillDef, target: shieldTargets[0], priority });
+            candidates.push({ skillDef, target: shieldTargets[0], priority, slotIndex });
           }
           continue;
         }
@@ -1360,7 +1523,7 @@ export class SkillSystem {
               const bRatio = (b.hp + b.criticalHp) / (b.maxHp + b.maxCriticalHp);
               return aRatio - bRatio;
             });
-            candidates.push({ skillDef, target: hotCandidates[0], priority });
+            candidates.push({ skillDef, target: hotCandidates[0], priority, slotIndex });
           }
           continue;
         }
@@ -1382,7 +1545,7 @@ export class SkillSystem {
             const bRatio = (b.hp + b.criticalHp) / (b.maxHp + b.maxCriticalHp);
             return aRatio - bRatio;
           });
-          candidates.push({ skillDef, target: damagedAllies[0], priority });
+          candidates.push({ skillDef, target: damagedAllies[0], priority, slotIndex });
         }
       } else if (context === 'defensive') {
         if (role !== 'defensive') continue;
@@ -1397,7 +1560,7 @@ export class SkillSystem {
             return Math.max(Math.abs(cTile.x - eTile.x), Math.abs(cTile.y - eTile.y)) <= radius;
           }).length;
           if (livingNearby >= cond.enemiesInRadius) {
-            candidates.push({ skillDef, target: member, priority });
+            candidates.push({ skillDef, target: member, priority, slotIndex });
           }
           continue;
         }
@@ -1410,14 +1573,14 @@ export class SkillSystem {
 
         // Standard self buff / stance (don't recast if already active)
         if (member.hasStatusEffect(skillId)) continue;
-        candidates.push({ skillDef, target: member, priority });
+        candidates.push({ skillDef, target: member, priority, slotIndex });
       } else if (context === 'gapCloser') {
         if (role !== 'gapCloser' && role !== 'opener') continue;
         if (!targetEnemy || targetEnemy.state === 'dead' || targetEnemy.state === 'downed') continue;
 
         const maxRange = skillDef.rangeTiles ?? 1;
         if (distanceTiles !== undefined && distanceTiles <= maxRange) {
-          candidates.push({ skillDef, target: targetEnemy, priority });
+          candidates.push({ skillDef, target: targetEnemy, priority, slotIndex });
         }
       } else if (context === 'rotation') {
         if (role !== 'rotation' && role !== 'opener' && role !== 'finisher') continue;
@@ -1478,14 +1641,18 @@ export class SkillSystem {
           if (!targetEnemy.hasStatusEffect(cond.requiresTargetStatus)) continue;
         }
 
-        candidates.push({ skillDef, target: targetEnemy, priority });
+        candidates.push({ skillDef, target: targetEnemy, priority, slotIndex });
       }
     }
 
     if (candidates.length === 0) return null;
 
-    // Pick highest priority matching candidate
-    candidates.sort((a, b) => b.priority - a.priority);
+    // Pick highest priority matching candidate (player slot order if custom order enabled, else designer ai.priority)
+    if (member.useCustomSkillOrder) {
+      candidates.sort((a, b) => a.slotIndex - b.slotIndex);
+    } else {
+      candidates.sort((a, b) => b.priority - a.priority);
+    }
     return { skillDef: candidates[0].skillDef, target: candidates[0].target };
   }
 

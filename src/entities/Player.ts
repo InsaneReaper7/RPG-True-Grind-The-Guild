@@ -53,6 +53,9 @@ export class Player extends Entity {
   public bookLearnedSkills: Set<string> = new Set();
   public companionUid: string | null = null;
 
+  // Milestone 10: Player Skill Priority
+  public useCustomSkillOrder: boolean = false;
+
   // Milestone 7: Hunger, Mood & Food Buff
   public hunger: number = 100;
   public maxHunger: number = 100;
@@ -1112,6 +1115,7 @@ export class Player extends Entity {
         // Swap or move within slots
         this.equippedSkillIds.splice(existingIndex, 1);
         this.equippedSkillIds.splice(slotIndex, 0, skillId);
+        this.useCustomSkillOrder = true;
         return true;
       }
       return false;
@@ -1149,6 +1153,19 @@ export class Player extends Entity {
     console.log(`[Player] Unequipped skill: ${skillId}. Current loadout: [${this.equippedSkillIds.join(', ')}]`);
     EventLog.getInstance().add('skill', `${this.entityName}: Unequipped skill ${skillId}`);
     return true;
+  }
+
+  public resetSkillOrderToDefault(): void {
+    const dataLoader = DataLoader.getInstance();
+    this.equippedSkillIds.sort((a, b) => {
+      const defA = dataLoader.getSkill(a);
+      const defB = dataLoader.getSkill(b);
+      const prioA = defA?.ai?.priority ?? 50;
+      const prioB = defB?.ai?.priority ?? 50;
+      return prioB - prioA;
+    });
+    this.useCustomSkillOrder = false;
+    console.log(`[Player] Reset skill order to default. Current loadout: [${this.equippedSkillIds.join(', ')}]`);
   }
 
   public learnSkill(skillId: string, fromBook: boolean = false): boolean {
@@ -1509,6 +1526,7 @@ export class Player extends Entity {
       foodItems: this.foodItems.map((f) => ({ ...f })),
       knownSkillIds: [...this.knownSkillIds],
       equippedSkillIds: [...this.equippedSkillIds],
+      useCustomSkillOrder: this.useCustomSkillOrder ?? false,
       autocastMap: autocastObj,
       skillCooldownsRemainingMs: remainingCooldowns,
       activeClass: this.activeClass,
@@ -1592,6 +1610,7 @@ export class Player extends Entity {
 
     this.knownSkillIds = snapshot.knownSkillIds ? [...snapshot.knownSkillIds] : [];
     this.equippedSkillIds = snapshot.equippedSkillIds ? [...snapshot.equippedSkillIds] : [];
+    this.useCustomSkillOrder = snapshot.useCustomSkillOrder ?? false;
 
     this.autocastMap.clear();
     if (snapshot.autocastMap) {

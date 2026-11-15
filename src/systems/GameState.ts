@@ -2011,6 +2011,7 @@ export class GameState {
       energy: player.energy,
       knownSkillIds: [...player.knownSkillIds],
       equippedSkillIds: [...player.equippedSkillIds],
+      useCustomSkillOrder: player.useCustomSkillOrder ?? false,
       autocastMap: autocastObj,
       skillCooldownsRemainingMs: remainingCooldowns,
       proficiencies: progData.proficiencies,
@@ -2095,6 +2096,7 @@ export class GameState {
     player.energy = snap.energy;
     player.knownSkillIds = [...snap.knownSkillIds];
     player.equippedSkillIds = [...snap.equippedSkillIds];
+    player.useCustomSkillOrder = snap.useCustomSkillOrder ?? false;
 
     if (snap.resources) {
       this.resources = { ...snap.resources, wood: snap.resources.wood ?? 0, ore: snap.resources.ore ?? 0 };

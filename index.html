@@ -2949,9 +2949,12 @@
         <div class="loadout-body">
           <!-- Left Column: 5 Equip Slots -->
           <div>
-            <div class="loadout-section-title">
-              <span>Equipped Slots</span>
-              <span id="slots-count-badge" style="color: #9ca3af; font-size: 11px;">1 / 5</span>
+            <div class="loadout-section-title" style="display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <span>Equipped Slots</span>
+                <span id="slots-count-badge" style="color: #9ca3af; font-size: 11px; margin-left: 6px;">1 / 5</span>
+              </div>
+              <button id="reset-skill-order-btn" type="button" class="btn-action" style="font-size: 11px; padding: 2px 8px; background: rgba(59, 130, 246, 0.2); border: 1px solid #3b82f6; color: #93c5fd; border-radius: 4px; cursor: pointer;">Reset to default order</button>
             </div>
             <div id="equip-slots-container">
               <!-- Dynamically populated with 5 slots -->
