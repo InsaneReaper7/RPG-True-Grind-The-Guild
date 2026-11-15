@@ -597,7 +597,8 @@ async function runTests() {
   // -------------------------------------------------------------
   console.log('\n--- Test 3: Equipment Stash Owned-Only Toggle & Empty Notice ---');
   {
-    const hero = new Player(mockScene as any, 0, 0, basePlayerData as any, dataLoader.getWeapon('short_swords')!, 32, 'player-avatar', new ProgressionSystem());
+    // TG-L5VXMA: gear worn by the leader now counts as owned, so the empty-notice case uses an unarmed hero.
+    const hero = new Player(mockScene as any, 0, 0, basePlayerData as any, dataLoader.getWeapon('fist')!, 32, 'player-avatar', new ProgressionSystem());
     const gameState = GameState.getInstance();
     gameState.resetToDefault();
     hero.clearInventory();

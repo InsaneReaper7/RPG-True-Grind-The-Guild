@@ -26,6 +26,20 @@ export interface AnnouncementItem {
   durationMs: number;
 }
 
+/**
+ * TG-TDTUUP: one-line summary of what an armor/jewelry piece actually grants. Only stats the
+ * piece has are listed, so pieces without hpBonus (e.g. the Ingredient Bag) never show "undefined HP".
+ */
+export function armorEffectText(a: any): string {
+  if (!a) return '';
+  const parts: string[] = [];
+  if (a.hpBonus) parts.push(`+${a.hpBonus} HP`);
+  if (a.carryCapacityBonus) parts.push(`+${a.carryCapacityBonus} kg carry`);
+  if (a.ingredientCapacityKg) parts.push(`${a.ingredientCapacityKg} kg ingredient space`);
+  if (a.luckBonus) parts.push(`+${a.luckBonus} Luck`);
+  return parts.join(' · ');
+}
+
 export class HUD {
   private playerHpEl: HTMLElement | null;
   private playerCritHpEl: HTMLElement | null;
@@ -4424,7 +4438,7 @@ export class HUD {
             <span class="slot-item-icon">🪖</span>
             <div>
               <div class="slot-item-text" title="${helmet ? (helmet.name + (helmet.armorRating ? ` — Armor ${helmet.armorRating} (${helmet.weightClass})` : '') + getCraftText(helmet)) : 'Empty'}">${helmet ? helmet.name : '<span class="slot-empty-text">Empty Helmet</span>'}</div>
-              ${helmet ? `<div class="slot-item-stat">+${helmet.hpBonus} HP${helmet.armorRating ? ` · Armor ${helmet.armorRating} (${helmet.weightClass})` : ''}${getBonusBadge(helmet)} · ${member.getEquippedArmorPieceWeight(helmet).toFixed(1)}kg</div>` : ''}
+              ${helmet ? `<div class="slot-item-stat">${armorEffectText(helmet)}${helmet.armorRating ? ` · Armor ${helmet.armorRating} (${helmet.weightClass})` : ''}${getBonusBadge(helmet)} · ${member.getEquippedArmorPieceWeight(helmet).toFixed(1)}kg</div>` : ''}
             </div>
           </div>
           ${helmet ? `<button class="slot-unequip-btn" data-slot="helmet" data-member-idx="${i}" type="button" title="Unequip Helmet">&times;</button>` : ''}
@@ -4465,7 +4479,7 @@ export class HUD {
             <span class="slot-item-icon">📿</span>
             <div>
               <div class="slot-item-text" title="${necklace ? (necklace.name + getCraftText(necklace)) : 'Empty'}">${necklace ? necklace.name : '<span class="slot-empty-text">Empty Necklace</span>'}</div>
-              ${necklace ? `<div class="slot-item-stat">+${necklace.hpBonus} HP${getBonusBadge(necklace)} · ${necklace.weight ?? 0.3}kg</div>` : ''}
+              ${necklace ? `<div class="slot-item-stat">${armorEffectText(necklace)}${getBonusBadge(necklace)} · ${necklace.weight ?? 0.3}kg</div>` : ''}
             </div>
           </div>
           ${necklace ? `<button class="slot-unequip-btn" data-slot="necklace" data-member-idx="${i}" type="button" title="Unequip Necklace">&times;</button>` : ''}
@@ -4521,7 +4535,7 @@ export class HUD {
             <span class="slot-item-icon">💍</span>
             <div>
               <div class="slot-item-text" title="${ring ? (ring.name + getCraftText(ring)) : 'Empty'}">${ring ? ring.name : '<span class="slot-empty-text">Empty Ring</span>'}</div>
-              ${ring ? `<div class="slot-item-stat">+${ring.hpBonus} HP${getBonusBadge(ring)} · ${ring.weight ?? 0.2}kg</div>` : ''}
+              ${ring ? `<div class="slot-item-stat">${armorEffectText(ring)}${getBonusBadge(ring)} · ${ring.weight ?? 0.2}kg</div>` : ''}
             </div>
           </div>
           ${ring ? `<button class="slot-unequip-btn" data-slot="ring" data-member-idx="${i}" type="button" title="Unequip Ring">&times;</button>` : ''}
@@ -4542,7 +4556,7 @@ export class HUD {
             </span>
             <div>
               <div class="slot-item-text" title="${bodyArmor ? (bodyArmor.name + (bodyArmor.armorRating ? ` — Armor ${bodyArmor.armorRating} (${bodyArmor.weightClass})` : '') + getCraftText(bodyArmor)) : 'Empty'}">${bodyArmor ? bodyArmor.name : '<span class="slot-empty-text">Empty Body</span>'}</div>
-              ${bodyArmor ? `<div class="slot-item-stat">+${bodyArmor.hpBonus} HP${bodyArmor.armorRating ? ` · Armor ${bodyArmor.armorRating} (${bodyArmor.weightClass})` : ''}${getBonusBadge(bodyArmor)} · ${member.getEquippedArmorPieceWeight(bodyArmor).toFixed(1)}kg</div>` : ''}
+              ${bodyArmor ? `<div class="slot-item-stat">${armorEffectText(bodyArmor)}${bodyArmor.armorRating ? ` · Armor ${bodyArmor.armorRating} (${bodyArmor.weightClass})` : ''}${getBonusBadge(bodyArmor)} · ${member.getEquippedArmorPieceWeight(bodyArmor).toFixed(1)}kg</div>` : ''}
             </div>
           </div>
           ${bodyArmor ? `<button class="slot-unequip-btn" data-slot="body" data-member-idx="${i}" type="button" title="Unequip Body Armor">&times;</button>` : ''}
@@ -4561,7 +4575,7 @@ export class HUD {
             <span class="slot-item-icon">🔮</span>
             <div>
               <div class="slot-item-text" title="${accessory ? (accessory.name + getCraftText(accessory)) : 'Empty'}">${accessory ? accessory.name : '<span class="slot-empty-text">Empty Accessory</span>'}</div>
-              ${accessory ? `<div class="slot-item-stat">+${accessory.hpBonus} HP${getBonusBadge(accessory)} · ${accessory.weight ?? 0.5}kg</div>` : ''}
+              ${accessory ? `<div class="slot-item-stat">${armorEffectText(accessory)}${getBonusBadge(accessory)} · ${accessory.weight ?? 0.5}kg</div>` : ''}
             </div>
           </div>
           ${accessory ? `<button class="slot-unequip-btn" data-slot="accessory" data-member-idx="${i}" type="button" title="Unequip Accessory">&times;</button>` : ''}
@@ -5077,7 +5091,7 @@ export class HUD {
           const icon = isShield ? '🛡️' : (w.category === 'ranged' ? '🏹' : (w.category === 'magic' ? '✨' : '⚔️'));
           const slot = isShield ? 'offhand' : 'main';
           const displaySlot = isShield ? 'Shield / Off-Hand' : (w.twoHanded ? '2H Weapon' : '1H Weapon');
-          const ownership = getPartyGearOwnership(w.id, partyMembers, gameState, this.isOutpost, this.currentPlayer);
+          const ownership = getPartyGearOwnership(w.id, partyMembers, gameState, this.isOutpost);
           items.push({
             id: w.id,
             name: w.name,
@@ -5098,7 +5112,7 @@ export class HUD {
       for (const a of allArmors) {
         if (a.slot === 'helmet' || a.slot === 'body') {
           const icon = a.slot === 'helmet' ? '🪖' : '🛡️';
-          const ownership = getPartyGearOwnership(a.id, partyMembers, gameState, this.isOutpost, this.currentPlayer);
+          const ownership = getPartyGearOwnership(a.id, partyMembers, gameState, this.isOutpost);
           items.push({
             id: a.id,
             name: a.name,
@@ -5106,7 +5120,7 @@ export class HUD {
             slot: a.slot,
             displaySlot: a.slot === 'helmet' ? 'Helmet' : 'Body Armor',
             icon,
-            statText: `+${a.hpBonus} HP · ${a.weight || 0} kg`,
+            statText: `${armorEffectText(a)} · ${a.weight || 0} kg`,
             count: ownership.totalOwned,
             wornCount: ownership.wornCount,
             wornDetails: ownership.wornDetails
@@ -5119,7 +5133,7 @@ export class HUD {
       for (const a of allArmors) {
         if (a.slot === 'necklace' || a.slot === 'ring' || a.slot === 'accessory') {
           const icon = a.slot === 'necklace' ? '📿' : (a.slot === 'ring' ? '💍' : '🔮');
-          const ownership = getPartyGearOwnership(a.id, partyMembers, gameState, this.isOutpost, this.currentPlayer);
+          const ownership = getPartyGearOwnership(a.id, partyMembers, gameState, this.isOutpost);
           items.push({
             id: a.id,
             name: a.name,
@@ -5127,7 +5141,7 @@ export class HUD {
             slot: a.slot,
             displaySlot: a.slot.charAt(0).toUpperCase() + a.slot.slice(1),
             icon,
-            statText: `+${a.hpBonus} HP · ${a.weight || 0} kg`,
+            statText: `${armorEffectText(a)} · ${a.weight || 0} kg`,
             count: ownership.totalOwned,
             wornCount: ownership.wornCount,
             wornDetails: ownership.wornDetails
@@ -8146,7 +8160,7 @@ export class HUD {
         };
         const slotName = armorDef ? (slotNameMap[armorDef.slot] || 'Armor') : 'Armor';
         const split = armorDef ? getArmorHpSplit(armorDef) : { mainHpBonus: 0, criticalHpBonus: 0 };
-        const armorStats = armorDef ? `Slot: ${slotName} | +${armorDef.hpBonus} HP (+${split.mainHpBonus} Main / +${split.criticalHpBonus} Crit)` : '';
+        const armorStats = armorDef ? `Slot: ${slotName} | ${armorEffectText(armorDef)}${armorDef.hpBonus ? ` (+${split.mainHpBonus} Main / +${split.criticalHpBonus} Crit)` : ''}` : '';
 
         let actionBtnHtml = '';
         if (!isLevelUnlocked) {
