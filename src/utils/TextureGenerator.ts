@@ -424,6 +424,21 @@ export class TextureGenerator {
       g.destroy();
     }
 
+    // 3c. Merchant Avatar Texture (Amber/Gold Circle with Gold Coin icon)
+    if (!scene.textures.exists('merchant-avatar')) {
+      const size = 28;
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      g.fillStyle(0xd97706, 1); // Amber / Gold
+      g.fillCircle(size / 2, size / 2, size / 2 - 2);
+      g.lineStyle(2, 0xfde68a, 1);
+      g.strokeCircle(size / 2, size / 2, size / 2 - 2);
+      // Gold coin centre
+      g.fillStyle(0xfef08a, 1);
+      g.fillCircle(size / 2, size / 2, 4);
+      g.generateTexture('merchant-avatar', size, size);
+      g.destroy();
+    }
+
     // 4. Wolf Avatar Texture (Red/Amber Diamond)
     if (!scene.textures.exists('wolf-avatar')) {
       const size = 28;
@@ -2893,6 +2908,7 @@ export class TextureGenerator {
     makeStation('buildable-woodworking-bench', 0x78350f, 0xd97706);
     makeStation('buildable-stonemason-yard', 0x475569, 0x94a3b8);
     makeStation('buildable-animal-pen', 0x78350f, 0x10b981);
+    makeStation('buildable-merchant-stall', 0x78350f, 0xfacc15);
 
     // Furniture textures
     const furnitureDefs: [string, number, number][] = [

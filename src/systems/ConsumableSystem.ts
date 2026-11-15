@@ -108,7 +108,7 @@ export class ConsumableSystem {
 
   public isConsumable(itemId: string): boolean {
     if (itemId.startsWith('lost_recipe_')) return true;
-    if (itemId.startsWith('gear_recipe_')) return true;
+    if (itemId.startsWith('gear_recipe_') || itemId.startsWith('merchant_recipe_')) return true;
     if (this.isFoodItem(itemId)) return true;
     const knownConsumables = new Set([
       'bandage',
@@ -236,7 +236,8 @@ export class ConsumableSystem {
 
     const stockpileCount = gameState.getItemCount(normalizedId);
 
-    const isScroll = normalizedId.startsWith('gear_recipe_');
+    const itemDef = DataLoader.getInstance().getItem(normalizedId);
+    const isScroll = normalizedId.startsWith('gear_recipe_') || normalizedId.startsWith('merchant_recipe_') || !!itemDef?.teachesRecipeId;
 
     if (options?.fromStockpile) {
       if (!isFood && !isScroll) {
@@ -257,9 +258,7 @@ export class ConsumableSystem {
     }
 
     switch (normalizedId) {
-      case normalizedId.startsWith('gear_recipe_') ? normalizedId : '___never___':
-      case normalizedId.startsWith('gear_recipe_') ? normalizedId : '___never___':
-      case normalizedId.startsWith('lost_recipe_') ? normalizedId : '___never___': {
+      case (isScroll || normalizedId.startsWith('lost_recipe_')) ? normalizedId : '___never___': {
         return { canUse: true, target: leader };
       }
       case 'revive_potion': {
@@ -335,6 +334,29 @@ export class ConsumableSystem {
 
         if (target.energy >= target.maxEnergy) {
           return { canUse: false, reason: 'Energy full', target };
+        }
+
+        return { canUse: true, target };
+      }
+
+      case (itemDef?.healPercent !== undefined || itemDef?.energyPercent !== undefined) ? normalizedId : '___never___': {
+        let target: Player | undefined;
+        if (options?.preferredTarget) {
+          target = options.preferredTarget;
+        } else if (selectedMembers.length === 1) {
+          target = selectedMembers[0];
+        } else {
+          target = leader;
+        }
+
+        if (!target) {
+          return { canUse: false, reason: 'No valid target' };
+        }
+
+        const needsHeal = itemDef?.healPercent !== undefined && target.hp < target.maxHp;
+        const needsEnergy = itemDef?.energyPercent !== undefined && target.energy < target.maxEnergy;
+        if (!needsHeal && !needsEnergy) {
+          return { canUse: false, reason: 'Health and Energy full', target };
         }
 
         return { canUse: true, target };
@@ -577,8 +599,11 @@ export class ConsumableSystem {
     const leader = party[0];
     const target = check.target || leader;
 
+    const itemDef = DataLoader.getInstance().getItem(normalizedId);
+    const isScroll = normalizedId.startsWith('gear_recipe_') || normalizedId.startsWith('merchant_recipe_') || !!itemDef?.teachesRecipeId;
+
     switch (normalizedId) {
-      case normalizedId.startsWith('gear_recipe_') ? normalizedId : '___never___': {
+      case isScroll ? normalizedId : '___never___': {
         const gameState = GameState.getInstance();
         const isAtOutpost = leader && typeof leader.isAtOutpost === 'function' ? leader.isAtOutpost() : false;
         let consumed = false;
@@ -597,12 +622,13 @@ export class ConsumableSystem {
         }
 
         const dataLoader = DataLoader.getInstance();
-        const pieceId = normalizedId.replace(/^gear_recipe_/, '');
-        const pieceDef = dataLoader.getWeapon(pieceId) || dataLoader.getArmor(pieceId);
+        const pieceId = itemDef?.teachesRecipeId || normalizedId.replace(/^gear_recipe_/, '').replace(/^merchant_recipe_/, '');
+        const pieceDef = dataLoader.getWeapon(pieceId) || dataLoader.getArmor(pieceId) || dataLoader.getItem(pieceId);
         const bsRecipe = dataLoader.getBlacksmithRecipe(pieceId);
         const asRecipe = dataLoader.getArmorsmithRecipe(pieceId);
         const byRecipe = dataLoader.getBowyerRecipe(pieceId);
-        const recipe = bsRecipe || asRecipe || byRecipe;
+        const alRecipe = dataLoader.getAlchemyRecipe(pieceId);
+        const recipe = bsRecipe || asRecipe || byRecipe || alRecipe;
 
         const pieceName = pieceDef?.name || recipe?.name || pieceId.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
         const rarityId = pieceDef?.rarity || recipe?.rarity || 'uncommon';
@@ -610,13 +636,16 @@ export class ConsumableSystem {
         const rarityName = rarityDef?.name || 'Uncommon';
         const rarityColour = rarityDef?.colour || '#22c55e';
 
-        const isAlreadyKnown = gameState.isGearRecipeKnown(pieceId);
+        const isAlreadyKnown = alRecipe ? gameState.isAlchemyRecipeDiscovered(pieceId) : gameState.isGearRecipeKnown(pieceId);
 
         if (isAlreadyKnown) {
           const dupExp = dataLoader.getGearRarityData().duplicateScrollExp || 50;
           let stationProf = 'blacksmithing';
           let stationDisplayName = 'Blacksmithing';
-          if (byRecipe) {
+          if (alRecipe) {
+            stationProf = 'alchemy';
+            stationDisplayName = 'Alchemy';
+          } else if (byRecipe) {
             stationProf = 'bowyer';
             stationDisplayName = 'Bowyer';
           } else if (asRecipe) {
@@ -629,9 +658,42 @@ export class ConsumableSystem {
           return { success: true, message: msg };
         }
 
-        gameState.learnGearRecipe(pieceId);
+        if (alRecipe) {
+          gameState.discoverAlchemyRecipe(pieceId);
+        } else {
+          gameState.learnGearRecipe(pieceId);
+        }
         const msg = `📜 Learned ${rarityName} recipe: ${pieceName}`;
         this.showToast(msg, 'success', 3500, rarityColour);
+        return { success: true, message: msg };
+      }
+
+      case (itemDef?.healPercent !== undefined || itemDef?.energyPercent !== undefined) ? normalizedId : '___never___': {
+        const consumed = this.consumeItemFromParty(normalizedId, target, party, options?.fromMember);
+        if (!consumed) {
+          const msg = `No ${itemDef?.name || 'consumable'} carried by party!`;
+          this.showToast(msg, 'warn');
+          return { success: false, message: msg };
+        }
+        let healPart = '';
+        let energyPart = '';
+        if (itemDef?.healPercent !== undefined) {
+          const healAmt = Math.round(target.maxHp * (itemDef.healPercent / 100));
+          const healed = target.heal(healAmt);
+          target.createFloatingText?.(`+${healed} HP`, '#4ade80');
+          healPart = `+${healed} HP`;
+        }
+        if (itemDef?.energyPercent !== undefined) {
+          const energyAmt = Math.round(target.maxEnergy * (itemDef.energyPercent / 100));
+          const oldEnergy = target.energy;
+          target.energy = Math.min(target.maxEnergy, target.energy + energyAmt);
+          const restored = Math.floor(target.energy - oldEnergy);
+          target.createFloatingText?.(`+${restored} EN`, '#38bdf8');
+          energyPart = `+${restored} Energy`;
+        }
+        const details = [healPart, energyPart].filter(Boolean).join(', ');
+        const msg = `✨ ${target.entityName} used ${itemDef?.name || 'consumable'}! (${details})`;
+        this.showToast(msg, 'success');
         return { success: true, message: msg };
       }
 

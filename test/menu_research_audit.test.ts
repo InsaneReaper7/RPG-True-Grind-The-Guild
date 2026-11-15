@@ -294,6 +294,18 @@ async function runAudit() {
         .filter((f: any) => fs.readFileSync(path.join('src', String(f)), 'utf8').includes(`${fn}()`) && !String(f).endsWith('GameState.ts'));
       assert.ok(callers.length > 0, `${fn}() (gate for ${node}) must be checked in game code`);
     }
+
+    // Milestone 9: Merchant Stall Research Gating & maxCount audit
+    const stallBuildable = buildables.find((b: any) => b.id === 'merchant_stall');
+    assert.ok(stallBuildable, 'merchant_stall exists in buildables.json');
+    assert.equal(stallBuildable.lockedByDefault, true, 'merchant_stall is lockedByDefault');
+    assert.equal(stallBuildable.maxCount, 1, 'merchant_stall maxCount is 1');
+    assert.equal(stallBuildable.indoorRequired, true, 'merchant_stall requires indoor placement');
+    const merchantNode = nodes.find((n: any) => n.id === 'research_merchant_visits');
+    assert.ok(merchantNode, 'research_merchant_visits exists in researchTree.json');
+    assert.equal(merchantNode.cost, 6, 'research_merchant_visits cost is 6');
+    assert.ok(merchantNode.prerequisites?.includes('research_woodworking_bench'), 'prereq is research_woodworking_bench');
+    assert.ok(merchantNode.unlocksBuildables?.includes('merchant_stall'), 'unlocks merchant_stall');
     console.log(`✔ 1. Research gating: ${buildables.length} buildables classified; every locked one has a node; feature nodes enforced.`);
   }
 

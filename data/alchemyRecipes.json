@@ -286,6 +286,21 @@
       },
       "expGranted": 55,
       "description": "Enchanted dust cloud that confuses all enemies within a 1.5-tile radius (60% chance)."
+    },
+    {
+      "id": "greater_energy_draught",
+      "name": "Greater Energy Draught",
+      "resultItemId": "greater_energy_draught",
+      "requiredLevel": 0,
+      "ingredients": {
+        "wild_herbs": 2,
+        "wood": 2
+      },
+      "expGranted": 45,
+      "energyPercent": 60,
+      "requiresScroll": true,
+      "rarity": "uncommon",
+      "description": "An invigorating alchemical draught that instantly restores 60% max energy."
     }
   ]
 }

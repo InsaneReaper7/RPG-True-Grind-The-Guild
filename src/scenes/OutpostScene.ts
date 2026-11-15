@@ -58,6 +58,7 @@ export class OutpostScene extends Phaser.Scene {
   private baseWallSet: Set<string> = new Set();
   private placedSprites: Map<string, Phaser.GameObjects.Sprite | Phaser.GameObjects.Image> = new Map();
   private harvestIcons: Map<string, { sprite: Phaser.GameObjects.Sprite; tween?: Phaser.Tweens.Tween; type: 'plot' | 'seed_maker' }> = new Map();
+  private merchantSprite: Phaser.GameObjects.Sprite | null = null;
 
   // Cursor Hover Reticle & Ghost Preview
   private hoverHighlightSprite!: Phaser.GameObjects.Sprite;
@@ -719,6 +720,18 @@ export class OutpostScene extends Phaser.Scene {
       // Check if clicking a placed Animal Pen (Milestone 8)
       if (clickedPlacedItem?.id === 'animal_pen') {
         this.interactAnimalPen(clickedPlacedItem);
+        return;
+      }
+
+      // Check if clicking a placed Merchant Stall (Milestone 9)
+      if (clickedPlacedItem?.id === 'merchant_stall') {
+        const visit = GameState.getInstance().getMerchantVisitState();
+        if (!visit.present) {
+          const daysLeft = Math.max(1, visit.nextArrivalDay - GameState.getInstance().getCurrentGameDay());
+          this.hud.showToast(`The merchant is away. Back in ${daysLeft} days.`, 'info');
+        } else {
+          this.hud.openMerchantModal(this.player);
+        }
         return;
       }
 
@@ -1845,6 +1858,19 @@ export class OutpostScene extends Phaser.Scene {
       });
     } else if (blueprint.id === 'alchemy_station') {
       TutorialSystem.getInstance().notifyBuildablePlaced('alchemy_station');
+    } else if (blueprint.id === 'merchant_stall') {
+      const gs = GameState.getInstance();
+      const visit = gs.getMerchantVisitState();
+      if (!visit.placed) {
+        const config = DataLoader.getInstance().getMerchantConfig();
+        const currentDay = gs.getCurrentGameDay();
+        gs.setMerchantVisitState({
+          ...visit,
+          placed: true,
+          nextArrivalDay: currentDay + config.firstVisitDelayDays
+        });
+      }
+      this.updateMerchantVisuals();
     }
   }
 
@@ -1923,6 +1949,16 @@ export class OutpostScene extends Phaser.Scene {
     // Update adjacent wall auto-orientations
     if (BuildingSystem.isWall(def) || BuildingSystem.isDoor(def)) {
       this.updateAllWallTextures();
+    }
+
+    if (placed.id === 'merchant_stall') {
+      const gs = GameState.getInstance();
+      gs.setMerchantVisitState({
+        ...gs.getMerchantVisitState(),
+        placed: false,
+        present: false
+      });
+      this.updateMerchantVisuals();
     }
 
     // Recalculate room classification cache
@@ -2007,6 +2043,7 @@ export class OutpostScene extends Phaser.Scene {
 
     this.pathfinder.updateGrid(this.gridMatrix);
     this.updateAllWallTextures();
+    this.updateMerchantVisuals();
   }
 
   private updateAllWallTextures(): void {
@@ -2021,6 +2058,35 @@ export class OutpostScene extends Phaser.Scene {
           sprite.setTexture(textureKey);
         }
       }
+    }
+  }
+
+  public updateMerchantVisuals(): void {
+    const gs = GameState.getInstance();
+    const stall = gs.getPlacedBuildables().find((b) => b.id === 'merchant_stall');
+    const visit = gs.getMerchantVisitState();
+
+    if (!stall || !visit.present) {
+      if (this.merchantSprite) {
+        this.merchantSprite.destroy();
+        this.merchantSprite = null;
+      }
+      return;
+    }
+
+    const posX = stall.x * this.tileSize + this.tileSize / 2;
+    const posY = stall.y * this.tileSize + this.tileSize / 2;
+    if (!this.merchantSprite) {
+      if (this.textures && this.textures.exists('merchant-avatar')) {
+        this.merchantSprite = this.add.sprite(posX, posY, 'merchant-avatar').setDepth(posY + 5);
+        this.merchantSprite.setInteractive({ cursor: 'pointer' });
+        this.merchantSprite.on('pointerdown', () => {
+          this.hud.openMerchantModal(this.player);
+        });
+      }
+    } else {
+      this.merchantSprite.setPosition(posX, posY);
+      this.merchantSprite.setDepth(posY + 5);
     }
   }
 
@@ -2616,6 +2682,7 @@ export class OutpostScene extends Phaser.Scene {
     }
 
     this.updatePlayerRoomLookup(false);
+    this.updateMerchantVisuals();
     this.hud.update(this.player, this.progressionSystem, time, this.party);
   }
 

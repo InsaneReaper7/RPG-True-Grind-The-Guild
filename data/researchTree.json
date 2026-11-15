@@ -197,6 +197,18 @@
         "research_woodworking_bench"
       ],
       "description": "Unlocks construction of Animal Pens at the outpost to shelter and tend livestock for daily goods."
+    },
+    {
+      "id": "research_merchant_visits",
+      "name": "Merchant Visits",
+      "cost": 6,
+      "prerequisites": [
+        "research_woodworking_bench"
+      ],
+      "unlocksBuildables": [
+        "merchant_stall"
+      ],
+      "description": "Invites a travelling merchant to set up shop in the guild hall, buying crafted goods and selling rare wares."
     }
   ]
 }

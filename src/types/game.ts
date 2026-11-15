@@ -82,6 +82,7 @@ export interface WeaponDef {
   baseItemId?: string;
   rarity?: string;
   band?: number;
+  luckBonus?: number;
 }
 
 export interface StartingKitDef {
@@ -270,6 +271,7 @@ export interface BuildableDef {
   description: string;
   lockedByDefault?: boolean;
   capacity?: number;
+  maxCount?: number;
 }
 
 export interface BuildablesData {
@@ -450,6 +452,8 @@ export interface PlayerSnapshot {
   knownGearRecipes?: string[];
   lastDungeonFloorVisited?: number;
   tamedAnimals?: TamedAnimal[];
+  gold?: number;
+  merchantVisit?: MerchantVisitState;
 }
 
 export interface SaveMetadata {
@@ -547,11 +551,14 @@ export interface AlchemyRecipeDef {
   ingredients: Record<string, number>;
   expGranted: number;
   energyRestored?: number;
+  energyPercent?: number;
+  requiresScroll?: boolean;
   buffDurationMs?: number;
   buffRegenPerSec?: number;
   targetRegenSkill?: string;
   requiredLevel?: number;
   description: string;
+  rarity?: string;
 }
 
 export interface AlchemyRecipesData {
@@ -723,6 +730,7 @@ export interface ArmorDef {
   baseItemId?: string;
   rarity?: string;
   band?: number;
+  luckBonus?: number;
 }
 
 export function getArmorHpSplit(armor: ArmorDef): { mainHpBonus: number; criticalHpBonus: number } {
@@ -1206,6 +1214,8 @@ export interface ItemDef {
   description?: string;
   keepOnReturn?: boolean;
   healAmount?: number;
+  healPercent?: number;
+  energyPercent?: number;
   cooldownMs?: number;
   ingredient?: boolean;
   cookingTags?: string[];
@@ -1680,3 +1690,55 @@ export interface LuckConfig {
   lifeStealPerLevel: number;
   treasureHunter?: TreasureHunterConfig;
 }
+
+export interface MerchantConfig {
+  visitIntervalDays: number;
+  visitLengthDays: number;
+  firstVisitDelayDays: number;
+  stockSlots: number;
+  valuePerIngredientUnit: number;
+  valuePerRequiredLevel: number;
+  rarityMultiplier: Record<string, number>;
+  foodQualityMultiplier: Record<string, number>;
+  hagglingPerLevel: number;
+}
+
+export interface MerchantStockEntry {
+  id: string;
+  kind: 'weapon' | 'armor' | 'item' | 'recipeScroll';
+  refId: string;
+  price: number;
+  weight: number;
+}
+
+export interface MerchantStockData {
+  stock: MerchantStockEntry[];
+}
+
+export interface MerchantStockItem extends MerchantStockEntry {
+  sold: boolean;
+  name?: string;
+  description?: string;
+  rarity?: string;
+}
+
+export interface SellableItemEntry {
+  key: string;
+  id: string;
+  name: string;
+  itemOrInstance: any;
+  count: number;
+  unitPrice: number;
+  locationName: string;
+  sourceHolder: any;
+}
+
+export interface MerchantVisitState {
+  placed: boolean;
+  present: boolean;
+  nextArrivalDay: number;
+  departureDay?: number;
+  visitNumber: number;
+  stock: MerchantStockItem[];
+}
+

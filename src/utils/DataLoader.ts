@@ -66,7 +66,10 @@ import type {
   GearRarityTierDef,
   TamingConfig,
   HusbandryConfig,
-  BeastCompanionConfig
+  BeastCompanionConfig,
+  MerchantConfig,
+  MerchantStockData,
+  MerchantStockEntry
 } from '../types/game.ts';
 import { HiddenSkillSystem } from '../systems/HiddenSkillSystem.ts';
 import { resolveGearStats, getBaseItemId, isCraftingClass, resolvePartyGearSource, getPartyGearOwnership, canEquipBowDaggerSidearm, getRarityDisplay } from './gearResolver.ts';
@@ -115,6 +118,8 @@ export class DataLoader {
   private tamingConfigData?: TamingConfig;
   private husbandryConfigData?: HusbandryConfig;
   private beastCompanionConfigData?: BeastCompanionConfig;
+  private merchantConfigData?: MerchantConfig;
+  private merchantStockData?: MerchantStockData;
 
   private constructor() {}
 
@@ -126,7 +131,7 @@ export class DataLoader {
   }
 
   public async loadAll(): Promise<void> {
-    const [player, weapons, classes, enemies, skills, statusEffects, buildables, rooms, hiddenSkills, skillBooks, researchTree, alchemyRecipes, cookingRecipes, blacksmithRecipes, bowyerRecipes, armors, armorsmithRecipes, foods, moodEffects, dungeon, gathering, items, recruits, craftingConfig, introNarrative, enchantingRecipes, statGains, crops, cookingConfig, campConfig, craftingRanks, luckConfig, woodworkingRecipes, stonemasonRecipes, alchemyConfig, throwingConfig, gearRarity, tamingConfig, husbandryConfig, beastCompanionConfig] = await Promise.all([
+    const [player, weapons, classes, enemies, skills, statusEffects, buildables, rooms, hiddenSkills, skillBooks, researchTree, alchemyRecipes, cookingRecipes, blacksmithRecipes, bowyerRecipes, armors, armorsmithRecipes, foods, moodEffects, dungeon, gathering, items, recruits, craftingConfig, introNarrative, enchantingRecipes, statGains, crops, cookingConfig, campConfig, craftingRanks, luckConfig, woodworkingRecipes, stonemasonRecipes, alchemyConfig, throwingConfig, gearRarity, tamingConfig, husbandryConfig, beastCompanionConfig, merchantConfig, merchantStock] = await Promise.all([
       fetch('/data/player.json').then((res) => res.json()),
       fetch('/data/weapons.json').then((res) => res.json()),
       fetch('/data/classes.json').then((res) => res.json()),
@@ -166,7 +171,9 @@ export class DataLoader {
       fetch('/data/gearRarity.json').then((res) => res.json()).catch(() => null),
       fetch('/data/tamingConfig.json').then((res) => res.json()).catch(() => null),
       fetch('/data/husbandryConfig.json').then((res) => res.json()).catch(() => null),
-      fetch('/data/beastCompanionConfig.json').then((res) => res.json()).catch(() => null)
+      fetch('/data/beastCompanionConfig.json').then((res) => res.json()).catch(() => null),
+      fetch('/data/merchantConfig.json').then((res) => res.json()).catch(() => null),
+      fetch('/data/merchantStock.json').then((res) => res.json()).catch(() => null)
     ]);
 
     this.playerData = player as PlayerData;
@@ -234,6 +241,12 @@ export class DataLoader {
     }
     if (beastCompanionConfig) {
       this.beastCompanionConfigData = beastCompanionConfig as BeastCompanionConfig;
+    }
+    if (merchantConfig) {
+      this.merchantConfigData = merchantConfig as MerchantConfig;
+    }
+    if (merchantStock) {
+      this.merchantStockData = merchantStock as MerchantStockData;
     }
     if (craftingConfig) {
       this.craftingConfigData = craftingConfig as CraftingConfigData;
@@ -1199,6 +1212,48 @@ export class DataLoader {
       killCreditTo: 'owner',
       tamingExpPerKill: 2
     };
+  }
+
+  public getMerchantConfig(): MerchantConfig {
+    if (this.merchantConfigData) {
+      return this.merchantConfigData;
+    }
+    try {
+      if (typeof process !== 'undefined' && process.versions?.node) {
+        const fsModule = (globalThis as any).fs || (typeof require !== 'undefined' ? require('node:fs') : undefined);
+        if (fsModule && fsModule.existsSync('data/merchantConfig.json')) {
+          this.merchantConfigData = JSON.parse(fsModule.readFileSync('data/merchantConfig.json', 'utf8'));
+          return this.merchantConfigData!;
+        }
+      }
+    } catch { /* fallback */ }
+    return this.merchantConfigData || {
+      visitIntervalDays: 5,
+      visitLengthDays: 3,
+      firstVisitDelayDays: 1,
+      stockSlots: 6,
+      valuePerIngredientUnit: 3,
+      valuePerRequiredLevel: 0.10,
+      rarityMultiplier: { common: 1, uncommon: 1.5, rare: 2.5, epic: 4, legendary: 6 },
+      foodQualityMultiplier: { poor: 0.5, common: 1.0, good: 1.25, excellent: 1.5, perfect: 1.75 },
+      hagglingPerLevel: 0.005
+    };
+  }
+
+  public getMerchantStock(): MerchantStockEntry[] {
+    if (this.merchantStockData?.stock) {
+      return this.merchantStockData.stock;
+    }
+    try {
+      if (typeof process !== 'undefined' && process.versions?.node) {
+        const fsModule = (globalThis as any).fs || (typeof require !== 'undefined' ? require('node:fs') : undefined);
+        if (fsModule && fsModule.existsSync('data/merchantStock.json')) {
+          this.merchantStockData = JSON.parse(fsModule.readFileSync('data/merchantStock.json', 'utf8'));
+          return this.merchantStockData?.stock ?? [];
+        }
+      }
+    } catch { /* fallback */ }
+    return this.merchantStockData?.stock ?? [];
   }
 
   public getGatheringNodesConfig(): GatheringNodesConfig {

@@ -851,6 +851,21 @@
       "requiresScroll": true,
       "rarity": "legendary",
       "resultWeaponId": "dawnbreaker"
+    },
+    {
+      "id": "desert_steel_saber",
+      "name": "Desert Steel Saber",
+      "resultWeaponId": "desert_steel_saber",
+      "requiredLevel": 8,
+      "ingredients": {
+        "ore": 8,
+        "steel_scrap": 2,
+        "void_plate": 1
+      },
+      "expGranted": 100,
+      "description": "A curved desert saber tempered with void-infused steel.",
+      "requiresScroll": true,
+      "rarity": "rare"
     }
   ]
 }

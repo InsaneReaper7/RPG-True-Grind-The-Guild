@@ -1,0 +1,23 @@
+{
+  "visitIntervalDays": 5,
+  "visitLengthDays": 3,
+  "firstVisitDelayDays": 1,
+  "stockSlots": 6,
+  "valuePerIngredientUnit": 3,
+  "valuePerRequiredLevel": 0.10,
+  "rarityMultiplier": {
+    "common": 1,
+    "uncommon": 1.5,
+    "rare": 2.5,
+    "epic": 4,
+    "legendary": 6
+  },
+  "foodQualityMultiplier": {
+    "poor": 0.5,
+    "common": 1.0,
+    "good": 1.25,
+    "excellent": 1.5,
+    "perfect": 1.75
+  },
+  "hagglingPerLevel": 0.005
+}

@@ -1,4 +1,5 @@
 import type { BuildableDef, GridPos } from '../types/game';
+import { GameState } from './GameState';
 
 export interface EnclosureResult {
   isIndoor: boolean;
@@ -278,7 +279,8 @@ export class BuildingSystem {
     gardeningLevel: number = 0,
     isUnlockedFn?: (id: string) => boolean,
     currentOre: number = 0,
-    getItemCountFn?: (id: string) => number
+    getItemCountFn?: (id: string) => number,
+    countPlacedFn?: (id: string) => number
   ): { valid: boolean; reason?: string } {
     // 0. Research unlock check for lockedByDefault buildables
     if (blueprint.lockedByDefault) {
@@ -287,6 +289,19 @@ export class BuildingSystem {
         return {
           valid: false,
           reason: `Cannot place ${blueprint.name}: Research not yet unlocked!`
+        };
+      }
+    }
+
+    // 0b. Max count check for limited buildables (e.g. maxCount: 1)
+    if (blueprint.maxCount !== undefined && blueprint.maxCount > 0) {
+      const placedCount = countPlacedFn
+        ? countPlacedFn(blueprint.id)
+        : GameState.getInstance().getPlacedBuildables().filter((b) => b.id === blueprint.id).length;
+      if (placedCount >= blueprint.maxCount) {
+        return {
+          valid: false,
+          reason: `Cannot place ${blueprint.name}: Guild already has the maximum allowed (${blueprint.maxCount})!`
         };
       }
     }

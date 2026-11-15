@@ -662,6 +662,7 @@ export class Player extends Entity {
     this.progression = progression;
     if (this.progression) {
       this.progression.ownerName = this.entityName;
+      this.progression.character = this;
       this.progression.onProgressionLevelUp(() => {
         this.recalculateDerivedStats(true);
       });
@@ -865,6 +866,28 @@ export class Player extends Entity {
     if (this.equippedRing) list.push(this.equippedRing);
     if (this.equippedAccessory) list.push(this.equippedAccessory);
     return list;
+  }
+
+  /**
+   * Returns the total luck bonus from all equipped gear pieces.
+   */
+  public getEquippedLuckBonus(): number {
+    let bonus = 0;
+    for (const piece of this.getEquippedArmors()) {
+      if (typeof piece.luckBonus === 'number') {
+        bonus += piece.luckBonus;
+      }
+    }
+    return bonus;
+  }
+
+  /**
+   * Returns effective Luck level: base stored level + equipment luckBonus.
+   * Single source of truth for effective Luck everywhere it is read.
+   */
+  public getEffectiveLuck(): number {
+    const base = this.progression ? this.progression.getProficiencyLevel('luck') : 0;
+    return base + this.getEquippedLuckBonus();
   }
 
   /**
@@ -1160,7 +1183,7 @@ export class Player extends Entity {
   }
 
   public drinkPotion(potionId: string): boolean {
-    if (potionId !== 'energy_potion' && potionId !== 'mana_potion') {
+    if (potionId !== 'energy_potion' && potionId !== 'mana_potion' && potionId !== 'greater_energy_draught') {
       return false;
     }
     const dataLoader = DataLoader.getInstance();
@@ -1170,7 +1193,9 @@ export class Player extends Entity {
     const consumed = this.consumeCarriedConsumable(potionId, 1);
     if (!consumed) return false;
 
-    const energyRestored = recipe.energyRestored ?? 35;
+    const energyRestored = recipe.energyPercent !== undefined
+      ? Math.round(this.maxEnergy * (recipe.energyPercent / 100))
+      : (recipe.energyRestored ?? 35);
     const oldEnergy = this.energy;
     this.energy = Math.min(this.maxEnergy, this.energy + energyRestored);
     const restored = Math.floor(this.energy - oldEnergy);
@@ -1178,7 +1203,10 @@ export class Player extends Entity {
     const buffDuration = recipe.buffDurationMs ?? 15000;
     const buffRegen = recipe.buffRegenPerSec ?? 2;
 
-    if (potionId === 'energy_potion') {
+    if (potionId === 'greater_energy_draught') {
+      console.log(`[Potion] ⚡ ${this.entityName} drank Greater Energy Draught! +${restored} EN restored`);
+      this.createFloatingText(`+${restored} EN (Greater Energy Draught)`, '#38bdf8');
+    } else if (potionId === 'energy_potion') {
       this.energyPotionRemainingMs = buffDuration;
       this.energyPotionRegenPerSec = buffRegen;
       console.log(`[Potion] ⚡ ${this.entityName} drank Energy Potion! +${restored} EN restored, +${buffRegen} EN/s for ${(buffDuration / 1000).toFixed(0)}s`);

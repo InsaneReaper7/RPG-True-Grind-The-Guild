@@ -2543,6 +2543,10 @@
           <span>Stockpile Wood:</span>
           <span id="player-wood-text" class="hud-stat-value" style="color: #f59e0b;">🪵 100</span>
         </div>
+        <div class="hud-stat" id="hud-gold-row">
+          <span>Gold:</span>
+          <span id="player-gold-text" class="hud-stat-value" style="color: #fbbf24;">🪙 0</span>
+        </div>
 
         <!-- Discovered Defensive & Regen Skills (Hidden at Level 0, revealed at Level >= 1) -->
         <div id="hud-discovered-skills-section" style="display: none; margin-top: 6px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 4px;">
@@ -3495,6 +3499,45 @@
           </div>
         </div>
       </div>
+      <!-- Merchant Modal (Milestone 9) -->
+      <div id="merchant-modal" class="custom-modal" style="width: 680px; max-height: 85vh; overflow-y: auto;">
+        <div class="modal-header">
+          <div>
+            <div class="modal-title" style="color: #fbbf24;">🪙 Travelling Merchant</div>
+            <div class="modal-subtitle">Rare wares, unique scrolls, and a fair price for your masterwork crafts.</div>
+          </div>
+          <button id="close-merchant-btn" class="modal-close-btn" type="button">✕</button>
+        </div>
+
+        <!-- Trader Selector & Gold / Haggling Header -->
+        <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(31, 41, 55, 0.7); padding: 10px 14px; border-radius: 8px; margin-bottom: 12px; border: 1px solid rgba(251, 191, 36, 0.2);">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <label for="merchant-trader-select" style="font-size: 12px; color: #9ca3af; font-weight: bold;">Trading as:</label>
+            <select id="merchant-trader-select" style="background: #1f2937; color: #f3f4f6; border: 1px solid #4b5563; border-radius: 6px; padding: 4px 8px; font-size: 12px; outline: none; cursor: pointer;"></select>
+          </div>
+          <div style="display: flex; align-items: center; gap: 16px;">
+            <div id="merchant-haggling-info" style="font-size: 11px; color: #a3e635;">Haggling Lv 0 (0% bonus)</div>
+            <div id="merchant-gold-display" style="font-size: 14px; font-weight: bold; color: #fbbf24;">🪙 0 Gold</div>
+          </div>
+        </div>
+
+        <!-- Buy / Sell Tabs -->
+        <div style="display: flex; gap: 8px; margin-bottom: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 8px;">
+          <button id="merchant-tab-buy" class="inv-filter-btn active" type="button" style="padding: 6px 16px; font-size: 13px;">Buy</button>
+          <button id="merchant-tab-sell" class="inv-filter-btn" type="button" style="padding: 6px 16px; font-size: 13px;">Sell</button>
+        </div>
+
+        <!-- Buy Panel -->
+        <div id="merchant-buy-panel" style="display: flex; flex-direction: column; gap: 8px;">
+          <div id="merchant-buy-list" style="display: flex; flex-direction: column; gap: 8px;"></div>
+        </div>
+
+        <!-- Sell Panel -->
+        <div id="merchant-sell-panel" style="display: none; flex-direction: column; gap: 8px;">
+          <div id="merchant-sell-list" style="display: flex; flex-direction: column; gap: 8px;"></div>
+        </div>
+      </div>
+
       <!-- Summon Guild Recruit Modal (Milestone: The Real Game Start) -->
       <div id="summon-recruit-modal" class="custom-modal">
         <div class="modal-header">

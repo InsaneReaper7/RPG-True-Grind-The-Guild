@@ -691,6 +691,24 @@
       "indoorRequired": true,
       "walkable": false,
       "description": "Monumental stone hearth roaring with warm fire."
+    },
+    {
+      "id": "merchant_stall",
+      "name": "Merchant Stall",
+      "woodCost": 15,
+      "itemCosts": {
+        "planks": 5
+      },
+      "footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "rotatable": true,
+      "indoorRequired": true,
+      "walkable": false,
+      "lockedByDefault": true,
+      "maxCount": 1,
+      "description": "Trading stall for the travelling merchant. One per guild. Requires a fully enclosed indoor room."
     }
   ]
 }

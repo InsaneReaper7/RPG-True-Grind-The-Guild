@@ -15,13 +15,15 @@ import type {
   SaveMetadata,
   GameSaveFile,
   GearItemInstance,
-  RecruitDef
+  RecruitDef,
+  MerchantVisitState
 } from '../types/game.ts';
 import { DataLoader } from '../utils/DataLoader.ts';
 import { LockpickingSystem } from './LockpickingSystem.ts';
 import { EventLog } from './EventLog.ts';
 import { isCraftingClass, getBaseItemId } from '../utils/gearResolver.ts';
 import { createPassiveRng } from '../utils/rng.ts';
+import { MerchantSystem } from './MerchantSystem.ts';
 
 export function validateCharacterName(name: string | null | undefined, defaultName: string): string {
   if (typeof name !== 'string') return defaultName;
@@ -135,6 +137,69 @@ export class GameState {
     if (this.snapshot) {
       this.snapshot.grovePityCounter = this.grovePityCounter;
     }
+  }
+
+  // Milestone 9: The Merchant, Gold and Haggling
+  private gold: number = 0;
+  private merchantVisitState: MerchantVisitState = {
+    placed: false,
+    present: false,
+    nextArrivalDay: 1,
+    visitNumber: 0,
+    stock: []
+  };
+
+  public getGold(): number {
+    return this.gold;
+  }
+
+  public addGold(amount: number): void {
+    if (amount <= 0) return;
+    this.gold = Math.floor(this.gold + amount);
+    if (this.snapshot) {
+      this.snapshot.gold = this.gold;
+    }
+  }
+
+  public consumeGold(amount: number): boolean {
+    if (amount <= 0) return true;
+    if (this.gold >= amount) {
+      this.gold = Math.floor(this.gold - amount);
+      if (this.snapshot) {
+        this.snapshot.gold = this.gold;
+      }
+      return true;
+    }
+    return false;
+  }
+
+  public setGold(amount: number): void {
+    this.gold = Math.max(0, Math.floor(amount));
+    if (this.snapshot) {
+      this.snapshot.gold = this.gold;
+    }
+  }
+
+  public getMerchantState(): MerchantVisitState {
+    return this.merchantVisitState;
+  }
+
+  public getMerchantVisitState(): MerchantVisitState {
+    return this.merchantVisitState;
+  }
+
+  public setMerchantState(state: MerchantVisitState): void {
+    this.merchantVisitState = state;
+    if (this.snapshot) {
+      this.snapshot.merchantVisit = {
+        ...this.merchantVisitState,
+        stock: [...this.merchantVisitState.stock]
+      };
+    }
+  }
+
+  public setMerchantVisitState(state: MerchantVisitState): void {
+    this.setMerchantState(state);
   }
 
   public applyGroveGenerationResult(dungeon: { overgrownGrove?: unknown | null; groveEligible?: boolean }): void {
@@ -321,7 +386,15 @@ export class GameState {
       defeatedAreaBosses: Array.from(this.defeatedAreaBosses),
       quickSlots: ['revive_potion', 'bandage', 'energy_potion', 'antidote'],
       worldFlags: { ...this.worldFlags },
-      grovePityCounter: this.grovePityCounter
+      grovePityCounter: this.grovePityCounter,
+      gold: 0,
+      merchantVisit: {
+        placed: false,
+        present: false,
+        nextArrivalDay: 1,
+        visitNumber: 0,
+        stock: []
+      }
     };
 
     const startingConsumableKit: Record<string, number> = {
@@ -680,15 +753,23 @@ export class GameState {
    * Runs food spoilage check immediately.
    */
   public advanceGameDay(days: number = 1): number {
-    this.currentGameDay += days;
-    console.log(`%c[Clock] 🌅 Game Day advanced by +${days} -> Day ${this.currentGameDay}`, 'color: #f59e0b; font-weight: bold;');
-    this.updateGardeningPlots();
-    this.updateAnimalPens(days);
+    for (let d = 0; d < days; d++) {
+      this.currentGameDay += 1;
+      console.log(`%c[Clock] 🌅 Game Day advanced by +1 -> Day ${this.currentGameDay}`, 'color: #f59e0b; font-weight: bold;');
+      this.updateGardeningPlots();
+      this.updateAnimalPens(1);
+      MerchantSystem.getInstance().onGameDayAdvanced(this.currentGameDay);
+    }
     const spoiled = this.checkFoodSpoilage();
     if (this.snapshot) {
       this.snapshot.currentGameDay = this.currentGameDay;
       this.snapshot.foodItems = [...this.foodItems];
       this.snapshot.tamedAnimals = [...this.tamedAnimals];
+      this.snapshot.gold = this.gold;
+      this.snapshot.merchantVisit = {
+        ...this.merchantVisitState,
+        stock: [...this.merchantVisitState.stock]
+      };
     }
     return spoiled;
   }
@@ -1879,7 +1960,9 @@ export class GameState {
         discoveredStatusEffects: Array.from(this.discoveredStatusEffects),
         discoveredGatheringNodes: Array.from(this.discoveredGatheringNodes),
         defeatedAreaBosses: Array.from(this.defeatedAreaBosses),
-        gearInstances: Object.fromEntries(this.gearInstances)
+        gearInstances: Object.fromEntries(this.gearInstances),
+        gold: this.gold,
+        merchantVisit: { ...this.merchantVisitState, stock: [...this.merchantVisitState.stock] }
       };
     }
     console.log(
@@ -1975,7 +2058,12 @@ export class GameState {
       gearInstances: Object.fromEntries(this.gearInstances),
       worldFlags: { ...this.worldFlags },
       grovePityCounter: this.grovePityCounter,
-      tamedAnimals: [...this.tamedAnimals]
+      tamedAnimals: [...this.tamedAnimals],
+      gold: this.gold,
+      merchantVisit: {
+        ...this.merchantVisitState,
+        stock: [...this.merchantVisitState.stock]
+      }
     };
 
     console.log(
@@ -2855,6 +2943,25 @@ export class GameState {
     snap.worldFlags = { ...this.worldFlags };
     snap.grovePityCounter = this.grovePityCounter;
 
+    this.gold = typeof snap.gold === 'number' ? Math.max(0, Math.floor(snap.gold)) : 0;
+    if (snap.merchantVisit) {
+      this.merchantVisitState = {
+        placed: !!snap.merchantVisit.placed,
+        present: !!snap.merchantVisit.present,
+        nextArrivalDay: snap.merchantVisit.nextArrivalDay ?? 1,
+        visitNumber: snap.merchantVisit.visitNumber ?? 0,
+        stock: Array.isArray(snap.merchantVisit.stock) ? [...snap.merchantVisit.stock] : []
+      };
+    } else {
+      this.merchantVisitState = {
+        placed: false,
+        present: false,
+        nextArrivalDay: 1,
+        visitNumber: 0,
+        stock: []
+      };
+    }
+
     this.syncFoodInventory();
     this.isInitialized = true;
   }
@@ -2906,6 +3013,14 @@ export class GameState {
     this.quickSlots = ['revive_potion', 'bandage', 'energy_potion', 'antidote'];
     this.worldFlags = {};
     this.grovePityCounter = 0;
+    this.gold = 0;
+    this.merchantVisitState = {
+      placed: false,
+      present: false,
+      nextArrivalDay: 1,
+      visitNumber: 0,
+      stock: []
+    };
     this.dungeonFloorCount = 0;
     this.lifetimeDungeonFloorCount = 0;
     this.lastSaveError = null;

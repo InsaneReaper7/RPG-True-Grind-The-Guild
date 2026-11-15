@@ -1701,6 +1701,57 @@
       "rarity": "legendary",
       "icon": "📜",
       "description": "A rare crafting scroll detailing the construction of Heart of Winter."
+    },
+    {
+      "id": "merchant_recipe_desert_steel_saber",
+      "name": "Recipe: Desert Steel Saber",
+      "weight": 0.1,
+      "category": "recipes",
+      "teachesRecipeId": "desert_steel_saber",
+      "rarity": "rare",
+      "icon": "📜",
+      "description": "An ancient blacksmithing schematic detailing the craftsmanship of the Desert Steel Saber."
+    },
+    {
+      "id": "merchant_recipe_nomads_coat",
+      "name": "Recipe: Nomad's Coat",
+      "weight": 0.1,
+      "category": "recipes",
+      "teachesRecipeId": "nomads_coat",
+      "rarity": "rare",
+      "icon": "📜",
+      "description": "An armorsmithing blueprint for tailoring a weather-hardened Nomad's Coat."
+    },
+    {
+      "id": "merchant_recipe_greater_energy_draught",
+      "name": "Recipe: Greater Energy Draught",
+      "weight": 0.1,
+      "category": "recipes",
+      "teachesRecipeId": "greater_energy_draught",
+      "rarity": "uncommon",
+      "icon": "📜",
+      "description": "An alchemy formula detailing how to brew the Greater Energy Draught."
+    },
+    {
+      "id": "greater_energy_draught",
+      "name": "Greater Energy Draught",
+      "weight": 0.3,
+      "category": "consumables",
+      "icon": "⚡",
+      "energyPercent": 60,
+      "rarity": "uncommon",
+      "description": "An invigorating alchemical draught that instantly restores 60% max energy."
+    },
+    {
+      "id": "travelers_tonic",
+      "name": "Traveler's Tonic",
+      "weight": 0.3,
+      "category": "consumables",
+      "icon": "🧪",
+      "healPercent": 40,
+      "energyPercent": 40,
+      "rarity": "uncommon",
+      "description": "A revitalizing caravan elixir. Restores 40% max HP and 40% max energy."
     }
   ]
 }

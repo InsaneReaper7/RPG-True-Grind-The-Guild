@@ -17,6 +17,7 @@ import { isTypingInTextField, disableGameKeyboard, enableGameKeyboard, initKeybo
 import { formatRequirement } from '../utils/formatRequirement.ts';
 import { EventLog } from '../systems/EventLog.ts';
 import { BugReportModal } from './BugReportModal.ts';
+import { MerchantSystem } from '../systems/MerchantSystem.ts';
 
 export interface AnnouncementItem {
   type: 'class' | 'skill';
@@ -405,6 +406,21 @@ export class HUD {
   private confirmDropActionBtn: HTMLButtonElement | null = null;
   private cancelDropBtn: HTMLButtonElement | null = null;
   private closeDropConfirmBtn: HTMLButtonElement | null = null;
+
+  // Milestone 9: Travelling Merchant Elements & State
+  private merchantModalEl: HTMLElement | null = null;
+  private closeMerchantBtn: HTMLElement | null = null;
+  private merchantTraderSelectEl: HTMLSelectElement | null = null;
+  private merchantGoldDisplayEl: HTMLElement | null = null;
+  private merchantHagglingInfoEl: HTMLElement | null = null;
+  private merchantTabBuyBtn: HTMLElement | null = null;
+  private merchantTabSellBtn: HTMLElement | null = null;
+  private merchantBuyPanelEl: HTMLElement | null = null;
+  private merchantSellPanelEl: HTMLElement | null = null;
+  private merchantBuyListEl: HTMLElement | null = null;
+  private merchantSellListEl: HTMLElement | null = null;
+  private activeMerchantTab: 'buy' | 'sell' = 'buy';
+  private activeMerchantTrader: Player | null = null;
 
   // Milestone: Tutorial & Onboarding Guide Elements
   private guildGuideWidgetEl: HTMLElement | null = null;
@@ -1195,6 +1211,59 @@ export class HUD {
       this.renderGuildGuide(step);
     });
     this.renderGuildGuide(TutorialSystem.getInstance().getCurrentStep());
+
+    // Milestone 9: Travelling Merchant Elements & Listeners
+    this.merchantModalEl = document.getElementById('merchant-modal');
+    this.closeMerchantBtn = document.getElementById('close-merchant-btn');
+    this.merchantTraderSelectEl = document.getElementById('merchant-trader-select') as HTMLSelectElement | null;
+    this.merchantGoldDisplayEl = document.getElementById('merchant-gold-display');
+    this.merchantHagglingInfoEl = document.getElementById('merchant-haggling-info');
+    this.merchantTabBuyBtn = document.getElementById('merchant-tab-buy');
+    this.merchantTabSellBtn = document.getElementById('merchant-tab-sell');
+    this.merchantBuyPanelEl = document.getElementById('merchant-buy-panel');
+    this.merchantSellPanelEl = document.getElementById('merchant-sell-panel');
+    this.merchantBuyListEl = document.getElementById('merchant-buy-list');
+    this.merchantSellListEl = document.getElementById('merchant-sell-list');
+
+    if (this.closeMerchantBtn) {
+      this.closeMerchantBtn.onclick = () => {
+        HUD.activeInstance?.closeMerchantModal();
+      };
+    }
+
+    if (this.merchantTabBuyBtn) {
+      this.merchantTabBuyBtn.onclick = () => {
+        this.activeMerchantTab = 'buy';
+        this.merchantTabBuyBtn?.classList.add('active');
+        this.merchantTabSellBtn?.classList.remove('active');
+        if (this.merchantBuyPanelEl) this.merchantBuyPanelEl.style.display = 'flex';
+        if (this.merchantSellPanelEl) this.merchantSellPanelEl.style.display = 'none';
+        this.renderMerchantBuyTab();
+      };
+    }
+
+    if (this.merchantTabSellBtn) {
+      this.merchantTabSellBtn.onclick = () => {
+        this.activeMerchantTab = 'sell';
+        this.merchantTabSellBtn?.classList.add('active');
+        this.merchantTabBuyBtn?.classList.remove('active');
+        if (this.merchantSellPanelEl) this.merchantSellPanelEl.style.display = 'flex';
+        if (this.merchantBuyPanelEl) this.merchantBuyPanelEl.style.display = 'none';
+        this.renderMerchantSellTab();
+      };
+    }
+
+    if (this.merchantTraderSelectEl) {
+      this.merchantTraderSelectEl.onchange = () => {
+        const traderId = this.merchantTraderSelectEl?.value;
+        const party = (this.currentParty && this.currentParty.length > 0) ? this.currentParty : (this.currentPlayer ? [this.currentPlayer] : []);
+        const trader = party.find((m) => m.id === traderId) || this.currentPlayer;
+        if (trader) {
+          this.activeMerchantTrader = trader;
+          this.renderMerchantModal();
+        }
+      };
+    }
 
     initKeyboardGuards();
     this.initTitleScreen();
@@ -2233,6 +2302,7 @@ export class HUD {
           active.closeWoodworkingModal?.();
           active.closeStonemasonModal?.();
           active.closeAnimalPenModal?.();
+          active.closeMerchantModal?.();
           active.closePartyOverviewModal();
           if (active.isBuildOverlayVisible()) {
             active.onBuildModeToggleCallback?.();
@@ -3414,6 +3484,12 @@ export class HUD {
       }
     }
 
+    // 8a. Gold Counter
+    const playerGoldEl = document.getElementById('player-gold-text');
+    if (playerGoldEl) {
+      playerGoldEl.innerText = `🪙 ${GameState.getInstance().getGold()}`;
+    }
+
     // 8b. Milestone 7: Day Clock, Hunger, Mood & Rations
     if (this.dayClockBadgeEl) {
       const day = GameState.getInstance().getCurrentGameDay();
@@ -3837,6 +3913,13 @@ export class HUD {
       const regen = recipe?.buffRegenPerSec ?? 2;
       const dur = (recipe?.buffDurationMs ?? 15000) / 1000;
       effect = `Restores ${energy} Energy, +${regen}/s for ${dur} s`;
+    } else if (itemId === 'greater_energy_draught') {
+      const recipe = dataLoader.getAlchemyRecipe?.('greater_energy_draught');
+      const energyText = recipe?.energyPercent ? `${recipe.energyPercent}% Energy` : `${recipe?.energyRestored ?? 35} Energy`;
+      effect = `Restores ${energyText}`;
+    } else if (itemId === 'travelers_tonic') {
+      const item = dataLoader.getItem(itemId);
+      effect = `Restores ${item?.healPercent ?? 40}% HP and ${item?.energyPercent ?? 40}% Energy`;
     } else if (itemId === 'bandage') {
       effect = 'Cures Bleed status effect';
     } else if (itemId === 'antidote') {
@@ -3862,7 +3945,7 @@ export class HUD {
     let target = '';
     if (itemId === 'health_potion') {
       target = 'Selected member if injured, else the lowest HP%';
-    } else if (itemId === 'mana_potion' || itemId === 'potion_mana' || itemId === 'energy_potion') {
+    } else if (itemId === 'mana_potion' || itemId === 'potion_mana' || itemId === 'energy_potion' || itemId === 'greater_energy_draught' || itemId === 'travelers_tonic') {
       target = 'Selected member, else party leader';
     } else if (itemId === 'bandage') {
       target = 'Selected member if bleeding, else any bleeding member';
@@ -6612,6 +6695,9 @@ export class HUD {
       this.alchemyRecipesContainerEl.innerHTML = '';
       let visibleCount = 0;
       for (const recipe of alchemyRecipes) {
+        if (recipe.requiresScroll && !gameState.isAlchemyRecipeDiscovered(recipe.id)) {
+          continue;
+        }
         const reqLevel = recipe.requiredLevel ?? 0;
         const isLevelUnlocked = alchemyStat.level >= reqLevel;
 
@@ -9020,6 +9106,205 @@ export class HUD {
         this.renderAnimalPenModal(penBuildable);
       });
     });
+  }
+
+  // --- Milestone 9: Travelling Merchant Modal ---
+
+  public openMerchantModal(player?: Player): void {
+    if (player) {
+      this.currentPlayer = player;
+      this.activeMerchantTrader = player;
+    }
+    if (this.merchantModalEl) {
+      this.merchantModalEl.classList.add('active');
+      this.renderMerchantModal();
+    }
+  }
+
+  public closeMerchantModal(): void {
+    if (this.merchantModalEl) {
+      this.merchantModalEl.classList.remove('active');
+    }
+  }
+
+  public isMerchantModalOpen(): boolean {
+    return this.merchantModalEl?.classList.contains('active') ?? false;
+  }
+
+  public renderMerchantModal(): void {
+    if (!this.merchantModalEl) return;
+    const gs = GameState.getInstance();
+    const dl = DataLoader.getInstance();
+    const config = dl.getMerchantConfig();
+
+    const party = (this.currentParty && this.currentParty.length > 0) ? this.currentParty : (this.currentPlayer ? [this.currentPlayer] : []);
+    if (!this.activeMerchantTrader || !party.some((m) => m.id === this.activeMerchantTrader?.id)) {
+      this.activeMerchantTrader = this.currentPlayer || party[0];
+    }
+    const trader = this.activeMerchantTrader;
+
+    // 1. Populate Trader Selector
+    if (this.merchantTraderSelectEl) {
+      this.merchantTraderSelectEl.innerHTML = '';
+      for (const m of party) {
+        const opt = document.createElement('option');
+        opt.value = m.id;
+        opt.innerText = m.entityName;
+        if (trader && m.id === trader.id) {
+          opt.selected = true;
+        }
+        this.merchantTraderSelectEl.appendChild(opt);
+      }
+    }
+
+    // 2. Haggling level & discount/bonus readout
+    const hagglingLvl = trader?.progression ? trader.progression.getProficiencyLevel('haggling') : 0;
+    const pct = (hagglingLvl * config.hagglingPerLevel * 100).toFixed(1);
+    if (this.merchantHagglingInfoEl) {
+      this.merchantHagglingInfoEl.innerText = `Haggling Lv ${hagglingLvl} (+${pct}% Sell / -${pct}% Buy)`;
+    }
+
+    // 3. Gold Display
+    if (this.merchantGoldDisplayEl) {
+      this.merchantGoldDisplayEl.innerText = `🪙 ${gs.getGold()} Gold`;
+    }
+
+    // 4. Render active tab
+    if (this.activeMerchantTab === 'buy') {
+      if (this.merchantBuyPanelEl) this.merchantBuyPanelEl.style.display = 'flex';
+      if (this.merchantSellPanelEl) this.merchantSellPanelEl.style.display = 'none';
+      if (this.merchantTabBuyBtn) this.merchantTabBuyBtn.classList.add('active');
+      if (this.merchantTabSellBtn) this.merchantTabSellBtn.classList.remove('active');
+      this.renderMerchantBuyTab();
+    } else {
+      if (this.merchantSellPanelEl) this.merchantSellPanelEl.style.display = 'flex';
+      if (this.merchantBuyPanelEl) this.merchantBuyPanelEl.style.display = 'none';
+      if (this.merchantTabSellBtn) this.merchantTabSellBtn.classList.add('active');
+      if (this.merchantTabBuyBtn) this.merchantTabBuyBtn.classList.remove('active');
+      this.renderMerchantSellTab();
+    }
+  }
+
+  public renderMerchantBuyTab(): void {
+    if (!this.merchantBuyListEl) return;
+    this.merchantBuyListEl.innerHTML = '';
+    const gs = GameState.getInstance();
+    const visit = gs.getMerchantVisitState();
+    const trader = this.activeMerchantTrader || this.currentPlayer;
+    const playerGold = gs.getGold();
+
+    for (const item of visit.stock) {
+      const buyPrice = MerchantSystem.getBuyPrice(item.price, trader || undefined);
+      const row = document.createElement('div');
+      row.style.cssText = 'background: rgba(31, 41, 55, 0.75); border: 1px solid rgba(148, 163, 184, 0.3); border-radius: 8px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; gap: 12px;';
+
+      const nameColor = item.rarity === 'legendary' ? '#f59e0b' : (item.rarity === 'rare' ? '#60a5fa' : (item.rarity === 'uncommon' ? '#4ade80' : '#f3f4f6'));
+      const canAfford = playerGold >= buyPrice;
+
+      let actionHtml = '';
+      if (item.sold) {
+        actionHtml = `<span style="font-weight: bold; color: #ef4444; font-size: 13px; padding: 6px 12px;">Sold</span>`;
+      } else {
+        const disabledAttr = canAfford ? '' : 'disabled';
+        const btnStyle = canAfford
+          ? 'background: #059669; border: 1px solid #34d399; color: white; border-radius: 6px; padding: 6px 14px; font-size: 12px; font-weight: bold; cursor: pointer;'
+          : 'background: #374151; border: 1px solid #4b5563; color: #9ca3af; border-radius: 6px; padding: 6px 14px; font-size: 12px; cursor: not-allowed;';
+        actionHtml = `<button type="button" class="btn-action merchant-buy-btn" data-merchant-buy-id="${item.id}" ${disabledAttr} style="${btnStyle}">Buy (🪙 ${buyPrice})</button>`;
+      }
+
+      row.innerHTML = `
+        <div style="flex: 1;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-weight: bold; color: ${nameColor}; font-size: 14px;">${item.name}</span>
+            <span style="font-size: 11px; text-transform: uppercase; color: #9ca3af; border: 1px solid #4b5563; border-radius: 4px; padding: 1px 5px;">${item.kind}</span>
+          </div>
+          <div style="font-size: 11px; color: #9ca3af; margin-top: 2px;">${item.description}</div>
+        </div>
+        <div>${actionHtml}</div>
+      `;
+
+      const buyBtn = row.querySelector<HTMLButtonElement>(`[data-merchant-buy-id="${item.id}"]`);
+      if (buyBtn && !item.sold) {
+        buyBtn.onclick = () => {
+          if (!trader) return;
+          const res = MerchantSystem.getInstance().buyItem(item.id, trader);
+          if (res.success) {
+            this.showToast(`Purchased ${item.name}!`, 'success');
+            this.renderMerchantModal();
+            this.update(this.currentPlayer || trader, trader.progression, 0, this.currentParty);
+          } else {
+            this.showToast(res.reason || 'Cannot buy item.', 'warn');
+          }
+        };
+      }
+
+      this.merchantBuyListEl.appendChild(row);
+    }
+  }
+
+  public renderMerchantSellTab(): void {
+    if (!this.merchantSellListEl) return;
+    this.merchantSellListEl.innerHTML = '';
+    const trader = this.activeMerchantTrader || this.currentPlayer;
+    const sellables = MerchantSystem.getInstance().getSellableItems(trader || undefined);
+
+    if (sellables.length === 0) {
+      this.merchantSellListEl.innerHTML = `<div style="text-align: center; color: #9ca3af; font-size: 13px; padding: 24px 0; font-style: italic;">No crafted items to sell. Craft gear, food, or potions to earn gold!</div>`;
+      return;
+    }
+
+    for (const entry of sellables) {
+      const row = document.createElement('div');
+      row.style.cssText = 'background: rgba(31, 41, 55, 0.75); border: 1px solid rgba(148, 163, 184, 0.3); border-radius: 8px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; gap: 12px;';
+
+      const totalSellPrice = entry.unitPrice * entry.count;
+      const sellAllBtnHtml = entry.count > 1
+        ? `<button type="button" class="btn-action merchant-sell-all-btn" data-merchant-sell-key="${entry.key}" style="background: #0284c7; border: 1px solid #38bdf8; color: white; border-radius: 6px; padding: 6px 12px; font-size: 11px; font-weight: bold; cursor: pointer;">Sell All (🪙 ${totalSellPrice})</button>`
+        : '';
+
+      row.innerHTML = `
+        <div style="flex: 1;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-weight: bold; color: #f3f4f6; font-size: 14px;">${entry.name}</span>
+            <span style="font-size: 12px; color: #fbbf24; font-weight: bold;">x${entry.count}</span>
+            <span style="font-size: 11px; color: #9ca3af; border: 1px solid #4b5563; border-radius: 4px; padding: 1px 5px;">${entry.locationName}</span>
+          </div>
+          <div style="font-size: 11px; color: #a3e635; margin-top: 2px;">🪙 ${entry.unitPrice} gold each</div>
+        </div>
+        <div style="display: flex; gap: 6px;">
+          <button type="button" class="btn-action merchant-sell-one-btn" data-merchant-sell-key="${entry.key}" style="background: #d97706; border: 1px solid #fbbf24; color: white; border-radius: 6px; padding: 6px 12px; font-size: 11px; font-weight: bold; cursor: pointer;">Sell 1 (🪙 ${entry.unitPrice})</button>
+          ${sellAllBtnHtml}
+        </div>
+      `;
+
+      const sellOneBtn = row.querySelector<HTMLButtonElement>(`[data-merchant-sell-key="${entry.key}"].merchant-sell-one-btn`);
+      if (sellOneBtn) {
+        sellOneBtn.onclick = () => {
+          if (!trader) return;
+          const res = MerchantSystem.getInstance().sellItem(entry.itemOrInstance, 1, trader, entry.sourceHolder);
+          if (res.success) {
+            this.showToast(`Sold 1x ${entry.name} for ${res.goldGained} gold!`, 'success');
+            this.renderMerchantModal();
+            this.update(this.currentPlayer || trader, trader.progression, 0, this.currentParty);
+          }
+        };
+      }
+
+      const sellAllBtn = row.querySelector<HTMLButtonElement>(`[data-merchant-sell-key="${entry.key}"].merchant-sell-all-btn`);
+      if (sellAllBtn) {
+        sellAllBtn.onclick = () => {
+          if (!trader) return;
+          const res = MerchantSystem.getInstance().sellItem(entry.itemOrInstance, entry.count, trader, entry.sourceHolder);
+          if (res.success) {
+            this.showToast(`Sold ${entry.count}x ${entry.name} for ${res.goldGained} gold!`, 'success');
+            this.renderMerchantModal();
+            this.update(this.currentPlayer || trader, trader.progression, 0, this.currentParty);
+          }
+        };
+      }
+
+      this.merchantSellListEl.appendChild(row);
+    }
   }
 
   // --- GEAR SALVAGE UI (Milestone: Gear Salvage) ---

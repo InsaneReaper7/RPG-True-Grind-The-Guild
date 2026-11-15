@@ -1,0 +1,60 @@
+{
+  "stock": [
+    {
+      "id": "traders_rapier",
+      "kind": "weapon",
+      "refId": "traders_rapier",
+      "price": 300,
+      "weight": 2
+    },
+    {
+      "id": "caravan_warbow",
+      "kind": "weapon",
+      "refId": "caravan_warbow",
+      "price": 900,
+      "weight": 2
+    },
+    {
+      "id": "sandstorm_glaive",
+      "kind": "weapon",
+      "refId": "sandstorm_glaive",
+      "price": 2000,
+      "weight": 2
+    },
+    {
+      "id": "merchant_recipe_desert_steel_saber",
+      "kind": "recipeScroll",
+      "refId": "merchant_recipe_desert_steel_saber",
+      "price": 400,
+      "weight": 3
+    },
+    {
+      "id": "merchant_recipe_nomads_coat",
+      "kind": "recipeScroll",
+      "refId": "merchant_recipe_nomads_coat",
+      "price": 600,
+      "weight": 3
+    },
+    {
+      "id": "merchant_recipe_greater_energy_draught",
+      "kind": "recipeScroll",
+      "refId": "merchant_recipe_greater_energy_draught",
+      "price": 250,
+      "weight": 3
+    },
+    {
+      "id": "travelers_tonic",
+      "kind": "item",
+      "refId": "travelers_tonic",
+      "price": 60,
+      "weight": 6
+    },
+    {
+      "id": "merchants_charm",
+      "kind": "armor",
+      "refId": "merchants_charm",
+      "price": 500,
+      "weight": 1
+    }
+  ]
+}

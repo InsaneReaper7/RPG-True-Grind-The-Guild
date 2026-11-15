@@ -489,6 +489,36 @@
           "aggroReduction": 0.4
         }
       ]
+    },
+    {
+      "id": "haggling",
+      "name": "Haggling",
+      "family": "luck",
+      "triggerType": "onTransaction",
+      "eligibility": {
+        "gear": "none"
+      },
+      "baseProcChance": 0.05,
+      "procChancePerLevel": 0.005,
+      "expPerProc": 1,
+      "description": "The art of striking a bargain. Grants better prices when buying from and selling to merchants.",
+      "tierEffects": [
+        {
+          "level": 1,
+          "description": "+0.5% sell value, -0.5% buy cost",
+          "hagglingBonus": 0.005
+        },
+        {
+          "level": 50,
+          "description": "+25.0% sell value, -25.0% buy cost",
+          "hagglingBonus": 0.25
+        },
+        {
+          "level": 100,
+          "description": "+50.0% sell value, -50.0% buy cost",
+          "hagglingBonus": 0.5
+        }
+      ]
     }
   ]
 }

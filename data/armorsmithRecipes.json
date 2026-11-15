@@ -519,6 +519,21 @@
       "requiresScroll": true,
       "rarity": "legendary",
       "resultArmorId": "heart_of_winter"
+    },
+    {
+      "id": "nomads_coat",
+      "name": "Nomad's Coat",
+      "resultArmorId": "nomads_coat",
+      "requiredLevel": 12,
+      "ingredients": {
+        "wolf_pelt": 4,
+        "orc_heavy_hide": 2,
+        "glacial_essence": 2
+      },
+      "expGranted": 110,
+      "description": "A reinforced traveling coat woven with frost-resistant linings and desert resilience.",
+      "requiresScroll": true,
+      "rarity": "rare"
     }
   ]
 }

@@ -286,6 +286,7 @@ console.log('2. Checking Luck proc rate & stream isolation...');
   const slimeDef = dl.getEnemy('slime')!;
   const slime = new Enemy(scene, 11, 10, slimeDef, 'slime', 32);
   const combat = new CombatSystem(scene, [player], [slime], new Pathfinder([[0, 0], [0, 0]]));
+  combat.setEnableCookingDrops(false);
 
   const matSeed = 777;
   combat.setMaterialLootRng(mulberry32(matSeed));
@@ -330,6 +331,7 @@ console.log('3. Checking Fortune Trigger Mechanics...');
   const slimeDef = dl.getEnemy('slime')!;
   const slime = new Enemy(scene, 11, 10, slimeDef, 'slime', 32);
   const combat = new CombatSystem(scene, [player], [slime], new Pathfinder([[0, 0], [0, 0]]));
+  combat.setEnableCookingDrops(false);
 
   // Force Luck proc and Fortune Trigger via luckRng stub returning 0.0
   combat.setLuckRng(() => 0.0);
@@ -399,6 +401,7 @@ console.log('4. Checking Lady Fortune Unlocks & Nodes...');
   const slimeDef = dl.getEnemy('slime')!;
   const slime = new Enemy(scene, 11, 10, slimeDef, 'slime', 32);
   const combat = new CombatSystem(scene, [player], [slime], new Pathfinder([[0, 0], [0, 0]]));
+  combat.setEnableCookingDrops(false);
   combat.setLuckRng(() => 0.0); // Proc & Fortune Trigger
   combat.setMaterialLootRng(() => 0.0);
   combat.handleTargetDefeated(player, slime, 'short_swords');

@@ -44,6 +44,7 @@ export class ProgressionSystem {
   ];
 
   public ownerName: string = 'Guild Hero';
+  public character?: any;
 
   private static expLog: ExpTransaction[] = [];
   private static expListeners: ((tx: ExpTransaction) => void)[] = [];
@@ -204,6 +205,24 @@ export class ProgressionSystem {
 
   public getProficiencyLevel(id: string): number {
     return this.proficiencies.get(id)?.level ?? 0;
+  }
+
+  /**
+   * Returns equipment luck bonus if a character is bound.
+   */
+  public getEquippedLuckBonus(): number {
+    if (this.character && typeof this.character.getEquippedLuckBonus === 'function') {
+      return this.character.getEquippedLuckBonus();
+    }
+    return 0;
+  }
+
+  /**
+   * Returns effective Luck level: base stored level + equipment luckBonus (if character bound).
+   * Single source of truth for effective Luck everywhere it is read.
+   */
+  public getEffectiveLuck(): number {
+    return this.getProficiencyLevel('luck') + this.getEquippedLuckBonus();
   }
 
   /**

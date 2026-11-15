@@ -454,6 +454,28 @@
       "description": "The legendary crystalline signet enclosing the living eye and sovereign heart of winter.",
       "rarity": "legendary",
       "band": 4
+    },
+    {
+      "id": "nomads_coat",
+      "name": "Nomad's Coat",
+      "slot": "body",
+      "band": 4,
+      "weightClass": "medium",
+      "weight": 7,
+      "armorRating": 17,
+      "hpBonus": 157.5,
+      "splitRatio": "50/50",
+      "rarity": "rare",
+      "description": "A reinforced traveling coat woven with frost-resistant linings and desert resilience."
+    },
+    {
+      "id": "merchants_charm",
+      "name": "Merchant's Charm",
+      "slot": "accessory",
+      "weight": 0.5,
+      "luckBonus": 0.5,
+      "rarity": "rare",
+      "description": "A glittering merchant talisman that brings fortune to negotiations and findings. Grants +0.5 flat Luck."
     }
   ]
 }

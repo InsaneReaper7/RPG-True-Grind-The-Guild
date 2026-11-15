@@ -1529,6 +1529,78 @@
       "rarity": "legendary",
       "band": 4,
       "description": "A legendary longsword heralding the first rays of dawn through eternal winter."
+    },
+    {
+      "id": "traders_rapier",
+      "name": "Trader's Rapier",
+      "category": "melee_1h",
+      "twoHanded": false,
+      "weight": 3.5,
+      "attackIntervalMs": 950,
+      "baseDamage": 6.6,
+      "baseAccuracy": 0.65,
+      "bleedChance": 0.35,
+      "proficiencyId": "short_swords",
+      "levelBonus": {
+        "accuracyPerLevel": 0.004,
+        "damagePerLevel": 0.5
+      },
+      "rarity": "rare",
+      "description": "A balanced, precision-forged rapier carried by travelling merchant caravan guards."
+    },
+    {
+      "id": "caravan_warbow",
+      "name": "Caravan Warbow",
+      "category": "ranged",
+      "twoHanded": true,
+      "weight": 4,
+      "attackIntervalMs": 1300,
+      "attackRangeTiles": 5,
+      "baseDamage": 14.3,
+      "baseAccuracy": 0.7,
+      "proficiencyId": "bows",
+      "levelBonus": {
+        "accuracyPerLevel": 0.004,
+        "damagePerLevel": 0.6,
+        "attackSpeedPerLevel": 0.005
+      },
+      "rarity": "rare",
+      "description": "A reinforced composite warbow carried by long-distance desert caravans."
+    },
+    {
+      "id": "sandstorm_glaive",
+      "name": "Sandstorm Glaive",
+      "category": "melee_2h",
+      "twoHanded": true,
+      "weight": 9.5,
+      "attackIntervalMs": 1300,
+      "baseDamage": 26.4,
+      "baseAccuracy": 0.7,
+      "frostbiteChance": 0.1,
+      "proficiencyId": "spears",
+      "levelBonus": {
+        "accuracyPerLevel": 0.004,
+        "damagePerLevel": 0.75
+      },
+      "rarity": "epic",
+      "description": "An exotic curved polearm honed in harsh desert winds. Striking with great reach and cutting power."
+    },
+    {
+      "id": "desert_steel_saber",
+      "name": "Desert Steel Saber",
+      "category": "melee_1h",
+      "twoHanded": false,
+      "weight": 5,
+      "attackIntervalMs": 1100,
+      "baseDamage": 12.6,
+      "baseAccuracy": 0.7,
+      "proficiencyId": "longswords",
+      "levelBonus": {
+        "accuracyPerLevel": 0.004,
+        "damagePerLevel": 0.55
+      },
+      "rarity": "rare",
+      "description": "A curved desert saber tempered with void-infused steel."
     }
   ],
   "proficiencyTiers": {
