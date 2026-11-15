@@ -70,6 +70,7 @@ const { DataLoader } = await import('../src/utils/DataLoader.ts');
 const { CombatSystem } = await import('../src/systems/CombatSystem.ts');
 const { Player } = await import('../src/entities/Player.ts');
 const { Enemy } = await import('../src/entities/Enemy.ts');
+const { BeastCompanion } = await import('../src/entities/BeastCompanion.ts');
 const { Pathfinder } = await import('../src/utils/Pathfinder.ts');
 import type { EnemyDef, WeaponDef } from '../src/types/game.ts';
 import {
@@ -188,6 +189,8 @@ function createMockScene(gridWidth: number = 40, gridHeight: number = 40): any {
     gridHeight,
     grid,
     pathfinder,
+    findOpenAdjacentTile: (center: any) => ({ x: center.x, y: center.y + 1 }),
+    getPartyUnitObstacles: () => [],
     time: {
       now: 1000,
       addEvent: () => ({ remove: () => {} })
@@ -330,6 +333,18 @@ function runFightSimulation(
 
   companion.mood = 50;
   companion.activeClass = classDef.id;
+  if (classDef.id === 'beastmaster') {
+    companion.companionUid = 'sim_wolf_1';
+    const beast = new BeastCompanion(
+      scene,
+      10,
+      11,
+      companion,
+      { uid: 'sim_wolf_1', speciesId: 'wolf', name: 'Wolf' },
+      32
+    );
+    combat.setBeastCompanions([beast]);
+  }
   companion.recalculateDerivedStats(false);
   companion.hp = companion.maxHp;
   companion.criticalHp = companion.maxCriticalHp;
@@ -442,6 +457,11 @@ function runFightSimulation(
 
     // Execute per-frame path
     companion.update(now, dt);
+    if (combat.beastCompanions) {
+      for (const b of combat.beastCompanions) {
+        b.update(now, dt);
+      }
+    }
     ally.update(now, dt);
     dummy1.update(now, dt);
     if (!singleTarget && dummy2 && dummy3) {

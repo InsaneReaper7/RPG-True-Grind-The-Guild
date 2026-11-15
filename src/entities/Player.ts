@@ -51,6 +51,7 @@ export class Player extends Entity {
   public equippedSkillIds: string[] = [];
   public autocastMap: Map<string, boolean> = new Map();
   public bookLearnedSkills: Set<string> = new Set();
+  public companionUid: string | null = null;
 
   // Milestone 7: Hunger, Mood & Food Buff
   public hunger: number = 100;
@@ -215,6 +216,7 @@ export class Player extends Entity {
       console.log(`[Player:${this.entityName}] Cleared active class (Unranked).`);
       EventLog.getInstance().add('class', `${this.entityName}: Cleared active class (Unranked)`);
       this.handleClassChangeOffhandCheck(prevClass);
+      this.handleClassChangeCompanionCheck(prevClass);
       this.recalculateDerivedStats(true);
       return true;
     }
@@ -227,6 +229,7 @@ export class Player extends Entity {
       console.log(`[Player:${this.entityName}] Active class set to: ${classId}`);
       EventLog.getInstance().add('class', `${this.entityName}: Active class set to: ${classId}`);
       this.handleClassChangeOffhandCheck(prevClass);
+      this.handleClassChangeCompanionCheck(prevClass);
       this.checkSkillUnlocks();
       this.recalculateDerivedStats(true);
       return true;
@@ -249,6 +252,12 @@ export class Player extends Entity {
         const hud = (globalThis as any).activeHUD || (globalThis as any).window?.activeHUD || (this.scene as any)?.hud;
         hud?.showToast(msg, 'warn', 6000);
       }
+    }
+  }
+
+  private handleClassChangeCompanionCheck(prevClass: string | null): void {
+    if (prevClass === 'beastmaster' && this.activeClass !== 'beastmaster') {
+      this.companionUid = null;
     }
   }
 
@@ -1427,7 +1436,8 @@ export class Player extends Entity {
       hunger: (!dataLoader.isHungerEnabled() && this.savedHunger !== undefined) ? this.savedHunger : this.hunger,
       mood: (!dataLoader.isMoodEnabled() && this.savedMood !== undefined) ? this.savedMood : this.mood,
       state: currentState,
-      coating: this.coating ? { ...this.coating } : null
+      coating: this.coating ? { ...this.coating } : null,
+      companionUid: this.companionUid
     };
   }
 
@@ -1520,6 +1530,9 @@ export class Player extends Entity {
       this.mood = dataLoader.isMoodEnabled() ? 80 : 50;
     }
     this.activeClass = snapshot.activeClass ?? null;
+    if (snapshot.companionUid !== undefined) {
+      this.companionUid = snapshot.companionUid ?? null;
+    }
     if (this.activeClass && isCraftingClass(this.activeClass)) {
       console.warn(`[Player:${this.entityName}] Migrating activeClass from crafting class '${this.activeClass}' to null.`);
       this.activeClass = null;

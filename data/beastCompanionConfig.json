@@ -1,0 +1,10 @@
+{
+  "hpPerClassLevel": 0.03,
+  "damagePerClassLevel": 0.03,
+  "followDistanceTiles": 2,
+  "assistRadiusTiles": 4,
+  "leashTiles": 8,
+  "reviveHpFraction": 0.5,
+  "killCreditTo": "owner",
+  "tamingExpPerKill": 2
+}

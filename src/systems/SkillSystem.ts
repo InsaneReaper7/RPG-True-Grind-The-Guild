@@ -103,6 +103,18 @@ export class SkillSystem {
       }
     }
 
+    // 2b. Beast Companion requirement check (mend_beast, bestial_fury, guardian_howl require a living companion)
+    if (skillDef.id === 'mend_beast' || skillDef.id === 'bestial_fury' || skillDef.id === 'guardian_howl') {
+      const livingBeast = this.combatSystem?.beastCompanions?.find(
+        (b) => b.owner === caster && !b.isDowned && b.state !== 'dead'
+      );
+      if (!livingBeast) {
+        console.warn(`[SkillSystem] Cannot cast ${skillDef.name}: No companion!`);
+        this.combatSystem?.createFloatingText?.(caster.x, caster.y - 20, 'No companion!', '#f87171');
+        return false;
+      }
+    }
+
     // 3. Range check if applicable
     const range = skillDef.rangeTiles;
     if (range && target && target !== caster) {
@@ -952,6 +964,79 @@ export class SkillSystem {
         }
         break;
       }
+
+      case 'beastCommand': {
+        const livingBeast = this.combatSystem?.beastCompanions?.find(
+          (b) => b.owner === caster && !b.isDowned && b.state !== 'dead'
+        );
+        if (!livingBeast) break;
+
+        switch (effect.action) {
+          case 'strike': {
+            const isEnemyLike = (t: any): boolean => !!(t && (t instanceof Enemy || (t.gridPos && typeof t.takeDamage === 'function')));
+            const enemyTarget: any = isEnemyLike(target) ? target : (isEnemyLike(caster.targetEntity) ? caster.targetEntity : null);
+            if (enemyTarget && enemyTarget.state !== 'dead' && enemyTarget.state !== 'downed') {
+              const mult = effect.multiplier ?? 1.0;
+              const beastDmg = livingBeast.getEffectiveMeleeDamage() * mult;
+              const scene: any = livingBeast.scene;
+              if (scene && scene.findOpenAdjacentTile) {
+                const adj = scene.findOpenAdjacentTile(enemyTarget.gridPos, livingBeast.gridPos, undefined, livingBeast);
+                if (adj) {
+                  livingBeast.setGridPosition(adj.x, adj.y);
+                }
+              }
+              const downed = enemyTarget.takeDamage(beastDmg, livingBeast);
+              this.combatSystem.createAttackEffect(livingBeast.x, livingBeast.y, enemyTarget.x, enemyTarget.y, 0xef4444);
+              this.combatSystem.createFloatingText(enemyTarget.x, enemyTarget.y - 16, `-${Math.round(beastDmg * 10) / 10} (${skillDef.name})`, '#f87171');
+              if (downed) {
+                livingBeast.handleBeastKill(enemyTarget, this.combatSystem);
+              }
+            }
+            break;
+          }
+          case 'heal': {
+            const frac = effect.fraction ?? 0.3;
+            livingBeast.healBeast(frac);
+            break;
+          }
+          case 'buff': {
+            const spd = (effect.attackSpeedPercent ?? 40) / 100;
+            const dmg = (effect.damagePercent ?? 20) / 100;
+            const dur = effect.durationMs ?? 8000;
+            livingBeast.applyBestialFury(spd, dmg, dur);
+            break;
+          }
+          case 'taunt': {
+            const radius = effect.radiusTiles ?? 3;
+            const dur = effect.durationMs ?? 4000;
+            const tauntDef = DataLoader.getInstance().getStatusEffect('taunted') || {
+              id: 'taunted',
+              name: 'Taunted',
+              durationMs: dur,
+              tickIntervalMs: dur,
+              damagePerTick: 0,
+              color: '#f97316'
+            };
+            const bTile = { x: Math.floor(livingBeast.x / livingBeast.tileSize), y: Math.floor(livingBeast.y / livingBeast.tileSize) };
+            for (const enemy of this.combatSystem.enemies) {
+              if (enemy.state === 'dead' || enemy.state === 'downed') continue;
+              const eTile = { x: Math.floor(enemy.x / enemy.tileSize), y: Math.floor(enemy.y / enemy.tileSize) };
+              const dist = Math.max(Math.abs(bTile.x - eTile.x), Math.abs(bTile.y - eTile.y));
+              if (dist <= radius) {
+                enemy.applyStatusEffect(tauntDef);
+                enemy.tauntSource = livingBeast;
+                enemy.targetEntity = livingBeast;
+                enemy.isAggroed = true;
+                enemy.state = 'chasing';
+                this.combatSystem.createFloatingText(enemy.x, enemy.y - 20, 'TAUNTED!', '#f97316');
+              }
+            }
+            this.combatSystem.createFloatingText(livingBeast.x, livingBeast.y - 12, 'HOWL!', '#f97316');
+            break;
+          }
+        }
+        break;
+      }
     }
   }
 
@@ -1173,6 +1258,36 @@ export class SkillSystem {
       const role = ai?.role ?? this.inferFallbackRole(skillDef);
       const priority = ai?.priority ?? 50;
       const cond: any = ai?.condition ? { ...ai, ...ai.condition } : ai;
+
+      // Beastmaster kit companion AI checks
+      if (skillDef.id === 'mend_beast') {
+        if (context === 'support') {
+          const livingBeast = this.combatSystem?.beastCompanions?.find(
+            (b) => b.owner === member && !b.isDowned && b.state !== 'dead'
+          );
+          if (livingBeast && (livingBeast.hp / livingBeast.maxHp) < 0.50) {
+            candidates.push({ skillDef, target: member, priority });
+          }
+        }
+        continue;
+      }
+      if (skillDef.id === 'bestial_fury' || skillDef.id === 'guardian_howl') {
+        if (context === 'defensive') {
+          const livingBeast = this.combatSystem?.beastCompanions?.find(
+            (b) => b.owner === member && !b.isDowned && b.state !== 'dead'
+          );
+          if (livingBeast) {
+            if (skillDef.id === 'bestial_fury') {
+              if ((livingBeast as any).buffRemainingMs <= 0) {
+                candidates.push({ skillDef, target: member, priority });
+              }
+            } else {
+              candidates.push({ skillDef, target: member, priority });
+            }
+          }
+        }
+        continue;
+      }
 
       // Handle context matching
       if (context === 'support') {

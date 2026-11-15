@@ -3308,10 +3308,16 @@ export class HUD {
         const elapsed = time - lastUsed;
         const cooldownMs = skillDef.cooldownMs;
 
+        const isCompanionSkill = skillId === 'mend_beast' || skillId === 'bestial_fury' || skillId === 'guardian_howl';
+        const hasLivingBeast = !!((this.scene as any)?.beastCompanions?.some((b: any) => b.owner === player && !b.isDowned && b.state !== 'dead'));
+
         let statusText = '';
         let statusColor = '#9ca3af';
 
-        if (!isUnlocked) {
+        if (isCompanionSkill && !hasLivingBeast) {
+          statusText = 'No companion';
+          statusColor = '#ef4444';
+        } else if (!isUnlocked) {
           statusText = 'Locked';
           statusColor = '#6b7280';
         } else if (elapsed < cooldownMs) {
@@ -3334,6 +3340,15 @@ export class HUD {
 
         const btn = this.hudSkillsListEl.querySelector(`[data-hud-skill="${skillId}"]`) as HTMLButtonElement;
         if (btn) {
+          if (isCompanionSkill && !hasLivingBeast) {
+            btn.disabled = true;
+            btn.style.opacity = '0.5';
+            btn.style.cursor = 'not-allowed';
+          } else {
+            btn.disabled = false;
+            btn.style.opacity = '1';
+            btn.style.cursor = 'pointer';
+          }
           const expectedClass = `hud-autocast-btn ${isAuto ? 'autocast-on' : 'autocast-off'}`;
           if (btn.className !== expectedClass) {
             btn.className = expectedClass;
@@ -3757,8 +3772,28 @@ export class HUD {
           card.classList.remove('selected');
           if (statusEl) statusEl.innerText = isDowned ? 'DOWNED' : (member.isEncumbered ? '⚠️ ENC' : `[F${i + 1}]`);
         }
+
+        const beastEl = document.getElementById(`party-portrait-beast-${i}`);
+        if (beastEl) {
+          const beast = (this.scene as any)?.beastCompanions?.find((b: any) => b.owner === member);
+          if (beast) {
+            beastEl.style.display = 'block';
+            beastEl.innerText = `🐾 ${beast.tamedAnimal.name}: ${Math.ceil(beast.hp)}/${beast.maxHp} HP`;
+            if (beast.isDowned || beast.hp <= 0) {
+              beastEl.style.opacity = '0.5';
+              beastEl.style.color = '#9ca3af';
+            } else {
+              beastEl.style.opacity = '1';
+              beastEl.style.color = '#34d399';
+            }
+          } else {
+            beastEl.style.display = 'none';
+          }
+        }
       } else {
         // Unoccupied slot
+        const beastEl = document.getElementById(`party-portrait-beast-${i}`);
+        if (beastEl) beastEl.style.display = 'none';
         card.classList.remove('selected', 'downed');
         card.classList.add('empty');
         if (nameEl) nameEl.innerText = '(Empty)';
@@ -4652,6 +4687,64 @@ export class HUD {
 
       const statGains = StatGainsSystem.calculateStatGains(member.progression);
 
+      let companionBoxHtml = '';
+      if (member.activeClass === 'beastmaster') {
+        const tamedAnimals = GameState.getInstance().tamedAnimals || [];
+        const predatorSpecies = ['wolf', 'spider', 'deep_crawler', 'cinder_hound', 'frostfang_stalker'];
+        const tamedPredators = tamedAnimals.filter((a) => predatorSpecies.includes(a.speciesId));
+
+        // Animals bonded to other members
+        const bondedUidsOther = new Set<string>();
+        for (let otherIdx = 0; otherIdx < this.currentParty.length; otherIdx++) {
+          if (otherIdx !== i) {
+            const otherM = this.currentParty[otherIdx];
+            if (otherM.companionUid) {
+              bondedUidsOther.add(otherM.companionUid);
+            }
+          }
+        }
+
+        let optionsHtml = `<option value="">None</option>`;
+        for (const animal of tamedPredators) {
+          const isSelected = member.companionUid === animal.uid;
+          const isBondedOther = bondedUidsOther.has(animal.uid);
+          const disabledAttr = isBondedOther ? 'disabled' : '';
+          const suffix = isBondedOther ? ' (Bonded)' : '';
+          optionsHtml += `<option value="${animal.uid}" ${isSelected ? 'selected' : ''} ${disabledAttr}>${animal.name}${suffix}</option>`;
+        }
+
+        let companionDetailHtml = '<div style="color: #6b7280; font-size: 10px; font-style: italic; margin-top: 3px;">No companion bonded</div>';
+        if (member.companionUid) {
+          const bonded = tamedAnimals.find((a) => a.uid === member.companionUid);
+          if (bonded) {
+            const speciesDef = dataLoader.getEnemy(bonded.speciesId);
+            const bmConfig = dataLoader.getBeastCompanionConfig();
+            const bmLevel = member.progression.getClassLevel('beastmaster');
+            const maxHp = speciesDef ? Math.round(speciesDef.hp * (1 + bmConfig.hpPerClassLevel * bmLevel)) : 0;
+            const speciesName = speciesDef?.name || bonded.speciesId;
+            companionDetailHtml = `
+              <div class="party-companion-details" style="font-size: 10px; color: #34d399; margin-top: 3px; display: flex; flex-direction: column; gap: 1px;">
+                <div><span style="font-weight: 600; color: #e2e8f0;">Name:</span> ${bonded.name}</div>
+                <div><span style="font-weight: 600; color: #e2e8f0;">Species:</span> ${speciesName}</div>
+                <div><span style="font-weight: 600; color: #e2e8f0;">Max HP:</span> ${maxHp} HP</div>
+              </div>
+            `;
+          }
+        }
+
+        companionBoxHtml = `
+          <div class="party-equip-box party-companion-box" style="margin-top: 4px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
+              <span style="font-weight: bold; color: #34d399; font-size: 10px; text-transform: uppercase;">🐾 Companion</span>
+            </div>
+            <select class="party-companion-select" data-member-idx="${i}" style="width: 100%; font-size: 11px; padding: 3px 6px; background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(52, 211, 153, 0.4); border-radius: 4px; color: #f1f5f9; cursor: pointer;">
+              ${optionsHtml}
+            </select>
+            ${companionDetailHtml}
+          </div>
+        `;
+      }
+
       html += `
         <div class="party-card ${isDowned ? 'downed' : ''}" data-party-card-idx="${i}">
           <div class="party-card-header">
@@ -4741,6 +4834,8 @@ export class HUD {
           </div>
 
           ${paperdollHtml}
+
+          ${companionBoxHtml}
 
           <div class="party-equip-box party-personal-inv-box">
             <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -5615,6 +5710,19 @@ export class HUD {
     // Milestone 51: Transfer personal item select & Milestone: Quickslot assign select
     this.partyOverviewRosterEl.onchange = (e) => {
       const target = e.target as HTMLElement;
+      if (target.classList.contains('party-companion-select')) {
+        const sel = target as HTMLSelectElement;
+        const memberIdx = parseInt(sel.dataset.memberIdx || '0', 10);
+        const member = this.currentParty[memberIdx];
+        if (member) {
+          const val = sel.value || null;
+          member.companionUid = val;
+          const sceneTime = this.scene ? (this.scene as any).time?.now ?? Date.now() : Date.now();
+          GameState.getInstance().savePartySnapshot(this.currentParty, sceneTime);
+          this.renderPartyOverviewModal(true);
+        }
+      }
+
       if (target.classList.contains('party-item-transfer-select')) {
         const sel = target as HTMLSelectElement;
         const fromIdx = parseInt(sel.dataset.fromIdx || '-1', 10);

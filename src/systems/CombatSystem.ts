@@ -2,6 +2,7 @@ import type Phaser from 'phaser';
 import { Entity } from '../entities/Entity.ts';
 import { Player } from '../entities/Player.ts';
 import { Enemy } from '../entities/Enemy.ts';
+import { BeastCompanion } from '../entities/BeastCompanion.ts';
 import { Pathfinder } from '../utils/Pathfinder.ts';
 import { ProgressionSystem } from './ProgressionSystem.ts';
 import { DataLoader } from '../utils/DataLoader.ts';
@@ -24,7 +25,8 @@ export class CombatSystem {
   private onEnemyDeathCallback?: (enemy: Enemy) => void;
   private lastCombatTimeMs: number = 0;
   private lastPassiveTickTimeMs: number = 0;
-  private enemyTargets: Map<Enemy, Player> = new Map();
+  private enemyTargets: Map<Enemy, Player | BeastCompanion> = new Map();
+  public beastCompanions: BeastCompanion[] = [];
   private casterRegrowthTargets: Map<string, Entity> = new Map();
   public skillSystem: SkillSystem;
 
@@ -88,6 +90,13 @@ export class CombatSystem {
     for (const member of this.party) {
       if (member.targetEntity === enemy) {
         member.clearTarget();
+      }
+    }
+    if (this.beastCompanions) {
+      for (const beast of this.beastCompanions) {
+        if (beast.targetEntity === enemy) {
+          beast.clearTarget();
+        }
       }
     }
   }
@@ -170,10 +179,28 @@ export class CombatSystem {
     return [...this.party];
   }
 
+  public setBeastCompanions(beasts: BeastCompanion[]): void {
+    this.beastCompanions = beasts;
+  }
+
+  public getEnemyTargetCandidates(): (Player | BeastCompanion)[] {
+    const candidates: (Player | BeastCompanion)[] = this.party.filter(
+      (m) => m.state !== 'dead' && m.state !== 'downed'
+    );
+    if (this.beastCompanions) {
+      for (const b of this.beastCompanions) {
+        if (b.state !== 'dead' && b.state !== 'downed' && b.hp > 0) {
+          candidates.push(b);
+        }
+      }
+    }
+    return candidates;
+  }
+
   /**
-   * Finds the closest valid, living party member within enemy's aggro radius and LOS.
+   * Finds the closest valid, living party member or beast companion within enemy's aggro radius and LOS.
    */
-  public findBestTargetInParty(enemy: Enemy): Player | null {
+  public findBestTargetInParty(enemy: Enemy): Player | BeastCompanion | null {
     const enemyTile = {
       x: Math.floor(enemy.x / enemy.tileSize),
       y: Math.floor(enemy.y / enemy.tileSize)
@@ -184,13 +211,13 @@ export class CombatSystem {
     );
     if (distFromSpawn > enemy.maxLeashDistance) return null;
 
-    const validCandidates: { member: Player; dist: number }[] = [];
+    const validCandidates: { member: Player | BeastCompanion; dist: number }[] = [];
 
     const stealthDef = HiddenSkillSystem.getInstance().getSkillDef('stealth');
     const aggroRedPerLv = stealthDef?.aggroReductionPerLevel ?? 0.004;
     const minAggroMult = stealthDef?.minAggroMultiplier ?? 0.6;
 
-    for (const member of this.party) {
+    for (const member of this.getEnemyTargetCandidates()) {
       if (member.state === 'downed' || member.state === 'dead') continue;
       if (typeof member.hasStatusEffect === 'function' && member.hasStatusEffect('hidden')) continue; // Hidden members cannot be proximity aggroed
       const memberTile = {
@@ -199,7 +226,7 @@ export class CombatSystem {
       };
       const dist = Math.max(Math.abs(enemyTile.x - memberTile.x), Math.abs(enemyTile.y - memberTile.y));
 
-      const stealthLevel = member.progression ? member.progression.getProficiencyLevel('stealth') : 0;
+      const stealthLevel = (member instanceof Player && member.progression) ? member.progression.getProficiencyLevel('stealth') : 0;
       const aggroMult = stealthLevel >= 1 ? Math.max(minAggroMult, 1 - aggroRedPerLv * stealthLevel) : 1.0;
       const effectiveAggroRadius = enemy.enemyData.aggroRadius * aggroMult;
 
@@ -574,10 +601,18 @@ export class CombatSystem {
    */
   public recordDamageEvent(victim: Entity, amountLost: number, source?: Entity | string): void {
     if (amountLost <= 0) return;
+    const isVictimBeast = victim instanceof BeastCompanion;
+    const isSourceBeast = source instanceof BeastCompanion;
     const sourceIsMember = source instanceof Entity && this.party.includes(source as Player);
-    if (this.party.includes(victim as Player)) {
+
+    if (isVictimBeast) {
+      const sourceName = typeof source === 'string' ? source : (source?.entityName ?? 'Unknown');
+      this.recordDamageTaken((victim as BeastCompanion).combatSummaryName, amountLost, sourceName);
+    } else if (this.party.includes(victim as Player)) {
       const sourceName = typeof source === 'string' ? source : (source?.entityName ?? 'Unknown');
       this.recordDamageTaken(victim.entityName, amountLost, sourceName);
+    } else if (isSourceBeast) {
+      this.recordDamageDealt((source as BeastCompanion).combatSummaryName, amountLost);
     } else if (sourceIsMember) {
       this.recordDamageDealt((source as Entity).entityName, amountLost);
     }
@@ -920,6 +955,27 @@ export class CombatSystem {
                 }
                 const rawDamage = baseEnemyDamage;
 
+                if (target instanceof BeastCompanion) {
+                  const attackColor = enemy.enemyData.id === 'glacial_sovereign' ? 0x06b6d4 : (isRanged ? 0xf59e0b : 0xef4444);
+                  this.createAttackEffect(enemy.x, enemy.y, target.x, target.y, attackColor);
+                  const actualDamage = rawDamage;
+                  console.log(`[Combat] ${enemy.entityName} hits ${target.entityName} for ${actualDamage} damage!`);
+                  const targetDowned = target.takeDamage(actualDamage, enemy);
+                  this.createFloatingText(target.x, target.y - 20, `-${actualDamage}`, '#ef4444');
+
+                  if (targetDowned) {
+                    console.log(`[Combat] ${target.entityName} has been downed by enemy attack!`);
+                    target.clearTarget();
+                    this.enemyTargets.delete(enemy);
+                    const nextTarget = this.findBestTargetInParty(enemy);
+                    if (nextTarget) {
+                      this.enemyTargets.set(enemy, nextTarget);
+                      enemy.state = 'chasing';
+                      console.log(`%c[Combat Retarget] 🎯 ${enemy.entityName} immediately switched target to ${nextTarget.entityName}!`, 'color: #f59e0b; font-weight: bold;');
+                    }
+                  }
+                } else {
+
                 const hiddenSystem = HiddenSkillSystem.getInstance();
                 const hasShield = target.hasShield();
                 const shieldDef = hasShield ? target.offhandWeapon : null;
@@ -1139,7 +1195,7 @@ export class CombatSystem {
                   if ((enemy.enemyData.id === 'bone_warden' || enemy.enemyData.id === 'abyssal_colossus' || enemy.enemyData.id === 'magma_tyrant') && rawDamage > 0) {
                     const cleaveRatio = enemy.enemyData.id === 'bone_warden' ? 0.25 : 0.5;
                     const rawSplash = Math.max(1, Math.round(rawDamage * cleaveRatio));
-                    for (const member of this.party) {
+                    for (const member of this.getEnemyTargetCandidates()) {
                       if (member !== target && member.state !== 'downed' && member.state !== 'dead') {
                         const dist = Math.hypot(member.gridPos.x - enemy.gridPos.x, member.gridPos.y - enemy.gridPos.y);
                         if (dist <= 1.5) {
@@ -1194,7 +1250,7 @@ export class CombatSystem {
                     // Signature Mechanic 1: Glacial Spike Nova / Permafrost Shards
                     // Projectile shards shatter outward from the impact, hitting all other party members within 3 tiles of the target
                     const rawShard = Math.max(1, Math.round(rawDamage * 0.4));
-                    for (const member of this.party) {
+                    for (const member of this.getEnemyTargetCandidates()) {
                       if (member !== target && member.state !== 'downed' && member.state !== 'dead') {
                         const distToImpact = Math.hypot(member.gridPos.x - target.gridPos.x, member.gridPos.y - target.gridPos.y);
                         if (distToImpact <= 3.0) {
@@ -1379,6 +1435,7 @@ export class CombatSystem {
                   if (actualDamage > 0 && wasUnengaged) {
                     this.triggerRetaliation(enemy, target);
                   }
+                }
                 }
               } else {
                 enemy.state = 'chasing';
@@ -1731,6 +1788,12 @@ export class CombatSystem {
           }
         }
       }
+    }
+
+    // 2b. Beast Companion AI Loop: Follow, Assist, Attack, Leash
+    for (const beast of this.beastCompanions) {
+      if (beast.isDowned) continue;
+      beast.updateBeastBehavior(time, delta, this);
     }
 
     // 3. Passive Regen Ticks (Out of Combat Health & Mana Regen) per Party Member
@@ -4310,7 +4373,7 @@ export class CombatSystem {
     return false;
   }
 
-  public triggerRetaliation(attacker: Enemy, victim: Player): void {
+  public triggerRetaliation(attacker: Enemy, victim: Player | BeastCompanion): void {
     if (attacker.state === 'dead' || attacker.state === 'downed') return;
 
     // Milestone 11: Non-interference rule - only genuinely idle / unengaged living members join retaliation

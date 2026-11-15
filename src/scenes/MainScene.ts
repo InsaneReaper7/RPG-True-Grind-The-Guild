@@ -4,6 +4,7 @@ import { TextureGenerator } from '../utils/TextureGenerator';
 import { Pathfinder } from '../utils/Pathfinder';
 import { DungeonGenerator } from '../utils/DungeonGenerator';
 import { Player } from '../entities/Player';
+import { BeastCompanion } from '../entities/BeastCompanion';
 import { Enemy } from '../entities/Enemy';
 import { Entity } from '../entities/Entity';
 import { CombatSystem } from '../systems/CombatSystem';
@@ -86,6 +87,7 @@ export class MainScene extends Phaser.Scene {
   private tilemap!: Phaser.Tilemaps.Tilemap;
   private pathfinder!: Pathfinder;
   public party: Player[] = [];
+  public beastCompanions: BeastCompanion[] = [];
   public get player(): Player {
     return this.party[0];
   }
@@ -701,6 +703,43 @@ export class MainScene extends Phaser.Scene {
         this.onEnemyDefeated(deadEnemy);
       }
     );
+
+    // Spawn Beast Companions for Beastmaster party members
+    this.beastCompanions = [];
+    const beastConfig = dataLoader.getBeastCompanionConfig();
+    for (const member of this.party) {
+      if (member.activeClass === 'beastmaster' && member.companionUid) {
+        const animal = GameState.getInstance().tamedAnimals.find((a) => a.uid === member.companionUid);
+        if (animal) {
+          const species = dataLoader.getEnemy(animal.speciesId);
+          if (species) {
+            const spawnTile = this.findOpenAdjacentTile(member.gridPos, undefined, undefined, member);
+            const savedState = GameState.getInstance().getBeastHpState(animal.uid);
+            let currentHp: number | undefined = undefined;
+            if (savedState) {
+              const bmLevel = member.progression.getClassLevel('beastmaster');
+              const maxHp = species.hp * (1 + beastConfig.hpPerClassLevel * bmLevel);
+              if (savedState.isDowned) {
+                currentHp = maxHp * beastConfig.reviveHpFraction;
+              } else {
+                currentHp = Math.min(maxHp, savedState.currentHp);
+              }
+            }
+            const beast = new BeastCompanion(
+              this,
+              spawnTile.x,
+              spawnTile.y,
+              member,
+              animal,
+              this.tileSize,
+              currentHp
+            );
+            this.beastCompanions.push(beast);
+          }
+        }
+      }
+    }
+    this.combatSystem.setBeastCompanions(this.beastCompanions);
 
     // Milestone 16: Continuous Floor Timer initialization
     this.debugAutoRespawnEnabled = false;
@@ -2085,6 +2124,14 @@ export class MainScene extends Phaser.Scene {
     // Save live party snapshot and player snapshot
     GameState.getInstance().savePartySnapshot(this.party, this.time.now);
     GameState.getInstance().saveSnapshot(this.player, this.progressionSystem, this.time.now);
+
+    // Save live beast companion states before scene restart
+    for (const beast of this.beastCompanions) {
+      GameState.getInstance().setBeastHpState(beast.tamedAnimal.uid, {
+        currentHp: beast.hp,
+        isDowned: beast.isDowned || beast.hp <= 0
+      });
+    }
 
     // Restart MainScene to generate the next floor
     this.dungeon = null as any;

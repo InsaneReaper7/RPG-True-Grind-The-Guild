@@ -385,6 +385,7 @@ export interface CharacterSnapshot {
   mood?: number;
   state?: EntityState;
   coating?: PlayerCoating | null;
+  companionUid?: string | null;
 }
 
 export interface PlayerSnapshot {
@@ -910,6 +911,28 @@ export interface SkillEffectConsumeStatus {
   status: string;
 }
 
+export interface SkillEffectBeastCommand {
+  type: 'beastCommand';
+  action: 'strike' | 'heal' | 'buff' | 'taunt';
+  multiplier?: number;
+  fraction?: number;
+  attackSpeedPercent?: number;
+  damagePercent?: number;
+  durationMs?: number;
+  radiusTiles?: number;
+}
+
+export interface BeastCompanionConfig {
+  hpPerClassLevel: number;
+  damagePerClassLevel: number;
+  followDistanceTiles: number;
+  assistRadiusTiles: number;
+  leashTiles: number;
+  reviveHpFraction: number;
+  killCreditTo: string;
+  tamingExpPerKill: number;
+}
+
 export type SkillEffect =
   | SkillEffectDamage
   | SkillEffectApplyStatus
@@ -923,7 +946,8 @@ export type SkillEffect =
   | SkillEffectResource
   | SkillEffectReactive
   | SkillEffectRevive
-  | SkillEffectConsumeStatus;
+  | SkillEffectConsumeStatus
+  | SkillEffectBeastCommand;
 
 export interface SkillDef {
   id: string;

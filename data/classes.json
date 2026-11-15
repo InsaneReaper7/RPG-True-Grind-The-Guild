@@ -1280,6 +1280,33 @@
       "primaryAttribute": "dex"
     },
     {
+      "id": "beastmaster",
+      "name": "Beastmaster",
+      "tier": "expert",
+      "requirements": [
+        {
+          "type": "proficiency",
+          "target": "animal_husbandry",
+          "value": 60
+        },
+        {
+          "type": "proficiency",
+          "target": "taming",
+          "value": 60
+        },
+        {
+          "type": "proficiency",
+          "target": "bows",
+          "value": 30
+        }
+      ],
+      "fantasy": "Hunter bonded to a beast",
+      "hiddenSkillBonuses": {
+        "evasion": 0.05
+      },
+      "primaryAttribute": "dex"
+    },
+    {
       "id": "knight",
       "name": "Knight",
       "tier": "expert",

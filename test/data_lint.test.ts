@@ -41,7 +41,7 @@ console.log('2. Checking combat class skill counts...');
 const combatClasses = classesData.classes.filter(
   (c: any) => c.category !== 'crafting' && c.tier !== 'crafting' && !c.isCrafting
 );
-assert.strictEqual(combatClasses.length, 96, 'There must be exactly 96 combat classes');
+assert.strictEqual(combatClasses.length, 97, 'There must be exactly 97 combat classes');
 
 const classSkillsMap = new Map<string, string[]>();
 for (const c of combatClasses) {
@@ -368,6 +368,19 @@ for (const pId of expectedPieces) {
 assert.ok(gearRarityData.bandByRegion, 'Must define bandByRegion in gearRarity.json');
 assert.ok(gearRarityData.drops, 'Must define drops block in gearRarity.json');
 console.log('✓ PASS: All 24 rarity gear pieces, station recipes, scrolls, and rarity tiers verified.\n');
+
+// 12. Beast Companion Configuration Guard
+console.log('12. Checking Beast Companion configuration...');
+const beastConfig = JSON.parse(fs.readFileSync(path.join(rootDir, 'data/beastCompanionConfig.json'), 'utf8'));
+assert.strictEqual(beastConfig.killCreditTo, 'owner', 'beastCompanionConfig.killCreditTo must be "owner"');
+assert.ok(typeof beastConfig.hpPerClassLevel === 'number' && beastConfig.hpPerClassLevel > 0);
+assert.ok(typeof beastConfig.damagePerClassLevel === 'number' && beastConfig.damagePerClassLevel > 0);
+assert.ok(typeof beastConfig.followDistanceTiles === 'number' && beastConfig.followDistanceTiles > 0);
+assert.ok(typeof beastConfig.assistRadiusTiles === 'number' && beastConfig.assistRadiusTiles > 0);
+assert.ok(typeof beastConfig.leashTiles === 'number' && beastConfig.leashTiles > 0);
+assert.ok(typeof beastConfig.reviveHpFraction === 'number' && beastConfig.reviveHpFraction > 0);
+assert.ok(typeof beastConfig.tamingExpPerKill === 'number' && beastConfig.tamingExpPerKill > 0);
+console.log('✓ PASS: Beast companion configuration and killCreditTo verified.\n');
 
 console.log('🎉 ALL DATA LINT CHECKS PASSED PERFECTLY!');
 

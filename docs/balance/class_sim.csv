@@ -53,6 +53,7 @@ shadowblade,expert,daggers,43.3,62.7,0.1,1.5,19,61,346,6.3,41.6,daggers;dark_mag
 arcane_archer,expert,bows,47.9,86.1,0,0,21,56,398,10.3,42.4,bows;arcane_magic;daggers,ranger
 storm_archer,expert,bows,43.6,73.8,0,0,20,54,376,4.3,39.5,bows;lightning_magic;daggers,ranger
 witch_hunter,expert,crossbows,50.1,64.1,0,0,18,48,370,5.3,49.3,crossbows;holy_magic;bows,sharpshooter
+beastmaster,expert,bows,42.6,43.6,0,0,9,38,182,2.5,42.6,animal_husbandry;taming;bows,
 knight,expert,short_swords,56.5,63.1,0,0,12,49,222,2.5,53.6,short_swords;shields,vanguard;fencer;guardian
 paladin,expert,short_swords,64.7,86.7,1.4,3.6,19,45,386,6.3,58.1,shields;holy_magic;short_swords,vanguard;fencer;guardian
 juggernaut,expert,greatswords,62.8,150.7,0,0,8,40,212.5,2,57.3,greatswords;shields,reaver;brute

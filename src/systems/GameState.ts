@@ -71,6 +71,19 @@ export class GameState {
 
   // Milestone 8 Part A: Taming & Husbandry
   public tamedAnimals: TamedAnimal[] = [];
+  private beastHpState: Map<string, { currentHp: number; isDowned: boolean }> = new Map();
+
+  public getBeastHpState(uid: string): { currentHp: number; isDowned: boolean } | undefined {
+    return this.beastHpState.get(uid);
+  }
+
+  public setBeastHpState(uid: string, state: { currentHp: number; isDowned: boolean }): void {
+    this.beastHpState.set(uid, state);
+  }
+
+  public clearBeastHpState(): void {
+    this.beastHpState.clear();
+  }
   private tamingRng: () => number = createPassiveRng(0x2a91b4c3);
   private husbandryRng: () => number = createPassiveRng(0x4b7291a5);
 
@@ -2248,6 +2261,7 @@ export class GameState {
   }
 
   public resetDungeonFloorCount(): void {
+    this.clearBeastHpState();
     if (this.dungeonFloorCount > 0) {
       this.lastDungeonFloorVisited = this.dungeonFloorCount;
       if (this.snapshot) {

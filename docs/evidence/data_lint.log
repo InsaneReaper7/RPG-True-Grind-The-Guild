@@ -1,10 +1,10 @@
 === DATA LINT GLOBAL GUARD TEST ===
 
 1. Checking ID uniqueness...
-✓ PASS: 142 class IDs and 480 skill IDs are unique.
+✓ PASS: 143 class IDs and 485 skill IDs are unique.
 
 2. Checking combat class skill counts...
-✓ PASS: All 96 combat classes have exactly 5 skills.
+✓ PASS: All 97 combat classes have exactly 5 skills.
 
 3. Checking status effect references...
 ✓ PASS: All status references exist in statusEffects.json (58 valid statuses).
@@ -30,5 +30,8 @@
 
 11. Checking Gear Rarity & Drop-Only Gear integrity...
 ✓ PASS: All 24 rarity gear pieces, station recipes, scrolls, and rarity tiers verified.
+
+12. Checking Beast Companion configuration...
+✓ PASS: Beast companion configuration and killCreditTo verified.
 
 🎉 ALL DATA LINT CHECKS PASSED PERFECTLY!

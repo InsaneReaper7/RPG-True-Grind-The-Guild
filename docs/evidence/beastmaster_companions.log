@@ -1,0 +1,87 @@
+================================================================
+🐺 MILESTONE 8 PART B TEST SUITE: BEASTMASTER & COMPANIONS
+================================================================
+
+--- Suite 1: Beastmaster Class Unlock Path ---
+[Progression] Class Unlocked: Marksman (marksman) for Beastmaster Candidate!
+[Progression] Class Unlocked: Beastmaster (beastmaster) for Beastmaster Candidate!
+✓ PASS: Beastmaster unlocks exactly at AH 60 / Taming 60 / Bows 30 (fails if any is short).
+
+--- Suite 2: Companion Dropdown, Bonding & Persistence ---
+[Progression] Class Unlocked: Marksman (marksman) for Hero BM!
+[Progression] Class Unlocked: Beastmaster (beastmaster) for Hero BM!
+[Player] Equipped skill: aimed_shot. Current loadout: [aimed_shot]
+[Player] Equipped skill: sic_em. Current loadout: [aimed_shot, sic_em]
+[Player:Ranger Tester] Active class set to: beastmaster
+[Player] Equipped skill: aimed_shot. Current loadout: [aimed_shot]
+[Player] Equipped skill: sic_em. Current loadout: [aimed_shot, sic_em]
+[Player:Ranger Tester] Active class set to: marksman
+[Player:Ranger Tester] Active class set to: beastmaster
+✓ PASS: Companion dropdown filters predators only, persists on save/load, and clears when changing class away.
+
+--- Suite 3: Companion Stats Calculation & Spawning ---
+[Progression] Class Unlocked: Marksman (marksman) for Master Hunter!
+[Progression] Class Unlocked: Beastmaster (beastmaster) for Master Hunter!
+[Progression] Set class 'beastmaster' to Level 20 (0 EXP) on Master Hunter
+[Player] Equipped skill: aimed_shot. Current loadout: [aimed_shot]
+[Player] Equipped skill: sic_em. Current loadout: [aimed_shot, sic_em]
+[Player] Equipped skill: mend_beast. Current loadout: [aimed_shot, sic_em, mend_beast]
+[Player] Equipped skill: bestial_fury. Current loadout: [aimed_shot, sic_em, mend_beast, bestial_fury]
+[Player:Ranger Tester] Active class set to: beastmaster
+[Progression] Set class 'beastmaster' to Level 25 (0 EXP) on Ranger Tester
+✓ PASS: Beast stats calculate correctly from enemies.json row × config (Lv 20 Wolf: 48 HP, 6.4 DMG).
+
+--- Suite 4: 4-Step Companion Behaviour Order ---
+[Progression] Class Unlocked: Marksman (marksman) for Ranger Bob!
+[Progression] Class Unlocked: Beastmaster (beastmaster) for Ranger Bob!
+[Progression] Set class 'beastmaster' to Level 10 (0 EXP) on Ranger Bob
+[Player] Equipped skill: aimed_shot. Current loadout: [aimed_shot]
+[Player] Equipped skill: sic_em. Current loadout: [aimed_shot, sic_em]
+[Player] Equipped skill: mend_beast. Current loadout: [aimed_shot, sic_em, mend_beast]
+[Player:Ranger Tester] Active class set to: beastmaster
+✓ PASS: All 4 behaviour priority rules hold strictly in sequence.
+
+--- Suite 5: Enemy Targeting, Downed State & Non-Interference ---
+[Progression] Class Unlocked: Marksman (marksman) for Targeting Tester!
+[Progression] Class Unlocked: Beastmaster (beastmaster) for Targeting Tester!
+[Player] Equipped skill: aimed_shot. Current loadout: [aimed_shot]
+[Player] Equipped skill: sic_em. Current loadout: [aimed_shot, sic_em]
+[Player:Ranger Tester] Active class set to: beastmaster
+✓ PASS: Beast is valid enemy target, takes 0 armor mitigation, lies down without causing party wipe, and is never targeted by party heals/revives.
+
+--- Suite 6: Kill Credit & Combat Summary Recording ---
+[Progression] Class Unlocked: Marksman (marksman) for Exp Hunter!
+[Progression] Class Unlocked: Beastmaster (beastmaster) for Exp Hunter!
+[Progression] Set class 'beastmaster' to Level 1 (0 EXP) on Exp Hunter
+[Player] Equipped skill: aimed_shot. Current loadout: [aimed_shot]
+[Player] Equipped skill: sic_em. Current loadout: [aimed_shot, sic_em]
+[Player:Ranger Tester] Active class set to: beastmaster
+[Combat] Wolf defeated/downed by Ranger Tester!
+[Progression] +4 EXP for 'bows' (Ranger Tester). Current: Level 30 (4/170 EXP)
+[Progression] Recorded tx 'bows': +4 EXP for Ranger Tester, resulting total: Level 30 (4/170 EXP)
+[Progression] +25 Class EXP for 'beastmaster' (Ranger Tester). Current: Level 1 (25/54 EXP)
+[Progression] +2 EXP for 'taming' (Ranger Tester). Current: Level 60 (2/290 EXP)
+[Progression] Recorded tx 'taming': +2 EXP for Ranger Tester, resulting total: Level 60 (2/290 EXP)
+✓ PASS: Kill credit routes to owner via handleTargetDefeated (+2 Taming EXP), combat summary records <Species> (<Owner>'s).
+
+--- Suite 7: Kit Skills & AI Selection ---
+[Progression] Class Unlocked: Marksman (marksman) for Kit Master!
+[Progression] Class Unlocked: Beastmaster (beastmaster) for Kit Master!
+[Progression] Set class 'beastmaster' to Level 40 (0 EXP) on Kit Master
+[Player] Equipped skill: aimed_shot. Current loadout: [aimed_shot]
+[Player] Equipped skill: sic_em. Current loadout: [aimed_shot, sic_em]
+[Player] Equipped skill: mend_beast. Current loadout: [aimed_shot, sic_em, mend_beast]
+[Player] Equipped skill: bestial_fury. Current loadout: [aimed_shot, sic_em, mend_beast, bestial_fury]
+[Player] Equipped skill: guardian_howl. Current loadout: [aimed_shot, sic_em, mend_beast, bestial_fury, guardian_howl]
+[Player:Ranger Tester] Active class set to: beastmaster
+[SkillSystem] Cannot cast Mend Beast: No companion!
+[SkillSystem] Cannot cast Bestial Fury: No companion!
+[SkillSystem] Cannot cast Guardian Howl: No companion!
+[Progression] +2 EXP for 'bows' (Ranger Tester). Current: Level 30 (2/170 EXP)
+[Progression] Recorded tx 'bows': +2 EXP for Ranger Tester, resulting total: Level 30 (2/170 EXP)
+✓ PASS: Kit skills execute correctly, companion-only skills gated without companion, and AI rules match requirements.
+
+--- Suite 8: UI Overflow & Clickability Checks ---
+✓ PASS: UI overflow rules verified.
+
+🎉 ALL BEASTMASTER & COMPANIONS TESTS PASSED SUCCESSFULLY!

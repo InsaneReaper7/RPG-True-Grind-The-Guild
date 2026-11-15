@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { Entity } from './Entity.ts';
 import type { Player } from './Player.ts';
+import type { BeastCompanion } from './BeastCompanion.ts';
 import type { EnemyDef, GridPos } from '../types/game.ts';
 import { EventLog } from '../systems/EventLog.ts';
 
@@ -9,7 +10,7 @@ export class Enemy extends Entity {
   public lastAttackTime: number = 0;
   public isAggroed: boolean = false;
   public targetEntity: Entity | null = null;
-  public tauntSource: Player | null = null;
+  public tauntSource: Player | BeastCompanion | null = null;
 
   public spawnPos: GridPos;
   public maxLeashDistance: number = 10;

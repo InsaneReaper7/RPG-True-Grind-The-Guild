@@ -15765,6 +15765,155 @@
           "lifesteal": 0.25
         }
       ]
+    },
+    {
+      "id": "sic_em",
+      "name": "Sic 'Em",
+      "energyCost": 16,
+      "cooldownMs": 4000,
+      "rangeTiles": 4,
+      "targetType": "enemy",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "beastmaster",
+          "value": 1
+        }
+      ],
+      "description": "Fire a shot for 0.8× weapon damage up to 4 tiles away while your companion leaps to the target and strikes for 2.0× its damage.",
+      "ai": {
+        "role": "rotation",
+        "priority": 30
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "weapon",
+          "multiplier": 0.8
+        },
+        {
+          "type": "beastCommand",
+          "action": "strike",
+          "multiplier": 2.0
+        }
+      ]
+    },
+    {
+      "id": "mend_beast",
+      "name": "Mend Beast",
+      "energyCost": 20,
+      "cooldownMs": 12000,
+      "targetType": "self",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "beastmaster",
+          "value": 10
+        }
+      ],
+      "description": "Tends to your bonded companion, restoring 30% of its maximum HP.",
+      "ai": {
+        "role": "heal",
+        "priority": 70,
+        "condition": {
+          "companionHpBelow": 0.50
+        }
+      },
+      "effects": [
+        {
+          "type": "beastCommand",
+          "action": "heal",
+          "fraction": 0.3
+        }
+      ]
+    },
+    {
+      "id": "bestial_fury",
+      "name": "Bestial Fury",
+      "energyCost": 24,
+      "cooldownMs": 18000,
+      "targetType": "self",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "beastmaster",
+          "value": 20
+        }
+      ],
+      "description": "Commands your companion to enter a fury, granting +40% attack speed and +20% damage for 8 seconds.",
+      "ai": {
+        "role": "buff",
+        "priority": 50
+      },
+      "effects": [
+        {
+          "type": "beastCommand",
+          "action": "buff",
+          "attackSpeedPercent": 40,
+          "damagePercent": 20,
+          "durationMs": 8000
+        }
+      ]
+    },
+    {
+      "id": "guardian_howl",
+      "name": "Guardian Howl",
+      "energyCost": 22,
+      "cooldownMs": 16000,
+      "targetType": "self",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "beastmaster",
+          "value": 30
+        }
+      ],
+      "description": "Companion unleashes a fierce howl, taunting enemies within 3 tiles for 4 seconds.",
+      "ai": {
+        "role": "defensive",
+        "priority": 75
+      },
+      "effects": [
+        {
+          "type": "beastCommand",
+          "action": "taunt",
+          "radiusTiles": 3,
+          "durationMs": 4000
+        }
+      ]
+    },
+    {
+      "id": "stampede",
+      "name": "Stampede",
+      "energyCost": 40,
+      "cooldownMs": 16000,
+      "rangeTiles": 4,
+      "targetType": "enemy",
+      "requirements": [
+        {
+          "type": "classLevel",
+          "target": "beastmaster",
+          "value": 40
+        }
+      ],
+      "description": "Unleash a volley dealing 1.2× weapon damage to all enemies within 2 tiles of the target, while your companion strikes the target for 1.5× its damage.",
+      "ai": {
+        "role": "rotation",
+        "priority": 55
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "scaling": "weapon",
+          "multiplier": 1.2,
+          "aoeRadiusTiles": 2
+        },
+        {
+          "type": "beastCommand",
+          "action": "strike",
+          "multiplier": 1.5
+        }
+      ]
     }
   ]
 }

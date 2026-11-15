@@ -65,7 +65,8 @@ import type {
   GearRarityData,
   GearRarityTierDef,
   TamingConfig,
-  HusbandryConfig
+  HusbandryConfig,
+  BeastCompanionConfig
 } from '../types/game.ts';
 import { HiddenSkillSystem } from '../systems/HiddenSkillSystem.ts';
 import { resolveGearStats, getBaseItemId, isCraftingClass, resolvePartyGearSource, getPartyGearOwnership, canEquipBowDaggerSidearm, getRarityDisplay } from './gearResolver.ts';
@@ -113,6 +114,7 @@ export class DataLoader {
   private gearRarityData?: GearRarityData;
   private tamingConfigData?: TamingConfig;
   private husbandryConfigData?: HusbandryConfig;
+  private beastCompanionConfigData?: BeastCompanionConfig;
 
   private constructor() {}
 
@@ -124,7 +126,7 @@ export class DataLoader {
   }
 
   public async loadAll(): Promise<void> {
-    const [player, weapons, classes, enemies, skills, statusEffects, buildables, rooms, hiddenSkills, skillBooks, researchTree, alchemyRecipes, cookingRecipes, blacksmithRecipes, bowyerRecipes, armors, armorsmithRecipes, foods, moodEffects, dungeon, gathering, items, recruits, craftingConfig, introNarrative, enchantingRecipes, statGains, crops, cookingConfig, campConfig, craftingRanks, luckConfig, woodworkingRecipes, stonemasonRecipes, alchemyConfig, throwingConfig, gearRarity, tamingConfig, husbandryConfig] = await Promise.all([
+    const [player, weapons, classes, enemies, skills, statusEffects, buildables, rooms, hiddenSkills, skillBooks, researchTree, alchemyRecipes, cookingRecipes, blacksmithRecipes, bowyerRecipes, armors, armorsmithRecipes, foods, moodEffects, dungeon, gathering, items, recruits, craftingConfig, introNarrative, enchantingRecipes, statGains, crops, cookingConfig, campConfig, craftingRanks, luckConfig, woodworkingRecipes, stonemasonRecipes, alchemyConfig, throwingConfig, gearRarity, tamingConfig, husbandryConfig, beastCompanionConfig] = await Promise.all([
       fetch('/data/player.json').then((res) => res.json()),
       fetch('/data/weapons.json').then((res) => res.json()),
       fetch('/data/classes.json').then((res) => res.json()),
@@ -163,7 +165,8 @@ export class DataLoader {
       fetch('/data/throwingConfig.json').then((res) => res.json()).catch(() => null),
       fetch('/data/gearRarity.json').then((res) => res.json()).catch(() => null),
       fetch('/data/tamingConfig.json').then((res) => res.json()).catch(() => null),
-      fetch('/data/husbandryConfig.json').then((res) => res.json()).catch(() => null)
+      fetch('/data/husbandryConfig.json').then((res) => res.json()).catch(() => null),
+      fetch('/data/beastCompanionConfig.json').then((res) => res.json()).catch(() => null)
     ]);
 
     this.playerData = player as PlayerData;
@@ -228,6 +231,9 @@ export class DataLoader {
     }
     if (husbandryConfig) {
       this.husbandryConfigData = husbandryConfig as HusbandryConfig;
+    }
+    if (beastCompanionConfig) {
+      this.beastCompanionConfigData = beastCompanionConfig as BeastCompanionConfig;
     }
     if (craftingConfig) {
       this.craftingConfigData = craftingConfig as CraftingConfigData;
@@ -1167,6 +1173,31 @@ export class DataLoader {
       expPerCollect: 15,
       penCapacity: 2,
       production: {}
+    };
+  }
+
+  public getBeastCompanionConfig(): BeastCompanionConfig {
+    if (this.beastCompanionConfigData) {
+      return this.beastCompanionConfigData;
+    }
+    try {
+      if (typeof process !== 'undefined' && process.versions?.node) {
+        const fsModule = (globalThis as any).fs || (typeof require !== 'undefined' ? require('node:fs') : undefined);
+        if (fsModule && fsModule.existsSync('data/beastCompanionConfig.json')) {
+          this.beastCompanionConfigData = JSON.parse(fsModule.readFileSync('data/beastCompanionConfig.json', 'utf8'));
+          return this.beastCompanionConfigData!;
+        }
+      }
+    } catch { /* fallback */ }
+    return this.beastCompanionConfigData || {
+      hpPerClassLevel: 0.03,
+      damagePerClassLevel: 0.03,
+      followDistanceTiles: 2,
+      assistRadiusTiles: 4,
+      leashTiles: 8,
+      reviveHpFraction: 0.5,
+      killCreditTo: 'owner',
+      tamingExpPerKill: 2
     };
   }
 
