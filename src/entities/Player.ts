@@ -658,13 +658,66 @@ export class Player extends Entity {
     return this.isEncumbered;
   }
 
+  /** Active "X has reached Lv N!" texts above this character, so simultaneous level-ups stack instead of overlapping. */
+  private levelUpFloatTexts: Phaser.GameObjects.Text[] = [];
+
+  /**
+   * Owner request (2026-11-15): every skill/proficiency or class level-up shows a short announcement above the
+   * character who gained it (e.g. "Katanas has reached Lv 3!"), for every party member. It holds, then fades.
+   */
+  public showLevelUpFloatText(event: { type: 'proficiency' | 'class'; id: string; level: number; levelsGained: number }): void {
+    if (!event || event.levelsGained <= 0) return; // restores and debug level sets report 0 levels gained
+    const scene: any = this.scene;
+    if (!scene || !scene.add || typeof scene.add.text !== 'function' || !this.active) return;
+
+    const dataLoader = DataLoader.getInstance();
+    const rawName = event.type === 'class'
+      ? dataLoader.getClass(event.id)?.name
+      : dataLoader.getTrainableStatDef(event.id)?.name;
+    const name = rawName || event.id.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase());
+    const label = event.type === 'class' ? `${name} (class) has reached Lv ${event.level}!` : `${name} has reached Lv ${event.level}!`;
+    const color = event.type === 'class' ? '#c4b5fd' : '#fde047';
+
+    this.levelUpFloatTexts = this.levelUpFloatTexts.filter((t) => t.active);
+    const stackIndex = this.levelUpFloatTexts.length;
+    const text: Phaser.GameObjects.Text = scene.add.text(0, -40 - stackIndex * 14, label, {
+      fontSize: '12px',
+      color,
+      fontStyle: 'bold',
+      stroke: '#000000',
+      strokeThickness: 3
+    });
+    text.setOrigin(0.5);
+    // Child of the character container, so it follows the character while it moves.
+    this.add(text);
+    this.levelUpFloatTexts.push(text);
+
+    const finish = () => {
+      this.levelUpFloatTexts = this.levelUpFloatTexts.filter((t) => t !== text);
+      text.destroy();
+    };
+    if (scene.tweens && typeof scene.tweens.add === 'function') {
+      scene.tweens.add({
+        targets: text,
+        y: text.y - 12,
+        alpha: 0,
+        delay: 1800,
+        duration: 900,
+        onComplete: finish
+      });
+    } else if (scene.time && typeof scene.time.delayedCall === 'function') {
+      scene.time.delayedCall(2700, finish);
+    }
+  }
+
   public bindProgression(progression: ProgressionSystem): void {
     this.progression = progression;
     if (this.progression) {
       this.progression.ownerName = this.entityName;
       this.progression.character = this;
-      this.progression.onProgressionLevelUp(() => {
+      this.progression.onProgressionLevelUp((event) => {
         this.recalculateDerivedStats(true);
+        this.showLevelUpFloatText(event);
       });
       this.progression.onClassUnlocked((event) => {
         if (!this.activeClass && !isCraftingClass(event.classDef.id)) {

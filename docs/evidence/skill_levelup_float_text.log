@@ -1,0 +1,140 @@
+SKILL LEVEL-UP FLOAT TEXT (owner request 2026-11-15)
+[GameState] Initialized from player.json boot seed with Hero & Valerie: {
+  hp: undefined,
+  criticalHp: undefined,
+  energy: undefined,
+  knownSkillIds: [],
+  equippedSkillIds: [],
+  autocastMap: {},
+  skillCooldownsRemainingMs: {},
+  proficiencies: {
+    undefined: { level: 0, currentExp: 0 },
+    construction: { level: 0, currentExp: 0 },
+    fist: { level: 0, currentExp: 0 },
+    short_swords: { level: 0, currentExp: 0 },
+    daggers: { level: 0, currentExp: 0 },
+    shields: { level: 0, currentExp: 0 },
+    dual_wielding: { level: 0, currentExp: 0 },
+    alchemy: { level: 0, currentExp: 0 },
+    evasion: { level: 0, currentExp: 0 },
+    parry: { level: 0, currentExp: 0 },
+    block: { level: 0, currentExp: 0 },
+    counterattack: { level: 0, currentExp: 0 },
+    resilience: { level: 0, currentExp: 0 },
+    health_regen: { level: 0, currentExp: 0 },
+    mana_regen: { level: 0, currentExp: 0 },
+    energy_regen: { level: 0, currentExp: 0 },
+    staff: { level: 0, currentExp: 0 },
+    healing_magic: { level: 0, currentExp: 0 },
+    fire_magic: { level: 0, currentExp: 0 },
+    foraging: { level: 0, currentExp: 0 },
+    woodcutting: { level: 0, currentExp: 0 },
+    mining: { level: 0, currentExp: 0 },
+    mace: { level: 0, currentExp: 0 },
+    blacksmithing: { level: 0, currentExp: 0 },
+    armorsmithing: { level: 0, currentExp: 0 },
+    digging: { level: 0, currentExp: 0 },
+    skinning: { level: 0, currentExp: 0 },
+    butchering: { level: 0, currentExp: 0 }
+  },
+  classLevels: {},
+  unlockedClasses: [],
+  resources: { wood: 1000, ore: 0 },
+  placedBuildables: [],
+  hunger: 100,
+  mood: 50,
+  currentGameDay: 1,
+  foodItems: [],
+  equippedWeaponId: undefined,
+  offhandWeaponId: null,
+  dungeonFloorCount: 0,
+  encounteredEnemies: [],
+  discoveredProficiencies: [],
+  discoveredStatusEffects: [],
+  discoveredGatheringNodes: [],
+  defeatedAreaBosses: [],
+  quickSlots: [ 'revive_potion', 'bandage', 'energy_potion', 'antidote' ],
+  worldFlags: {},
+  grovePityCounter: 0,
+  gold: 0,
+  merchantVisit: {
+    placed: false,
+    present: false,
+    nextArrivalDay: 1,
+    visitNumber: 0,
+    stock: []
+  },
+  party: [
+    {
+      id: 'hero',
+      name: 'Guild Hero',
+      avatarKey: 'player-avatar',
+      hp: undefined,
+      criticalHp: undefined,
+      energy: undefined,
+      equippedWeaponId: undefined,
+      offhandWeaponId: null,
+      inventory: [Object],
+      knownSkillIds: [],
+      equippedSkillIds: [],
+      autocastMap: {},
+      skillCooldownsRemainingMs: {},
+      proficiencies: [Object],
+      classLevels: {},
+      classStats: {},
+      unlockedClasses: [],
+      activeClass: null,
+      bookLearnedSkills: [],
+      hunger: 100,
+      mood: 50,
+      state: 'idle'
+    },
+    {
+      id: 'companion_1',
+      name: 'Valerie',
+      avatarKey: 'companion-avatar',
+      avatarTextureKey: 'companion-avatar',
+      hp: 50,
+      criticalHp: 25,
+      energy: 100,
+      equippedWeaponId: 'bows',
+      offhandWeaponId: 'daggers',
+      inventory: [Object],
+      knownSkillIds: [Array],
+      equippedSkillIds: [Array],
+      autocastMap: [Object],
+      skillCooldownsRemainingMs: {},
+      proficiencies: [Object],
+      classLevels: [Object],
+      classStats: [Object],
+      unlockedClasses: [Array],
+      activeClass: 'scout',
+      bookLearnedSkills: [],
+      hunger: 100,
+      mood: 50,
+      state: 'idle'
+    }
+  ]
+}
+[Progression] +2000 EXP for 'katana' (Kaelen). Current: Level 21 (110/134 EXP)
+[Progression] Recorded tx 'katana': +2000 EXP for Kaelen, resulting total: Level 21 (110/134 EXP)
+[Progression] LEVEL UP! 'katana' is now Level 21! (Gained 21 level(s))
+[Progression] Class Unlocked: Swordsman (swordsman) for Kaelen!
+[Player:Kaelen] Active class set to: swordsman
+[Player] Equipped skill: blade_strike. Current loadout: [blade_strike]
+[Progression] ✨ SKILL DISCOVERED: 'katana' reached Level 21 by Kaelen! ✨
+✔ Leader: "Katana has reached Lv 21!"
+✔ Holds, fades and is destroyed
+[Progression] +500 EXP for 'katana' (Valerie). Current: Level 7 (66/78 EXP)
+[Progression] Recorded tx 'katana': +500 EXP for Valerie, resulting total: Level 7 (66/78 EXP)
+[Progression] LEVEL UP! 'katana' is now Level 7! (Gained 7 level(s))
+[Progression] ✨ SKILL DISCOVERED: 'katana' reached Level 7 by Valerie! ✨
+✔ Ally: "Katana has reached Lv 7!"
+[Progression] +500 EXP for 'daggers' (Valerie). Current: Level 7 (66/78 EXP)
+[Progression] Recorded tx 'daggers': +500 EXP for Valerie, resulting total: Level 7 (66/78 EXP)
+[Progression] LEVEL UP! 'daggers' is now Level 7! (Gained 7 level(s))
+[Progression] ✨ SKILL DISCOVERED: 'daggers' reached Level 7 by Valerie! ✨
+✔ Stacks while the earlier text is still showing
+[Progression] Set class 'ronin' to Level 9 (0 EXP) on Kaelen
+✔ Class level-ups shown; level restores are silent
+ALL LEVEL-UP FLOAT TEXT TESTS PASSED
