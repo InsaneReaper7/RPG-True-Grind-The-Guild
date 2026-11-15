@@ -83,6 +83,7 @@ export interface WeaponDef {
   rarity?: string;
   band?: number;
   luckBonus?: number;
+  merchantExclusive?: boolean;
 }
 
 export interface StartingKitDef {
@@ -731,6 +732,7 @@ export interface ArmorDef {
   rarity?: string;
   band?: number;
   luckBonus?: number;
+  merchantExclusive?: boolean;
 }
 
 export function getArmorHpSplit(armor: ArmorDef): { mainHpBonus: number; criticalHpBonus: number } {

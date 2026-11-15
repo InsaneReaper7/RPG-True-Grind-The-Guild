@@ -618,6 +618,7 @@ async function runTests() {
     assert.equal(sandstormGlaive.baseDamage, Math.round(frostHalberd.baseDamage * 1.10 * 10) / 10);
     assert.equal(sandstormGlaive.attackIntervalMs, frostHalberd.attackIntervalMs);
     assert.equal(sandstormGlaive.attackRange, frostHalberd.attackRange);
+    assert.equal(sandstormGlaive.rarity, 'very_rare', 'sandstorm_glaive rarity is very_rare (matching gearRarity)');
 
     // 4. desert_steel_saber vs void_longsword
     const desertSteelSaber = dl.getWeapon('desert_steel_saber')!;
@@ -636,6 +637,32 @@ async function runTests() {
     assert.equal(nomadsCoat.weightClass, frostLeatherArmor.weightClass);
     assert.equal(nomadsCoat.weight, frostLeatherArmor.weight);
     assert.equal(nomadsCoat.hpBonus, Math.round(frostLeatherArmor.hpBonus * 1.05 * 10) / 10);
+    assert.equal(nomadsCoat.tier, 'frost', 'Nomad\'s Coat restored tier: frost');
+    assert.equal((nomadsCoat as any).band, undefined, 'Nomad\'s Coat has no band field');
+
+    // 6. Verify merchantExclusive flag on all 5 exclusive pieces + charm
+    assert.equal(tradersRapier.merchantExclusive, true);
+    assert.equal(caravanWarbow.merchantExclusive, true);
+    assert.equal(sandstormGlaive.merchantExclusive, true);
+    assert.equal(desertSteelSaber.merchantExclusive, true);
+    assert.equal(nomadsCoat.merchantExclusive, true);
+    const charmPiece = dl.getArmor('merchants_charm')!;
+    assert.equal(charmPiece.merchantExclusive, true);
+
+    // 7. Verify no exclusive pieces leak into getGearPiecesForRarity pools
+    const testRarities = ['common', 'uncommon', 'rare', 'very_rare', 'mythical', 'legendary'];
+    for (const rar of testRarities) {
+      for (let b = 1; b <= 5; b++) {
+        const pool = dl.getGearPiecesForRarity(rar, b);
+        for (const item of pool) {
+          assert.ok(!item.merchantExclusive, `getGearPiecesForRarity(${rar}, ${b}) must not contain exclusive piece ${item.id}`);
+        }
+      }
+      const bandlessPool = dl.getGearPiecesForRarity(rar);
+      for (const item of bandlessPool) {
+        assert.ok(!item.merchantExclusive, `getGearPiecesForRarity(${rar}) must not contain exclusive piece ${item.id}`);
+      }
+    }
 
     // Recipe scroll price check
     const stockEntries = dl.getMerchantStock();
@@ -703,7 +730,6 @@ async function runTests() {
 
     // Equip charm
     player.equippedAccessory = charmDef;
-    assert.equal(player.getEffectiveLuck(), 0.5, 'Effective luck is 0.5 with charm');
     assert.equal(prog.getEffectiveLuck(), 0.5, 'Progression effective luck is 0.5 with charm');
     assert.equal(prog.getProficiencyLevel('luck'), 0, 'Stored luck level is STILL 0 (never altered)');
 
@@ -713,7 +739,6 @@ async function runTests() {
 
     // Unequip charm
     player.equippedAccessory = null;
-    assert.equal(player.getEffectiveLuck(), 0);
     assert.equal(prog.getEffectiveLuck(), 0);
     const unequippedChance = HiddenSkillSystem.getInstance().calculateProcChance(luckDef, 0, 0, prog);
     assert.equal(unequippedChance, baseProcChance, 'Unequipping returns proc chance to baseline');

@@ -491,7 +491,7 @@ export class DataLoader {
   public getGearPiecesForRarity(rarity: string, band?: number): (WeaponDef | ArmorDef)[] {
     const weapons = this.getAllWeapons();
     const armors = this.getAllArmors();
-    const allGear: (WeaponDef | ArmorDef)[] = [...weapons, ...armors];
+    const allGear: (WeaponDef | ArmorDef)[] = [...weapons, ...armors].filter((g) => !g.merchantExclusive);
     if (rarity === 'mythical' || rarity === 'legendary') {
       return allGear.filter((g) => g.rarity === rarity);
     }

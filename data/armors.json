@@ -459,13 +459,14 @@
       "id": "nomads_coat",
       "name": "Nomad's Coat",
       "slot": "body",
-      "band": 4,
+      "tier": "frost",
       "weightClass": "medium",
       "weight": 7,
       "armorRating": 17,
       "hpBonus": 157.5,
       "splitRatio": "50/50",
       "rarity": "rare",
+      "merchantExclusive": true,
       "description": "A reinforced traveling coat woven with frost-resistant linings and desert resilience."
     },
     {
@@ -475,6 +476,7 @@
       "weight": 0.5,
       "luckBonus": 0.5,
       "rarity": "rare",
+      "merchantExclusive": true,
       "description": "A glittering merchant talisman that brings fortune to negotiations and findings. Grants +0.5 flat Luck."
     }
   ]

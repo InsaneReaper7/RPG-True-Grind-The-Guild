@@ -135,11 +135,8 @@ export class HiddenSkillSystem {
    */
   public calculateProcChance(skillDef: HiddenSkillDef, currentLevel: number, classBonus: number = 0, progression?: ProgressionSystem): number {
     let effectiveLevel = currentLevel;
-    if (skillDef.id === 'luck' && progression) {
-      const equipBonus = typeof (progression as any).getEquippedLuckBonus === 'function'
-        ? (progression as any).getEquippedLuckBonus()
-        : (progression.character?.getEquippedLuckBonus?.() ?? 0);
-      effectiveLevel += equipBonus;
+    if (skillDef.id === 'luck' && progression && typeof progression.getEffectiveLuck === 'function') {
+      effectiveLevel = progression.getEffectiveLuck(currentLevel);
     }
     let chance = skillDef.baseProcChance + (effectiveLevel * skillDef.procChancePerLevel) + classBonus;
     if (skillDef.id === 'luck' && progression && typeof progression.isClassUnlocked === 'function' && progression.isClassUnlocked('lady_fortune')) {

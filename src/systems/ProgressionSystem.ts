@@ -221,8 +221,9 @@ export class ProgressionSystem {
    * Returns effective Luck level: base stored level + equipment luckBonus (if character bound).
    * Single source of truth for effective Luck everywhere it is read.
    */
-  public getEffectiveLuck(): number {
-    return this.getProficiencyLevel('luck') + this.getEquippedLuckBonus();
+  public getEffectiveLuck(baseLevel?: number): number {
+    const base = baseLevel !== undefined ? baseLevel : this.getProficiencyLevel('luck');
+    return base + this.getEquippedLuckBonus();
   }
 
   /**

@@ -505,7 +505,7 @@ async function run() {
   // --- Test 9: "Heavy doesn't dominate" guard ---
   console.log('Test 9: "Heavy doesn\'t dominate" data guard across all tiers and slots');
   const armors = dl.getArmorsData().armors;
-  const trueArmors = armors.filter((a) => a.slot === 'helmet' || a.slot === 'body');
+  const trueArmors = armors.filter((a) => (a.slot === 'helmet' || a.slot === 'body') && !a.merchantExclusive);
 
   const tiers: ('starter' | 'mid' | 'void' | 'frost')[] = ['starter', 'mid', 'void', 'frost'];
   const slots: ('helmet' | 'body')[] = ['helmet', 'body'];

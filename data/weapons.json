@@ -1546,6 +1546,7 @@
         "damagePerLevel": 0.5
       },
       "rarity": "rare",
+      "merchantExclusive": true,
       "description": "A balanced, precision-forged rapier carried by travelling merchant caravan guards."
     },
     {
@@ -1565,6 +1566,7 @@
         "attackSpeedPerLevel": 0.005
       },
       "rarity": "rare",
+      "merchantExclusive": true,
       "description": "A reinforced composite warbow carried by long-distance desert caravans."
     },
     {
@@ -1582,7 +1584,8 @@
         "accuracyPerLevel": 0.004,
         "damagePerLevel": 0.75
       },
-      "rarity": "epic",
+      "rarity": "very_rare",
+      "merchantExclusive": true,
       "description": "An exotic curved polearm honed in harsh desert winds. Striking with great reach and cutting power."
     },
     {
@@ -1600,6 +1603,7 @@
         "damagePerLevel": 0.55
       },
       "rarity": "rare",
+      "merchantExclusive": true,
       "description": "A curved desert saber tempered with void-infused steel."
     }
   ],

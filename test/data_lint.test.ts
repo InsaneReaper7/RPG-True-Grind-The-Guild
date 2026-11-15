@@ -382,5 +382,47 @@ assert.ok(typeof beastConfig.reviveHpFraction === 'number' && beastConfig.revive
 assert.ok(typeof beastConfig.tamingExpPerKill === 'number' && beastConfig.tamingExpPerKill > 0);
 console.log('✓ PASS: Beast companion configuration and killCreditTo verified.\n');
 
+// 13. Merchant Economy & Rarity Multiplier Guard (Milestone 9)
+console.log('13. Checking Merchant economy rarity multiplier and gear rarity integrity...');
+const merchantConfig = JSON.parse(fs.readFileSync(path.join(rootDir, 'data/merchantConfig.json'), 'utf8'));
+const validRarityIds = gearRarityData.rarities.map((r: any) => r.id);
+const multiplierKeys = Object.keys(merchantConfig.rarityMultiplier);
+assert.deepStrictEqual(
+  multiplierKeys.sort(),
+  [...validRarityIds].sort(),
+  'merchantConfig.rarityMultiplier keys must equal the IDs in gearRarity.json'
+);
+
+// Every weapon, armor, and recipe with a rarity property must be one of the valid rarity IDs
+for (const w of weaponsData.weapons) {
+  if (w.rarity) {
+    assert.ok(validRarityIds.includes(w.rarity), `Weapon "${w.id}" has invalid rarity "${w.rarity}"`);
+  }
+}
+for (const a of armorsData.armors) {
+  if (a.rarity) {
+    assert.ok(validRarityIds.includes(a.rarity), `Armor "${a.id}" has invalid rarity "${a.rarity}"`);
+  }
+}
+const alcData = JSON.parse(fs.readFileSync(path.join(rootDir, 'data/alchemyRecipes.json'), 'utf8'));
+const cookData = JSON.parse(fs.readFileSync(path.join(rootDir, 'data/cookingRecipes.json'), 'utf8'));
+const woodData = JSON.parse(fs.readFileSync(path.join(rootDir, 'data/woodworkingRecipes.json'), 'utf8'));
+const stoneData = JSON.parse(fs.readFileSync(path.join(rootDir, 'data/stonemasonRecipes.json'), 'utf8'));
+const allStationRecipes = [
+  ...bsData.recipes,
+  ...asData.recipes,
+  ...byData.recipes,
+  ...(Array.isArray(alcData) ? alcData : alcData.recipes || []),
+  ...(Array.isArray(cookData) ? cookData : cookData.recipes || []),
+  ...(Array.isArray(woodData) ? woodData : woodData.recipes || []),
+  ...(Array.isArray(stoneData) ? stoneData : stoneData.recipes || [])
+];
+for (const r of allStationRecipes) {
+  if (r.rarity) {
+    assert.ok(validRarityIds.includes(r.rarity), `Recipe "${r.id}" has invalid rarity "${r.rarity}"`);
+  }
+}
+console.log('✓ PASS: Merchant rarity multipliers and weapon/armor/recipe rarity integrity verified.\n');
+
 console.log('🎉 ALL DATA LINT CHECKS PASSED PERFECTLY!');
 

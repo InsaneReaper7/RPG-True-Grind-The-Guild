@@ -9,8 +9,9 @@
     "common": 1,
     "uncommon": 1.5,
     "rare": 2.5,
-    "epic": 4,
-    "legendary": 6
+    "very_rare": 4,
+    "mythical": 6,
+    "legendary": 8
   },
   "foodQualityMultiplier": {
     "poor": 0.5,

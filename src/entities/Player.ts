@@ -882,15 +882,6 @@ export class Player extends Entity {
   }
 
   /**
-   * Returns effective Luck level: base stored level + equipment luckBonus.
-   * Single source of truth for effective Luck everywhere it is read.
-   */
-  public getEffectiveLuck(): number {
-    const base = this.progression ? this.progression.getProficiencyLevel('luck') : 0;
-    return base + this.getEquippedLuckBonus();
-  }
-
-  /**
    * Computes the unique armor weight classes actively worn on true armor slots (Helmet, Body).
    * Necklace, Ring, and Accessory slots are explicitly excluded — they are pure stat items.
    */

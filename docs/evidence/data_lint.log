@@ -34,4 +34,7 @@
 12. Checking Beast Companion configuration...
 ✓ PASS: Beast companion configuration and killCreditTo verified.
 
+13. Checking Merchant economy rarity multiplier and gear rarity integrity...
+✓ PASS: Merchant rarity multipliers and weapon/armor/recipe rarity integrity verified.
+
 🎉 ALL DATA LINT CHECKS PASSED PERFECTLY!
